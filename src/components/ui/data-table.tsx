@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useMemo, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, useState, type Key, type ReactNode } from 'react'
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 // ── Context ───────────────────────────────────────────────────
 
@@ -14,6 +15,8 @@ interface TableActions {
 }
 
 interface TableMeta<T> {
+  emptyMessage: string
+  getRowKey?: (row: T, index: number) => Key
   onRowClick?: (row: T) => void
 }
 
@@ -50,7 +53,16 @@ function TableBodyRow<T>({ row, onRowClick, children }: { row: T; onRowClick?: (
 
 // ── Root ──────────────────────────────────────────────────────
 
-function Root<T>({ data, children, onRowClick }: { data: T[]; children: ReactNode; onRowClick?: (row: T) => void }) {
+interface RootProps<T> {
+  children: ReactNode
+  data: T[]
+  emptyMessage?: string
+  getRowKey?: (row: T, index: number) => Key
+  onRowClick?: (row: T) => void
+  renderCard?: (row: T, index: number) => ReactNode
+}
+
+function Root<T>({ children, data, emptyMessage = 'No data found', getRowKey, onRowClick, renderCard }: RootProps<T>) {
   const [sortKey, setSortKeyState] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
 
@@ -79,12 +91,34 @@ function Root<T>({ data, children, onRowClick }: { data: T[]; children: ReactNod
     <TableContext.Provider value={{
       state: { data: sorted, sortKey, sortDir },
       actions: { setSorting },
-      meta: { onRowClick: onRowClick as ((row: unknown) => void) | undefined },
+      meta: {
+        emptyMessage,
+        getRowKey: getRowKey as ((row: unknown, index: number) => Key) | undefined,
+        onRowClick: onRowClick as ((row: unknown) => void) | undefined,
+      },
     }}>
-      <div className="overflow-x-auto rounded-lg border border-border-secondary">
-        <table className="w-full text-sm">
-          {children}
-        </table>
+      {renderCard && (
+        <div className="space-y-3 sm:hidden">
+          {sorted.length === 0 ? (
+            <div className="rounded-xl border border-border-secondary bg-background-primary px-4 py-8 text-center text-sm text-text-tertiary">
+              {emptyMessage}
+            </div>
+          ) : (
+            sorted.map((row, index) => (
+              <div key={getRowKey?.(row, index) ?? index}>
+                {renderCard(row, index)}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      <div className={renderCard ? 'hidden sm:block' : ''}>
+        <div className="overflow-x-auto rounded-lg border border-border-secondary">
+          <table className="w-full text-sm">
+            {children}
+          </table>
+        </div>
       </div>
     </TableContext.Provider>
   )
@@ -107,6 +141,7 @@ function Header({ children }: { children: ReactNode }) {
 function Column({ field, children, sortable = false, className = '' }: { field: string; children: ReactNode; sortable?: boolean; className?: string }) {
   const { state: { sortKey, sortDir }, actions: { setSorting } } = useTableContext()
   const active = sortKey === field
+  const ariaSort = active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'
 
   function handleSort() {
     setSorting(field)
@@ -114,19 +149,22 @@ function Column({ field, children, sortable = false, className = '' }: { field: 
 
   return (
     <th
+      aria-sort={sortable ? ariaSort : undefined}
       className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary ${sortable ? 'cursor-pointer select-none hover:text-text-secondary' : ''} ${className}`}
-      onClick={sortable ? handleSort : undefined}
+      scope="col"
     >
-      <span className="inline-flex items-center gap-1">
-        {children}
-        {sortable && (
-          active ? (
+      {sortable ? (
+        <Button className="-mx-2 h-auto min-h-0 gap-1 px-2 py-0 text-left text-xs font-medium uppercase tracking-wider" onClick={handleSort} size="sm" variant="ghost">
+          <span>{children}</span>
+          {active ? (
             sortDir === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />
           ) : (
             <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />
-          )
-        )}
-      </span>
+          )}
+        </Button>
+      ) : (
+        <span className="inline-flex items-center gap-1">{children}</span>
+      )}
     </th>
   )
 }
@@ -134,19 +172,19 @@ function Column({ field, children, sortable = false, className = '' }: { field: 
 // ── Body ─────────────────────────────────────────────────────
 
 function Body<T>({ render }: { render: (row: T, index: number) => ReactNode }) {
-  const { state: { data }, meta: { onRowClick } } = useTableContext<T>()
+  const { state: { data }, meta: { emptyMessage, getRowKey, onRowClick } } = useTableContext<T>()
 
   return (
     <tbody>
       {data.length === 0 ? (
         <tr>
           <td colSpan={100} className="px-4 py-12 text-center text-text-tertiary">
-            No data found
+            {emptyMessage}
           </td>
         </tr>
       ) : (
         data.map((row, i) => (
-          <TableBodyRow key={i} row={row} onRowClick={onRowClick}>
+          <TableBodyRow key={getRowKey?.(row, i) ?? i} row={row} onRowClick={onRowClick}>
             {render(row, i)}
           </TableBodyRow>
         ))

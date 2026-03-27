@@ -35,7 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading: false,
   })
 
-  const login = useCallback(async (_email: string, _password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
+    void email
+    void password
     setState((s) => ({ ...s, isLoading: true }))
     // Replace with supabase.auth.signInWithPassword
     await new Promise((r) => setTimeout(r, 800))

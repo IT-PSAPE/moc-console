@@ -1,22 +1,23 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 
 interface UseListFilterOptions<T> {
   data: T[]
   searchFields: (keyof T)[]
-  initialFilters?: Record<string, string>
+  initialFilters?: Record<string, string[]>
 }
 
 interface UseListFilterResult<T> {
   search: string
   setSearch: (value: string) => void
-  activeFilters: Record<string, string>
+  activeFilters: Record<string, string[]>
   filtered: T[]
   handleFilterChange: (key: string, value: string) => void
+  clearFilters: () => void
 }
 
 export function useListFilter<T>({ data, searchFields, initialFilters = {} }: UseListFilterOptions<T>): UseListFilterResult<T> {
   const [search, setSearch] = useState('')
-  const [activeFilters, setActiveFilters] = useState<Record<string, string>>(initialFilters)
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>(initialFilters)
 
   const filtered = useMemo(() => {
     return data.filter((item) => {
@@ -26,21 +27,28 @@ export function useListFilter<T>({ data, searchFields, initialFilters = {} }: Us
         )
         if (!match) return false
       }
-      for (const [key, value] of Object.entries(activeFilters)) {
-        if (value && (item as Record<string, unknown>)[key] !== value) return false
+      for (const [key, values] of Object.entries(activeFilters)) {
+        if (values.length > 0 && !values.includes(String((item as Record<string, unknown>)[key]))) {
+          return false
+        }
       }
       return true
     })
   }, [data, search, activeFilters, searchFields])
 
-  function handleFilterChange(key: string, value: string) {
+  const handleFilterChange = useCallback((key: string, value: string) => {
     setActiveFilters((prev) => {
-      const next = { ...prev }
-      if (value) next[key] = value
-      else delete next[key]
-      return next
+      const current = prev[key] ?? []
+      const next = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value]
+      return { ...prev, [key]: next }
     })
-  }
+  }, [])
 
-  return { search, setSearch, activeFilters, filtered, handleFilterChange }
+  const clearFilters = useCallback(() => {
+    setActiveFilters({})
+  }, [])
+
+  return { search, setSearch, activeFilters, filtered, handleFilterChange, clearFilters }
 }

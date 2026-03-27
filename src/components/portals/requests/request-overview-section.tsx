@@ -1,15 +1,11 @@
 import { Signal, Circle, Tag, CalendarDays, Clock } from 'lucide-react'
+import { InfoList } from '@/components/ui/info-list'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { formatDateTime, formatLabel } from '@/lib/utils'
 import type { CultureRequest } from '@/types'
-import type { ReactNode } from 'react'
 
 interface RequestOverviewSectionProps {
   request: CultureRequest
-  onStatusChange: (status: CultureRequest['status']) => void
-  onPriorityChange: (priority: CultureRequest['priority']) => void
-  onTypeChange: (type: CultureRequest['type']) => void
-  onDueDateChange: (value: string) => void
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -20,42 +16,42 @@ const STATUS_LABELS: Record<string, string> = {
   completed: 'Completed',
 }
 
-function PropertyRow({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
-  return (
-    <div className="flex items-center gap-3 py-1.5">
-      <span className="text-text-quaternary">{icon}</span>
-      <span className="w-28 shrink-0 text-sm text-text-secondary">{label}</span>
-      <div className="text-sm">{children}</div>
-    </div>
-  )
-}
-
 export function RequestOverviewSection({ request }: RequestOverviewSectionProps) {
   return (
-    <section className="space-y-0.5">
-      <PropertyRow icon={<Signal className="h-4 w-4" />} label="Status">
-        <span className="inline-flex items-center rounded-md border border-border-primary px-2 py-0.5 text-xs font-medium text-text-secondary">
+    <InfoList.Root withIcons>
+      <InfoList.Item>
+        <InfoList.Icon><Signal className="h-4 w-4" /></InfoList.Icon>
+        <InfoList.Label>Status</InfoList.Label>
+        <InfoList.Value>
+          <span className="inline-flex items-center rounded-md border border-border-primary px-2 py-0.5 text-xs font-medium text-text-secondary">
           {STATUS_LABELS[request.status] ?? formatLabel(request.status)}
-        </span>
-      </PropertyRow>
+          </span>
+        </InfoList.Value>
+      </InfoList.Item>
 
-      <PropertyRow icon={<Circle className="h-4 w-4" />} label="Priority">
-        <StatusBadge status={request.priority} />
-      </PropertyRow>
+      <InfoList.Item>
+        <InfoList.Icon><Circle className="h-4 w-4" /></InfoList.Icon>
+        <InfoList.Label>Priority</InfoList.Label>
+        <InfoList.Value><StatusBadge status={request.priority} /></InfoList.Value>
+      </InfoList.Item>
 
-      <PropertyRow icon={<Tag className="h-4 w-4" />} label="Type">
-        <StatusBadge status={request.type} />
-      </PropertyRow>
+      <InfoList.Item>
+        <InfoList.Icon><Tag className="h-4 w-4" /></InfoList.Icon>
+        <InfoList.Label>Type</InfoList.Label>
+        <InfoList.Value><StatusBadge status={request.type} /></InfoList.Value>
+      </InfoList.Item>
 
-      <PropertyRow icon={<CalendarDays className="h-4 w-4" />} label="Due Date">
-        <span className="text-text-primary">
-          {request.due_date ? formatDateTime(request.due_date) : '—'}
-        </span>
-      </PropertyRow>
+      <InfoList.Item>
+        <InfoList.Icon><CalendarDays className="h-4 w-4" /></InfoList.Icon>
+        <InfoList.Label>Due Date</InfoList.Label>
+        <InfoList.Value>{request.due_date ? formatDateTime(request.due_date) : '—'}</InfoList.Value>
+      </InfoList.Item>
 
-      <PropertyRow icon={<Clock className="h-4 w-4" />} label="Created time">
-        <span className="text-text-primary">{formatDateTime(request.created_at)}</span>
-      </PropertyRow>
-    </section>
+      <InfoList.Item>
+        <InfoList.Icon><Clock className="h-4 w-4" /></InfoList.Icon>
+        <InfoList.Label>Created Time</InfoList.Label>
+        <InfoList.Value>{formatDateTime(request.created_at)}</InfoList.Value>
+      </InfoList.Item>
+    </InfoList.Root>
   )
 }

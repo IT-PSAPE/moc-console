@@ -1,3 +1,4 @@
+import { InfoList } from '@/components/ui/info-list'
 import type { CultureRequest } from '@/types'
 
 interface RequestFiveWhSectionProps {
@@ -15,16 +16,13 @@ export function RequestFiveWhSection({ request }: RequestFiveWhSectionProps) {
   ]
 
   return (
-    <section className="space-y-3">
-      <h4 className="text-sm font-semibold text-text-primary">5Ws and 1H</h4>
-      <div className="space-y-2">
+    <InfoList.Root>
         {fields.map(({ label, value }) => (
-          <p key={label} className="text-sm text-text-primary">
-            <span className="font-semibold">{label}:</span>{' '}
-            {value || 'Not specified'}
-          </p>
+          <InfoList.Item key={label}>
+            <InfoList.Label>{label}</InfoList.Label>
+            <InfoList.Value>{value || 'Not specified'}</InfoList.Value>
+          </InfoList.Item>
         ))}
-      </div>
-    </section>
+    </InfoList.Root>
   )
 }

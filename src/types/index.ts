@@ -117,14 +117,29 @@ export type EquipmentStatus = 'available' | 'assigned' | 'maintenance' | 'retire
 export interface Equipment {
   id: string
   name: string
+  description?: string
+  image_url?: string
   category: string
   serial_number: string
   status: EquipmentStatus
   assigned_to?: string
   location: string
   condition: 'excellent' | 'good' | 'fair' | 'poor'
+  quantity: number
+  quantity_available: number
   last_maintenance?: string
   created_at: string
+}
+
+export interface EquipmentCheckout {
+  id: string
+  equipment_id: string
+  equipment_name: string
+  quantity: number
+  checked_out_by: string
+  destination: string
+  checked_out_at: string
+  returned_at?: string
 }
 
 // ── Broadcasting ──────────────────────────────────────────────
@@ -180,6 +195,7 @@ export interface QueueItem {
   id: string
   media_item_id: string
   media_item?: MediaItem
+  broadcast_id?: string
   display_order: number
   config: QueueItemConfig
 }

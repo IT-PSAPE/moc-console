@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Sparkles, Plus } from 'lucide-react'
+import { Sparkles, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { IconButton } from '@/components/ui/icon-button'
 import { Select } from '@/components/ui/select'
 import type { RequestAssignee, RequestMember } from '@/types'
 
@@ -42,13 +43,9 @@ export function RequestAssigneesManager({ assignees, members, onAssign, onUnassi
           <Sparkles className="h-4 w-4" />
         </span>
         <span className="w-28 shrink-0 text-sm text-text-secondary">Assigned Members</span>
-        <button
-          onClick={handleTogglePicker}
-          className="inline-flex items-center gap-1 text-sm text-text-tertiary hover:text-text-secondary"
-        >
-          <Plus className="h-3.5 w-3.5" />
+        <Button icon={<Plus className="h-3.5 w-3.5" />} onClick={handleTogglePicker} size="sm" variant="ghost">
           Add Member
-        </button>
+        </Button>
       </div>
 
       {assignees.length > 0 && (
@@ -57,12 +54,11 @@ export function RequestAssigneesManager({ assignees, members, onAssign, onUnassi
             function handleRemove() {
               onUnassign(assignee.member_id)
             }
+
             return (
               <div key={assignee.id} className="flex items-center justify-between rounded-lg border border-border-secondary px-3 py-1.5">
                 <span className="text-sm text-text-primary">{assignee.member_name}</span>
-                <button onClick={handleRemove} className="text-xs text-text-tertiary hover:text-text-secondary">
-                  Remove
-                </button>
+                <IconButton icon={<X className="h-3.5 w-3.5" />} label={`Remove ${assignee.member_name}`} onClick={handleRemove} size="sm" variant="ghost" />
               </div>
             )
           })}

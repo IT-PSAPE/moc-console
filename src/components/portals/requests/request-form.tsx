@@ -1,10 +1,9 @@
 import { Modal } from '@/components/ui/modal'
-import { Button } from '@/components/ui/button'
+import { FormWizard } from '@/components/ui/form-wizard'
 import { RequestFormBasicsStep } from './request-form-basics-step'
 import { RequestFormBriefStep } from './request-form-brief-step'
 import { RequestFormResourcesStep } from './request-form-resources-step'
 import { RequestFormReviewStep } from './request-form-review-step'
-import { RequestFormStepIndicator } from './request-form-step-indicator'
 import { useRequestForm } from './use-request-form'
 import { REQUEST_STEPS } from './request-constants'
 
@@ -39,51 +38,47 @@ export function RequestForm({ open, onClose }: RequestFormProps) {
     <Modal.Root open={open} onClose={handleDismiss}>
       <Modal.Header>New Request</Modal.Header>
       <Modal.Body>
-        <RequestFormStepIndicator currentStep={step} />
-        {step === 0 && (
-          <RequestFormBasicsStep form={form} noticeAlert={noticeAlert} onFieldChange={setField} />
-        )}
-        {step === 1 && <RequestFormBriefStep form={form} onFieldChange={setField} />}
-        {step === 2 && (
-          <RequestFormResourcesStep
-            form={form}
-            venues={supportData?.venues ?? []}
-            equipment={supportData?.equipment ?? []}
-            media={supportData?.media ?? []}
-            onToggleVenue={toggleVenue}
-            onToggleEquipment={toggleEquipment}
-            onToggleMedia={toggleMedia}
+        <FormWizard.Root
+          currentStep={step}
+          totalSteps={REQUEST_STEPS.length}
+          onNext={goNext}
+          onBack={goBack}
+        >
+          <FormWizard.StepIndicator labels={REQUEST_STEPS} />
+          <FormWizard.Step index={0}>
+            <RequestFormBasicsStep form={form} noticeAlert={noticeAlert} onFieldChange={setField} />
+          </FormWizard.Step>
+          <FormWizard.Step index={1}>
+            <RequestFormBriefStep form={form} onFieldChange={setField} />
+          </FormWizard.Step>
+          <FormWizard.Step index={2}>
+            <RequestFormResourcesStep
+              form={form}
+              venues={supportData?.venues ?? []}
+              equipment={supportData?.equipment ?? []}
+              media={supportData?.media ?? []}
+              onToggleVenue={toggleVenue}
+              onToggleEquipment={toggleEquipment}
+              onToggleMedia={toggleMedia}
+            />
+          </FormWizard.Step>
+          <FormWizard.Step index={3}>
+            <RequestFormReviewStep
+              form={form}
+              venues={supportData?.venues ?? []}
+              equipment={supportData?.equipment ?? []}
+              media={supportData?.media ?? []}
+            />
+          </FormWizard.Step>
+          <FormWizard.Navigation
+            canAdvance={canAdvance}
+            isSubmitting={isPending}
+            submitLabel="Submit Request"
+            onCancel={handleDismiss}
+            onSubmit={submit}
           />
-        )}
-        {step === 3 && (
-          <RequestFormReviewStep
-            form={form}
-            venues={supportData?.venues ?? []}
-            equipment={supportData?.equipment ?? []}
-            media={supportData?.media ?? []}
-          />
-        )}
+        </FormWizard.Root>
       </Modal.Body>
-      <Modal.Footer>
-        {step > 0 && (
-          <Button variant="secondary" size="sm" onClick={goBack}>
-            Back
-          </Button>
-        )}
-        <Button variant="secondary" size="sm" onClick={handleDismiss}>
-          Cancel
-        </Button>
-        {step < REQUEST_STEPS.length - 1 && (
-          <Button variant="primary" size="sm" onClick={goNext} disabled={!canAdvance}>
-            Next
-          </Button>
-        )}
-        {step === REQUEST_STEPS.length - 1 && (
-          <Button variant="primary" size="sm" onClick={submit} disabled={isPending}>
-            {isPending ? 'Submitting…' : 'Submit Request'}
-          </Button>
-        )}
-      </Modal.Footer>
     </Modal.Root>
   )
 }

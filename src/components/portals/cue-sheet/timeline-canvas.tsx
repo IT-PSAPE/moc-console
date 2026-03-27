@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { Plus, ZoomIn, ZoomOut, Edit2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { IconButton } from '@/components/ui/icon-button'
 import type { CueEvent, CueItem, Track } from '@/types'
 import type { Dispatch } from 'react'
 import type { CueSheetAction } from './types'
@@ -50,7 +51,7 @@ function CueBlock({ cue, track, zoom, onEdit, onDelete }: CueBlockProps) {
 
   return (
     <div
-      className="group absolute top-2 flex h-10 cursor-pointer items-center overflow-hidden rounded-lg border px-2 text-xs font-medium transition-shadow hover:shadow-md"
+      className="absolute top-2 flex h-10 items-center gap-2 overflow-hidden rounded-lg border px-2 text-xs font-medium transition-shadow hover:shadow-md"
       style={{
         left,
         width,
@@ -60,22 +61,10 @@ function CueBlock({ cue, track, zoom, onEdit, onDelete }: CueBlockProps) {
       }}
       title={`${cue.title} — ${formatMinutes(cue.startMinute)} for ${formatMinutes(cue.durationMinutes)}`}
     >
-      <span className="flex-1 truncate">{cue.title}</span>
-      <div className="ml-1 hidden shrink-0 items-center gap-0.5 group-hover:flex">
-        <button
-          onClick={handleEdit}
-          className="rounded p-0.5 hover:bg-white/20"
-          aria-label="Edit cue"
-        >
-          <Edit2 className="h-3 w-3" />
-        </button>
-        <button
-          onClick={handleDelete}
-          className="rounded p-0.5 hover:bg-white/20"
-          aria-label="Delete cue"
-        >
-          <Trash2 className="h-3 w-3" />
-        </button>
+      <span className="min-w-0 flex-1 truncate">{cue.title}</span>
+      <div className="flex shrink-0 items-center gap-1">
+        <IconButton className="text-current hover:bg-white/20 hover:text-current" icon={<Edit2 className="h-3 w-3" />} label="Edit cue" onClick={handleEdit} size="sm" />
+        <IconButton className="text-current hover:bg-white/20 hover:text-current" icon={<Trash2 className="h-3 w-3" />} label="Delete cue" onClick={handleDelete} size="sm" />
       </div>
     </div>
   )
@@ -112,23 +101,17 @@ function TrackRow({ track, cues, zoom, totalWidth, onEdit, onDelete, onAddCue, o
     <div className="flex" style={{ height: TRACK_HEIGHT }}>
       {/* Track label */}
       <div
-        className="group flex shrink-0 items-center justify-between border-b border-r border-border-secondary bg-background-primary px-3"
+        className="flex shrink-0 items-center justify-between border-b border-r border-border-secondary bg-background-primary px-3"
         style={{ width: LABEL_WIDTH, height: TRACK_HEIGHT }}
       >
         <div className="flex items-center gap-2 min-w-0">
           <div className="h-3 w-1 shrink-0 rounded-full" style={{ backgroundColor: track.color }} />
           <span className="truncate text-xs font-medium text-text-primary">{track.name}</span>
         </div>
-        <div className="hidden shrink-0 items-center gap-0.5 group-hover:flex">
-          <button onClick={handleAddCue} className="rounded p-1 text-text-quaternary hover:bg-background-secondary hover:text-text-brand" aria-label="Add cue">
-            <Plus className="h-3 w-3" />
-          </button>
-          <button onClick={handleEditTrack} className="rounded p-1 text-text-quaternary hover:bg-background-secondary" aria-label="Edit track">
-            <Edit2 className="h-3 w-3" />
-          </button>
-          <button onClick={handleDeleteTrack} className="rounded p-1 text-text-quaternary hover:bg-background-secondary hover:text-utility-error-600" aria-label="Delete track">
-            <Trash2 className="h-3 w-3" />
-          </button>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <IconButton icon={<Plus className="h-3 w-3" />} label={`Add cue to ${track.name}`} onClick={handleAddCue} size="sm" />
+          <IconButton icon={<Edit2 className="h-3 w-3" />} label={`Edit ${track.name}`} onClick={handleEditTrack} size="sm" />
+          <IconButton icon={<Trash2 className="h-3 w-3" />} label={`Delete ${track.name}`} onClick={handleDeleteTrack} size="sm" variant="danger" />
         </div>
       </div>
 
@@ -200,23 +183,9 @@ export function TimelineCanvas({ event, dispatch, onAddCue, onEditCue, onAddTrac
             Cue
           </Button>
           <div className="flex items-center gap-1 rounded-lg border border-border-secondary p-1">
-            <button
-              onClick={handleZoomOut}
-              disabled={zoom <= MIN_ZOOM}
-              className="rounded p-1 text-text-tertiary hover:bg-background-secondary disabled:opacity-40"
-              aria-label="Zoom out"
-            >
-              <ZoomOut className="h-3.5 w-3.5" />
-            </button>
+            <IconButton disabled={zoom <= MIN_ZOOM} icon={<ZoomOut className="h-3.5 w-3.5" />} label="Zoom out" onClick={handleZoomOut} size="sm" />
             <span className="min-w-[2.5rem] text-center text-xs text-text-tertiary">{zoom}px/m</span>
-            <button
-              onClick={handleZoomIn}
-              disabled={zoom >= MAX_ZOOM}
-              className="rounded p-1 text-text-tertiary hover:bg-background-secondary disabled:opacity-40"
-              aria-label="Zoom in"
-            >
-              <ZoomIn className="h-3.5 w-3.5" />
-            </button>
+            <IconButton disabled={zoom >= MAX_ZOOM} icon={<ZoomIn className="h-3.5 w-3.5" />} label="Zoom in" onClick={handleZoomIn} size="sm" />
           </div>
         </div>
       </div>

@@ -1,24 +1,20 @@
+import { ListSection } from '@/components/ui/list-section'
 import type { CultureRequest } from '@/types'
 
 function ResourceList({ title, items, emptyTitle, emptyMessage }: { title: string; items: string[]; emptyTitle: string; emptyMessage: string }) {
   return (
-    <section className="space-y-2">
-      <h4 className="text-sm font-semibold text-text-primary">{title}</h4>
+    <ListSection.Root>
+      <ListSection.Header>{title}</ListSection.Header>
       {items.length > 0 ? (
-        <div className="space-y-1.5">
+        <ListSection.Items>
           {items.map((item) => (
-            <div key={item} className="rounded-lg border border-border-secondary bg-background-secondary px-3 py-2 text-sm text-text-primary">
-              {item}
-            </div>
+            <ListSection.Item key={item}>{item}</ListSection.Item>
           ))}
-        </div>
+        </ListSection.Items>
       ) : (
-        <div className="rounded-lg border border-border-secondary bg-background-secondary px-4 py-3">
-          <p className="text-sm font-medium text-text-primary">{emptyTitle}</p>
-          <p className="text-xs text-text-tertiary">{emptyMessage}</p>
-        </div>
+        <ListSection.Empty description={emptyMessage} title={emptyTitle} />
       )}
-    </section>
+    </ListSection.Root>
   )
 }
 
@@ -48,10 +44,10 @@ export function RequestRelatedResourcesSection({ request }: RequestRelatedResour
       />
 
       <ResourceList
-        title="Songs"
+        title="Selected Media"
         items={mediaNames}
-        emptyTitle="No songs selected"
-        emptyMessage="No songs have been selected for this request."
+        emptyTitle="No media selected"
+        emptyMessage="No media has been selected for this request."
       />
 
       <ResourceList

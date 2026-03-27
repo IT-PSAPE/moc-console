@@ -1,12 +1,20 @@
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useContext, useId, type ReactNode, type RefObject } from 'react'
 import { X } from 'lucide-react'
+import { IconButton } from '@/components/ui/icon-button'
+import { useOverlayBehavior } from '@/hooks/use-overlay-behavior'
 
 interface PanelActions {
   onClose: () => void
 }
 
+interface PanelMeta {
+  closeButtonRef: RefObject<HTMLButtonElement | null>
+  titleId: string
+}
+
 interface PanelContextValue {
   actions: PanelActions
+  meta: PanelMeta
 }
 
 const PanelContext = createContext<PanelContextValue | null>(null)
@@ -18,13 +26,23 @@ function usePanelContext() {
 }
 
 function Root({ open, onClose, children }: { open: boolean; onClose: () => void; children: ReactNode }) {
+  const titleId = useId()
+  const { panelRef, closeButtonRef } = useOverlayBehavior({ open, onClose })
+
   if (!open) return null
 
   return (
-    <PanelContext.Provider value={{ actions: { onClose } }}>
+    <PanelContext.Provider value={{ actions: { onClose }, meta: { closeButtonRef, titleId } }}>
       <div className="fixed inset-0 z-50 flex justify-end">
-        <div className="fixed inset-0 bg-background-overlay/50" onClick={onClose} />
-        <div className="relative z-10 flex h-full w-full flex-col border-l border-border-primary bg-background-primary shadow-2xl sm:max-w-xl">
+        <div aria-hidden="true" className="fixed inset-0 bg-background-overlay/50" onClick={onClose} />
+        <div
+          aria-labelledby={titleId}
+          aria-modal="true"
+          className="relative z-10 flex h-full w-full flex-col border-l border-border-primary bg-background-primary shadow-2xl sm:max-w-xl"
+          ref={panelRef}
+          role="dialog"
+          tabIndex={-1}
+        >
           {children}
         </div>
       </div>
@@ -33,20 +51,20 @@ function Root({ open, onClose, children }: { open: boolean; onClose: () => void;
 }
 
 function Header({ children, actions }: { children?: ReactNode; actions?: ReactNode }) {
-  const { actions: { onClose } } = usePanelContext()
+  const { actions: { onClose }, meta: { closeButtonRef, titleId } } = usePanelContext()
 
   return (
     <div className="flex items-center justify-between border-b border-border-secondary px-6 py-3">
       <div className="flex items-center gap-1">
         {actions}
-        {children && <h3 className="text-lg font-semibold text-text-primary">{children}</h3>}
+        {children && <h2 className="text-lg font-semibold text-text-primary" id={titleId}>{children}</h2>}
       </div>
-      <button
+      <IconButton
+        icon={<X className="h-5 w-5" />}
+        label="Close panel"
         onClick={onClose}
-        className="rounded-lg p-1 text-text-tertiary hover:bg-background-secondary_hover hover:text-text-secondary"
-      >
-        <X className="h-5 w-5" />
-      </button>
+        ref={closeButtonRef}
+      />
     </div>
   )
 }

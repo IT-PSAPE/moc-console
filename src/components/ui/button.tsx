@@ -52,6 +52,7 @@ export function Button({ variant = 'primary', size = 'md', children, icon, class
   return (
     <button
       className={buttonStyles({ variant, size, className })}
+      type={props.type ?? 'button'}
       {...props}
     >
       {icon}

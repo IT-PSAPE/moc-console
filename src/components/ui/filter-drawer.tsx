@@ -1,17 +1,37 @@
 import { useState } from 'react'
-import { SlidersHorizontal, X } from 'lucide-react'
+import { SlidersHorizontal, X, Check } from 'lucide-react'
 import type { FilterConfig } from '@/types'
+import { useOverlayBehavior } from '@/hooks/use-overlay-behavior'
+import { IconButton } from '@/components/ui/icon-button'
+import { Button } from '@/components/ui/button'
 
 interface FilterDrawerProps {
   filters: FilterConfig[]
-  activeFilters: Record<string, string>
+  activeFilters: Record<string, string[]>
   onFilterChange: (key: string, value: string) => void
+  onClearAll?: () => void
+  onOpenChange?: (open: boolean) => void
+  open?: boolean
+  title?: string
 }
 
-export function FilterDrawer({ filters, activeFilters, onFilterChange }: FilterDrawerProps) {
-  const [open, setOpen] = useState(false)
+function isFilterChecked(activeFilters: Record<string, string[]>, filterKey: string, value: string) {
+  return (activeFilters[filterKey] ?? []).includes(value)
+}
 
-  const activeCount = Object.values(activeFilters).filter(Boolean).length
+export function FilterDrawer({ filters, activeFilters, onFilterChange, onClearAll, onOpenChange, open: controlledOpen, title = 'Filters' }: FilterDrawerProps) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const open = controlledOpen ?? uncontrolledOpen
+  const activeCount = Object.values(activeFilters).reduce((sum, arr) => sum + arr.length, 0)
+  const { panelRef, closeButtonRef } = useOverlayBehavior({ open, onClose: handleClose })
+
+  function setOpen(nextOpen: boolean) {
+    if (controlledOpen == null) {
+      setUncontrolledOpen(nextOpen)
+    }
+
+    onOpenChange?.(nextOpen)
+  }
 
   function handleOpen() {
     setOpen(true)
@@ -22,14 +42,20 @@ export function FilterDrawer({ filters, activeFilters, onFilterChange }: FilterD
   }
 
   function handleClearAll() {
-    for (const filter of filters) {
-      onFilterChange(filter.key, '')
+    onClearAll?.()
+  }
+
+  function createOptionToggleHandler(filterKey: string, value: string) {
+    return function handleOptionToggle() {
+      onFilterChange(filterKey, value)
     }
   }
 
   return (
     <>
       <button
+        aria-expanded={open}
+        aria-haspopup="dialog"
         onClick={handleOpen}
         className={`relative flex h-9 items-center gap-2 rounded-lg border px-3 text-sm transition-colors ${
           activeCount > 0
@@ -49,84 +75,83 @@ export function FilterDrawer({ filters, activeFilters, onFilterChange }: FilterD
       {open && (
         <>
           <div
+            aria-hidden="true"
             className="fixed inset-0 z-40 bg-background-overlay/40"
             onClick={handleClose}
           />
-          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xs flex-col border-l border-border-primary bg-background-primary shadow-2xl">
+          <div
+            aria-label={title}
+            aria-modal="true"
+            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col border-l border-border-primary bg-background-primary shadow-2xl"
+            ref={panelRef}
+            role="dialog"
+            tabIndex={-1}
+          >
             <div className="flex shrink-0 items-center justify-between border-b border-border-secondary px-5 py-4">
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-semibold text-text-primary">Filters</h3>
+                <h2 className="text-base font-semibold text-text-primary">{title}</h2>
                 {activeCount > 0 && (
                   <span className="rounded-full bg-background-brand_solid px-2 py-0.5 text-xs font-bold text-static-white">
                     {activeCount} active
                   </span>
                 )}
               </div>
-              <button
+              <IconButton
+                icon={<X className="h-5 w-5" />}
+                label="Close filters"
                 onClick={handleClose}
-                className="rounded-lg p-1 text-text-tertiary hover:bg-background-secondary_hover hover:text-text-secondary"
-                aria-label="Close filters"
-              >
-                <X className="h-5 w-5" />
-              </button>
+                ref={closeButtonRef}
+              />
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
-              {filters.map((filter) => (
-                <div key={filter.key}>
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wider text-text-quaternary">
-                    {filter.label}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => onFilterChange(filter.key, '')}
-                      className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
-                        !activeFilters[filter.key]
-                          ? 'border-border-brand bg-background-brand_primary text-foreground-brand_primary font-medium'
-                          : 'border-border-primary text-text-secondary hover:border-border-brand hover:text-text-primary'
-                      }`}
-                    >
-                      All
-                    </button>
-                    {filter.options.map((opt) => {
-                      const isActive = activeFilters[filter.key] === opt.value
+            <div className="flex-1 space-y-6 overflow-y-auto px-5 py-4">
+              {filters.map((filter) => {
+                return (
+                  <div key={filter.key}>
+                    <p className="mb-3 text-xs font-medium uppercase tracking-wider text-text-quaternary">
+                      {filter.label}
+                    </p>
+                    <div className="space-y-1">
+                      {filter.options.map((opt) => {
+                        const isChecked = isFilterChecked(activeFilters, filter.key, opt.value)
 
-                      function handleSelect() {
-                        onFilterChange(filter.key, opt.value)
-                      }
-
-                      return (
-                        <button
-                          key={opt.value}
-                          onClick={handleSelect}
-                          className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
-                            isActive
-                              ? 'border-border-brand bg-background-brand_primary text-foreground-brand_primary font-medium'
-                              : 'border-border-primary text-text-secondary hover:border-border-brand hover:text-text-primary'
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      )
-                    })}
+                        return (
+                          <label
+                            key={opt.value}
+                            className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-background-primary_hover"
+                          >
+                            <span
+                              role="checkbox"
+                              aria-checked={isChecked}
+                              tabIndex={0}
+                              onClick={createOptionToggleHandler(filter.key, opt.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === ' ' || e.key === 'Enter') {
+                                  e.preventDefault()
+                                  onFilterChange(filter.key, opt.value)
+                                }
+                              }}
+                              className={`flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded border transition-colors ${
+                                isChecked
+                                  ? 'border-border-brand bg-background-brand_solid text-static-white'
+                                  : 'border-border-primary bg-background-primary'
+                              }`}
+                            >
+                              {isChecked && <Check className="h-3 w-3" strokeWidth={3} />}
+                            </span>
+                            <span className="text-sm text-text-primary">{opt.label}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             <div className="flex shrink-0 items-center justify-between border-t border-border-secondary px-5 py-4">
-              <button
-                onClick={handleClearAll}
-                className="text-sm text-text-tertiary hover:text-text-secondary"
-              >
-                Clear all
-              </button>
-              <button
-                onClick={handleClose}
-                className="rounded-lg bg-background-brand_solid px-4 py-2 text-sm font-medium text-static-white hover:opacity-90"
-              >
-                Done
-              </button>
+              <Button onClick={handleClearAll} size="sm" variant="ghost">Clear all</Button>
+              <Button onClick={handleClose} size="sm" variant="primary">Done</Button>
             </div>
           </div>
         </>

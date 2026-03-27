@@ -7,25 +7,36 @@ function fetchMediaLibrary(): Promise<MediaItem[]> {
   return Promise.resolve([...mockMediaItems])
 }
 
-function fetchQueue(): Promise<QueueItem[]> {
-  return Promise.resolve([...mockQueueItems].sort((a, b) => a.display_order - b.display_order))
+function fetchQueue(broadcastId?: string): Promise<QueueItem[]> {
+  const items = broadcastId
+    ? mockQueueItems.filter((q) => q.broadcast_id === broadcastId)
+    : [...mockQueueItems]
+  return Promise.resolve(items.sort((a, b) => a.display_order - b.display_order))
 }
 
-function reorderQueue(orderedIds: string[]): Promise<QueueItem[]> {
+function reorderQueue(params: { broadcastId?: string; orderedIds: string[] }): Promise<QueueItem[]> {
+  const { broadcastId, orderedIds } = params
+
   orderedIds.forEach((id, index) => {
-    const item = mockQueueItems.find((q) => q.id === id)
+    const item = mockQueueItems.find((queueItem) => queueItem.id === id && queueItem.broadcast_id === broadcastId)
     if (item) item.display_order = index + 1
   })
-  return Promise.resolve([...mockQueueItems].sort((a, b) => a.display_order - b.display_order))
+
+  return fetchQueue(broadcastId)
 }
 
-function addToQueue(mediaItemId: string): Promise<QueueItem> {
-  const maxOrder = mockQueueItems.reduce((max, q) => Math.max(max, q.display_order), 0)
+function addToQueue(params: { mediaItemId: string; broadcastId?: string }): Promise<QueueItem> {
+  const { mediaItemId, broadcastId } = params
+  const broadcastItems = broadcastId
+    ? mockQueueItems.filter((q) => q.broadcast_id === broadcastId)
+    : mockQueueItems
+  const maxOrder = broadcastItems.reduce((max, q) => Math.max(max, q.display_order), 0)
   const mediaItem = mockMediaItems.find((m) => m.id === mediaItemId)
   const newItem: QueueItem = {
     id: `queue-${Date.now()}`,
     media_item_id: mediaItemId,
     media_item: mediaItem,
+    broadcast_id: broadcastId,
     display_order: maxOrder + 1,
     config: {},
   }
@@ -46,10 +57,10 @@ export function useMediaLibrary() {
   })
 }
 
-export function useMediaQueue() {
+export function useMediaQueue(broadcastId?: string) {
   return useQuery({
-    queryKey: queryKeys.media.queue(),
-    queryFn: fetchQueue,
+    queryKey: queryKeys.media.queue(broadcastId),
+    queryFn: () => fetchQueue(broadcastId),
   })
 }
 
@@ -57,25 +68,28 @@ export function useReorderQueue() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: reorderQueue,
-    onMutate: async (orderedIds: string[]) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.media.queue() })
-      const previous = queryClient.getQueryData<QueueItem[]>(queryKeys.media.queue())
+    onMutate: async ({ broadcastId, orderedIds }: { broadcastId?: string; orderedIds: string[] }) => {
+      const queryKey = queryKeys.media.queue(broadcastId)
+
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData<QueueItem[]>(queryKey)
       if (previous) {
         const reordered = orderedIds.map((id, index) => {
           const item = previous.find((q) => q.id === id)!
           return { ...item, display_order: index + 1 }
         })
-        queryClient.setQueryData(queryKeys.media.queue(), reordered)
+        queryClient.setQueryData(queryKey, reordered)
       }
       return { previous }
     },
-    onError: (_err, _vars, context) => {
+    onError: (_err, variables, context) => {
+      const queryKey = queryKeys.media.queue(variables.broadcastId)
       if (context?.previous) {
-        queryClient.setQueryData(queryKeys.media.queue(), context.previous)
+        queryClient.setQueryData(queryKey, context.previous)
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.media.queue() })
+    onSettled: (_data, _error, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.media.queue(variables.broadcastId) })
     },
   })
 }
@@ -85,7 +99,7 @@ export function useAddToQueue() {
   return useMutation({
     mutationFn: addToQueue,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.media.queue() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.media.all })
     },
   })
 }
@@ -95,7 +109,7 @@ export function useRemoveFromQueue() {
   return useMutation({
     mutationFn: removeFromQueue,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.media.queue() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.media.all })
     },
   })
 }

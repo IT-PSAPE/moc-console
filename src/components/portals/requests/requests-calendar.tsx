@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { IconButton } from '@/components/ui/icon-button'
 import { RequestDetailPanel } from './request-detail-panel'
 import type { CultureRequest } from '@/types'
 
@@ -90,6 +92,12 @@ export function RequestsCalendar({ requests }: RequestsCalendarProps) {
     setSelected(null)
   }
 
+  function createRequestOpenHandler(request: CultureRequest) {
+    return function handleOpenRequest() {
+      setSelected(request)
+    }
+  }
+
   const grid = getCalendarGrid(year, month)
   const today = todayKey()
   const monthLabel = new Date(year, month, 1).toLocaleDateString('en-US', {
@@ -129,26 +137,9 @@ export function RequestsCalendar({ requests }: RequestsCalendarProps) {
         <div className="flex items-center justify-between px-5 py-4">
           <h2 className="text-lg font-semibold text-text-primary">{monthLabel}</h2>
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleToday}
-              className="rounded-lg border border-border-primary px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-background-secondary_hover"
-            >
-              Today
-            </button>
-            <button
-              onClick={handlePrevMonth}
-              className="rounded-lg border border-border-primary p-1.5 text-text-tertiary hover:bg-background-secondary_hover hover:text-text-secondary"
-              aria-label="Previous month"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={handleNextMonth}
-              className="rounded-lg border border-border-primary p-1.5 text-text-tertiary hover:bg-background-secondary_hover hover:text-text-secondary"
-              aria-label="Next month"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+            <Button onClick={handleToday} size="sm" variant="secondary">Today</Button>
+            <IconButton icon={<ChevronLeft className="h-4 w-4" />} label="Previous month" onClick={handlePrevMonth} variant="secondary" />
+            <IconButton icon={<ChevronRight className="h-4 w-4" />} label="Next month" onClick={handleNextMonth} variant="secondary" />
           </div>
         </div>
 
@@ -189,16 +180,14 @@ export function RequestsCalendar({ requests }: RequestsCalendarProps) {
                 </span>
                 <div className="mt-0.5 space-y-0.5">
                   {dayRequests.slice(0, 3).map((req) => {
-                    function handleCardClick() {
-                      setSelected(req)
-                    }
                     const colorClass =
                       STATUS_COLORS[req.status] ?? 'bg-background-tertiary text-text-secondary'
                     return (
                       <button
                         key={req.id}
-                        onClick={handleCardClick}
+                        onClick={createRequestOpenHandler(req)}
                         className={`block w-full truncate rounded px-1.5 py-0.5 text-left text-xs transition-opacity hover:opacity-80 ${colorClass}`}
+                        type="button"
                       >
                         {req.title}
                       </button>

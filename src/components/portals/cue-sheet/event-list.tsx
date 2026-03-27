@@ -28,6 +28,34 @@ export function EventList({ events, activeEventId, onSelectEvent, onNewEvent }: 
     onSelectEvent(row.id)
   }
 
+  function renderCard(row: CueEvent) {
+    return (
+      <button
+        className={`w-full rounded-xl border p-4 text-left transition-colors ${row.id === activeEventId ? 'border-border-brand bg-background-brand_primary' : 'border-border-secondary bg-background-primary hover:border-border-brand'}`}
+        onClick={() => handleRowClick(row)}
+        type="button"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className={`text-base font-semibold ${row.id === activeEventId ? 'text-foreground-brand_primary' : 'text-text-primary'}`}>{row.name}</p>
+            <p className="mt-1 text-sm text-text-tertiary line-clamp-2">{row.description}</p>
+          </div>
+          <span className="rounded-full border border-border-secondary px-2 py-1 text-xs text-text-secondary">{row.totalDurationMinutes}m</span>
+        </div>
+        <dl className="mt-4 grid grid-cols-2 gap-3 text-sm text-text-secondary">
+          <div>
+            <dt className="text-xs uppercase tracking-[0.16em] text-text-quaternary">Tracks</dt>
+            <dd className="mt-1">{row.tracks.length}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.16em] text-text-quaternary">Cues</dt>
+            <dd className="mt-1">{row.cueItems.length}</dd>
+          </div>
+        </dl>
+      </button>
+    )
+  }
+
   function renderRow(row: CueEvent) {
     return (
       <>
@@ -54,7 +82,7 @@ export function EventList({ events, activeEventId, onSelectEvent, onNewEvent }: 
           New Event
         </Button>
       </div>
-      <DataTable.Root data={filtered} onRowClick={handleRowClick}>
+      <DataTable.Root data={filtered} emptyMessage="No events match the current search." getRowKey={(row) => row.id} onRowClick={handleRowClick} renderCard={renderCard}>
         <DataTable.Header>
           <DataTable.Column field="name" sortable>Event Name</DataTable.Column>
           <DataTable.Column field="description">Description</DataTable.Column>

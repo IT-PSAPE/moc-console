@@ -1,11 +1,12 @@
 import { DetailPanel } from '@/components/ui/detail-panel'
-import { Maximize2, Pencil, EyeOff, Trash2 } from 'lucide-react'
 import { RequestAssigneesManager } from './request-assignees-manager'
 import { RequestCommentsSection } from './request-comments-section'
 import { RequestFiveWhSection } from './request-five-wh-section'
 import { RequestOverviewSection } from './request-overview-section'
 import { RequestRelatedResourcesSection } from './request-related-resources-section'
-import { useAddRequestComment, useAssignRequestAssignee, useUnassignRequestAssignee, useUpdateRequest, useUpdateRequestStatus } from '@/hooks/use-requests'
+import { StatusBadge } from '@/components/ui/status-badge'
+import { useAddRequestComment, useAssignRequestAssignee, useUnassignRequestAssignee } from '@/hooks/use-requests'
+import { formatDateTime } from '@/lib/utils'
 import { useRequestSupportData } from '@/hooks/use-request-support-data'
 import type { CultureRequest } from '@/types'
 
@@ -14,40 +15,11 @@ interface RequestDetailPanelProps {
   onClose: () => void
 }
 
-const HEADER_ACTIONS = [
-  { icon: Maximize2, label: 'Expand' },
-  { icon: Pencil, label: 'Edit' },
-  { icon: EyeOff, label: 'Hide' },
-  { icon: Trash2, label: 'Delete' },
-]
-
 export function RequestDetailPanel({ selected, onClose }: RequestDetailPanelProps) {
-  const { mutate: updateRequest } = useUpdateRequest()
-  const { mutate: updateStatus } = useUpdateRequestStatus()
   const { mutate: addComment } = useAddRequestComment()
   const { mutate: assignAssignee } = useAssignRequestAssignee()
   const { mutate: unassignAssignee } = useUnassignRequestAssignee()
   const { data: supportData } = useRequestSupportData()
-
-  function handleStatusChange(status: CultureRequest['status']) {
-    if (!selected) return
-    updateStatus({ id: selected.id, status })
-  }
-
-  function handlePriorityChange(priority: CultureRequest['priority']) {
-    if (!selected) return
-    updateRequest({ id: selected.id, changes: { priority } })
-  }
-
-  function handleTypeChange(type: CultureRequest['type']) {
-    if (!selected) return
-    updateRequest({ id: selected.id, changes: { type } })
-  }
-
-  function handleDueDateChange(due_date: string) {
-    if (!selected) return
-    updateRequest({ id: selected.id, changes: { due_date: due_date || undefined } })
-  }
 
   function handleAddComment(body: string) {
     if (!selected) return
@@ -68,32 +40,36 @@ export function RequestDetailPanel({ selected, onClose }: RequestDetailPanelProp
     <DetailPanel.Root open={!!selected} onClose={onClose}>
       {selected && (
         <>
-          <DetailPanel.Header
-            actions={
-              <div className="flex items-center gap-1">
-                {HEADER_ACTIONS.map(({ icon: Icon, label }) => (
-                  <button
-                    key={label}
-                    className="rounded-lg p-1.5 text-text-tertiary hover:bg-background-secondary_hover hover:text-text-secondary"
-                    aria-label={label}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </button>
-                ))}
-              </div>
-            }
-          />
+          <DetailPanel.Header>{selected.title}</DetailPanel.Header>
           <DetailPanel.Body>
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-text-primary">{selected.title}</h2>
-
-              <RequestOverviewSection
-                request={selected}
-                onStatusChange={handleStatusChange}
-                onPriorityChange={handlePriorityChange}
-                onTypeChange={handleTypeChange}
-                onDueDateChange={handleDueDateChange}
-              />
+            <div className="space-y-8">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-border-secondary bg-background-secondary px-4 py-3">
+                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-text-quaternary">Status</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <StatusBadge status={selected.status} />
+                    <StatusBadge status={selected.priority} />
+                    <StatusBadge status={selected.type} />
+                  </div>
+                </div>
+                <div className="rounded-xl border border-border-secondary bg-background-secondary px-4 py-3">
+                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-text-quaternary">Request Timeline</p>
+                  <dl className="mt-2 space-y-2 text-sm text-text-secondary">
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-text-quaternary">Due</dt>
+                      <dd>{selected.due_date ? formatDateTime(selected.due_date) : 'Not set'}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-text-quaternary">Created</dt>
+                      <dd>{formatDateTime(selected.created_at)}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-text-quaternary">Requester</dt>
+                      <dd>{selected.who}</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
 
               <RequestAssigneesManager
                 assignees={selected.assignees ?? []}
@@ -102,14 +78,15 @@ export function RequestDetailPanel({ selected, onClose }: RequestDetailPanelProp
                 onUnassign={handleUnassign}
               />
 
-              <div className="border-t border-border-secondary" />
-
-              <RequestFiveWhSection request={selected} />
-
-              <div className="border-t border-border-secondary" />
-
-              <RequestRelatedResourcesSection request={selected} />
-
+              <DetailPanel.Section label="Request Overview">
+                <RequestOverviewSection request={selected} />
+              </DetailPanel.Section>
+              <DetailPanel.Section label="Brief and Intent">
+                <RequestFiveWhSection request={selected} />
+              </DetailPanel.Section>
+              <DetailPanel.Section label="Related Resources">
+                <RequestRelatedResourcesSection request={selected} />
+              </DetailPanel.Section>
               <RequestCommentsSection notes={selected.notes ?? []} onAddComment={handleAddComment} />
             </div>
           </DetailPanel.Body>

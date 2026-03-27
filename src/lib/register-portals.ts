@@ -25,8 +25,8 @@ export function registerAllPortals() {
     component: EquipmentPortal,
     sections: [
       { id: 'overview', label: 'Overview', path: '' },
-      { id: 'inventory', label: 'Inventory', path: '/inventory' },
-      { id: 'assignments', label: 'Assignments', path: '/assignments' },
+      { id: 'storage', label: 'In Storage', path: '/storage' },
+      { id: 'checkouts', label: 'Checked Out', path: '/checkouts' },
     ],
   })
 
@@ -37,9 +37,8 @@ export function registerAllPortals() {
     basePath: '/broadcasting',
     component: BroadcastingPortal,
     sections: [
-      { id: 'overview', label: 'Overview', path: '' },
-      { id: 'live', label: 'Live', path: '/live' },
-      { id: 'scheduled', label: 'Scheduled', path: '/scheduled' },
+      { id: 'workspace', label: 'Workspace', path: '' },
+      { id: 'broadcasts', label: 'All Broadcasts', path: '/broadcasts' },
       { id: 'history', label: 'History', path: '/history' },
     ],
   })
