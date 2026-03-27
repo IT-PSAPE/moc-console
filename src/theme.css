@@ -2,20 +2,143 @@
 
 @theme {
     /* FONT FAMILY */
-    --font-body: var(--font-inter, "Open Sans"), -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    --font-display: var(--font-inter, "Open Sans"), -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --font-body: var(--font-urbanist, "Urbanist"), var(--font-inter, "Open Sans"), -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --font-display: var(--font-urbanist, "Urbanist"), var(--font-inter, "Open Sans"), -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     --font-mono: ui-monospace, "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    --font-family-sans: 'Avenir Next', 'SF Pro Display', 'Segoe UI', sans-serif;
+    --font-title: var(--font-urbanist, "Urbanist"), var(--font-inter, "Open Sans"), -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --font-subheading: var(--font-urbanist, "Urbanist"), var(--font-inter, "Open Sans"), -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --font-label: var(--font-urbanist, "Urbanist"), var(--font-inter, "Open Sans"), -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --font-paragraph: var(--font-urbanist, "Urbanist"), var(--font-inter, "Open Sans"), -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --font-family-sans: var(--font-urbanist, "Urbanist"), 'Avenir Next', 'SF Pro Display', 'Segoe UI', sans-serif;
 
-    /* FONT SIZE */
-    --text-sm: calc(var(--spacing) * 2.875);
-    --text-sm--line-height: calc(var(--spacing) * 3.75);
+    /* TYPOGRAPHY SCALE */
+    --text-xs: 12px;
+    --text-xs--line-height: 16.8px;
 
-    --text-md: calc(var(--spacing) * 3.25);
-    --text-md--line-height: calc(var(--spacing) * 4);
+    --text-sm: 14px;
+    --text-sm--line-height: 19.6px;
 
-    --text-lg: calc(var(--spacing) * 3.5);
-    --text-lg--line-height: calc(var(--spacing) * 5.5);
+    --text-md: 16px;
+    --text-md--line-height: 18.75px;
+
+    --text-lg: 18px;
+    --text-lg--line-height: 21.09375px;
+
+    --text-xl: 24px;
+    --text-xl--line-height: 28.125px;
+
+    --text-2xl: 32px;
+    --text-2xl--line-height: 37.5px;
+
+    --text-3xl: 40px;
+    --text-3xl--line-height: 46.875px;
+
+    --text-4xl: 48px;
+    --text-4xl--line-height: 57.6px;
+
+    --text-5xl: 56px;
+    --text-5xl--line-height: 64.4px;
+
+    /* FIGMA TEXT STYLES */
+    --text-title-h1: 56px;
+    --text-title-h1--line-height: 64.4px;
+    --text-title-h1--letter-spacing: -0.56px;
+    --text-title-h1--font-weight: 500;
+
+    --text-title-h2: 48px;
+    --text-title-h2--line-height: 57.6px;
+    --text-title-h2--letter-spacing: -0.48px;
+    --text-title-h2--font-weight: 500;
+
+    --text-title-h3: 40px;
+    --text-title-h3--line-height: 46.875px;
+    --text-title-h3--letter-spacing: -0.4px;
+    --text-title-h3--font-weight: 500;
+
+    --text-title-h4: 32px;
+    --text-title-h4--line-height: 37.5px;
+    --text-title-h4--letter-spacing: -0.16px;
+    --text-title-h4--font-weight: 500;
+
+    --text-title-h5: 24px;
+    --text-title-h5--line-height: 28.125px;
+    --text-title-h5--letter-spacing: 0px;
+    --text-title-h5--font-weight: 500;
+
+    --text-title-h6: 20px;
+    --text-title-h6--line-height: 23.4375px;
+    --text-title-h6--letter-spacing: 0px;
+    --text-title-h6--font-weight: 500;
+
+    --text-label-lg: 24px;
+    --text-label-lg--line-height: 28.8px;
+    --text-label-lg--letter-spacing: 0.36px;
+    --text-label-lg--font-weight: 600;
+
+    --text-label-bg: 18px;
+    --text-label-bg--line-height: 21.6px;
+    --text-label-bg--letter-spacing: 0.27px;
+    --text-label-bg--font-weight: 600;
+
+    --text-label-md: 16px;
+    --text-label-md--line-height: 19.2px;
+    --text-label-md--letter-spacing: 0.176px;
+    --text-label-md--font-weight: 600;
+
+    --text-label-sm: 14px;
+    --text-label-sm--line-height: 16.8px;
+    --text-label-sm--letter-spacing: 0.084px;
+    --text-label-sm--font-weight: 600;
+
+    --text-label-xs: 12px;
+    --text-label-xs--line-height: 14.4px;
+    --text-label-xs--letter-spacing: 0px;
+    --text-label-xs--font-weight: 600;
+
+    --text-paragraph-lg: 24px;
+    --text-paragraph-lg--line-height: 28.125px;
+    --text-paragraph-lg--letter-spacing: -0.36px;
+    --text-paragraph-lg--font-weight: 400;
+
+    --text-paragraph-bg: 18px;
+    --text-paragraph-bg--line-height: 21.09375px;
+    --text-paragraph-bg--letter-spacing: -0.27px;
+    --text-paragraph-bg--font-weight: 400;
+
+    --text-paragraph-md: 16px;
+    --text-paragraph-md--line-height: 18.75px;
+    --text-paragraph-md--letter-spacing: -0.176px;
+    --text-paragraph-md--font-weight: 400;
+
+    --text-paragraph-sm: 14px;
+    --text-paragraph-sm--line-height: 19.6px;
+    --text-paragraph-sm--letter-spacing: -0.084px;
+    --text-paragraph-sm--font-weight: 400;
+
+    --text-paragraph-xs: 12px;
+    --text-paragraph-xs--line-height: 16.8px;
+    --text-paragraph-xs--letter-spacing: 0px;
+    --text-paragraph-xs--font-weight: 400;
+
+    --text-subheading-bg: 16px;
+    --text-subheading-bg--line-height: 24px;
+    --text-subheading-bg--letter-spacing: 0.96px;
+    --text-subheading-bg--font-weight: 500;
+
+    --text-subheading-md: 14px;
+    --text-subheading-md--line-height: 19.6px;
+    --text-subheading-md--letter-spacing: 0.84px;
+    --text-subheading-md--font-weight: 500;
+
+    --text-subheading-sm: 12px;
+    --text-subheading-sm--line-height: 16.8px;
+    --text-subheading-sm--letter-spacing: 0.48px;
+    --text-subheading-sm--font-weight: 500;
+
+    --text-subheading-xs: 11px;
+    --text-subheading-xs--line-height: 13.2px;
+    --text-subheading-xs--letter-spacing: 0.22px;
+    --text-subheading-xs--font-weight: 500;
 
     /* BASE COLOR */
     --color-transparent: #00000000;
@@ -220,6 +343,8 @@
     --color-background-brand_secondary: var(--color-brand-100);
     --color-background-brand_solid: var(--color-brand-600);
     --color-background-brand_solid-hover: var(--color-brand-700);
+    --color-background-button_primary: #ED1153FF;
+    --color-background-button_primary_hover: #D80F4CFF;
     --color-background-brand_solid-section: var(--color-brand-800);
     --color-background-brand_solid-section-subtle: var(--color-brand-700);
     --color-background-error_primary: var(--color-red-50);
@@ -535,6 +660,8 @@ select:focus-visible {
         --color-background-brand_secondary: var(--color-brand-600);
         --color-background-brand_solid: var(--color-brand-600);
         --color-background-brand_solid-hover: var(--color-brand-500);
+        --color-background-button_primary: #ED1153FF;
+        --color-background-button_primary_hover: #F83341FF;
         --color-background-brand_solid-section: var(--color-gray-800);
         --color-background-brand_solid-section-subtle: var(--color-gray-950);
         --color-background-error_primary: var(--color-red-950);

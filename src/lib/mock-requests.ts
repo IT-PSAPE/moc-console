@@ -1,4 +1,7 @@
 import type { CultureRequest } from '@/types'
+import { mockEquipment } from './mock-equipment'
+import { mockMediaItems } from './mock-media'
+import { mockRequestVenues } from './mock-request-venues'
 
 export const mockRequests: CultureRequest[] = [
   {
@@ -15,6 +18,27 @@ export const mockRequests: CultureRequest[] = [
     status: 'pending',
     priority: 'high',
     due_date: '2026-04-30',
+    info: 'Visitor services team needs wayfinding signage and accessible entry planning signed off before launch.',
+    venues: [mockRequestVenues[1]],
+    equipment: [mockEquipment[3]],
+    media: [mockMediaItems[1]],
+    notes: [
+      {
+        id: 'note-001',
+        request_id: 'req-001',
+        author: 'Aisha Karim',
+        body: 'Venue layout is available. Waiting on final visitor circulation approval.',
+        created_at: '2026-03-12T09:00:00Z',
+      },
+    ],
+    assignees: [
+      {
+        id: 'assign-001',
+        request_id: 'req-001',
+        member_id: 'member-001',
+        member_name: 'Aisha Karim',
+      },
+    ],
     created_at: '2026-03-10T08:00:00Z',
     updated_at: '2026-03-10T08:00:00Z',
   },
@@ -32,6 +56,24 @@ export const mockRequests: CultureRequest[] = [
     status: 'approved',
     priority: 'medium',
     due_date: '2026-03-25',
+    media: [mockMediaItems[5]],
+    notes: [
+      {
+        id: 'note-002',
+        request_id: 'req-002',
+        author: 'Tariq Al-Hamdan',
+        body: 'Approved after confirming instructor availability and room allocations.',
+        created_at: '2026-03-18T14:00:00Z',
+      },
+    ],
+    assignees: [
+      {
+        id: 'assign-002',
+        request_id: 'req-002',
+        member_id: 'member-002',
+        member_name: 'Tariq Al-Hamdan',
+      },
+    ],
     created_at: '2026-03-05T10:30:00Z',
     updated_at: '2026-03-18T14:00:00Z',
   },
@@ -49,6 +91,32 @@ export const mockRequests: CultureRequest[] = [
     status: 'in_review',
     priority: 'urgent',
     due_date: '2026-04-08',
+    info: 'The field crew also needs one branded opener slide for sponsor review sessions.',
+    equipment: [mockEquipment[0], mockEquipment[2], mockEquipment[3]],
+    media: [mockMediaItems[2], mockMediaItems[7]],
+    notes: [
+      {
+        id: 'note-003',
+        request_id: 'req-003',
+        author: 'Mariam Al-Sayegh',
+        body: 'Audio recorder is still in maintenance. Alternative kit is being checked.',
+        created_at: '2026-03-22T11:00:00Z',
+      },
+    ],
+    assignees: [
+      {
+        id: 'assign-003',
+        request_id: 'req-003',
+        member_id: 'member-003',
+        member_name: 'Mariam Al-Sayegh',
+      },
+      {
+        id: 'assign-004',
+        request_id: 'req-003',
+        member_id: 'member-002',
+        member_name: 'Tariq Al-Hamdan',
+      },
+    ],
     created_at: '2026-03-20T09:15:00Z',
     updated_at: '2026-03-22T11:00:00Z',
   },
@@ -66,6 +134,15 @@ export const mockRequests: CultureRequest[] = [
     status: 'rejected',
     priority: 'high',
     due_date: '2026-04-15',
+    notes: [
+      {
+        id: 'note-004',
+        request_id: 'req-004',
+        author: 'Aisha Karim',
+        body: 'Rejected pending revised speaker budget and travel policy approval.',
+        created_at: '2026-03-15T09:30:00Z',
+      },
+    ],
     created_at: '2026-02-28T16:00:00Z',
     updated_at: '2026-03-15T09:30:00Z',
   },
@@ -83,6 +160,25 @@ export const mockRequests: CultureRequest[] = [
     status: 'approved',
     priority: 'medium',
     due_date: '2026-04-10',
+    venues: [mockRequestVenues[3]],
+    media: [mockMediaItems[0], mockMediaItems[4]],
+    notes: [
+      {
+        id: 'note-005',
+        request_id: 'req-005',
+        author: 'Yousef Nasser',
+        body: 'Vendor onboarding is complete. Awaiting final archive batch manifest.',
+        created_at: '2026-03-19T10:00:00Z',
+      },
+    ],
+    assignees: [
+      {
+        id: 'assign-005',
+        request_id: 'req-005',
+        member_id: 'member-004',
+        member_name: 'Yousef Nasser',
+      },
+    ],
     created_at: '2026-03-01T12:00:00Z',
     updated_at: '2026-03-19T10:00:00Z',
   },
@@ -99,6 +195,8 @@ export const mockRequests: CultureRequest[] = [
     type: 'other',
     status: 'pending',
     priority: 'low',
+    archived: false,
+    venues: [mockRequestVenues[0]],
     created_at: '2026-03-22T14:00:00Z',
     updated_at: '2026-03-22T14:00:00Z',
   },

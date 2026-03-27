@@ -9,12 +9,13 @@ export function formatDate(dateString: string | undefined): string {
 
 export function formatDateTime(dateString: string | undefined): string {
   if (!dateString) return '—'
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
+  return new Date(dateString).toLocaleDateString('en-GB', {
     day: 'numeric',
+    month: 'short',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
   })
 }
 

@@ -1,5 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
+import { cv } from '../../utils/cv'
+
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
@@ -10,23 +12,46 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: ReactNode
 }
 
-const VARIANT_STYLES: Record<Variant, string> = {
-  primary: 'bg-background-brand_solid text-static-white hover:bg-background-brand_solid-hover',
-  secondary: 'bg-background-secondary text-text-secondary hover:bg-background-secondary_hover border border-border-primary',
-  ghost: 'text-text-tertiary hover:text-text-secondary hover:bg-background-secondary_hover',
-  danger: 'bg-background-error_primary text-foreground-error_primary hover:bg-background-error_secondary border border-border-error_subtle',
-}
-
-const SIZE_STYLES: Record<Size, string> = {
-  sm: 'px-2.5 py-1.5 text-xs gap-1.5',
-  md: 'px-3.5 py-2 text-sm gap-2',
-  lg: 'px-5 py-2.5 text-sm gap-2',
-}
+const buttonStyles = cv({
+  base: [
+    'inline-flex items-center justify-center font-semibold transition-colors',
+    'disabled:pointer-events-none',
+  ],
+  variants: {
+    variant: {
+      primary: [
+        'bg-background-button_primary text-static-white hover:bg-background-button_primary_hover',
+        'disabled:border disabled:border-border-disabled disabled:bg-background-disabled disabled:text-text-disable',
+      ],
+      secondary: [
+        'border border-border-primary bg-background-secondary text-text-secondary hover:bg-background-secondary_hover',
+        'disabled:border-border-disabled disabled:bg-background-disabled disabled:text-text-disable',
+      ],
+      ghost: [
+        'bg-transparent text-text-secondary hover:bg-background-secondary hover:text-text-secondary',
+        'disabled:bg-transparent disabled:text-text-disable',
+      ],
+      danger: [
+        'border border-border-error bg-background-error_solid text-static-white hover:bg-background-error_solid-hover',
+        'disabled:border-border-disabled disabled:bg-background-disabled disabled:text-text-disable',
+      ],
+    },
+    size: {
+      sm: ['rounded-[4px] gap-1.5 px-3 py-1.5 text-[12px] leading-[14.4px] tracking-[0px]'],
+      md: ['rounded-[6px] gap-2 px-4 py-2 text-[14px] leading-[16.8px] tracking-[0.084px]'],
+      lg: ['rounded-[6px] gap-2 px-6 py-3 text-[14px] leading-[16.8px] tracking-[0.084px]'],
+    },
+  },
+  defaultVariants: {
+    variant: 'primary',
+    size: 'md',
+  },
+})
 
 export function Button({ variant = 'primary', size = 'md', children, icon, className = '', ...props }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none ${VARIANT_STYLES[variant]} ${SIZE_STYLES[size]} ${className}`}
+      className={buttonStyles({ variant, size, className })}
       {...props}
     >
       {icon}

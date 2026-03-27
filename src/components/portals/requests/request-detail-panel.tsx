@@ -1,7 +1,12 @@
 import { DetailPanel } from '@/components/ui/detail-panel'
-import { StatusBadge } from '@/components/ui/status-badge'
-import { Button } from '@/components/ui/button'
-import { formatDate } from '@/lib/utils'
+import { Maximize2, Pencil, EyeOff, Trash2 } from 'lucide-react'
+import { RequestAssigneesManager } from './request-assignees-manager'
+import { RequestCommentsSection } from './request-comments-section'
+import { RequestFiveWhSection } from './request-five-wh-section'
+import { RequestOverviewSection } from './request-overview-section'
+import { RequestRelatedResourcesSection } from './request-related-resources-section'
+import { useAddRequestComment, useAssignRequestAssignee, useUnassignRequestAssignee, useUpdateRequest, useUpdateRequestStatus } from '@/hooks/use-requests'
+import { useRequestSupportData } from '@/hooks/use-request-support-data'
 import type { CultureRequest } from '@/types'
 
 interface RequestDetailPanelProps {
@@ -9,46 +14,105 @@ interface RequestDetailPanelProps {
   onClose: () => void
 }
 
+const HEADER_ACTIONS = [
+  { icon: Maximize2, label: 'Expand' },
+  { icon: Pencil, label: 'Edit' },
+  { icon: EyeOff, label: 'Hide' },
+  { icon: Trash2, label: 'Delete' },
+]
+
 export function RequestDetailPanel({ selected, onClose }: RequestDetailPanelProps) {
+  const { mutate: updateRequest } = useUpdateRequest()
+  const { mutate: updateStatus } = useUpdateRequestStatus()
+  const { mutate: addComment } = useAddRequestComment()
+  const { mutate: assignAssignee } = useAssignRequestAssignee()
+  const { mutate: unassignAssignee } = useUnassignRequestAssignee()
+  const { data: supportData } = useRequestSupportData()
+
+  function handleStatusChange(status: CultureRequest['status']) {
+    if (!selected) return
+    updateStatus({ id: selected.id, status })
+  }
+
+  function handlePriorityChange(priority: CultureRequest['priority']) {
+    if (!selected) return
+    updateRequest({ id: selected.id, changes: { priority } })
+  }
+
+  function handleTypeChange(type: CultureRequest['type']) {
+    if (!selected) return
+    updateRequest({ id: selected.id, changes: { type } })
+  }
+
+  function handleDueDateChange(due_date: string) {
+    if (!selected) return
+    updateRequest({ id: selected.id, changes: { due_date: due_date || undefined } })
+  }
+
+  function handleAddComment(body: string) {
+    if (!selected) return
+    addComment({ id: selected.id, author: 'MoC Console Admin', body })
+  }
+
+  function handleAssign(memberId: string) {
+    if (!selected) return
+    assignAssignee({ id: selected.id, memberId })
+  }
+
+  function handleUnassign(memberId: string) {
+    if (!selected) return
+    unassignAssignee({ id: selected.id, memberId })
+  }
+
   return (
     <DetailPanel.Root open={!!selected} onClose={onClose}>
       {selected && (
         <>
-          <DetailPanel.Header actions={<Button variant="secondary" size="sm">Edit</Button>}>
-            {selected.title}
-          </DetailPanel.Header>
-          <DetailPanel.Body>
-            <DetailPanel.Section label="Status">
-              <div className="flex items-center gap-3">
-                <StatusBadge status={selected.status} />
-                <StatusBadge status={selected.priority} />
+          <DetailPanel.Header
+            actions={
+              <div className="flex items-center gap-1">
+                {HEADER_ACTIONS.map(({ icon: Icon, label }) => (
+                  <button
+                    key={label}
+                    className="rounded-lg p-1.5 text-text-tertiary hover:bg-background-secondary_hover hover:text-text-secondary"
+                    aria-label={label}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </button>
+                ))}
               </div>
-            </DetailPanel.Section>
-            <DetailPanel.Section label="5W + 1H">
-              <DetailPanel.Field label="Who">{selected.who}</DetailPanel.Field>
-              <DetailPanel.Field label="What">{selected.what}</DetailPanel.Field>
-              <DetailPanel.Field label="When">{selected.when}</DetailPanel.Field>
-              <DetailPanel.Field label="Where">{selected.where}</DetailPanel.Field>
-              <DetailPanel.Field label="Why">{selected.why}</DetailPanel.Field>
-              <DetailPanel.Field label="How">{selected.how}</DetailPanel.Field>
-            </DetailPanel.Section>
-            <DetailPanel.Section label="Details">
-              <DetailPanel.Field label="Type">{selected.type}</DetailPanel.Field>
-              <DetailPanel.Field label="Email">{selected.requester_email}</DetailPanel.Field>
-              {selected.due_date && (
-                <DetailPanel.Field label="Due Date">{formatDate(selected.due_date)}</DetailPanel.Field>
-              )}
-              <DetailPanel.Field label="Created">{formatDate(selected.created_at)}</DetailPanel.Field>
-              <DetailPanel.Field label="Updated">{formatDate(selected.updated_at)}</DetailPanel.Field>
-            </DetailPanel.Section>
+            }
+          />
+          <DetailPanel.Body>
+            <div className="space-y-6">
+              <h2 className="text-lg font-semibold text-text-primary">{selected.title}</h2>
+
+              <RequestOverviewSection
+                request={selected}
+                onStatusChange={handleStatusChange}
+                onPriorityChange={handlePriorityChange}
+                onTypeChange={handleTypeChange}
+                onDueDateChange={handleDueDateChange}
+              />
+
+              <RequestAssigneesManager
+                assignees={selected.assignees ?? []}
+                members={supportData?.members ?? []}
+                onAssign={handleAssign}
+                onUnassign={handleUnassign}
+              />
+
+              <div className="border-t border-border-secondary" />
+
+              <RequestFiveWhSection request={selected} />
+
+              <div className="border-t border-border-secondary" />
+
+              <RequestRelatedResourcesSection request={selected} />
+
+              <RequestCommentsSection notes={selected.notes ?? []} onAddComment={handleAddComment} />
+            </div>
           </DetailPanel.Body>
-          <DetailPanel.Footer>
-            {selected.status === 'pending' && <Button variant="danger" size="sm">Reject</Button>}
-            {(selected.status === 'pending' || selected.status === 'in_review') && (
-              <Button variant="primary" size="sm">Approve</Button>
-            )}
-            {selected.status === 'approved' && <Button variant="primary" size="sm">Mark Complete</Button>}
-          </DetailPanel.Footer>
         </>
       )}
     </DetailPanel.Root>

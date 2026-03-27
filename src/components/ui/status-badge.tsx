@@ -27,6 +27,12 @@ const STATUS_STYLES: Record<string, string> = {
   good: 'bg-utility-blue-50 text-utility-blue-700 border-utility-blue-200',
   fair: 'bg-utility-warning-50 text-utility-warning-700 border-utility-warning-200',
   poor: 'bg-utility-error-50 text-utility-error-700 border-utility-error-200',
+  event: 'bg-utility-warning-50 text-utility-warning-700 border-utility-warning-200',
+  program: 'bg-utility-blue-50 text-utility-blue-700 border-utility-blue-200',
+  venue: 'bg-purple-50 text-purple-700 border-purple-200',
+  equipment: 'bg-utility-warning-50 text-utility-warning-700 border-utility-warning-200',
+  media: 'bg-utility-error-50 text-utility-error-700 border-utility-error-200',
+  other: 'bg-utility-gray-100 text-utility-gray-600 border-utility-gray-200',
 }
 
 const DOT_COLORS: Record<string, string> = {

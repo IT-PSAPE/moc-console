@@ -6,19 +6,41 @@ import type { CultureRequest } from '@/types'
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  in_review: 'bg-blue-100 text-blue-800',
-  approved: 'bg-green-100 text-green-800',
-  rejected: 'bg-red-100 text-red-800',
-  completed: 'bg-gray-100 text-gray-600',
+  pending: 'bg-utility-warning-50 text-utility-warning-700',
+  in_review: 'bg-utility-blue-50 text-utility-blue-700',
+  approved: 'bg-utility-success-50 text-utility-success-700',
+  rejected: 'bg-utility-error-50 text-utility-error-700',
+  completed: 'bg-utility-gray-100 text-utility-gray-600',
 }
 
-function getMonthGrid(year: number, month: number): (number | null)[] {
+interface CalendarDay {
+  day: number
+  isCurrentMonth: boolean
+}
+
+function getCalendarGrid(year: number, month: number): CalendarDay[] {
   const firstWeekday = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const grid: (number | null)[] = []
-  for (let i = 0; i < firstWeekday; i++) grid.push(null)
-  for (let d = 1; d <= daysInMonth; d++) grid.push(d)
+  const daysInPrevMonth = new Date(year, month, 0).getDate()
+
+  const grid: CalendarDay[] = []
+
+  // Previous month trailing days
+  for (let i = firstWeekday - 1; i >= 0; i--) {
+    grid.push({ day: daysInPrevMonth - i, isCurrentMonth: false })
+  }
+
+  // Current month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    grid.push({ day: d, isCurrentMonth: true })
+  }
+
+  // Next month leading days to fill remaining rows
+  const remaining = 42 - grid.length
+  for (let d = 1; d <= remaining; d++) {
+    grid.push({ day: d, isCurrentMonth: false })
+  }
+
   return grid
 }
 
@@ -59,17 +81,23 @@ export function RequestsCalendar({ requests }: RequestsCalendarProps) {
     }
   }
 
+  function handleToday() {
+    setYear(now.getFullYear())
+    setMonth(now.getMonth())
+  }
+
   function handleClosePanel() {
     setSelected(null)
   }
 
-  const grid = getMonthGrid(year, month)
+  const grid = getCalendarGrid(year, month)
   const today = todayKey()
   const monthLabel = new Date(year, month, 1).toLocaleDateString('en-US', {
     month: 'long',
     year: 'numeric',
   })
 
+  // Build a map of date keys to requests
   const byDate = new Map<string, CultureRequest[]>()
   for (const req of requests) {
     if (!req.due_date) continue
@@ -79,86 +107,109 @@ export function RequestsCalendar({ requests }: RequestsCalendarProps) {
     else byDate.set(key, [req])
   }
 
+  // Calculate date keys for prev/next month overflow cells
+  function getDateKeyForCell(cell: CalendarDay, index: number): string | null {
+    if (cell.isCurrentMonth) return toDateKey(year, month, cell.day)
+    // Before current month days start
+    if (index < 7) {
+      const prevMonth = month === 0 ? 11 : month - 1
+      const prevYear = month === 0 ? year - 1 : year
+      return toDateKey(prevYear, prevMonth, cell.day)
+    }
+    // After current month days end
+    const nextMonth = month === 11 ? 0 : month + 1
+    const nextYear = month === 11 ? year + 1 : year
+    return toDateKey(nextYear, nextMonth, cell.day)
+  }
+
   return (
     <>
       <div className="overflow-hidden rounded-xl border border-border-primary bg-background-primary">
-        <div className="flex items-center justify-between border-b border-border-secondary px-4 py-3">
-          <button
-            onClick={handlePrevMonth}
-            className="rounded-lg p-1.5 text-text-tertiary hover:bg-background-secondary_hover hover:text-text-secondary"
-            aria-label="Previous month"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <span className="text-sm font-semibold text-text-primary">{monthLabel}</span>
-          <button
-            onClick={handleNextMonth}
-            className="rounded-lg p-1.5 text-text-tertiary hover:bg-background-secondary_hover hover:text-text-secondary"
-            aria-label="Next month"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4">
+          <h2 className="text-lg font-semibold text-text-primary">{monthLabel}</h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleToday}
+              className="rounded-lg border border-border-primary px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-background-secondary_hover"
+            >
+              Today
+            </button>
+            <button
+              onClick={handlePrevMonth}
+              className="rounded-lg border border-border-primary p-1.5 text-text-tertiary hover:bg-background-secondary_hover hover:text-text-secondary"
+              aria-label="Previous month"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={handleNextMonth}
+              className="rounded-lg border border-border-primary p-1.5 text-text-tertiary hover:bg-background-secondary_hover hover:text-text-secondary"
+              aria-label="Next month"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-7 border-b border-border-secondary">
+        {/* Day headers */}
+        <div className="grid grid-cols-7 border-t border-border-secondary">
           {DAY_LABELS.map((label) => (
             <div
               key={label}
-              className="py-2 text-center text-xs font-medium text-text-quaternary"
+              className="border-r border-border-secondary py-2 text-center text-xs font-medium text-text-quaternary last:border-r-0"
             >
               {label}
             </div>
           ))}
         </div>
 
+        {/* Calendar grid */}
         <div className="grid grid-cols-7">
-          {grid.map((day, i) => {
-            const dateKey = day ? toDateKey(year, month, day) : null
+          {grid.map((cell, i) => {
+            const dateKey = getDateKeyForCell(cell, i)
             const dayRequests = dateKey ? (byDate.get(dateKey) ?? []) : []
             const isToday = dateKey === today
 
             return (
               <div
                 key={i}
-                className={`min-h-20 border-b border-r border-border-tertiary p-1 last:border-r-0 ${
-                  !day ? 'bg-background-secondary' : ''
-                }`}
+                className="min-h-24 border-r border-t border-border-secondary p-1.5 last:border-r-0 [&:nth-child(7n)]:border-r-0"
               >
-                {day && (
-                  <>
-                    <span
-                      className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
-                        isToday
-                          ? 'bg-background-brand_solid text-static-white'
-                          : 'text-text-secondary'
-                      }`}
-                    >
-                      {day}
+                <span
+                  className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
+                    isToday
+                      ? 'bg-utility-success-500 text-static-white'
+                      : cell.isCurrentMonth
+                        ? 'text-text-secondary'
+                        : 'text-text-quaternary'
+                  }`}
+                >
+                  {cell.day}
+                </span>
+                <div className="mt-0.5 space-y-0.5">
+                  {dayRequests.slice(0, 3).map((req) => {
+                    function handleCardClick() {
+                      setSelected(req)
+                    }
+                    const colorClass =
+                      STATUS_COLORS[req.status] ?? 'bg-background-tertiary text-text-secondary'
+                    return (
+                      <button
+                        key={req.id}
+                        onClick={handleCardClick}
+                        className={`block w-full truncate rounded px-1.5 py-0.5 text-left text-xs transition-opacity hover:opacity-80 ${colorClass}`}
+                      >
+                        {req.title}
+                      </button>
+                    )
+                  })}
+                  {dayRequests.length > 3 && (
+                    <span className="pl-1 text-xs text-text-tertiary">
+                      +{dayRequests.length - 3} more
                     </span>
-                    <div className="mt-0.5 space-y-0.5">
-                      {dayRequests.slice(0, 2).map((req) => {
-                        function handleCardClick() {
-                          setSelected(req)
-                        }
-                        const colorClass = STATUS_COLORS[req.status] ?? 'bg-background-tertiary text-text-secondary'
-                        return (
-                          <button
-                            key={req.id}
-                            onClick={handleCardClick}
-                            className={`block w-full truncate rounded px-1 py-0.5 text-left text-xs transition-opacity hover:opacity-80 ${colorClass}`}
-                          >
-                            {req.title}
-                          </button>
-                        )
-                      })}
-                      {dayRequests.length > 2 && (
-                        <span className="pl-1 text-xs text-text-tertiary">
-                          +{dayRequests.length - 2} more
-                        </span>
-                      )}
-                    </div>
-                  </>
-                )}
+                  )}
+                </div>
               </div>
             )
           })}

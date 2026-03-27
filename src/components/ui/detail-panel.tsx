@@ -32,21 +32,21 @@ function Root({ open, onClose, children }: { open: boolean; onClose: () => void;
   )
 }
 
-function Header({ children, actions }: { children: ReactNode; actions?: ReactNode }) {
+function Header({ children, actions }: { children?: ReactNode; actions?: ReactNode }) {
   const { actions: { onClose } } = usePanelContext()
 
   return (
-    <div className="flex items-center justify-between border-b border-border-secondary px-6 py-4">
-      <h3 className="text-lg font-semibold text-text-primary">{children}</h3>
-      <div className="flex items-center gap-2">
+    <div className="flex items-center justify-between border-b border-border-secondary px-6 py-3">
+      <div className="flex items-center gap-1">
         {actions}
-        <button
-          onClick={onClose}
-          className="rounded-lg p-1 text-text-tertiary hover:bg-background-secondary_hover hover:text-text-secondary"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        {children && <h3 className="text-lg font-semibold text-text-primary">{children}</h3>}
       </div>
+      <button
+        onClick={onClose}
+        className="rounded-lg p-1 text-text-tertiary hover:bg-background-secondary_hover hover:text-text-secondary"
+      >
+        <X className="h-5 w-5" />
+      </button>
     </div>
   )
 }

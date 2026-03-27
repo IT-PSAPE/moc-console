@@ -9,7 +9,8 @@ import { RequestsKanban } from './requests-kanban'
 import { RequestsCalendar } from './requests-calendar'
 import { useListFilter } from '@/hooks/use-list-filter'
 import { useRequests } from '@/hooks/use-requests'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatLabel } from '@/lib/utils'
+import { REQUEST_PRIORITY_OPTIONS, REQUEST_STATUS_OPTIONS, REQUEST_TYPE_OPTIONS } from './request-constants'
 import type { CultureRequest, FilterConfig } from '@/types'
 
 export type ViewMode = 'list' | 'kanban' | 'calendar'
@@ -18,39 +19,21 @@ const FILTERS: FilterConfig[] = [
   {
     key: 'status',
     label: 'All Statuses',
-    options: [
-      { label: 'Pending', value: 'pending' },
-      { label: 'Approved', value: 'approved' },
-      { label: 'Rejected', value: 'rejected' },
-      { label: 'In Review', value: 'in_review' },
-      { label: 'Completed', value: 'completed' },
-    ],
+    options: REQUEST_STATUS_OPTIONS,
   },
   {
     key: 'priority',
     label: 'All Priorities',
-    options: [
-      { label: 'Urgent', value: 'urgent' },
-      { label: 'High', value: 'high' },
-      { label: 'Medium', value: 'medium' },
-      { label: 'Low', value: 'low' },
-    ],
+    options: REQUEST_PRIORITY_OPTIONS,
   },
   {
     key: 'type',
     label: 'All Types',
-    options: [
-      { label: 'Event', value: 'event' },
-      { label: 'Program', value: 'program' },
-      { label: 'Venue', value: 'venue' },
-      { label: 'Equipment', value: 'equipment' },
-      { label: 'Media', value: 'media' },
-      { label: 'Other', value: 'other' },
-    ],
+    options: REQUEST_TYPE_OPTIONS,
   },
 ]
 
-const SEARCH_FIELDS: (keyof CultureRequest)[] = ['title', 'who']
+const SEARCH_FIELDS: (keyof CultureRequest)[] = ['title', 'who', 'what', 'requester_email']
 
 const VIEW_OPTIONS: { id: ViewMode; icon: typeof List; label: string }[] = [
   { id: 'list', icon: List, label: 'List' },
@@ -107,13 +90,16 @@ export function RequestsList({ viewMode, onViewModeChange }: RequestsListProps) 
   }
 
   function renderRow(row: CultureRequest) {
+    const assigneeCount = row.assignees?.length ?? 0
+
     return (
       <>
         <DataTable.Cell className="font-medium text-text-primary">{row.title}</DataTable.Cell>
         <DataTable.Cell>{row.who}</DataTable.Cell>
-        <DataTable.Cell>{row.type}</DataTable.Cell>
+        <DataTable.Cell>{formatLabel(row.type)}</DataTable.Cell>
         <DataTable.Cell><StatusBadge status={row.status} /></DataTable.Cell>
         <DataTable.Cell><StatusBadge status={row.priority} /></DataTable.Cell>
+        <DataTable.Cell className="text-text-quaternary">{assigneeCount === 0 ? 'Unassigned' : `${assigneeCount} assigned`}</DataTable.Cell>
         <DataTable.Cell className="text-text-quaternary">{row.due_date ? formatDate(row.due_date) : '—'}</DataTable.Cell>
       </>
     )
@@ -140,6 +126,7 @@ export function RequestsList({ viewMode, onViewModeChange }: RequestsListProps) 
               <DataTable.Column field="type">Type</DataTable.Column>
               <DataTable.Column field="status" sortable>Status</DataTable.Column>
               <DataTable.Column field="priority" sortable>Priority</DataTable.Column>
+              <DataTable.Column field="assignees">Assignees</DataTable.Column>
               <DataTable.Column field="due_date" sortable>Due Date</DataTable.Column>
             </DataTable.Header>
             <DataTable.Body<CultureRequest> render={renderRow} />

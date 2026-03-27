@@ -62,11 +62,25 @@ export interface RequestNote {
   created_at: string
 }
 
+export interface RequestMember {
+  id: string
+  name: string
+  email: string
+  role: Role
+}
+
 export interface RequestAssignee {
   id: string
   request_id: string
   member_id: string
   member_name: string
+}
+
+export interface RequestVenue {
+  id: string
+  name: string
+  description: string
+  available: boolean
 }
 
 export interface CultureRequest {
@@ -79,14 +93,19 @@ export interface CultureRequest {
   where: string
   why: string
   how: string
+  info?: string
   // Meta
   requester_email: string
   type: RequestType
   status: RequestFlow
   priority: 'low' | 'medium' | 'high' | 'urgent'
   due_date?: string
+  archived?: boolean
   notes?: RequestNote[]
   assignees?: RequestAssignee[]
+  venues?: RequestVenue[]
+  equipment?: Equipment[]
+  media?: MediaItem[]
   created_at: string
   updated_at: string
 }
