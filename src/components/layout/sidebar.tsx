@@ -1,50 +1,170 @@
+import { ChevronRight } from 'lucide-react'
+import { cn } from '@/utils/cn'
+import { cv } from '@/utils/cv'
+import { Children, createContext, useContext, useState, type HTMLAttributes, type MouseEventHandler, type ReactNode } from 'react'
+
+type SidebarMenuLevelContextValue = {
+    state: {
+        isChild: boolean
+    }
+    actions: Record<string, never>
+    meta: Record<string, never>
+}
+
+const sidebarMenuLevelContextDefaultValue: SidebarMenuLevelContextValue = {
+    state: {
+        isChild: false,
+    },
+    actions: {},
+    meta: {},
+}
+
+const SidebarMenuLevelContext = createContext<SidebarMenuLevelContextValue>(sidebarMenuLevelContextDefaultValue)
+
+const nestedSidebarMenuLevelContextValue: SidebarMenuLevelContextValue = {
+    state: {
+        isChild: true,
+    },
+    actions: {},
+    meta: {},
+}
+
+const sidebarMenuItemClasses = cv({
+    base: [
+        'py-1 rounded-md inline-flex justify-start items-center gap-2 overflow-hidden w-full',
+    ],
+    variants: {
+        state: {
+            active: ['bg-brand_primary text-brand_secondary'],
+            inactive: ['bg-transparent text-color-secondary'],
+        },
+    },
+    defaultVariants: {
+        state: 'inactive',
+    },
+})
 
 
-function SidebarPanel() {
+function useSidebarMenuLevel() {
+    return useContext(SidebarMenuLevelContext)
+}
+
+
+function SidebarPanel({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("")}></div>
+        <aside className={cn('flex flex-col border-r border-secondary', className)}>
+            {children}
+        </aside>
     )
 }
 
-function SidebarHeader() {
+function SidebarHeader({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("")}></div>
+        <div className={cn("px-3 py-2 border-b border-secondary inline-flex justify-start items-center overflow-hidden", className)}>
+            <div className="flex-1 flex justify-start items-center gap-2.5">
+                {children}
+            </div>
+        </div>
     )
 }
 
-function SidebarContent() {
+function SidebarContent({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("")}></div>
+        <div className={cn("w-full py-1.5 inline-flex flex-col justify-start items-start min-h-0 flex-1 overflow-y-auto scrollbar-hidden", className)}>
+            {children}
+        </div>
     )
 }
 
-function SidebarFooter() {
+function SidebarFooter({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("")}></div>
+        <div className={cn("p-3 border-t border-secondary inline-flex justify-start items-center overflow-hidden", className)}>
+            <div className="flex-1 rounded-lg flex justify-start items-center gap-2">
+                {children}
+            </div>
+        </div>
     )
 }
 
-function SidebarGroup() {
+function SidebarGroup({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("")}></div>
+        <div className={cn("py-2 inline-flex flex-col justify-start items-start", className)}>
+            {children}
+        </div>
     )
 }
 
-function SidebarGroupTitle() {
+function SidebarGroupTitle({ title, className }: { title: string, className?: string }) {
     return (
-        <div className={cn("")}></div>
+        <div className={cn("px-4 py-1.5 inline-flex justify-start items-center gap-2.5", className)}>
+            <h3 className="text-neutral-500 text-xs">{title}</h3>
+        </div>
     )
 }
 
-function SidebarGroupContent() {
+function SidebarGroupContent({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("")}></div>
+        <div className={cn("px-2 flex flex-col justify-start items-start gap-0.5", className)}>
+            {children}
+        </div>
     )
 }
 
-function SidebarMenuItem() {
+type SidebarMenuItemProps = {
+    children?: ReactNode
+    icon?: ReactNode
+    active?: boolean
+    onClick?: MouseEventHandler<HTMLButtonElement>
+    title: string
+}
+
+function SidebarMenuItem({ title, children, icon, active = false, onClick }: SidebarMenuItemProps) {
+    const { state } = useSidebarMenuLevel()
+    const [isOpen, setIsOpen] = useState(true)
+    const menuChildren = Children.toArray(children)
+    const hasChildren = menuChildren.length > 0
+    const itemState = active ? 'active' : 'inactive'
+
+    function handleToggle() {
+        if (!hasChildren) {
+            return
+        }
+
+        setIsOpen(!isOpen)
+    }
+
+    const handleClick = hasChildren ? handleToggle : onClick
+    const cursorClassName = handleClick ? 'cursor-pointer' : 'cursor-default'
+
     return (
-        <div className={cn("")}></div>
+        <div className="w-full">
+            <button
+                type="button"
+                className={cn(sidebarMenuItemClasses({ state: itemState }), cursorClassName)}
+                onClick={handleClick}
+                aria-expanded={hasChildren ? isOpen : undefined}
+            >
+                <div className="flex-1 px-1 flex justify-start items-center gap-1.5">
+                    <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
+                        {state.isChild ? null : icon}
+                    </div>
+                    <span className={"flex-1 justify-start text-sm text-left"}>{title}</span>
+
+                    {hasChildren ? (
+                        <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
+                            <ChevronRight className={cn('size-4 transition-transform', isOpen ? 'rotate-90' : 'rotate-0')} aria-hidden="true" />
+                        </div>
+                    ) : null}
+                </div>
+            </button>
+            {hasChildren && isOpen ? (
+                <SidebarMenuLevelContext.Provider value={nestedSidebarMenuLevelContextValue}>
+                    <div className="flex flex-col justify-start items-start gap-0.5 pt-0.5 w-full">
+                        {menuChildren}
+                    </div>
+                </SidebarMenuLevelContext.Provider>
+            ) : null}
+        </div>
     )
 }
 
@@ -56,4 +176,5 @@ export const Sidebar = {
     Group: SidebarGroup,
     GroupTitle: SidebarGroupTitle,
     GroupContent: SidebarGroupContent,
+    MenuItem: SidebarMenuItem,
 }
