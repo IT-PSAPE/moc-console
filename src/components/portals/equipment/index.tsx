@@ -1,81 +1,99 @@
 import { useState } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/ui/page-header'
-import { Tabs } from '@/components/ui/tabs'
-import { EquipmentCheckoutForm } from './equipment-checkout-form'
-import { EquipmentCheckouts } from './equipment-checkouts'
-import { EquipmentDashboard } from './equipment-dashboard'
-import { EquipmentForm } from './equipment-form'
+import { EquipmentOverview } from './equipment-overview'
 import { EquipmentInventory } from './equipment-inventory'
+import { EquipmentBookings } from './equipment-bookings'
+import { EquipmentMaintenance } from './equipment-maintenance'
+import { EquipmentReports } from './equipment-reports'
+import { EquipmentForm } from './equipment-form'
+import { EquipmentBookingForm } from './equipment-booking-form'
+import { EquipmentIssueForm } from './equipment-issue-form'
 import type { Equipment } from '@/types'
 
 export function EquipmentPortal() {
-  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null)
-  const [checkoutEquipment, setCheckoutEquipment] = useState<Equipment | null>(null)
   const [formOpen, setFormOpen] = useState(false)
+  const [editEquipment, setEditEquipment] = useState<Equipment | null>(null)
+  const [bookingFormOpen, setBookingFormOpen] = useState(false)
+  const [bookingEquipment, setBookingEquipment] = useState<Equipment | null>(null)
+  const [issueFormOpen, setIssueFormOpen] = useState(false)
+  const [issueEquipment, setIssueEquipment] = useState<Equipment | null>(null)
 
   function handleAddEquipment() {
-    setSelectedEquipment(null)
+    setEditEquipment(null)
     setFormOpen(true)
-  }
-
-  function handleCloseEquipmentForm() {
-    setFormOpen(false)
-    setSelectedEquipment(null)
   }
 
   function handleEditEquipment(equipment: Equipment) {
-    setSelectedEquipment(equipment)
+    setEditEquipment(equipment)
     setFormOpen(true)
   }
 
-  function handleOpenCheckoutForm(equipment: Equipment) {
-    setCheckoutEquipment(equipment)
+  function handleCloseForm() {
+    setFormOpen(false)
+    setEditEquipment(null)
   }
 
-  function handleCloseCheckoutForm() {
-    setCheckoutEquipment(null)
+  function handleOpenBookingForm(equipment?: Equipment) {
+    setBookingEquipment(equipment ?? null)
+    setBookingFormOpen(true)
+  }
+
+  function handleCloseBookingForm() {
+    setBookingFormOpen(false)
+    setBookingEquipment(null)
+  }
+
+  function handleOpenIssueForm(equipment?: Equipment) {
+    setIssueEquipment(equipment ?? null)
+    setIssueFormOpen(true)
+  }
+
+  function handleCloseIssueForm() {
+    setIssueFormOpen(false)
+    setIssueEquipment(null)
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        actions={(
+        title="Equipment"
+        description="Manage equipment inventory, bookings, and maintenance across the department."
+        actions={
           <Button icon={<Plus className="h-4 w-4" />} onClick={handleAddEquipment} size="sm">
             Add Equipment
           </Button>
-        )}
-        description="Track inventory, log manual collection, and see what is currently in storage or checked out."
-        title="Equipment"
+        }
       />
 
-      <EquipmentDashboard />
-
-      <Tabs.Root defaultTab="storage">
-        <Tabs.List>
-          <Tabs.Trigger id="storage">In Storage</Tabs.Trigger>
-          <Tabs.Trigger id="checkouts">Checked Out</Tabs.Trigger>
-        </Tabs.List>
-        <Tabs.Content id="storage">
-          <EquipmentInventory onCheckoutEquipment={handleOpenCheckoutForm} onEditEquipment={handleEditEquipment} />
-        </Tabs.Content>
-        <Tabs.Content id="checkouts">
-          <EquipmentCheckouts />
-        </Tabs.Content>
-      </Tabs.Root>
+      <Routes>
+        <Route index element={<EquipmentOverview />} />
+        <Route path="inventory" element={<EquipmentInventory onBookEquipment={handleOpenBookingForm} onEditEquipment={handleEditEquipment} onReportIssue={handleOpenIssueForm} />} />
+        <Route path="bookings" element={<EquipmentBookings onNewBooking={() => handleOpenBookingForm()} />} />
+        <Route path="maintenance" element={<EquipmentMaintenance onReportIssue={() => handleOpenIssueForm()} />} />
+        <Route path="reports" element={<EquipmentReports />} />
+        <Route path="*" element={<Navigate to="" replace />} />
+      </Routes>
 
       <EquipmentForm
-        equipment={selectedEquipment}
-        key={`${selectedEquipment?.id ?? 'new'}-${formOpen ? 'open' : 'closed'}`}
-        onClose={handleCloseEquipmentForm}
+        equipment={editEquipment}
+        key={`${editEquipment?.id ?? 'new'}-${formOpen ? 'open' : 'closed'}`}
+        onClose={handleCloseForm}
         open={formOpen}
       />
-      <EquipmentCheckoutForm
-        equipment={checkoutEquipment}
-        key={`${checkoutEquipment?.id ?? 'checkout'}-${checkoutEquipment ? 'open' : 'closed'}`}
-        onClose={handleCloseCheckoutForm}
-        open={Boolean(checkoutEquipment)}
+      <EquipmentBookingForm
+        equipment={bookingEquipment}
+        key={`booking-${bookingEquipment?.id ?? 'any'}-${bookingFormOpen ? 'open' : 'closed'}`}
+        onClose={handleCloseBookingForm}
+        open={bookingFormOpen}
+      />
+      <EquipmentIssueForm
+        equipment={issueEquipment}
+        key={`issue-${issueEquipment?.id ?? 'any'}-${issueFormOpen ? 'open' : 'closed'}`}
+        onClose={handleCloseIssueForm}
+        open={issueFormOpen}
       />
     </div>
   )

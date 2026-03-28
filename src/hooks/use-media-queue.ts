@@ -38,6 +38,7 @@ function addToQueue(params: { mediaItemId: string; broadcastId?: string }): Prom
     media_item: mediaItem,
     broadcast_id: broadcastId,
     display_order: maxOrder + 1,
+    status: 'queued',
     config: {},
   }
   mockQueueItems.push(newItem)

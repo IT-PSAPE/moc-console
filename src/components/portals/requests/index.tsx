@@ -1,14 +1,15 @@
 import { useState } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
-import { RequestsDashboard } from './requests-dashboard'
-import { RequestsList } from './requests-list'
 import { RequestForm } from './request-form'
-import type { ViewMode } from './requests-list'
+import { RequestsOverview } from './requests-overview'
+import { RequestsAllRequests } from './requests-all-requests'
+import { RequestsArchive } from './requests-archive'
+import { RequestsInsights } from './requests-insights'
 
 export function RequestsPortal() {
   const [formOpen, setFormOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
 
   function handleOpenForm() {
     setFormOpen(true)
@@ -26,9 +27,13 @@ export function RequestsPortal() {
         actions={<Button variant="primary" size="sm" onClick={handleOpenForm}>New Request</Button>}
       />
 
-      <RequestsDashboard />
-
-      <RequestsList viewMode={viewMode} onViewModeChange={setViewMode} />
+      <Routes>
+        <Route index element={<RequestsOverview />} />
+        <Route path="all" element={<RequestsAllRequests />} />
+        <Route path="archive" element={<RequestsArchive />} />
+        <Route path="insights" element={<RequestsInsights />} />
+        <Route path="*" element={<Navigate to="" replace />} />
+      </Routes>
 
       <RequestForm open={formOpen} onClose={handleCloseForm} />
     </div>

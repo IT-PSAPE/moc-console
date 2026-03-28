@@ -137,9 +137,9 @@ export function EquipmentForm({ equipment, onClose, open }: EquipmentFormProps) 
             <Input id="equipment-quantity" label="Total Quantity" min={1} onChange={handleQuantityChange} type="number" value={String(form.quantity)} />
             <Select id="equipment-status" label="Status" onChange={handleStatusChange} value={form.status}>
               <option value="available">Available</option>
-              <option value="assigned">Assigned</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="retired">Retired</option>
+              <option value="booked">Booked</option>
+              <option value="in_use">In Use</option>
+              <option value="faulty">Faulty</option>
             </Select>
           </div>
 

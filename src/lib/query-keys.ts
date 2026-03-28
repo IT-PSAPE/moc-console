@@ -8,7 +8,9 @@ export const queryKeys = {
   equipment: {
     all: ['equipment'] as const,
     list: (filters?: Record<string, string>) => ['equipment', 'list', filters] as const,
-    checkouts: () => ['equipment', 'checkouts'] as const,
+    detail: (id: string) => ['equipment', 'detail', id] as const,
+    bookings: (filters?: Record<string, string>) => ['equipment', 'bookings', filters] as const,
+    issues: (filters?: Record<string, string>) => ['equipment', 'issues', filters] as const,
   },
   media: {
     all: ['media'] as const,

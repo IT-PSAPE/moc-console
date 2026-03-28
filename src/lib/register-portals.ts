@@ -13,7 +13,10 @@ export function registerAllPortals() {
     basePath: '/requests',
     component: RequestsPortal,
     sections: [
-      { id: 'all', label: 'All Requests', path: '' },
+      { id: 'overview', label: 'Overview', path: '' },
+      { id: 'all', label: 'All Requests', path: '/all' },
+      { id: 'archive', label: 'Archive', path: '/archive' },
+      { id: 'insights', label: 'Insights', path: '/insights' },
     ],
   })
 
@@ -25,8 +28,10 @@ export function registerAllPortals() {
     component: EquipmentPortal,
     sections: [
       { id: 'overview', label: 'Overview', path: '' },
-      { id: 'storage', label: 'In Storage', path: '/storage' },
-      { id: 'checkouts', label: 'Checked Out', path: '/checkouts' },
+      { id: 'inventory', label: 'Inventory', path: '/inventory' },
+      { id: 'bookings', label: 'Bookings', path: '/bookings' },
+      { id: 'maintenance', label: 'Maintenance', path: '/maintenance' },
+      { id: 'reports', label: 'Reports', path: '/reports' },
     ],
   })
 
@@ -37,9 +42,9 @@ export function registerAllPortals() {
     basePath: '/broadcasting',
     component: BroadcastingPortal,
     sections: [
-      { id: 'workspace', label: 'Workspace', path: '' },
-      { id: 'broadcasts', label: 'All Broadcasts', path: '/broadcasts' },
-      { id: 'history', label: 'History', path: '/history' },
+      { id: 'overview', label: 'Overview', path: '' },
+      { id: 'media-bin', label: 'Media Bin', path: '/media-bin' },
+      { id: 'broadcasts', label: 'Broadcasts', path: '/broadcasts' },
     ],
   })
 

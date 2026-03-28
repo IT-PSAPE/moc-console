@@ -112,7 +112,7 @@ export interface CultureRequest {
 
 // ── Equipment ─────────────────────────────────────────────────
 
-export type EquipmentStatus = 'available' | 'assigned' | 'maintenance' | 'retired'
+export type EquipmentStatus = 'available' | 'booked' | 'in_use' | 'faulty'
 
 export interface Equipment {
   id: string
@@ -131,15 +131,34 @@ export interface Equipment {
   created_at: string
 }
 
-export interface EquipmentCheckout {
+export type BookingStatus = 'booked' | 'in_use' | 'returned'
+
+export interface EquipmentBooking {
   id: string
   equipment_id: string
   equipment_name: string
   quantity: number
-  checked_out_by: string
-  destination: string
-  checked_out_at: string
-  returned_at?: string
+  status: BookingStatus
+  booked_by: string
+  assigned_to: string
+  event?: string
+  start_date: string
+  end_date: string
+  notes?: string
+  created_at: string
+}
+
+export type IssueStatus = 'active' | 'resolved'
+
+export interface EquipmentIssue {
+  id: string
+  equipment_id: string
+  equipment_name: string
+  description: string
+  reported_by: string
+  status: IssueStatus
+  resolved_at?: string
+  created_at: string
 }
 
 // ── Broadcasting ──────────────────────────────────────────────
@@ -168,6 +187,14 @@ export interface MediaSlide {
   id: string
   url: string
   duration?: number
+  audio_url?: string
+}
+
+export interface Presentation {
+  id: string
+  title: string
+  slides: MediaSlide[]
+  created_at: string
 }
 
 export interface MediaItem {
@@ -179,9 +206,14 @@ export interface MediaItem {
   metadata?: {
     default_duration?: number
     slides?: MediaSlide[]
+    file_size?: string
+    dimensions?: string
+    duration_seconds?: number
   }
   created_at: string
 }
+
+export type QueueItemStatus = 'queued' | 'playing' | 'completed'
 
 export interface QueueItemConfig {
   duration?: number
@@ -197,6 +229,7 @@ export interface QueueItem {
   media_item?: MediaItem
   broadcast_id?: string
   display_order: number
+  status: QueueItemStatus
   config: QueueItemConfig
 }
 
