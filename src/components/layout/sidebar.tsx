@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ChevronDown, PanelLeftClose, PanelLeft, LogOut } from 'lucide-react'
+import { ChevronDown, LogOut } from 'lucide-react'
 import { IconButton } from '@/components/ui/icon-button'
 import { Sidebar as SidebarChrome } from '@/components/ui/sidebar'
 import { useSidebar } from '@/contexts/sidebar-context'
@@ -10,7 +10,7 @@ import type { PortalConfig, PortalSection } from '@/types'
 export function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { state: { collapsed, expandedPortal, mobileOpen }, actions: { closeMobile, toggleCollapsed, togglePortal } } = useSidebar()
+  const { state: { collapsed, expandedPortal, mobileOpen }, actions: { closeMobile, togglePortal } } = useSidebar()
   const { state: { portals } } = usePortals()
   const { state: { user }, actions: { logout } } = useAuth()
   const showLabels = !collapsed || mobileOpen
@@ -92,7 +92,7 @@ export function Sidebar() {
           <SidebarChrome.Brand>
             <SidebarChrome.BrandMark>M</SidebarChrome.BrandMark>
             <SidebarChrome.Reveal className="min-w-0 overflow-hidden">
-              <p className="truncate text-sm font-semibold text-text-primary">MOC Console</p>
+              <p className="truncate text-base font-semibold text-text-primary">MOC Console</p>
               <p className="truncate text-xs text-text-tertiary">Admin Platform</p>
             </SidebarChrome.Reveal>
           </SidebarChrome.Brand>
@@ -105,22 +105,17 @@ export function Sidebar() {
         </SidebarChrome.Content>
 
         <SidebarChrome.Footer>
-          {showLabels && user && (
-            <SidebarChrome.UserCard>
-              <p className="truncate text-sm font-medium text-text-primary">{user.full_name}</p>
-              <p className="truncate text-xs text-text-tertiary">{user.role}</p>
-            </SidebarChrome.UserCard>
+          {showLabels && user ? (
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-text-primary">{user.full_name}</p>
+                <p className="truncate text-xs text-text-tertiary">{user.role}</p>
+              </div>
+              <IconButton icon={<LogOut className="h-4 w-4" />} label="Sign out" onClick={logout} variant="ghost" />
+            </div>
+          ) : (
+            <IconButton icon={<LogOut className="h-4 w-4" />} label="Sign out" onClick={logout} variant="ghost" />
           )}
-          <SidebarChrome.ActionRow>
-            <IconButton
-              className="hidden lg:inline-flex"
-              icon={collapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-              label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              onClick={toggleCollapsed}
-              variant="ghost"
-            />
-            <IconButton className="flex-1 lg:flex-none" icon={<LogOut className="h-4 w-4" />} label="Sign out" onClick={logout} variant="ghost" />
-          </SidebarChrome.ActionRow>
         </SidebarChrome.Footer>
       </SidebarChrome.Panel>
     </SidebarChrome.Root>

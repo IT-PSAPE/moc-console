@@ -83,7 +83,7 @@ function Panel({ children, className = '', id }: HTMLAttributes<HTMLElement>) {
 }
 
 function Header({ children, className = '' }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={clsx('flex h-16 items-center gap-3 border-b border-border-secondary px-4', className)}>{children}</div>
+  return <div className={clsx('flex h-16 items-center gap-2.5 border-b border-border-secondary px-5', className)}>{children}</div>
 }
 
 function Brand({ children, className = '' }: HTMLAttributes<HTMLDivElement>) {
@@ -116,7 +116,7 @@ function Group({ children, className = '' }: HTMLAttributes<HTMLDivElement>) {
 
 function GroupLabel({ children, className = '' }: HTMLAttributes<HTMLParagraphElement>) {
   useSidebarContext()
-  return <p className={clsx('px-3 pb-1 text-xs font-medium uppercase tracking-[0.16em] text-text-quaternary', className)}>{children}</p>
+  return <p className={clsx('px-3 pb-1 text-[11px] font-medium uppercase tracking-[0.05em] text-text-quaternary', className)}>{children}</p>
 }
 
 function Menu({ children, className = '' }: HTMLAttributes<HTMLDivElement>) {
@@ -127,10 +127,10 @@ function MenuButton({ active = false, children, className = '', type, ...props }
   return (
     <button
       className={clsx(
-        'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+        'flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
         active
-          ? 'bg-background-secondary_hover text-text-primary'
-          : 'text-text-tertiary hover:bg-background-primary_hover hover:text-text-secondary',
+          ? 'bg-background-brand_primary text-foreground-brand_primary'
+          : 'text-text-secondary hover:bg-background-primary_hover hover:text-text-primary',
         className,
       )}
       type={type ?? 'button'}
@@ -168,7 +168,7 @@ function Item({ active = false, children, className = '', type, ...props }: Side
 }
 
 function Footer({ children, className = '' }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={clsx('border-t border-border-secondary p-3', className)}>{children}</div>
+  return <div className={clsx('border-t border-border-secondary px-4 py-3', className)}>{children}</div>
 }
 
 function UserCard({ children, className = '' }: HTMLAttributes<HTMLDivElement>) {
