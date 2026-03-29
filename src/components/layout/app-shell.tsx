@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { routes } from '@/screens/console-routes'
 import { Sidebar } from './sidebar'
-import { Breadcrumb } from './breadcrumb'
+import { Breadcrumb } from '../breadcrumb'
 import { Cast, Drama, FileText, LayoutGrid, Package, PanelLeft, PanelLeftClose, Search } from 'lucide-react'
 import { TopBar } from './topbar'
 import { useLocation, useNavigate } from 'react-router-dom'
