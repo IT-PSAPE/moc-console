@@ -3,23 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/utils/cn'
 import type { ReactNode } from 'react'
 
-const segmentLabelMap: Record<string, string> = {
-    'dashboard': 'Dashboard',
-    'search': 'Search',
-    'requests': 'Requests',
-    'all-requests': 'All Requests',
-    'archived': 'Archived',
-    'reports': 'Reports',
-    'equipment': 'Equipment',
-    'inventory': 'Inventory',
-    'bookings': 'Bookings',
-    'maintenance': 'Maintenance',
-    'broadcast': 'Broadcast',
-    'media': 'Media',
-    'cue-sheet': 'Cue Sheet',
-    'event': 'Event',
-}
-
 function formatSegment(segment: string): string {
     return segment
         .split('-')
@@ -36,8 +19,7 @@ function deriveBreadcrumbs(pathname: string): Array<{ label: string; path: strin
     let currentPath = ''
     for (const segment of segments) {
         currentPath += `/${segment}`
-        const label = segmentLabelMap[segment] ?? formatSegment(segment)
-        crumbs.push({ label, path: currentPath })
+        crumbs.push({ label: formatSegment(segment), path: currentPath })
     }
 
     return crumbs

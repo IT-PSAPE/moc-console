@@ -5,7 +5,7 @@ import { Breadcrumb } from '../breadcrumb'
 import { Cast, Drama, FileText, LayoutGrid, Package, PanelLeft, PanelLeftClose, Search } from 'lucide-react'
 import { TopBar } from './topbar'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { SidebarProvider, useSidebar } from './sidebar.context'
+import { SidebarProvider, useSidebar } from './sidebar'
 import { Divider } from '../divider'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 
