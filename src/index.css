@@ -760,6 +760,8 @@ select:focus-visible {
         --color-utility-green-700: var(--color-green-300);
 
     }
+
+  
 }
 
 .scrollbar-hidden {
@@ -771,4 +773,36 @@ select:focus-visible {
 /* Chrome, Safari, and Opera */
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;
+}
+
+@theme {
+  --spacing: 0.25rem;
+  --spacing-header: 3rem;
+  --spacing-sidebar: 16rem;
+  --spacing-sidebar-collapsed: 3.5rem;
+}
+
+@utility app-grid {
+  display: grid;
+  grid-template-areas: "topbar" "content";
+  grid-template-columns: 1fr;
+  grid-template-rows: var(--spacing-header) 1fr;
+  height: 100dvh;
+}
+
+@utility app-grid-desktop {
+  grid-template-areas: "sidebar topbar" "sidebar content";
+  grid-template-columns: auto 1fr;
+}
+
+@utility area-sidebar {
+  grid-area: sidebar;
+}
+
+@utility area-topbar {
+  grid-area: topbar;
+}
+
+@utility area-content {
+  grid-area: content;
 }

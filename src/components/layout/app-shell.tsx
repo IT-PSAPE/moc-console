@@ -1,148 +1,156 @@
-import type { ReactNode } from 'react'
-import { consoleRoutes } from '@/screens/console-routes'
+import { useEffect, type ReactNode } from 'react'
+import { routes } from '@/screens/console-routes'
 import { Sidebar } from './sidebar'
-import { Cast, Drama, FileText, LayoutGrid, Package, Search } from 'lucide-react'
+import { Breadcrumb } from './breadcrumb'
+import { Cast, Drama, FileText, LayoutGrid, Package, PanelLeft, PanelLeftClose, Search } from 'lucide-react'
 import { TopBar } from './topbar'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { SidebarProvider, useSidebar } from './sidebar.context'
+import { Divider } from '../divider'
+import { useIsMobile } from '@/hooks/use-is-mobile'
 
 type AppShellProps = {
     children: ReactNode
 }
 
 export function AppShell({ children }: AppShellProps) {
+    return (
+        <SidebarProvider>
+            <AppShellInner>{children}</AppShellInner>
+        </SidebarProvider>
+    )
+}
+
+function SidebarToggleButton() {
+    const { state, actions } = useSidebar()
+    const isMobile = useIsMobile()
+
+    function handleClick() {
+        if (isMobile) {
+            actions.setMobileOpen(!state.isMobileOpen)
+        } else {
+            actions.toggleCollapsed()
+        }
+    }
+
+    const Icon = isMobile
+        ? (state.isMobileOpen ? PanelLeftClose : PanelLeft)
+        : (state.isCollapsed ? PanelLeft : PanelLeftClose)
+
+    const label = isMobile
+        ? (state.isMobileOpen ? 'Close sidebar' : 'Open sidebar')
+        : (state.isCollapsed ? 'Expand sidebar' : 'Collapse sidebar')
+
+    return (
+        <button
+            type="button"
+            onClick={handleClick}
+            className="size-8 flex items-center justify-center rounded-md hover:bg-[var(--background-color-secondary_hover)] text-[var(--text-color-secondary)] cursor-pointer"
+            aria-label={label}
+        >
+            <Icon className="size-5" />
+        </button>
+    )
+}
+
+function AppShellInner({ children }: AppShellProps) {
+    const { state, actions } = useSidebar()
     const location = useLocation()
     const navigate = useNavigate()
     const { pathname } = location
+
+    // Close mobile sidebar on route change
+    useEffect(() => {
+        actions.closeMobile()
+    }, [pathname, actions])
 
     function navigateToRoute(route: string) {
         navigate(`/${route}`)
     }
 
-    function handleDashboardClick() {
-        navigateToRoute(consoleRoutes.dashboard)
-    }
-
-    function handleSearchClick() {
-        navigateToRoute(consoleRoutes.search)
-    }
-
-    function handleRequestsOverviewClick() {
-        navigateToRoute(consoleRoutes.requestsOverview)
-    }
-
-    function handleRequestsAllRequestsClick() {
-        navigateToRoute(consoleRoutes.requestsAllRequests)
-    }
-
-    function handleRequestsArchivedClick() {
-        navigateToRoute(consoleRoutes.requestsArchived)
-    }
-
-    function handleRequestsReportsClick() {
-        navigateToRoute(consoleRoutes.requestsReports)
-    }
-
-    function handleEquipmentOverviewClick() {
-        navigateToRoute(consoleRoutes.equipmentOverview)
-    }
-
-    function handleEquipmentInventoryClick() {
-        navigateToRoute(consoleRoutes.equipmentInventory)
-    }
-
-    function handleEquipmentBookingsClick() {
-        navigateToRoute(consoleRoutes.equipmentBookings)
-    }
-
-    function handleEquipmentMaintenanceClick() {
-        navigateToRoute(consoleRoutes.equipmentMaintenance)
-    }
-
-    function handleEquipmentReportsClick() {
-        navigateToRoute(consoleRoutes.equipmentReports)
-    }
-
-    function handleBroadcastOverviewClick() {
-        navigateToRoute(consoleRoutes.broadcastOverview)
-    }
-
-    function handleBroadcastMediaClick() {
-        navigateToRoute(consoleRoutes.broadcastMedia)
-    }
-
-    function handleBroadcastBroadcastClick() {
-        navigateToRoute(consoleRoutes.broadcastBroadcast)
-    }
-
-    function handleCueSheetOverviewClick() {
-        navigateToRoute(consoleRoutes.cueSheetOverview)
-    }
-
-    function handleCueSheetEventClick() {
-        navigateToRoute(consoleRoutes.cueSheetEvent)
+    function isActive(route: string) {
+        return pathname === `/${route}`
     }
 
     return (
-        <div className="flex h-screen flex-col bg-[var(--background-color-primary)] text-[var(--text-color-primary)] md:grid md:grid-cols-[21.25rem_minmax(0,1fr)]">
-            <Sidebar.Panel className="h-full min-h-0">
-                <Sidebar.Header className="px-3 py-2">
-                    <div className="size-8 shrink-0 rounded-lg bg-brand_solid" />
-                    <div className="flex flex-col">
-                        <span className="text-label-sm">MOC Console</span>
-                        <span className="text-paragraph-xs text-tertiary">Admin Platform</span>
-                    </div>
+        <div className="app-grid md:app-grid-desktop bg-primary text-primary">
+            <Sidebar.Panel>
+                <Sidebar.Header>
+                    <div className="size-9 shrink-0 rounded-lg bg-brand_solid" />
+                    {!state.isCollapsed && (
+                        <div className="flex flex-col">
+                            <span className="text-label-sm truncate leading-none">MOC Console</span>
+                            <span className="text-paragraph-xs text-quaternary truncate leading-none">Admin Platform</span>
+                        </div>
+                    )}
                 </Sidebar.Header>
 
-                <Sidebar.Content className="gap-2 px-0 py-4">
-                    <Sidebar.Group className="w-full border-b border-[var(--border-color-secondary)] px-2 pb-4">
-                        <Sidebar.GroupContent className="w-full gap-1 px-2">
-                            <Sidebar.MenuItem title={"Dashboard"} icon={<LayoutGrid />} active={pathname === `/${consoleRoutes.dashboard}`} onClick={handleDashboardClick} />
-                            <Sidebar.MenuItem title={"Search"} icon={<Search />} active={pathname === `/${consoleRoutes.search}`} onClick={handleSearchClick} />
+                <Sidebar.Content>
+                    <Sidebar.Group>
+                        <Sidebar.GroupContent>
+                            <Sidebar.MenuItem title={"Dashboard"} icon={<LayoutGrid />} active={isActive(routes.dashboard)} onClick={() => navigateToRoute(routes.dashboard)} />
+                            <Sidebar.MenuItem title={"Search"} icon={<Search />} active={isActive(routes.search)} onClick={() => navigateToRoute(routes.search)} />
                         </Sidebar.GroupContent>
                     </Sidebar.Group>
 
-                    <Sidebar.Group className="w-full px-2">
-                        <Sidebar.GroupContent className="w-full gap-2 px-2">
+                    <Divider className='px-2' />
+
+                    <Sidebar.Group>
+                        <Sidebar.GroupContent>
                             <Sidebar.MenuItem title={"Requests"} icon={<FileText />}>
-                                <Sidebar.MenuItem title={"Overview"} active={pathname === `/${consoleRoutes.requestsOverview}`} onClick={handleRequestsOverviewClick} />
-                                <Sidebar.MenuItem title={"All requests"} active={pathname === `/${consoleRoutes.requestsAllRequests}`} onClick={handleRequestsAllRequestsClick} />
-                                <Sidebar.MenuItem title={"Archived"} active={pathname === `/${consoleRoutes.requestsArchived}`} onClick={handleRequestsArchivedClick} />
-                                <Sidebar.MenuItem title={"Reports"} active={pathname === `/${consoleRoutes.requestsReports}`} onClick={handleRequestsReportsClick} />
+                                <Sidebar.MenuItem title={"Overview"} active={isActive(routes.requestsOverview)} onClick={() => navigateToRoute(routes.requestsOverview)} />
+                                <Sidebar.MenuItem title={"All requests"} active={isActive(routes.requestsAllRequests)} onClick={() => navigateToRoute(routes.requestsAllRequests)} />
+                                <Sidebar.MenuItem title={"Archived"} active={isActive(routes.requestsArchived)} onClick={() => navigateToRoute(routes.requestsArchived)} />
+                                <Sidebar.MenuItem title={"Reports"} active={isActive(routes.requestsReports)} onClick={() => navigateToRoute(routes.requestsReports)} />
                             </Sidebar.MenuItem>
                             <Sidebar.MenuItem title={"Equipment"} icon={<Package />}>
-                                <Sidebar.MenuItem title={"Overview"} active={pathname === `/${consoleRoutes.equipmentOverview}`} onClick={handleEquipmentOverviewClick} />
-                                <Sidebar.MenuItem title={"Inventory"} active={pathname === `/${consoleRoutes.equipmentInventory}`} onClick={handleEquipmentInventoryClick} />
-                                <Sidebar.MenuItem title={"Bookings"} active={pathname === `/${consoleRoutes.equipmentBookings}`} onClick={handleEquipmentBookingsClick} />
-                                <Sidebar.MenuItem title={"Maintenance"} active={pathname === `/${consoleRoutes.equipmentMaintenance}`} onClick={handleEquipmentMaintenanceClick} />
-                                <Sidebar.MenuItem title={"Reports"} active={pathname === `/${consoleRoutes.equipmentReports}`} onClick={handleEquipmentReportsClick} />
+                                <Sidebar.MenuItem title={"Overview"} active={isActive(routes.equipmentOverview)} onClick={() => navigateToRoute(routes.equipmentOverview)} />
+                                <Sidebar.MenuItem title={"Inventory"} active={isActive(routes.equipmentInventory)} onClick={() => navigateToRoute(routes.equipmentInventory)} />
+                                <Sidebar.MenuItem title={"Bookings"} active={isActive(routes.equipmentBookings)} onClick={() => navigateToRoute(routes.equipmentBookings)} />
+                                <Sidebar.MenuItem title={"Maintenance"} active={isActive(routes.equipmentMaintenance)} onClick={() => navigateToRoute(routes.equipmentMaintenance)} />
+                                <Sidebar.MenuItem title={"Reports"} active={isActive(routes.equipmentReports)} onClick={() => navigateToRoute(routes.equipmentReports)} />
                             </Sidebar.MenuItem>
                             <Sidebar.MenuItem title={"Broadcast"} icon={<Cast />}>
-                                <Sidebar.MenuItem title={"Overview"} active={pathname === `/${consoleRoutes.broadcastOverview}`} onClick={handleBroadcastOverviewClick} />
-                                <Sidebar.MenuItem title={"Media"} active={pathname === `/${consoleRoutes.broadcastMedia}`} onClick={handleBroadcastMediaClick} />
-                                <Sidebar.MenuItem title={"Broadcast"} active={pathname === `/${consoleRoutes.broadcastBroadcast}`} onClick={handleBroadcastBroadcastClick} />
+                                <Sidebar.MenuItem title={"Overview"} active={isActive(routes.broadcastOverview)} onClick={() => navigateToRoute(routes.broadcastOverview)} />
+                                <Sidebar.MenuItem title={"Media"} active={isActive(routes.broadcastMedia)} onClick={() => navigateToRoute(routes.broadcastMedia)} />
+                                <Sidebar.MenuItem title={"Broadcast"} active={isActive(routes.broadcastBroadcast)} onClick={() => navigateToRoute(routes.broadcastBroadcast)} />
                             </Sidebar.MenuItem>
                             <Sidebar.MenuItem title={"Cue Sheet"} icon={<Drama />}>
-                                <Sidebar.MenuItem title={"Overview"} active={pathname === `/${consoleRoutes.cueSheetOverview}`} onClick={handleCueSheetOverviewClick} />
-                                <Sidebar.MenuItem title={"Event"} active={pathname === `/${consoleRoutes.cueSheetEvent}`} onClick={handleCueSheetEventClick} />
+                                <Sidebar.MenuItem title={"Overview"} active={isActive(routes.cueSheetOverview)} onClick={() => navigateToRoute(routes.cueSheetOverview)} />
+                                <Sidebar.MenuItem title={"Event"} active={isActive(routes.cueSheetEvent)} onClick={() => navigateToRoute(routes.cueSheetEvent)} />
                             </Sidebar.MenuItem>
                         </Sidebar.GroupContent>
                     </Sidebar.Group>
                 </Sidebar.Content>
 
-                <Sidebar.Footer className="px-4 py-3">
-                    <div className="size-8 shrink-0 rounded-lg bg-brand_solid" />
-                    <div className="flex flex-col">
-                        <span className="text-label-sm">MoC Member</span>
-                        <span className="text-paragraph-xs text-tertiary">Super Admin</span>
-                    </div>
+                <Sidebar.Footer>
+                    <div className="size-9 shrink-0 rounded-lg bg-brand_solid" />
+                    {!state.isCollapsed && (
+                        <div className="flex flex-col">
+                            <span className="text-label-sm truncate leading-none">MoC Member</span>
+                            <span className="text-paragraph-xs text-quaternary truncate leading-none">Super Admin</span>
+                        </div>
+                    )}
                 </Sidebar.Footer>
             </Sidebar.Panel>
-            <div className="flex min-h-0 flex-1 flex-col md:h-screen">
-                <TopBar />
-                <main className="min-h-0 flex-1 overflow-y-auto bg-[var(--background-color-primary)]">
-                    {children}
-                </main>
-            </div>
+
+            {/* Mobile backdrop overlay */}
+            {state.isMobileOpen && (
+                <div
+                    className="fixed inset-0 z-40 bg-black/50 md:hidden"
+                    onClick={actions.closeMobile}
+                    aria-hidden="true"
+                />
+            )}
+
+            <TopBar>
+                <SidebarToggleButton />
+                <Breadcrumb.Root />
+            </TopBar>
+
+            <main className="area-content min-h-0 overflow-y-auto bg-[var(--background-color-primary)]">
+                {children}
+            </main>
         </div>
     )
 }

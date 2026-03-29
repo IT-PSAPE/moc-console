@@ -1,20 +1,18 @@
-export const consoleRoutes = {
+export const routes = {
     dashboard: 'dashboard',
     search: 'search',
-    requestsOverview: 'requests/overview',
+    requestsOverview: 'requests',
     requestsAllRequests: 'requests/all-requests',
     requestsArchived: 'requests/archived',
     requestsReports: 'requests/reports',
-    equipmentOverview: 'equipment/overview',
+    equipmentOverview: 'equipment',
     equipmentInventory: 'equipment/inventory',
     equipmentBookings: 'equipment/bookings',
     equipmentMaintenance: 'equipment/maintenance',
     equipmentReports: 'equipment/reports',
-    broadcastOverview: 'broadcast/overview',
+    broadcastOverview: 'broadcast',
     broadcastMedia: 'broadcast/media',
     broadcastBroadcast: 'broadcast/broadcast',
-    cueSheetOverview: 'cue-sheet/overview',
+    cueSheetOverview: 'cue-sheet',
     cueSheetEvent: 'cue-sheet/event',
 } as const
-
-export const defaultConsoleRoute = `/${consoleRoutes.dashboard}`

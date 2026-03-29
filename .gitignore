@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+output
+build
 *.local
 
 # Editor directories and files
@@ -17,6 +19,8 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+.playwright-cli
+.claude
 *.suo
 *.ntvs*
 *.njsproj
