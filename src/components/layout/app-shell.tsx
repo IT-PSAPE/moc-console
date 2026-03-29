@@ -2,12 +2,11 @@ import { useEffect, type ReactNode } from 'react'
 import { routes } from '@/screens/console-routes'
 import { Sidebar } from './sidebar'
 import { Breadcrumb } from '../breadcrumb'
-import { Cast, Drama, FileText, LayoutGrid, Package, PanelLeft, PanelLeftClose, Search } from 'lucide-react'
+import { Cast, Drama, FileText, LayoutGrid, Package, Search } from 'lucide-react'
 import { TopBar } from './topbar'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { SidebarProvider, useSidebar } from './sidebar'
 import { Divider } from '../divider'
-import { useIsMobile } from '@/hooks/use-is-mobile'
 
 type AppShellProps = {
     children: ReactNode
@@ -21,43 +20,11 @@ export function AppShell({ children }: AppShellProps) {
     )
 }
 
-function SidebarToggleButton() {
-    const { state, actions } = useSidebar()
-    const isMobile = useIsMobile()
-
-    function handleClick() {
-        if (isMobile) {
-            actions.setMobileOpen(!state.isMobileOpen)
-        } else {
-            actions.toggleCollapsed()
-        }
-    }
-
-    const Icon = isMobile
-        ? (state.isMobileOpen ? PanelLeftClose : PanelLeft)
-        : (state.isCollapsed ? PanelLeft : PanelLeftClose)
-
-    const label = isMobile
-        ? (state.isMobileOpen ? 'Close sidebar' : 'Open sidebar')
-        : (state.isCollapsed ? 'Expand sidebar' : 'Collapse sidebar')
-
-    return (
-        <button
-            type="button"
-            onClick={handleClick}
-            className="size-8 flex items-center justify-center rounded-md hover:bg-[var(--background-color-secondary_hover)] text-[var(--text-color-secondary)] cursor-pointer"
-            aria-label={label}
-        >
-            <Icon className="size-5" />
-        </button>
-    )
-}
-
 function AppShellInner({ children }: AppShellProps) {
-    const { state, actions } = useSidebar()
-    const location = useLocation()
     const navigate = useNavigate()
-    const { pathname } = location
+    const { pathname } = useLocation()
+
+    const { state, actions } = useSidebar()
 
     // Close mobile sidebar on route change
     useEffect(() => {
@@ -144,7 +111,6 @@ function AppShellInner({ children }: AppShellProps) {
             )}
 
             <TopBar>
-                <SidebarToggleButton />
                 <Breadcrumb.Root />
             </TopBar>
 

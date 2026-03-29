@@ -1,4 +1,4 @@
-import { ChevronRight, Home } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/utils/cn'
 import type { ReactNode } from 'react'
@@ -35,28 +35,22 @@ type BreadcrumbItemProps = {
 function BreadcrumbItem({ label, isLast, onClick, icon }: BreadcrumbItemProps) {
     if (isLast) {
         return (
-            <span className="text-paragraph-sm text-[var(--text-color-primary)] font-medium flex items-center gap-1">
-                {icon}
-                {label}
+            <span className="text-paragraph-sm text-primary font-medium flex items-center gap-1">
+                {icon} {label}
             </span>
         )
     }
 
     return (
-        <button
-            type="button"
-            onClick={onClick}
-            className="text-paragraph-sm text-[var(--text-color-tertiary)] hover:text-[var(--text-color-secondary)] cursor-pointer flex items-center gap-1"
-        >
-            {icon}
-            {label}
+        <button type="button" onClick={onClick} className="text-paragraph-sm text-tertiary hover:text-secondary cursor-pointer flex items-center gap-1" >
+            {icon} {label}
         </button>
     )
 }
 
 function BreadcrumbSeparator() {
     return (
-        <ChevronRight className="size-3.5 text-[var(--text-color-tertiary)]" aria-hidden="true" />
+        <ChevronRight className="size-4 text-placeholder" aria-hidden="true" />
     )
 }
 
@@ -73,12 +67,7 @@ function BreadcrumbRoot({ className }: { className?: string }) {
                     return (
                         <li key={crumb.path} className="flex items-center gap-1">
                             {index > 0 && <BreadcrumbSeparator />}
-                            <BreadcrumbItem
-                                label={crumb.label}
-                                isLast={isLast}
-                                onClick={() => navigate(crumb.path)}
-                                icon={index === 0 ? <Home className="size-4" /> : undefined}
-                            />
+                            <BreadcrumbItem label={crumb.label} isLast={isLast} onClick={() => navigate(crumb.path)} />
                         </li>
                     )
                 })}

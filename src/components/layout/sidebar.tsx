@@ -83,14 +83,14 @@ const nestedSidebarMenuLevelContextValue: SidebarMenuLevelContextValue = {
     meta: {},
 }
 
-const sidebarMenuItemClasses = cv({
+const menuItemVarients = cv({
     base: [
         'py-1 rounded-md inline-flex justify-start items-center gap-2 overflow-hidden w-full ',
     ],
     variants: {
         state: {
-            active: ['bg-brand_primary text-brand_secondary'],
-            inactive: ['bg-transparent text-color-secondary'],
+            active: ['bg-brand_primary text-brand_secondary hover:bg-brand_secondary'],
+            inactive: ['bg-transparent text-color-secondary hover:bg-secondary'],
         },
     },
     defaultVariants: {
@@ -201,7 +201,6 @@ function SidebarMenuItem({ title, children, icon, active = false, onClick }: Sid
     const hasChildren = menuChildren.length > 0
     const itemState = active ? 'active' : 'inactive'
     const isCollapsed = sidebarState.isCollapsed
-    const showChildren = hasChildren && isOpen && !isCollapsed
 
     function handleToggle() {
         if (!hasChildren) {
@@ -215,38 +214,42 @@ function SidebarMenuItem({ title, children, icon, active = false, onClick }: Sid
     const cursorClassName = handleClick ? 'cursor-pointer' : 'cursor-default'
 
     return (
-        <div className="w-full">
-            <button
-                type="button"
-                className={cn(sidebarMenuItemClasses({ state: itemState }), cursorClassName)}
-                onClick={handleClick}
-                aria-expanded={hasChildren ? isOpen : undefined}
-                title={isCollapsed ? title : undefined}
-            >
+        <div className={isCollapsed ? "w-fit" : "w-full"}>
+            <button type="button" className={cn(menuItemVarients({ state: itemState }), cursorClassName)} onClick={handleClick} aria-expanded={hasChildren ? isOpen : undefined} title={isCollapsed ? title : undefined} > 
                 <div className={cn("flex-1 px-1 flex justify-start items-center gap-1.5", isCollapsed && "justify-center px-0")}>
                     <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
                         {levelState.isChild ? null : icon}
                     </div>
                     {!isCollapsed && (
-                        <>
-                            <span className={"flex-1 justify-start text-sm text-left whitespace-nowrap"}>{title}</span>
-                            {hasChildren ? (
-                                <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
-                                    <ChevronRight className={cn('size-4 transition-transform', isOpen ? 'rotate-90' : 'rotate-0')} aria-hidden="true" />
-                                </div>
-                            ) : null}
-                        </>
+                        <span className={"flex-1 justify-start text-sm text-left whitespace-nowrap"}>{title}</span>
+                    )}
+                    {(!isCollapsed && hasChildren) && (
+                        <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
+                            <ChevronRight className={cn('size-4 transition-transform', isOpen ? 'rotate-90' : 'rotate-0')} aria-hidden="true" />
+                        </div>
                     )}
                 </div>
             </button>
-            {showChildren ? (
-                <SidebarMenuLevelContext.Provider value={nestedSidebarMenuLevelContextValue}>
-                    <div className="flex flex-col justify-start items-start gap-0.5 pt-0.5 w-full">
-                        {menuChildren}
-                    </div>
-                </SidebarMenuLevelContext.Provider>
-            ) : null}
+            <SidebarMenuItemChildren expanded={isOpen}>
+                {menuChildren}
+            </SidebarMenuItemChildren>
         </div>
+    )
+}
+
+function SidebarMenuItemChildren({ children, expanded }: HTMLAttributes<HTMLDivElement> & { expanded?: boolean }) {
+    const { state } = useSidebar()
+
+    const showChildren = (Children.toArray(children).length > 0) && expanded && !state.isCollapsed
+
+    if (!showChildren) return null;
+
+    return (
+        <SidebarMenuLevelContext.Provider value={nestedSidebarMenuLevelContextValue}>
+            <div className="flex flex-col justify-start items-start gap-0.5 pt-0.5 w-full">
+                {children}
+            </div>
+        </SidebarMenuLevelContext.Provider>
     )
 }
 
