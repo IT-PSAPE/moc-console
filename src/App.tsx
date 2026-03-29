@@ -1,3 +1,6 @@
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import { routes } from './screens/console-routes'
+import { AppShell } from './components/layout/app-shell'
 import { BroadcastMediaScreen } from '@/screens/broadcast/media/page'
 import { BroadcastOverviewScreen } from '@/screens/broadcast/page'
 import { BroadcastScreen } from '@/screens/broadcast/broadcast/page'
@@ -14,9 +17,7 @@ import { RequestsArchivedScreen } from '@/screens/requests/archived/page'
 import { RequestsOverviewScreen } from '@/screens/requests/page'
 import { RequestsReportsScreen } from '@/screens/requests/reports/page'
 import { SearchScreen } from '@/screens/search/page'
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
-import { AppShell } from './components/layout/app-shell'
-import { routes } from './screens/console-routes'
+import { CueSheetChecklistScreen } from './screens/cue-sheet/checklist/page'
 
 function App() {
     return (
@@ -40,6 +41,7 @@ function App() {
                     <Route path={routes.broadcastBroadcast} element={<BroadcastScreen />} />
                     <Route path={routes.cueSheetOverview} element={<CueSheetOverviewScreen />} />
                     <Route path={routes.cueSheetEvent} element={<CueSheetEventScreen />} />
+                    <Route path={routes.cueSheetChecklist} element={<CueSheetChecklistScreen />} />
                 </Route>
                 <Route path="*" element={<Navigate to={`/${routes.dashboard}`} replace />} />
             </Routes>

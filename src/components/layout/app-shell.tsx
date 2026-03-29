@@ -84,6 +84,7 @@ function AppShellInner({ children }: AppShellProps) {
                             </Sidebar.MenuItem>
                             <Sidebar.MenuItem title={"Cue Sheet"} icon={<Drama />}>
                                 <Sidebar.MenuItem title={"Overview"} active={isActive(routes.cueSheetOverview)} onClick={() => navigateToRoute(routes.cueSheetOverview)} />
+                                <Sidebar.MenuItem title={"Checklist"} active={isActive(routes.cueSheetChecklist)} onClick={() => navigateToRoute(routes.cueSheetChecklist)} />
                                 <Sidebar.MenuItem title={"Event"} active={isActive(routes.cueSheetEvent)} onClick={() => navigateToRoute(routes.cueSheetEvent)} />
                             </Sidebar.MenuItem>
                         </Sidebar.GroupContent>
