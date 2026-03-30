@@ -2,6 +2,7 @@ import { ChevronRight } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { cv } from '@/utils/cv'
 import { Children, createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type MouseEventHandler, type ReactNode } from 'react'
+import { Label } from '../text'
 
 // ─── Context ─────────────────────────────────────────────
 
@@ -221,7 +222,9 @@ function SidebarMenuItem({ title, children, icon, active = false, onClick }: Sid
                         {levelState.isChild ? null : icon}
                     </div>
                     {!isCollapsed && (
-                        <span className={"flex-1 justify-start text-sm text-left whitespace-nowrap"}>{title}</span>
+                        <Label.sm className={cn("flex-1 text-left whitespace-nowrap text-inherit", levelState.isChild && "!font-normal", (!active && levelState.isChild) && "!text-quaternary")}>
+                            {title}
+                        </Label.sm>
                     )}
                     {(!isCollapsed && hasChildren) && (
                         <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
