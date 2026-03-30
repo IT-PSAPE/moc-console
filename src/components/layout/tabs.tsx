@@ -38,9 +38,8 @@ function TabsTab({children, className, value}: HTMLAttributes<HTMLDivElement> & 
         setValue(value);
     }
 
-
     return (
-        <div className={cn('py-2 border-b-2 cursor-pointer', current ? 'border-brand' : 'border-transparent', className)} onClick={handleClick}>
+        <div className={cn('py-1.5 border-b-2 cursor-pointer', current ? 'border-brand' : 'border-transparent', className)} onClick={handleClick}>
             {children}
         </div>
     )

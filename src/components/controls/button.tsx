@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/utils/cn";
 import { cv } from "@/utils/cv";
-import { Label } from "../text";
+import { Label } from "../display/text";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 

@@ -1,12 +1,14 @@
-import { Card } from '@/components/card'
+import { Card } from '@/components/display/card'
 import { Button } from '@/components/controls/button'
+import { Divider } from '@/components/display/divider'
 import { Checkbox } from '@/components/form/checkbox'
+import { FormLabel } from '@/components/form/form-label'
 import { Input } from '@/components/form/input'
-import { Header } from '@/components/header'
-import { Modal } from '@/components/modal'
+import { Header } from '@/components/display/header'
+import { Modal } from '@/components/overlays/modal'
 import { RequestItem } from '@/components/request-item'
-import { Tabs } from '@/components/tabs'
-import { Label, Paragraph, TextBlock, Title } from '@/components/text'
+import { Tabs } from '@/components/layout/tabs'
+import { Label, Paragraph, TextBlock, Title } from '@/components/display/text'
 import { Dot, Search, Settings2, X } from 'lucide-react'
 
 
@@ -116,51 +118,63 @@ function FilterModal() {
                             <Label.md>Filter</Label.md>
                             <Paragraph.xs>Description</Paragraph.xs>
                         </div>
-                        <Modal.Close>
-                            <Button variant='secondary' icon={<X />} iconOnly />
+                        <Modal.Close>Overlays
+                            <Button variant='ghost' icon={<X />} iconOnly />
                         </Modal.Close>
                     </Modal.Header>
 
                     <Modal.Content>
                         <Tabs.Root defaultTab={'filters'}>
                             <Tabs.List>
-                                <Tabs.Tab value="filters">Filters</Tabs.Tab>
-                                <Tabs.Tab value="sort">Sort</Tabs.Tab>
+                                <Tabs.Tab value="filters">
+                                    <Label.sm>Filters</Label.sm>
+                                </Tabs.Tab>
+                                <Tabs.Tab value="sort">
+                                    <Label.sm>Sort</Label.sm>
+                                </Tabs.Tab>
                             </Tabs.List>
                             <Tabs.Panels>
                                 <Tabs.Panel value='filters'>
                                     <div className="py-2">
-                                        <Paragraph.md className='px-4 py-1.5 text-quaternary'>Type</Paragraph.md>
-                                        <div className='grid grid-cols-2 gap-2 px-4 ' >
-                                            <Checkbox>Video Filming & Production</Checkbox>
-                                            <Checkbox>Design Flyer</Checkbox>
-                                            <Checkbox>Video Filming</Checkbox>
-                                            <Checkbox>Design Special</Checkbox>
-                                            <Checkbox>Event</Checkbox>
-                                            <Checkbox>Video Editing</Checkbox>
-                                            <Checkbox>Equipment</Checkbox>
+                                        <Paragraph.sm className='px-3 py-1.5 text-quaternary'>Type</Paragraph.sm>
+                                        <div className='grid grid-cols-2 gap-2 px-3 ' >
+                                            <Checkbox><FormLabel label="Video Filming & Production" /></Checkbox>
+                                            <Checkbox><FormLabel label="Design Flyer" /></Checkbox>
+                                            <Checkbox><FormLabel label="Video Filming" /></Checkbox>
+                                            <Checkbox><FormLabel label="Design Special" /></Checkbox>
+                                            <Checkbox><FormLabel label="Event" /></Checkbox>
+                                            <Checkbox><FormLabel label="Video Editing" /></Checkbox>
+                                            <Checkbox><FormLabel label="Equipment" /></Checkbox>
                                         </div>
                                     </div>
+                                    <Divider className="px-4" />
                                     <div className="py-2">
-                                        <Paragraph.md className='px-4 py-1.5 text-quaternary'>Priority</Paragraph.md>
-                                        <div className='grid grid-cols-2 gap-2 px-4 ' >
-                                            <Checkbox>Low</Checkbox>
-                                            <Checkbox>Medium</Checkbox>
-                                            <Checkbox>High</Checkbox>
-                                            <Checkbox>Urgent</Checkbox>
+                                        <Paragraph.sm className='px-3 py-1.5 text-quaternary'>Priority</Paragraph.sm>
+                                        <div className='grid grid-cols-2 gap-2 px-3 ' >
+                                            <Checkbox><FormLabel label="Low" /></Checkbox>
+                                            <Checkbox><FormLabel label="Medium" /></Checkbox>
+                                            <Checkbox><FormLabel label="High" /></Checkbox>
+                                            <Checkbox><FormLabel label="Urgent" /></Checkbox>
                                         </div>
                                     </div>
+                                    <Divider className="px-4" />
                                     <div className="py-2">
-                                        <Paragraph.md className='px-4 py-1.5 text-quaternary'>Timeline</Paragraph.md>
-                                        <div className='flex flex-col gap-2 px-4' >
-                                            <Input placeholder='Start Date' />
-                                            <Input placeholder='End Date' />
+                                        <Paragraph.sm className='px-3 py-1.5 text-quaternary'>Timeline</Paragraph.sm>
+                                        <div className='flex gap-2 px-3' >
+                                            <label className='space-y-1 *:odd:ml-1'>
+                                                <FormLabel label="Start Date" />
+                                                <Input placeholder='Start Date' />
+                                            </label>
+                                            <label className='space-y-1 *:odd:ml-1'>
+                                                <FormLabel label="End Date" />
+                                                <Input placeholder='End Date' />
+                                            </label>
                                         </div>
                                     </div>
                                 </Tabs.Panel>
                                 <Tabs.Panel value='sort'>
                                     <div className="py-2">
-                                        <Paragraph.md className='px-4 py-1.5 text-quaternary'>Sort</Paragraph.md>
+                                        <Paragraph.sm className='px-4 py-1.5 text-quaternary'>Sort</Paragraph.sm>
                                     </div>
                                 </Tabs.Panel>
                             </Tabs.Panels>

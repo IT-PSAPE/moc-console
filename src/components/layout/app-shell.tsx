@@ -1,12 +1,12 @@
 import { useEffect, type ReactNode } from 'react'
 import { routes } from '@/screens/console-routes'
-import { Sidebar } from './sidebar'
-import { Breadcrumb } from '../breadcrumb'
+import { Sidebar } from '../navigation/sidebar'
+import { Breadcrumb } from '../navigation/breadcrumb'
 import { Cast, Drama, FileText, LayoutGrid, Package, Search } from 'lucide-react'
 import { TopBar } from './topbar'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { SidebarProvider, useSidebar } from './sidebar'
-import { Divider } from '../divider'
+import { SidebarProvider, useSidebar } from '../navigation/sidebar'
+import { Divider } from '../display/divider'
 
 type AppShellProps = {
     children: ReactNode

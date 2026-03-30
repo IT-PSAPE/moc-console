@@ -1,6 +1,6 @@
-import { Card } from '@/components/card'
-import { Header } from '@/components/header'
-import { Label, Paragraph, Title } from '@/components/text'
+import { Card } from '@/components/display/card'
+import { Header } from '@/components/display/header'
+import { Label, Paragraph, Title } from '@/components/display/text'
 import { Dot } from 'lucide-react'
 
 export function DashboardScreen() {
