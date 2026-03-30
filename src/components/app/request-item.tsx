@@ -1,5 +1,5 @@
 import { Dot } from "lucide-react";
-import { Label, Paragraph } from "./display/text";
+import { Label, Paragraph } from "../display/text";
 
 export function RequestItem() {
     return (
