@@ -205,14 +205,6 @@ function CommandMenuPanel({ children, className, ...props }: HTMLAttributes<HTML
     const panelRef = useRef<HTMLDivElement | null>(null)
     const { state, actions, meta } = useCommandMenu()
 
-    useEffect(() => {
-        if (!state.isOpen || !state.isTopmost) {
-            return
-        }
-
-        panelRef.current?.focus()
-    }, [state.isOpen, state.isTopmost])
-
     function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
         const itemCount = meta.itemIds.length
 

@@ -17,7 +17,7 @@ export function RequestsOverviewScreen() {
         <section>
             <Header.Root className='p-4 pt-8 mx-auto max-w-content'>
                 <Header.Lead className='gap-2'>
-                    <Title.h6>Dashboard</Title.h6>
+                    <Title.h6>Requests</Title.h6>
                     <Paragraph.sm className="text-tertiary max-w-2xl">Welcome to the MOC Console dashboard. Here you can find an overview of all your activities and access various features.</Paragraph.sm>
                 </Header.Lead>
             </Header.Root>
@@ -118,7 +118,7 @@ function FilterModal() {
                             <Label.md>Filter</Label.md>
                             <Paragraph.xs>Description</Paragraph.xs>
                         </div>
-                        <Modal.Close>Overlays
+                        <Modal.Close>
                             <Button variant='ghost' icon={<X />} iconOnly />
                         </Modal.Close>
                     </Modal.Header>
