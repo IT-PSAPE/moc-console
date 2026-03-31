@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import { fetchRequests } from '@/data/fetch-requests'
 import type { Request } from '@/types/requests'
 import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
+import { useRequestFilters } from '@/features/requests/use-request-filters'
 
 
 export function RequestsOverviewScreen() {
@@ -20,11 +21,19 @@ export function RequestsOverviewScreen() {
         fetchRequests().then(setRequests);
     }, []);
 
+    const requestFilters = useRequestFilters(requests);
+    const { filtered, setSearch, filters: state } = requestFilters;
+
+    // Stats — always derived from the full unfiltered dataset
     const now = new Date();
-    const active = requests.filter((r) => r.status === 'in_progress' || r.status === 'not_started');
-    const upcoming = requests.filter((r) => r.status === 'not_started' && (!r.dueDate || new Date(r.dueDate) >= now));
-    const overdue = requests.filter((r) => r.status !== 'completed' && r.dueDate && new Date(r.dueDate) < now);
-    const completed = requests.filter((r) => r.status === 'completed');
+    const activeCount = requests.filter((r) => r.status === 'in_progress' || r.status === 'not_started').length;
+    const upcomingCount = requests.filter((r) => r.status !== 'archived' && r.status !== 'completed' && r.dueDate && new Date(r.dueDate) > now).length;
+    const overdueCount = requests.filter((r) => r.status !== 'archived' && r.status !== 'completed' && r.dueDate && new Date(r.dueDate) < now).length;
+    const completedCount = requests.filter((r) => r.status === 'completed').length;
+
+    // Dashboard lists — derived from filtered results
+    const overdue = filtered.filter((r) => r.status !== 'archived' && r.status !== 'completed' && r.dueDate && new Date(r.dueDate) < now);
+    const upcoming = filtered.filter((r) => r.status !== 'archived' && r.status !== 'completed' && r.dueDate && new Date(r.dueDate) > now);
 
     return (
         <section>
@@ -42,7 +51,7 @@ export function RequestsOverviewScreen() {
                         <Label.sm>Active Requests</Label.sm>
                     </Card.Header>
                     <Card.Content className='p-4'>
-                        <TextBlock className='title-h4'>{active.length}</TextBlock>
+                        <TextBlock className='title-h4'>{activeCount}</TextBlock>
                     </Card.Content>
                 </Card.Root>
                 <Card.Root>
@@ -51,7 +60,7 @@ export function RequestsOverviewScreen() {
                         <Label.sm>Upcoming Requests</Label.sm>
                     </Card.Header>
                     <Card.Content className='p-4'>
-                        <TextBlock className='title-h4'>{upcoming.length}</TextBlock>
+                        <TextBlock className='title-h4'>{upcomingCount}</TextBlock>
                     </Card.Content>
                 </Card.Root>
                 <Card.Root>
@@ -60,7 +69,7 @@ export function RequestsOverviewScreen() {
                         <Label.sm>Overdue Requests</Label.sm>
                     </Card.Header>
                     <Card.Content className='p-4'>
-                        <TextBlock className='title-h4'>{overdue.length}</TextBlock>
+                        <TextBlock className='title-h4'>{overdueCount}</TextBlock>
                     </Card.Content>
                 </Card.Root>
                 <Card.Root>
@@ -69,7 +78,7 @@ export function RequestsOverviewScreen() {
                         <Label.sm>Completed Requests</Label.sm>
                     </Card.Header>
                     <Card.Content className='p-4'>
-                        <TextBlock className='title-h4'>{completed.length}</TextBlock>
+                        <TextBlock className='title-h4'>{completedCount}</TextBlock>
                     </Card.Content>
                 </Card.Root>
             </div>
@@ -80,12 +89,12 @@ export function RequestsOverviewScreen() {
                         <Label.md>Dashboard</Label.md>
                     </Header.Lead>
                     <Header.Trail className='gap-2 flex-1 justify-end '>
-                        <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-sm' />
+                        <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-sm' value={state.search} onChange={(e) => setSearch(e.target.value)} />
                         <Drawer.Root>
                             <Drawer.Trigger>
                                 <Button icon={<Settings2 />} variant='secondary'>Filter</Button>
                             </Drawer.Trigger>
-                            <RequestFilterDrawer />
+                            <RequestFilterDrawer filters={requestFilters} />
                         </Drawer.Root>
                     </Header.Trail>
                 </Header.Root>

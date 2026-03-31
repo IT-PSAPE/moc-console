@@ -12,6 +12,7 @@ import { CalendarDays, Columns3, List, Search, Settings2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Drawer } from '@/components/overlays/drawer'
 import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
+import { useRequestFilters } from '@/features/requests/use-request-filters'
 
 export function RequestsAllRequestsScreen() {
     const [view, setView] = useState('list');
@@ -20,6 +21,9 @@ export function RequestsAllRequestsScreen() {
     useEffect(() => {
         fetchRequests().then(setRequests);
     }, []);
+
+    const requestFilters = useRequestFilters(requests);
+    const { filtered, setSearch, filters: state } = requestFilters;
 
     return (
         <section>
@@ -39,19 +43,19 @@ export function RequestsAllRequestsScreen() {
                     </SegmentedControl.Root>
                 </Header.Lead>
                 <Header.Trail className='gap-2 flex-1 justify-end '>
-                    <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-sm' />
+                    <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-sm' value={state.search} onChange={(e) => setSearch(e.target.value)} />
                     <Drawer.Root>
                         <Drawer.Trigger>
                             <Button icon={<Settings2 />} variant='secondary'>Filter</Button>
                         </Drawer.Trigger>
-                        <RequestFilterDrawer />
+                        <RequestFilterDrawer filters={requestFilters} />
                     </Drawer.Root>
                 </Header.Trail>
             </Header.Root>
 
-            {view === 'list' && <RequestLists requests={requests} />}
-            {view === 'kanban' && <RequestKanban requests={requests} />}
-            {view === 'calendar' && <RequestCalendar requests={requests} />}
+            {view === 'list' && <RequestLists requests={filtered} />}
+            {view === 'kanban' && <RequestKanban requests={filtered} />}
+            {view === 'calendar' && <RequestCalendar requests={filtered} />}
         </section>
     )
 }

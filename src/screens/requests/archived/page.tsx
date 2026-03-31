@@ -11,6 +11,7 @@ import { Search, Settings2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Drawer } from '@/components/overlays/drawer'
 import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
+import { useRequestFilters } from '@/features/requests/use-request-filters'
 
 export function RequestsArchivedScreen() {
     const [requests, setRequests] = useState<Request[]>([]);
@@ -18,6 +19,9 @@ export function RequestsArchivedScreen() {
     useEffect(() => {
         fetchArchivedRequests().then(setRequests);
     }, []);
+
+    const requestFilters = useRequestFilters(requests);
+    const { filtered, setSearch, filters: state } = requestFilters;
 
     return (
         <section>
@@ -36,17 +40,17 @@ export function RequestsArchivedScreen() {
                             <Label.sm>Archived Tasks</Label.sm>
                         </div>
                         <div className='flex items-center gap-1.5'>
-                            <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-sm' />
+                            <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-sm' value={state.search} onChange={(e) => setSearch(e.target.value)} />
                             <Drawer.Root>
                                 <Drawer.Trigger>
                                     <Button icon={<Settings2 />} variant='secondary'>Filter</Button>
                                 </Drawer.Trigger>
-                                <RequestFilterDrawer />
+                                <RequestFilterDrawer filters={requestFilters} />
                             </Drawer.Root>
                         </div>
                     </Card.Header>
                     <Card.Content ghost className='flex flex-col gap-1.5'>
-                        {requests.map((r) => (
+                        {filtered.map((r) => (
                             <RequestItem key={r.id} request={r} />
                         ))}
                     </Card.Content>
