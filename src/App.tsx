@@ -1,6 +1,6 @@
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { routes } from './screens/console-routes'
-import { AppShell } from './components/layout/app-shell'
+import { AppShell } from './components/app/app-shell'
 import { BroadcastMediaScreen } from '@/screens/broadcast/media/page'
 import { BroadcastOverviewScreen } from '@/screens/broadcast/page'
 import { BroadcastScreen } from '@/screens/broadcast/broadcast/page'
@@ -16,7 +16,6 @@ import { RequestsAllRequestsScreen } from '@/screens/requests/all-requests/page'
 import { RequestsArchivedScreen } from '@/screens/requests/archived/page'
 import { RequestsOverviewScreen } from '@/screens/requests/page'
 import { RequestsReportsScreen } from '@/screens/requests/reports/page'
-import { SearchScreen } from '@/screens/search/page'
 import { CueSheetChecklistScreen } from './screens/cue-sheet/checklist/page'
 
 function App() {
@@ -26,7 +25,6 @@ function App() {
                 <Route element={<AppShell><Outlet /></AppShell>}>
                     <Route index element={<Navigate to={`/${routes.dashboard}`} replace />} />
                     <Route path={routes.dashboard} element={<DashboardScreen />} />
-                    <Route path={routes.search} element={<SearchScreen />} />
                     <Route path={routes.requestsOverview} element={<RequestsOverviewScreen />} />
                     <Route path={routes.requestsAllRequests} element={<RequestsAllRequestsScreen />} />
                     <Route path={routes.requestsArchived} element={<RequestsArchivedScreen />} />

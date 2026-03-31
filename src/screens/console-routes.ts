@@ -1,6 +1,5 @@
 export const routes = {
     dashboard: 'dashboard',
-    search: 'search',
     requestsOverview: 'requests',
     requestsAllRequests: 'requests/all-requests',
     requestsArchived: 'requests/archived',

@@ -262,7 +262,7 @@ function CommandMenuInput({ className, ...props }: CommandMenuInputProps) {
     return (
         <input
             ref={inputRef}
-            className={cn('w-full border-b border-secondary bg-transparent px-4 py-3 text-sm text-primary outline-none placeholder:text-quaternary', className)}
+            className={cn('w-full border-b border-secondary bg-transparent px-4 py-3 text-sm text-primary outline-none placeholder:text-quaternary focus:!outline-none focus-visible:!outline-none ', className)}
             onChange={event => {
                 actions.setSearch(event.target.value)
                 actions.setActiveIndex(0)
