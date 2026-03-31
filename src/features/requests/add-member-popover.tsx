@@ -98,7 +98,7 @@ function AddMemberPanel({ existingAssigneeIds, onAdd }: Omit<AddMemberPopoverPro
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <Label.sm>{a.name} {a.surname}</Label.sm>
-                                    <Paragraph.xs className="text-tertiary">{a.role}</Paragraph.xs>
+
                                 </div>
                                 {alreadyAssigned && <Check className="size-4 text-brand_secondary shrink-0" />}
                             </button>
@@ -120,7 +120,7 @@ function AddMemberPanel({ existingAssigneeIds, onAdd }: Omit<AddMemberPopoverPro
                     </div>
                     <div>
                         <Label.sm>{selectedAssignee?.name} {selectedAssignee?.surname}</Label.sm>
-                        <Paragraph.xs className="text-tertiary">{selectedAssignee?.role}</Paragraph.xs>
+
                     </div>
                 </div>
             </div>

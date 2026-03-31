@@ -128,7 +128,7 @@ export function RequestAssigneeList({ assignees, className }: { assignees: Resol
                     <div key={a.id} className="flex items-center justify-between rounded-lg border border-secondary px-3 py-2">
                         <div>
                             <Label.sm>{a.name} {a.surname}</Label.sm>
-                            <Paragraph.xs className="text-tertiary">{a.role}</Paragraph.xs>
+
                         </div>
                         <Badge label={a.duty} variant="outline" />
                     </div>
