@@ -5,22 +5,8 @@ import { Drawer } from "../../components/overlays/drawer";
 import { cn } from "@/utils/cn";
 import { cv } from "@/utils/cv";
 import type { Request } from "@/types/requests";
+import { priorityColor, categoryLabel } from "@/types/requests";
 import { RequestDrawer } from "./request-drawer";
-
-const priorityColor = {
-    urgent: "red",
-    high: "yellow",
-    medium: "blue",
-    low: "gray",
-} as const;
-
-const categoryLabel = {
-    video_production: "Video Production",
-    video_shooting: "Video Shooting",
-    graphic_design: "Graphic Design",
-    event: "Event",
-    education: "Education",
-} as const;
 
 const itemVariants = cv({
     base: [

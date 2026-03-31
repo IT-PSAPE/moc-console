@@ -1,9 +1,34 @@
-import type { HTMLAttributes } from 'react'
+import { createContext, useCallback, useContext, useState, type HTMLAttributes, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useSidebar } from '../components/navigation/sidebar'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { PanelLeft, PanelLeftClose } from 'lucide-react'
 
+// ─── TopBar action slot (portal-based) ─────────────────
+
+type TopBarSlotContextValue = {
+    node: HTMLDivElement | null
+    setNode: (node: HTMLDivElement | null) => void
+}
+
+const TopBarSlotContext = createContext<TopBarSlotContextValue>({ node: null, setNode: () => { } })
+
+export function TopBarProvider({ children }: { children: ReactNode }) {
+    const [node, setNode] = useState<HTMLDivElement | null>(null)
+    return <TopBarSlotContext value={{ node, setNode }}>{children}</TopBarSlotContext>
+}
+
+export function TopBarActions({ children }: { children: ReactNode }) {
+    const { node } = useContext(TopBarSlotContext)
+    if (!node) return null
+    return createPortal(children, node)
+}
+
+// ─── TopBar ────────────────────────────────────────────
+
 export function TopBar({ children }: HTMLAttributes<HTMLDivElement>) {
+    const { setNode } = useContext(TopBarSlotContext)
+    const slotRef = useCallback((el: HTMLDivElement | null) => setNode(el), [setNode])
     const { state, actions } = useSidebar()
     const isMobile = useIsMobile()
 
@@ -34,6 +59,7 @@ export function TopBar({ children }: HTMLAttributes<HTMLDivElement>) {
                 <Icon className="size-5" />
             </button>
             {children}
+            <div ref={slotRef} className="ml-auto flex items-center gap-2" />
         </header>
     )
 }

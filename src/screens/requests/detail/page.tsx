@@ -7,27 +7,14 @@ import { Label, Paragraph, Title } from '@/components/display/text'
 import { fetchRequestById } from '@/data/fetch-requests'
 import { fetchAssigneesByRequestId, type ResolvedAssignee } from '@/data/fetch-assignees'
 import type { Request } from '@/types/requests'
-import {
-    Archive,
-    ArchiveRestore,
-    ArrowLeft,
-    EllipsisVertical,
-    Pencil,
-    Trash2,
-} from 'lucide-react'
+import { TopBarActions } from '@/features/topbar'
+import { Archive, ArchiveRestore, EllipsisVertical, Pencil, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import {
-    RequestMetaFields,
-    RequestFiveW,
-    RequestNotes,
-    RequestFlow,
-    RequestAssigneeList,
-} from '@/features/requests/request-properties'
+import { useParams } from 'react-router-dom'
+import { RequestMetaFields, RequestFiveW, RequestNotes, RequestFlow, RequestAssigneeList } from '@/features/requests/request-properties'
 
 export function RequestDetailScreen() {
     const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
     const [request, setRequest] = useState<Request | null>(null);
     const [assignees, setAssignees] = useState<ResolvedAssignee[]>([]);
     const [content, setContent] = useState('');
@@ -42,6 +29,12 @@ export function RequestDetailScreen() {
         fetchAssigneesByRequestId(id).then(setAssignees);
     }, [id]);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    function handleAddMember(_assigneeId: string, _duty: string) {
+        // TODO: persist to Supabase, then refetch
+        if (id) fetchAssigneesByRequestId(id).then(setAssignees);
+    }
+
     if (!request) {
         return (
             <section className="p-4 pt-8 mx-auto max-w-content-sm">
@@ -52,39 +45,39 @@ export function RequestDetailScreen() {
 
     return (
         <section className="mx-auto max-w-content-sm">
+            <TopBarActions>
+                <Button variant='secondary' icon={<Pencil />}>Edit</Button>
+                <Dropdown.Root placement="bottom">
+                    <Dropdown.Trigger>
+                        <Button variant="secondary" icon={<EllipsisVertical />} iconOnly />
+                    </Dropdown.Trigger>
+                    <Dropdown.Panel>
+                        <Dropdown.Item onSelect={() => { }}>
+                            {request.status === "archived" ? (
+                                <><ArchiveRestore className="size-4" />Unarchive</>
+                            ) : (
+                                <><Archive className="size-4" />Archive</>
+                            )}
+                        </Dropdown.Item>
+                        <Dropdown.Separator />
+                        <Dropdown.Item onSelect={() => { }}>
+                            <Trash2 className="size-4 text-utility-red-600" />
+                            <span className="text-utility-red-600">Delete</span>
+                        </Dropdown.Item>
+                    </Dropdown.Panel>
+                </Dropdown.Root>
+            </TopBarActions>
+
             {/* Header */}
-            <Header.Root className='p-4 pt-8'>
+            <Header.Root className='px-4 pt-12'>
                 <Header.Lead className='gap-2'>
-                    <Button variant='ghost' icon={<ArrowLeft />} iconOnly onClick={() => navigate(-1)} />
-                    <Title.h6>{request.title}</Title.h6>
+                    <Title.h5>{request.title}</Title.h5>
                 </Header.Lead>
-                <Header.Trail className='gap-2'>
-                    <Button variant='secondary' icon={<Pencil />}>Edit</Button>
-                    <Dropdown.Root placement="bottom">
-                        <Dropdown.Trigger>
-                            <Button variant="secondary" icon={<EllipsisVertical />} iconOnly />
-                        </Dropdown.Trigger>
-                        <Dropdown.Panel>
-                            <Dropdown.Item onSelect={() => { }}>
-                                {request.status === "archived" ? (
-                                    <><ArchiveRestore className="size-4" />Unarchive</>
-                                ) : (
-                                    <><Archive className="size-4" />Archive</>
-                                )}
-                            </Dropdown.Item>
-                            <Dropdown.Separator />
-                            <Dropdown.Item onSelect={() => { }}>
-                                <Trash2 className="size-4 text-utility-red-600" />
-                                <span className="text-utility-red-600">Delete</span>
-                            </Dropdown.Item>
-                        </Dropdown.Panel>
-                    </Dropdown.Root>
-                </Header.Trail>
             </Header.Root>
 
             {/* Properties */}
-            <div className="p-4 pt-8">
-                <RequestMetaFields request={request} assignees={assignees} />
+            <div className="p-4">
+                <RequestMetaFields request={request} assignees={assignees} onAddMember={handleAddMember} />
             </div>
 
             <Divider className="px-4 my-2" />
@@ -118,7 +111,7 @@ export function RequestDetailScreen() {
             {/* Content area — Notion-style */}
             <Divider className="px-4 my-2" />
             <div className="p-4">
-                <Label.md className="pb-3">Content</Label.md>
+                <Label.md className="block pb-3">Content</Label.md>
                 <textarea
                     className="w-full min-h-64 rounded-lg border border-secondary bg-primary p-4 text-sm text-primary placeholder:text-quaternary outline-none focus:border-brand focus:ring-1 focus:ring-brand resize-y"
                     placeholder="Add notes, details, or any additional context here..."

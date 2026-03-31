@@ -50,6 +50,12 @@ function RequestDrawerContent({ request }: { request: Request }) {
         navigate(`/requests/${request.id}`);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    function handleAddMember(_assigneeId: string, _duty: string) {
+        // TODO: persist to Supabase, then refetch
+        fetchAssigneesByRequestId(request.id).then(setAssignees);
+    }
+
     return (
         <>
             {/* Toolbar */}
@@ -90,36 +96,32 @@ function RequestDrawerContent({ request }: { request: Request }) {
                 </div>
 
                 <div className="px-4">
-                    <RequestMetaFields request={request} assignees={assignees} />
+                    <RequestMetaFields request={request} assignees={assignees} onAddMember={handleAddMember} />
                 </div>
 
-                <Divider className="px-4 py-6" />
+                <>
+                    <Divider className="px-4 py-6" />
+                    <RequestFiveW request={request} className="px-4" />
+                </>
 
-                <div className="px-4">
-                    <RequestFiveW request={request} />
-                </div>
-
-                <Divider className="px-4 py-6" />
-
-                <div className="px-4">
-                    <RequestNotes request={request} />
-                </div>
+                {request.notes && (
+                    <>
+                        <Divider className="px-4 py-6" />
+                        <RequestNotes request={request} className="px-4" />
+                    </>
+                )}
 
                 {request.flow && (
                     <>
                         <Divider className="px-4 py-6" />
-                        <div className="px-4">
-                            <RequestFlow request={request} />
-                        </div>
+                        <RequestFlow request={request} className="px-4" />
                     </>
                 )}
 
                 {assignees.length > 0 && (
                     <>
                         <Divider className="px-4 py-6" />
-                        <div className="px-4">
-                            <RequestAssigneeList assignees={assignees} />
-                        </div>
+                        <RequestAssigneeList assignees={assignees} className="px-4" />
                     </>
                 )}
             </Drawer.Content>

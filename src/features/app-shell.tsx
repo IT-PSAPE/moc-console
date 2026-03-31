@@ -3,7 +3,7 @@ import { routes } from '@/screens/console-routes'
 import { Sidebar } from '../components/navigation/sidebar'
 import { Breadcrumb, BreadcrumbProvider } from '../components/navigation/breadcrumb'
 import { Cast, Drama, FileText, LayoutGrid, Package, Search } from 'lucide-react'
-import { TopBar } from './topbar'
+import { TopBar, TopBarProvider } from './topbar'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { SidebarProvider, useSidebar } from '../components/navigation/sidebar'
 import { Divider } from '../components/display/divider'
@@ -17,7 +17,9 @@ export function AppShell({ children }: AppShellProps) {
     return (
         <BreadcrumbProvider>
             <SidebarProvider>
-                <AppShellInner>{children}</AppShellInner>
+                <TopBarProvider>
+                    <AppShellInner>{children}</AppShellInner>
+                </TopBarProvider>
             </SidebarProvider>
         </BreadcrumbProvider>
     )

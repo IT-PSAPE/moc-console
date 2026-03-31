@@ -3,12 +3,7 @@ import { Indicator } from "@/components/display/indicator";
 import { RequestItem } from "./request-item";
 import { Label } from "@/components/display/text";
 import type { Request } from "@/types/requests";
-
-const statusGroups = [
-    { key: "not_started", label: "Not Started", color: "red" },
-    { key: "in_progress", label: "In Progress", color: "yellow" },
-    { key: "completed", label: "Completed", color: "green" },
-] as const;
+import { statusGroups } from "@/types/requests";
 
 export function RequestKanban({ requests }: { requests: Request[] }) {
     return (

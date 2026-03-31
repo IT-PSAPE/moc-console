@@ -2,26 +2,9 @@ import { Calendar, type CalendarEvent } from "@/components/display/calendar"
 import { Drawer } from "@/components/overlays/drawer"
 import { cn } from "@/utils/cn"
 import type { Request } from "@/types/requests";
+import { categoryColor, eventColorMap } from "@/types/requests";
 import { RequestDrawer } from "./request-drawer";
 import { useMemo } from "react";
-
-const categoryColor = {
-    video_production: "orange",
-    video_shooting: "orange",
-    graphic_design: "purple",
-    event: "blue",
-    education: "green",
-} as const;
-
-const eventColorMap: Record<string, string> = {
-    red: 'bg-error_primary text-error',
-    orange: 'bg-warning_primary text-warning',
-    yellow: 'bg-warning_primary text-warning',
-    green: 'bg-success_primary text-success',
-    blue: 'bg-[var(--color-utility-blue-50)] text-[var(--color-utility-blue-700)]',
-    purple: 'bg-brand_primary text-brand_secondary',
-    gray: 'bg-secondary text-tertiary',
-}
 
 function toCalendarEvents(requests: Request[]): CalendarEvent[] {
     return requests

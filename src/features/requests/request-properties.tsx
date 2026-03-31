@@ -2,31 +2,10 @@ import { Badge } from "@/components/display/badge";
 import { Label, Paragraph } from "@/components/display/text";
 import type { ResolvedAssignee } from "@/data/fetch-assignees";
 import type { Request } from "@/types/requests";
-import { Calendar, Clock, Dot, Plus, UserPlus, Users } from "lucide-react";
-
-// ─── Label maps ─────────────────────────────────────────
-
-export const statusLabel: Record<Request["status"], string> = {
-    not_started: "Not Started",
-    in_progress: "In Progress",
-    completed: "Completed",
-    archived: "Archived",
-};
-
-export const priorityColor = {
-    urgent: "red",
-    high: "yellow",
-    medium: "blue",
-    low: "gray",
-} as const;
-
-export const categoryLabel: Record<Request["category"], string> = {
-    video_production: "Video Production",
-    video_shooting: "Video Shooting",
-    graphic_design: "Graphic Design",
-    event: "Event",
-    education: "Education",
-};
+import { statusLabel, priorityColor, categoryLabel } from "@/types/requests";
+import { Calendar, CircleChevronDown, Clock, Dot, Loader, Plus, Tag, UserPlus, Users } from "lucide-react";
+import { AddMemberPopover } from "./add-member-popover";
+import { cn } from "@/utils/cn";
 
 export function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString("en-US", {
@@ -63,20 +42,26 @@ export function FiveWRow({ label, value }: { label: string; value: string }) {
 
 // ─── Composed sections ──────────────────────────────────
 
-export function RequestMetaFields({ request, assignees }: { request: Request; assignees: ResolvedAssignee[] }) {
+type RequestMetaFieldsProps = {
+    request: Request;
+    assignees: ResolvedAssignee[];
+    onAddMember?: (assigneeId: string, duty: string) => void;
+};
+
+export function RequestMetaFields({ request, assignees, onAddMember }: RequestMetaFieldsProps) {
     return (
         <div className="space-y-3">
-            <MetaRow icon={<Dot />} label="Status">
+            <MetaRow icon={<Loader />} label="Status">
                 <Badge label={statusLabel[request.status]} variant="outline" />
             </MetaRow>
-            <MetaRow icon={<Dot />} label="Priority">
+            <MetaRow icon={<CircleChevronDown />} label="Priority">
                 <Badge
                     label={request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
                     icon={<Dot />}
                     color={priorityColor[request.priority]}
                 />
             </MetaRow>
-            <MetaRow icon={<Dot />} label="Type">
+            <MetaRow icon={<Tag />} label="Type">
                 <Badge label={categoryLabel[request.category]} icon={<Dot />} color="purple" />
             </MetaRow>
             {request.dueDate && (
@@ -93,72 +78,87 @@ export function RequestMetaFields({ request, assignees }: { request: Request; as
                         {assignees.map((a) => (
                             <Badge key={a.id} label={`${a.name} ${a.surname}`} variant="outline" />
                         ))}
-                        <button className="flex items-center gap-1 text-tertiary hover:text-primary transition-colors cursor-pointer">
-                            <UserPlus className="size-3.5" />
-                            <Label.xs>Add</Label.xs>
-                        </button>
+                        {onAddMember && (
+                            <AddMemberPopover existingAssigneeIds={assignees.map(a => a.id)} onAdd={onAddMember}>
+                                <button className="flex items-center gap-1 text-tertiary hover:text-primary transition-colors cursor-pointer">
+                                    <UserPlus className="size-3.5" />
+                                    <Label.xs>Add</Label.xs>
+                                </button>
+                            </AddMemberPopover>
+                        )}
                     </div>
                 ) : (
-                    <button className="flex items-center gap-1 text-tertiary hover:text-primary transition-colors cursor-pointer">
-                        <Badge label="Add member" icon={<Plus />} variant="outline" />
-                    </button>
+                    onAddMember ? (
+                        <AddMemberPopover existingAssigneeIds={[]} onAdd={onAddMember}>
+                            <button className="flex items-center gap-1 text-tertiary hover:text-primary transition-colors cursor-pointer">
+                                <Badge label="Add member" icon={<Plus />} variant="outline" />
+                            </button>
+                        </AddMemberPopover>
+                    ) : (
+                        <Paragraph.sm className="text-quaternary">None</Paragraph.sm>
+                    )
                 )}
             </MetaRow>
         </div>
     );
 }
 
-export function RequestFiveW({ request }: { request: Request }) {
+export function RequestFiveW({ request, className }: { request: Request, className?: string }) {
     return (
-        <div className="space-y-3">
-            <Label.md>5Ws and 1H</Label.md>
-            <FiveWRow label="Who" value={request.who} />
-            <FiveWRow label="What" value={request.what} />
-            <FiveWRow label="When" value={request.when} />
-            <FiveWRow label="Where" value={request.where} />
-            <FiveWRow label="Why" value={request.why} />
-            <FiveWRow label="How" value={request.how} />
+        <div className={cn(className)}>
+            <Label.md className="block pb-3">5Ws and 1H</Label.md>
+            <div className="space-y-3">
+                <FiveWRow label="Who" value={request.who} />
+                <FiveWRow label="What" value={request.what} />
+                <FiveWRow label="When" value={request.when} />
+                <FiveWRow label="Where" value={request.where} />
+                <FiveWRow label="Why" value={request.why} />
+                <FiveWRow label="How" value={request.how} />
+            </div>
         </div>
     );
 }
 
-export function RequestAssigneeList({ assignees }: { assignees: ResolvedAssignee[] }) {
+export function RequestAssigneeList({ assignees, className }: { assignees: ResolvedAssignee[], className?: string }) {
     if (assignees.length === 0) return null;
     return (
-        <div className="space-y-3">
-            <Label.md>Assigned Members</Label.md>
-            {assignees.map((a) => (
-                <div
-                    key={a.id}
-                    className="flex items-center justify-between rounded-lg border border-secondary px-3 py-2"
-                >
-                    <div>
-                        <Label.sm>{a.name} {a.surname}</Label.sm>
-                        <Paragraph.xs className="text-tertiary">{a.role}</Paragraph.xs>
+        <div className={cn(className)}>
+            <Label.md className="block pb-3">Assigned Members</Label.md>
+            <div className="space-y-3">
+                {assignees.map((a) => (
+                    <div key={a.id} className="flex items-center justify-between rounded-lg border border-secondary px-3 py-2">
+                        <div>
+                            <Label.sm>{a.name} {a.surname}</Label.sm>
+                            <Paragraph.xs className="text-tertiary">{a.role}</Paragraph.xs>
+                        </div>
+                        <Badge label={a.duty} variant="outline" />
                     </div>
-                    <Badge label={a.duty} variant="outline" />
-                </div>
-            ))}
+                ))}
+            </div>
         </div>
     );
 }
 
-export function RequestNotes({ request }: { request: Request }) {
+export function RequestNotes({ request, className }: { request: Request, className?: string }) {
     if (!request.notes) return null;
     return (
-        <div className="space-y-2">
-            <Label.md>Notes</Label.md>
-            <Paragraph.sm className="text-tertiary">{request.notes}</Paragraph.sm>
+        <div className={cn(className)}>
+            <Label.md className="block pb-3">Notes</Label.md>
+            <div className="space-y-3">
+                <Paragraph.sm className="text-tertiary">{request.notes}</Paragraph.sm>
+            </div>
         </div>
     );
 }
 
-export function RequestFlow({ request }: { request: Request }) {
+export function RequestFlow({ request, className }: { request: Request, className?: string }) {
     if (!request.flow) return null;
     return (
-        <div className="space-y-2">
-            <Label.md>Flow</Label.md>
-            <Paragraph.sm className="text-tertiary">{request.flow}</Paragraph.sm>
+        <div className={cn(className)}>
+            <Label.md className="block pb-3">Flow</Label.md>
+            <div className="space-y-3">
+                <Paragraph.sm className="text-tertiary">{request.flow}</Paragraph.sm>
+            </div>
         </div>
     );
 }
