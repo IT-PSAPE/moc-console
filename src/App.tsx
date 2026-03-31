@@ -15,6 +15,7 @@ import { EquipmentReportsScreen } from '@/screens/equipment/reports/page'
 import { RequestsAllRequestsScreen } from '@/screens/requests/all-requests/page'
 import { RequestsArchivedScreen } from '@/screens/requests/archived/page'
 import { RequestsOverviewScreen } from '@/screens/requests/page'
+import { RequestDetailScreen } from '@/screens/requests/detail/page'
 import { RequestsReportsScreen } from '@/screens/requests/reports/page'
 import { CueSheetChecklistScreen } from './screens/cue-sheet/checklist/page'
 
@@ -28,6 +29,7 @@ function App() {
                     <Route path={routes.requestsOverview} element={<RequestsOverviewScreen />} />
                     <Route path={routes.requestsAllRequests} element={<RequestsAllRequestsScreen />} />
                     <Route path={routes.requestsArchived} element={<RequestsArchivedScreen />} />
+                    <Route path={routes.requestsDetail} element={<RequestDetailScreen />} />
                     <Route path={routes.requestsReports} element={<RequestsReportsScreen />} />
                     <Route path={routes.equipmentOverview} element={<EquipmentOverviewScreen />} />
                     <Route path={routes.equipmentInventory} element={<EquipmentInventoryScreen />} />

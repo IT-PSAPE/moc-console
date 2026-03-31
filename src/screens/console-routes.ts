@@ -3,6 +3,7 @@ export const routes = {
     requestsOverview: 'requests',
     requestsAllRequests: 'requests/all-requests',
     requestsArchived: 'requests/archived',
+    requestsDetail: 'requests/:id',
     requestsReports: 'requests/reports',
     equipmentOverview: 'equipment',
     equipmentInventory: 'equipment/inventory',

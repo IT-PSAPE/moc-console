@@ -4,6 +4,7 @@ import { Label, Paragraph } from "@/components/display/text";
 import { Checkbox } from "@/components/form/checkbox";
 import { FormLabel } from "@/components/form/form-label";
 import { Input } from "@/components/form/input";
+import { Radio } from "@/components/form/radio";
 import { Tabs } from "@/components/layout/tabs";
 import { Drawer } from "@/components/overlays/drawer";
 import { X } from "lucide-react";
@@ -74,7 +75,35 @@ export function RequestFilterDrawer() {
                             </Tabs.Panel>
                             <Tabs.Panel value='sort'>
                                 <div className="py-2">
-                                    <Paragraph.sm className='px-4 py-1.5 text-quaternary'>Sort</Paragraph.sm>
+                                    <Paragraph.sm className='px-3 py-1.5 text-quaternary'>Name</Paragraph.sm>
+                                    <div className='grid grid-cols-2 gap-2 px-3'>
+                                        <Radio name="sort" value="name-asc"><FormLabel label="A-Z" /></Radio>
+                                        <Radio name="sort" value="name-desc"><FormLabel label="Z-A" /></Radio>
+                                    </div>
+                                </div>
+                                <Divider className="px-4" />
+                                <div className="py-2">
+                                    <Paragraph.sm className='px-3 py-1.5 text-quaternary'>Due date</Paragraph.sm>
+                                    <div className='grid grid-cols-2 gap-2 px-3'>
+                                        <Radio name="sort" value="due-asc"><FormLabel label="Ascending" /></Radio>
+                                        <Radio name="sort" value="due-desc"><FormLabel label="Descending" /></Radio>
+                                    </div>
+                                </div>
+                                <Divider className="px-4" />
+                                <div className="py-2">
+                                    <Paragraph.sm className='px-3 py-1.5 text-quaternary'>Create date</Paragraph.sm>
+                                    <div className='grid grid-cols-2 gap-2 px-3'>
+                                        <Radio name="sort" value="created-asc"><FormLabel label="Ascending" /></Radio>
+                                        <Radio name="sort" value="created-desc"><FormLabel label="Descending" /></Radio>
+                                    </div>
+                                </div>
+                                <Divider className="px-4" />
+                                <div className="py-2">
+                                    <Paragraph.sm className='px-3 py-1.5 text-quaternary'>Type</Paragraph.sm>
+                                    <div className='grid grid-cols-2 gap-2 px-3'>
+                                        <Radio name="sort" value="type-asc"><FormLabel label="A-Z" /></Radio>
+                                        <Radio name="sort" value="type-desc"><FormLabel label="Z-A" /></Radio>
+                                    </div>
                                 </div>
                             </Tabs.Panel>
                         </Tabs.Panels>

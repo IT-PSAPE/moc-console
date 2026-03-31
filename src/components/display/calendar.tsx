@@ -49,6 +49,7 @@ function getCalendarDays(year: number, month: number) {
 // ─── Types ───────────────────────────────────────────────
 
 export type CalendarEvent = {
+    id?: string
     date: Date
     label: string
     color?: 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'gray'
