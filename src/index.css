@@ -425,6 +425,30 @@
     --color-utility-green-500: var(--color-green-500);
     --color-utility-green-600: var(--color-green-600);
     --color-utility-green-700: var(--color-green-700);
+    --color-utility-orange-50: var(--color-orange-50);
+    --color-utility-orange-100: var(--color-orange-100);
+    --color-utility-orange-200: var(--color-orange-200);
+    --color-utility-orange-300: var(--color-orange-300);
+    --color-utility-orange-400: var(--color-orange-400);
+    --color-utility-orange-500: var(--color-orange-500);
+    --color-utility-orange-600: var(--color-orange-600);
+    --color-utility-orange-700: var(--color-orange-700);
+    --color-utility-yellow-50: var(--color-yellow-50);
+    --color-utility-yellow-100: var(--color-yellow-100);
+    --color-utility-yellow-200: var(--color-yellow-200);
+    --color-utility-yellow-300: var(--color-yellow-300);
+    --color-utility-yellow-400: var(--color-yellow-400);
+    --color-utility-yellow-500: var(--color-yellow-500);
+    --color-utility-yellow-600: var(--color-yellow-600);
+    --color-utility-yellow-700: var(--color-yellow-700);
+    --color-utility-purple-50: var(--color-purple-50);
+    --color-utility-purple-100: var(--color-purple-100);
+    --color-utility-purple-200: var(--color-purple-200);
+    --color-utility-purple-300: var(--color-purple-300);
+    --color-utility-purple-400: var(--color-purple-400);
+    --color-utility-purple-500: var(--color-purple-500);
+    --color-utility-purple-600: var(--color-purple-600);
+    --color-utility-purple-700: var(--color-purple-700);
 
     /* PROPERTY COLORS */
     --text-color-primary: var(--color-text-primary);

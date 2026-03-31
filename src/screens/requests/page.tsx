@@ -6,10 +6,11 @@ import { FormLabel } from '@/components/form/form-label'
 import { Input } from '@/components/form/input'
 import { Header } from '@/components/display/header'
 import { Modal } from '@/components/overlays/modal'
-import { RequestItem } from '@/components/app/request-item'
+import { RequestItem } from '@/components/app/requests/request-item'
 import { Tabs } from '@/components/layout/tabs'
 import { Label, Paragraph, TextBlock, Title } from '@/components/display/text'
 import { Dot, Search, Settings2, X } from 'lucide-react'
+import { Indicator } from '@/components/display/indicator'
 
 
 export function RequestsOverviewScreen() {
@@ -18,7 +19,7 @@ export function RequestsOverviewScreen() {
             <Header.Root className='p-4 pt-8 mx-auto max-w-content'>
                 <Header.Lead className='gap-2'>
                     <Title.h6>Requests</Title.h6>
-                    <Paragraph.sm className="text-tertiary max-w-2xl">Welcome to the MOC Console dashboard. Here you can find an overview of all your activities and access various features.</Paragraph.sm>
+                    <Paragraph.sm className="text-tertiary max-w-2xl">Track and manage incoming requests. View active, upcoming, and overdue items at a glance.</Paragraph.sm>
                 </Header.Lead>
             </Header.Root>
 
@@ -79,7 +80,7 @@ export function RequestsOverviewScreen() {
                 </Modal.Root>
                 <Card.Root>
                     <Card.Header className='gap-1.5'>
-                        <Dot className='size-4' />
+                        <Indicator color='red' className='size-6' />
                         <Label.sm>Overdue Requests</Label.sm>
                     </Card.Header>
                     <Card.Content ghost className='space-y-1.5'>
@@ -90,7 +91,7 @@ export function RequestsOverviewScreen() {
                 </Card.Root>
                 <Card.Root>
                     <Card.Header className='gap-1.5'>
-                        <Dot className='size-4' />
+                        <Indicator className='size-6' />
                         <Label.sm>Upcoming Requests</Label.sm>
                     </Card.Header>
                     <Card.Content ghost className='space-y-1.5'>
