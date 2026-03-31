@@ -108,7 +108,7 @@ export function RequestDetailScreen() {
                 </>
             )}
 
-            {/* Content area — Notion-style */}
+            {/* Content area */}
             <Divider className="px-4 my-2" />
             <div className="p-4">
                 <Label.md className="block pb-3">Content</Label.md>

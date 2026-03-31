@@ -18,12 +18,29 @@ import { RequestsOverviewScreen } from '@/screens/requests/page'
 import { RequestDetailScreen } from '@/screens/requests/detail/page'
 import { RequestsReportsScreen } from '@/screens/requests/reports/page'
 import { CueSheetChecklistScreen } from './screens/cue-sheet/checklist/page'
+import { BreadcrumbProvider } from './components/navigation/breadcrumb'
+import { SidebarProvider } from './components/navigation/sidebar'
+import { TopBarProvider } from './features/topbar'
+
+export function AppProviders() {
+    return (
+        <BreadcrumbProvider>
+            <SidebarProvider>
+                <TopBarProvider>
+                    <AppShell>
+                        <Outlet />
+                    </AppShell>
+                </TopBarProvider>
+            </SidebarProvider>
+        </BreadcrumbProvider>
+    )
+}
 
 function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route element={<AppShell><Outlet /></AppShell>}>
+                <Route element={<AppProviders />}>
                     <Route index element={<Navigate to={`/${routes.dashboard}`} replace />} />
                     <Route path={routes.dashboard} element={<DashboardScreen />} />
                     <Route path={routes.requestsOverview} element={<RequestsOverviewScreen />} />

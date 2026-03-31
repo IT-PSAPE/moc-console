@@ -12,10 +12,9 @@ export function RequestsReportsScreen() {
                 </Header.Lead>
             </Header.Root>
 
-            <div className='flex-1'>
+            <div className='flex-1 mx-auto w-full max-w-content'>
                 <Placeholder>Requests reports cooming soon</Placeholder>
             </div>
-
         </section>
     )
 }

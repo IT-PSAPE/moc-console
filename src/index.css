@@ -2,8 +2,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* Changes the base unit from 0.25rem to 0.1rem */
-  --spacing: 0.1rem;
+  --breakpoint-mobile: 480px;
 }
 
 @theme {

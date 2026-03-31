@@ -239,7 +239,7 @@ function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDiv
         <div
             ref={refs.panelRef}
             className={cn(
-                'fixed z-50 flex min-w-48 flex-col overflow-hidden rounded-xl border border-secondary bg-primary p-1 shadow-lg',
+                'fixed z-50 flex min-w-48 flex-col overflow-hidden rounded-md border border-secondary bg-primary p-1 shadow-lg',
                 className,
             )}
             onKeyDown={handleKeyDown}
@@ -296,7 +296,7 @@ function DropdownItem({ children, className, onClick, onSelect, ...props }: Drop
         <div
             aria-selected={isActive}
             className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-secondary',
+                'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 text-sm text-secondary',
                 isActive && 'bg-secondary text-primary',
                 className,
             )}

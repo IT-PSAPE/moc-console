@@ -5,7 +5,7 @@ import { Popover, usePopover } from "@/components/overlays/popover";
 import { fetchAllAssignees } from "@/data/fetch-assignees";
 import { fetchRoles } from "@/data/fetch-roles";
 import type { Assignee } from "@/types/requests";
-import { Check, Plus, Search, UserPlus } from "lucide-react";
+import { Check, Search } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 type AddMemberPopoverProps = {

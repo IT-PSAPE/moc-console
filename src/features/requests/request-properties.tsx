@@ -3,7 +3,7 @@ import { Label, Paragraph } from "@/components/display/text";
 import type { ResolvedAssignee } from "@/data/fetch-assignees";
 import type { Request } from "@/types/requests";
 import { statusLabel, priorityColor, categoryLabel } from "@/types/requests";
-import { Calendar, CircleChevronDown, Clock, Dot, Loader, Plus, Tag, UserPlus, Users } from "lucide-react";
+import { Calendar, CircleAlert, CircleChevronDown, Clock, Loader, Plus, Tag, Users } from "lucide-react";
 import { AddMemberPopover } from "./add-member-popover";
 import { cn } from "@/utils/cn";
 
@@ -57,12 +57,12 @@ export function RequestMetaFields({ request, assignees, onAddMember }: RequestMe
             <MetaRow icon={<CircleChevronDown />} label="Priority">
                 <Badge
                     label={request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
-                    icon={<Dot />}
+                    icon={<CircleAlert />}
                     color={priorityColor[request.priority]}
                 />
             </MetaRow>
             <MetaRow icon={<Tag />} label="Type">
-                <Badge label={categoryLabel[request.category]} icon={<Dot />} color="purple" />
+                <Badge label={categoryLabel[request.category]} icon={<Tag />} color="purple" />
             </MetaRow>
             {request.dueDate && (
                 <MetaRow icon={<Calendar className="size-4" />} label="Due Date">
@@ -80,9 +80,8 @@ export function RequestMetaFields({ request, assignees, onAddMember }: RequestMe
                         ))}
                         {onAddMember && (
                             <AddMemberPopover existingAssigneeIds={assignees.map(a => a.id)} onAdd={onAddMember}>
-                                <button className="flex items-center gap-1 text-tertiary hover:text-primary transition-colors cursor-pointer">
-                                    <UserPlus className="size-3.5" />
-                                    <Label.xs>Add</Label.xs>
+                                <button className="cursor-pointer">
+                                    <Badge label="Add member" icon={<Plus />} />
                                 </button>
                             </AddMemberPopover>
                         )}
@@ -90,7 +89,7 @@ export function RequestMetaFields({ request, assignees, onAddMember }: RequestMe
                 ) : (
                     onAddMember ? (
                         <AddMemberPopover existingAssigneeIds={[]} onAdd={onAddMember}>
-                            <button className="flex items-center gap-1 text-tertiary hover:text-primary transition-colors cursor-pointer">
+                            <button className="cursor-pointer">
                                 <Badge label="Add member" icon={<Plus />} variant="outline" />
                             </button>
                         </AddMemberPopover>

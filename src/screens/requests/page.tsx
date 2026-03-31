@@ -5,7 +5,7 @@ import { Header } from '@/components/display/header'
 import { Drawer } from '@/components/overlays/drawer'
 import { RequestItem } from '@/features/requests/request-item'
 import { Label, Paragraph, TextBlock, Title } from '@/components/display/text'
-import { Dot, Search, Settings2 } from 'lucide-react'
+import { Activity, CalendarClock, CircleAlert, CircleCheck, Search, Settings2 } from 'lucide-react'
 import { Indicator } from '@/components/display/indicator'
 import { useEffect, useState } from 'react'
 import { fetchRequests } from '@/data/fetch-requests'
@@ -35,10 +35,10 @@ export function RequestsOverviewScreen() {
                 </Header.Lead>
             </Header.Root>
 
-            <div className='grid grid-cols-4 gap-4 p-4 pt-8 mx-auto w-full max-w-content'>
+            <div className='grid grid-cols-4 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2'>
                 <Card.Root>
                     <Card.Header className='gap-1.5'>
-                        <Dot className='size-4' />
+                        <Activity className='size-4' />
                         <Label.sm>Active Requests</Label.sm>
                     </Card.Header>
                     <Card.Content className='p-4'>
@@ -47,7 +47,7 @@ export function RequestsOverviewScreen() {
                 </Card.Root>
                 <Card.Root>
                     <Card.Header className='gap-1.5'>
-                        <Dot className='size-4' />
+                        <CalendarClock className='size-4' />
                         <Label.sm>Upcoming Requests</Label.sm>
                     </Card.Header>
                     <Card.Content className='p-4'>
@@ -56,7 +56,7 @@ export function RequestsOverviewScreen() {
                 </Card.Root>
                 <Card.Root>
                     <Card.Header className='gap-1.5'>
-                        <Dot className='size-4' />
+                        <CircleAlert className='size-4' />
                         <Label.sm>Overdue Requests</Label.sm>
                     </Card.Header>
                     <Card.Content className='p-4'>
@@ -65,7 +65,7 @@ export function RequestsOverviewScreen() {
                 </Card.Root>
                 <Card.Root>
                     <Card.Header className='gap-1.5'>
-                        <Dot className='size-4' />
+                        <CircleCheck className='size-4' />
                         <Label.sm>Completed Requests</Label.sm>
                     </Card.Header>
                     <Card.Content className='p-4'>
@@ -75,7 +75,7 @@ export function RequestsOverviewScreen() {
             </div>
 
             <div className='flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content'>
-                <Header.Root className='pt-8'>
+                <Header.Root className='gap-2 max-mobile:flex-col *:max-mobile:w-full'>
                     <Header.Lead className='gap-2'>
                         <Label.md>Dashboard</Label.md>
                     </Header.Lead>
