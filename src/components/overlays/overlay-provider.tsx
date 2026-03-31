@@ -54,7 +54,10 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
     }, [])
 
     const unregister = useCallback((id: string) => {
-        setStack(previousStack => previousStack.filter(entryId => entryId !== id))
+        setStack(previousStack => {
+            const next = previousStack.filter(entryId => entryId !== id)
+            return next.length === previousStack.length ? previousStack : next
+        })
     }, [])
 
     useEffect(() => {
@@ -69,19 +72,25 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
         }
     }, [stack.length])
 
+    const state = useMemo<OverlayStackContextValue['state']>(() => ({
+        rootElement,
+        stack,
+    }), [rootElement, stack])
+
+    const actions = useMemo<OverlayStackContextValue['actions']>(() => ({
+        register,
+        unregister,
+    }), [register, unregister])
+
+    const meta = useMemo<OverlayStackContextValue['meta']>(() => ({
+        baseZIndex: OVERLAY_BASE_Z_INDEX,
+    }), [])
+
     const value = useMemo<OverlayStackContextValue>(() => ({
-        state: {
-            rootElement,
-            stack,
-        },
-        actions: {
-            register,
-            unregister,
-        },
-        meta: {
-            baseZIndex: OVERLAY_BASE_Z_INDEX,
-        },
-    }), [register, rootElement, stack, unregister])
+        state,
+        actions,
+        meta,
+    }), [actions, meta, state])
 
     return (
         <OverlayStackContext.Provider value={value}>

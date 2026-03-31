@@ -1,16 +1,25 @@
-import { RequestCalendar } from '@/components/app/requests/request-calendar'
-import { RequestKanban } from '@/components/app/requests/request-kanban'
-import { RequestLists } from '@/components/app/requests/request-list'
+import { RequestCalendar } from '@/features/requests/request-calendar'
+import { RequestKanban } from '@/features/requests/request-kanban'
+import { RequestLists } from '@/features/requests/request-list'
 import { Button } from '@/components/controls/button'
 import { SegmentedControl } from '@/components/controls/segmented-control'
 import { Header } from '@/components/display/header'
 import { Paragraph, Title } from '@/components/display/text'
 import { Input } from '@/components/form/input'
+import { fetchRequests } from '@/data/fetch-requests'
+import type { Request } from '@/types/requests'
 import { CalendarDays, Columns3, List, Search, Settings2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Drawer } from '@/components/overlays/drawer'
+import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
 
 export function RequestsAllRequestsScreen() {
     const [view, setView] = useState('list');
+    const [requests, setRequests] = useState<Request[]>([]);
+
+    useEffect(() => {
+        fetchRequests().then(setRequests);
+    }, []);
 
     return (
         <section>
@@ -31,13 +40,18 @@ export function RequestsAllRequestsScreen() {
                 </Header.Lead>
                 <Header.Trail className='gap-2 flex-1 justify-end '>
                     <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-sm' />
-                    <Button icon={<Settings2 />} variant='secondary'>Filter</Button>
+                    <Drawer.Root>
+                        <Drawer.Trigger>
+                            <Button icon={<Settings2 />} variant='secondary'>Filter</Button>
+                        </Drawer.Trigger>
+                        <RequestFilterDrawer />
+                    </Drawer.Root>
                 </Header.Trail>
             </Header.Root>
 
-            {view === 'list' && <RequestLists />}
-            {view === 'kanban' && <RequestKanban />}
-            {view === 'calendar' && <RequestCalendar />}
+            {view === 'list' && <RequestLists requests={requests} />}
+            {view === 'kanban' && <RequestKanban requests={requests} />}
+            {view === 'calendar' && <RequestCalendar requests={requests} />}
         </section>
     )
 }

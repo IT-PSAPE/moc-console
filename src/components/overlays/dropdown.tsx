@@ -95,7 +95,10 @@ function DropdownRoot({ children, closeOnEscape = true, defaultOpen = false, onO
     }, [])
 
     const unregisterItem = useCallback((id: string) => {
-        setItemIds(prev => prev.filter(itemId => itemId !== id))
+        setItemIds(prev => {
+            const next = prev.filter(itemId => itemId !== id)
+            return next.length === prev.length ? prev : next
+        })
     }, [])
 
     // Click outside to close
@@ -124,29 +127,37 @@ function DropdownRoot({ children, closeOnEscape = true, defaultOpen = false, onO
         }
     }, [closeDropdown, closeOnEscape, isOpen])
 
+    const state = useMemo<DropdownContextValue['state']>(() => ({
+        isOpen,
+        zIndex,
+        activeIndex,
+        placement,
+    }), [activeIndex, isOpen, placement, zIndex])
+
+    const actions = useMemo<DropdownContextValue['actions']>(() => ({
+        close: closeDropdown,
+        open: openDropdown,
+        toggle,
+        setActiveIndex,
+        registerItem,
+        unregisterItem,
+    }), [closeDropdown, openDropdown, registerItem, toggle, unregisterItem])
+
+    const refs = useMemo<DropdownContextValue['refs']>(() => ({
+        triggerRef,
+        panelRef,
+    }), [])
+
+    const meta = useMemo<DropdownContextValue['meta']>(() => ({
+        itemIds,
+    }), [itemIds])
+
     const value = useMemo<DropdownContextValue>(() => ({
-        state: {
-            isOpen,
-            zIndex,
-            activeIndex,
-            placement,
-        },
-        actions: {
-            close: closeDropdown,
-            open: openDropdown,
-            toggle,
-            setActiveIndex,
-            registerItem,
-            unregisterItem,
-        },
-        refs: {
-            triggerRef,
-            panelRef,
-        },
-        meta: {
-            itemIds,
-        },
-    }), [activeIndex, closeDropdown, isOpen, itemIds, openDropdown, placement, registerItem, toggle, unregisterItem, zIndex])
+        state,
+        actions,
+        refs,
+        meta,
+    }), [actions, meta, refs, state])
 
     return (
         <DropdownContext.Provider value={value}>

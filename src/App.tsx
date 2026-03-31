@@ -1,6 +1,6 @@
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { routes } from './screens/console-routes'
-import { AppShell } from './components/app/app-shell'
+import { AppShell } from './features/app-shell'
 import { BroadcastMediaScreen } from '@/screens/broadcast/media/page'
 import { BroadcastOverviewScreen } from '@/screens/broadcast/page'
 import { BroadcastScreen } from '@/screens/broadcast/broadcast/page'

@@ -1,0 +1,7 @@
+[
+  { "id": "usr-001", "name": "David", "surname": "Chen", "role": "Videographer" },
+  { "id": "usr-002", "name": "Maria", "surname": "Santos", "role": "Designer" },
+  { "id": "usr-003", "name": "James", "surname": "Okonkwo", "role": "Videographer" },
+  { "id": "usr-004", "name": "Sarah", "surname": "Kim", "role": "Audio Tech" },
+  { "id": "usr-005", "name": "Rachel", "surname": "Thompson", "role": "Event Coordinator" }
+]

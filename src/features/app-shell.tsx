@@ -1,13 +1,13 @@
 import { useEffect, type ReactNode } from 'react'
 import { routes } from '@/screens/console-routes'
-import { Sidebar } from '../navigation/sidebar'
-import { Breadcrumb } from '../navigation/breadcrumb'
+import { Sidebar } from '../components/navigation/sidebar'
+import { Breadcrumb } from '../components/navigation/breadcrumb'
 import { Cast, Drama, FileText, LayoutGrid, Package, Search } from 'lucide-react'
 import { TopBar } from './topbar'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { SidebarProvider, useSidebar } from '../navigation/sidebar'
-import { Divider } from '../display/divider'
-import { CommandMenu, useCommandMenu } from '../overlays/command-menu'
+import { SidebarProvider, useSidebar } from '../components/navigation/sidebar'
+import { Divider } from '../components/display/divider'
+import { CommandMenu, useCommandMenu } from '../components/overlays/command-menu'
 
 type AppShellProps = {
     children: ReactNode

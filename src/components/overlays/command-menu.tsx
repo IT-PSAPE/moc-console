@@ -90,13 +90,15 @@ function CommandMenuRoot({ children, closeOnEscape = true, defaultOpen = false, 
     }, [])
 
     const unregisterItem = useCallback((id: string) => {
-        setItemIds(prev => prev.filter(itemId => itemId !== id))
+        setItemIds(prev => {
+            const next = prev.filter(itemId => itemId !== id)
+            return next.length === prev.length ? prev : next
+        })
     }, [])
 
     // Overlay stack registration
     useEffect(() => {
         if (!isOpen) {
-            overlayActions.unregister(menuId)
             return undefined
         }
 
@@ -149,27 +151,33 @@ function CommandMenuRoot({ children, closeOnEscape = true, defaultOpen = false, 
         }
     }, [closeMenu, closeOnEscape, isOpen, isTopmost])
 
+    const state = useMemo<CommandMenuContextValue['state']>(() => ({
+        isOpen,
+        isTopmost,
+        zIndex,
+        search,
+        activeIndex,
+    }), [activeIndex, isOpen, isTopmost, search, zIndex])
+
+    const actions = useMemo<CommandMenuContextValue['actions']>(() => ({
+        close: closeMenu,
+        open: openMenu,
+        setOpen: setOpenState,
+        setSearch,
+        setActiveIndex,
+        registerItem,
+        unregisterItem,
+    }), [closeMenu, openMenu, registerItem, setOpenState, unregisterItem])
+
+    const meta = useMemo<CommandMenuContextValue['meta']>(() => ({
+        itemIds,
+    }), [itemIds])
+
     const value = useMemo<CommandMenuContextValue>(() => ({
-        state: {
-            isOpen,
-            isTopmost,
-            zIndex,
-            search,
-            activeIndex,
-        },
-        actions: {
-            close: closeMenu,
-            open: openMenu,
-            setOpen: setOpenState,
-            setSearch,
-            setActiveIndex,
-            registerItem,
-            unregisterItem,
-        },
-        meta: {
-            itemIds,
-        },
-    }), [activeIndex, closeMenu, isOpen, isTopmost, itemIds, openMenu, registerItem, search, setOpenState, unregisterItem, zIndex])
+        state,
+        actions,
+        meta,
+    }), [actions, meta, state])
 
     return (
         <CommandMenuContext.Provider value={value}>

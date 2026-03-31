@@ -1,3 +1,4 @@
+export type { Assignee, RequestAssignee } from "./assignee";
 export type { Priority } from "./priority";
 export type { Status } from "./status";
 export type { Category } from "./category";

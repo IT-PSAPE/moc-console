@@ -119,9 +119,9 @@ function CalendarRoot({ className, defaultMonth, events = [], onMonthChange, ren
             <div className="flex items-center justify-between pb-4">
                 <span className="title-h5">{MONTH_LABELS[month]} {year}</span>
                 <div className="flex items-center gap-1">
+                    <Button variant="secondary" iconOnly icon={<ChevronLeft />} onClick={() => navigate(-1)} />
                     <Button variant="secondary" onClick={goToToday}>Today</Button>
-                    <Button variant="ghost" iconOnly icon={<ChevronLeft />} onClick={() => navigate(-1)} />
-                    <Button variant="ghost" iconOnly icon={<ChevronRight />} onClick={() => navigate(1)} />
+                    <Button variant="secondary" iconOnly icon={<ChevronRight />} onClick={() => navigate(1)} />
                 </div>
             </div>
 

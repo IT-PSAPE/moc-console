@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from 'react'
-import { useSidebar } from '../navigation/sidebar'
+import { useSidebar } from '../components/navigation/sidebar'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { PanelLeft, PanelLeftClose } from 'lucide-react'
 

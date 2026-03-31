@@ -1,13 +1,24 @@
-import { RequestItem } from '@/components/app/requests/request-item'
+import { RequestItem } from '@/features/requests/request-item'
 import { Button } from '@/components/controls/button'
 import { Card } from '@/components/display/card'
 import { Header } from '@/components/display/header'
 import { Indicator } from '@/components/display/indicator'
 import { Label, Paragraph, Title } from '@/components/display/text'
 import { Input } from '@/components/form/input'
+import { fetchArchivedRequests } from '@/data/fetch-requests'
+import type { Request } from '@/types/requests'
 import { Search, Settings2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Drawer } from '@/components/overlays/drawer'
+import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
 
 export function RequestsArchivedScreen() {
+    const [requests, setRequests] = useState<Request[]>([]);
+
+    useEffect(() => {
+        fetchArchivedRequests().then(setRequests);
+    }, []);
+
     return (
         <section>
             <Header.Root className='p-4 pt-8 mx-auto max-w-content'>
@@ -26,13 +37,18 @@ export function RequestsArchivedScreen() {
                         </div>
                         <div className='flex items-center gap-1.5'>
                             <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-sm' />
-                            <Button icon={<Settings2 />} variant='secondary'>Filter</Button>
+                            <Drawer.Root>
+                                <Drawer.Trigger>
+                                    <Button icon={<Settings2 />} variant='secondary'>Filter</Button>
+                                </Drawer.Trigger>
+                                <RequestFilterDrawer />
+                            </Drawer.Root>
                         </div>
                     </Card.Header>
-                    <Card.Content ghost className='space-y-1.5'>
-                        <RequestItem />
-                        <RequestItem />
-                        <RequestItem />
+                    <Card.Content ghost className='flex flex-col gap-1.5'>
+                        {requests.map((r) => (
+                            <RequestItem key={r.id} request={r} />
+                        ))}
                     </Card.Content>
                 </Card.Root>
             </div>

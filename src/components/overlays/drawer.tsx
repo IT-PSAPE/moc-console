@@ -77,7 +77,6 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
 
     useEffect(() => {
         if (!isOpen) {
-            overlayActions.unregister(drawerId)
             return undefined
         }
 
@@ -187,7 +186,7 @@ function DrawerPanel({ children, className, ...props }: HTMLAttributes<HTMLDivEl
             ref={panelRef}
             aria-modal="true"
             className={cn(
-                'pointer-events-auto fixed flex flex-col border border-secondary bg-primary',
+                'pointer-events-auto fixed flex flex-col border border-secondary bg-primary rounded-lg m-2',
                 panelClassesBySide[state.side],
                 className,
             )}

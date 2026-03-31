@@ -1,0 +1,12 @@
+[
+  { "requestId": "req-001", "assigneeId": "usr-001", "duty": "Filming & editing" },
+  { "requestId": "req-001", "assigneeId": "usr-002", "duty": "Thumbnail & title cards" },
+  { "requestId": "req-002", "assigneeId": "usr-001", "duty": "Camera 1 — main" },
+  { "requestId": "req-002", "assigneeId": "usr-003", "duty": "Camera 2 — wide" },
+  { "requestId": "req-002", "assigneeId": "usr-004", "duty": "Live mix & board recording" },
+  { "requestId": "req-004", "assigneeId": "usr-005", "duty": "Logistics & vendor management" },
+  { "requestId": "req-004", "assigneeId": "usr-003", "duty": "Event coverage" },
+  { "requestId": "req-006", "assigneeId": "usr-002", "duty": "Layout & typesetting" },
+  { "requestId": "req-015", "assigneeId": "usr-001", "duty": "Recording & editing" },
+  { "requestId": "req-015", "assigneeId": "usr-004", "duty": "Mic setup & audio post" }
+]

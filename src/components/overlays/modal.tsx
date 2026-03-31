@@ -87,7 +87,6 @@ function ModalRoot({ children, closeOnBackdropClick = true, closeOnEscape = true
 
     useEffect(() => {
         if (!isOpen) {
-            overlayActions.unregister(modalId)
             return undefined
         }
 
