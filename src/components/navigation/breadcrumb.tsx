@@ -1,7 +1,65 @@
 import { ChevronRight } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/utils/cn'
-import type { ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
+
+// ─── Label overrides context ────────────────────────────
+
+type BreadcrumbOverrides = Record<string, string>
+
+const BreadcrumbOverridesContext = createContext<{
+    overrides: BreadcrumbOverrides
+    setOverride: (segment: string, label: string) => void
+    removeOverride: (segment: string) => void
+}>({
+    overrides: {},
+    setOverride: () => {},
+    removeOverride: () => {},
+})
+
+export function useBreadcrumbOverride(segment: string, label: string | undefined) {
+    const { setOverride, removeOverride } = useContext(BreadcrumbOverridesContext)
+
+    useEffect(() => {
+        if (!label) return
+        setOverride(segment, label)
+        return () => removeOverride(segment)
+    }, [segment, label, setOverride, removeOverride])
+}
+
+// ─── Provider ───────────────────────────────────────────
+
+import { useCallback, useState } from 'react'
+
+export function BreadcrumbProvider({ children }: { children: ReactNode }) {
+    const [overrides, setOverrides] = useState<BreadcrumbOverrides>({})
+
+    const setOverride = useCallback((segment: string, label: string) => {
+        setOverrides(prev => {
+            if (prev[segment] === label) return prev
+            return { ...prev, [segment]: label }
+        })
+    }, [])
+
+    const removeOverride = useCallback((segment: string) => {
+        setOverrides(prev => {
+            if (!(segment in prev)) return prev
+            const next = { ...prev }
+            delete next[segment]
+            return next
+        })
+    }, [])
+
+    const value = useMemo(() => ({ overrides, setOverride, removeOverride }), [overrides, setOverride, removeOverride])
+
+    return (
+        <BreadcrumbOverridesContext.Provider value={value}>
+            {children}
+        </BreadcrumbOverridesContext.Provider>
+    )
+}
+
+// ─── Helpers ────────────────────────────────────────────
 
 function formatSegment(segment: string): string {
     return segment
@@ -10,7 +68,7 @@ function formatSegment(segment: string): string {
         .join(' ')
 }
 
-function deriveBreadcrumbs(pathname: string): Array<{ label: string; path: string }> {
+function deriveBreadcrumbs(pathname: string, overrides: BreadcrumbOverrides): Array<{ label: string; path: string }> {
     const segments = pathname.split('/').filter(Boolean)
     const crumbs: Array<{ label: string; path: string }> = [
         { label: 'Home', path: '/dashboard' },
@@ -19,11 +77,14 @@ function deriveBreadcrumbs(pathname: string): Array<{ label: string; path: strin
     let currentPath = ''
     for (const segment of segments) {
         currentPath += `/${segment}`
-        crumbs.push({ label: formatSegment(segment), path: currentPath })
+        const label = overrides[segment] ?? formatSegment(segment)
+        crumbs.push({ label, path: currentPath })
     }
 
     return crumbs
 }
+
+// ─── Components ─────────────────────────────────────────
 
 type BreadcrumbItemProps = {
     label: string
@@ -57,7 +118,8 @@ function BreadcrumbSeparator() {
 function BreadcrumbRoot({ className }: { className?: string }) {
     const { pathname } = useLocation()
     const navigate = useNavigate()
-    const crumbs = deriveBreadcrumbs(pathname)
+    const { overrides } = useContext(BreadcrumbOverridesContext)
+    const crumbs = deriveBreadcrumbs(pathname, overrides)
 
     return (
         <nav aria-label="Breadcrumb" className={cn("flex items-center", className)}>

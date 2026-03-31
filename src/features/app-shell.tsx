@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { routes } from '@/screens/console-routes'
 import { Sidebar } from '../components/navigation/sidebar'
-import { Breadcrumb } from '../components/navigation/breadcrumb'
+import { Breadcrumb, BreadcrumbProvider } from '../components/navigation/breadcrumb'
 import { Cast, Drama, FileText, LayoutGrid, Package, Search } from 'lucide-react'
 import { TopBar } from './topbar'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -15,9 +15,11 @@ type AppShellProps = {
 
 export function AppShell({ children }: AppShellProps) {
     return (
-        <SidebarProvider>
-            <AppShellInner>{children}</AppShellInner>
-        </SidebarProvider>
+        <BreadcrumbProvider>
+            <SidebarProvider>
+                <AppShellInner>{children}</AppShellInner>
+            </SidebarProvider>
+        </BreadcrumbProvider>
     )
 }
 

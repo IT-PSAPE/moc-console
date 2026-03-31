@@ -1,3 +1,4 @@
+import { useBreadcrumbOverride } from '@/components/navigation/breadcrumb'
 import { Dropdown } from '@/components/overlays/dropdown'
 import { Button } from '@/components/controls/button'
 import { Divider } from '@/components/display/divider'
@@ -30,6 +31,8 @@ export function RequestDetailScreen() {
     const [request, setRequest] = useState<Request | null>(null);
     const [assignees, setAssignees] = useState<ResolvedAssignee[]>([]);
     const [content, setContent] = useState('');
+
+    useBreadcrumbOverride(id ?? '', request?.title);
 
     useEffect(() => {
         if (!id) return;
