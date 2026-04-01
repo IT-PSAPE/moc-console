@@ -3,66 +3,134 @@ import { Dropdown } from "@/components/overlays/dropdown";
 import { Divider } from "@/components/display/divider";
 import { Button } from "@/components/controls/button";
 import { Title } from "@/components/display/text";
-import { fetchAssigneesByRequestId, type ResolvedAssignee } from "@/data/fetch-assignees";
+import { fetchAllAssignees, fetchAssigneesByRequestId, type ResolvedAssignee } from "@/data/fetch-assignees";
+import { useFeedback } from "@/components/feedback/feedback-provider";
 import type { Request } from "@/types/requests";
-import {
-    Archive,
-    ArchiveRestore,
-    EllipsisVertical,
-    Maximize2,
-    Pencil,
-    Trash2,
-    X,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { useRequestStore } from "./use-request-store";
+import { UnsavedChangesModal } from "./unsaved-changes-modal";
+import { Archive, ArchiveRestore, EllipsisVertical, Maximize2, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useState, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-    RequestMetaFields,
-    RequestFiveW,
-    RequestNotes,
-    RequestFlow,
-    RequestAssigneeList,
-} from "./request-properties";
+import { RequestMetaFields, RequestFiveW, RequestNotes, RequestFlow, RequestAssigneeList } from "./request-properties";
 
-export function RequestDrawer({ request }: { request: Request }) {
+export type RequestDrawerProps = {
+    request: Request;
+    onRequestClose?: () => void;
+    isDirtyRef?: RefObject<boolean>;
+    requestCloseRef?: RefObject<(() => void) | null>;
+};
+
+export function RequestDrawer({ request, onRequestClose, isDirtyRef, requestCloseRef }: RequestDrawerProps) {
     return (
         <Drawer.Portal>
             <Drawer.Backdrop />
-            <Drawer.Panel>
-                <RequestDrawerContent request={request} />
+            <Drawer.Panel className="!max-w-lg">
+                <RequestDrawerContent
+                    request={request}
+                    onRequestClose={onRequestClose}
+                    isDirtyRef={isDirtyRef}
+                    requestCloseRef={requestCloseRef}
+                />
             </Drawer.Panel>
         </Drawer.Portal>
     );
 }
 
-function RequestDrawerContent({ request }: { request: Request }) {
-    const { state, actions } = useDrawer();
+function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestCloseRef }: RequestDrawerProps) {
+    const { state: drawerState } = useDrawer();
     const navigate = useNavigate();
+    const { toast } = useFeedback();
     const [assignees, setAssignees] = useState<ResolvedAssignee[]>([]);
+    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+
+    const store = useRequestStore(request);
+
+    // Sync dirty state to parent ref so RequestItem can intercept close
+    useEffect(() => {
+        if (isDirtyRef) isDirtyRef.current = store.state.isDirty;
+    }, [isDirtyRef, store.state.isDirty]);
+
+    // Register the "request close with modal" handler on the parent ref
+    useEffect(() => {
+        if (requestCloseRef) {
+            requestCloseRef.current = () => setShowUnsavedModal(true);
+        }
+        return () => {
+            if (requestCloseRef) requestCloseRef.current = null;
+        };
+    }, [requestCloseRef]);
 
     useEffect(() => {
-        if (!state.isOpen) return;
+        if (!drawerState.isOpen) return;
         fetchAssigneesByRequestId(request.id).then(setAssignees);
-    }, [state.isOpen, request.id]);
+    }, [drawerState.isOpen, request.id]);
 
     function handleOpenFullPage() {
-        actions.close();
+        if (store.state.isDirty) {
+            setShowUnsavedModal(true);
+            return;
+        }
+        onRequestClose?.();
         navigate(`/requests/${request.id}`);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    function handleAddMember(_assigneeId: string, _duty: string) {
+    const handleClose = useCallback(() => {
+        if (store.state.isDirty) {
+            setShowUnsavedModal(true);
+            return;
+        }
+        onRequestClose?.();
+    }, [store.state.isDirty, onRequestClose]);
+
+    function handleAddMember(assigneeId: string, duty: string) {
         // TODO: persist to Supabase, then refetch
-        fetchAssigneesByRequestId(request.id).then(setAssignees);
+        // Optimistically add to local state
+        fetchAllAssignees().then((all) => {
+            const match = all.find((a) => a.id === assigneeId);
+            if (match) {
+                setAssignees((prev) => [...prev, { ...match, duty }]);
+            }
+        });
+    }
+
+    const handleSave = useCallback(async () => {
+        try {
+            await store.actions.save();
+            toast({ title: 'Request saved', variant: 'success' });
+        } catch {
+            toast({ title: 'Failed to save request', variant: 'error' });
+        }
+    }, [store.actions, toast]);
+
+    // Modal actions
+    async function handleModalSave() {
+        try {
+            await store.actions.save();
+            toast({ title: 'Request saved', variant: 'success' });
+            setShowUnsavedModal(false);
+            onRequestClose?.();
+        } catch {
+            toast({ title: 'Failed to save request', variant: 'error' });
+        }
+    }
+
+    function handleModalDiscard() {
+        store.actions.discard();
+        setShowUnsavedModal(false);
+        onRequestClose?.();
+    }
+
+    function handleModalCancel() {
+        setShowUnsavedModal(false);
     }
 
     return (
         <>
             {/* Toolbar */}
             <Drawer.Header className="flex items-center gap-1">
-                <Drawer.Close>
+                <button type="button" onClick={handleClose}>
                     <Button variant="ghost" icon={<X />} iconOnly />
-                </Drawer.Close>
+                </button>
                 <Button variant="ghost" icon={<Maximize2 />} iconOnly onClick={handleOpenFullPage} />
                 <div className="flex-1" />
                 <Dropdown.Root placement="bottom">
@@ -70,10 +138,6 @@ function RequestDrawerContent({ request }: { request: Request }) {
                         <Button variant="ghost" icon={<EllipsisVertical />} iconOnly />
                     </Dropdown.Trigger>
                     <Dropdown.Panel>
-                        <Dropdown.Item onSelect={() => { }}>
-                            <Pencil className="size-4" />
-                            Edit
-                        </Dropdown.Item>
                         <Dropdown.Item onSelect={() => { }}>
                             {request.status === "archived" ? (
                                 <><ArchiveRestore className="size-4" />Unarchive</>
@@ -92,29 +156,35 @@ function RequestDrawerContent({ request }: { request: Request }) {
 
             <Drawer.Content className="py-4">
                 <div className="px-4 pb-4">
-                    <Title.h6>{request.title}</Title.h6>
+                    <Title.h6>{store.state.draft.title}</Title.h6>
                 </div>
 
                 <div className="px-4">
-                    <RequestMetaFields request={request} assignees={assignees} onAddMember={handleAddMember} />
+                    <RequestMetaFields
+                        request={store.state.draft}
+                        assignees={assignees}
+                        onAddMember={handleAddMember}
+                        editable
+                        onFieldChange={store.actions.updateField}
+                    />
                 </div>
 
                 <>
                     <Divider className="px-4 py-6" />
-                    <RequestFiveW request={request} className="px-4" />
+                    <RequestFiveW request={store.state.draft} className="px-4" />
                 </>
 
-                {request.notes && (
+                {store.state.draft.notes && (
                     <>
                         <Divider className="px-4 py-6" />
-                        <RequestNotes request={request} className="px-4" />
+                        <RequestNotes request={store.state.draft} className="px-4" />
                     </>
                 )}
 
-                {request.flow && (
+                {store.state.draft.flow && (
                     <>
                         <Divider className="px-4 py-6" />
-                        <RequestFlow request={request} className="px-4" />
+                        <RequestFlow request={store.state.draft} className="px-4" />
                     </>
                 )}
 
@@ -125,6 +195,25 @@ function RequestDrawerContent({ request }: { request: Request }) {
                     </>
                 )}
             </Drawer.Content>
+
+            {/* Save footer — visible only when dirty */}
+            {store.state.isDirty && (
+                <Drawer.Footer className="justify-end">
+                    <Button variant="ghost" onClick={store.actions.discard}>Discard</Button>
+                    <Button onClick={handleSave} disabled={store.state.isSaving}>
+                        {store.state.isSaving ? 'Saving...' : 'Save'}
+                    </Button>
+                </Drawer.Footer>
+            )}
+
+            {/* Unsaved changes modal */}
+            <UnsavedChangesModal
+                open={showUnsavedModal}
+                onSave={handleModalSave}
+                onDiscard={handleModalDiscard}
+                onCancel={handleModalCancel}
+                isSaving={store.state.isSaving}
+            />
         </>
     );
 }

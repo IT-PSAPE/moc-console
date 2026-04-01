@@ -3,7 +3,7 @@ import { cn } from "@/utils/cn";
 import { cv } from "@/utils/cv";
 import { Label } from "../display/text";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "danger-secondary";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
     icon?: ReactNode
@@ -37,6 +37,11 @@ const buttonVariants = cv({
             ],
             danger: [
                 "border-error bg-error_solid text-white",
+                "hover:border-error hover:bg-error_solid-hover",
+                "disabled:border-disabled disabled:bg-disabled disabled:text-disable",
+            ],
+            "danger-secondary": [
+                "border-secondary bg-primary text-secondary hover:text-white",
                 "hover:border-error hover:bg-error_solid-hover",
                 "disabled:border-disabled disabled:bg-disabled disabled:text-disable",
             ],

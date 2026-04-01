@@ -7,6 +7,7 @@ import { cv } from "@/utils/cv";
 import type { Request } from "@/types/requests";
 import { priorityColor, categoryLabel } from "@/types/requests";
 import { RequestDrawer } from "./request-drawer";
+import { useCallback, useRef, useState } from "react";
 
 const itemVariants = cv({
     base: [
@@ -24,8 +25,27 @@ const itemVariants = cv({
 })
 
 export function RequestItem({ request, vertical }: { request: Request; vertical?: boolean }) {
+    const [open, setOpen] = useState(false);
+    const isDirtyRef = useRef(false);
+    const requestCloseRef = useRef<(() => void) | null>(null);
+
+    const handleOpenChange = useCallback((nextOpen: boolean) => {
+        if (nextOpen) {
+            setOpen(true);
+        } else if (isDirtyRef.current) {
+            // Dirty — let the drawer content handle close via its modal
+            requestCloseRef.current?.();
+        } else {
+            setOpen(false);
+        }
+    }, []);
+
+    const handleRequestClose = useCallback(() => {
+        setOpen(false);
+    }, []);
+
     return (
-        <Drawer.Root>
+        <Drawer.Root open={open} onOpenChange={handleOpenChange}>
             <Drawer.Trigger>
                 <div className={cn(itemVariants({ vertical: vertical ? 'true' : 'false' }), 'cursor-pointer hover:bg-background-primary-hover transition-colors')}>
                     <div>
@@ -49,7 +69,12 @@ export function RequestItem({ request, vertical }: { request: Request; vertical?
                     </div>
                 </div>
             </Drawer.Trigger>
-            <RequestDrawer request={request} />
+            <RequestDrawer
+                request={request}
+                onRequestClose={handleRequestClose}
+                isDirtyRef={isDirtyRef}
+                requestCloseRef={requestCloseRef}
+            />
         </Drawer.Root>
     )
 }

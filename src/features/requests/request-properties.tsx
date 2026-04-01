@@ -1,11 +1,20 @@
 import { Badge } from "@/components/display/badge";
 import { Label, Paragraph } from "@/components/display/text";
+import { Dropdown } from "@/components/overlays/dropdown";
+
 import type { ResolvedAssignee } from "@/data/fetch-assignees";
-import type { Request } from "@/types/requests";
-import { statusLabel, priorityColor, categoryLabel } from "@/types/requests";
-import { Calendar, CircleAlert, CircleChevronDown, Clock, Loader, Plus, Tag, Users } from "lucide-react";
+import type { Request, Status, Priority, Category } from "@/types/requests";
+import { statusLabel, priorityLabel, categoryLabel, priorityColor } from "@/types/requests";
+import { Calendar, Check, CircleAlert, CircleChevronDown, Clock, Loader, Plus, Tag, Users, X } from "lucide-react";
 import { AddMemberPopover } from "./add-member-popover";
 import { cn } from "@/utils/cn";
+import { MemberItem } from "@/components/display/member-item";
+
+function toLocalDateTimeValue(iso: string) {
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 export function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString("en-US", {
@@ -22,11 +31,11 @@ export function formatDate(iso: string) {
 export function MetaRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
     return (
         <div className="flex items-start gap-3">
-            <div className="min-h-6 flex items-center gap-2 w-40 shrink-0 text-tertiary">
+            <div className="min-h-6 flex-1 flex items-center gap-2 w-40 shrink-0 text-tertiary">
                 <span className="*:size-4">{icon}</span>
-                <Label.sm className="text-tertiary">{label}</Label.sm>
+                <Label.xs className="text-tertiary truncate w-full">{label}</Label.xs>
             </div>
-            <div className="min-h-6 flex items-center flex-1">{children}</div>
+            <div className="min-h-6 flex-2 flex items-center flex-1">{children}</div>
         </div>
     );
 }
@@ -40,43 +49,137 @@ export function FiveWRow({ label, value }: { label: string; value: string }) {
     );
 }
 
+// ─── Options ────────────────────────────────────────────
+
+const editableStatuses: Status[] = ["not_started", "in_progress", "completed"];
+const allPriorities: Priority[] = ["low", "medium", "high", "urgent"];
+const allCategories: Category[] = ["video_production", "video_shooting", "graphic_design", "event", "education"];
+
 // ─── Composed sections ──────────────────────────────────
 
 type RequestMetaFieldsProps = {
     request: Request;
     assignees: ResolvedAssignee[];
     onAddMember?: (assigneeId: string, duty: string) => void;
+    editable?: boolean;
+    onFieldChange?: <K extends keyof Request>(field: K, value: Request[K]) => void;
 };
 
-export function RequestMetaFields({ request, assignees, onAddMember }: RequestMetaFieldsProps) {
+export function RequestMetaFields({ request, assignees, onAddMember, editable = false, onFieldChange }: RequestMetaFieldsProps) {
     return (
         <div className="space-y-3">
+            {/* Status */}
             <MetaRow icon={<Loader />} label="Status">
-                <Badge label={statusLabel[request.status]} variant="outline" />
+                {editable && onFieldChange ? (
+                    <Dropdown.Root placement="bottom">
+                        <Dropdown.Trigger>
+                            <Badge label={statusLabel[request.status]} variant="outline" className="cursor-pointer" />
+                        </Dropdown.Trigger>
+                        <Dropdown.Panel>
+                            {editableStatuses.map((s) => (
+                                <Dropdown.Item key={s} onSelect={() => onFieldChange("status", s)}>
+                                    <span className="size-4 shrink-0 flex items-center justify-center">
+                                        {s === request.status && <Check className="size-3.5 text-brand_secondary" />}
+                                    </span>
+                                    {statusLabel[s]}
+                                </Dropdown.Item>
+                            ))}
+                        </Dropdown.Panel>
+                    </Dropdown.Root>
+                ) : (
+                    <Badge label={statusLabel[request.status]} variant="outline" />
+                )}
             </MetaRow>
+
+            {/* Priority */}
             <MetaRow icon={<CircleChevronDown />} label="Priority">
-                <Badge
-                    label={request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
-                    icon={<CircleAlert />}
-                    color={priorityColor[request.priority]}
-                />
+                {editable && onFieldChange ? (
+                    <Dropdown.Root placement="bottom">
+                        <Dropdown.Trigger>
+                            <Badge
+                                label={request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
+                                icon={<CircleAlert />}
+                                color={priorityColor[request.priority]}
+                                className="cursor-pointer"
+                            />
+                        </Dropdown.Trigger>
+                        <Dropdown.Panel>
+                            {allPriorities.map((p) => (
+                                <Dropdown.Item key={p} onSelect={() => onFieldChange("priority", p)}>
+                                    <span className="size-4 shrink-0 flex items-center justify-center">
+                                        {p === request.priority && <Check className="size-3.5 text-brand_secondary" />}
+                                    </span>
+                                    {priorityLabel[p]}
+                                </Dropdown.Item>
+                            ))}
+                        </Dropdown.Panel>
+                    </Dropdown.Root>
+                ) : (
+                    <Badge
+                        label={request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
+                        icon={<CircleAlert />}
+                        color={priorityColor[request.priority]}
+                    />
+                )}
             </MetaRow>
+
+            {/* Type / Category */}
             <MetaRow icon={<Tag />} label="Type">
-                <Badge label={categoryLabel[request.category]} icon={<Tag />} color="purple" />
+                {editable && onFieldChange ? (
+                    <Dropdown.Root placement="bottom">
+                        <Dropdown.Trigger>
+                            <Badge label={categoryLabel[request.category]} icon={<Tag />} color="purple" className="cursor-pointer" />
+                        </Dropdown.Trigger>
+                        <Dropdown.Panel>
+                            {allCategories.map((c) => (
+                                <Dropdown.Item key={c} onSelect={() => onFieldChange("category", c)}>
+                                    <span className="size-4 shrink-0 flex items-center justify-center">
+                                        {c === request.category && <Check className="size-3.5 text-brand_secondary" />}
+                                    </span>
+                                    {categoryLabel[c]}
+                                </Dropdown.Item>
+                            ))}
+                        </Dropdown.Panel>
+                    </Dropdown.Root>
+                ) : (
+                    <Badge label={categoryLabel[request.category]} icon={<Tag />} color="purple" />
+                )}
             </MetaRow>
-            {request.dueDate && (
-                <MetaRow icon={<Calendar className="size-4" />} label="Due Date">
-                    <Paragraph.sm>{formatDate(request.dueDate)}</Paragraph.sm>
-                </MetaRow>
-            )}
+
+            {/* Due Date */}
+            <MetaRow icon={<Calendar className="size-4" />} label="Due Date">
+                {editable && onFieldChange ? (
+                    <input
+                        type="datetime-local"
+                        value={request.dueDate ? toLocalDateTimeValue(request.dueDate) : ""}
+                        onChange={(e) => {
+                            const v = e.target.value;
+                            onFieldChange("dueDate", v ? new Date(v).toISOString() : null);
+                        }}
+                        className="bg-transparent text-xs text-primary outline-none cursor-pointer"
+                    />
+                ) : (
+                    request.dueDate ? (
+                        <Paragraph.sm>{formatDate(request.dueDate)}</Paragraph.sm>
+                    ) : (
+                        <Paragraph.sm className="text-quaternary">No due date</Paragraph.sm>
+                    )
+                )}
+            </MetaRow>
+
+            {/* Created time (always read-only) */}
             <MetaRow icon={<Clock className="size-4" />} label="Created time">
                 <Paragraph.sm>{formatDate(request.createdAt)}</Paragraph.sm>
             </MetaRow>
-            <MetaRow icon={<Users className="size-4" />} label="Assigned Members">
+
+            {/* Assigned Members */}
+            <MetaRow icon={<Users className="size-4" />} label="Assigee">
                 {assignees.length > 0 ? (
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-wrap gap-1.5">
                         {assignees.map((a) => (
-                            <Badge key={a.id} label={`${a.name} ${a.surname}`} variant="outline" />
+                            <MemberItem name={a.name} surname={a.surname} size='sm' className="!w-fit" >
+                                <X className="size-4" />
+                            </MemberItem>
                         ))}
                         {onAddMember && (
                             <AddMemberPopover existingAssigneeIds={assignees.map(a => a.id)} onAdd={onAddMember}>
@@ -122,16 +225,10 @@ export function RequestAssigneeList({ assignees, className }: { assignees: Resol
     if (assignees.length === 0) return null;
     return (
         <div className={cn(className)}>
-            <Label.md className="block pb-3">Assigned Members</Label.md>
+            <Label.md className="block pb-3">Assignee</Label.md>
             <div className="space-y-3">
                 {assignees.map((a) => (
-                    <div key={a.id} className="flex items-center justify-between rounded-lg border border-secondary px-3 py-2">
-                        <div>
-                            <Label.sm>{a.name} {a.surname}</Label.sm>
-
-                        </div>
-                        <Badge label={a.duty} variant="outline" />
-                    </div>
+                    <MemberItem name={a.name} surname={a.surname} duty={a.duty} size="bg" />
                 ))}
             </div>
         </div>

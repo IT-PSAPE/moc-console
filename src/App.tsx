@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom'
 import { routes } from './screens/console-routes'
 import { AppShell } from './features/app-shell'
 import { BroadcastMediaScreen } from '@/screens/broadcast/media/page'
@@ -22,7 +22,7 @@ import { BreadcrumbProvider } from './components/navigation/breadcrumb'
 import { SidebarProvider } from './components/navigation/sidebar'
 import { TopBarProvider } from './features/topbar'
 
-export function AppProviders() {
+function AppProviders() {
     return (
         <BreadcrumbProvider>
             <SidebarProvider>
@@ -36,34 +36,35 @@ export function AppProviders() {
     )
 }
 
+const router = createBrowserRouter([
+    {
+        element: <AppProviders />,
+        children: [
+            { index: true, element: <Navigate to={`/${routes.dashboard}`} replace /> },
+            { path: routes.dashboard, element: <DashboardScreen /> },
+            { path: routes.requestsOverview, element: <RequestsOverviewScreen /> },
+            { path: routes.requestsAllRequests, element: <RequestsAllRequestsScreen /> },
+            { path: routes.requestsArchived, element: <RequestsArchivedScreen /> },
+            { path: routes.requestsDetail, element: <RequestDetailScreen /> },
+            { path: routes.requestsReports, element: <RequestsReportsScreen /> },
+            { path: routes.equipmentOverview, element: <EquipmentOverviewScreen /> },
+            { path: routes.equipmentInventory, element: <EquipmentInventoryScreen /> },
+            { path: routes.equipmentBookings, element: <EquipmentBookingsScreen /> },
+            { path: routes.equipmentMaintenance, element: <EquipmentMaintenanceScreen /> },
+            { path: routes.equipmentReports, element: <EquipmentReportsScreen /> },
+            { path: routes.broadcastOverview, element: <BroadcastOverviewScreen /> },
+            { path: routes.broadcastMedia, element: <BroadcastMediaScreen /> },
+            { path: routes.broadcastBroadcast, element: <BroadcastScreen /> },
+            { path: routes.cueSheetOverview, element: <CueSheetOverviewScreen /> },
+            { path: routes.cueSheetEvent, element: <CueSheetEventScreen /> },
+            { path: routes.cueSheetChecklist, element: <CueSheetChecklistScreen /> },
+        ],
+    },
+    { path: '*', element: <Navigate to={`/${routes.dashboard}`} replace /> },
+])
+
 function App() {
-    return (
-        <BrowserRouter>
-            <Routes>
-                <Route element={<AppProviders />}>
-                    <Route index element={<Navigate to={`/${routes.dashboard}`} replace />} />
-                    <Route path={routes.dashboard} element={<DashboardScreen />} />
-                    <Route path={routes.requestsOverview} element={<RequestsOverviewScreen />} />
-                    <Route path={routes.requestsAllRequests} element={<RequestsAllRequestsScreen />} />
-                    <Route path={routes.requestsArchived} element={<RequestsArchivedScreen />} />
-                    <Route path={routes.requestsDetail} element={<RequestDetailScreen />} />
-                    <Route path={routes.requestsReports} element={<RequestsReportsScreen />} />
-                    <Route path={routes.equipmentOverview} element={<EquipmentOverviewScreen />} />
-                    <Route path={routes.equipmentInventory} element={<EquipmentInventoryScreen />} />
-                    <Route path={routes.equipmentBookings} element={<EquipmentBookingsScreen />} />
-                    <Route path={routes.equipmentMaintenance} element={<EquipmentMaintenanceScreen />} />
-                    <Route path={routes.equipmentReports} element={<EquipmentReportsScreen />} />
-                    <Route path={routes.broadcastOverview} element={<BroadcastOverviewScreen />} />
-                    <Route path={routes.broadcastMedia} element={<BroadcastMediaScreen />} />
-                    <Route path={routes.broadcastBroadcast} element={<BroadcastScreen />} />
-                    <Route path={routes.cueSheetOverview} element={<CueSheetOverviewScreen />} />
-                    <Route path={routes.cueSheetEvent} element={<CueSheetEventScreen />} />
-                    <Route path={routes.cueSheetChecklist} element={<CueSheetChecklistScreen />} />
-                </Route>
-                <Route path="*" element={<Navigate to={`/${routes.dashboard}`} replace />} />
-            </Routes>
-        </BrowserRouter>
-    )
+    return <RouterProvider router={router} />
 }
 
 export default App

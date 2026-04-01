@@ -1,6 +1,8 @@
 import { Button } from "@/components/controls/button";
+import { MemberItem } from "@/components/display/member-item";
 import { Label, Paragraph } from "@/components/display/text";
 import { Input } from "@/components/form/input";
+import { Radio } from "@/components/form/radio";
 import { Popover, usePopover } from "@/components/overlays/popover";
 import { fetchAllAssignees } from "@/data/fetch-assignees";
 import { fetchRoles } from "@/data/fetch-roles";
@@ -77,7 +79,7 @@ function AddMemberPanel({ existingAssigneeIds, onAdd }: Omit<AddMemberPopoverPro
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
-                <div className="max-h-56 overflow-y-auto p-1">
+                <div className="max-h-56 overflow-y-auto p-1 flex flex-col gap-0.5">
                     {filtered.length === 0 && (
                         <div className="px-3 py-4 text-center">
                             <Paragraph.sm className="text-quaternary">No members found</Paragraph.sm>
@@ -86,21 +88,10 @@ function AddMemberPanel({ existingAssigneeIds, onAdd }: Omit<AddMemberPopoverPro
                     {filtered.map((a) => {
                         const alreadyAssigned = existingAssigneeIds.includes(a.id);
                         return (
-                            <button
-                                key={a.id}
-                                type="button"
-                                disabled={alreadyAssigned}
-                                className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                onClick={() => handleSelectAssignee(a)}
-                            >
-                                <div className="size-8 shrink-0 rounded-full bg-brand_primary flex items-center justify-center">
-                                    <Label.xs className="text-brand_secondary">{a.name[0]}{a.surname[0]}</Label.xs>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <Label.sm>{a.name} {a.surname}</Label.sm>
-
-                                </div>
-                                {alreadyAssigned && <Check className="size-4 text-brand_secondary shrink-0" />}
+                            <button key={a.id} type="button" disabled={alreadyAssigned} onClick={() => handleSelectAssignee(a)} className="flex w-full">
+                                <MemberItem name={a.name} surname={a.surname} disabled={alreadyAssigned} selectable>
+                                    {alreadyAssigned && <Check className="size-4 text-brand_secondary shrink-0" />}
+                                </MemberItem>
                             </button>
                         );
                     })}
@@ -111,34 +102,15 @@ function AddMemberPanel({ existingAssigneeIds, onAdd }: Omit<AddMemberPopoverPro
 
     return (
         <>
-            <div className="p-3 border-b border-secondary">
-                <div className="flex items-center gap-2">
-                    <div className="size-8 shrink-0 rounded-full bg-brand_primary flex items-center justify-center">
-                        <Label.xs className="text-brand_secondary">
-                            {selectedAssignee?.name[0]}{selectedAssignee?.surname[0]}
-                        </Label.xs>
-                    </div>
-                    <div>
-                        <Label.sm>{selectedAssignee?.name} {selectedAssignee?.surname}</Label.sm>
-
-                    </div>
-                </div>
+            <div className="p-1 border-b border-secondary">
+                <MemberItem name={selectedAssignee!.name} surname={selectedAssignee!.surname} />
             </div>
-            <div className="p-2 border-b border-secondary">
-                <Paragraph.xs className="px-1 pb-1.5 text-quaternary">Select a duty</Paragraph.xs>
-                <div className="max-h-40 overflow-y-auto space-y-0.5">
+            <div className="py-2 border-b border-secondary">
+                <Paragraph.xs className="px-3 pb-1.5 text-quaternary">Select a duty</Paragraph.xs>
+                <div className="max-h-40 px-1 overflow-y-auto space-y-0.5">
                     {roles.map((role) => (
-                        <button
-                            key={role}
-                            type="button"
-                            className="w-full flex items-center gap-2 rounded-lg px-3 py-1.5 text-left hover:bg-secondary transition-colors cursor-pointer"
-                            onClick={() => handleSelectRole(role)}
-                        >
-                            {duty === role ? (
-                                <Check className="size-3.5 text-brand_secondary shrink-0" />
-                            ) : (
-                                <span className="size-3.5 shrink-0" />
-                            )}
+                        <button key={role} type="button" className="w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-secondary transition-colors cursor-pointer" onClick={() => handleSelectRole(role)}>
+                            <Radio value={role} checked={duty === role} />
                             <Label.sm className={duty === role ? "text-primary" : "text-secondary"}>{role}</Label.sm>
                         </button>
                     ))}

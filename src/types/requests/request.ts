@@ -18,4 +18,5 @@ export type Request = {
   how: string;
   notes?: string;
   flow?: string;
+  content?: string;
 };
