@@ -5,7 +5,8 @@ import { Divider } from '@/components/display/divider'
 import { Header } from '@/components/display/header'
 import { Label, Paragraph, Title } from '@/components/display/text'
 import { fetchRequestById } from '@/data/fetch-requests'
-import { fetchAllAssignees, fetchAssigneesByRequestId, type ResolvedAssignee } from '@/data/fetch-assignees'
+import { fetchAssigneesByRequestId, type ResolvedAssignee } from '@/data/fetch-assignees'
+import { addRequestAssignee } from '@/data/mutate-requests'
 import type { Request } from '@/types/requests'
 import { TopBarActions } from '@/features/topbar'
 import { useRequestStore } from '@/features/requests/use-request-store'
@@ -75,15 +76,14 @@ function RequestDetailContent({ request, assignees, setAssignees, toast }: Reque
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [store.state.isDirty]);
 
-    function handleAddMember(assigneeId: string, duty: string) {
-        // TODO: persist to Supabase, then refetch
-        // Optimistically add to local state
-        fetchAllAssignees().then((all) => {
-            const match = all.find((a) => a.id === assigneeId);
-            if (match) {
-                setAssignees([...assignees, { ...match, duty }]);
-            }
-        });
+    async function handleAddMember(assigneeId: string, duty: string) {
+        try {
+            await addRequestAssignee(request.id, assigneeId, duty);
+            const updated = await fetchAssigneesByRequestId(request.id);
+            setAssignees(updated);
+        } catch {
+            toast({ title: "Failed to add member", variant: "error" });
+        }
     }
 
     const handleSave = useCallback(async () => {

@@ -1,13 +1,11 @@
-import data from "./roles.json";
-
-const roles = data as string[];
-
-function delay(ms = 300) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
+import { supabase } from "@/lib/supabase";
 
 /** Fetch all available roles */
 export async function fetchRoles(): Promise<string[]> {
-  await delay();
-  return roles;
+  const { data, error } = await supabase
+    .from("roles")
+    .select("name");
+
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => r.name);
 }

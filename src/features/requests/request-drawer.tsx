@@ -3,7 +3,8 @@ import { Dropdown } from "@/components/overlays/dropdown";
 import { Divider } from "@/components/display/divider";
 import { Button } from "@/components/controls/button";
 import { Title } from "@/components/display/text";
-import { fetchAllAssignees, fetchAssigneesByRequestId, type ResolvedAssignee } from "@/data/fetch-assignees";
+import { fetchAssigneesByRequestId, type ResolvedAssignee } from "@/data/fetch-assignees";
+import { addRequestAssignee } from "@/data/mutate-requests";
 import { useFeedback } from "@/components/feedback/feedback-provider";
 import type { Request } from "@/types/requests";
 import { useRequestStore } from "./use-request-store";
@@ -82,15 +83,14 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
         onRequestClose?.();
     }, [store.state.isDirty, onRequestClose]);
 
-    function handleAddMember(assigneeId: string, duty: string) {
-        // TODO: persist to Supabase, then refetch
-        // Optimistically add to local state
-        fetchAllAssignees().then((all) => {
-            const match = all.find((a) => a.id === assigneeId);
-            if (match) {
-                setAssignees((prev) => [...prev, { ...match, duty }]);
-            }
-        });
+    async function handleAddMember(assigneeId: string, duty: string) {
+        try {
+            await addRequestAssignee(request.id, assigneeId, duty);
+            const updated = await fetchAssigneesByRequestId(request.id);
+            setAssignees(updated);
+        } catch {
+            toast({ title: "Failed to add member", variant: "error" });
+        }
     }
 
     const handleSave = useCallback(async () => {

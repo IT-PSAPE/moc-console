@@ -1,14 +1,5 @@
-import type { Assignee, RequestAssignee } from "@/types/requests";
-import assigneesData from "./assignees.json";
-import joinData from "./request-assignees.json";
-
-const assignees = assigneesData as Assignee[];
-const requestAssignees = joinData as RequestAssignee[];
-
-/** Simulate network latency */
-function delay(ms = 300) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
+import type { Assignee } from "@/types/requests";
+import { supabase } from "@/lib/supabase";
 
 /** Resolved assignee with duty for a specific request */
 export type ResolvedAssignee = Assignee & { duty: string };
@@ -17,19 +8,25 @@ export type ResolvedAssignee = Assignee & { duty: string };
 export async function fetchAssigneesByRequestId(
   requestId: string,
 ): Promise<ResolvedAssignee[]> {
-  await delay();
-  const joins = requestAssignees.filter((ra) => ra.requestId === requestId);
-  return joins
-    .map((join) => {
-      const assignee = assignees.find((a) => a.id === join.assigneeId);
-      if (!assignee) return null;
-      return { ...assignee, duty: join.duty };
-    })
-    .filter((a): a is ResolvedAssignee => a !== null);
+  const { data, error } = await supabase
+    .from("request_assignees")
+    .select("duty, assignees(id, name, surname)")
+    .eq("request_id", requestId);
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((row) => {
+    const assignee = row.assignees as unknown as Assignee;
+    return { ...assignee, duty: row.duty };
+  });
 }
 
 /** Fetch all assignees (for assignment pickers, etc.) */
 export async function fetchAllAssignees(): Promise<Assignee[]> {
-  await delay();
-  return assignees;
+  const { data, error } = await supabase
+    .from("assignees")
+    .select("*");
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Assignee[];
 }
