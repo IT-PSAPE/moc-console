@@ -77,6 +77,7 @@ function deriveBreadcrumbs(pathname: string, overrides: BreadcrumbOverrides): Ar
     let currentPath = ''
     for (const segment of segments) {
         currentPath += `/${segment}`
+        if (currentPath === '/dashboard') continue
         const label = overrides[segment] ?? formatSegment(segment)
         crumbs.push({ label, path: currentPath })
     }

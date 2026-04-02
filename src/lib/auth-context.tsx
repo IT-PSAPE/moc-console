@@ -1,15 +1,14 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import type { ReactNode } from "react"
 import type { Session, User } from "@supabase/supabase-js"
-import type { User as Profile } from "@/types/requests/assignee"
-import type { AppRole } from "@/types/requests/assignee"
+import type { User as Profile, Role } from "@/types/requests/assignee"
 import { supabase } from "./supabase"
 
 type AuthState = {
     session: Session | null
     user: User | null
     profile: Profile | null
-    role: AppRole | null
+    role: Role | null
     loading: boolean
     signUp: (email: string, password: string) => Promise<{ error: Error | null }>
     signIn: (email: string, password: string) => Promise<{ error: Error | null }>
@@ -23,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [session, setSession] = useState<Session | null>(null)
     const [user, setUser] = useState<User | null>(null)
     const [profile, setProfile] = useState<Profile | null>(null)
-    const [role, setRole] = useState<AppRole | null>(null)
+    const [role, setRole] = useState<Role | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -59,11 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         supabase
             .from("user_roles")
-            .select("role")
+            .select("roles(id, name, can_create, can_read, can_update, can_delete, can_manage_roles, can_manage_assignees)")
             .eq("user_id", user.id)
             .single()
             .then(({ data }) => {
-                setRole((data?.role as AppRole) ?? null)
+                const userRole = Array.isArray(data?.roles) ? data.roles[0] : data?.roles
+                setRole((userRole as Role | null) ?? null)
             })
     }, [user])
 

@@ -1,5 +1,6 @@
 import { Button } from "@/components/controls/button";
-import { MemberItem } from "@/components/display/member-item";
+import { Avatar } from "@/components/display/avatar";
+import { cn } from "@/utils/cn";
 import { Label, Paragraph } from "@/components/display/text";
 import { Input } from "@/components/form/input";
 import { Radio } from "@/components/form/radio";
@@ -88,10 +89,12 @@ function AddMemberPanel({ existingUserIds, onAdd }: Omit<AddMemberPopoverProps, 
                     {filtered.map((a) => {
                         const alreadyAssigned = existingUserIds.includes(a.id);
                         return (
-                            <button key={a.id} type="button" disabled={alreadyAssigned} onClick={() => handleSelectUser(a)} className="flex w-full">
-                                <MemberItem name={a.name} surname={a.surname} disabled={alreadyAssigned} selectable>
-                                    {alreadyAssigned && <Check className="size-4 text-brand_secondary shrink-0" />}
-                                </MemberItem>
+                            <button key={a.id} type="button" disabled={alreadyAssigned} onClick={() => handleSelectUser(a)} className={cn("w-full flex items-center rounded-lg py-1 px-2 space-x-2 hover:bg-secondary transition-colors cursor-pointer", alreadyAssigned && "opacity-50 !cursor-not-allowed hover:!bg-transparent")}>
+                                <Avatar.initials size="sm" name={`${a.name[0]}${a.surname[0]}`} />
+                                <div className="flex-1 min-w-0">
+                                    <Label.sm>{a.name} {a.surname}</Label.sm>
+                                </div>
+                                {alreadyAssigned && <Check className="size-4 text-brand_secondary shrink-0" />}
                             </button>
                         );
                     })}
@@ -103,7 +106,12 @@ function AddMemberPanel({ existingUserIds, onAdd }: Omit<AddMemberPopoverProps, 
     return (
         <>
             <div className="p-1 border-b border-secondary">
-                <MemberItem name={selectedUser!.name} surname={selectedUser!.surname} />
+                <div className="w-full flex items-center rounded-lg py-1 space-x-2">
+                    <Avatar.initials size="sm" name={`${selectedUser!.name[0]}${selectedUser!.surname[0]}`} />
+                    <div className="flex-1 min-w-0">
+                        <Label.sm>{selectedUser!.name} {selectedUser!.surname}</Label.sm>
+                    </div>
+                </div>
             </div>
             <div className="py-2 border-b border-secondary">
                 <Paragraph.xs className="px-3 pb-1.5 text-quaternary">Select a duty</Paragraph.xs>

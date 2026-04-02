@@ -8,7 +8,7 @@ import { statusLabel, statusColor, priorityLabel, categoryLabel, priorityColor }
 import { Archive, Calendar, Check, CircleAlert, CircleChevronDown, CircleDashed, Clock, Loader, Plus, Tag, X } from "lucide-react";
 import { AddMemberPopover } from "./add-member-popover";
 import { cn } from "@/utils/cn";
-import { MemberItem } from "@/components/display/member-item";
+import { Avatar } from "@/components/display/avatar";
 import { Button } from "@/components/controls/button";
 
 function toLocalDateTimeValue(iso: string) {
@@ -212,18 +212,21 @@ export function RequestAssigneeList({ assignees, onAddMember, onRemoveMember, cl
                 <Label.md>Assignees</Label.md>
                 {onAddMember && (
                     <AddMemberPopover existingUserIds={assignees.map(a => a.id)} onAdd={onAddMember}>
-                        <button className="cursor-pointer">
-                            <Button icon={<Plus />} iconOnly variant="ghost" />
-                        </button>
+                        <Button icon={<Plus />} iconOnly variant="ghost" className="cursor-pointer" />
                     </AddMemberPopover>
                 )}
             </div>
             {assignees.length > 0 ? (
                 <div className="space-y-3">
                     {assignees.map((a) => (
-                        <MemberItem key={a.id} name={a.name} surname={a.surname} duty={a.duty} size="bg">
+                        <div key={a.id} className="w-full flex items-center rounded-lg py-1 space-x-2">
+                            <Avatar.initials size="md" name={`${a.name[0]}${a.surname[0]}`} />
+                            <div className="flex-1 min-w-0">
+                                <Label.sm>{a.name} {a.surname}</Label.sm>
+                                {a.duty && <Paragraph.xs className="text-quaternary truncate">{a.duty}</Paragraph.xs>}
+                            </div>
                             {onRemoveMember && <Button icon={<X />} iconOnly variant="ghost" onClick={() => onRemoveMember(a.id)} />}
-                        </MemberItem>
+                        </div>
                     ))}
                 </div>
             ) : (

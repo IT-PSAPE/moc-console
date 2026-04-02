@@ -10,6 +10,7 @@ import { useAuth } from '../lib/auth-context'
 import { Divider } from '../components/display/divider'
 import { CommandMenu } from '../components/overlays/command-menu'
 import { SearchCommandMenuContent, SearchMenuItem } from './search/search-command-menu'
+import { Avatar } from '@/components/display/avatar'
 
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -17,7 +18,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const { pathname } = useLocation()
 
     const { state, actions } = useSidebar()
-    const { profile, user, role } = useAuth()
+    const { profile, role } = useAuth()
 
     // Close mobile sidebar on route change
     useEffect(() => {
@@ -86,14 +87,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </Sidebar.Content>
 
                     <Sidebar.Footer>
-                        <div className="size-9 shrink-0 rounded-lg bg-brand_solid" />
+                        {profile && <Avatar.initials name={`${profile!.name[0]}${profile!.surname[0]}`} />}
                         {!state.isCollapsed && (
                             <div className="flex flex-col">
                                 <span className="text-label-sm truncate leading-none">
                                     {profile ? `${profile.name} ${profile.surname}` : "MoC Member"}
                                 </span>
                                 <span className="text-paragraph-xs text-quaternary truncate leading-none capitalize">
-                                    {role ?? "No role"}
+                                    {role?.name ?? "No role"}
                                 </span>
                             </div>
                         )}

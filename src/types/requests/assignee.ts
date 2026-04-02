@@ -1,4 +1,13 @@
-export type AppRole = "admin" | "editor" | "viewer";
+export type Role = {
+  id: string;
+  name: string;
+  can_create: boolean;
+  can_read: boolean;
+  can_update: boolean;
+  can_delete: boolean;
+  can_manage_roles: boolean;
+  can_manage_assignees: boolean;
+};
 
 export type User = {
   id: string;

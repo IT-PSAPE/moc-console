@@ -180,7 +180,7 @@ function SidebarGroupTitle({ title, className }: { title: string, className?: st
 
 function SidebarGroupContent({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("w-full px-2 flex flex-col justify-start items-start gap-0.5", className)}>
+        <div className={cn("w-full px-2 flex flex-col justify-start items-start", className)}>
             {children}
         </div>
     )

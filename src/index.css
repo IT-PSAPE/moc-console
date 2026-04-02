@@ -940,6 +940,11 @@ select:focus-visible {
   
 }
 
+.doc-block:empty::before {
+    content: attr(data-placeholder);
+    @apply text-quaternary pointer-events-none;
+}
+
 .scrollbar-hidden {
   /* Firefox */
   scrollbar-width: none;

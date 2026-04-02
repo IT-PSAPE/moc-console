@@ -7,17 +7,7 @@ import { statusGroups } from "@/types/requests";
 import { useRequests } from "./request-provider";
 import { updateRequestStatus } from "@/data/mutate-requests";
 import { useFeedback } from "@/components/feedback/feedback-provider";
-import {
-    DndContext,
-    DragOverlay,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    useDroppable,
-    closestCenter,
-    type DragStartEvent,
-    type DragEndEvent,
-} from "@dnd-kit/core";
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, useDroppable, closestCenter, type DragStartEvent, type DragEndEvent } from "@dnd-kit/core";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { useCallback, useState } from "react";
@@ -60,7 +50,7 @@ function DroppableColumn({
             <Card.Header className="gap-1.5">
                 <Indicator color={group.color} className="size-6" />
                 <Label.sm>{group.label}</Label.sm>
-                <span className="text-quaternary text-xs ml-auto">{items.length}</span>
+                <Label.sm className="text-quaternary ml-auto">{items.length}</Label.sm>
             </Card.Header>
             <div ref={setNodeRef}>
                 <Card.Content ghost className="flex flex-col gap-1.5 min-h-16">
