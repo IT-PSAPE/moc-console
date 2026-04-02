@@ -1,4 +1,4 @@
-import type { Request } from "@/types/requests";
+import type { Request, Status } from "@/types/requests";
 import { supabase } from "@/lib/supabase";
 import { mapRow, toRow } from "./map-request";
 
@@ -24,6 +24,26 @@ export async function archiveRequest(id: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+/** Unarchive a request by resetting its status to 'not_started' */
+export async function unarchiveRequest(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("requests")
+    .update({ status: "not_started" })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+}
+
+/** Update just the status of a request */
+export async function updateRequestStatus(id: string, status: Status): Promise<void> {
+  const { error } = await supabase
+    .from("requests")
+    .update({ status })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+}
+
 /** Delete a request (cascades to request_assignees) */
 export async function deleteRequest(id: string): Promise<void> {
   const { error } = await supabase
@@ -34,29 +54,29 @@ export async function deleteRequest(id: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-/** Add an assignee to a request with a specific duty */
+/** Add a user to a request with a specific duty */
 export async function addRequestAssignee(
   requestId: string,
-  assigneeId: string,
+  userId: string,
   duty: string,
 ): Promise<void> {
   const { error } = await supabase
     .from("request_assignees")
-    .insert({ request_id: requestId, assignee_id: assigneeId, duty });
+    .insert({ request_id: requestId, user_id: userId, duty });
 
   if (error) throw new Error(error.message);
 }
 
-/** Remove an assignee from a request */
+/** Remove a user from a request */
 export async function removeRequestAssignee(
   requestId: string,
-  assigneeId: string,
+  userId: string,
 ): Promise<void> {
   const { error } = await supabase
     .from("request_assignees")
     .delete()
     .eq("request_id", requestId)
-    .eq("assignee_id", assigneeId);
+    .eq("user_id", userId);
 
   if (error) throw new Error(error.message);
 }

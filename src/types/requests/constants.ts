@@ -28,6 +28,13 @@ export const categoryLabel: Record<Category, string> = {
 
 // ─── Colors ────────────────────────────────────────────
 
+export const statusColor = {
+    not_started: "gray",
+    in_progress: "yellow",
+    completed: "green",
+    archived: "gray",
+} as const satisfies Record<Status, string>;
+
 export const priorityColor = {
     urgent: "red",
     high: "yellow",

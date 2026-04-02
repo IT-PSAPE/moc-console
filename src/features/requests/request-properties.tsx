@@ -4,11 +4,12 @@ import { Dropdown } from "@/components/overlays/dropdown";
 
 import type { ResolvedAssignee } from "@/data/fetch-assignees";
 import type { Request, Status, Priority, Category } from "@/types/requests";
-import { statusLabel, priorityLabel, categoryLabel, priorityColor } from "@/types/requests";
-import { Calendar, Check, CircleAlert, CircleChevronDown, Clock, Loader, Plus, Tag, Users, X } from "lucide-react";
+import { statusLabel, statusColor, priorityLabel, categoryLabel, priorityColor } from "@/types/requests";
+import { Archive, Calendar, Check, CircleAlert, CircleChevronDown, CircleDashed, Clock, Loader, Plus, Tag, X } from "lucide-react";
 import { AddMemberPopover } from "./add-member-popover";
 import { cn } from "@/utils/cn";
 import { MemberItem } from "@/components/display/member-item";
+import { Button } from "@/components/controls/button";
 
 function toLocalDateTimeValue(iso: string) {
     const d = new Date(iso);
@@ -51,7 +52,14 @@ export function FiveWRow({ label, value }: { label: string; value: string }) {
 
 // ─── Options ────────────────────────────────────────────
 
-const editableStatuses: Status[] = ["not_started", "in_progress", "completed"];
+const statusIcon: Record<Status, React.ReactNode> = {
+    not_started: <CircleDashed />,
+    in_progress: <Loader />,
+    completed: <Check />,
+    archived: <Archive />,
+};
+
+const editableStatuses: Status[] = ["not_started", "in_progress", "completed", "archived"];
 const allPriorities: Priority[] = ["low", "medium", "high", "urgent"];
 const allCategories: Category[] = ["video_production", "video_shooting", "graphic_design", "event", "education"];
 
@@ -59,13 +67,11 @@ const allCategories: Category[] = ["video_production", "video_shooting", "graphi
 
 type RequestMetaFieldsProps = {
     request: Request;
-    assignees: ResolvedAssignee[];
-    onAddMember?: (assigneeId: string, duty: string) => void;
     editable?: boolean;
     onFieldChange?: <K extends keyof Request>(field: K, value: Request[K]) => void;
 };
 
-export function RequestMetaFields({ request, assignees, onAddMember, editable = false, onFieldChange }: RequestMetaFieldsProps) {
+export function RequestMetaFields({ request, editable = false, onFieldChange }: RequestMetaFieldsProps) {
     return (
         <div className="space-y-3">
             {/* Status */}
@@ -73,7 +79,7 @@ export function RequestMetaFields({ request, assignees, onAddMember, editable = 
                 {editable && onFieldChange ? (
                     <Dropdown.Root placement="bottom">
                         <Dropdown.Trigger>
-                            <Badge label={statusLabel[request.status]} variant="outline" className="cursor-pointer" />
+                            <Badge label={statusLabel[request.status]} icon={statusIcon[request.status]} color={statusColor[request.status]} className="cursor-pointer" />
                         </Dropdown.Trigger>
                         <Dropdown.Panel>
                             {editableStatuses.map((s) => (
@@ -87,7 +93,7 @@ export function RequestMetaFields({ request, assignees, onAddMember, editable = 
                         </Dropdown.Panel>
                     </Dropdown.Root>
                 ) : (
-                    <Badge label={statusLabel[request.status]} variant="outline" />
+                    <Badge label={statusLabel[request.status]} icon={statusIcon[request.status]} color={statusColor[request.status]} />
                 )}
             </MetaRow>
 
@@ -172,35 +178,6 @@ export function RequestMetaFields({ request, assignees, onAddMember, editable = 
                 <Paragraph.sm>{formatDate(request.createdAt)}</Paragraph.sm>
             </MetaRow>
 
-            {/* Assigned Members */}
-            <MetaRow icon={<Users className="size-4" />} label="Assigee">
-                {assignees.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                        {assignees.map((a) => (
-                            <MemberItem name={a.name} surname={a.surname} size='sm' className="!w-fit" >
-                                <X className="size-4" />
-                            </MemberItem>
-                        ))}
-                        {onAddMember && (
-                            <AddMemberPopover existingAssigneeIds={assignees.map(a => a.id)} onAdd={onAddMember}>
-                                <button className="cursor-pointer">
-                                    <Badge label="Add member" icon={<Plus />} />
-                                </button>
-                            </AddMemberPopover>
-                        )}
-                    </div>
-                ) : (
-                    onAddMember ? (
-                        <AddMemberPopover existingAssigneeIds={[]} onAdd={onAddMember}>
-                            <button className="cursor-pointer">
-                                <Badge label="Add member" icon={<Plus />} variant="outline" />
-                            </button>
-                        </AddMemberPopover>
-                    ) : (
-                        <Paragraph.sm className="text-quaternary">None</Paragraph.sm>
-                    )
-                )}
-            </MetaRow>
         </div>
     );
 }
@@ -221,16 +198,37 @@ export function RequestFiveW({ request, className }: { request: Request, classNa
     );
 }
 
-export function RequestAssigneeList({ assignees, className }: { assignees: ResolvedAssignee[], className?: string }) {
-    if (assignees.length === 0) return null;
+type RequestAssigneeListProps = {
+    assignees: ResolvedAssignee[];
+    onAddMember?: (userId: string, duty: string) => void;
+    onRemoveMember?: (userId: string) => void;
+    className?: string;
+};
+
+export function RequestAssigneeList({ assignees, onAddMember, onRemoveMember, className }: RequestAssigneeListProps) {
     return (
         <div className={cn(className)}>
-            <Label.md className="block pb-3">Assignee</Label.md>
-            <div className="space-y-3">
-                {assignees.map((a) => (
-                    <MemberItem name={a.name} surname={a.surname} duty={a.duty} size="bg" />
-                ))}
+            <div className="flex items-center justify-between pb-3">
+                <Label.md>Assignees</Label.md>
+                {onAddMember && (
+                    <AddMemberPopover existingUserIds={assignees.map(a => a.id)} onAdd={onAddMember}>
+                        <button className="cursor-pointer">
+                            <Button icon={<Plus />} iconOnly variant="ghost" />
+                        </button>
+                    </AddMemberPopover>
+                )}
             </div>
+            {assignees.length > 0 ? (
+                <div className="space-y-3">
+                    {assignees.map((a) => (
+                        <MemberItem key={a.id} name={a.name} surname={a.surname} duty={a.duty} size="bg">
+                            {onRemoveMember && <Button icon={<X />} iconOnly variant="ghost" onClick={() => onRemoveMember(a.id)} />}
+                        </MemberItem>
+                    ))}
+                </div>
+            ) : (
+                <Paragraph.sm className="text-quaternary">No assignees</Paragraph.sm>
+            )}
         </div>
     );
 }

@@ -4,24 +4,24 @@ import { Label, Paragraph } from "@/components/display/text";
 import { Input } from "@/components/form/input";
 import { Radio } from "@/components/form/radio";
 import { Popover, usePopover } from "@/components/overlays/popover";
-import { fetchAllAssignees } from "@/data/fetch-assignees";
+import { fetchAllUsers } from "@/data/fetch-assignees";
 import { fetchRoles } from "@/data/fetch-roles";
-import type { Assignee } from "@/types/requests";
+import type { User } from "@/types/requests";
 import { Check, Search } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 type AddMemberPopoverProps = {
-    existingAssigneeIds: string[];
+    existingUserIds: string[];
     onAdd: (assigneeId: string, duty: string) => void;
     children: ReactNode;
 };
 
-export function AddMemberPopover({ existingAssigneeIds, onAdd, children }: AddMemberPopoverProps) {
+export function AddMemberPopover({ existingUserIds, onAdd, children }: AddMemberPopoverProps) {
     return (
         <Popover.Root placement="bottom">
             <Popover.Trigger>{children}</Popover.Trigger>
             <Popover.Panel className="w-72">
-                <AddMemberPanel existingAssigneeIds={existingAssigneeIds} onAdd={onAdd} />
+                <AddMemberPanel existingUserIds={existingUserIds} onAdd={onAdd} />
             </Popover.Panel>
         </Popover.Root>
     );
@@ -29,27 +29,27 @@ export function AddMemberPopover({ existingAssigneeIds, onAdd, children }: AddMe
 
 type Step = "select-member" | "select-role";
 
-function AddMemberPanel({ existingAssigneeIds, onAdd }: Omit<AddMemberPopoverProps, "children">) {
+function AddMemberPanel({ existingUserIds, onAdd }: Omit<AddMemberPopoverProps, "children">) {
     const { actions } = usePopover();
     const [step, setStep] = useState<Step>("select-member");
-    const [allAssignees, setAllAssignees] = useState<Assignee[]>([]);
+    const [allUsers, setAllUsers] = useState<User[]>([]);
     const [roles, setRoles] = useState<string[]>([]);
     const [search, setSearch] = useState("");
-    const [selectedAssignee, setSelectedAssignee] = useState<Assignee | null>(null);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [duty, setDuty] = useState("");
 
     useEffect(() => {
-        fetchAllAssignees().then(setAllAssignees);
+        fetchAllUsers().then(setAllUsers);
         fetchRoles().then(setRoles);
     }, []);
 
-    const filtered = allAssignees.filter((a) => {
+    const filtered = allUsers.filter((a) => {
         const fullName = `${a.name} ${a.surname}`.toLowerCase();
         return fullName.includes(search.toLowerCase());
     });
 
-    function handleSelectAssignee(assignee: Assignee) {
-        setSelectedAssignee(assignee);
+    function handleSelectUser(assignee: User) {
+        setSelectedUser(assignee);
         setSearch("");
         setStep("select-role");
     }
@@ -59,11 +59,11 @@ function AddMemberPanel({ existingAssigneeIds, onAdd }: Omit<AddMemberPopoverPro
     }
 
     function handleConfirm() {
-        if (!selectedAssignee || !duty) return;
-        onAdd(selectedAssignee.id, duty);
+        if (!selectedUser || !duty) return;
+        onAdd(selectedUser.id, duty);
         actions.close();
         setStep("select-member");
-        setSelectedAssignee(null);
+        setSelectedUser(null);
         setDuty("");
         setSearch("");
     }
@@ -86,9 +86,9 @@ function AddMemberPanel({ existingAssigneeIds, onAdd }: Omit<AddMemberPopoverPro
                         </div>
                     )}
                     {filtered.map((a) => {
-                        const alreadyAssigned = existingAssigneeIds.includes(a.id);
+                        const alreadyAssigned = existingUserIds.includes(a.id);
                         return (
-                            <button key={a.id} type="button" disabled={alreadyAssigned} onClick={() => handleSelectAssignee(a)} className="flex w-full">
+                            <button key={a.id} type="button" disabled={alreadyAssigned} onClick={() => handleSelectUser(a)} className="flex w-full">
                                 <MemberItem name={a.name} surname={a.surname} disabled={alreadyAssigned} selectable>
                                     {alreadyAssigned && <Check className="size-4 text-brand_secondary shrink-0" />}
                                 </MemberItem>
@@ -103,7 +103,7 @@ function AddMemberPanel({ existingAssigneeIds, onAdd }: Omit<AddMemberPopoverPro
     return (
         <>
             <div className="p-1 border-b border-secondary">
-                <MemberItem name={selectedAssignee!.name} surname={selectedAssignee!.surname} />
+                <MemberItem name={selectedUser!.name} surname={selectedUser!.surname} />
             </div>
             <div className="py-2 border-b border-secondary">
                 <Paragraph.xs className="px-3 pb-1.5 text-quaternary">Select a duty</Paragraph.xs>
@@ -125,7 +125,7 @@ function AddMemberPanel({ existingAssigneeIds, onAdd }: Omit<AddMemberPopoverPro
                 />
             </div>
             <div className="p-2 flex gap-2">
-                <Button variant="secondary" className="flex-1" onClick={() => { setStep("select-member"); setSelectedAssignee(null); setDuty(""); }}>
+                <Button variant="secondary" className="flex-1" onClick={() => { setStep("select-member"); setSelectedUser(null); setDuty(""); }}>
                     Back
                 </Button>
                 <Button className="flex-1" disabled={!duty} onClick={handleConfirm}>

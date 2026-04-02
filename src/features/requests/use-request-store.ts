@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import type { Request } from '@/types/requests'
 import { updateRequest } from '@/data/mutate-requests'
 
@@ -14,7 +14,7 @@ type RequestStoreState = {
 type Action =
     | { type: 'UPDATE_FIELD'; field: keyof Request; value: Request[keyof Request] }
     | { type: 'SAVE_START' }
-    | { type: 'SAVE_SUCCESS' }
+    | { type: 'SAVE_SUCCESS'; request: Request }
     | { type: 'SAVE_ERROR'; error: string }
     | { type: 'DISCARD' }
     | { type: 'RESET'; request: Request }
@@ -29,7 +29,7 @@ function reducer(state: RequestStoreState, action: Action): RequestStoreState {
         case 'SAVE_START':
             return { ...state, isSaving: true, error: null }
         case 'SAVE_SUCCESS':
-            return { ...state, original: state.draft, isSaving: false, error: null }
+            return { ...state, original: action.request, draft: action.request, isSaving: false, error: null }
         case 'SAVE_ERROR':
             return { ...state, draft: state.original, isSaving: false, error: action.error }
         case 'DISCARD':
@@ -39,9 +39,13 @@ function reducer(state: RequestStoreState, action: Action): RequestStoreState {
     }
 }
 
+type UseRequestStoreOptions = {
+    syncRequest?: (request: Request) => void
+}
+
 // ─── Hook ───────────────────────────────────────────────────────────
 
-export function useRequestStore(initialRequest: Request) {
+export function useRequestStore(initialRequest: Request, options?: UseRequestStoreOptions) {
     const [state, dispatch] = useReducer(reducer, {
         original: initialRequest,
         draft: initialRequest,
@@ -54,20 +58,34 @@ export function useRequestStore(initialRequest: Request) {
         [state.draft, state.original],
     )
 
+    useEffect(() => {
+        if (state.original.id !== initialRequest.id || !isDirty) {
+            dispatch({ type: 'RESET', request: initialRequest })
+        }
+    }, [initialRequest, isDirty, state.original.id])
+
     const updateField = useCallback(<K extends keyof Request>(field: K, value: Request[K]) => {
         dispatch({ type: 'UPDATE_FIELD', field, value })
     }, [])
 
     const save = useCallback(async () => {
+        const previousRequest = state.original
+        const nextRequest = state.draft
+
         dispatch({ type: 'SAVE_START' })
+        options?.syncRequest?.(nextRequest)
+
         try {
-            await updateRequest(state.draft)
-            dispatch({ type: 'SAVE_SUCCESS' })
+            const persistedRequest = await updateRequest(nextRequest)
+            options?.syncRequest?.(persistedRequest)
+            dispatch({ type: 'SAVE_SUCCESS', request: persistedRequest })
+            return persistedRequest
         } catch {
+            options?.syncRequest?.(previousRequest)
             dispatch({ type: 'SAVE_ERROR', error: 'Failed to save request' })
             throw new Error('Failed to save request')
         }
-    }, [state.draft])
+    }, [options, state.draft, state.original])
 
     const discard = useCallback(() => {
         dispatch({ type: 'DISCARD' })

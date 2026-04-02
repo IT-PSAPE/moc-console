@@ -4,34 +4,34 @@ import { Button } from '@/components/controls/button'
 import { Divider } from '@/components/display/divider'
 import { Header } from '@/components/display/header'
 import { Label, Paragraph, Title } from '@/components/display/text'
-import { fetchRequestById } from '@/data/fetch-requests'
 import { fetchAssigneesByRequestId, type ResolvedAssignee } from '@/data/fetch-assignees'
-import { addRequestAssignee } from '@/data/mutate-requests'
+import { addRequestAssignee, removeRequestAssignee, archiveRequest, unarchiveRequest, deleteRequest } from '@/data/mutate-requests'
 import type { Request } from '@/types/requests'
 import { TopBarActions } from '@/features/topbar'
 import { useRequestStore } from '@/features/requests/use-request-store'
 import { UnsavedChangesModal } from '@/features/requests/unsaved-changes-modal'
+import { DeleteRequestModal } from '@/features/requests/delete-request-modal'
+import { useRequests } from '@/features/requests/request-provider'
 import { useFeedback } from '@/components/feedback/feedback-provider'
 import { Archive, ArchiveRestore, EllipsisVertical, Pencil, Trash2, Save, Undo2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { useBlocker, useParams } from 'react-router-dom'
+import { useBlocker, useNavigate, useParams } from 'react-router-dom'
 import { RequestMetaFields, RequestFiveW, RequestNotes, RequestFlow, RequestAssigneeList } from '@/features/requests/request-properties'
 
 export function RequestDetailScreen() {
     const { id } = useParams<{ id: string }>();
-    const [request, setRequest] = useState<Request | null>(null);
     const [assignees, setAssignees] = useState<ResolvedAssignee[]>([]);
+    const { state: requestsState, actions: { loadRequest, syncRequest } } = useRequests();
     const { toast } = useFeedback();
+    const request = id ? requestsState.requestsById[id] ?? null : null
 
     useBreadcrumbOverride(id ?? '', request?.title);
 
     useEffect(() => {
         if (!id) return;
-        fetchRequestById(id).then((r) => {
-            if (r) setRequest(r);
-        });
+        loadRequest(id);
         fetchAssigneesByRequestId(id).then(setAssignees);
-    }, [id]);
+    }, [id, loadRequest]);
 
     if (!request) {
         return (
@@ -47,6 +47,7 @@ export function RequestDetailScreen() {
             assignees={assignees}
             setAssignees={setAssignees}
             toast={toast}
+            syncRequest={syncRequest}
         />
     );
 }
@@ -56,10 +57,15 @@ type RequestDetailContentProps = {
     assignees: ResolvedAssignee[];
     setAssignees: (a: ResolvedAssignee[]) => void;
     toast: (options: { title: string; variant?: 'error' | 'warning' | 'success' | 'info' | 'feature' }) => string;
+    syncRequest: (request: Request) => void;
 };
 
-function RequestDetailContent({ request, assignees, setAssignees, toast }: RequestDetailContentProps) {
-    const store = useRequestStore(request);
+function RequestDetailContent({ request, assignees, setAssignees, toast, syncRequest }: RequestDetailContentProps) {
+    const navigate = useNavigate();
+    const { actions: { removeRequest } } = useRequests();
+    const store = useRequestStore(request, { syncRequest });
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Navigation guard
     const blocker = useBlocker(store.state.isDirty);
@@ -76,13 +82,23 @@ function RequestDetailContent({ request, assignees, setAssignees, toast }: Reque
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [store.state.isDirty]);
 
-    async function handleAddMember(assigneeId: string, duty: string) {
+    async function handleAddMember(userId: string, duty: string) {
         try {
-            await addRequestAssignee(request.id, assigneeId, duty);
+            await addRequestAssignee(request.id, userId, duty);
             const updated = await fetchAssigneesByRequestId(request.id);
             setAssignees(updated);
         } catch {
             toast({ title: "Failed to add member", variant: "error" });
+        }
+    }
+
+    async function handleRemoveMember(userId: string) {
+        try {
+            await removeRequestAssignee(request.id, userId);
+            const updated = await fetchAssigneesByRequestId(request.id);
+            setAssignees(updated);
+        } catch {
+            toast({ title: "Failed to remove member", variant: "error" });
         }
     }
 
@@ -115,6 +131,37 @@ function RequestDetailContent({ request, assignees, setAssignees, toast }: Reque
         if (blocker.state === 'blocked') blocker.reset();
     }
 
+    async function handleArchiveToggle() {
+        try {
+            if (request.status === "archived") {
+                await unarchiveRequest(request.id);
+                syncRequest({ ...request, status: "not_started" });
+                toast({ title: "Request unarchived", variant: "success" });
+            } else {
+                await archiveRequest(request.id);
+                syncRequest({ ...request, status: "archived" });
+                toast({ title: "Request archived", variant: "success" });
+            }
+        } catch {
+            toast({ title: "Failed to update request", variant: "error" });
+        }
+    }
+
+    async function handleDelete() {
+        setIsDeleting(true);
+        try {
+            await deleteRequest(request.id);
+            removeRequest(request.id);
+            toast({ title: "Request deleted", variant: "success" });
+            setShowDeleteModal(false);
+            navigate("/requests/all-requests");
+        } catch {
+            toast({ title: "Failed to delete request", variant: "error" });
+        } finally {
+            setIsDeleting(false);
+        }
+    }
+
     return (
         <section className="mx-auto max-w-content-sm">
             <TopBarActions>
@@ -133,7 +180,7 @@ function RequestDetailContent({ request, assignees, setAssignees, toast }: Reque
                         <Button variant="secondary" icon={<EllipsisVertical />} iconOnly />
                     </Dropdown.Trigger>
                     <Dropdown.Panel>
-                        <Dropdown.Item onSelect={() => { }}>
+                        <Dropdown.Item onSelect={handleArchiveToggle}>
                             {request.status === "archived" ? (
                                 <><ArchiveRestore className="size-4" />Unarchive</>
                             ) : (
@@ -141,7 +188,7 @@ function RequestDetailContent({ request, assignees, setAssignees, toast }: Reque
                             )}
                         </Dropdown.Item>
                         <Dropdown.Separator />
-                        <Dropdown.Item onSelect={() => { }}>
+                        <Dropdown.Item onSelect={() => setShowDeleteModal(true)}>
                             <Trash2 className="size-4 text-utility-red-600" />
                             <span className="text-utility-red-600">Delete</span>
                         </Dropdown.Item>
@@ -160,8 +207,6 @@ function RequestDetailContent({ request, assignees, setAssignees, toast }: Reque
             <div className="p-4">
                 <RequestMetaFields
                     request={store.state.draft}
-                    assignees={assignees}
-                    onAddMember={handleAddMember}
                     editable
                     onFieldChange={store.actions.updateField}
                 />
@@ -186,14 +231,14 @@ function RequestDetailContent({ request, assignees, setAssignees, toast }: Reque
             )}
 
             {/* Assignees */}
-            {assignees.length > 0 && (
-                <>
-                    <Divider className="px-4 my-2" />
-                    <div className="p-4">
-                        <RequestAssigneeList assignees={assignees} />
-                    </div>
-                </>
-            )}
+            <Divider className="px-4 my-2" />
+            <div className="p-4">
+                <RequestAssigneeList
+                    assignees={assignees}
+                    onAddMember={handleAddMember}
+                    onRemoveMember={handleRemoveMember}
+                />
+            </div>
 
             {/* Content area */}
             <Divider className="px-4 my-2" />
@@ -214,6 +259,14 @@ function RequestDetailContent({ request, assignees, setAssignees, toast }: Reque
                 onDiscard={handleBlockerDiscard}
                 onCancel={handleBlockerCancel}
                 isSaving={store.state.isSaving}
+            />
+
+            {/* Delete confirmation modal */}
+            <DeleteRequestModal
+                open={showDeleteModal}
+                onDelete={handleDelete}
+                onCancel={() => setShowDeleteModal(false)}
+                isDeleting={isDeleting}
             />
 
         </section>

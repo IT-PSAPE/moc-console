@@ -6,6 +6,7 @@ import { Cast, Drama, FileText, LayoutGrid, Package } from 'lucide-react'
 import { TopBar } from './topbar'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useSidebar } from '../components/navigation/sidebar'
+import { useAuth } from '../lib/auth-context'
 import { Divider } from '../components/display/divider'
 import { CommandMenu } from '../components/overlays/command-menu'
 import { SearchCommandMenuContent, SearchMenuItem } from './search/search-command-menu'
@@ -16,6 +17,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const { pathname } = useLocation()
 
     const { state, actions } = useSidebar()
+    const { profile, user, role } = useAuth()
 
     // Close mobile sidebar on route change
     useEffect(() => {
@@ -87,8 +89,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <div className="size-9 shrink-0 rounded-lg bg-brand_solid" />
                         {!state.isCollapsed && (
                             <div className="flex flex-col">
-                                <span className="text-label-sm truncate leading-none">MoC Member</span>
-                                <span className="text-paragraph-xs text-quaternary truncate leading-none">Super Admin</span>
+                                <span className="text-label-sm truncate leading-none">
+                                    {profile ? `${profile.name} ${profile.surname}` : "MoC Member"}
+                                </span>
+                                <span className="text-paragraph-xs text-quaternary truncate leading-none capitalize">
+                                    {role ?? "No role"}
+                                </span>
                             </div>
                         )}
                     </Sidebar.Footer>

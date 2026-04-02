@@ -24,7 +24,7 @@ const itemVariants = cv({
     },
 })
 
-export function RequestItem({ request, vertical }: { request: Request; vertical?: boolean }) {
+export function RequestItem({ request, vertical, onDrawerOpenChange }: { request: Request; vertical?: boolean; onDrawerOpenChange?: (open: boolean) => void }) {
     const [open, setOpen] = useState(false);
     const isDirtyRef = useRef(false);
     const requestCloseRef = useRef<(() => void) | null>(null);
@@ -32,17 +32,20 @@ export function RequestItem({ request, vertical }: { request: Request; vertical?
     const handleOpenChange = useCallback((nextOpen: boolean) => {
         if (nextOpen) {
             setOpen(true);
+            onDrawerOpenChange?.(true);
         } else if (isDirtyRef.current) {
             // Dirty — let the drawer content handle close via its modal
             requestCloseRef.current?.();
         } else {
             setOpen(false);
+            onDrawerOpenChange?.(false);
         }
-    }, []);
+    }, [onDrawerOpenChange]);
 
     const handleRequestClose = useCallback(() => {
         setOpen(false);
-    }, []);
+        onDrawerOpenChange?.(false);
+    }, [onDrawerOpenChange]);
 
     return (
         <Drawer.Root open={open} onOpenChange={handleOpenChange}>

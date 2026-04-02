@@ -4,11 +4,13 @@ import { Divider } from "@/components/display/divider";
 import { Button } from "@/components/controls/button";
 import { Title } from "@/components/display/text";
 import { fetchAssigneesByRequestId, type ResolvedAssignee } from "@/data/fetch-assignees";
-import { addRequestAssignee } from "@/data/mutate-requests";
+import { addRequestAssignee, removeRequestAssignee, archiveRequest, unarchiveRequest, deleteRequest } from "@/data/mutate-requests";
 import { useFeedback } from "@/components/feedback/feedback-provider";
 import type { Request } from "@/types/requests";
 import { useRequestStore } from "./use-request-store";
 import { UnsavedChangesModal } from "./unsaved-changes-modal";
+import { DeleteRequestModal } from "./delete-request-modal";
+import { useRequests } from "./request-provider";
 import { Archive, ArchiveRestore, EllipsisVertical, Maximize2, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useState, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
@@ -41,10 +43,13 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
     const { state: drawerState } = useDrawer();
     const navigate = useNavigate();
     const { toast } = useFeedback();
+    const { actions: { syncRequest, removeRequest } } = useRequests();
     const [assignees, setAssignees] = useState<ResolvedAssignee[]>([]);
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    const store = useRequestStore(request);
+    const store = useRequestStore(request, { syncRequest });
 
     // Sync dirty state to parent ref so RequestItem can intercept close
     useEffect(() => {
@@ -83,13 +88,23 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
         onRequestClose?.();
     }, [store.state.isDirty, onRequestClose]);
 
-    async function handleAddMember(assigneeId: string, duty: string) {
+    async function handleAddMember(userId: string, duty: string) {
         try {
-            await addRequestAssignee(request.id, assigneeId, duty);
+            await addRequestAssignee(request.id, userId, duty);
             const updated = await fetchAssigneesByRequestId(request.id);
             setAssignees(updated);
         } catch {
             toast({ title: "Failed to add member", variant: "error" });
+        }
+    }
+
+    async function handleRemoveMember(userId: string) {
+        try {
+            await removeRequestAssignee(request.id, userId);
+            const updated = await fetchAssigneesByRequestId(request.id);
+            setAssignees(updated);
+        } catch {
+            toast({ title: "Failed to remove member", variant: "error" });
         }
     }
 
@@ -124,6 +139,38 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
         setShowUnsavedModal(false);
     }
 
+    async function handleArchiveToggle() {
+        try {
+            if (request.status === "archived") {
+                await unarchiveRequest(request.id);
+                syncRequest({ ...request, status: "not_started" });
+                toast({ title: "Request unarchived", variant: "success" });
+            } else {
+                await archiveRequest(request.id);
+                syncRequest({ ...request, status: "archived" });
+                toast({ title: "Request archived", variant: "success" });
+            }
+            onRequestClose?.();
+        } catch {
+            toast({ title: "Failed to update request", variant: "error" });
+        }
+    }
+
+    async function handleDelete() {
+        setIsDeleting(true);
+        try {
+            await deleteRequest(request.id);
+            removeRequest(request.id);
+            toast({ title: "Request deleted", variant: "success" });
+            setShowDeleteModal(false);
+            onRequestClose?.();
+        } catch {
+            toast({ title: "Failed to delete request", variant: "error" });
+        } finally {
+            setIsDeleting(false);
+        }
+    }
+
     return (
         <>
             {/* Toolbar */}
@@ -138,7 +185,7 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
                         <Button variant="ghost" icon={<EllipsisVertical />} iconOnly />
                     </Dropdown.Trigger>
                     <Dropdown.Panel>
-                        <Dropdown.Item onSelect={() => { }}>
+                        <Dropdown.Item onSelect={handleArchiveToggle}>
                             {request.status === "archived" ? (
                                 <><ArchiveRestore className="size-4" />Unarchive</>
                             ) : (
@@ -146,7 +193,7 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
                             )}
                         </Dropdown.Item>
                         <Dropdown.Separator />
-                        <Dropdown.Item onSelect={() => { }}>
+                        <Dropdown.Item onSelect={() => setShowDeleteModal(true)}>
                             <Trash2 className="size-4 text-utility-red-600" />
                             <span className="text-utility-red-600">Delete</span>
                         </Dropdown.Item>
@@ -162,8 +209,6 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
                 <div className="px-4">
                     <RequestMetaFields
                         request={store.state.draft}
-                        assignees={assignees}
-                        onAddMember={handleAddMember}
                         editable
                         onFieldChange={store.actions.updateField}
                     />
@@ -188,12 +233,13 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
                     </>
                 )}
 
-                {assignees.length > 0 && (
-                    <>
-                        <Divider className="px-4 py-6" />
-                        <RequestAssigneeList assignees={assignees} className="px-4" />
-                    </>
-                )}
+                <Divider className="px-4 py-6" />
+                <RequestAssigneeList
+                    assignees={assignees}
+                    onAddMember={handleAddMember}
+                    onRemoveMember={handleRemoveMember}
+                    className="px-4"
+                />
             </Drawer.Content>
 
             {/* Save footer — visible only when dirty */}
@@ -213,6 +259,14 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
                 onDiscard={handleModalDiscard}
                 onCancel={handleModalCancel}
                 isSaving={store.state.isSaving}
+            />
+
+            {/* Delete confirmation modal */}
+            <DeleteRequestModal
+                open={showDeleteModal}
+                onDelete={handleDelete}
+                onCancel={() => setShowDeleteModal(false)}
+                isDeleting={isDeleting}
             />
         </>
     );

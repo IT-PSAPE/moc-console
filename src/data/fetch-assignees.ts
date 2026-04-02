@@ -1,8 +1,8 @@
-import type { Assignee } from "@/types/requests";
+import type { User } from "@/types/requests";
 import { supabase } from "@/lib/supabase";
 
 /** Resolved assignee with duty for a specific request */
-export type ResolvedAssignee = Assignee & { duty: string };
+export type ResolvedAssignee = User & { duty: string };
 
 /** Fetch assignees for a given request, joined with their duty */
 export async function fetchAssigneesByRequestId(
@@ -10,23 +10,23 @@ export async function fetchAssigneesByRequestId(
 ): Promise<ResolvedAssignee[]> {
   const { data, error } = await supabase
     .from("request_assignees")
-    .select("duty, assignees(id, name, surname)")
+    .select("duty, users(id, name, surname, email)")
     .eq("request_id", requestId);
 
   if (error) throw new Error(error.message);
 
   return (data ?? []).map((row) => {
-    const assignee = row.assignees as unknown as Assignee;
-    return { ...assignee, duty: row.duty };
+    const user = row.users as unknown as User;
+    return { ...user, duty: row.duty };
   });
 }
 
-/** Fetch all assignees (for assignment pickers, etc.) */
-export async function fetchAllAssignees(): Promise<Assignee[]> {
+/** Fetch all users (for assignment pickers, etc.) */
+export async function fetchAllUsers(): Promise<User[]> {
   const { data, error } = await supabase
-    .from("assignees")
+    .from("users")
     .select("*");
 
   if (error) throw new Error(error.message);
-  return (data ?? []) as Assignee[];
+  return (data ?? []) as User[];
 }

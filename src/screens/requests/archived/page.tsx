@@ -5,20 +5,20 @@ import { Header } from '@/components/display/header'
 import { Indicator } from '@/components/display/indicator'
 import { Label, Paragraph, Title } from '@/components/display/text'
 import { Input } from '@/components/form/input'
-import { fetchArchivedRequests } from '@/data/fetch-requests'
-import type { Request } from '@/types/requests'
 import { Search, Settings2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Drawer } from '@/components/overlays/drawer'
 import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
 import { useRequestFilters } from '@/features/requests/use-request-filters'
+import { useRequests } from '@/features/requests/request-provider'
 
 export function RequestsArchivedScreen() {
-    const [requests, setRequests] = useState<Request[]>([]);
+    const { state: requestsState, actions: { loadArchivedRequests } } = useRequests()
+    const requests = requestsState.archivedRequests
 
     useEffect(() => {
-        fetchArchivedRequests().then(setRequests);
-    }, []);
+        loadArchivedRequests()
+    }, [loadArchivedRequests])
 
     const requestFilters = useRequestFilters(requests);
     const { filtered, setSearch, filters: state } = requestFilters;

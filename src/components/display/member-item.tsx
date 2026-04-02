@@ -65,7 +65,7 @@ export function MemberItem({ name, surname, duty, disabled, selectable, classNam
             </div>
             <div className="flex-1 min-w-0">
                 <Label.sm className="!text-[length:inherit]" >{name} {surname}</Label.sm>
-                {duty && <Paragraph.xs className="text-quaternary truncate leading-none">{duty}</Paragraph.xs>}
+                {duty && <Paragraph.xs className="text-quaternary truncate">{duty}</Paragraph.xs>}
             </div>
             <span className="ml-auto">{children}</span>
         </div>

@@ -6,21 +6,21 @@ import { SegmentedControl } from '@/components/controls/segmented-control'
 import { Header } from '@/components/display/header'
 import { Paragraph, Title } from '@/components/display/text'
 import { Input } from '@/components/form/input'
-import { fetchRequests } from '@/data/fetch-requests'
-import type { Request } from '@/types/requests'
 import { CalendarDays, Columns3, List, Search, Settings2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Drawer } from '@/components/overlays/drawer'
 import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
 import { useRequestFilters } from '@/features/requests/use-request-filters'
+import { useRequests } from '@/features/requests/request-provider'
 
 export function RequestsAllRequestsScreen() {
     const [view, setView] = useState('list');
-    const [requests, setRequests] = useState<Request[]>([]);
+    const { state: requestsState, actions: { loadActiveRequests } } = useRequests()
+    const requests = requestsState.activeRequests
 
     useEffect(() => {
-        fetchRequests().then(setRequests);
-    }, []);
+        loadActiveRequests()
+    }, [loadActiveRequests])
 
     const requestFilters = useRequestFilters(requests);
     const { filtered, setSearch, filters: state } = requestFilters;

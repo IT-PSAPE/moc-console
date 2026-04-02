@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom'
 import { routes } from './screens/console-routes'
+import { useAuth } from './lib/auth-context'
 import { AppShell } from './features/app-shell'
 import { BroadcastMediaScreen } from '@/screens/broadcast/media/page'
 import { BroadcastOverviewScreen } from '@/screens/broadcast/page'
@@ -17,12 +18,30 @@ import { RequestsArchivedScreen } from '@/screens/requests/archived/page'
 import { RequestsOverviewScreen } from '@/screens/requests/page'
 import { RequestDetailScreen } from '@/screens/requests/detail/page'
 import { RequestsReportsScreen } from '@/screens/requests/reports/page'
+import { RequestsProvider } from '@/features/requests/request-provider'
 import { CueSheetChecklistScreen } from './screens/cue-sheet/checklist/page'
 import { BreadcrumbProvider } from './components/navigation/breadcrumb'
 import { SidebarProvider } from './components/navigation/sidebar'
 import { TopBarProvider } from './features/topbar'
+import { LoginScreen } from './screens/auth/login'
+import { SignupScreen } from './screens/auth/signup'
+import { ResetPasswordScreen } from './screens/auth/reset-password'
 
-function AppProviders() {
+function RequireAuth() {
+    const { session, loading } = useAuth()
+
+    if (loading) {
+        return (
+            <div className="flex min-h-dvh items-center justify-center">
+                <p className="paragraph-sm text-tertiary">Loading...</p>
+            </div>
+        )
+    }
+
+    if (!session) {
+        return <Navigate to={`/${routes.login}`} replace />
+    }
+
     return (
         <BreadcrumbProvider>
             <SidebarProvider>
@@ -36,17 +55,46 @@ function AppProviders() {
     )
 }
 
+function RedirectIfAuth({ children }: { children: React.ReactNode }) {
+    const { session, loading } = useAuth()
+
+    if (loading) {
+        return (
+            <div className="flex min-h-dvh items-center justify-center">
+                <p className="paragraph-sm text-tertiary">Loading...</p>
+            </div>
+        )
+    }
+
+    if (session) {
+        return <Navigate to={`/${routes.dashboard}`} replace />
+    }
+
+    return children
+}
+
 const router = createBrowserRouter([
+    // Auth routes — redirect to dashboard if already signed in
+    { path: routes.login, element: <RedirectIfAuth><LoginScreen /></RedirectIfAuth> },
+    { path: routes.signup, element: <RedirectIfAuth><SignupScreen /></RedirectIfAuth> },
+    { path: routes.resetPassword, element: <RedirectIfAuth><ResetPasswordScreen /></RedirectIfAuth> },
+
+    // Protected app routes
     {
-        element: <AppProviders />,
+        element: <RequireAuth />,
         children: [
             { index: true, element: <Navigate to={`/${routes.dashboard}`} replace /> },
             { path: routes.dashboard, element: <DashboardScreen /> },
-            { path: routes.requestsOverview, element: <RequestsOverviewScreen /> },
-            { path: routes.requestsAllRequests, element: <RequestsAllRequestsScreen /> },
-            { path: routes.requestsArchived, element: <RequestsArchivedScreen /> },
-            { path: routes.requestsDetail, element: <RequestDetailScreen /> },
-            { path: routes.requestsReports, element: <RequestsReportsScreen /> },
+            {
+                element: <RequestsProvider><Outlet /></RequestsProvider>,
+                children: [
+                    { path: routes.requestsOverview, element: <RequestsOverviewScreen /> },
+                    { path: routes.requestsAllRequests, element: <RequestsAllRequestsScreen /> },
+                    { path: routes.requestsArchived, element: <RequestsArchivedScreen /> },
+                    { path: routes.requestsDetail, element: <RequestDetailScreen /> },
+                    { path: routes.requestsReports, element: <RequestsReportsScreen /> },
+                ],
+            },
             { path: routes.equipmentOverview, element: <EquipmentOverviewScreen /> },
             { path: routes.equipmentInventory, element: <EquipmentInventoryScreen /> },
             { path: routes.equipmentBookings, element: <EquipmentBookingsScreen /> },
@@ -60,7 +108,7 @@ const router = createBrowserRouter([
             { path: routes.cueSheetChecklist, element: <CueSheetChecklistScreen /> },
         ],
     },
-    { path: '*', element: <Navigate to={`/${routes.dashboard}`} replace /> },
+    { path: '*', element: <Navigate to={`/${routes.login}`} replace /> },
 ])
 
 function App() {

@@ -7,19 +7,19 @@ import { RequestItem } from '@/features/requests/request-item'
 import { Label, Paragraph, TextBlock, Title } from '@/components/display/text'
 import { Activity, CalendarClock, CircleAlert, CircleCheck, Search, Settings2 } from 'lucide-react'
 import { Indicator } from '@/components/display/indicator'
-import { useEffect, useState } from 'react'
-import { fetchRequests } from '@/data/fetch-requests'
-import type { Request } from '@/types/requests'
+import { useEffect } from 'react'
 import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
 import { useRequestFilters } from '@/features/requests/use-request-filters'
+import { useRequests } from '@/features/requests/request-provider'
 
 
 export function RequestsOverviewScreen() {
-    const [requests, setRequests] = useState<Request[]>([]);
+    const { state: requestsState, actions: { loadActiveRequests } } = useRequests()
+    const requests = requestsState.activeRequests
 
     useEffect(() => {
-        fetchRequests().then(setRequests);
-    }, []);
+        loadActiveRequests()
+    }, [loadActiveRequests])
 
     const requestFilters = useRequestFilters(requests);
     const { filtered, setSearch, filters: state } = requestFilters;
