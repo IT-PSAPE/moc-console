@@ -8,6 +8,7 @@ import { Popover, usePopover } from "@/components/overlays/popover";
 import { fetchAllUsers } from "@/data/fetch-assignees";
 import { fetchRoles } from "@/data/fetch-roles";
 import type { User } from "@/types/requests";
+import { Spinner } from "@/components/feedback/spinner";
 import { Check, Search } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -38,10 +39,16 @@ function AddMemberPanel({ existingUserIds, onAdd }: Omit<AddMemberPopoverProps, 
     const [search, setSearch] = useState("");
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [duty, setDuty] = useState("");
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        fetchAllUsers().then(setAllUsers);
-        fetchRoles().then(setRoles);
+        setIsLoading(true);
+        Promise.all([fetchAllUsers(), fetchRoles()])
+            .then(([users, fetchedRoles]) => {
+                setAllUsers(users);
+                setRoles(fetchedRoles);
+            })
+            .finally(() => setIsLoading(false));
     }, []);
 
     const filtered = allUsers.filter((a) => {
@@ -81,12 +88,17 @@ function AddMemberPanel({ existingUserIds, onAdd }: Omit<AddMemberPopoverProps, 
                     />
                 </div>
                 <div className="max-h-56 overflow-y-auto p-1 flex flex-col gap-0.5">
-                    {filtered.length === 0 && (
+                    {isLoading && (
+                        <div className="flex justify-center py-4">
+                            <Spinner size="sm" />
+                        </div>
+                    )}
+                    {!isLoading && filtered.length === 0 && (
                         <div className="px-3 py-4 text-center">
                             <Paragraph.sm className="text-quaternary">No members found</Paragraph.sm>
                         </div>
                     )}
-                    {filtered.map((a) => {
+                    {!isLoading && filtered.map((a) => {
                         const alreadyAssigned = existingUserIds.includes(a.id);
                         return (
                             <button key={a.id} type="button" disabled={alreadyAssigned} onClick={() => handleSelectUser(a)} className={cn("w-full flex items-center rounded-lg py-1 px-2 space-x-2 hover:bg-secondary transition-colors cursor-pointer", alreadyAssigned && "opacity-50 !cursor-not-allowed hover:!bg-transparent")}>

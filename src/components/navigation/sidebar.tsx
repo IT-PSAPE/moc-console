@@ -249,7 +249,7 @@ function SidebarMenuItemChildren({ children, expanded }: HTMLAttributes<HTMLDivE
 
     return (
         <SidebarMenuLevelContext.Provider value={nestedSidebarMenuLevelContextValue}>
-            <div className="flex flex-col justify-start items-start gap-0.5 pt-0.5 w-full">
+            <div className="flex flex-col justify-start items-start pt-0.5 w-full">
                 {children}
             </div>
         </SidebarMenuLevelContext.Provider>

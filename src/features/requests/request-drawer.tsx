@@ -11,6 +11,7 @@ import { useRequestStore } from "./use-request-store";
 import { UnsavedChangesModal } from "./unsaved-changes-modal";
 import { DeleteRequestModal } from "./delete-request-modal";
 import { useRequests } from "./request-provider";
+import { Spinner } from "@/components/feedback/spinner";
 import { Archive, ArchiveRestore, EllipsisVertical, Maximize2, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useState, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
@@ -45,6 +46,7 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
     const { toast } = useFeedback();
     const { actions: { syncRequest, removeRequest } } = useRequests();
     const [assignees, setAssignees] = useState<ResolvedAssignee[]>([]);
+    const [isLoadingAssignees, setIsLoadingAssignees] = useState(false);
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -68,7 +70,10 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
 
     useEffect(() => {
         if (!drawerState.isOpen) return;
-        fetchAssigneesByRequestId(request.id).then(setAssignees);
+        setIsLoadingAssignees(true);
+        fetchAssigneesByRequestId(request.id)
+            .then(setAssignees)
+            .finally(() => setIsLoadingAssignees(false));
     }, [drawerState.isOpen, request.id]);
 
     function handleOpenFullPage() {
@@ -232,12 +237,18 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
                 )}
 
                 <Divider className="px-4 py-6" />
-                <RequestAssigneeList
-                    assignees={assignees}
-                    onAddMember={handleAddMember}
-                    onRemoveMember={handleRemoveMember}
-                    className="px-4"
-                />
+                {isLoadingAssignees ? (
+                    <div className="flex justify-center py-6">
+                        <Spinner />
+                    </div>
+                ) : (
+                    <RequestAssigneeList
+                        assignees={assignees}
+                        onAddMember={handleAddMember}
+                        onRemoveMember={handleRemoveMember}
+                        className="px-4"
+                    />
+                )}
             </Drawer.Content>
 
             {/* Save footer — visible only when dirty */}

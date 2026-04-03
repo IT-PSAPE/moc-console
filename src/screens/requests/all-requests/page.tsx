@@ -6,8 +6,11 @@ import { SegmentedControl } from '@/components/controls/segmented-control'
 import { Header } from '@/components/display/header'
 import { Paragraph, Title } from '@/components/display/text'
 import { Input } from '@/components/form/input'
-import { CalendarDays, Columns3, List, Search, Settings2 } from 'lucide-react'
+import { CalendarDays, Columns3, Inbox, List, Search, Settings2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Decision } from '@/components/display/decision'
+import { Spinner } from '@/components/feedback/spinner'
+import { EmptyState } from '@/components/feedback/empty-state'
 import { Drawer } from '@/components/overlays/drawer'
 import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
 import { useRequestFilters } from '@/features/requests/use-request-filters'
@@ -15,8 +18,7 @@ import { useRequests } from '@/features/requests/request-provider'
 
 export function RequestsAllRequestsScreen() {
     const [view, setView] = useState('list');
-    const { state: requestsState, actions: { loadActiveRequests } } = useRequests()
-    const requests = requestsState.activeRequests
+    const { state: { activeRequests: requests, isLoadingActive }, actions: { loadActiveRequests } } = useRequests()
 
     useEffect(() => {
         loadActiveRequests()
@@ -53,9 +55,29 @@ export function RequestsAllRequestsScreen() {
                 </Header.Trail>
             </Header.Root>
 
-            {view === 'list' && <RequestLists requests={filtered} />}
-            {view === 'kanban' && <RequestKanban requests={filtered} />}
-            {view === 'calendar' && <RequestCalendar requests={filtered} />}
+            <Decision.Root value={filtered} loading={isLoadingActive}>
+                <Decision.Loading>
+                    <div className="flex justify-center py-16">
+                        <Spinner size="lg" />
+                    </div>
+                </Decision.Loading>
+                <Decision.Empty>
+                    <EmptyState
+                        icon={<Inbox />}
+                        title="No requests found"
+                        description="No requests match your current filters, or none have been created yet."
+                    />
+                </Decision.Empty>
+                <Decision.Data>
+                    {() => (
+                        <>
+                            {view === 'list' && <RequestLists requests={filtered} />}
+                            {view === 'kanban' && <RequestKanban requests={filtered} />}
+                            {view === 'calendar' && <RequestCalendar requests={filtered} />}
+                        </>
+                    )}
+                </Decision.Data>
+            </Decision.Root>
         </section>
     )
 }

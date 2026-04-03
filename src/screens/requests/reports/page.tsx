@@ -1,6 +1,7 @@
 import { Header } from '@/components/display/header'
 import { Paragraph, Title } from '@/components/display/text'
-import { Placeholder } from '@/components/placeholder'
+import { EmptyState } from '@/components/feedback/empty-state'
+import { BarChart3 } from 'lucide-react'
 
 export function RequestsReportsScreen() {
     return (
@@ -12,8 +13,8 @@ export function RequestsReportsScreen() {
                 </Header.Lead>
             </Header.Root>
 
-            <div className='flex-1 mx-auto w-full max-w-content'>
-                <Placeholder>Requests reports cooming soon</Placeholder>
+            <div className='flex-1 flex items-center justify-center mx-auto w-full max-w-content'>
+                <EmptyState icon={<BarChart3 />} title="Reports" description="Coming soon." />
             </div>
         </section>
     )

@@ -3,7 +3,8 @@ import { Dropdown } from '@/components/overlays/dropdown'
 import { Button } from '@/components/controls/button'
 import { Divider } from '@/components/display/divider'
 import { Header } from '@/components/display/header'
-import { Label, Paragraph, Title } from '@/components/display/text'
+import { Label, Title } from '@/components/display/text'
+import { Spinner } from '@/components/feedback/spinner'
 import { fetchAssigneesByRequestId, type ResolvedAssignee } from '@/data/fetch-assignees'
 import { addRequestAssignee, removeRequestAssignee, archiveRequest, unarchiveRequest, deleteRequest } from '@/data/mutate-requests'
 import type { Request } from '@/types/requests'
@@ -35,8 +36,8 @@ export function RequestDetailScreen() {
 
     if (!request) {
         return (
-            <section className="p-4 pt-8 mx-auto max-w-content-sm">
-                <Paragraph.sm className="text-tertiary">Loading...</Paragraph.sm>
+            <section className="flex justify-center py-16 mx-auto max-w-content-sm">
+                <Spinner size="lg" />
             </section>
         );
     }

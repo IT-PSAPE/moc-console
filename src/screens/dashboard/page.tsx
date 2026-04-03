@@ -1,10 +1,11 @@
 import { Header } from '@/components/display/header'
 import { Paragraph, Title } from '@/components/display/text'
+import { EmptyState } from '@/components/feedback/empty-state'
 import { Placeholder } from '@/components/placeholder'
+import { LayoutDashboard } from 'lucide-react'
 
 export function DashboardScreen() {
     return (
-
         <section className='flex flex-col h-full'>
             <Header.Root className='p-4 pt-8 mx-auto max-w-content'>
                 <Header.Lead className='gap-2'>
@@ -13,9 +14,9 @@ export function DashboardScreen() {
                 </Header.Lead>
             </Header.Root>
 
-            <div className='flex-1 mx-auto w-full max-w-content'>
-                <Placeholder>Dashboard Coming Soon</Placeholder>
-            </div>
+            <Placeholder>
+                <EmptyState icon={<LayoutDashboard />} title="Dashboard" description="Coming soon." />
+            </Placeholder>
         </section>
     )
 }

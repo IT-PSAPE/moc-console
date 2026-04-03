@@ -7,6 +7,8 @@ type RequestsContextValue = {
         activeRequests: Request[]
         archivedRequests: Request[]
         requestsById: Record<string, Request>
+        isLoadingActive: boolean
+        isLoadingArchived: boolean
     }
     actions: {
         loadActiveRequests: () => Promise<void>
@@ -31,6 +33,8 @@ function mergeRequests(previous: Record<string, Request>, requests: Request[]) {
 
 export function RequestsProvider({ children }: { children: ReactNode }) {
     const [requestsById, setRequestsById] = useState<Record<string, Request>>({})
+    const [isLoadingActive, setIsLoadingActive] = useState(false)
+    const [isLoadingArchived, setIsLoadingArchived] = useState(false)
     const requestsByIdRef = useRef<Record<string, Request>>({})
     const activeLoadedRef = useRef(false)
     const archivedLoadedRef = useRef(false)
@@ -57,6 +61,7 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
         if (activeLoadedRef.current) return
         if (activePromiseRef.current) return activePromiseRef.current
 
+        setIsLoadingActive(true)
         activePromiseRef.current = fetchRequests()
             .then((requests) => {
                 setRequestsById((previous) => mergeRequests(previous, requests))
@@ -64,6 +69,7 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
             })
             .finally(() => {
                 activePromiseRef.current = null
+                setIsLoadingActive(false)
             })
 
         return activePromiseRef.current
@@ -73,6 +79,7 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
         if (archivedLoadedRef.current) return
         if (archivedPromiseRef.current) return archivedPromiseRef.current
 
+        setIsLoadingArchived(true)
         archivedPromiseRef.current = fetchArchivedRequests()
             .then((requests) => {
                 setRequestsById((previous) => mergeRequests(previous, requests))
@@ -80,6 +87,7 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
             })
             .finally(() => {
                 archivedPromiseRef.current = null
+                setIsLoadingArchived(false)
             })
 
         return archivedPromiseRef.current
@@ -102,6 +110,8 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
             activeRequests,
             archivedRequests,
             requestsById,
+            isLoadingActive,
+            isLoadingArchived,
         },
         actions: {
             loadActiveRequests,
@@ -110,7 +120,7 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
             syncRequest,
             removeRequest,
         },
-    }), [activeRequests, archivedRequests, loadActiveRequests, loadArchivedRequests, loadRequest, requestsById, syncRequest, removeRequest])
+    }), [activeRequests, archivedRequests, loadActiveRequests, loadArchivedRequests, loadRequest, requestsById, syncRequest, removeRequest, isLoadingActive, isLoadingArchived])
 
     return <RequestsContext.Provider value={value}>{children}</RequestsContext.Provider>
 }

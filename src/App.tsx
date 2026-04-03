@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom'
 import { routes } from './screens/console-routes'
+import { Spinner } from '@/components/feedback/spinner'
 import { useAuth } from './lib/auth-context'
 import { AppShell } from './features/app-shell'
 import { BroadcastMediaScreen } from '@/screens/broadcast/media/page'
@@ -33,7 +34,7 @@ function RequireAuth() {
     if (loading) {
         return (
             <div className="flex min-h-dvh items-center justify-center">
-                <p className="paragraph-sm text-tertiary">Loading...</p>
+                <Spinner size="lg" />
             </div>
         )
     }
@@ -61,7 +62,7 @@ function RedirectIfAuth({ children }: { children: React.ReactNode }) {
     if (loading) {
         return (
             <div className="flex min-h-dvh items-center justify-center">
-                <p className="paragraph-sm text-tertiary">Loading...</p>
+                <Spinner size="lg" />
             </div>
         )
     }
