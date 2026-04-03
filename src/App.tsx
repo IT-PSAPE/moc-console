@@ -14,12 +14,14 @@ import { EquipmentInventoryScreen } from '@/screens/equipment/inventory/page'
 import { EquipmentMaintenanceScreen } from '@/screens/equipment/maintenance/page'
 import { EquipmentOverviewScreen } from '@/screens/equipment/page'
 import { EquipmentReportsScreen } from '@/screens/equipment/reports/page'
+import { EquipmentDetailScreen } from '@/screens/equipment/detail/page'
 import { RequestsAllRequestsScreen } from '@/screens/requests/all-requests/page'
 import { RequestsArchivedScreen } from '@/screens/requests/archived/page'
 import { RequestsOverviewScreen } from '@/screens/requests/page'
 import { RequestDetailScreen } from '@/screens/requests/detail/page'
 import { RequestsReportsScreen } from '@/screens/requests/reports/page'
 import { RequestsProvider } from '@/features/requests/request-provider'
+import { EquipmentProvider } from '@/features/equipment/equipment-provider'
 import { CueSheetChecklistScreen } from './screens/cue-sheet/checklist/page'
 import { BreadcrumbProvider } from './components/navigation/breadcrumb'
 import { SidebarProvider } from './components/navigation/sidebar'
@@ -96,11 +98,17 @@ const router = createBrowserRouter([
                     { path: routes.requestsReports, element: <RequestsReportsScreen /> },
                 ],
             },
-            { path: routes.equipmentOverview, element: <EquipmentOverviewScreen /> },
-            { path: routes.equipmentInventory, element: <EquipmentInventoryScreen /> },
-            { path: routes.equipmentBookings, element: <EquipmentBookingsScreen /> },
-            { path: routes.equipmentMaintenance, element: <EquipmentMaintenanceScreen /> },
-            { path: routes.equipmentReports, element: <EquipmentReportsScreen /> },
+            {
+                element: <EquipmentProvider><Outlet /></EquipmentProvider>,
+                children: [
+                    { path: routes.equipmentOverview, element: <EquipmentOverviewScreen /> },
+                    { path: routes.equipmentInventory, element: <EquipmentInventoryScreen /> },
+                    { path: routes.equipmentBookings, element: <EquipmentBookingsScreen /> },
+                    { path: routes.equipmentMaintenance, element: <EquipmentMaintenanceScreen /> },
+                    { path: routes.equipmentDetail, element: <EquipmentDetailScreen /> },
+                    { path: routes.equipmentReports, element: <EquipmentReportsScreen /> },
+                ],
+            },
             { path: routes.broadcastOverview, element: <BroadcastOverviewScreen /> },
             { path: routes.broadcastMedia, element: <BroadcastMediaScreen /> },
             { path: routes.broadcastBroadcast, element: <BroadcastScreen /> },

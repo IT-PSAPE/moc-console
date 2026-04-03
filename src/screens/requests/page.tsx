@@ -102,7 +102,7 @@ export function RequestsOverviewScreen() {
                     <div className='flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content'>
                         <Header.Root className='gap-2 max-mobile:flex-col *:max-mobile:w-full'>
                             <Header.Lead className='gap-2'>
-                                <Label.md>Dashboard</Label.md>
+                                <Label.md>Schedule</Label.md>
                             </Header.Lead>
                             <Header.Trail className='gap-2 flex-1 justify-end '>
                                 <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-sm' value={state.search} onChange={(e) => setSearch(e.target.value)} />
