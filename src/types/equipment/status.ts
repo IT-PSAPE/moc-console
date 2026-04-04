@@ -1,1 +1,1 @@
-export type EquipmentStatus = "available" | "booked_out" | "maintenance" | "retired";
+export type EquipmentStatus = "available" | "booked" | "booked_out" | "maintenance";

@@ -15,7 +15,7 @@ export type BookingFilters = {
 
 const defaultFilters: BookingFilters = {
   search: "",
-  statuses: new Set(),
+  statuses: new Set<BookingStatus>(["booked", "checked_out"]),
   sortField: "checkedOutDate",
   sortDirection: "desc",
 };
@@ -83,7 +83,9 @@ export function useBookingFilters(bookings: Booking[]) {
     setFilters(defaultFilters);
   }
 
-  const hasActiveFilters = filters.statuses.size > 0;
+  const hasActiveFilters =
+    filters.statuses.size !== defaultFilters.statuses.size ||
+    [...filters.statuses].some((s) => !defaultFilters.statuses.has(s));
 
   return {
     filters,

@@ -1,7 +1,10 @@
 import { cn } from '@/utils/cn'
 import { useCallback, useMemo, useState, type HTMLAttributes, type ReactNode } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '../controls/button'
+import { Drawer } from '../overlays/drawer'
+import { Label, Paragraph } from './text'
+import { EmptyState } from '../feedback/empty-state'
 
 // ─── Helpers ─────────────────────────────────────────────
 
@@ -48,31 +51,47 @@ function getCalendarDays(year: number, month: number) {
 
 // ─── Types ───────────────────────────────────────────────
 
-export type CalendarEvent = {
+export type CalendarEvent<T = unknown> = {
     id?: string
     date: Date
     label: string
     color?: 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'gray'
+    data?: T
 }
 
-type RenderDayProps = {
+type RenderDayProps<T = unknown> = {
     date: Date
     isCurrentMonth: boolean
     isToday: boolean
-    events: CalendarEvent[]
+    events: CalendarEvent<T>[]
+}
+
+export type CellDrawerConfig<T = unknown> = {
+    title?: string | ((date: Date, events: CalendarEvent<T>[]) => string)
+    renderItem: (event: CalendarEvent<T>, index: number) => ReactNode
 }
 
 // ─── Root ────────────────────────────────────────────────
 
-type CalendarRootProps = HTMLAttributes<HTMLDivElement> & {
+type CalendarRootProps<T = unknown> = HTMLAttributes<HTMLDivElement> & {
     defaultMonth?: Date
-    events?: CalendarEvent[]
+    events?: CalendarEvent<T>[]
     onMonthChange?: (date: Date) => void
-    renderDay?: (props: RenderDayProps) => ReactNode
+    renderDay?: (props: RenderDayProps<T>) => ReactNode
+    cellDrawer?: CellDrawerConfig<T>
 }
 
-function CalendarRoot({ className, defaultMonth, events = [], onMonthChange, renderDay, ...props }: CalendarRootProps) {
+const DAY_NAMES = [
+    'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
+] as const
+
+function formatDrawerDate(date: Date) {
+    return `${DAY_NAMES[date.getDay()]}, ${date.getDate()} ${MONTH_LABELS[date.getMonth()]} ${date.getFullYear()}`
+}
+
+function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMonthChange, renderDay, cellDrawer, ...props }: CalendarRootProps<T>) {
     const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(defaultMonth ?? new Date()))
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null)
     const today = useMemo(() => new Date(), [])
 
     const year = currentMonth.getFullYear()
@@ -94,7 +113,7 @@ function CalendarRoot({ className, defaultMonth, events = [], onMonthChange, ren
     }, [onMonthChange])
 
     const eventsByDate = useMemo(() => {
-        const map = new Map<string, CalendarEvent[]>()
+        const map = new Map<string, CalendarEvent<T>[]>()
 
         for (const event of events) {
             const key = `${event.date.getFullYear()}-${event.date.getMonth()}-${event.date.getDate()}`
@@ -113,6 +132,19 @@ function CalendarRoot({ className, defaultMonth, events = [], onMonthChange, ren
         const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
         return eventsByDate.get(key) ?? []
     }
+
+    const selectedDateEvents = useMemo(() => {
+        if (!selectedDate) return []
+        return getEventsForDate(selectedDate)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedDate, eventsByDate])
+
+    const drawerTitle = useMemo(() => {
+        if (!selectedDate) return ''
+        if (!cellDrawer?.title) return formatDrawerDate(selectedDate)
+        if (typeof cellDrawer.title === 'string') return cellDrawer.title
+        return cellDrawer.title(selectedDate, selectedDateEvents)
+    }, [selectedDate, cellDrawer?.title, selectedDateEvents])
 
     return (
         <div className={cn('flex flex-col', className)} {...props}>
@@ -142,25 +174,74 @@ function CalendarRoot({ className, defaultMonth, events = [], onMonthChange, ren
                     const isDateToday = isSameDay(date, today)
                     const dayEvents = getEventsForDate(date)
 
-                    if (renderDay) {
+                    const cellContent = renderDay
+                        ? renderDay({ date, isCurrentMonth, isToday: isDateToday, events: dayEvents })
+                        : <CalendarCell date={date} events={dayEvents} isCurrentMonth={isCurrentMonth} isToday={isDateToday} />
+
+                    if (cellDrawer) {
                         return (
-                            <div key={index} className="border-r border-b border-secondary">
-                                {renderDay({ date, isCurrentMonth, isToday: isDateToday, events: dayEvents })}
+                            <div
+                                key={index}
+                                className={cn(
+                                    'border-r border-b border-secondary cursor-pointer transition-colors hover:bg-secondary/50',
+                                    !renderDay && '[&>div]:border-0',
+                                )}
+                                onClick={() => setSelectedDate(date)}
+                            >
+                                {cellContent}
                             </div>
                         )
                     }
 
-                    return (
-                        <CalendarCell
-                            key={index}
-                            date={date}
-                            events={dayEvents}
-                            isCurrentMonth={isCurrentMonth}
-                            isToday={isDateToday}
-                        />
-                    )
+                    if (renderDay) {
+                        return (
+                            <div key={index} className="border-r border-b border-secondary">
+                                {cellContent}
+                            </div>
+                        )
+                    }
+
+                    return <CalendarCell key={index} date={date} events={dayEvents} isCurrentMonth={isCurrentMonth} isToday={isDateToday} />
                 })}
             </div>
+
+            {/* Cell drawer */}
+            {cellDrawer && (
+                <Drawer.Root
+                    open={selectedDate !== null}
+                    onOpenChange={(open) => { if (!open) setSelectedDate(null) }}
+                >
+                    <Drawer.Portal>
+                        <Drawer.Backdrop />
+                        <Drawer.Panel>
+                            <Drawer.Header>
+                                <div className="flex-1">
+                                    <Label.md>{drawerTitle}</Label.md>
+                                    <Paragraph.xs className="text-tertiary">
+                                        {selectedDateEvents.length} {selectedDateEvents.length === 1 ? 'event' : 'events'}
+                                    </Paragraph.xs>
+                                </div>
+                                <Drawer.Close>
+                                    <Button variant="ghost" iconOnly icon={<ChevronRight />} />
+                                </Drawer.Close>
+                            </Drawer.Header>
+                            <Drawer.Content>
+                                {selectedDateEvents.length === 0 ? (
+                                    <EmptyState
+                                        icon={<CalendarDays />}
+                                        title="No events"
+                                        description="There are no events scheduled for this day."
+                                    />
+                                ) : (
+                                    <div className="flex flex-col">
+                                        {selectedDateEvents.map((event, i) => cellDrawer.renderItem(event, i))}
+                                    </div>
+                                )}
+                            </Drawer.Content>
+                        </Drawer.Panel>
+                    </Drawer.Portal>
+                </Drawer.Root>
+            )}
         </div>
     )
 }
@@ -177,9 +258,9 @@ const eventColorMap: Record<string, string> = {
     gray: 'bg-secondary text-tertiary',
 }
 
-type CalendarCellProps = {
+type CalendarCellProps<T = unknown> = {
     date: Date
-    events: CalendarEvent[]
+    events: CalendarEvent<T>[]
     isCurrentMonth: boolean
     isToday: boolean
 }

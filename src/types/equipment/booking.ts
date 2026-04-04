@@ -1,4 +1,4 @@
-export type BookingStatus = "checked_out" | "returned";
+export type BookingStatus = "booked" | "checked_out" | "returned";
 
 export type Booking = {
   id: string;

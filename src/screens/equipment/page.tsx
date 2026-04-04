@@ -5,7 +5,7 @@ import { Header } from "@/components/display/header";
 import { Drawer } from "@/components/overlays/drawer";
 import { Badge } from "@/components/display/badge";
 import { Label, Paragraph, TextBlock, Title } from "@/components/display/text";
-import { ArrowUpRight, CircleCheck, Package, Search, Settings2, Wrench } from "lucide-react";
+import { ArrowUpRight, CalendarCheck, CircleCheck, Package, Search, Settings2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Decision } from "@/components/display/decision";
 import { Spinner } from "@/components/feedback/spinner";
@@ -79,7 +79,8 @@ export function EquipmentOverviewScreen() {
   // Stats — always from unfiltered data
   const totalCount = equipment.length;
   const availableCount = equipment.filter((e) => e.status === "available").length;
-  const bookedCount = equipment.filter((e) => e.status === "booked_out").length;
+  const bookedCount = equipment.filter((e) => e.status === "booked").length;
+  const bookedOutCount = equipment.filter((e) => e.status === "booked_out").length;
   const maintenanceCount = equipment.filter((e) => e.status === "maintenance").length;
 
   // Recent activity — filtered, sorted by last active desc, limited to 10
@@ -124,7 +125,7 @@ export function EquipmentOverviewScreen() {
           <EmptyState icon={<Package />} title="No equipment yet" description="Add equipment to start tracking your inventory." />
         </Decision.Empty>
         <Decision.Data>
-          <div className="grid grid-cols-4 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2">
+          <div className="grid grid-cols-5 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2">
             <Card.Root>
               <Card.Header className="gap-1.5">
                 <Package className="size-4" />
@@ -145,11 +146,20 @@ export function EquipmentOverviewScreen() {
             </Card.Root>
             <Card.Root>
               <Card.Header className="gap-1.5">
+                <CalendarCheck className="size-4" />
+                <Label.sm>Booked</Label.sm>
+              </Card.Header>
+              <Card.Content className="p-4">
+                <TextBlock className="title-h4">{bookedCount}</TextBlock>
+              </Card.Content>
+            </Card.Root>
+            <Card.Root>
+              <Card.Header className="gap-1.5">
                 <ArrowUpRight className="size-4" />
                 <Label.sm>Booked Out</Label.sm>
               </Card.Header>
               <Card.Content className="p-4">
-                <TextBlock className="title-h4">{bookedCount}</TextBlock>
+                <TextBlock className="title-h4">{bookedOutCount}</TextBlock>
               </Card.Content>
             </Card.Root>
             <Card.Root>

@@ -21,13 +21,15 @@ import {
   equipmentStatusColor,
   equipmentCategoryLabel,
   equipmentCategoryColor,
+  bookingStatusLabel,
+  bookingStatusColor,
 } from "@/types/equipment";
 import type { Equipment, EquipmentStatus, EquipmentCategory, Booking } from "@/types/equipment";
 import { Check, ChevronDown, Hash, History, Loader, MapPin, Package, Pencil, Save, Tag, Trash2, Undo2, User } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
 
-const allStatuses: EquipmentStatus[] = ["available", "booked_out", "maintenance", "retired"];
+const allStatuses: EquipmentStatus[] = ["available", "booked", "booked_out", "maintenance"];
 const allCategories: EquipmentCategory[] = ["camera", "lens", "lighting", "audio", "support", "monitor", "cable", "accessory"];
 
 export function EquipmentDetailScreen() {
@@ -254,30 +256,35 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
                     </Paragraph.xs>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge
-                      label={b.status === "checked_out" ? "Checked Out" : "Returned"}
-                      color={b.status === "checked_out" ? "yellow" : "green"}
-                    />
                     <ChevronDown className="size-4 text-tertiary transition-transform data-[state=open]:rotate-180" />
                   </div>
                 </Accordion.Trigger>
-                <Accordion.Content className="pb-3 space-y-1.5">
-                  {b.returnedDate && (
+                <Accordion.Content>
+                  <div className="pb-3 space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <Paragraph.xs className="text-quaternary">Returned:</Paragraph.xs>
-                      <Paragraph.xs>{new Date(b.returnedDate).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}</Paragraph.xs>
+                      <Paragraph.xs className="text-quaternary">Status:</Paragraph.xs>
+                      <Badge
+                        label={bookingStatusLabel[b.status]}
+                        color={bookingStatusColor[b.status]}
+                      />
                     </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Paragraph.xs className="text-quaternary">Duration:</Paragraph.xs>
-                    <Paragraph.xs>{b.duration}</Paragraph.xs>
+                    {b.returnedDate && (
+                      <div className="flex items-center gap-2">
+                        <Paragraph.xs className="text-quaternary">Returned:</Paragraph.xs>
+                        <Paragraph.xs>{new Date(b.returnedDate).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}</Paragraph.xs>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Paragraph.xs className="text-quaternary">Duration:</Paragraph.xs>
+                      <Paragraph.xs>{b.duration}</Paragraph.xs>
+                    </div>
+                    {b.notes && (
+                      <div className="flex items-center gap-2">
+                        <Paragraph.xs className="text-quaternary">Notes:</Paragraph.xs>
+                        <Paragraph.xs>{b.notes}</Paragraph.xs>
+                      </div>
+                    )}
                   </div>
-                  {b.notes && (
-                    <div className="flex items-center gap-2">
-                      <Paragraph.xs className="text-quaternary">Notes:</Paragraph.xs>
-                      <Paragraph.xs>{b.notes}</Paragraph.xs>
-                    </div>
-                  )}
                 </Accordion.Content>
               </Accordion.Item>
             ))}

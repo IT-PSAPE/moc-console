@@ -1,12 +1,25 @@
 import { Calendar, type CalendarEvent } from "@/components/display/calendar"
 import { Drawer } from "@/components/overlays/drawer"
+import { Badge } from "@/components/display/badge"
+import { Label, Paragraph } from "@/components/display/text"
 import { cn } from "@/utils/cn"
 import type { Request } from "@/types/requests";
-import { categoryColor, eventColorMap } from "@/types/requests";
+import { categoryColor, categoryLabel, statusColor, statusLabel } from "@/types/requests";
 import { RequestDrawer } from "./request-drawer";
 import { useMemo } from "react";
+import { Circle } from "lucide-react";
 
-function toCalendarEvents(requests: Request[]): CalendarEvent[] {
+const circleColorMap: Record<string, string> = {
+    red: "fill-error text-error",
+    orange: "fill-warning text-warning",
+    yellow: "fill-warning text-warning",
+    green: "fill-success text-success",
+    blue: "fill-[var(--color-utility-blue-700)] text-[var(--color-utility-blue-700)]",
+    purple: "fill-brand_secondary text-brand_secondary",
+    gray: "fill-tertiary text-tertiary",
+}
+
+function toCalendarEvents(requests: Request[]): CalendarEvent<Request>[] {
     return requests
         .filter((r) => r.dueDate !== null)
         .map((r) => ({
@@ -14,64 +27,53 @@ function toCalendarEvents(requests: Request[]): CalendarEvent[] {
             date: new Date(r.dueDate!),
             label: r.title,
             color: categoryColor[r.category],
+            data: r,
         }));
 }
 
 export function RequestCalendar({ requests }: { requests: Request[] }) {
-    const events = toCalendarEvents(requests);
-    const requestMap = useMemo(() => {
-        const map = new Map<string, Request>();
-        for (const r of requests) map.set(r.id, r);
-        return map;
-    }, [requests]);
+    const events = useMemo(() => toCalendarEvents(requests), [requests]);
 
     return (
         <div className='p-4 pt-0 mx-auto w-full max-w-content'>
             <Calendar.Root
                 events={events}
-                renderDay={({ date, isCurrentMonth, isToday, events: dayEvents }) => (
-                    <div className={cn(
-                        'flex min-h-24 flex-col p-1.5',
-                        !isCurrentMonth && 'bg-secondary',
-                    )}>
-                        <span className={cn(
-                            'mb-1 inline-flex size-6 items-center justify-center self-start rounded-full text-paragraph-xs',
-                            isToday && 'bg-brand_solid text-primary_on-brand',
-                            !isToday && isCurrentMonth && 'text-primary',
-                            !isToday && !isCurrentMonth && 'text-quaternary',
-                        )}>
-                            {date.getDate()}
-                        </span>
-                        <div className="flex flex-col gap-0.5 overflow-hidden">
-                            {dayEvents.slice(0, 2).map((event) => {
-                                const request = event.id ? requestMap.get(event.id) : undefined;
-                                const pill = (
-                                    <div
-                                        className={cn(
-                                            'truncate rounded px-1.5 py-0.5 text-paragraph-xs cursor-pointer hover:opacity-80 transition-opacity',
-                                            eventColorMap[event.color ?? 'gray'],
-                                        )}
-                                        title={event.label}
-                                    >
-                                        {event.label}
-                                    </div>
-                                );
+                cellDrawer={{
+                    renderItem: (event, index) => {
+                        const request = event.data;
+                        if (!request) return null;
 
-                                if (!request) return <div key={event.id ?? event.label}>{pill}</div>;
+                        const item = (
+                            <div
+                                key={request.id}
+                                className={cn(
+                                    "flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-secondary/50 transition-colors",
+                                    index > 0 && "border-t border-secondary",
+                                )}
+                            >
+                                <Circle className={cn("size-2 shrink-0", circleColorMap[categoryColor[request.category]])} />
+                                <div className="flex-1 min-w-0">
+                                    <Label.sm className="truncate">{request.title}</Label.sm>
+                                    <Paragraph.xs className="text-tertiary">
+                                        {categoryLabel[request.category]}
+                                    </Paragraph.xs>
+                                </div>
+                                <Badge
+                                    label={statusLabel[request.status]}
+                                    color={statusColor[request.status]}
+                                    variant="filled"
+                                />
+                            </div>
+                        );
 
-                                return (
-                                    <Drawer.Root key={request.id}>
-                                        <Drawer.Trigger>{pill}</Drawer.Trigger>
-                                        <RequestDrawer request={request} />
-                                    </Drawer.Root>
-                                );
-                            })}
-                            {dayEvents.length > 2 && (
-                                <span className="px-1.5 text-paragraph-xs text-quaternary">+{dayEvents.length - 2} more</span>
-                            )}
-                        </div>
-                    </div>
-                )}
+                        return (
+                            <Drawer.Root key={request.id}>
+                                <Drawer.Trigger>{item}</Drawer.Trigger>
+                                <RequestDrawer request={request} />
+                            </Drawer.Root>
+                        );
+                    },
+                }}
             />
         </div>
     )

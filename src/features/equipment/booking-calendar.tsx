@@ -1,20 +1,44 @@
 import { Calendar, type CalendarEvent } from "@/components/display/calendar";
 import { Drawer } from "@/components/overlays/drawer";
+import { Badge } from "@/components/display/badge";
+import { Label, Paragraph } from "@/components/display/text";
 import { cn } from "@/utils/cn";
 import type { Booking } from "@/types/equipment";
 import type { Equipment } from "@/types/equipment";
+import { bookingStatusLabel, bookingStatusColor } from "@/types/equipment";
 import { EquipmentDrawer } from "./equipment-drawer";
 import { useMemo } from "react";
+import { Circle } from "lucide-react";
 
-function toCalendarEvents(bookings: Booking[]): CalendarEvent[] {
+type BookingEventData = {
+  booking: Booking;
+  equipment: Equipment | undefined;
+};
+
+function toCalendarEvents(
+  bookings: Booking[],
+  equipmentMap: Map<string, Equipment>,
+): CalendarEvent<BookingEventData>[] {
   return bookings
-    .filter((b) => b.status === "checked_out")
+    .filter((b) => b.status !== "returned")
     .map((b) => ({
       id: b.equipmentId,
       date: new Date(b.checkedOutDate),
       label: b.equipmentName,
-      color: "yellow" as const,
+      color: (b.status === "booked" ? "blue" : "yellow") as "blue" | "yellow",
+      data: {
+        booking: b,
+        equipment: equipmentMap.get(b.equipmentId),
+      },
     }));
+}
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 type BookingCalendarProps = {
@@ -23,58 +47,53 @@ type BookingCalendarProps = {
 };
 
 export function BookingCalendar({ bookings, equipmentMap }: BookingCalendarProps) {
-  const events = useMemo(() => toCalendarEvents(bookings), [bookings]);
+  const events = useMemo(() => toCalendarEvents(bookings, equipmentMap), [bookings, equipmentMap]);
 
   return (
     <div className="p-4 pt-0 mx-auto w-full max-w-content">
       <Calendar.Root
         events={events}
-        renderDay={({ date, isCurrentMonth, isToday, events: dayEvents }) => (
-          <div
-            className={cn(
-              "flex min-h-24 flex-col p-1.5",
-              !isCurrentMonth && "bg-secondary",
-            )}
-          >
-            <span
-              className={cn(
-                "mb-1 inline-flex size-6 items-center justify-center self-start rounded-full text-paragraph-xs",
-                isToday && "bg-brand_solid text-primary_on-brand",
-                !isToday && isCurrentMonth && "text-primary",
-                !isToday && !isCurrentMonth && "text-quaternary",
-              )}
-            >
-              {date.getDate()}
-            </span>
-            <div className="flex flex-col gap-0.5 overflow-hidden">
-              {dayEvents.slice(0, 2).map((event) => {
-                const equipment = event.id ? equipmentMap.get(event.id) : undefined;
-                const pill = (
-                  <div
-                    className="truncate rounded bg-warning_primary text-warning px-1.5 py-0.5 text-paragraph-xs cursor-pointer hover:opacity-80 transition-opacity"
-                    title={event.label}
-                  >
-                    {event.label}
-                  </div>
-                );
+        cellDrawer={{
+          renderItem: (event, index) => {
+            const data = event.data;
+            if (!data) return null;
 
-                if (!equipment) return <div key={event.id ?? event.label}>{pill}</div>;
+            const { booking, equipment } = data;
 
-                return (
-                  <Drawer.Root key={`${equipment.id}-${date.getTime()}`}>
-                    <Drawer.Trigger>{pill}</Drawer.Trigger>
-                    <EquipmentDrawer equipment={equipment} />
-                  </Drawer.Root>
-                );
-              })}
-              {dayEvents.length > 2 && (
-                <span className="px-1.5 text-paragraph-xs text-quaternary">
-                  +{dayEvents.length - 2} more
-                </span>
-              )}
-            </div>
-          </div>
-        )}
+            const item = (
+              <div
+                key={booking.id}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3",
+                  index > 0 && "border-t border-secondary",
+                  equipment && "cursor-pointer hover:bg-secondary/50 transition-colors",
+                )}
+              >
+                <Circle className={cn("size-2 shrink-0", booking.status === "booked" ? "fill-info text-info" : "fill-warning text-warning")} />
+                <div className="flex-1 min-w-0">
+                  <Label.sm className="truncate">{booking.equipmentName}</Label.sm>
+                  <Paragraph.xs className="text-tertiary">
+                    Booked by {booking.bookedBy} &middot; {formatDate(booking.checkedOutDate)}
+                  </Paragraph.xs>
+                </div>
+                <Badge
+                  label={bookingStatusLabel[booking.status]}
+                  color={bookingStatusColor[booking.status]}
+                  variant="filled"
+                />
+              </div>
+            );
+
+            if (!equipment) return item;
+
+            return (
+              <Drawer.Root key={booking.id}>
+                <Drawer.Trigger>{item}</Drawer.Trigger>
+                <EquipmentDrawer equipment={equipment} />
+              </Drawer.Root>
+            );
+          },
+        }}
       />
     </div>
   );

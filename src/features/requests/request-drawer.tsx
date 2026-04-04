@@ -41,7 +41,7 @@ export function RequestDrawer({ request, onRequestClose, isDirtyRef, requestClos
 }
 
 function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestCloseRef }: RequestDrawerProps) {
-    const { state: drawerState } = useDrawer();
+    const { state: drawerState, actions: drawerActions } = useDrawer();
     const navigate = useNavigate();
     const { toast } = useFeedback();
     const { actions: { syncRequest, removeRequest } } = useRequests();
@@ -76,12 +76,16 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
             .finally(() => setIsLoadingAssignees(false));
     }, [drawerState.isOpen, request.id]);
 
+    const closeDrawer = useCallback(() => {
+        onRequestClose ? onRequestClose() : drawerActions.close();
+    }, [onRequestClose, drawerActions]);
+
     function handleOpenFullPage() {
         if (store.state.isDirty) {
             setShowUnsavedModal(true);
             return;
         }
-        onRequestClose?.();
+        closeDrawer();
         navigate(`/requests/${request.id}`);
     }
 
@@ -90,8 +94,8 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
             setShowUnsavedModal(true);
             return;
         }
-        onRequestClose?.();
-    }, [store.state.isDirty, onRequestClose]);
+        closeDrawer();
+    }, [store.state.isDirty, closeDrawer]);
 
     async function handleAddMember(userId: string, duty: string) {
         try {
@@ -128,7 +132,7 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
             await store.actions.save();
             toast({ title: 'Request saved', variant: 'success' });
             setShowUnsavedModal(false);
-            onRequestClose?.();
+            closeDrawer();
         } catch {
             toast({ title: 'Failed to save request', variant: 'error' });
         }
@@ -137,7 +141,7 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
     function handleModalDiscard() {
         store.actions.discard();
         setShowUnsavedModal(false);
-        onRequestClose?.();
+        closeDrawer();
     }
 
     function handleModalCancel() {
@@ -155,7 +159,7 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
                 syncRequest({ ...request, status: "archived" });
                 toast({ title: "Request archived", variant: "success" });
             }
-            onRequestClose?.();
+            closeDrawer();
         } catch {
             toast({ title: "Failed to update request", variant: "error" });
         }
@@ -168,7 +172,7 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
             removeRequest(request.id);
             toast({ title: "Request deleted", variant: "success" });
             setShowDeleteModal(false);
-            onRequestClose?.();
+            closeDrawer();
         } catch {
             toast({ title: "Failed to delete request", variant: "error" });
         } finally {

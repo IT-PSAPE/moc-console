@@ -6,9 +6,9 @@ import type { BookingStatus } from "./booking";
 
 export const equipmentStatusLabel: Record<EquipmentStatus, string> = {
   available: "Available",
+  booked: "Booked",
   booked_out: "Booked Out",
   maintenance: "Maintenance",
-  retired: "Retired",
 };
 
 export const equipmentCategoryLabel: Record<EquipmentCategory, string> = {
@@ -23,17 +23,18 @@ export const equipmentCategoryLabel: Record<EquipmentCategory, string> = {
 };
 
 export const bookingStatusLabel: Record<BookingStatus, string> = {
+  booked: "Booked",
   checked_out: "Checked Out",
   returned: "Returned",
 };
 
 // ─── Colors ────────────────────────────────────────────
 
-export const equipmentStatusColor: Record<EquipmentStatus, "green" | "yellow" | "red" | "gray"> = {
+export const equipmentStatusColor: Record<EquipmentStatus, "green" | "yellow" | "blue" | "red"> = {
   available: "green",
+  booked: "blue",
   booked_out: "yellow",
   maintenance: "red",
-  retired: "gray",
 };
 
 export const equipmentCategoryColor: Record<EquipmentCategory, "blue" | "purple" | "yellow" | "green" | "gray"> = {
@@ -47,7 +48,8 @@ export const equipmentCategoryColor: Record<EquipmentCategory, "blue" | "purple"
   accessory: "purple",
 };
 
-export const bookingStatusColor: Record<BookingStatus, "yellow" | "green"> = {
+export const bookingStatusColor: Record<BookingStatus, "blue" | "yellow" | "green"> = {
+  booked: "blue",
   checked_out: "yellow",
   returned: "green",
 };
