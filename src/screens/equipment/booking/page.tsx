@@ -139,8 +139,8 @@ export function EquipmentBookingsScreen() {
                 {view === "table" && (
                   <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
                     <Card.Root>
-                      <Card.Content>
-                        <DataTable data={filtered} columns={columns} emptyMessage="No bookings found" onRowClick={handleBookingRowClick} />
+                      <Card.Content className="!border-secondary overflow-hidden">
+                          <DataTable data={filtered} columns={columns} emptyMessage="No bookings found" onRowClick={handleBookingRowClick} />
                       </Card.Content>
                     </Card.Root>
                     {selectedEquipment && (

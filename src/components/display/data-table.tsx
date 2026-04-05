@@ -61,7 +61,7 @@ export function DataTable<T extends Record<string, unknown>>({
         </Table.Row>
       </Table.Head>
 
-      <Table.Body>
+      <Table.Body className="bg-primary">
         {data.length === 0 ? (
           <Table.Row>
             <Table.Cell className="px-3 py-6 text-center text-tertiary" colSpan={columns.length}>

@@ -5,7 +5,8 @@ import { useAuth } from './lib/auth-context'
 import { AppShell } from './features/app-shell'
 import { BroadcastMediaScreen } from '@/screens/broadcast/media/page'
 import { BroadcastOverviewScreen } from '@/screens/broadcast/page'
-import { BroadcastScreen } from '@/screens/broadcast/broadcast/page'
+import { PlaylistScreen } from '@/screens/broadcast/playlist/page'
+import { PlaylistDetailScreen } from '@/screens/broadcast/detail/page'
 import { CueSheetEventScreen } from '@/screens/cue-sheet/events/page'
 import { CueSheetOverviewScreen } from '@/screens/cue-sheet/page'
 import { DashboardScreen } from '@/screens/dashboard/page'
@@ -22,6 +23,7 @@ import { RequestDetailScreen } from '@/screens/requests/detail/page'
 import { RequestsReportsScreen } from '@/screens/requests/reports/page'
 import { RequestsProvider } from '@/features/requests/request-provider'
 import { EquipmentProvider } from '@/features/equipment/equipment-provider'
+import { BroadcastProvider } from '@/features/broadcast/broadcast-provider'
 import { CueSheetChecklistScreen } from './screens/cue-sheet/checklist/page'
 import { BreadcrumbProvider } from './components/navigation/breadcrumb'
 import { SidebarProvider } from './components/navigation/sidebar'
@@ -109,9 +111,15 @@ const router = createBrowserRouter([
                     { path: routes.equipmentReports, element: <EquipmentReportsScreen /> },
                 ],
             },
-            { path: routes.broadcastOverview, element: <BroadcastOverviewScreen /> },
-            { path: routes.broadcastMedia, element: <BroadcastMediaScreen /> },
-            { path: routes.broadcastBroadcast, element: <BroadcastScreen /> },
+            {
+                element: <BroadcastProvider><Outlet /></BroadcastProvider>,
+                children: [
+                    { path: routes.broadcastOverview, element: <BroadcastOverviewScreen /> },
+                    { path: routes.broadcastMedia, element: <BroadcastMediaScreen /> },
+                    { path: routes.broadcastPlaylists, element: <PlaylistScreen /> },
+                    { path: routes.broadcastPlaylistDetail, element: <PlaylistDetailScreen /> },
+                ],
+            },
             { path: routes.cueSheetOverview, element: <CueSheetOverviewScreen /> },
             { path: routes.cueSheetEvent, element: <CueSheetEventScreen /> },
             { path: routes.cueSheetChecklist, element: <CueSheetChecklistScreen /> },

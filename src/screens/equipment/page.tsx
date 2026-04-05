@@ -174,24 +174,22 @@ export function EquipmentOverviewScreen() {
           </div>
 
           <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
-            <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
-              <Header.Lead className="gap-2">
-                <Label.md>Recent Activity</Label.md>
-              </Header.Lead>
-              <Header.Trail className="gap-2 flex-1 justify-end">
-                <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-sm" value={state.search} onChange={(e) => setSearch(e.target.value)} />
-                <Drawer.Root>
-                  <Drawer.Trigger>
-                    <Button icon={<Settings2 />} variant="secondary">Filter</Button>
-                  </Drawer.Trigger>
-                  <EquipmentFilterDrawer filters={equipmentFilters} />
-                </Drawer.Root>
-              </Header.Trail>
-            </Header.Root>
 
             <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
               <Card.Root>
-                <Card.Content>
+                <Card.Header className="gap-2">
+                  <Label.md>Recent Activity</Label.md>
+                  <div className="ml-auto flex items-center gap-1">
+                    <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-sm" value={state.search} onChange={(e) => setSearch(e.target.value)} />
+                    <Drawer.Root>
+                      <Drawer.Trigger>
+                        <Button icon={<Settings2 />} variant="secondary">Filter</Button>
+                      </Drawer.Trigger>
+                      <EquipmentFilterDrawer filters={equipmentFilters} />
+                    </Drawer.Root>
+                  </div>
+                </Card.Header>
+                <Card.Content className="!border-secondary overflow-hidden">
                   <DataTable data={recentActivity} columns={columns} emptyMessage="No recent activity" onRowClick={(row) => setSelectedEquipment(row)} />
                 </Card.Content>
               </Card.Root>

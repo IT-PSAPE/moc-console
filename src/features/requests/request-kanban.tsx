@@ -25,13 +25,20 @@ function DraggableRequestItem({ request, vertical }: { request: Request; vertica
     }, []);
 
     const style = {
-        transform: CSS.Translate.toString(transform),
-        opacity: isDragging ? 0.4 : undefined,
+        transform: isDragging ? undefined : CSS.Translate.toString(transform),
     };
 
     return (
         <div ref={setNodeRef} style={style} {...(drawerOpen ? {} : { ...listeners, ...attributes })}>
-            <RequestItem request={request} vertical={vertical} onDrawerOpenChange={handleDrawerOpenChange} />
+            {isDragging ? (
+                <div className="rounded-lg border-2 border-dashed border-secondary">
+                    <div className="invisible">
+                        <RequestItem request={request} vertical={vertical} />
+                    </div>
+                </div>
+            ) : (
+                <RequestItem request={request} vertical={vertical} onDrawerOpenChange={handleDrawerOpenChange} />
+            )}
         </div>
     );
 }

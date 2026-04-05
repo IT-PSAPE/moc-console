@@ -86,8 +86,8 @@ export function EquipmentMaintenanceScreen() {
           <Decision.Data>
             <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
               <Card.Root>
-                <Card.Content>
-                  <DataTable data={maintenanceItems} columns={columns} emptyMessage="No maintenance records" onRowClick={(row) => setSelectedEquipment(row)} />
+                <Card.Content className="!border-secondary overflow-hidden">
+                    <DataTable data={maintenanceItems} columns={columns} emptyMessage="No maintenance records" onRowClick={(row) => setSelectedEquipment(row)} />
                 </Card.Content>
               </Card.Root>
               {selectedEquipment && (

@@ -75,7 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 <Sidebar.MenuItem title={"Broadcast"} icon={<Cast />}>
                                     <Sidebar.MenuItem title={"Overview"} active={isActive(routes.broadcastOverview)} onClick={() => navigateToRoute(routes.broadcastOverview)} />
                                     <Sidebar.MenuItem title={"Media"} active={isActive(routes.broadcastMedia)} onClick={() => navigateToRoute(routes.broadcastMedia)} />
-                                    <Sidebar.MenuItem title={"Broadcast"} active={isActive(routes.broadcastBroadcast)} onClick={() => navigateToRoute(routes.broadcastBroadcast)} />
+                                    <Sidebar.MenuItem title={"Playlists"} active={isActive(routes.broadcastPlaylists)} onClick={() => navigateToRoute(routes.broadcastPlaylists)} />
                                 </Sidebar.MenuItem>
                                 <Sidebar.MenuItem title={"Cue Sheet"} icon={<Drama />}>
                                     <Sidebar.MenuItem title={"Overview"} active={isActive(routes.cueSheetOverview)} onClick={() => navigateToRoute(routes.cueSheetOverview)} />

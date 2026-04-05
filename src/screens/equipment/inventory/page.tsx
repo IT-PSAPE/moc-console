@@ -17,17 +17,8 @@ import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-dra
 import { EquipmentDrawer } from "@/features/equipment/equipment-drawer";
 import { equipmentStatusLabel, equipmentStatusColor, equipmentCategoryLabel, equipmentCategoryColor } from "@/types/equipment";
 import type { Equipment } from "@/types/equipment";
+import { EquipmentThumbnail } from "@/features/equipment/equipment-thumbnail";
 
-function EquipmentThumbnail({ equipment }: { equipment: Equipment }) {
-  if (equipment.thumbnail) {
-    return <img src={equipment.thumbnail} alt={equipment.name} className="size-8 rounded object-cover" />;
-  }
-  return (
-    <span className="flex size-8 items-center justify-center rounded bg-secondary text-quaternary">
-      <Package className="size-4" />
-    </span>
-  );
-}
 
 const columns = [
   {
@@ -121,8 +112,8 @@ export function EquipmentInventoryScreen() {
           <Decision.Data>
             <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
               <Card.Root>
-                <Card.Content>
-                  <DataTable data={filtered} columns={columns} emptyMessage="No equipment found" onRowClick={(row) => setSelectedEquipment(row)} />
+                <Card.Content className="!border-secondary overflow-hidden">
+                    <DataTable data={filtered} columns={columns} emptyMessage="No equipment found" onRowClick={(row) => setSelectedEquipment(row)} />
                 </Card.Content>
               </Card.Root>
               {selectedEquipment && (

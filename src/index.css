@@ -541,6 +541,7 @@
     --spacing-sidebar-collapsed: 3.5rem;
     --spacing-content: 80rem;
     --spacing-content-sm: 45rem;
+    --spacing-content-md: 64rem;
 }
 
 
@@ -712,6 +713,12 @@
 
 @utility area-content {
   grid-area: content;
+}
+
+@utility all-unset {
+  all: unset;
+  display: inline;
+  cursor: text;
 }
 
 /* BASE STYLES */
