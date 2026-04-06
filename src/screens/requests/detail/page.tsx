@@ -6,24 +6,21 @@ import { Header } from '@/components/display/header'
 import { Label, Title } from '@/components/display/text'
 import { Spinner } from '@/components/feedback/spinner'
 import { fetchAssigneesByRequestId, type ResolvedAssignee } from '@/data/fetch-assignees'
-import { addRequestAssignee, removeRequestAssignee, archiveRequest, unarchiveRequest, deleteRequest } from '@/data/mutate-requests'
 import type { Request } from '@/types/requests'
 import { TopBarActions } from '@/features/topbar'
-import { useRequestStore } from '@/features/requests/use-request-store'
 import { UnsavedChangesModal } from '@/features/requests/unsaved-changes-modal'
 import { DeleteRequestModal } from '@/features/requests/delete-request-modal'
 import { useRequests } from '@/features/requests/request-provider'
-import { useFeedback } from '@/components/feedback/feedback-provider'
+import { useRequestDetail } from '@/features/requests/use-request-detail'
 import { Archive, ArchiveRestore, EllipsisVertical, Pencil, Trash2, Save, Undo2 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import { useBlocker, useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { RequestMetaFields, RequestFiveW, RequestNotes, RequestFlow, RequestAssigneeList } from '@/features/requests/request-properties'
 
 export function RequestDetailScreen() {
     const { id } = useParams<{ id: string }>();
     const [assignees, setAssignees] = useState<ResolvedAssignee[]>([]);
     const { state: requestsState, actions: { loadRequest, syncRequest } } = useRequests();
-    const { toast } = useFeedback();
     const request = id ? requestsState.requestsById[id] ?? null : null
 
     useBreadcrumbOverride(id ?? '', request?.title);
@@ -47,7 +44,6 @@ export function RequestDetailScreen() {
             request={request}
             assignees={assignees}
             setAssignees={setAssignees}
-            toast={toast}
             syncRequest={syncRequest}
         />
     );
@@ -57,111 +53,25 @@ type RequestDetailContentProps = {
     request: Request;
     assignees: ResolvedAssignee[];
     setAssignees: (a: ResolvedAssignee[]) => void;
-    toast: (options: { title: string; variant?: 'error' | 'warning' | 'success' | 'info' | 'feature' }) => string;
     syncRequest: (request: Request) => void;
 };
 
-function RequestDetailContent({ request, assignees, setAssignees, toast, syncRequest }: RequestDetailContentProps) {
-    const navigate = useNavigate();
-    const { actions: { removeRequest } } = useRequests();
-    const store = useRequestStore(request, { syncRequest });
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
-
-    // Navigation guard
-    const blocker = useBlocker(store.state.isDirty);
-
-    // Browser close/refresh guard
-    useEffect(() => {
-        if (!store.state.isDirty) return;
-
-        function handleBeforeUnload(e: BeforeUnloadEvent) {
-            e.preventDefault();
-        }
-
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [store.state.isDirty]);
-
-    async function handleAddMember(userId: string, duty: string) {
-        try {
-            await addRequestAssignee(request.id, userId, duty);
-            const updated = await fetchAssigneesByRequestId(request.id);
-            setAssignees(updated);
-        } catch {
-            toast({ title: "Failed to add member", variant: "error" });
-        }
-    }
-
-    async function handleRemoveMember(userId: string) {
-        try {
-            await removeRequestAssignee(request.id, userId);
-            const updated = await fetchAssigneesByRequestId(request.id);
-            setAssignees(updated);
-        } catch {
-            toast({ title: "Failed to remove member", variant: "error" });
-        }
-    }
-
-    const handleSave = useCallback(async () => {
-        try {
-            await store.actions.save();
-            toast({ title: 'Request saved', variant: 'success' });
-        } catch {
-            toast({ title: 'Failed to save request', variant: 'error' });
-        }
-    }, [store.actions, toast]);
-
-    // Handle blocker modal actions
-    async function handleBlockerSave() {
-        try {
-            await store.actions.save();
-            toast({ title: 'Request saved', variant: 'success' });
-            if (blocker.state === 'blocked') blocker.proceed();
-        } catch {
-            toast({ title: 'Failed to save request', variant: 'error' });
-        }
-    }
-
-    function handleBlockerDiscard() {
-        store.actions.discard();
-        if (blocker.state === 'blocked') blocker.proceed();
-    }
-
-    function handleBlockerCancel() {
-        if (blocker.state === 'blocked') blocker.reset();
-    }
-
-    async function handleArchiveToggle() {
-        try {
-            if (request.status === "archived") {
-                await unarchiveRequest(request.id);
-                syncRequest({ ...request, status: "not_started" });
-                toast({ title: "Request unarchived", variant: "success" });
-            } else {
-                await archiveRequest(request.id);
-                syncRequest({ ...request, status: "archived" });
-                toast({ title: "Request archived", variant: "success" });
-            }
-        } catch {
-            toast({ title: "Failed to update request", variant: "error" });
-        }
-    }
-
-    async function handleDelete() {
-        setIsDeleting(true);
-        try {
-            await deleteRequest(request.id);
-            removeRequest(request.id);
-            toast({ title: "Request deleted", variant: "success" });
-            setShowDeleteModal(false);
-            navigate("/requests/all-requests");
-        } catch {
-            toast({ title: "Failed to delete request", variant: "error" });
-        } finally {
-            setIsDeleting(false);
-        }
-    }
+function RequestDetailContent({ request, assignees, setAssignees, syncRequest }: RequestDetailContentProps) {
+    const detail = useRequestDetail({ request, setAssignees, syncRequest });
+    const { blockerState, isDeleting, showDeleteModal, store } = detail;
+    const {
+        closeDeleteModal,
+        handleAddMember,
+        handleArchiveToggle,
+        handleBlockerCancel,
+        handleBlockerDiscard,
+        handleBlockerSave,
+        handleContentChange,
+        handleDelete,
+        handleRemoveMember,
+        handleSave,
+        openDeleteModal,
+    } = detail.actions;
 
     return (
         <section className="mx-auto max-w-content-sm">
@@ -189,7 +99,7 @@ function RequestDetailContent({ request, assignees, setAssignees, toast, syncReq
                             )}
                         </Dropdown.Item>
                         <Dropdown.Separator />
-                        <Dropdown.Item onSelect={() => setShowDeleteModal(true)}>
+                        <Dropdown.Item onSelect={openDeleteModal}>
                             <Trash2 className="size-4 text-utility-red-600" />
                             <span className="text-utility-red-600">Delete</span>
                         </Dropdown.Item>
@@ -249,13 +159,13 @@ function RequestDetailContent({ request, assignees, setAssignees, toast, syncReq
                     className="w-full min-h-64 rounded-lg border border-secondary bg-primary p-4 text-sm text-primary placeholder:text-quaternary outline-none focus:border-brand focus:ring-1 focus:ring-brand resize-y"
                     placeholder="Add notes, details, or any additional context here..."
                     value={store.state.draft.content ?? ''}
-                    onChange={(e) => store.actions.updateField('content', e.target.value)}
+                    onChange={handleContentChange}
                 />
             </div>
 
             {/* Navigation guard modal */}
             <UnsavedChangesModal
-                open={blocker.state === 'blocked'}
+                open={blockerState === 'blocked'}
                 onSave={handleBlockerSave}
                 onDiscard={handleBlockerDiscard}
                 onCancel={handleBlockerCancel}
@@ -266,7 +176,7 @@ function RequestDetailContent({ request, assignees, setAssignees, toast, syncReq
             <DeleteRequestModal
                 open={showDeleteModal}
                 onDelete={handleDelete}
-                onCancel={() => setShowDeleteModal(false)}
+                onCancel={closeDeleteModal}
                 isDeleting={isDeleting}
             />
 
