@@ -1,0 +1,26 @@
+[
+  {
+    "id": "a1b2c3d4-e5f6-4890-abcd-ef1234567890",
+    "title": "Sunday Service",
+    "description": "Standard Sunday morning service template",
+    "duration": 120,
+    "createdAt": "2026-03-01T08:00:00Z",
+    "updatedAt": "2026-03-28T10:00:00Z"
+  },
+  {
+    "id": "b2c3d4e5-f6a7-4901-bcde-f12345678901",
+    "title": "Wednesday Bible Study",
+    "description": "Midweek Bible study session",
+    "duration": 90,
+    "createdAt": "2026-03-05T08:00:00Z",
+    "updatedAt": "2026-03-26T10:00:00Z"
+  },
+  {
+    "id": "c3d4e5f6-a7b8-4012-cdef-123456789012",
+    "title": "Youth Night",
+    "description": "Friday youth gathering template",
+    "duration": 150,
+    "createdAt": "2026-03-10T08:00:00Z",
+    "updatedAt": "2026-03-30T10:00:00Z"
+  }
+]

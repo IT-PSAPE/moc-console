@@ -36,7 +36,7 @@ export function CueSheetEventScreen() {
         )
     }, [events, search])
 
-    const handleCreate = useCallback(({ title, description, duration }: { title: string; description: string; duration: number }) => {
+    const handleCreate = useCallback(async ({ title, description, duration }: { title: string; description: string; duration: number }) => {
         const now = new Date().toISOString()
         const newEvent: CueSheetEvent = {
             id: crypto.randomUUID(),
@@ -46,7 +46,7 @@ export function CueSheetEventScreen() {
             createdAt: now,
             updatedAt: now,
         }
-        syncEvent(newEvent)
+        await syncEvent(newEvent)
         setShowCreateModal(false)
         navigate(`/cue-sheet/events/${newEvent.id}`)
     }, [syncEvent, navigate])

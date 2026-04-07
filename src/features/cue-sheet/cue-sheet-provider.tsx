@@ -1,200 +1,19 @@
 import type { CueSheetEvent, Checklist, Track } from '@/types/cue-sheet'
+import {
+    fetchCueSheetChecklists,
+    fetchCueSheetEventById,
+    fetchCueSheetEvents,
+    fetchCueSheetTracks,
+    fetchCueSheetTracksByEventId,
+} from '@/data/fetch-cue-sheet'
+import {
+    deleteCueSheetChecklist,
+    deleteCueSheetEvent,
+    saveCueSheetChecklist,
+    saveCueSheetEvent,
+    saveCueSheetTracks,
+} from '@/data/mutate-cue-sheet'
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
-
-// ─── Mock Data ──────────────────────────────────────────────────────
-
-const MOCK_EVENTS: CueSheetEvent[] = [
-    {
-        id: 'a1b2c3d4-e5f6-4890-abcd-ef1234567890',
-        title: 'Sunday Service',
-        description: 'Standard Sunday morning service template',
-        duration: 120,
-        createdAt: '2026-03-01T08:00:00Z',
-        updatedAt: '2026-03-28T10:00:00Z',
-    },
-    {
-        id: 'b2c3d4e5-f6a7-4901-bcde-f12345678901',
-        title: 'Wednesday Bible Study',
-        description: 'Midweek Bible study session',
-        duration: 90,
-        createdAt: '2026-03-05T08:00:00Z',
-        updatedAt: '2026-03-26T10:00:00Z',
-    },
-    {
-        id: 'c3d4e5f6-a7b8-4012-cdef-123456789012',
-        title: 'Youth Night',
-        description: 'Friday youth gathering template',
-        duration: 150,
-        createdAt: '2026-03-10T08:00:00Z',
-        updatedAt: '2026-03-30T10:00:00Z',
-    },
-]
-
-const MOCK_CHECKLISTS: Checklist[] = [
-    {
-        id: 'd4e5f6a7-b8c9-4123-def0-234567890123',
-        name: 'Sunday Service Prep',
-        description: 'Pre-service preparation checklist',
-        items: [
-            { id: 'e5f6a7b8-c9d0-4234-ef01-345678901234', label: 'Venue unlocked and lights on', checked: false },
-            { id: 'f6a7b8c9-d0e1-4345-f012-456789012345', label: 'Communion elements prepared', checked: false },
-        ],
-        sections: [
-            {
-                id: '01a2b3c4-d5e6-4456-0123-567890123456',
-                name: 'Audio Team',
-                items: [
-                    { id: '12b3c4d5-e6f7-4567-1234-678901234567', label: 'Sound check completed', checked: false },
-                    { id: '23c4d5e6-f7a8-4678-2345-789012345678', label: 'Microphone batteries replaced', checked: false },
-                    { id: '34d5e6f7-a8b9-4789-3456-890123456789', label: 'Audio mixer levels set', checked: false },
-                ],
-            },
-            {
-                id: '45e6f7a8-b9c0-4890-4567-901234567890',
-                name: 'Visuals & Streaming',
-                items: [
-                    { id: '56f7a8b9-c0d1-4901-5678-012345678901', label: 'Projector slides loaded', checked: false },
-                    { id: '67a8b9c0-d1e2-4012-6789-123456789012', label: 'Livestream tested', checked: false },
-                    { id: '78b9c0d1-e2f3-4123-7890-234567890123', label: 'Recording software running', checked: false },
-                ],
-            },
-            {
-                id: '89c0d1e2-f3a4-4234-8901-345678901234',
-                name: 'Welcome Team',
-                items: [
-                    { id: '90d1e2f3-a4b5-4345-9012-456789012345', label: 'Welcome team briefed', checked: false },
-                    { id: 'a1e2f3a4-b5c6-4456-a123-567890123456', label: 'Bulletins printed and ready', checked: false },
-                ],
-            },
-        ],
-        createdAt: '2026-03-01T07:00:00Z',
-        updatedAt: '2026-03-28T07:00:00Z',
-    },
-    {
-        id: 'b2f3a4b5-c6d7-4567-b234-678901234567',
-        name: 'Media Setup',
-        description: 'Equipment and media readiness check',
-        items: [
-            { id: 'c3a4b5c6-d7e8-4678-c345-789012345678', label: 'Cameras powered on', checked: false },
-            { id: 'd4b5c6d7-e8f9-4789-d456-890123456789', label: 'Audio mixer levels set', checked: false },
-            { id: 'e5c6d7e8-f9a0-4890-e567-901234567890', label: 'Recording software running', checked: false },
-        ],
-        sections: [],
-        createdAt: '2026-03-02T07:00:00Z',
-        updatedAt: '2026-03-29T07:00:00Z',
-    },
-    {
-        id: 'f6d7e8f9-a0b1-4901-f678-012345678901',
-        name: 'Youth Night Prep',
-        description: 'Youth event preparation',
-        items: [
-            { id: 'a7e8f9a0-b1c2-4012-a789-123456789012', label: 'Venue setup complete', checked: false },
-        ],
-        sections: [
-            {
-                id: 'b8f9a0b1-c2d3-4123-b890-234567890123',
-                name: 'Praise & Worship',
-                items: [
-                    { id: 'c9a0b1c2-d3e4-4234-c901-345678901234', label: 'Worship team rehearsed', checked: false },
-                    { id: 'd0b1c2d3-e4f5-4345-d012-456789012345', label: 'Lyrics loaded on screens', checked: false },
-                ],
-            },
-            {
-                id: 'e1c2d3e4-f5a6-4456-e123-567890123456',
-                name: 'Activities',
-                items: [
-                    { id: 'f2d3e4f5-a6b7-4567-f234-678901234567', label: 'Games equipment ready', checked: false },
-                    { id: 'a3e4f5a6-b7c8-4678-a345-789012345678', label: 'Snacks and drinks set up', checked: false },
-                    { id: 'b4f5a6b7-c8d9-4789-b456-890123456789', label: 'Small group materials printed', checked: false },
-                ],
-            },
-        ],
-        createdAt: '2026-03-10T07:00:00Z',
-        updatedAt: '2026-03-30T07:00:00Z',
-    },
-]
-
-const MOCK_TRACKS: Record<string, Track[]> = {
-    'a1b2c3d4-e5f6-4890-abcd-ef1234567890': [
-        {
-            id: 'c5a6b7c8-d9e0-4890-c567-901234567890',
-            name: 'Audio',
-            color: 'var(--color-utility-blue-500)',
-            cues: [
-                { id: 'd6b7c8d9-e0f1-4901-d678-012345678901', label: 'Pre-service music', startMin: 0, durationMin: 15, type: 'performance' },
-                { id: 'e7c8d9e0-f1a2-4012-e789-123456789012', label: 'Worship set', startMin: 15, durationMin: 30, type: 'performance' },
-                { id: 'f8d9e0f1-a2b3-4123-f890-234567890123', label: 'Sermon audio', startMin: 50, durationMin: 40, type: 'performance' },
-                { id: 'a9e0f1a2-b3c4-4234-a901-345678901234', label: 'Closing music', startMin: 100, durationMin: 20, type: 'performance' },
-            ],
-        },
-        {
-            id: 'b0f1a2b3-c4d5-4345-b012-456789012345',
-            name: 'Visuals',
-            color: 'var(--color-utility-purple-500)',
-            cues: [
-                { id: 'c1a2b3c4-d5e6-4456-c123-567890123456', label: 'Welcome slides', startMin: 0, durationMin: 15, type: 'technical' },
-                { id: 'd2b3c4d5-e6f7-4567-d234-678901234567', label: 'Worship lyrics', startMin: 15, durationMin: 30, type: 'technical' },
-                { id: 'e3c4d5e6-f7a8-4678-e345-789012345678', label: 'Sermon slides', startMin: 50, durationMin: 40, type: 'technical' },
-                { id: 'f4d5e6f7-a8b9-4789-f456-890123456789', label: 'Announcements', startMin: 90, durationMin: 10, type: 'announcement' },
-            ],
-        },
-        {
-            id: 'a5e6f7a8-b9c0-4890-a567-901234567890',
-            name: 'Livestream',
-            color: 'var(--color-utility-red-500)',
-            cues: [
-                { id: 'b6f7a8b9-c0d1-4901-b678-012345678901', label: 'Go live', startMin: 10, durationMin: 5, type: 'technical' },
-                { id: 'c7a8b9c0-d1e2-4012-c789-123456789012', label: 'Main broadcast', startMin: 15, durationMin: 95, type: 'technical' },
-                { id: 'd8b9c0d1-e2f3-4123-d890-234567890123', label: 'End stream', startMin: 110, durationMin: 10, type: 'technical' },
-            ],
-        },
-    ],
-    'b2c3d4e5-f6a7-4901-bcde-f12345678901': [
-        {
-            id: 'e9c0d1e2-f3a4-4234-e901-345678901234',
-            name: 'Audio',
-            color: 'var(--color-utility-blue-500)',
-            cues: [
-                { id: 'f0d1e2f3-a4b5-4345-f012-456789012345', label: 'Background music', startMin: 0, durationMin: 10, type: 'performance' },
-                { id: 'a1e2f3a4-b5c6-4456-a123-567890123457', label: 'Teaching audio', startMin: 10, durationMin: 60, type: 'performance' },
-                { id: 'b2f3a4b5-c6d7-4567-b234-678901234568', label: 'Discussion', startMin: 70, durationMin: 20, type: 'transition' },
-            ],
-        },
-        {
-            id: 'c3a4b5c6-d7e8-4678-c345-789012345679',
-            name: 'Visuals',
-            color: 'var(--color-utility-purple-500)',
-            cues: [
-                { id: 'd4b5c6d7-e8f9-4789-d456-890123456790', label: 'Study slides', startMin: 10, durationMin: 60, type: 'technical' },
-                { id: 'e5c6d7e8-f9a0-4890-e567-901234567891', label: 'Discussion prompts', startMin: 70, durationMin: 20, type: 'technical' },
-            ],
-        },
-    ],
-    'c3d4e5f6-a7b8-4012-cdef-123456789012': [
-        {
-            id: 'f6d7e8f9-a0b1-4901-f678-012345678902',
-            name: 'Stage',
-            color: 'var(--color-utility-green-500)',
-            cues: [
-                { id: 'a7e8f9a0-b1c2-4012-a789-123456789013', label: 'Games', startMin: 0, durationMin: 30, type: 'performance' },
-                { id: 'b8f9a0b1-c2d3-4123-b890-234567890124', label: 'Worship', startMin: 30, durationMin: 30, type: 'performance' },
-                { id: 'c9a0b1c2-d3e4-4234-c901-345678901235', label: 'Message', startMin: 60, durationMin: 30, type: 'performance' },
-                { id: 'd0b1c2d3-e4f5-4345-d012-456789012346', label: 'Small groups', startMin: 90, durationMin: 40, type: 'transition' },
-                { id: 'e1c2d3e4-f5a6-4456-e123-567890123457', label: 'Hangout', startMin: 130, durationMin: 20, type: 'transition' },
-            ],
-        },
-        {
-            id: 'f2d3e4f5-a6b7-4567-f234-678901234568',
-            name: 'Media',
-            color: 'var(--color-utility-orange-500)',
-            cues: [
-                { id: 'a3e4f5a6-b7c8-4678-a345-789012345679', label: 'Game visuals', startMin: 0, durationMin: 30, type: 'technical' },
-                { id: 'b4f5a6b7-c8d9-4789-b456-890123456790', label: 'Lyrics', startMin: 30, durationMin: 30, type: 'technical' },
-                { id: 'c5a6b7c8-d9e0-4890-c567-901234567891', label: 'Sermon slides', startMin: 60, durationMin: 30, type: 'technical' },
-            ],
-        },
-    ],
-}
 
 // ─── Context ────────────────────────────────────────────────────────
 
@@ -211,12 +30,24 @@ type CueSheetContextValue = {
         loadEvents: () => Promise<void>
         loadChecklists: () => Promise<void>
         loadEvent: (id: string) => Promise<void>
-        syncChecklist: (checklist: Checklist) => void
-        syncEvent: (event: CueSheetEvent) => void
-        syncTracks: (eventId: string, tracks: Track[]) => void
-        removeEvent: (id: string) => void
-        removeChecklist: (id: string) => void
+        syncChecklist: (checklist: Checklist) => Promise<void>
+        syncEvent: (event: CueSheetEvent) => Promise<void>
+        syncTracks: (eventId: string, tracks: Track[]) => Promise<void>
+        createEventInstance: (template: CueSheetEvent) => Promise<CueSheetEvent>
+        removeEvent: (id: string) => Promise<void>
+        removeChecklist: (id: string) => Promise<void>
     }
+}
+
+function duplicateTracks(tracks: Track[]): Track[] {
+    return tracks.map((track) => ({
+        ...track,
+        id: crypto.randomUUID(),
+        cues: track.cues.map((cue) => ({
+            ...cue,
+            id: crypto.randomUUID(),
+        })),
+    }))
 }
 
 const CueSheetContext = createContext<CueSheetContextValue | null>(null)
@@ -238,12 +69,12 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
         if (eventsPromiseRef.current) return eventsPromiseRef.current
 
         setIsLoadingEvents(true)
-        eventsPromiseRef.current = Promise.resolve(MOCK_EVENTS)
-            .then((events) => {
+        eventsPromiseRef.current = Promise.all([fetchCueSheetEvents(), fetchCueSheetTracks()])
+            .then(([events, tracks]) => {
                 const byId: Record<string, CueSheetEvent> = {}
                 for (const event of events) byId[event.id] = event
                 setEventsById(byId)
-                setTracksByEventId(MOCK_TRACKS)
+                setTracksByEventId(tracks)
                 eventsLoadedRef.current = true
             })
             .finally(() => {
@@ -259,7 +90,7 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
         if (checklistsPromiseRef.current) return checklistsPromiseRef.current
 
         setIsLoadingChecklists(true)
-        checklistsPromiseRef.current = Promise.resolve(MOCK_CHECKLISTS)
+        checklistsPromiseRef.current = fetchCueSheetChecklists()
             .then((data) => {
                 setChecklists(data)
                 checklistsLoadedRef.current = true
@@ -273,40 +104,71 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
     }, [])
 
     const loadEvent = useCallback(async (id: string) => {
-        if (eventsById[id]) return
-        const event = MOCK_EVENTS.find((e) => e.id === id)
+        if (eventsById[id] && tracksByEventId[id]) return
+        const [event, tracks] = await Promise.all([
+            fetchCueSheetEventById(id),
+            fetchCueSheetTracksByEventId(id),
+        ])
         if (!event) return
         setEventsById((prev) => ({ ...prev, [event.id]: event }))
-        if (MOCK_TRACKS[id]) {
-            setTracksByEventId((prev) => ({ ...prev, [id]: MOCK_TRACKS[id] }))
-        }
-    }, [eventsById])
+        setTracksByEventId((prev) => ({ ...prev, [id]: tracks }))
+    }, [eventsById, tracksByEventId])
 
-    const syncChecklist = useCallback((checklist: Checklist) => {
+    const syncChecklist = useCallback(async (checklist: Checklist) => {
+        const savedChecklist = await saveCueSheetChecklist(checklist)
         setChecklists((prev) => {
-            const idx = prev.findIndex((c) => c.id === checklist.id)
-            if (idx === -1) return [...prev, checklist]
-            return prev.map((c) => (c.id === checklist.id ? checklist : c))
+            const idx = prev.findIndex((c) => c.id === savedChecklist.id)
+            if (idx === -1) return [...prev, savedChecklist]
+            return prev.map((c) => (c.id === savedChecklist.id ? savedChecklist : c))
         })
     }, [])
 
-    const syncEvent = useCallback((event: CueSheetEvent) => {
-        setEventsById((prev) => ({ ...prev, [event.id]: event }))
+    const syncEvent = useCallback(async (event: CueSheetEvent) => {
+        const savedEvent = await saveCueSheetEvent(event)
+        setEventsById((prev) => ({ ...prev, [savedEvent.id]: savedEvent }))
     }, [])
 
-    const syncTracks = useCallback((eventId: string, tracks: Track[]) => {
-        setTracksByEventId((prev) => ({ ...prev, [eventId]: tracks }))
+    const syncTracks = useCallback(async (eventId: string, tracks: Track[]) => {
+        const savedTracks = await saveCueSheetTracks(eventId, tracks)
+        setTracksByEventId((prev) => ({ ...prev, [eventId]: savedTracks }))
     }, [])
 
-    const removeEvent = useCallback((id: string) => {
+    const createEventInstance = useCallback(async (template: CueSheetEvent) => {
+        const now = new Date().toISOString()
+        const instance: CueSheetEvent = {
+            ...template,
+            id: crypto.randomUUID(),
+            kind: 'instance',
+            templateId: template.id,
+            title: `${template.title} Run`,
+            scheduledAt: now,
+            createdAt: now,
+            updatedAt: now,
+        }
+        const sourceTracks = tracksByEventId[template.id] ?? []
+        const savedEvent = await saveCueSheetEvent(instance)
+        const savedTracks = await saveCueSheetTracks(savedEvent.id, duplicateTracks(sourceTracks))
+        setEventsById((prev) => ({ ...prev, [savedEvent.id]: savedEvent }))
+        setTracksByEventId((prev) => ({ ...prev, [savedEvent.id]: savedTracks }))
+        return savedEvent
+    }, [tracksByEventId])
+
+    const removeEvent = useCallback(async (id: string) => {
+        await deleteCueSheetEvent(id)
         setEventsById((prev) => {
+            const next = { ...prev }
+            delete next[id]
+            return next
+        })
+        setTracksByEventId((prev) => {
             const next = { ...prev }
             delete next[id]
             return next
         })
     }, [])
 
-    const removeChecklist = useCallback((id: string) => {
+    const removeChecklist = useCallback(async (id: string) => {
+        await deleteCueSheetChecklist(id)
         setChecklists((prev) => prev.filter((c) => c.id !== id))
     }, [])
 
@@ -328,10 +190,11 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
             syncChecklist,
             syncEvent,
             syncTracks,
+            createEventInstance,
             removeEvent,
             removeChecklist,
         },
-    }), [events, checklists, eventsById, tracksByEventId, isLoadingEvents, isLoadingChecklists, loadEvents, loadChecklists, loadEvent, syncChecklist, syncEvent, syncTracks, removeEvent, removeChecklist])
+    }), [events, checklists, eventsById, tracksByEventId, isLoadingEvents, isLoadingChecklists, loadEvents, loadChecklists, loadEvent, syncChecklist, syncEvent, syncTracks, createEventInstance, removeEvent, removeChecklist])
 
     return <CueSheetContext.Provider value={value}>{children}</CueSheetContext.Provider>
 }

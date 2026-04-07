@@ -7,7 +7,7 @@ It complements [schema-reference.md](./schema-reference.md).
 ## Source Notes
 
 - Requests are the only domain currently wired to real Supabase reads and writes.
-- Equipment and broadcast mutations are mock implementations that return the passed data.
+- Equipment, broadcast, and cue-sheet mutations are mock implementations that return the passed data.
 - User signup only creates a Supabase Auth account in the current code. This repository does not show profile-row or role-row creation for `users` and `user_roles`.
 
 ## Global Conventions
@@ -22,6 +22,7 @@ It complements [schema-reference.md](./schema-reference.md).
   - Media: `media-001`
   - Cues: `cue-001`
   - Slides: `slide-011a`
+- Cue-sheet event, checklist, track, and timeline cue ids currently use UUID-like strings generated with `crypto.randomUUID()` for new records.
 - Request ids come from Supabase and are treated as opaque strings.
 - `users.id` is expected to match the Supabase Auth user id because profile lookup does `.eq("id", user.id)`.
 
@@ -36,6 +37,9 @@ It complements [schema-reference.md](./schema-reference.md).
   - Example: `2026-04-05`
 - Equipment bookings:
   - `checkedOutDate` and `returnedDate` also behave like date-only strings in current usage.
+- Cue sheet:
+  - `createdAt` and `updatedAt` use ISO datetime strings.
+  - Timeline cues use `startMin` and `durationMin` as numeric minute values, not datetimes.
 
 ### Null vs empty string
 
@@ -52,6 +56,7 @@ It complements [schema-reference.md](./schema-reference.md).
   - `MediaItem.audioUrl`: `null` when absent
   - `MediaItem.slides`: `null` unless `type === "slide"`
   - `MediaItem.url`: current slide entries use `""`, even though the field is not nullable
+- Cue-sheet `Cue.notes`: omitted when absent
 
 ## Requests
 
@@ -418,6 +423,62 @@ That means:
 - `0` is currently used as a placeholder value for newly created non-image uploads.
 - If downstream logic expects a real runtime duration, replace `0` with the actual duration after ingestion.
 
+## Cue Sheet
+
+### `CueSheetEvent`
+
+Expected usage:
+
+- `title` should be short and operationally recognizable.
+- `description` can be empty, but a concise sentence helps distinguish reusable event templates.
+- `duration` is the full event timeline length in minutes.
+- `createdAt` and `updatedAt` should remain ISO datetime strings.
+
+Good examples:
+
+- `Sunday Service`
+- `Wednesday Bible Study`
+- `Youth Night`
+
+### `Checklist`
+
+Expected usage:
+
+- `name` should describe the preparation flow, such as `Sunday Service Prep`.
+- `items` contains ungrouped tasks shown before any sections.
+- `sections` contains grouped tasks and should be an empty array when no grouping is needed.
+- Use `checked: false` for newly created checklist items.
+
+### `ChecklistSection`
+
+- `name` should be a team, phase, or operational grouping.
+- `items` should stay as an array, even when empty.
+- Section and item ordering is represented by array order.
+
+### Cue-sheet timeline `Track`
+
+- Tracks are stored under their owning event id in `src/data/mock/cue-sheet-tracks.json`.
+- `name` should identify the lane, such as `Audio`, `Visuals`, `Livestream`, or `Stage`.
+- `color` is a CSS color string used by the timeline UI.
+- Track ordering is represented by array order.
+
+### Cue-sheet timeline `Cue`
+
+Allowed `type` values:
+
+- `performance`
+- `technical`
+- `equipment`
+- `announcement`
+- `transition`
+
+Timing rules:
+
+- `startMin` is the offset from the start of the event.
+- `durationMin` is the cue length in minutes.
+- Keep both values numeric so timeline drag, resize, and marker calculations remain stable.
+- Cue ordering within a track is represented by array order and visual position.
+
 ## Cross-Domain Practical Rules
 
 ### Prefer enums exactly as defined
@@ -455,7 +516,9 @@ Examples of denormalized text fields that are intentionally human-readable:
 
 - Equipment save/delete calls are mock-only.
 - Broadcast save/delete/update calls are mock-only.
+- Cue-sheet save/delete/update calls are mock-only.
 - Playlists are embedded objects with nested cues, not normalized DB rows in the current implementation.
+- Cue-sheet checklists and timeline tracks are embedded mock JSON structures, not normalized DB rows in the current implementation.
 - Request data is normalized enough to infer real tables:
   - `requests`
   - `request_assignees`

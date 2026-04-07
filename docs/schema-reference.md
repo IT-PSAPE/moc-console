@@ -13,11 +13,12 @@ It is an inferred schema, not a database migration export. There is no checked-i
 
 - Requests and request assignments are backed by Supabase tables.
 - User profile and role lookups are backed by Supabase tables plus Supabase Auth.
-- Equipment, bookings, broadcast media, playlists, and cues are currently mock-backed.
+- Equipment, bookings, broadcast media, playlists, broadcast cues, cue-sheet events, cue-sheet checklists, and cue-sheet timeline tracks are currently mock-backed.
 - Several fields are optional in the app model but normalized to `null` when written to Supabase.
 - Some storage conventions are domain-specific:
   - Request dates behave like ISO datetime strings.
   - Equipment and broadcast dates currently behave like `YYYY-MM-DD` date strings.
+  - Cue-sheet event and checklist dates currently use ISO datetime strings, while cue timing is stored as minute offsets.
 
 ## Domain Summary
 
@@ -27,6 +28,7 @@ It is an inferred schema, not a database migration export. There is no checked-i
 | Users and roles | `User`, `Role` | Supabase + Supabase Auth |
 | Equipment | `Equipment`, `Booking` | Mock JSON |
 | Broadcast | `Playlist`, `Cue`, `MediaItem`, `SlideImage` | Mock JSON |
+| Cue Sheet | `CueSheetEvent`, `Checklist`, `Track`, `Cue` | Mock JSON |
 
 ## Requests
 
@@ -251,6 +253,75 @@ Source:
 | `url` | `string` | Yes | No | Image URL | Slide image asset. |
 | `duration` | `number` | Yes | No | Seconds | Per-slide duration. |
 
+## Cue Sheet
+
+Source:
+- `src/types/cue-sheet/**`
+- `src/data/mock/cue-sheet-events.json`
+- `src/data/mock/cue-sheet-checklists.json`
+- `src/data/mock/cue-sheet-tracks.json`
+
+### `CueSheetEvent`
+
+| Field | Type | Required | Nullable | Allowed values / format | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `string` | Yes | No | UUID-like string in current mock data | Event template identifier. |
+| `title` | `string` | Yes | No | Free text | Primary event label and breadcrumb title. |
+| `description` | `string` | Yes | No | Free text, may be empty string | Event context shown in lists. |
+| `duration` | `number` | Yes | No | Minutes | Total timeline duration for the event. |
+| `createdAt` | `string` | Yes | No | ISO datetime string in current data | Creation timestamp. |
+| `updatedAt` | `string` | Yes | No | ISO datetime string in current data | Last update timestamp. |
+
+### `Checklist`
+
+| Field | Type | Required | Nullable | Allowed values / format | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `string` | Yes | No | UUID-like string in current mock data | Checklist identifier. |
+| `name` | `string` | Yes | No | Free text | Primary checklist label and breadcrumb title. |
+| `description` | `string` | Yes | No | Free text, may be empty string | Checklist context shown in lists and details. |
+| `items` | `ChecklistItem[]` | Yes | No | Array | Top-level checklist items not assigned to a section. |
+| `sections` | `ChecklistSection[]` | Yes | No | Array | Grouped checklist item sections. |
+| `createdAt` | `string` | Yes | No | ISO datetime string in current data | Creation timestamp. |
+| `updatedAt` | `string` | Yes | No | ISO datetime string in current data | Last update timestamp. |
+
+### `ChecklistItem`
+
+| Field | Type | Required | Nullable | Allowed values / format | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `string` | Yes | No | UUID-like string in current mock data | Checklist item identifier. |
+| `label` | `string` | Yes | No | Free text | Visible task text. |
+| `checked` | `boolean` | Yes | No | `true` or `false` | Completion state. |
+
+### `ChecklistSection`
+
+| Field | Type | Required | Nullable | Allowed values / format | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `string` | Yes | No | UUID-like string in current mock data | Section identifier. |
+| `name` | `string` | Yes | No | Free text | Visible section heading. |
+| `items` | `ChecklistItem[]` | Yes | No | Array | Items inside the section. |
+
+### Cue-sheet `Track`
+
+| Field | Type | Required | Nullable | Allowed values / format | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `string` | Yes | No | UUID-like string in current mock data | Timeline track identifier. |
+| `name` | `string` | Yes | No | Free text | Track lane label, such as `Audio` or `Visuals`. |
+| `color` | `string` | Yes | No | CSS color string | Track and cue visual color. |
+| `cues` | `Cue[]` | Yes | No | Array | Timeline cues rendered within this track. |
+
+### Cue-sheet `Cue`
+
+This is separate from broadcast `Cue`.
+
+| Field | Type | Required | Nullable | Allowed values / format | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `string` | Yes | No | UUID-like string in current mock data | Timeline cue identifier. |
+| `label` | `string` | Yes | No | Free text | Visible cue label. |
+| `startMin` | `number` | Yes | No | Minutes from event start | Timeline start offset. |
+| `durationMin` | `number` | Yes | No | Minutes | Cue duration. |
+| `type` | `"performance" \| "technical" \| "equipment" \| "announcement" \| "transition"` | Yes | No | Enum | See `src/types/cue-sheet/timeline.ts`. |
+| `notes` | `string \| undefined` | No | App: omitted | Free text | Optional implementation or operator note. |
+
 ## Relationships
 
 - `request_assignees.request_id` points to `requests.id`.
@@ -260,6 +331,8 @@ Source:
 - `Booking.equipmentId` points to `Equipment.id`.
 - `Cue.mediaItemId` points to `MediaItem.id`.
 - `Playlist.cues` is an embedded ordered list, not a separate persisted table in the current mock-backed implementation.
+- Cue-sheet tracks are keyed by `CueSheetEvent.id` in `src/data/mock/cue-sheet-tracks.json`.
+- `Checklist.sections.items` are embedded under each checklist, not normalized into separate persisted tables in the current mock-backed implementation.
 
 ## Enumerations
 
@@ -285,3 +358,9 @@ Source:
 | --- | --- |
 | `PlaylistStatus` | `draft`, `active` |
 | `MediaType` | `image`, `audio`, `video`, `slide` |
+
+### Cue-sheet enums
+
+| Enum | Values |
+| --- | --- |
+| `CueType` | `performance`, `technical`, `equipment`, `announcement`, `transition` |

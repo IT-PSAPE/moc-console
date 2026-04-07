@@ -33,7 +33,7 @@ export function CueSheetOverviewScreen() {
     const isLoading = isLoadingEvents || isLoadingChecklists
     const hasData = events.length > 0 || checklists.length > 0
 
-    const handleCreateEvent = useCallback(({ title, description, duration }: { title: string; description: string; duration: number }) => {
+    const handleCreateEvent = useCallback(async ({ title, description, duration }: { title: string; description: string; duration: number }) => {
         const now = new Date().toISOString()
         const newEvent: CueSheetEvent = {
             id: crypto.randomUUID(),
@@ -43,12 +43,12 @@ export function CueSheetOverviewScreen() {
             createdAt: now,
             updatedAt: now,
         }
-        syncEvent(newEvent)
+        await syncEvent(newEvent)
         setShowEventModal(false)
         navigate(`/cue-sheet/events/${newEvent.id}`)
     }, [syncEvent, navigate])
 
-    const handleCreateChecklist = useCallback(({ name, description }: { name: string; description: string }) => {
+    const handleCreateChecklist = useCallback(async ({ name, description }: { name: string; description: string }) => {
         const now = new Date().toISOString()
         const newChecklist: Checklist = {
             id: crypto.randomUUID(),
@@ -59,7 +59,7 @@ export function CueSheetOverviewScreen() {
             createdAt: now,
             updatedAt: now,
         }
-        syncChecklist(newChecklist)
+        await syncChecklist(newChecklist)
         setShowChecklistModal(false)
     }, [syncChecklist])
 

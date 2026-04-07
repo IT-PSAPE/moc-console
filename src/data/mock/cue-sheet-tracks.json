@@ -1,0 +1,81 @@
+{
+  "a1b2c3d4-e5f6-4890-abcd-ef1234567890": [
+    {
+      "id": "c5a6b7c8-d9e0-4890-c567-901234567890",
+      "name": "Audio",
+      "color": "var(--color-utility-blue-500)",
+      "cues": [
+        { "id": "d6b7c8d9-e0f1-4901-d678-012345678901", "label": "Pre-service music", "startMin": 0, "durationMin": 15, "type": "performance" },
+        { "id": "e7c8d9e0-f1a2-4012-e789-123456789012", "label": "Worship set", "startMin": 15, "durationMin": 30, "type": "performance" },
+        { "id": "f8d9e0f1-a2b3-4123-f890-234567890123", "label": "Sermon audio", "startMin": 50, "durationMin": 40, "type": "performance" },
+        { "id": "a9e0f1a2-b3c4-4234-a901-345678901234", "label": "Closing music", "startMin": 100, "durationMin": 20, "type": "performance" }
+      ]
+    },
+    {
+      "id": "b0f1a2b3-c4d5-4345-b012-456789012345",
+      "name": "Visuals",
+      "color": "var(--color-utility-purple-500)",
+      "cues": [
+        { "id": "c1a2b3c4-d5e6-4456-c123-567890123456", "label": "Welcome slides", "startMin": 0, "durationMin": 15, "type": "technical" },
+        { "id": "d2b3c4d5-e6f7-4567-d234-678901234567", "label": "Worship lyrics", "startMin": 15, "durationMin": 30, "type": "technical" },
+        { "id": "e3c4d5e6-f7a8-4678-e345-789012345678", "label": "Sermon slides", "startMin": 50, "durationMin": 40, "type": "technical" },
+        { "id": "f4d5e6f7-a8b9-4789-f456-890123456789", "label": "Announcements", "startMin": 90, "durationMin": 10, "type": "announcement" }
+      ]
+    },
+    {
+      "id": "a5e6f7a8-b9c0-4890-a567-901234567890",
+      "name": "Livestream",
+      "color": "var(--color-utility-red-500)",
+      "cues": [
+        { "id": "b6f7a8b9-c0d1-4901-b678-012345678901", "label": "Go live", "startMin": 10, "durationMin": 5, "type": "technical" },
+        { "id": "c7a8b9c0-d1e2-4012-c789-123456789012", "label": "Main broadcast", "startMin": 15, "durationMin": 95, "type": "technical" },
+        { "id": "d8b9c0d1-e2f3-4123-d890-234567890123", "label": "End stream", "startMin": 110, "durationMin": 10, "type": "technical" }
+      ]
+    }
+  ],
+  "b2c3d4e5-f6a7-4901-bcde-f12345678901": [
+    {
+      "id": "e9c0d1e2-f3a4-4234-e901-345678901234",
+      "name": "Audio",
+      "color": "var(--color-utility-blue-500)",
+      "cues": [
+        { "id": "f0d1e2f3-a4b5-4345-f012-456789012345", "label": "Background music", "startMin": 0, "durationMin": 10, "type": "performance" },
+        { "id": "a1e2f3a4-b5c6-4456-a123-567890123457", "label": "Teaching audio", "startMin": 10, "durationMin": 60, "type": "performance" },
+        { "id": "b2f3a4b5-c6d7-4567-b234-678901234568", "label": "Discussion", "startMin": 70, "durationMin": 20, "type": "transition" }
+      ]
+    },
+    {
+      "id": "c3a4b5c6-d7e8-4678-c345-789012345679",
+      "name": "Visuals",
+      "color": "var(--color-utility-purple-500)",
+      "cues": [
+        { "id": "d4b5c6d7-e8f9-4789-d456-890123456790", "label": "Study slides", "startMin": 10, "durationMin": 60, "type": "technical" },
+        { "id": "e5c6d7e8-f9a0-4890-e567-901234567891", "label": "Discussion prompts", "startMin": 70, "durationMin": 20, "type": "technical" }
+      ]
+    }
+  ],
+  "c3d4e5f6-a7b8-4012-cdef-123456789012": [
+    {
+      "id": "f6d7e8f9-a0b1-4901-f678-012345678902",
+      "name": "Stage",
+      "color": "var(--color-utility-green-500)",
+      "cues": [
+        { "id": "a7e8f9a0-b1c2-4012-a789-123456789013", "label": "Games", "startMin": 0, "durationMin": 30, "type": "performance" },
+        { "id": "b8f9a0b1-c2d3-4123-b890-234567890124", "label": "Worship", "startMin": 30, "durationMin": 30, "type": "performance" },
+        { "id": "c9a0b1c2-d3e4-4234-c901-345678901235", "label": "Message", "startMin": 60, "durationMin": 30, "type": "performance" },
+        { "id": "d0b1c2d3-e4f5-4345-d012-456789012346", "label": "Small groups", "startMin": 90, "durationMin": 40, "type": "transition" },
+        { "id": "e1c2d3e4-f5a6-4456-e123-567890123457", "label": "Hangout", "startMin": 130, "durationMin": 20, "type": "transition" }
+      ]
+    },
+    {
+      "id": "f2d3e4f5-a6b7-4567-f234-678901234568",
+      "name": "Media",
+      "color": "var(--color-utility-orange-500)",
+      "cues": [
+        { "id": "a3e4f5a6-b7c8-4678-a345-789012345679", "label": "Game visuals", "startMin": 0, "durationMin": 30, "type": "technical" },
+        { "id": "b4f5a6b7-c8d9-4789-b456-890123456790", "label": "Lyrics", "startMin": 30, "durationMin": 30, "type": "technical" },
+        { "id": "c5a6b7c8-d9e0-4890-c567-901234567891", "label": "Sermon slides", "startMin": 60, "durationMin": 30, "type": "technical" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+[
+  {
+    "id": "d4e5f6a7-b8c9-4123-def0-234567890123",
+    "name": "Sunday Service Prep",
+    "description": "Pre-service preparation checklist",
+    "items": [
+      { "id": "e5f6a7b8-c9d0-4234-ef01-345678901234", "label": "Venue unlocked and lights on", "checked": false },
+      { "id": "f6a7b8c9-d0e1-4345-f012-456789012345", "label": "Communion elements prepared", "checked": false }
+    ],
+    "sections": [
+      {
+        "id": "01a2b3c4-d5e6-4456-0123-567890123456",
+        "name": "Audio Team",
+        "items": [
+          { "id": "12b3c4d5-e6f7-4567-1234-678901234567", "label": "Sound check completed", "checked": false },
+          { "id": "23c4d5e6-f7a8-4678-2345-789012345678", "label": "Microphone batteries replaced", "checked": false },
+          { "id": "34d5e6f7-a8b9-4789-3456-890123456789", "label": "Audio mixer levels set", "checked": false }
+        ]
+      },
+      {
+        "id": "45e6f7a8-b9c0-4890-4567-901234567890",
+        "name": "Visuals & Streaming",
+        "items": [
+          { "id": "56f7a8b9-c0d1-4901-5678-012345678901", "label": "Projector slides loaded", "checked": false },
+          { "id": "67a8b9c0-d1e2-4012-6789-123456789012", "label": "Livestream tested", "checked": false },
+          { "id": "78b9c0d1-e2f3-4123-7890-234567890123", "label": "Recording software running", "checked": false }
+        ]
+      },
+      {
+        "id": "89c0d1e2-f3a4-4234-8901-345678901234",
+        "name": "Welcome Team",
+        "items": [
+          { "id": "90d1e2f3-a4b5-4345-9012-456789012345", "label": "Welcome team briefed", "checked": false },
+          { "id": "a1e2f3a4-b5c6-4456-a123-567890123456", "label": "Bulletins printed and ready", "checked": false }
+        ]
+      }
+    ],
+    "createdAt": "2026-03-01T07:00:00Z",
+    "updatedAt": "2026-03-28T07:00:00Z"
+  },
+  {
+    "id": "b2f3a4b5-c6d7-4567-b234-678901234567",
+    "name": "Media Setup",
+    "description": "Equipment and media readiness check",
+    "items": [
+      { "id": "c3a4b5c6-d7e8-4678-c345-789012345678", "label": "Cameras powered on", "checked": false },
+      { "id": "d4b5c6d7-e8f9-4789-d456-890123456789", "label": "Audio mixer levels set", "checked": false },
+      { "id": "e5c6d7e8-f9a0-4890-e567-901234567890", "label": "Recording software running", "checked": false }
+    ],
+    "sections": [],
+    "createdAt": "2026-03-02T07:00:00Z",
+    "updatedAt": "2026-03-29T07:00:00Z"
+  },
+  {
+    "id": "f6d7e8f9-a0b1-4901-f678-012345678901",
+    "name": "Youth Night Prep",
+    "description": "Youth event preparation",
+    "items": [
+      { "id": "a7e8f9a0-b1c2-4012-a789-123456789012", "label": "Venue setup complete", "checked": false }
+    ],
+    "sections": [
+      {
+        "id": "b8f9a0b1-c2d3-4123-b890-234567890123",
+        "name": "Praise & Worship",
+        "items": [
+          { "id": "c9a0b1c2-d3e4-4234-c901-345678901234", "label": "Worship team rehearsed", "checked": false },
+          { "id": "d0b1c2d3-e4f5-4345-d012-456789012345", "label": "Lyrics loaded on screens", "checked": false }
+        ]
+      },
+      {
+        "id": "e1c2d3e4-f5a6-4456-e123-567890123456",
+        "name": "Activities",
+        "items": [
+          { "id": "f2d3e4f5-a6b7-4567-f234-678901234567", "label": "Games equipment ready", "checked": false },
+          { "id": "a3e4f5a6-b7c8-4678-a345-789012345678", "label": "Snacks and drinks set up", "checked": false },
+          { "id": "b4f5a6b7-c8d9-4789-b456-890123456789", "label": "Small group materials printed", "checked": false }
+        ]
+      }
+    ],
+    "createdAt": "2026-03-10T07:00:00Z",
+    "updatedAt": "2026-03-30T07:00:00Z"
+  }
+]

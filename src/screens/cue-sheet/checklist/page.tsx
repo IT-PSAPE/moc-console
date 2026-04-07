@@ -34,7 +34,7 @@ export function CueSheetChecklistScreen() {
         )
     }, [checklists, search])
 
-    const handleCreate = useCallback(({ name, description }: { name: string; description: string }) => {
+    const handleCreate = useCallback(async ({ name, description }: { name: string; description: string }) => {
         const now = new Date().toISOString()
         const newChecklist: Checklist = {
             id: crypto.randomUUID(),
@@ -45,7 +45,7 @@ export function CueSheetChecklistScreen() {
             createdAt: now,
             updatedAt: now,
         }
-        syncChecklist(newChecklist)
+        await syncChecklist(newChecklist)
         setShowCreateModal(false)
     }, [syncChecklist])
 
