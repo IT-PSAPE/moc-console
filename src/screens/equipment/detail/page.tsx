@@ -274,6 +274,12 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
                         <Paragraph.xs>{new Date(b.returnedDate).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}</Paragraph.xs>
                       </div>
                     )}
+                    {!b.returnedDate && (
+                      <div className="flex items-center gap-2">
+                        <Paragraph.xs className="text-quaternary">Expected:</Paragraph.xs>
+                        <Paragraph.xs>{new Date(b.expectedReturnAt).toLocaleString("en-ZA", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Paragraph.xs>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <Paragraph.xs className="text-quaternary">Duration:</Paragraph.xs>
                       <Paragraph.xs>{b.duration}</Paragraph.xs>

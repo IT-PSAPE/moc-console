@@ -77,5 +77,138 @@
         { "id": "c5a6b7c8-d9e0-4890-c567-901234567891", "label": "Sermon slides", "startMin": 60, "durationMin": 30, "type": "technical" }
       ]
     }
+  ],
+  "11111111-1111-4111-8111-111111111111": [
+    {
+      "id": "11111111-1111-4111-8111-111111111101",
+      "name": "Audio",
+      "color": "var(--color-utility-blue-500)",
+      "cues": [
+        { "id": "11111111-1111-4111-8111-111111111102", "label": "Pre-service music", "startMin": 0, "durationMin": 15, "type": "performance" },
+        { "id": "11111111-1111-4111-8111-111111111103", "label": "Worship set", "startMin": 15, "durationMin": 30, "type": "performance" },
+        { "id": "11111111-1111-4111-8111-111111111104", "label": "Sermon audio", "startMin": 50, "durationMin": 40, "type": "performance" }
+      ]
+    },
+    {
+      "id": "11111111-1111-4111-8111-111111111105",
+      "name": "Visuals",
+      "color": "var(--color-utility-purple-500)",
+      "cues": [
+        { "id": "11111111-1111-4111-8111-111111111106", "label": "Welcome slides", "startMin": 0, "durationMin": 15, "type": "technical" },
+        { "id": "11111111-1111-4111-8111-111111111107", "label": "Worship lyrics", "startMin": 15, "durationMin": 30, "type": "technical" },
+        { "id": "11111111-1111-4111-8111-111111111108", "label": "Announcements", "startMin": 90, "durationMin": 10, "type": "announcement" }
+      ]
+    }
+  ],
+  "22222222-2222-4222-8222-222222222222": [
+    {
+      "id": "22222222-2222-4222-8222-222222222201",
+      "name": "Audio",
+      "color": "var(--color-utility-blue-500)",
+      "cues": [
+        { "id": "22222222-2222-4222-8222-222222222202", "label": "Background music", "startMin": 0, "durationMin": 10, "type": "performance" },
+        { "id": "22222222-2222-4222-8222-222222222203", "label": "Teaching audio", "startMin": 10, "durationMin": 60, "type": "performance" },
+        { "id": "22222222-2222-4222-8222-222222222204", "label": "Discussion", "startMin": 70, "durationMin": 20, "type": "transition" }
+      ]
+    }
+  ],
+  "33333333-3333-4333-8333-333333333333": [
+    {
+      "id": "33333333-3333-4333-8333-333333333301",
+      "name": "Stage",
+      "color": "var(--color-utility-green-500)",
+      "cues": [
+        { "id": "33333333-3333-4333-8333-333333333302", "label": "Games", "startMin": 0, "durationMin": 30, "type": "performance" },
+        { "id": "33333333-3333-4333-8333-333333333303", "label": "Worship", "startMin": 30, "durationMin": 30, "type": "performance" },
+        { "id": "33333333-3333-4333-8333-333333333304", "label": "Message", "startMin": 60, "durationMin": 30, "type": "performance" },
+        { "id": "33333333-3333-4333-8333-333333333305", "label": "Small groups", "startMin": 90, "durationMin": 40, "type": "transition" }
+      ]
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333306",
+      "name": "Media",
+      "color": "var(--color-utility-orange-500)",
+      "cues": [
+        { "id": "33333333-3333-4333-8333-333333333307", "label": "Game visuals", "startMin": 0, "durationMin": 30, "type": "technical" },
+        { "id": "33333333-3333-4333-8333-333333333308", "label": "Lyrics", "startMin": 30, "durationMin": 30, "type": "technical" }
+      ]
+    }
+  ],
+  "44444444-4444-4444-8444-444444444444": [
+    {
+      "id": "44444444-4444-4444-8444-444444444401",
+      "name": "Audio",
+      "color": "var(--color-utility-blue-500)",
+      "cues": [
+        { "id": "44444444-4444-4444-8444-444444444402", "label": "Pre-service music", "startMin": 0, "durationMin": 15, "type": "performance" },
+        { "id": "44444444-4444-4444-8444-444444444403", "label": "Worship set", "startMin": 15, "durationMin": 30, "type": "performance" },
+        { "id": "44444444-4444-4444-8444-444444444404", "label": "Sermon audio", "startMin": 50, "durationMin": 40, "type": "performance" },
+        { "id": "44444444-4444-4444-8444-444444444405", "label": "Closing music", "startMin": 100, "durationMin": 20, "type": "performance" }
+      ]
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444406",
+      "name": "Visuals",
+      "color": "var(--color-utility-purple-500)",
+      "cues": [
+        { "id": "44444444-4444-4444-8444-444444444407", "label": "Welcome slides", "startMin": 0, "durationMin": 15, "type": "technical" },
+        { "id": "44444444-4444-4444-8444-444444444408", "label": "Worship lyrics", "startMin": 15, "durationMin": 30, "type": "technical" },
+        { "id": "44444444-4444-4444-8444-444444444409", "label": "Sermon slides", "startMin": 50, "durationMin": 40, "type": "technical" }
+      ]
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444410",
+      "name": "Livestream",
+      "color": "var(--color-utility-red-500)",
+      "cues": [
+        { "id": "44444444-4444-4444-8444-444444444411", "label": "Go live", "startMin": 10, "durationMin": 5, "type": "technical" },
+        { "id": "44444444-4444-4444-8444-444444444412", "label": "End stream", "startMin": 110, "durationMin": 10, "type": "technical" }
+      ]
+    }
+  ],
+  "55555555-5555-4555-8555-555555555555": [
+    {
+      "id": "55555555-5555-4555-8555-555555555501",
+      "name": "Audio",
+      "color": "var(--color-utility-blue-500)",
+      "cues": [
+        { "id": "55555555-5555-4555-8555-555555555502", "label": "Background music", "startMin": 0, "durationMin": 10, "type": "performance" },
+        { "id": "55555555-5555-4555-8555-555555555503", "label": "Teaching audio", "startMin": 10, "durationMin": 60, "type": "performance" },
+        { "id": "55555555-5555-4555-8555-555555555504", "label": "Discussion", "startMin": 70, "durationMin": 20, "type": "transition" }
+      ]
+    },
+    {
+      "id": "55555555-5555-4555-8555-555555555505",
+      "name": "Visuals",
+      "color": "var(--color-utility-purple-500)",
+      "cues": [
+        { "id": "55555555-5555-4555-8555-555555555506", "label": "Study slides", "startMin": 10, "durationMin": 60, "type": "technical" },
+        { "id": "55555555-5555-4555-8555-555555555507", "label": "Discussion prompts", "startMin": 70, "durationMin": 20, "type": "technical" }
+      ]
+    }
+  ],
+  "66666666-6666-4666-8666-666666666666": [
+    {
+      "id": "66666666-6666-4666-8666-666666666601",
+      "name": "Audio",
+      "color": "var(--color-utility-blue-500)",
+      "cues": [
+        { "id": "66666666-6666-4666-8666-666666666602", "label": "Pre-service music", "startMin": 0, "durationMin": 15, "type": "performance" },
+        { "id": "66666666-6666-4666-8666-666666666603", "label": "Worship set", "startMin": 15, "durationMin": 30, "type": "performance" },
+        { "id": "66666666-6666-4666-8666-666666666604", "label": "Sermon audio", "startMin": 50, "durationMin": 40, "type": "performance" },
+        { "id": "66666666-6666-4666-8666-666666666605", "label": "Closing music", "startMin": 100, "durationMin": 20, "type": "performance" }
+      ]
+    },
+    {
+      "id": "66666666-6666-4666-8666-666666666606",
+      "name": "Visuals",
+      "color": "var(--color-utility-purple-500)",
+      "cues": [
+        { "id": "66666666-6666-4666-8666-666666666607", "label": "Welcome slides", "startMin": 0, "durationMin": 15, "type": "technical" },
+        { "id": "66666666-6666-4666-8666-666666666608", "label": "Worship lyrics", "startMin": 15, "durationMin": 30, "type": "technical" },
+        { "id": "66666666-6666-4666-8666-666666666609", "label": "Sermon slides", "startMin": 50, "durationMin": 40, "type": "technical" },
+        { "id": "66666666-6666-4666-8666-666666666610", "label": "Announcements", "startMin": 90, "durationMin": 10, "type": "announcement" }
+      ]
+    }
   ]
 }

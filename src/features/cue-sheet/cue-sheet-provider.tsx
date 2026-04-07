@@ -34,6 +34,7 @@ type CueSheetContextValue = {
         syncEvent: (event: CueSheetEvent) => Promise<void>
         syncTracks: (eventId: string, tracks: Track[]) => Promise<void>
         createEventInstance: (template: CueSheetEvent) => Promise<CueSheetEvent>
+        createChecklistInstance: (template: Checklist) => Promise<Checklist>
         removeEvent: (id: string) => Promise<void>
         removeChecklist: (id: string) => Promise<void>
     }
@@ -48,6 +49,26 @@ function duplicateTracks(tracks: Track[]): Track[] {
             id: crypto.randomUUID(),
         })),
     }))
+}
+
+function duplicateChecklist(template: Checklist): Checklist {
+    const now = new Date().toISOString()
+    return {
+        ...template,
+        id: crypto.randomUUID(),
+        kind: 'instance',
+        templateId: template.id,
+        name: `${template.name} Run`,
+        scheduledAt: now,
+        createdAt: now,
+        updatedAt: now,
+        items: template.items.map((item) => ({ ...item, id: crypto.randomUUID(), checked: false })),
+        sections: template.sections.map((section) => ({
+            ...section,
+            id: crypto.randomUUID(),
+            items: section.items.map((item) => ({ ...item, id: crypto.randomUUID(), checked: false })),
+        })),
+    }
 }
 
 const CueSheetContext = createContext<CueSheetContextValue | null>(null)
@@ -153,6 +174,12 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
         return savedEvent
     }, [tracksByEventId])
 
+    const createChecklistInstance = useCallback(async (template: Checklist) => {
+        const savedChecklist = await saveCueSheetChecklist(duplicateChecklist(template))
+        setChecklists((prev) => [...prev, savedChecklist])
+        return savedChecklist
+    }, [])
+
     const removeEvent = useCallback(async (id: string) => {
         await deleteCueSheetEvent(id)
         setEventsById((prev) => {
@@ -191,10 +218,11 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
             syncEvent,
             syncTracks,
             createEventInstance,
+            createChecklistInstance,
             removeEvent,
             removeChecklist,
         },
-    }), [events, checklists, eventsById, tracksByEventId, isLoadingEvents, isLoadingChecklists, loadEvents, loadChecklists, loadEvent, syncChecklist, syncEvent, syncTracks, createEventInstance, removeEvent, removeChecklist])
+    }), [events, checklists, eventsById, tracksByEventId, isLoadingEvents, isLoadingChecklists, loadEvents, loadChecklists, loadEvent, syncChecklist, syncEvent, syncTracks, createEventInstance, createChecklistInstance, removeEvent, removeChecklist])
 
     return <CueSheetContext.Provider value={value}>{children}</CueSheetContext.Provider>
 }

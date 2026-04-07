@@ -7,6 +7,7 @@ export type Cue = {
     startMin: number // offset in minutes from event start
     durationMin: number
     type: CueType
+    assignee?: string
     notes?: string
 }
 

@@ -23,11 +23,12 @@ export function useCueDrag({ tracks, totalMinutes, pixelsPerMinute, trackRowsRef
         for (const row of trackRows) {
             const rect = row.getBoundingClientRect()
             if (clientY >= rect.top && clientY <= rect.bottom) {
-                return row.getAttribute('data-track-id')
+                const trackId = row.getAttribute('data-track-id')
+                return trackId && tracks.some((track) => track.id === trackId) ? trackId : null
             }
         }
         return null
-    }, [trackRowsRef])
+    }, [trackRowsRef, tracks])
 
     const handlePointerMove = useCallback((e: PointerEvent) => {
         if (!dragState) return

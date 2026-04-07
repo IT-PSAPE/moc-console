@@ -5,6 +5,7 @@ import { Header } from "@/components/display/header"
 import { Badge } from "@/components/display/badge"
 import { Button } from "@/components/controls/button"
 import { Input } from "@/components/form/input"
+import { InlineEditableText } from "@/components/form/inline-editable-text"
 import { Label, Paragraph, Title } from "@/components/display/text"
 import { Divider } from "@/components/display/divider"
 import { MetaRow } from "@/components/display/meta-row"
@@ -19,7 +20,7 @@ import { Dropdown } from "@/components/overlays/dropdown"
 import { playlistStatusColor, playlistStatusLabel, mediaTypeColor, mediaTypeLabel } from "@/types/broadcast"
 import type { Playlist, Cue, MediaItem, MediaType, PlaylistStatus } from "@/types/broadcast"
 import { fetchPlaylistById } from "@/data/fetch-broadcast"
-import { updatePlaylistCues } from "@/data/mutate-broadcast"
+import { updatePlaylist, updatePlaylistCues } from "@/data/mutate-broadcast"
 import {
   DndContext,
   DragOverlay,
@@ -47,7 +48,7 @@ const mediaTypeIcon: Record<MediaType, React.ReactNode> = {
   slide: <Layers />,
 }
 
-const allStatuses: PlaylistStatus[] = ["draft", "active"]
+const allStatuses: PlaylistStatus[] = ["draft", "published"]
 
 export function PlaylistDetailScreen() {
   const { id } = useParams<{ id: string }>()
@@ -55,7 +56,7 @@ export function PlaylistDetailScreen() {
   const { toast } = useFeedback()
   const {
     state: { media },
-    actions: { loadMedia },
+    actions: { loadMedia, syncPlaylist },
   } = useBroadcast()
 
   const [playlist, setPlaylist] = useState<Playlist | null>(null)
@@ -89,6 +90,24 @@ export function PlaylistDetailScreen() {
   const updateField = useCallback(<K extends keyof Playlist>(field: K, value: Playlist[K]) => {
     setPlaylist((prev) => (prev ? { ...prev, [field]: value } : prev))
   }, [])
+
+  const syncPlaylistUpdate = useCallback((updated: Playlist) => {
+    setPlaylist(updated)
+    syncPlaylist(updated)
+    updatePlaylist(updated).catch(() => {
+      toast({ title: "Failed to save", description: "The playlist could not be updated. Please try again.", variant: "error" })
+    })
+  }, [syncPlaylist, toast])
+
+  const handleNameSave = useCallback((name: string) => {
+    if (!playlist) return
+    syncPlaylistUpdate({ ...playlist, name })
+  }, [playlist, syncPlaylistUpdate])
+
+  const handleStatusChange = useCallback((status: PlaylistStatus) => {
+    if (!playlist) return
+    syncPlaylistUpdate({ ...playlist, status })
+  }, [playlist, syncPlaylistUpdate])
 
   // ─── Cue mutations ──────────────────────────────────
 
@@ -217,7 +236,9 @@ export function PlaylistDetailScreen() {
 
         <Header.Root className="px-4 pt-12">
           <Header.Lead className="gap-2">
-            <Title.h5>{playlist.name}</Title.h5>
+            <Title.h5>
+              <InlineEditableText value={playlist.name} onSave={handleNameSave} placeholder="Untitled" />
+            </Title.h5>
           </Header.Lead>
         </Header.Root>
 
@@ -233,7 +254,7 @@ export function PlaylistDetailScreen() {
               </Dropdown.Trigger>
               <Dropdown.Panel>
                 {allStatuses.map((s) => (
-                  <Dropdown.Item key={s} onSelect={() => updateField("status", s)}>
+                  <Dropdown.Item key={s} onSelect={() => handleStatusChange(s)}>
                     <span className="size-4 shrink-0 flex items-center justify-center">
                       {s === playlist.status && <Check className="size-3.5 text-brand_secondary" />}
                     </span>
@@ -242,15 +263,6 @@ export function PlaylistDetailScreen() {
                 ))}
               </Dropdown.Panel>
             </Dropdown.Root>
-          </MetaRow>
-
-          <MetaRow icon={<FileText />} label="Name">
-            <input
-              className="all-unset w-full text-xs text-primary placeholder:text-quaternary"
-              value={playlist.name}
-              onChange={(e) => updateField("name", e.target.value)}
-              placeholder="Playlist name"
-            />
           </MetaRow>
 
           <MetaRow icon={<FileText />} label="Description">

@@ -70,7 +70,7 @@ export function useRequestStore(initialRequest: Request, options?: UseRequestSto
 
     const save = useCallback(async () => {
         const previousRequest = state.original
-        const nextRequest = state.draft
+        const nextRequest = { ...state.draft, updatedAt: new Date().toISOString() }
 
         dispatch({ type: 'SAVE_START' })
         options?.syncRequest?.(nextRequest)

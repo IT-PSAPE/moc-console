@@ -1,23 +1,27 @@
-import { Card } from '@/components/display/card'
-import { Header } from '@/components/display/header'
-import { Input } from '@/components/form/input'
-import { Button } from '@/components/controls/button'
-import { Label, Paragraph, Title } from '@/components/display/text'
-import { Decision } from '@/components/display/decision'
-import { Spinner } from '@/components/feedback/spinner'
-import { EmptyState } from '@/components/feedback/empty-state'
-import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
-import { CreateEventModal } from '@/features/cue-sheet/create-event-modal'
-import { EventItem } from '@/features/cue-sheet/event-item'
-import type { CueSheetEvent } from '@/types/cue-sheet'
-import { Calendar, Plus, Search } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Calendar, Plus, Search, Settings2 } from 'lucide-react'
+import { Button } from '@/components/controls/button'
+import { Card } from '@/components/display/card'
+import { Decision } from '@/components/display/decision'
+import { Header } from '@/components/display/header'
+import { Label, Paragraph, Title } from '@/components/display/text'
+import { EmptyState } from '@/components/feedback/empty-state'
+import { Spinner } from '@/components/feedback/spinner'
+import { Input } from '@/components/form/input'
+import { Drawer } from '@/components/overlays/drawer'
+import { Dropdown } from '@/components/overlays/dropdown'
+import { EventItem } from '@/features/cue-sheet/event-item'
+import { EventRunFilterDrawer } from '@/features/cue-sheet/event-run-filter-drawer'
+import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
+import { useEventRunFilters } from '@/features/cue-sheet/use-event-run-filters'
+import type { CueSheetEvent } from '@/types/cue-sheet'
+import { routes } from '@/screens/console-routes'
 
 export function CueSheetEventScreen() {
     const {
-        state: { events, isLoadingEvents },
-        actions: { loadEvents, syncEvent },
+        state: { events, tracksByEventId, isLoadingEvents },
+        actions: { loadEvents, createEventInstance },
     } = useCueSheet()
     const navigate = useNavigate()
 
@@ -25,44 +29,32 @@ export function CueSheetEventScreen() {
         loadEvents()
     }, [loadEvents])
 
-    const [search, setSearch] = useState('')
-    const [showCreateModal, setShowCreateModal] = useState(false)
+    const eventTemplates = useMemo(() => events.filter((event) => event.kind === 'template'), [events])
+    const eventRuns = useMemo(() => events.filter((event) => event.kind === 'instance'), [events])
+    const eventFilters = useEventRunFilters(eventRuns, tracksByEventId)
+    const { filtered, filters, setSearch } = eventFilters
 
-    const filtered = useMemo(() => {
-        if (!search.trim()) return events
-        const q = search.toLowerCase()
-        return events.filter(
-            (e) => e.title.toLowerCase().includes(q) || e.description.toLowerCase().includes(q),
-        )
-    }, [events, search])
+    const handleCreateRun = useCallback(async (template: CueSheetEvent) => {
+        const instance = await createEventInstance(template)
+        navigate(`/cue-sheet/events/${instance.id}`)
+    }, [createEventInstance, navigate])
 
-    const handleCreate = useCallback(async ({ title, description, duration }: { title: string; description: string; duration: number }) => {
-        const now = new Date().toISOString()
-        const newEvent: CueSheetEvent = {
-            id: crypto.randomUUID(),
-            title,
-            description,
-            duration,
-            createdAt: now,
-            updatedAt: now,
-        }
-        await syncEvent(newEvent)
-        setShowCreateModal(false)
-        navigate(`/cue-sheet/events/${newEvent.id}`)
-    }, [syncEvent, navigate])
+    const handleOpenTemplates = useCallback(() => {
+        navigate(`/${routes.cueSheetTemplates}`)
+    }, [navigate])
 
     return (
         <section>
             <Header.Root className="p-4 pt-8 mx-auto max-w-content">
                 <Header.Lead className="gap-2">
-                    <Title.h6>Events</Title.h6>
+                    <Title.h6>Event Runs</Title.h6>
                     <Paragraph.sm className="text-tertiary max-w-2xl">
-                        Browse and manage event templates. Click an event to view its cue sheet timeline.
+                        View scheduled cue sheet runs created from event templates.
                     </Paragraph.sm>
                 </Header.Lead>
             </Header.Root>
 
-            <Decision.Root value={events} loading={isLoadingEvents}>
+            <Decision.Root value={eventRuns} loading={isLoadingEvents}>
                 <Decision.Loading>
                     <div className="flex justify-center py-16">
                         <Spinner size="lg" />
@@ -71,33 +63,63 @@ export function CueSheetEventScreen() {
                 <Decision.Empty>
                     <EmptyState
                         icon={<Calendar />}
-                        title="No events yet"
-                        description="Create your first event template to get started."
-                        action={<Button icon={<Plus />} onClick={() => setShowCreateModal(true)}>New Event</Button>}
+                        title="No event runs yet"
+                        description="Create a run from a template when you need an editable cue sheet copy."
+                        action={
+                            <Dropdown.Root placement="bottom">
+                                <Dropdown.Trigger>
+                                    <Button icon={<Plus />}>Create Run</Button>
+                                </Dropdown.Trigger>
+                                <Dropdown.Panel>
+                                    {eventTemplates.map((event) => (
+                                        <Dropdown.Item key={event.id} onSelect={() => void handleCreateRun(event)}>
+                                            {event.title}
+                                        </Dropdown.Item>
+                                    ))}
+                                    {eventTemplates.length === 0 && (
+                                        <Dropdown.Item onSelect={handleOpenTemplates}>
+                                            Create event template
+                                        </Dropdown.Item>
+                                    )}
+                                </Dropdown.Panel>
+                            </Dropdown.Root>
+                        }
                     />
                 </Decision.Empty>
                 <Decision.Data>
                     <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
-                        <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
-                            <Header.Lead className="gap-2">
-                                <Label.md>All Events</Label.md>
-                            </Header.Lead>
-                            <Header.Trail className="gap-2 flex-1 justify-end">
-                                <Input
-                                    icon={<Search />}
-                                    placeholder="Search events..."
-                                    className="w-full max-w-sm"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                />
-                            </Header.Trail>
-                        </Header.Root>
-
                         <Card.Root>
-                            <Card.Header className="gap-1.5">
-                                <Calendar className="size-4" />
-                                <Label.sm className='mr-auto'>Events</Label.sm>
-                                <Button icon={<Plus />} onClick={() => setShowCreateModal(true)}>New Event</Button>
+                            <Card.Header className="gap-1.5 max-mobile:flex-col *:max-mobile:w-full">
+                                <div className="flex flex-1 items-center gap-1.5">
+                                    <Calendar className="size-4" />
+                                    <Label.sm>All Event Runs</Label.sm>
+                                </div>
+                                <div className="flex items-center gap-1.5 max-mobile:w-full max-mobile:flex-col">
+                                    <Input icon={<Search />} placeholder="Search event runs..." className="w-full max-w-sm" value={filters.search} onChange={(event) => setSearch(event.target.value)} />
+                                    <Drawer.Root>
+                                        <Drawer.Trigger>
+                                            <Button icon={<Settings2 />} variant="secondary">Filter</Button>
+                                        </Drawer.Trigger>
+                                        <EventRunFilterDrawer filters={eventFilters} />
+                                    </Drawer.Root>
+                                    <Dropdown.Root placement="bottom">
+                                        <Dropdown.Trigger>
+                                            <Button variant='secondary' icon={<Plus />} iconOnly/>
+                                        </Dropdown.Trigger>
+                                        <Dropdown.Panel>
+                                            {eventTemplates.map((event) => (
+                                                <Dropdown.Item key={event.id} onSelect={() => void handleCreateRun(event)}>
+                                                    {event.title}
+                                                </Dropdown.Item>
+                                            ))}
+                                            {eventTemplates.length === 0 && (
+                                                <Dropdown.Item onSelect={handleOpenTemplates}>
+                                                    Create event template
+                                                </Dropdown.Item>
+                                            )}
+                                        </Dropdown.Panel>
+                                    </Dropdown.Root>
+                                </div>
                             </Card.Header>
                             <Card.Content ghost className="flex flex-col gap-1.5">
                                 {filtered.map((event) => (
@@ -105,7 +127,7 @@ export function CueSheetEventScreen() {
                                 ))}
                                 {filtered.length === 0 && (
                                     <div className="py-8 text-center">
-                                        <Paragraph.sm className="text-tertiary">No events match your search.</Paragraph.sm>
+                                        <Paragraph.sm className="text-tertiary">No event runs match your filters.</Paragraph.sm>
                                     </div>
                                 )}
                             </Card.Content>
@@ -113,8 +135,6 @@ export function CueSheetEventScreen() {
                     </div>
                 </Decision.Data>
             </Decision.Root>
-
-            <CreateEventModal open={showCreateModal} onOpenChange={setShowCreateModal} onCreate={handleCreate} />
         </section>
     )
 }

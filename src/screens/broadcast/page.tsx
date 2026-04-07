@@ -7,24 +7,35 @@ import { Spinner } from "@/components/feedback/spinner"
 import { EmptyState } from "@/components/feedback/empty-state"
 import { DataTable } from "@/components/display/data-table"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
-import { mediaTypeColor, mediaTypeLabel } from "@/types/broadcast"
-import type { MediaItem } from "@/types/broadcast"
-import { Radio, ListMusic, CircleCheck, FileEdit } from "lucide-react"
+import { playlistStatusColor, playlistStatusLabel } from "@/types/broadcast"
+import type { Playlist } from "@/types/broadcast"
+import { Radio, ListMusic, CircleCheck, FileEdit, Film } from "lucide-react"
 import { useEffect, useMemo } from "react"
 
-const mediaColumns = [
-  { key: "name", header: "Media" },
+type PlaylistReadiness = Record<string, unknown> & {
+  id: string
+  name: string
+  status: Playlist["status"]
+  cues: number
+  readiness: string
+}
+
+const readinessColumns = [
+  { key: "name", header: "Playlist" },
   {
-    key: "type",
-    header: "Type",
-    render: (_: unknown, row: MediaItem) => (
-      <Badge label={mediaTypeLabel[row.type]} color={mediaTypeColor[row.type]} />
+    key: "status",
+    header: "Status",
+    render: (_: unknown, row: PlaylistReadiness) => (
+      <Badge label={playlistStatusLabel[row.status]} color={playlistStatusColor[row.status]} />
     ),
   },
   {
-    key: "createdAt",
-    header: "Added",
-    render: (value: unknown) => new Date(value as string).toLocaleDateString("en-ZA", { day: "numeric", month: "short" }),
+    key: "cues",
+    header: "Cues",
+  },
+  {
+    key: "readiness",
+    header: "Readiness",
   },
 ]
 
@@ -44,17 +55,27 @@ export function BroadcastOverviewScreen() {
 
   // Stats
   const totalPlaylists = playlists.length
-  const activeCount = playlists.filter((p) => p.status === "active").length
+  const publishedCount = playlists.filter((p) => p.status === "published").length
   const draftCount = playlists.filter((p) => p.status === "draft").length
 
-  // Media from the last 30 days
-  const recentMedia = useMemo(() => {
-    const cutoff = new Date()
-    cutoff.setDate(cutoff.getDate() - 30)
-    return [...media]
-      .filter((m) => new Date(m.createdAt) >= cutoff)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-  }, [media])
+  const playlistReadiness = useMemo<PlaylistReadiness[]>(() => {
+    const mediaIds = new Set(media.map((item) => item.id))
+    return playlists.map((playlist) => {
+      const missingMediaCount = playlist.cues.filter((cue) => !mediaIds.has(cue.mediaItemId)).length
+      const issues = [
+        playlist.cues.length === 0 ? "No cues" : null,
+        missingMediaCount > 0 ? `${missingMediaCount} missing media` : null,
+        playlist.status === "draft" ? "Draft" : null,
+      ].filter(Boolean)
+      return {
+        id: playlist.id,
+        name: playlist.name,
+        status: playlist.status,
+        cues: playlist.cues.length,
+        readiness: issues.length > 0 ? issues.join(" · ") : "Ready",
+      }
+    })
+  }, [media, playlists])
 
   return (
     <section>
@@ -78,7 +99,7 @@ export function BroadcastOverviewScreen() {
         </Decision.Empty>
         <Decision.Data>
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2">
+          <div className="grid grid-cols-4 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2">
             <Card.Root>
               <Card.Header className="gap-1.5">
                 <ListMusic className="size-4" />
@@ -91,10 +112,10 @@ export function BroadcastOverviewScreen() {
             <Card.Root>
               <Card.Header className="gap-1.5">
                 <CircleCheck className="size-4" />
-                <Label.sm>Active</Label.sm>
+                <Label.sm>Published</Label.sm>
               </Card.Header>
               <Card.Content className="p-4">
-                <TextBlock className="title-h4">{activeCount}</TextBlock>
+                <TextBlock className="title-h4">{publishedCount}</TextBlock>
               </Card.Content>
             </Card.Root>
             <Card.Root>
@@ -106,19 +127,28 @@ export function BroadcastOverviewScreen() {
                 <TextBlock className="title-h4">{draftCount}</TextBlock>
               </Card.Content>
             </Card.Root>
+            <Card.Root>
+              <Card.Header className="gap-1.5">
+                <Film className="size-4" />
+                <Label.sm>Media Items</Label.sm>
+              </Card.Header>
+              <Card.Content className="p-4">
+                <TextBlock className="title-h4">{media.length}</TextBlock>
+              </Card.Content>
+            </Card.Root>
           </div>
 
-          {/* Recent Media */}
+          {/* Readiness */}
           <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
             <Header.Root>
               <Header.Lead className="gap-2">
-                <Label.md>Recent Media</Label.md>
-                <Paragraph.xs className="text-tertiary">Last 30 days</Paragraph.xs>
+                <Label.md>Playlist Readiness</Label.md>
+                <Paragraph.xs className="text-tertiary">Published playlists should be ready for people to use immediately.</Paragraph.xs>
               </Header.Lead>
             </Header.Root>
             <Card.Root>
               <Card.Content className="!border-secondary overflow-hidden">
-                <DataTable data={recentMedia} columns={mediaColumns} emptyMessage="No media added in the last 30 days" />
+                <DataTable data={playlistReadiness} columns={readinessColumns} emptyMessage="No playlists to review" />
               </Card.Content>
             </Card.Root>
           </div>

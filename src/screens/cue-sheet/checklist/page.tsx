@@ -1,66 +1,59 @@
-import { Card } from '@/components/display/card'
-import { Header } from '@/components/display/header'
-import { Input } from '@/components/form/input'
+import { useCallback, useEffect, useMemo } from 'react'
+import { ListChecks, Plus, Search, Settings2 } from 'lucide-react'
 import { Button } from '@/components/controls/button'
-import { Label, Paragraph, Title } from '@/components/display/text'
+import { Card } from '@/components/display/card'
 import { Decision } from '@/components/display/decision'
-import { Spinner } from '@/components/feedback/spinner'
+import { Header } from '@/components/display/header'
+import { Label, Paragraph, Title } from '@/components/display/text'
 import { EmptyState } from '@/components/feedback/empty-state'
-import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
-import { CreateChecklistModal } from '@/features/cue-sheet/create-checklist-modal'
+import { Spinner } from '@/components/feedback/spinner'
+import { Input } from '@/components/form/input'
+import { Drawer } from '@/components/overlays/drawer'
+import { Dropdown } from '@/components/overlays/dropdown'
 import { ChecklistItemCard } from '@/features/cue-sheet/checklist-item'
+import { ChecklistRunFilterDrawer } from '@/features/cue-sheet/checklist-run-filter-drawer'
+import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
+import { useChecklistRunFilters } from '@/features/cue-sheet/use-checklist-run-filters'
+import { routes } from '@/screens/console-routes'
 import type { Checklist } from '@/types/cue-sheet'
-import { ListChecks, Plus, Search } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 export function CueSheetChecklistScreen() {
     const {
         state: { checklists, isLoadingChecklists },
-        actions: { loadChecklists, syncChecklist },
+        actions: { loadChecklists, createChecklistInstance },
     } = useCueSheet()
+    const navigate = useNavigate()
 
     useEffect(() => {
         loadChecklists()
     }, [loadChecklists])
 
-    const [search, setSearch] = useState('')
-    const [showCreateModal, setShowCreateModal] = useState(false)
+    const checklistTemplates = useMemo(() => checklists.filter((checklist) => checklist.kind === 'template'), [checklists])
+    const checklistRuns = useMemo(() => checklists.filter((checklist) => checklist.kind === 'instance'), [checklists])
+    const checklistFilters = useChecklistRunFilters(checklistRuns)
+    const { filtered, filters, setSearch } = checklistFilters
 
-    const filtered = useMemo(() => {
-        if (!search.trim()) return checklists
-        const q = search.toLowerCase()
-        return checklists.filter(
-            (c) => c.name.toLowerCase().includes(q) || c.description.toLowerCase().includes(q),
-        )
-    }, [checklists, search])
+    const handleCreateRun = useCallback(async (template: Checklist) => {
+        await createChecklistInstance(template)
+    }, [createChecklistInstance])
 
-    const handleCreate = useCallback(async ({ name, description }: { name: string; description: string }) => {
-        const now = new Date().toISOString()
-        const newChecklist: Checklist = {
-            id: crypto.randomUUID(),
-            name,
-            description,
-            items: [],
-            sections: [],
-            createdAt: now,
-            updatedAt: now,
-        }
-        await syncChecklist(newChecklist)
-        setShowCreateModal(false)
-    }, [syncChecklist])
+    const handleOpenTemplates = useCallback(() => {
+        navigate(`/${routes.cueSheetTemplates}`)
+    }, [navigate])
 
     return (
         <section>
             <Header.Root className="p-4 pt-8 mx-auto max-w-content">
                 <Header.Lead className="gap-2">
-                    <Title.h6>Checklists</Title.h6>
+                    <Title.h6>Checklist Runs</Title.h6>
                     <Paragraph.sm className="text-tertiary max-w-2xl">
-                        Preparation checklists for events and services. Click a checklist to view and check off items.
+                        View preparation checklist runs created from reusable checklist templates.
                     </Paragraph.sm>
                 </Header.Lead>
             </Header.Root>
 
-            <Decision.Root value={checklists} loading={isLoadingChecklists}>
+            <Decision.Root value={checklistRuns} loading={isLoadingChecklists}>
                 <Decision.Loading>
                     <div className="flex justify-center py-16">
                         <Spinner size="lg" />
@@ -69,33 +62,63 @@ export function CueSheetChecklistScreen() {
                 <Decision.Empty>
                     <EmptyState
                         icon={<ListChecks />}
-                        title="No checklists yet"
-                        description="Create your first checklist to get started."
-                        action={<Button icon={<Plus />} onClick={() => setShowCreateModal(true)}>New Checklist</Button>}
+                        title="No checklist runs yet"
+                        description="Create a run from a template when you need an editable preparation copy."
+                        action={
+                            <Dropdown.Root placement="bottom">
+                                <Dropdown.Trigger>
+                                    <Button icon={<Plus />}>Create Run</Button>
+                                </Dropdown.Trigger>
+                                <Dropdown.Panel>
+                                    {checklistTemplates.map((checklist) => (
+                                        <Dropdown.Item key={checklist.id} onSelect={() => void handleCreateRun(checklist)}>
+                                            {checklist.name}
+                                        </Dropdown.Item>
+                                    ))}
+                                    {checklistTemplates.length === 0 && (
+                                        <Dropdown.Item onSelect={handleOpenTemplates}>
+                                            Create checklist template
+                                        </Dropdown.Item>
+                                    )}
+                                </Dropdown.Panel>
+                            </Dropdown.Root>
+                        }
                     />
                 </Decision.Empty>
                 <Decision.Data>
                     <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
-                        <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
-                            <Header.Lead className="gap-2">
-                                <Label.md>All Checklists</Label.md>
-                            </Header.Lead>
-                            <Header.Trail className="gap-2 flex-1 justify-end">
-                                <Input
-                                    icon={<Search />}
-                                    placeholder="Search checklists..."
-                                    className="w-full max-w-sm"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                />
-                            </Header.Trail>
-                        </Header.Root>
-
                         <Card.Root>
-                            <Card.Header className="gap-1.5">
-                                <ListChecks className="size-4" />
-                                <Label.sm className='mr-auto'>Checklists</Label.sm>
-                                <Button icon={<Plus />} onClick={() => setShowCreateModal(true)}>New Checklist</Button>
+                            <Card.Header className="gap-1.5 max-mobile:flex-col *:max-mobile:w-full">
+                                <div className="flex flex-1 items-center gap-1.5">
+                                    <ListChecks className="size-4" />
+                                    <Label.sm>All Checklist Runs</Label.sm>
+                                </div>
+                                <div className="flex items-center gap-1.5 max-mobile:w-full max-mobile:flex-col">
+                                    <Input icon={<Search />} placeholder="Search checklist runs..." className="w-full max-w-sm" value={filters.search} onChange={(event) => setSearch(event.target.value)} />
+                                    <Drawer.Root>
+                                        <Drawer.Trigger>
+                                            <Button icon={<Settings2 />} variant="secondary">Filter</Button>
+                                        </Drawer.Trigger>
+                                        <ChecklistRunFilterDrawer filters={checklistFilters} />
+                                    </Drawer.Root>
+                                    <Dropdown.Root placement="bottom">
+                                        <Dropdown.Trigger>
+                                            <Button variant='secondary' icon={<Plus />} iconOnly/>
+                                        </Dropdown.Trigger>
+                                        <Dropdown.Panel>
+                                            {checklistTemplates.map((checklist) => (
+                                                <Dropdown.Item key={checklist.id} onSelect={() => void handleCreateRun(checklist)}>
+                                                    {checklist.name}
+                                                </Dropdown.Item>
+                                            ))}
+                                            {checklistTemplates.length === 0 && (
+                                                <Dropdown.Item onSelect={handleOpenTemplates}>
+                                                    Create checklist template
+                                                </Dropdown.Item>
+                                            )}
+                                        </Dropdown.Panel>
+                                    </Dropdown.Root>
+                                </div>
                             </Card.Header>
                             <Card.Content ghost className="flex flex-col gap-1.5">
                                 {filtered.map((checklist) => (
@@ -103,7 +126,7 @@ export function CueSheetChecklistScreen() {
                                 ))}
                                 {filtered.length === 0 && (
                                     <div className="py-8 text-center">
-                                        <Paragraph.sm className="text-tertiary">No checklists match your search.</Paragraph.sm>
+                                        <Paragraph.sm className="text-tertiary">No checklist runs match your filters.</Paragraph.sm>
                                     </div>
                                 )}
                             </Card.Content>
@@ -111,8 +134,6 @@ export function CueSheetChecklistScreen() {
                     </div>
                 </Decision.Data>
             </Decision.Root>
-
-            <CreateChecklistModal open={showCreateModal} onOpenChange={setShowCreateModal} onCreate={handleCreate} />
         </section>
     )
 }

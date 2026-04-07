@@ -23,4 +23,5 @@ export const routes = {
     cueSheetEventDetail: 'cue-sheet/events/:id',
     cueSheetChecklists: 'cue-sheet/checklists',
     cueSheetChecklistDetail: 'cue-sheet/checklist/:id',
+    cueSheetTemplates: 'cue-sheet/templates',
 } as const

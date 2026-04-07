@@ -93,7 +93,11 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
   }, [drawerState.isOpen, equipment.id]);
 
   const closeDrawer = useCallback(() => {
-    onEquipmentClose ? onEquipmentClose() : drawerActions.close();
+    if (onEquipmentClose) {
+      onEquipmentClose();
+      return;
+    }
+    drawerActions.close();
   }, [onEquipmentClose, drawerActions]);
 
   const handleClose = useCallback(() => {
@@ -302,15 +306,21 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
                           color={bookingStatusColor[b.status]}
                         />
                       </div>
-                      {b.returnedDate && (
-                        <div className="flex items-center gap-2">
-                          <Paragraph.xs className="text-quaternary">Returned:</Paragraph.xs>
-                          <Paragraph.xs>{new Date(b.returnedDate).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}</Paragraph.xs>
-                        </div>
-                      )}
+                    {b.returnedDate && (
                       <div className="flex items-center gap-2">
-                        <Paragraph.xs className="text-quaternary">Duration:</Paragraph.xs>
-                        <Paragraph.xs>{b.duration}</Paragraph.xs>
+                        <Paragraph.xs className="text-quaternary">Returned:</Paragraph.xs>
+                        <Paragraph.xs>{new Date(b.returnedDate).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}</Paragraph.xs>
+                      </div>
+                    )}
+                    {!b.returnedDate && (
+                      <div className="flex items-center gap-2">
+                        <Paragraph.xs className="text-quaternary">Expected:</Paragraph.xs>
+                        <Paragraph.xs>{new Date(b.expectedReturnAt).toLocaleString("en-ZA", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Paragraph.xs>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Paragraph.xs className="text-quaternary">Duration:</Paragraph.xs>
+                      <Paragraph.xs>{b.duration}</Paragraph.xs>
                       </div>
                       {b.notes && (
                         <div className="flex items-center gap-2">

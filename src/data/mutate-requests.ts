@@ -18,7 +18,7 @@ export async function updateRequest(request: Request): Promise<Request> {
 export async function archiveRequest(id: string): Promise<void> {
   const { error } = await supabase
     .from("requests")
-    .update({ status: "archived" })
+    .update({ status: "archived", updated_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) throw new Error(error.message);
@@ -28,7 +28,7 @@ export async function archiveRequest(id: string): Promise<void> {
 export async function unarchiveRequest(id: string): Promise<void> {
   const { error } = await supabase
     .from("requests")
-    .update({ status: "not_started" })
+    .update({ status: "not_started", updated_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) throw new Error(error.message);
@@ -38,7 +38,7 @@ export async function unarchiveRequest(id: string): Promise<void> {
 export async function updateRequestStatus(id: string, status: Status): Promise<void> {
   const { error } = await supabase
     .from("requests")
-    .update({ status })
+    .update({ status, updated_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) throw new Error(error.message);

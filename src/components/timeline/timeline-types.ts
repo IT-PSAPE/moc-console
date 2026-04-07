@@ -1,4 +1,4 @@
-import type { CueType, Cue, Track } from '@/types/cue-sheet'
+import type { CueType, Cue } from '@/types/cue-sheet'
 
 // ─── Constants ─────────────────────────────────────────────────────
 
@@ -69,6 +69,7 @@ export type CueFormData = {
     type: CueType
     startMin: number
     durationMin: number
+    assignee: string
     notes: string
 }
 

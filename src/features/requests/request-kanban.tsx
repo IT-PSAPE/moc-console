@@ -98,7 +98,7 @@ export function RequestKanban({ requests }: { requests: Request[] }) {
 
         // Optimistic update
         const previousStatus = request.status;
-        const updated = { ...request, status: newStatus };
+        const updated = { ...request, status: newStatus, updatedAt: new Date().toISOString() };
         syncRequest(updated);
 
         try {

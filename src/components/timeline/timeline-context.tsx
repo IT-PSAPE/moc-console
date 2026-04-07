@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
-import type { Track, Cue, CueType } from '@/types/cue-sheet'
+import type { Track, Cue } from '@/types/cue-sheet'
 import type { CueModalState, CueFilter } from './timeline-types'
 import { useTimelineZoom } from './use-timeline-zoom'
 import { useTimelinePlayback } from './use-timeline-playback'

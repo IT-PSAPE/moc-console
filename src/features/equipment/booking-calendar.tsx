@@ -34,10 +34,12 @@ function toCalendarEvents(
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-GB", {
+  return new Date(dateStr).toLocaleString("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -73,7 +75,7 @@ export function BookingCalendar({ bookings, equipmentMap }: BookingCalendarProps
                 <div className="flex-1 min-w-0">
                   <Label.sm className="truncate">{booking.equipmentName}</Label.sm>
                   <Paragraph.xs className="text-tertiary">
-                    Booked by {booking.bookedBy} &middot; {formatDate(booking.checkedOutDate)}
+                    Due {formatDate(booking.expectedReturnAt)} &middot; {booking.bookedBy}
                   </Paragraph.xs>
                 </div>
                 <Badge

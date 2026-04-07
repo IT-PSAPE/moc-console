@@ -3,7 +3,7 @@ import type { Booking, BookingStatus } from "@/types/equipment";
 
 // ─── Filter / Sort state ───────────────────────────────
 
-export type BookingSortField = "checkedOutDate" | "equipmentName" | "bookedBy";
+export type BookingSortField = "checkedOutDate" | "expectedReturnAt" | "equipmentName" | "bookedBy";
 export type SortDirection = "asc" | "desc";
 
 export type BookingFilters = {
@@ -50,6 +50,8 @@ export function useBookingFilters(bookings: Booking[]) {
       switch (filters.sortField) {
         case "checkedOutDate":
           return dir * (new Date(a.checkedOutDate).getTime() - new Date(b.checkedOutDate).getTime());
+        case "expectedReturnAt":
+          return dir * (new Date(a.expectedReturnAt).getTime() - new Date(b.expectedReturnAt).getTime());
         case "equipmentName":
           return dir * a.equipmentName.localeCompare(b.equipmentName);
         case "bookedBy":

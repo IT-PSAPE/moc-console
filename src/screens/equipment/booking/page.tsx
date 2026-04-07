@@ -33,15 +33,19 @@ const columns = [
   {
     key: "checkedOutDate",
     header: "Checked Out",
-    render: (value: unknown) => new Date(value as string).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" }),
+    render: (value: unknown) => new Date(value as string).toLocaleString("en-ZA", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+  },
+  {
+    key: "expectedReturnAt",
+    header: "Expected Return",
+    render: (value: unknown) => new Date(value as string).toLocaleString("en-ZA", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
   },
   {
     key: "returnedDate",
     header: "Returned",
     render: (value: unknown) =>
-      value ? new Date(value as string).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" }) : <span className="text-quaternary">—</span>,
+      value ? new Date(value as string).toLocaleString("en-ZA", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : <span className="text-quaternary">—</span>,
   },
-  { key: "duration", header: "Duration" },
   {
     key: "notes",
     header: "Notes",

@@ -5,8 +5,8 @@ import { Header } from "@/components/display/header";
 import { Drawer } from "@/components/overlays/drawer";
 import { Badge } from "@/components/display/badge";
 import { Label, Paragraph, TextBlock, Title } from "@/components/display/text";
-import { ArrowUpRight, CalendarCheck, CircleCheck, Package, Search, Settings2, Wrench } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowUpRight, CalendarX2Icon, CircleAlert, CircleCheck, Package, Search, Settings2, Wrench } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Decision } from "@/components/display/decision";
 import { Spinner } from "@/components/feedback/spinner";
 import { EmptyState } from "@/components/feedback/empty-state";
@@ -15,63 +15,67 @@ import { useEquipment } from "@/features/equipment/equipment-provider";
 import { useEquipmentFilters } from "@/features/equipment/use-equipment-filters";
 import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
 import { EquipmentDrawer } from "@/features/equipment/equipment-drawer";
-import { equipmentStatusLabel, equipmentStatusColor, equipmentCategoryLabel, equipmentCategoryColor } from "@/types/equipment";
+import { equipmentStatusColor, equipmentStatusLabel } from "@/types/equipment";
 import type { Equipment } from "@/types/equipment";
 
-function EquipmentThumbnail({ equipment }: { equipment: Equipment }) {
-  if (equipment.thumbnail) {
-    return <img src={equipment.thumbnail} alt={equipment.name} className="size-8 rounded object-cover" />;
-  }
-  return (
-    <span className="flex size-8 items-center justify-center rounded bg-secondary text-quaternary">
-      <Package className="size-4" />
-    </span>
-  );
-}
+type OverdueBookingItem = Record<string, unknown> & {
+  id: string;
+  equipmentId: string;
+  equipmentName: string;
+  bookedBy: string;
+  checkedOutDate: string;
+  expectedReturnAt: string;
+};
 
-const columns = [
+type FaultyEquipmentItem = Record<string, unknown> & Equipment;
+
+const overdueColumns = [
+  { key: "equipmentName", header: "Equipment" },
+  { key: "bookedBy", header: "Booked By" },
   {
-    key: "thumbnail",
-    header: "",
-    width: 48,
-    render: (_: unknown, row: Equipment) => <EquipmentThumbnail equipment={row} />,
+    key: "checkedOutDate",
+    header: "Checked Out",
+    render: (value: unknown) => new Date(value as string).toLocaleString("en-ZA", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
   },
+  {
+    key: "expectedReturnAt",
+    header: "Expected Return",
+    render: (value: unknown) => new Date(value as string).toLocaleString("en-ZA", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+  },
+];
+
+const faultyColumns = [
   { key: "name", header: "Equipment" },
-  {
-    key: "category",
-    header: "Category",
-    render: (_: unknown, row: Equipment) => (
-      <Badge label={equipmentCategoryLabel[row.category]} color={equipmentCategoryColor[row.category]} />
-    ),
-  },
+  { key: "location", header: "Location" },
   {
     key: "status",
     header: "Status",
-    render: (_: unknown, row: Equipment) => (
+    render: (_: unknown, row: FaultyEquipmentItem) => (
       <Badge label={equipmentStatusLabel[row.status]} color={equipmentStatusColor[row.status]} />
     ),
-  },
-  {
-    key: "bookedBy",
-    header: "Booked By",
-    render: (value: unknown) => (value as string) || <span className="text-quaternary">—</span>,
   },
   {
     key: "lastActiveDate",
     header: "Last Active",
     render: (value: unknown) => new Date(value as string).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" }),
   },
+  {
+    key: "notes",
+    header: "Issue",
+    render: (value: unknown) => (value as string) || <span className="text-quaternary">No note</span>,
+  },
 ];
 
 export function EquipmentOverviewScreen() {
   const {
-    state: { equipment, isLoadingEquipment },
-    actions: { loadEquipment },
+    state: { equipment, bookings, isLoadingEquipment, isLoadingBookings },
+    actions: { loadEquipment, loadBookings },
   } = useEquipment();
 
   useEffect(() => {
     loadEquipment();
-  }, [loadEquipment]);
+    loadBookings();
+  }, [loadEquipment, loadBookings]);
 
   const equipmentFilters = useEquipmentFilters(equipment);
   const { filtered, setSearch, filters: state } = equipmentFilters;
@@ -79,14 +83,37 @@ export function EquipmentOverviewScreen() {
   // Stats — always from unfiltered data
   const totalCount = equipment.length;
   const availableCount = equipment.filter((e) => e.status === "available").length;
-  const bookedCount = equipment.filter((e) => e.status === "booked").length;
   const bookedOutCount = equipment.filter((e) => e.status === "booked_out").length;
-  const maintenanceCount = equipment.filter((e) => e.status === "maintenance").length;
 
-  // Recent activity — filtered, sorted by last active desc, limited to 10
-  const recentActivity = [...filtered]
-    .sort((a, b) => new Date(b.lastActiveDate).getTime() - new Date(a.lastActiveDate).getTime())
-    .slice(0, 10);
+  const equipmentMap = useMemo(() => {
+    const map = new Map<string, Equipment>();
+    for (const item of equipment) map.set(item.id, item);
+    return map;
+  }, [equipment]);
+
+  const filteredEquipmentIds = useMemo(() => new Set(filtered.map((item) => item.id)), [filtered]);
+
+  const overdueItems = useMemo<OverdueBookingItem[]>(() => {
+    const now = new Date();
+    return bookings
+      .filter((booking) => booking.status !== "returned" && !booking.returnedDate && filteredEquipmentIds.has(booking.equipmentId) && new Date(booking.expectedReturnAt) < now)
+      .map((booking) => ({
+        id: booking.id,
+        equipmentId: booking.equipmentId,
+        equipmentName: booking.equipmentName,
+        bookedBy: booking.bookedBy,
+        checkedOutDate: booking.checkedOutDate,
+        expectedReturnAt: booking.expectedReturnAt,
+      }))
+      .sort((a, b) => new Date(a.expectedReturnAt).getTime() - new Date(b.expectedReturnAt).getTime())
+      .slice(0, 10);
+  }, [bookings, filteredEquipmentIds]);
+
+  const faultyItems = useMemo<FaultyEquipmentItem[]>(() => (
+    filtered
+      .filter((item) => item.status === "maintenance")
+      .sort((a, b) => new Date(a.lastActiveDate).getTime() - new Date(b.lastActiveDate).getTime())
+  ), [filtered]);
 
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const isDirtyRef = useRef(false);
@@ -104,6 +131,15 @@ export function EquipmentOverviewScreen() {
     setSelectedEquipment(null);
   }, []);
 
+  const handleOverdueRowClick = useCallback((row: OverdueBookingItem) => {
+    const item = equipmentMap.get(row.equipmentId);
+    if (item) setSelectedEquipment(item);
+  }, [equipmentMap]);
+
+  const handleFaultyRowClick = useCallback((row: FaultyEquipmentItem) => {
+    setSelectedEquipment(row);
+  }, []);
+
   return (
     <section>
       <Header.Root className="p-4 pt-8 mx-auto max-w-content">
@@ -115,7 +151,7 @@ export function EquipmentOverviewScreen() {
         </Header.Lead>
       </Header.Root>
 
-      <Decision.Root value={equipment} loading={isLoadingEquipment}>
+      <Decision.Root value={equipment} loading={isLoadingEquipment || isLoadingBookings}>
         <Decision.Loading>
           <div className="flex justify-center py-16">
             <Spinner size="lg" />
@@ -125,7 +161,7 @@ export function EquipmentOverviewScreen() {
           <EmptyState icon={<Package />} title="No equipment yet" description="Add equipment to start tracking your inventory." />
         </Decision.Empty>
         <Decision.Data>
-          <div className="grid grid-cols-5 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2">
+          <div className="grid grid-cols-2 gap-4 p-4 pt-8 mx-auto w-full max-w-content md:grid-cols-4 max-mobile:gap-2">
             <Card.Root>
               <Card.Header className="gap-1.5">
                 <Package className="size-4" />
@@ -146,15 +182,6 @@ export function EquipmentOverviewScreen() {
             </Card.Root>
             <Card.Root>
               <Card.Header className="gap-1.5">
-                <CalendarCheck className="size-4" />
-                <Label.sm>Booked</Label.sm>
-              </Card.Header>
-              <Card.Content className="p-4">
-                <TextBlock className="title-h4">{bookedCount}</TextBlock>
-              </Card.Content>
-            </Card.Root>
-            <Card.Root>
-              <Card.Header className="gap-1.5">
                 <ArrowUpRight className="size-4" />
                 <Label.sm>Booked Out</Label.sm>
               </Card.Header>
@@ -164,11 +191,11 @@ export function EquipmentOverviewScreen() {
             </Card.Root>
             <Card.Root>
               <Card.Header className="gap-1.5">
-                <Wrench className="size-4" />
-                <Label.sm>In Maintenance</Label.sm>
+                <CalendarX2Icon className="size-4" />
+                <Label.sm>Overdue</Label.sm>
               </Card.Header>
               <Card.Content className="p-4">
-                <TextBlock className="title-h4">{maintenanceCount}</TextBlock>
+                <TextBlock className="title-h4">{overdueItems.length}</TextBlock>
               </Card.Content>
             </Card.Root>
           </div>
@@ -178,7 +205,10 @@ export function EquipmentOverviewScreen() {
             <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
               <Card.Root>
                 <Card.Header className="gap-2">
-                  <Label.md>Recent Activity</Label.md>
+                  <div className="flex items-center gap-2">
+                    <CircleAlert className="size-4 text-tertiary" />
+                    <Label.md>Overdue Equipment</Label.md>
+                  </div>
                   <div className="ml-auto flex items-center gap-1">
                     <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-sm" value={state.search} onChange={(e) => setSearch(e.target.value)} />
                     <Drawer.Root>
@@ -190,7 +220,28 @@ export function EquipmentOverviewScreen() {
                   </div>
                 </Card.Header>
                 <Card.Content className="!border-secondary overflow-hidden">
-                  <DataTable data={recentActivity} columns={columns} emptyMessage="No recent activity" onRowClick={(row) => setSelectedEquipment(row)} />
+                  <DataTable
+                    data={overdueItems}
+                    columns={overdueColumns}
+                    emptyMessage="No overdue equipment"
+                    onRowClick={handleOverdueRowClick}
+                  />
+                </Card.Content>
+              </Card.Root>
+              <Card.Root>
+                <Card.Header className="gap-2">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="size-4 text-tertiary" />
+                    <Label.md>Faulty Equipment</Label.md>
+                  </div>
+                </Card.Header>
+                <Card.Content className="!border-secondary overflow-hidden">
+                  <DataTable
+                    data={faultyItems}
+                    columns={faultyColumns}
+                    emptyMessage="No faulty equipment"
+                    onRowClick={handleFaultyRowClick}
+                  />
                 </Card.Content>
               </Card.Root>
               {selectedEquipment && (

@@ -29,7 +29,11 @@ const searchablePages = [
     { group: 'Cue Sheet', label: 'Cue Sheet Overview', route: routes.cueSheetOverview, icon: <Drama className="size-4" /> },
     { group: 'Cue Sheet', label: 'Checklists', route: routes.cueSheetChecklists, icon: <Drama className="size-4" /> },
     { group: 'Cue Sheet', label: 'Events', route: routes.cueSheetEvents, icon: <Drama className="size-4" /> },
+    { group: 'Cue Sheet', label: 'Templates', route: routes.cueSheetTemplates, icon: <Drama className="size-4" /> },
 ] as const
+
+type SearchablePage = (typeof searchablePages)[number]
+type SearchablePageGroup = SearchablePage['group']
 
 export function SearchCommandMenuContent() {
     const navigate = useNavigate()
@@ -40,14 +44,15 @@ export function SearchCommandMenuContent() {
         ? searchablePages.filter(page => page.label.toLowerCase().includes(query) || page.group.toLowerCase().includes(query))
         : searchablePages
 
-    const groups = filtered.reduce<Record<string, typeof filtered>>((acc, page) => {
+    const groups: Partial<Record<SearchablePageGroup, SearchablePage[]>> = {}
+    for (const page of filtered) {
         const group = page.group
-        if (!acc[group]) {
-            acc[group] = []
+        if (!groups[group]) {
+            groups[group] = []
         }
-        acc[group].push(page)
-        return acc
-    }, {})
+        groups[group].push(page)
+    }
+    const groupedPages = Object.entries(groups) as [SearchablePageGroup, SearchablePage[]][]
 
     return (
         <CommandMenu.Portal>
@@ -56,7 +61,7 @@ export function SearchCommandMenuContent() {
                 <CommandMenu.Input placeholder="Search pages..." />
                 <CommandMenu.List>
                     {filtered.length === 0 && <CommandMenu.Empty />}
-                    {Object.entries(groups).map(([group, pages]) => (
+                    {groupedPages.map(([group, pages]) => (
                         <CommandMenu.Group key={group} heading={group}>
                             {pages.map(page => (
                                 <CommandMenu.Item key={page.route} value={page.label} onSelect={() => navigate(`/${page.route}`)}>

@@ -5,11 +5,12 @@ import { Dropdown } from "@/components/overlays/dropdown";
 import type { ResolvedAssignee } from "@/data/fetch-assignees";
 import type { Request, Status, Priority, Category } from "@/types/requests";
 import { statusLabel, statusColor, priorityLabel, categoryLabel, priorityColor } from "@/types/requests";
-import { Archive, Calendar, Check, CircleAlert, CircleChevronDown, CircleDashed, Clock, Loader, Plus, Tag, X } from "lucide-react";
+import { Archive, Calendar, Check, CircleAlert, CircleChevronDown, CircleDashed, Clock, History, Loader, Plus, Tag, User, X } from "lucide-react";
 import { AddMemberPopover } from "./add-member-popover";
 import { cn } from "@/utils/cn";
 import { Avatar } from "@/components/display/avatar";
 import { Button } from "@/components/controls/button";
+import { Input } from "@/components/form/input";
 
 function toLocalDateTimeValue(iso: string) {
     const d = new Date(iso);
@@ -164,9 +165,31 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
                 )}
             </MetaRow>
 
+            {/* Requested by */}
+            <MetaRow icon={<User className="size-4" />} label="Requested By">
+                {editable && onFieldChange ? (
+                    <Input
+                        value={request.requestedBy}
+                        onChange={(e) => onFieldChange("requestedBy", e.target.value)}
+                        placeholder="Requester name"
+                        className="max-w-48"
+                    />
+                ) : (
+                    request.requestedBy ? (
+                        <Paragraph.sm>{request.requestedBy}</Paragraph.sm>
+                    ) : (
+                        <Paragraph.sm className="text-quaternary">No requester</Paragraph.sm>
+                    )
+                )}
+            </MetaRow>
+
             {/* Created time (always read-only) */}
             <MetaRow icon={<Clock className="size-4" />} label="Created time">
                 <Paragraph.sm>{formatDate(request.createdAt)}</Paragraph.sm>
+            </MetaRow>
+
+            <MetaRow icon={<History className="size-4" />} label="Last updated">
+                <Paragraph.sm>{formatDate(request.updatedAt)}</Paragraph.sm>
             </MetaRow>
 
         </div>

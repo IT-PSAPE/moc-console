@@ -3,7 +3,7 @@ import { Badge } from '@/components/display/badge'
 import { cn } from '@/utils/cn'
 import { cv } from '@/utils/cv'
 import type { CueSheetEvent } from '@/types/cue-sheet'
-import { Clock, Layers } from 'lucide-react'
+import { CalendarClock, Clock, Layers } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useCueSheet } from './cue-sheet-provider'
 
@@ -22,10 +22,16 @@ function formatDuration(minutes: number) {
     return `${h}h ${m}min`
 }
 
+function formatScheduledAt(scheduledAt?: string) {
+    if (!scheduledAt) return null
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(scheduledAt))
+}
+
 export function EventItem({ event }: { event: CueSheetEvent }) {
     const navigate = useNavigate()
     const { state: { tracksByEventId } } = useCueSheet()
     const trackCount = tracksByEventId[event.id]?.length ?? 0
+    const scheduledAt = formatScheduledAt(event.scheduledAt)
 
     return (
         <div
@@ -40,6 +46,7 @@ export function EventItem({ event }: { event: CueSheetEvent }) {
                 <Paragraph.sm className="text-tertiary">{event.description}</Paragraph.sm>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+                {scheduledAt && <Badge label={scheduledAt} icon={<CalendarClock />} color="purple" />}
                 <Badge label={formatDuration(event.duration)} icon={<Clock />} variant="outline" />
                 {trackCount > 0 && (
                     <Badge label={`${trackCount} track${trackCount !== 1 ? 's' : ''}`} icon={<Layers />} color="blue" />

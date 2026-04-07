@@ -46,7 +46,7 @@ function TimeRuler({ totalMin }: { totalMin: number }) {
 
 // ─── Cue Block ──────────────────────────────────────────────────────
 
-function CueBlock({ cue, totalMin }: { cue: Cue; totalMin: number }) {
+function CueBlock({ cue, trackColor, totalMin }: { cue: Cue; trackColor: string; totalMin: number }) {
     const left = (cue.startMin / totalMin) * 100
     const width = (cue.durationMin / totalMin) * 100
 
@@ -56,7 +56,7 @@ function CueBlock({ cue, totalMin }: { cue: Cue; totalMin: number }) {
             style={{
                 left: `${left}%`,
                 width: `${width}%`,
-                backgroundColor: cue.color,
+                backgroundColor: trackColor,
                 opacity: 0.85,
             }}
             title={`${cue.label} (${formatTime(cue.startMin)} - ${formatTime(cue.startMin + cue.durationMin)})`}
@@ -90,7 +90,7 @@ function TrackRow({ track, totalMin, onDelete }: { track: Track; totalMin: numbe
             {/* Cue lane */}
             <div className="relative flex-1 h-10">
                 {track.cues.map((cue) => (
-                    <CueBlock key={cue.id} cue={cue} totalMin={totalMin} />
+                    <CueBlock key={cue.id} cue={cue} trackColor={track.color} totalMin={totalMin} />
                 ))}
             </div>
         </div>

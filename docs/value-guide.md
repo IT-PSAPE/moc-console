@@ -29,14 +29,15 @@ It complements [schema-reference.md](./schema-reference.md).
 ### Dates
 
 - Requests:
-  - `createdAt` and `dueDate` should be ISO datetime strings.
+  - `createdAt`, `updatedAt`, and `dueDate` should be ISO datetime strings.
   - The request editor uses `datetime-local` and converts back with `new Date(value).toISOString()`.
   - Example: `2026-04-05T13:30:00.000Z`
 - Equipment and broadcast:
   - Current mock data uses date-only strings.
   - Example: `2026-04-05`
 - Equipment bookings:
-  - `checkedOutDate` and `returnedDate` also behave like date-only strings in current usage.
+  - `checkedOutDate` and `returnedDate` still come from current date-like mock data.
+  - `expectedReturnAt` should be a full ISO datetime string so the app can calculate due-soon and overdue return states by hour.
 - Cue sheet:
   - `createdAt` and `updatedAt` use ISO datetime strings.
   - Timeline cues use `startMin` and `durationMin` as numeric minute values, not datetimes.
@@ -123,6 +124,16 @@ Expected usage:
 - Good examples:
   - `Youth Conference Promo Video`
   - `Sunday Service Graphics Update`
+
+### `requestedBy`
+
+- Keep this as a free-text requester label.
+- Do not link it to teams or users yet; this field is intentionally lightweight.
+
+### `updatedAt`
+
+- Update this whenever request details, archive state, or kanban status changes.
+- Use it as the app’s “last updated” timestamp instead of adding a separate `completedAt` field.
 
 ### 5W1H fields: `who`, `what`, `when`, `where`, `why`, `how`
 
@@ -308,6 +319,8 @@ Consistency rules:
 
 - `returnedDate` should be `null` for `booked` and `checked_out`.
 - `returnedDate` should be populated for `returned`.
+- `expectedReturnAt` should be populated for every booking, including active and returned bookings.
+- For active bookings, due-soon/overdue logic compares `expectedReturnAt` to the current time.
 - `duration` is currently human-readable text, not a numeric day count.
 
 ## Broadcast
@@ -317,17 +330,17 @@ Consistency rules:
 Allowed values:
 
 - `draft`
-- `active`
+- `published`
 
 Expected usage:
 
 - `draft`: playlist is still being prepared
-- `active`: playlist is ready for operational use
+- `published`: playlist is ready and immediately available for operational use
 
 Current implementation notes:
 
 - New playlists default to `draft`.
-- The list and drawer toggle between `draft` and `active`.
+- The list and drawer toggle between `draft` and `published`.
 
 ### `Playlist.name` and `description`
 
@@ -433,6 +446,10 @@ Expected usage:
 - `description` can be empty, but a concise sentence helps distinguish reusable event templates.
 - `duration` is the full event timeline length in minutes.
 - `createdAt` and `updatedAt` should remain ISO datetime strings.
+- `kind: "template"` means the event is reusable.
+- `kind: "instance"` means the event was created from a template and can be adjusted independently.
+- `templateId` should be set only on instances created from a template.
+- `scheduledAt` is optional for instances and should be an ISO datetime string when used.
 
 Good examples:
 
@@ -448,6 +465,10 @@ Expected usage:
 - `items` contains ungrouped tasks shown before any sections.
 - `sections` contains grouped tasks and should be an empty array when no grouping is needed.
 - Use `checked: false` for newly created checklist items.
+- `kind: "template"` means the checklist is reusable.
+- `kind: "instance"` means the checklist was created from a template and can be checked off independently.
+- `templateId` should be set only on instances created from a template.
+- `scheduledAt` is optional for instances and should be an ISO datetime string when used.
 
 ### `ChecklistSection`
 
@@ -478,6 +499,7 @@ Timing rules:
 - `durationMin` is the cue length in minutes.
 - Keep both values numeric so timeline drag, resize, and marker calculations remain stable.
 - Cue ordering within a track is represented by array order and visual position.
+- `assignee` is optional free text for the person responsible for a specific cue.
 
 ## Cross-Domain Practical Rules
 

@@ -87,19 +87,6 @@ export function EquipmentInventoryScreen() {
       </Header.Root>
 
       <div className="flex flex-col gap-4 p-4 mx-auto w-full max-w-content">
-        <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
-          <Header.Lead />
-          <Header.Trail className="gap-2 flex-1 justify-end">
-            <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-sm" value={state.search} onChange={(e) => setSearch(e.target.value)} />
-            <Drawer.Root>
-              <Drawer.Trigger>
-                <Button icon={<Settings2 />} variant="secondary">Filter</Button>
-              </Drawer.Trigger>
-              <EquipmentFilterDrawer filters={equipmentFilters} />
-            </Drawer.Root>
-          </Header.Trail>
-        </Header.Root>
-
         <Decision.Root value={filtered} loading={isLoadingEquipment}>
           <Decision.Loading>
             <div className="flex justify-center py-16">
@@ -112,8 +99,17 @@ export function EquipmentInventoryScreen() {
           <Decision.Data>
             <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
               <Card.Root>
+                <Card.Header className="gap-2 flex-1 justify-end">
+                  <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-sm" value={state.search} onChange={(e) => setSearch(e.target.value)} />
+                  <Drawer.Root>
+                    <Drawer.Trigger>
+                      <Button icon={<Settings2 />} variant="secondary">Filter</Button>
+                    </Drawer.Trigger>
+                    <EquipmentFilterDrawer filters={equipmentFilters} />
+                  </Drawer.Root>
+                </Card.Header>
                 <Card.Content className="!border-secondary overflow-hidden">
-                    <DataTable data={filtered} columns={columns} emptyMessage="No equipment found" onRowClick={(row) => setSelectedEquipment(row)} />
+                  <DataTable data={filtered} columns={columns} emptyMessage="No equipment found" onRowClick={(row) => setSelectedEquipment(row)} />
                 </Card.Content>
               </Card.Root>
               {selectedEquipment && (

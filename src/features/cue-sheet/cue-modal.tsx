@@ -17,6 +17,7 @@ type CueFormState = {
     type: CueType
     startMin: number
     durationMin: number
+    assignee: string
     notes: string
 }
 
@@ -26,6 +27,7 @@ const defaultForm: CueFormState = {
     type: 'performance',
     startMin: 0,
     durationMin: 5,
+    assignee: '',
     notes: '',
 }
 
@@ -53,6 +55,7 @@ export function CueModal() {
                 type: cueModal.cue.type,
                 startMin: cueModal.cue.startMin,
                 durationMin: cueModal.cue.durationMin,
+                assignee: cueModal.cue.assignee ?? '',
                 notes: cueModal.cue.notes ?? '',
             })
         }
@@ -69,6 +72,7 @@ export function CueModal() {
                 type: form.type,
                 startMin: form.startMin,
                 durationMin: form.durationMin,
+                assignee: form.assignee.trim() || undefined,
                 notes: form.notes.trim() || undefined,
             })
         } else if (cueModal.mode === 'edit') {
@@ -81,6 +85,7 @@ export function CueModal() {
                     label: form.label.trim(),
                     type: form.type,
                     durationMin: form.durationMin,
+                    assignee: form.assignee.trim() || undefined,
                     notes: form.notes.trim() || undefined,
                 })
             } else {
@@ -89,6 +94,7 @@ export function CueModal() {
                     type: form.type,
                     startMin: form.startMin,
                     durationMin: form.durationMin,
+                    assignee: form.assignee.trim() || undefined,
                     notes: form.notes.trim() || undefined,
                 })
             }
@@ -176,6 +182,15 @@ export function CueModal() {
                                         placeholder="Optional notes..."
                                         value={form.notes}
                                         onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-1.5">
+                                    <FormLabel label="Assignee" optional />
+                                    <Input
+                                        placeholder="Person responsible for this cue"
+                                        value={form.assignee}
+                                        onChange={(e) => setForm((prev) => ({ ...prev, assignee: e.target.value }))}
                                     />
                                 </div>
                             </div>

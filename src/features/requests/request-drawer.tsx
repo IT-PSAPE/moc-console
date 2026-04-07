@@ -77,7 +77,11 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
     }, [drawerState.isOpen, request.id]);
 
     const closeDrawer = useCallback(() => {
-        onRequestClose ? onRequestClose() : drawerActions.close();
+        if (onRequestClose) {
+            onRequestClose();
+            return;
+        }
+        drawerActions.close();
     }, [onRequestClose, drawerActions]);
 
     function handleOpenFullPage() {
@@ -150,13 +154,14 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
 
     async function handleArchiveToggle() {
         try {
+            const updatedAt = new Date().toISOString();
             if (request.status === "archived") {
                 await unarchiveRequest(request.id);
-                syncRequest({ ...request, status: "not_started" });
+                syncRequest({ ...request, status: "not_started", updatedAt });
                 toast({ title: "Request unarchived", variant: "success" });
             } else {
                 await archiveRequest(request.id);
-                syncRequest({ ...request, status: "archived" });
+                syncRequest({ ...request, status: "archived", updatedAt });
                 toast({ title: "Request archived", variant: "success" });
             }
             closeDrawer();

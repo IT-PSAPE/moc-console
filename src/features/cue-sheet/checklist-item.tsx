@@ -4,7 +4,7 @@ import { Drawer } from '@/components/overlays/drawer'
 import { cn } from '@/utils/cn'
 import { cv } from '@/utils/cv'
 import type { Checklist } from '@/types/cue-sheet'
-import { CheckCircle2, ListChecks } from 'lucide-react'
+import { CalendarClock, CheckCircle2, ListChecks } from 'lucide-react'
 import { useState } from 'react'
 import { ChecklistDrawer } from './checklist-drawer'
 import { getChecklistCounts } from './checklist-content'
@@ -16,10 +16,16 @@ const itemVariants = cv({
     ],
 })
 
+function formatScheduledAt(scheduledAt?: string) {
+    if (!scheduledAt) return null
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(scheduledAt))
+}
+
 export function ChecklistItemCard({ checklist }: { checklist: Checklist }) {
     const [open, setOpen] = useState(false)
     const { total, checked } = getChecklistCounts(checklist)
     const allDone = total > 0 && checked === total
+    const scheduledAt = formatScheduledAt(checklist.scheduledAt)
 
     return (
         <Drawer.Root open={open} onOpenChange={setOpen}>
@@ -30,6 +36,7 @@ export function ChecklistItemCard({ checklist }: { checklist: Checklist }) {
                         <Paragraph.sm className="text-tertiary">{checklist.description}</Paragraph.sm>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
+                        {scheduledAt && <Badge label={scheduledAt} icon={<CalendarClock />} color="purple" />}
                         <Badge
                             label={`${checked}/${total}`}
                             icon={<ListChecks />}

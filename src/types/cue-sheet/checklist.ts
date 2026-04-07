@@ -12,8 +12,11 @@ export type ChecklistSection = {
 
 export type Checklist = {
     id: string
+    kind: 'template' | 'instance'
+    templateId?: string
     name: string
     description: string
+    scheduledAt?: string
     /** Top-level items not in any section — always shown at the top */
     items: ChecklistItem[]
     /** Grouped sections shown below ungrouped items */

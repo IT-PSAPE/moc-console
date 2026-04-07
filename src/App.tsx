@@ -27,6 +27,7 @@ import { EquipmentProvider } from '@/features/equipment/equipment-provider'
 import { BroadcastProvider } from '@/features/broadcast/broadcast-provider'
 import { CueSheetChecklistScreen } from './screens/cue-sheet/checklist/page'
 import { CueSheetChecklistDetailScreen } from './screens/cue-sheet/checklist/detail/page'
+import { CueSheetTemplatesScreen } from './screens/cue-sheet/templates/page'
 import { CueSheetProvider } from './features/cue-sheet/cue-sheet-provider'
 import { BreadcrumbProvider } from './components/navigation/breadcrumb'
 import { SidebarProvider } from './components/navigation/sidebar'
@@ -131,6 +132,7 @@ const router = createBrowserRouter([
                     { path: routes.cueSheetEventDetail, element: <CueSheetEventDetailScreen /> },
                     { path: routes.cueSheetChecklists, element: <CueSheetChecklistScreen /> },
                     { path: routes.cueSheetChecklistDetail, element: <CueSheetChecklistDetailScreen /> },
+                    { path: routes.cueSheetTemplates, element: <CueSheetTemplatesScreen /> },
                 ],
             },
         ],

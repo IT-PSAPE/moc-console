@@ -12,7 +12,7 @@ export const mediaTypeLabel: Record<MediaType, string> = {
 
 export const playlistStatusLabel: Record<PlaylistStatus, string> = {
   draft: "Draft",
-  active: "Active",
+  published: "Published",
 }
 
 // ─── Colors ────────────────────────────────────────────
@@ -26,5 +26,5 @@ export const mediaTypeColor: Record<MediaType, "blue" | "green" | "purple" | "ye
 
 export const playlistStatusColor: Record<PlaylistStatus, "gray" | "green"> = {
   draft: "gray",
-  active: "green",
+  published: "green",
 }

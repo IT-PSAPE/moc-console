@@ -17,7 +17,8 @@ It is an inferred schema, not a database migration export. There is no checked-i
 - Several fields are optional in the app model but normalized to `null` when written to Supabase.
 - Some storage conventions are domain-specific:
   - Request dates behave like ISO datetime strings.
-  - Equipment and broadcast dates currently behave like `YYYY-MM-DD` date strings.
+  - Equipment inventory and broadcast created dates currently behave like `YYYY-MM-DD` date strings.
+  - Equipment booking return expectations use ISO datetime strings.
   - Cue-sheet event and checklist dates currently use ISO datetime strings, while cue timing is stored as minute offsets.
 
 ## Domain Summary
@@ -46,6 +47,8 @@ Source:
 | `status` | `"not_started" \| "in_progress" \| "completed" \| "archived"` | Yes | No | Enum | See `src/types/requests/status.ts`. |
 | `category` | `"video_production" \| "video_shooting" \| "graphic_design" \| "event" \| "education"` | Yes | No | Enum | See `src/types/requests/category.ts`. |
 | `createdAt` | `string` | Yes | No | ISO datetime string expected | Mapped to `created_at`. |
+| `updatedAt` | `string` | Yes | No | ISO datetime string expected | Mapped to `updated_at`; falls back to `created_at` when missing from older rows. |
+| `requestedBy` | `string` | Yes | No | Free text | Mapped to `requested_by`; intentionally not linked to a user/team table. |
 | `dueDate` | `string \| null` | Yes | Yes | ISO datetime string or `null` | Mapped to `due_date`. |
 | `who` | `string` | Yes | No | Free text | Part of the 5W1H block. |
 | `what` | `string` | Yes | No | Free text | Part of the 5W1H block. |
@@ -69,6 +72,8 @@ Inferred from `src/data/fetch-requests.ts`, `src/data/mutate-requests.ts`, and `
 | `status` | `Status` | No | `archived` is stored, not soft-deleted elsewhere. |
 | `category` | `Category` | No | Request type/category. |
 | `created_at` | `string` | No | Read into `createdAt`. |
+| `updated_at` | `string` | No | Read into `updatedAt`; app writes this on save/status changes. |
+| `requested_by` | `string` | No | Free-text requester label read into `requestedBy`. |
 | `due_date` | `string \| null` | Yes | Read into `dueDate`. |
 | `who` | `string` | No | 5W1H field. |
 | `what` | `string` | No | 5W1H field. |
@@ -197,6 +202,7 @@ Source:
 | `equipmentName` | `string` | Yes | No | Free text | Denormalized display field. |
 | `bookedBy` | `string` | Yes | No | Person name | Current schema uses plain string, not user id. |
 | `checkedOutDate` | `string` | Yes | No | `YYYY-MM-DD` in current data | Booking start/check-out date. |
+| `expectedReturnAt` | `string` | Yes | No | ISO datetime string | Expected return timestamp used for due-soon and overdue calculations. |
 | `returnedDate` | `string \| null` | Yes | Yes | `YYYY-MM-DD` or `null` | Null while still active. |
 | `duration` | `string` | Yes | No | Human-readable text like `3 days` | Not numeric. |
 | `notes` | `string` | Yes | No | Free text, sometimes empty string | Booking note field. |
@@ -216,7 +222,7 @@ Source:
 | `id` | `string` | Yes | No | Example prefixes `bc-`, `pl-new-` | Playlist identifier. |
 | `name` | `string` | Yes | No | Free text | Playlist name. |
 | `description` | `string` | Yes | No | Free text, may be empty string | Playlist summary. |
-| `status` | `"draft" \| "active"` | Yes | No | Enum | Broadcast readiness state. |
+| `status` | `"draft" \| "published"` | Yes | No | Enum | Published playlists are ready and immediately available. |
 | `createdAt` | `string` | Yes | No | `YYYY-MM-DD` in current data | Date-like string. |
 | `cues` | `Cue[]` | Yes | No | Array | Ordered cue list. |
 
@@ -266,9 +272,12 @@ Source:
 | Field | Type | Required | Nullable | Allowed values / format | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `id` | `string` | Yes | No | UUID-like string in current mock data | Event template identifier. |
+| `kind` | `"template" \| "instance"` | Yes | No | Enum | Templates are reusable; instances are created from templates and then edited independently. |
+| `templateId` | `string \| undefined` | No | App: omitted | References a template event id | Only set on event instances created from a template. |
 | `title` | `string` | Yes | No | Free text | Primary event label and breadcrumb title. |
 | `description` | `string` | Yes | No | Free text, may be empty string | Event context shown in lists. |
 | `duration` | `number` | Yes | No | Minutes | Total timeline duration for the event. |
+| `scheduledAt` | `string \| undefined` | No | App: omitted | ISO datetime string | Optional timestamp for event instances; not used for cross-domain scheduling. |
 | `createdAt` | `string` | Yes | No | ISO datetime string in current data | Creation timestamp. |
 | `updatedAt` | `string` | Yes | No | ISO datetime string in current data | Last update timestamp. |
 
@@ -277,8 +286,11 @@ Source:
 | Field | Type | Required | Nullable | Allowed values / format | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `id` | `string` | Yes | No | UUID-like string in current mock data | Checklist identifier. |
+| `kind` | `"template" \| "instance"` | Yes | No | Enum | Templates are reusable; instances are created from templates and then edited independently. |
+| `templateId` | `string \| undefined` | No | App: omitted | References a checklist template id | Only set on checklist instances created from a template. |
 | `name` | `string` | Yes | No | Free text | Primary checklist label and breadcrumb title. |
 | `description` | `string` | Yes | No | Free text, may be empty string | Checklist context shown in lists and details. |
+| `scheduledAt` | `string \| undefined` | No | App: omitted | ISO datetime string | Optional timestamp for checklist instances. |
 | `items` | `ChecklistItem[]` | Yes | No | Array | Top-level checklist items not assigned to a section. |
 | `sections` | `ChecklistSection[]` | Yes | No | Array | Grouped checklist item sections. |
 | `createdAt` | `string` | Yes | No | ISO datetime string in current data | Creation timestamp. |
@@ -320,6 +332,7 @@ This is separate from broadcast `Cue`.
 | `startMin` | `number` | Yes | No | Minutes from event start | Timeline start offset. |
 | `durationMin` | `number` | Yes | No | Minutes | Cue duration. |
 | `type` | `"performance" \| "technical" \| "equipment" \| "announcement" \| "transition"` | Yes | No | Enum | See `src/types/cue-sheet/timeline.ts`. |
+| `assignee` | `string \| undefined` | No | App: omitted | Free text | Optional person assigned to this specific timeline cue. |
 | `notes` | `string \| undefined` | No | App: omitted | Free text | Optional implementation or operator note. |
 
 ## Relationships
@@ -356,7 +369,7 @@ This is separate from broadcast `Cue`.
 
 | Enum | Values |
 | --- | --- |
-| `PlaylistStatus` | `draft`, `active` |
+| `PlaylistStatus` | `draft`, `published` |
 | `MediaType` | `image`, `audio`, `video`, `slide` |
 
 ### Cue-sheet enums

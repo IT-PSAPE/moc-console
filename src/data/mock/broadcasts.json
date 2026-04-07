@@ -3,7 +3,7 @@
     "id": "bc-001",
     "name": "Sunday Service",
     "description": "Main Sunday morning service playlist with worship, announcements, and sermon.",
-    "status": "active",
+    "status": "published",
     "createdAt": "2026-03-28",
     "cues": [
       { "id": "cue-001", "mediaItemId": "media-008", "mediaItemName": "Welcome Loop Video", "mediaItemType": "video", "order": 1, "durationOverride": null },
@@ -18,7 +18,7 @@
     "id": "bc-002",
     "name": "Easter Sunday Service",
     "description": "Special Easter celebration playlist with extended worship and Easter-themed media.",
-    "status": "active",
+    "status": "published",
     "createdAt": "2026-03-15",
     "cues": [
       { "id": "cue-007", "mediaItemId": "media-007", "mediaItemName": "Countdown Timer - 5 Min", "mediaItemType": "video", "order": 1, "durationOverride": null },
@@ -43,7 +43,7 @@
     "id": "bc-004",
     "name": "Youth Service",
     "description": "Friday youth service playlist with contemporary media.",
-    "status": "active",
+    "status": "published",
     "createdAt": "2026-03-18",
     "cues": [
       { "id": "cue-018", "mediaItemId": "media-007", "mediaItemName": "Countdown Timer - 5 Min", "mediaItemType": "video", "order": 1, "durationOverride": null },

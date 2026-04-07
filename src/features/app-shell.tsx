@@ -81,6 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                     <Sidebar.MenuItem title={"Overview"} active={isActive(routes.cueSheetOverview)} onClick={() => navigateToRoute(routes.cueSheetOverview)} />
                                     <Sidebar.MenuItem title={"Events"} active={isActive(routes.cueSheetEvents)} onClick={() => navigateToRoute(routes.cueSheetEvents)} />
                                     <Sidebar.MenuItem title={"Checklists"} active={isActive(routes.cueSheetChecklists)} onClick={() => navigateToRoute(routes.cueSheetChecklists)} />
+                                    <Sidebar.MenuItem title={"Templates"} active={isActive(routes.cueSheetTemplates)} onClick={() => navigateToRoute(routes.cueSheetTemplates)} />
                                 </Sidebar.MenuItem>
                             </Sidebar.GroupContent>
                         </Sidebar.Group>

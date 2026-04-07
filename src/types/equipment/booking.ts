@@ -6,6 +6,7 @@ export type Booking = {
   equipmentName: string;
   bookedBy: string;
   checkedOutDate: string;
+  expectedReturnAt: string;
   returnedDate: string | null;
   duration: string;
   notes: string;

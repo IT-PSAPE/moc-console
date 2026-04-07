@@ -67,7 +67,7 @@ const colorMap: Record<FeedbackVariant, Record<FeedbackStyle, string>> = {
 
 // ─── Component ──────────────────────────────────────────────────────
 
-type AlertProps = HTMLAttributes<HTMLDivElement> & {
+type AlertProps = Omit<HTMLAttributes<HTMLDivElement>, 'style'> & {
     title: string
     description?: string
     variant?: FeedbackVariant

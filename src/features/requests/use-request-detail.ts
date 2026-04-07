@@ -87,15 +87,16 @@ export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequ
 
     const handleArchiveToggle = useCallback(async () => {
         try {
+            const updatedAt = new Date().toISOString()
             if (request.status === 'archived') {
                 await unarchiveRequest(request.id)
-                syncRequest({ ...request, status: 'not_started' })
+                syncRequest({ ...request, status: 'not_started', updatedAt })
                 toast({ title: 'Request unarchived', variant: 'success' })
                 return
             }
 
             await archiveRequest(request.id)
-            syncRequest({ ...request, status: 'archived' })
+            syncRequest({ ...request, status: 'archived', updatedAt })
             toast({ title: 'Request archived', variant: 'success' })
         } catch {
             toast({ title: 'Failed to update request', variant: 'error' })

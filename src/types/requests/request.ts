@@ -9,7 +9,9 @@ export type Request = {
   status: Status;
   category: Category;
   createdAt: string;
+  updatedAt: string;
   dueDate: string | null;
+  requestedBy: string;
   who: string;
   what: string;
   when: string;

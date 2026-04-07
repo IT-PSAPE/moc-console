@@ -72,12 +72,13 @@ export function useTrackDrag({ tracks, onReorderTracks, disableTouchInteractions
             })
         }
 
-        const newIndex = getTrackIndexFromPointer(e.clientY, pending.startIndex)
+        const maxIndex = Math.max(tracks.length - 1, 0)
+        const newIndex = Math.min(getTrackIndexFromPointer(e.clientY, pending.startIndex), maxIndex)
         if (newIndex === pending.currentIndex) return
 
         pending.currentIndex = newIndex
         setTrackDragState((prev) => prev ? { ...prev, currentIndex: newIndex } : prev)
-    }, [getTrackIndexFromPointer])
+    }, [getTrackIndexFromPointer, tracks.length])
 
     const handleTrackDragEnd = useCallback((e: PointerEvent) => {
         const pending = pendingTrackDragRef.current

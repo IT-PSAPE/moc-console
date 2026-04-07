@@ -78,6 +78,18 @@ export function BookingFilterDrawer({ filters }: BookingFilterDrawerProps) {
                 </div>
                 <Divider className="px-4" />
                 <div className="py-2">
+                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Expected Return</Paragraph.sm>
+                  <div className="grid grid-cols-2 gap-2 px-3">
+                    <Radio name="sort" value="expectedReturnAt-asc" checked={sortValue === "expectedReturnAt-asc"} onChange={() => setSort("expectedReturnAt", "asc")}>
+                      <FormLabel label="Due soon" />
+                    </Radio>
+                    <Radio name="sort" value="expectedReturnAt-desc" checked={sortValue === "expectedReturnAt-desc"} onChange={() => setSort("expectedReturnAt", "desc")}>
+                      <FormLabel label="Due later" />
+                    </Radio>
+                  </div>
+                </div>
+                <Divider className="px-4" />
+                <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Equipment Name</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
                     <Radio name="sort" value="equipmentName-asc" checked={sortValue === "equipmentName-asc"} onChange={() => setSort("equipmentName", "asc")}>

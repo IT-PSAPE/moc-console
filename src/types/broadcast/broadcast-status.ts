@@ -1,1 +1,1 @@
-export type PlaylistStatus = "draft" | "active"
+export type PlaylistStatus = "draft" | "published"

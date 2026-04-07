@@ -123,6 +123,7 @@ export function TimelineCanvas() {
                         {track.cues.map((cue) => {
                             const typeConfig = CUE_TYPE_CONFIG[cue.type]
                             const metaParts = [typeConfig.label, `${cue.durationMin}m`]
+                            if (cue.assignee) metaParts.push(cue.assignee)
                             if (cue.notes) metaParts.push(cue.notes)
                             const metaText = metaParts.join(' \u2022 ')
                             const isFaded = filter !== 'all' && cue.type !== filter

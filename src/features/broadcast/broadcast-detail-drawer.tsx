@@ -5,6 +5,7 @@ import { Dropdown } from "@/components/overlays/dropdown"
 import { Accordion } from "@/components/display/accordion"
 import { Button } from "@/components/controls/button"
 import { Badge } from "@/components/display/badge"
+import { InlineEditableText } from "@/components/form/inline-editable-text"
 import { Label, Paragraph, Title } from "@/components/display/text"
 import { Divider } from "@/components/display/divider"
 import { MetaRow } from "@/components/display/meta-row"
@@ -13,7 +14,7 @@ import { playlistStatusColor, playlistStatusLabel, mediaTypeColor, mediaTypeLabe
 import type { Playlist } from "@/types/broadcast/broadcast"
 import type { PlaylistStatus } from "@/types/broadcast/broadcast-status"
 import { routes } from "@/screens/console-routes"
-import { ChevronDown, MoreHorizontal, Trash2, ToggleLeft, Maximize2, X, Loader, FileText, ListMusic } from "lucide-react"
+import { Check, ChevronDown, MoreHorizontal, Trash2, ToggleLeft, Maximize2, X, Loader, FileText, ListMusic } from "lucide-react"
 
 function formatDuration(seconds: number) {
   const m = Math.floor(seconds / 60)
@@ -61,7 +62,12 @@ export function PlaylistDetailDrawer({ playlist, open, onOpenChange, onSave, onD
     navigate(`/${routes.broadcastPlaylistDetail.replace(":id", playlist!.id)}`)
   }
 
-  const toggleStatus: PlaylistStatus = playlist.status === "active" ? "draft" : "active"
+  const toggleStatus: PlaylistStatus = playlist.status === "published" ? "draft" : "published"
+  const allStatuses: PlaylistStatus[] = ["draft", "published"]
+
+  function handleNameSave(nextName: string) {
+    onSave({ ...playlist!, name: nextName, description })
+  }
 
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
@@ -102,21 +108,28 @@ export function PlaylistDetailDrawer({ playlist, open, onOpenChange, onSave, onD
 
           <Drawer.Content className="py-4">
             <div className="px-4 pb-4">
-              <Title.h6>{name || "Untitled"}</Title.h6>
+              <Title.h6>
+                <InlineEditableText value={name || playlist.name} onSave={handleNameSave} placeholder="Untitled" />
+              </Title.h6>
             </div>
 
             <div className="px-4 space-y-3">
               <MetaRow icon={<Loader />} label="Status">
-                <Badge label={playlistStatusLabel[playlist.status]} color={playlistStatusColor[playlist.status]} />
-              </MetaRow>
-
-              <MetaRow icon={<FileText />} label="Name">
-                <input
-                  className="all-unset w-full text-xs text-primary placeholder:text-quaternary"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Playlist name"
-                />
+                <Dropdown.Root placement="bottom">
+                  <Dropdown.Trigger>
+                    <Badge label={playlistStatusLabel[playlist.status]} color={playlistStatusColor[playlist.status]} className="cursor-pointer" />
+                  </Dropdown.Trigger>
+                  <Dropdown.Panel>
+                    {allStatuses.map((status) => (
+                      <Dropdown.Item key={status} onSelect={() => onStatusChange?.(playlist.id, status)}>
+                        <span className="size-4 shrink-0 flex items-center justify-center">
+                          {status === playlist.status && <Check className="size-3.5 text-brand_secondary" />}
+                        </span>
+                        {playlistStatusLabel[status]}
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Panel>
+                </Dropdown.Root>
               </MetaRow>
 
               <MetaRow icon={<FileText />} label="Description">

@@ -5,6 +5,7 @@ import mockTracks from './mock/cue-sheet-tracks.json'
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * ms))
 type StoredCueSheetEvent = Omit<CueSheetEvent, 'kind'> & { kind?: CueSheetEvent['kind'] }
+type StoredChecklist = Omit<Checklist, 'kind'> & { kind?: Checklist['kind'] }
 
 export async function fetchCueSheetEvents(): Promise<CueSheetEvent[]> {
     await delay(200)
@@ -19,12 +20,13 @@ export async function fetchCueSheetEventById(id: string): Promise<CueSheetEvent 
 
 export async function fetchCueSheetChecklists(): Promise<Checklist[]> {
     await delay(200)
-    return mockChecklists as Checklist[]
+    return (mockChecklists as StoredChecklist[]).map((checklist) => ({ ...checklist, kind: checklist.kind ?? 'template' }))
 }
 
 export async function fetchCueSheetChecklistById(id: string): Promise<Checklist | undefined> {
     await delay(100)
-    return (mockChecklists as Checklist[]).find((checklist) => checklist.id === id)
+    const checklist = (mockChecklists as StoredChecklist[]).find((item) => item.id === id)
+    return checklist ? { ...checklist, kind: checklist.kind ?? 'template' } : undefined
 }
 
 export async function fetchCueSheetTracks(): Promise<Record<string, Track[]>> {
