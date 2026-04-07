@@ -19,6 +19,8 @@ export const routes = {
     broadcastPlaylists: 'broadcast/playlists',
     broadcastPlaylistDetail: 'broadcast/playlists/:id',
     cueSheetOverview: 'cue-sheet',
-    cueSheetEvent: 'cue-sheet/event',
-    cueSheetChecklist: 'cue-sheet/checklist',
+    cueSheetEvents: 'cue-sheet/events',
+    cueSheetEventDetail: 'cue-sheet/events/:id',
+    cueSheetChecklists: 'cue-sheet/checklists',
+    cueSheetChecklistDetail: 'cue-sheet/checklist/:id',
 } as const

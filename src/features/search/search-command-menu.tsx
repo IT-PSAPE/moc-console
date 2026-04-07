@@ -27,8 +27,8 @@ const searchablePages = [
     { group: 'Broadcast', label: 'Media', route: routes.broadcastMedia, icon: <Cast className="size-4" /> },
     { group: 'Broadcast', label: 'Playlists', route: routes.broadcastPlaylists, icon: <Cast className="size-4" /> },
     { group: 'Cue Sheet', label: 'Cue Sheet Overview', route: routes.cueSheetOverview, icon: <Drama className="size-4" /> },
-    { group: 'Cue Sheet', label: 'Checklist', route: routes.cueSheetChecklist, icon: <Drama className="size-4" /> },
-    { group: 'Cue Sheet', label: 'Event', route: routes.cueSheetEvent, icon: <Drama className="size-4" /> },
+    { group: 'Cue Sheet', label: 'Checklists', route: routes.cueSheetChecklists, icon: <Drama className="size-4" /> },
+    { group: 'Cue Sheet', label: 'Events', route: routes.cueSheetEvents, icon: <Drama className="size-4" /> },
 ] as const
 
 export function SearchCommandMenuContent() {

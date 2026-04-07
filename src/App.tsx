@@ -8,6 +8,7 @@ import { BroadcastOverviewScreen } from '@/screens/broadcast/page'
 import { PlaylistScreen } from '@/screens/broadcast/playlist/page'
 import { PlaylistDetailScreen } from '@/screens/broadcast/detail/page'
 import { CueSheetEventScreen } from '@/screens/cue-sheet/events/page'
+import { CueSheetEventDetailScreen } from '@/screens/cue-sheet/events/detail/page'
 import { CueSheetOverviewScreen } from '@/screens/cue-sheet/page'
 import { DashboardScreen } from '@/screens/dashboard/page'
 import { EquipmentBookingsScreen } from '@/screens/equipment/booking/page'
@@ -25,6 +26,8 @@ import { RequestsProvider } from '@/features/requests/request-provider'
 import { EquipmentProvider } from '@/features/equipment/equipment-provider'
 import { BroadcastProvider } from '@/features/broadcast/broadcast-provider'
 import { CueSheetChecklistScreen } from './screens/cue-sheet/checklist/page'
+import { CueSheetChecklistDetailScreen } from './screens/cue-sheet/checklist/detail/page'
+import { CueSheetProvider } from './features/cue-sheet/cue-sheet-provider'
 import { BreadcrumbProvider } from './components/navigation/breadcrumb'
 import { SidebarProvider } from './components/navigation/sidebar'
 import { TopBarProvider } from './features/topbar'
@@ -120,9 +123,16 @@ const router = createBrowserRouter([
                     { path: routes.broadcastPlaylistDetail, element: <PlaylistDetailScreen /> },
                 ],
             },
-            { path: routes.cueSheetOverview, element: <CueSheetOverviewScreen /> },
-            { path: routes.cueSheetEvent, element: <CueSheetEventScreen /> },
-            { path: routes.cueSheetChecklist, element: <CueSheetChecklistScreen /> },
+            {
+                element: <CueSheetProvider><Outlet /></CueSheetProvider>,
+                children: [
+                    { path: routes.cueSheetOverview, element: <CueSheetOverviewScreen /> },
+                    { path: routes.cueSheetEvents, element: <CueSheetEventScreen /> },
+                    { path: routes.cueSheetEventDetail, element: <CueSheetEventDetailScreen /> },
+                    { path: routes.cueSheetChecklists, element: <CueSheetChecklistScreen /> },
+                    { path: routes.cueSheetChecklistDetail, element: <CueSheetChecklistDetailScreen /> },
+                ],
+            },
         ],
     },
     { path: '*', element: <Navigate to={`/${routes.login}`} replace /> },
