@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import type { Track, Cue } from '@/types/cue-sheet'
 import type { CueModalState, CueFilter } from './timeline-types'
 import { useTimelineZoom } from './use-timeline-zoom'
@@ -107,7 +107,10 @@ export function TimelineProvider({ children, tracks, totalMinutes, onChange }: T
 
     // ── Track/cue mutation helpers ─────────────────────────────────
     const onChangeRef = useRef(onChange)
-    onChangeRef.current = onChange
+
+    useEffect(() => {
+        onChangeRef.current = onChange
+    }, [onChange])
 
     const updateTracks = useCallback((updater: (prev: Track[]) => Track[]) => {
         const next = updater(tracks)
@@ -167,7 +170,10 @@ export function TimelineProvider({ children, tracks, totalMinutes, onChange }: T
     // ── Hooks ──────────────────────────────────────────────────────
     const zoom = useTimelineZoom({ totalMinutes, timelineContainer: timelineContainerEl, currentTimeMinutesRef, onPinchStateChange: setIsPinchGestureActive })
     const playback = useTimelinePlayback({ totalMinutes, pixelsPerMinute: zoom.pixelsPerMinute, timelineContainerRef, isDraggingPlayheadRef })
-    currentTimeMinutesRef.current = playback.currentTimeMinutes
+
+    useEffect(() => {
+        currentTimeMinutesRef.current = playback.currentTimeMinutes
+    }, [playback.currentTimeMinutes])
 
     const playheadDrag = usePlayheadDrag({ pixelsPerMinute: zoom.pixelsPerMinute, totalMinutes, timelineContainerRef, setCurrentTimeMinutes: playback.setCurrentTimeMinutes, isDraggingPlayheadRef, disableTouchInteractions: isPinchGestureActive })
 

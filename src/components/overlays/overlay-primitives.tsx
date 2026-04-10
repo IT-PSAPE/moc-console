@@ -1,6 +1,6 @@
 import { cn } from '@/utils/cn'
 import { createPortal } from 'react-dom'
-import { useEffect, useCallback, useRef, useState, type HTMLAttributes, type MouseEvent, type ReactNode, type RefObject } from 'react'
+import { useEffect, useCallback, useRef, useState, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react'
 import { useOverlayStack } from './overlay-provider'
 
 // ─── Portal ──────────────────────────────────────────────────────────
@@ -149,8 +149,8 @@ type AnchorPosition = {
 }
 
 export function useAnchorPosition(
-    triggerRef: RefObject<HTMLElement | null>,
-    panelRef: RefObject<HTMLElement | null>,
+    triggerElement: HTMLElement | null,
+    panelElement: HTMLElement | null,
     isOpen: boolean,
     preferredPlacement: Placement = 'bottom',
     offset: number = 4,
@@ -158,15 +158,12 @@ export function useAnchorPosition(
     const [position, setPosition] = useState<AnchorPosition>({ top: 0, left: 0, placement: preferredPlacement })
 
     const calculate = useCallback(() => {
-        const trigger = triggerRef.current
-        const panel = panelRef.current
-
-        if (!trigger || !panel) {
+        if (!triggerElement || !panelElement) {
             return
         }
 
-        const triggerRect = trigger.getBoundingClientRect()
-        const panelRect = panel.getBoundingClientRect()
+        const triggerRect = triggerElement.getBoundingClientRect()
+        const panelRect = panelElement.getBoundingClientRect()
         const viewport = { width: window.innerWidth, height: window.innerHeight }
 
         let placement = preferredPlacement
@@ -213,19 +210,20 @@ export function useAnchorPosition(
         top = Math.max(4, Math.min(top, viewport.height - panelRect.height - 4))
 
         setPosition({ top, left, placement })
-    }, [triggerRef, panelRef, preferredPlacement, offset])
+    }, [offset, panelElement, preferredPlacement, triggerElement])
 
     useEffect(() => {
         if (!isOpen) {
             return
         }
 
-        calculate()
+        const frameId = window.requestAnimationFrame(calculate)
 
         window.addEventListener('resize', calculate)
         window.addEventListener('scroll', calculate, true)
 
         return () => {
+            window.cancelAnimationFrame(frameId)
             window.removeEventListener('resize', calculate)
             window.removeEventListener('scroll', calculate, true)
         }
@@ -234,9 +232,12 @@ export function useAnchorPosition(
     return position
 }
 
-export function useClickOutside(refs: RefObject<HTMLElement | null>[], isActive: boolean, handler: () => void) {
+export function useClickOutside(elements: Array<HTMLElement | null>, isActive: boolean, handler: () => void) {
     const handlerRef = useRef(handler)
-    handlerRef.current = handler
+
+    useEffect(() => {
+        handlerRef.current = handler
+    }, [handler])
 
     useEffect(() => {
         if (!isActive) {
@@ -246,8 +247,8 @@ export function useClickOutside(refs: RefObject<HTMLElement | null>[], isActive:
         function handlePointerDown(event: PointerEvent) {
             const target = event.target as Node
 
-            const isOutside = refs.every(ref => {
-                return !ref.current || !ref.current.contains(target)
+            const isOutside = elements.every((element) => {
+                return !element || !element.contains(target)
             })
 
             if (isOutside) {
@@ -260,5 +261,5 @@ export function useClickOutside(refs: RefObject<HTMLElement | null>[], isActive:
         return () => {
             document.removeEventListener('pointerdown', handlePointerDown)
         }
-    }, [isActive, refs])
+    }, [elements, isActive])
 }

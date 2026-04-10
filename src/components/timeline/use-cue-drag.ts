@@ -83,7 +83,14 @@ export function useCueDrag({ tracks, totalMinutes, pixelsPerMinute, trackRowsRef
 
     useEffect(() => {
         if (!disableTouchInteractions) return
-        setDragState(null)
+
+        const frameId = window.requestAnimationFrame(() => {
+            setDragState(null)
+        })
+
+        return () => {
+            window.cancelAnimationFrame(frameId)
+        }
     }, [disableTouchInteractions])
 
     useEffect(() => {

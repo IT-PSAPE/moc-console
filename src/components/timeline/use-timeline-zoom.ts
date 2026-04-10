@@ -111,9 +111,11 @@ export function useTimelineZoom({ totalMinutes, timelineContainer, currentTimeMi
     // Pinch-to-zoom
     useEffect(() => {
         if (!timelineContainer) return
+        const container = timelineContainer
+        const activeTouchPoints = activeTouchPointsRef.current
 
         const getDistance = () => {
-            const points = Array.from(activeTouchPointsRef.current.values())
+            const points = Array.from(activeTouchPoints.values())
             if (points.length < 2) return null
             const [first, second] = points
             return Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY)
@@ -126,8 +128,8 @@ export function useTimelineZoom({ totalMinutes, timelineContainer, currentTimeMi
 
         const handlePointerDown = (event: PointerEvent) => {
             if (event.pointerType !== 'touch') return
-            activeTouchPointsRef.current.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY })
-            if (activeTouchPointsRef.current.size === 2) {
+            activeTouchPoints.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY })
+            if (activeTouchPoints.size === 2) {
                 pinchLastDistanceRef.current = getDistance()
                 onPinchStateChange?.(true)
             }
@@ -135,9 +137,9 @@ export function useTimelineZoom({ totalMinutes, timelineContainer, currentTimeMi
 
         const handlePointerMove = (event: PointerEvent) => {
             if (event.pointerType !== 'touch') return
-            if (!activeTouchPointsRef.current.has(event.pointerId)) return
-            activeTouchPointsRef.current.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY })
-            if (activeTouchPointsRef.current.size < 2) return
+            if (!activeTouchPoints.has(event.pointerId)) return
+            activeTouchPoints.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY })
+            if (activeTouchPoints.size < 2) return
             const previousDistance = pinchLastDistanceRef.current
             const currentDistance = getDistance()
             if (!previousDistance || !currentDistance) return
@@ -151,31 +153,36 @@ export function useTimelineZoom({ totalMinutes, timelineContainer, currentTimeMi
 
         const handlePointerUpOrCancel = (event: PointerEvent) => {
             if (event.pointerType !== 'touch') return
-            activeTouchPointsRef.current.delete(event.pointerId)
-            if (activeTouchPointsRef.current.size < 2) {
+            activeTouchPoints.delete(event.pointerId)
+            if (activeTouchPoints.size < 2) {
                 resetPinch()
             } else {
                 pinchLastDistanceRef.current = getDistance()
             }
         }
 
-        const previousTouchAction = timelineContainer.style.touchAction
-        timelineContainer.style.touchAction = 'pan-x pan-y'
+        const touchStyle = container.style
+        const previousTouchAction = touchStyle.touchAction
+        touchStyle.setProperty('touch-action', 'pan-x pan-y')
 
-        timelineContainer.addEventListener('pointerdown', handlePointerDown)
-        timelineContainer.addEventListener('pointermove', handlePointerMove, { passive: false })
-        timelineContainer.addEventListener('pointerup', handlePointerUpOrCancel)
-        timelineContainer.addEventListener('pointercancel', handlePointerUpOrCancel)
-        timelineContainer.addEventListener('pointerleave', handlePointerUpOrCancel)
+        container.addEventListener('pointerdown', handlePointerDown)
+        container.addEventListener('pointermove', handlePointerMove, { passive: false })
+        container.addEventListener('pointerup', handlePointerUpOrCancel)
+        container.addEventListener('pointercancel', handlePointerUpOrCancel)
+        container.addEventListener('pointerleave', handlePointerUpOrCancel)
 
         return () => {
-            timelineContainer.style.touchAction = previousTouchAction
-            timelineContainer.removeEventListener('pointerdown', handlePointerDown)
-            timelineContainer.removeEventListener('pointermove', handlePointerMove)
-            timelineContainer.removeEventListener('pointerup', handlePointerUpOrCancel)
-            timelineContainer.removeEventListener('pointercancel', handlePointerUpOrCancel)
-            timelineContainer.removeEventListener('pointerleave', handlePointerUpOrCancel)
-            activeTouchPointsRef.current.clear()
+            if (previousTouchAction) {
+                touchStyle.setProperty('touch-action', previousTouchAction)
+            } else {
+                touchStyle.removeProperty('touch-action')
+            }
+            container.removeEventListener('pointerdown', handlePointerDown)
+            container.removeEventListener('pointermove', handlePointerMove)
+            container.removeEventListener('pointerup', handlePointerUpOrCancel)
+            container.removeEventListener('pointercancel', handlePointerUpOrCancel)
+            container.removeEventListener('pointerleave', handlePointerUpOrCancel)
+            activeTouchPoints.clear()
             resetPinch()
         }
     }, [onPinchStateChange, setZoomAnchoredToPlayhead, timelineContainer])

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Drawer } from "@/components/overlays/drawer"
 import { Dropdown } from "@/components/overlays/dropdown"
@@ -34,17 +34,33 @@ type PlaylistDetailDrawerProps = {
 export function PlaylistDetailDrawer({ playlist, open, onOpenChange, onSave, onDelete, onStatusChange }: PlaylistDetailDrawerProps) {
   const navigate = useNavigate()
   const { state: { media } } = useBroadcast()
-  const [name, setName] = useState("")
-  const [description, setDescription] = useState("")
-
-  useEffect(() => {
-    if (playlist) {
-      setName(playlist.name)
-      setDescription(playlist.description)
-    }
-  }, [playlist])
 
   if (!playlist) return null
+
+  return (
+    <PlaylistDetailDrawerContent
+      key={playlist.id}
+      media={media}
+      navigate={navigate}
+      onDelete={onDelete}
+      onOpenChange={onOpenChange}
+      onSave={onSave}
+      onStatusChange={onStatusChange}
+      open={open}
+      playlist={playlist}
+    />
+  )
+}
+
+type PlaylistDetailDrawerContentProps = PlaylistDetailDrawerProps & {
+  media: ReturnType<typeof useBroadcast>["state"]["media"]
+  navigate: ReturnType<typeof useNavigate>
+  playlist: Playlist
+}
+
+function PlaylistDetailDrawerContent({ media, navigate, onDelete, onOpenChange, onSave, onStatusChange, open, playlist }: PlaylistDetailDrawerContentProps) {
+  const [name, setName] = useState(playlist.name)
+  const [description, setDescription] = useState(playlist.description)
 
   const isDirty = name !== playlist.name || description !== playlist.description
 
@@ -53,20 +69,20 @@ export function PlaylistDetailDrawer({ playlist, open, onOpenChange, onSave, onD
   }
 
   function handleSave() {
-    onSave({ ...playlist!, name, description })
+    onSave({ ...playlist, name, description })
     onOpenChange(false)
   }
 
   function handleOpenFullPage() {
     onOpenChange(false)
-    navigate(`/${routes.broadcastPlaylistDetail.replace(":id", playlist!.id)}`)
+    navigate(`/${routes.broadcastPlaylistDetail.replace(":id", playlist.id)}`)
   }
 
   const toggleStatus: PlaylistStatus = playlist.status === "published" ? "draft" : "published"
   const allStatuses: PlaylistStatus[] = ["draft", "published"]
 
   function handleNameSave(nextName: string) {
-    onSave({ ...playlist!, name: nextName, description })
+    onSave({ ...playlist, name: nextName, description })
   }
 
   return (

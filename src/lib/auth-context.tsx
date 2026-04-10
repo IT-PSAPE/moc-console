@@ -29,23 +29,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session)
             setUser(session?.user ?? null)
+            if (!session?.user) {
+                setProfile(null)
+                setRole(null)
+            }
             setLoading(false)
         })
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session)
             setUser(session?.user ?? null)
+            if (!session?.user) {
+                setProfile(null)
+                setRole(null)
+            }
         })
 
         return () => subscription.unsubscribe()
     }, [])
 
     useEffect(() => {
-        if (!user) {
-            setProfile(null)
-            setRole(null)
-            return
-        }
+        if (!user) return
+
+        let isActive = true
 
         supabase
             .from("users")
@@ -53,7 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .eq("id", user.id)
             .single()
             .then(({ data }) => {
-                setProfile(data as Profile | null)
+                if (isActive) {
+                    setProfile(data as Profile | null)
+                }
             })
 
         supabase
@@ -63,8 +71,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .single()
             .then(({ data }) => {
                 const userRole = Array.isArray(data?.roles) ? data.roles[0] : data?.roles
-                setRole((userRole as Role | null) ?? null)
+                if (isActive) {
+                    setRole((userRole as Role | null) ?? null)
+                }
             })
+
+        return () => {
+            isActive = false
+        }
     }, [user])
 
     async function signUp(email: string, password: string) {

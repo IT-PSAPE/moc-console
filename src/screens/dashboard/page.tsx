@@ -11,7 +11,7 @@ import { useRequests } from '@/features/requests/request-provider'
 import { useEquipment } from '@/features/equipment/equipment-provider'
 import { useBroadcast } from '@/features/broadcast/broadcast-provider'
 import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { routes } from '@/screens/console-routes'
 import {
@@ -44,41 +44,63 @@ export function DashboardScreen() {
 
     const isLoading = isLoadingActive || isLoadingEquipment || isLoadingBookings || isLoadingMedia || isLoadingPlaylists || isLoadingEvents || isLoadingChecklists
     const hasData = activeRequests.length > 0 || equipment.length > 0 || media.length > 0 || events.length > 0
+    const [now, setNow] = useState<number | null>(null)
+
+    useEffect(() => {
+        const frameId = window.requestAnimationFrame(() => {
+            setNow(Date.now())
+        })
+
+        return () => {
+            window.cancelAnimationFrame(frameId)
+        }
+    }, [])
 
     // Request stats
-    const now = new Date()
     const overdueRequests = useMemo(() => (
-        activeRequests
-            .filter((r) => r.status !== 'archived' && r.status !== 'completed' && r.dueDate && new Date(r.dueDate) < now)
-            .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
-            .slice(0, 5)
-    ), [activeRequests])
+        (() => {
+            if (now === null) return []
+            return activeRequests
+                .filter((r) => r.status !== 'archived' && r.status !== 'completed' && r.dueDate && new Date(r.dueDate).getTime() < now)
+                .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
+                .slice(0, 5)
+        })()
+    ), [activeRequests, now])
 
     const upcomingRequests = useMemo(() => (
-        activeRequests
-            .filter((r) => r.status !== 'archived' && r.status !== 'completed' && r.dueDate && new Date(r.dueDate) >= now)
-            .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
-            .slice(0, 5)
-    ), [activeRequests])
+        (() => {
+            if (now === null) return []
+            return activeRequests
+                .filter((r) => r.status !== 'archived' && r.status !== 'completed' && r.dueDate && new Date(r.dueDate).getTime() >= now)
+                .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
+                .slice(0, 5)
+        })()
+    ), [activeRequests, now])
 
     const activeRequestCount = activeRequests.filter((r) => r.status === 'in_progress' || r.status === 'not_started').length
 
     // Equipment stats
     const overdueBookings = useMemo(() => (
-        bookings
-            .filter((b) => b.status !== 'returned' && !b.returnedDate && new Date(b.expectedReturnAt) < now)
-            .length
-    ), [bookings])
+        (() => {
+            if (now === null) return 0
+            return bookings
+                .filter((b) => b.status !== 'returned' && !b.returnedDate && new Date(b.expectedReturnAt).getTime() < now)
+                .length
+        })()
+    ), [bookings, now])
 
     const maintenanceCount = equipment.filter((e) => e.status === 'maintenance').length
 
     // Cue sheet stats
     const upcomingEvents = useMemo(() => (
-        events
-            .filter((e) => e.kind === 'instance' && e.scheduledAt && new Date(e.scheduledAt) >= now)
-            .sort((a, b) => new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime())
-            .slice(0, 5)
-    ), [events])
+        (() => {
+            if (now === null) return []
+            return events
+                .filter((e) => e.kind === 'instance' && e.scheduledAt && new Date(e.scheduledAt).getTime() >= now)
+                .sort((a, b) => new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime())
+                .slice(0, 5)
+        })()
+    ), [events, now])
 
     const pendingChecklists = useMemo(() => (
         checklists

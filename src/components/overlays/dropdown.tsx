@@ -1,5 +1,5 @@
 import { cn } from '@/utils/cn'
-import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type HTMLAttributes, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useId, useMemo, useState, type HTMLAttributes, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import { useAnchorPosition, useClickOutside, type Placement } from './overlay-primitives'
 import { useOverlayStack } from './overlay-provider'
 
@@ -18,11 +18,13 @@ type DropdownContextValue = {
         toggle: () => void
         setActiveIndex: (index: number) => void
         registerItem: (id: string) => void
+        setPanelElement: (node: HTMLDivElement | null) => void
+        setTriggerElement: (node: HTMLSpanElement | null) => void
         unregisterItem: (id: string) => void
     }
-    refs: {
-        triggerRef: React.RefObject<HTMLSpanElement | null>
-        panelRef: React.RefObject<HTMLDivElement | null>
+    elements: {
+        triggerElement: HTMLSpanElement | null
+        panelElement: HTMLDivElement | null
     }
     meta: {
         itemIds: string[]
@@ -57,8 +59,8 @@ function DropdownRoot({ children, closeOnEscape = true, defaultOpen = false, onO
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
     const [activeIndex, setActiveIndex] = useState(-1)
     const [itemIds, setItemIds] = useState<string[]>([])
-    const triggerRef = useRef<HTMLSpanElement | null>(null)
-    const panelRef = useRef<HTMLDivElement | null>(null)
+    const [triggerElement, setTriggerElementState] = useState<HTMLSpanElement | null>(null)
+    const [panelElement, setPanelElementState] = useState<HTMLDivElement | null>(null)
 
     const isOpen = isControlled ? open : uncontrolledOpen
 
@@ -94,6 +96,14 @@ function DropdownRoot({ children, closeOnEscape = true, defaultOpen = false, onO
         setItemIds(prev => prev.includes(id) ? prev : [...prev, id])
     }, [])
 
+    const setTriggerElement = useCallback((node: HTMLSpanElement | null) => {
+        setTriggerElementState(node)
+    }, [])
+
+    const setPanelElement = useCallback((node: HTMLDivElement | null) => {
+        setPanelElementState(node)
+    }, [])
+
     const unregisterItem = useCallback((id: string) => {
         setItemIds(prev => {
             const next = prev.filter(itemId => itemId !== id)
@@ -102,7 +112,7 @@ function DropdownRoot({ children, closeOnEscape = true, defaultOpen = false, onO
     }, [])
 
     // Click outside to close
-    useClickOutside([triggerRef, panelRef], isOpen, closeDropdown)
+    useClickOutside([triggerElement, panelElement], isOpen, closeDropdown)
 
     // Escape key
     useEffect(() => {
@@ -117,7 +127,7 @@ function DropdownRoot({ children, closeOnEscape = true, defaultOpen = false, onO
 
             event.preventDefault()
             closeDropdown()
-            triggerRef.current?.focus()
+            triggerElement?.focus()
         }
 
         document.addEventListener('keydown', handleDocumentKeyDown)
@@ -125,7 +135,7 @@ function DropdownRoot({ children, closeOnEscape = true, defaultOpen = false, onO
         return () => {
             document.removeEventListener('keydown', handleDocumentKeyDown)
         }
-    }, [closeDropdown, closeOnEscape, isOpen])
+    }, [closeDropdown, closeOnEscape, isOpen, triggerElement])
 
     const state = useMemo<DropdownContextValue['state']>(() => ({
         isOpen,
@@ -140,13 +150,15 @@ function DropdownRoot({ children, closeOnEscape = true, defaultOpen = false, onO
         toggle,
         setActiveIndex,
         registerItem,
+        setPanelElement,
+        setTriggerElement,
         unregisterItem,
-    }), [closeDropdown, openDropdown, registerItem, toggle, unregisterItem])
+    }), [closeDropdown, openDropdown, registerItem, setPanelElement, setTriggerElement, toggle, unregisterItem])
 
-    const refs = useMemo<DropdownContextValue['refs']>(() => ({
-        triggerRef,
-        panelRef,
-    }), [])
+    const elements = useMemo<DropdownContextValue['elements']>(() => ({
+        triggerElement,
+        panelElement,
+    }), [panelElement, triggerElement])
 
     const meta = useMemo<DropdownContextValue['meta']>(() => ({
         itemIds,
@@ -155,9 +167,9 @@ function DropdownRoot({ children, closeOnEscape = true, defaultOpen = false, onO
     const value = useMemo<DropdownContextValue>(() => ({
         state,
         actions,
-        refs,
+        elements,
         meta,
-    }), [actions, meta, refs, state])
+    }), [actions, elements, meta, state])
 
     return (
         <DropdownContext.Provider value={value}>
@@ -169,7 +181,10 @@ function DropdownRoot({ children, closeOnEscape = true, defaultOpen = false, onO
 // ─── Trigger ─────────────────────────────────────────────────────────
 
 function DropdownTrigger({ children, onClick, ...props }: HTMLAttributes<HTMLSpanElement>) {
-    const { state, actions, refs } = useDropdown()
+    const { state, actions } = useDropdown()
+    const handleTriggerRef = useCallback((node: HTMLSpanElement | null) => {
+        actions.setTriggerElement(node)
+    }, [actions])
 
     function handleClick(event: MouseEvent<HTMLSpanElement>) {
         onClick?.(event)
@@ -195,7 +210,7 @@ function DropdownTrigger({ children, onClick, ...props }: HTMLAttributes<HTMLSpa
 
     return (
         <span
-            ref={refs.triggerRef}
+            ref={handleTriggerRef}
             aria-expanded={state.isOpen}
             aria-haspopup="menu"
             onClick={handleClick}
@@ -212,8 +227,11 @@ function DropdownTrigger({ children, onClick, ...props }: HTMLAttributes<HTMLSpa
 // ─── Panel ───────────────────────────────────────────────────────────
 
 function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    const { state, actions, refs, meta } = useDropdown()
-    const position = useAnchorPosition(refs.triggerRef, refs.panelRef, state.isOpen, state.placement)
+    const { state, actions, elements, meta } = useDropdown()
+    const position = useAnchorPosition(elements.triggerElement, elements.panelElement, state.isOpen, state.placement)
+    const handlePanelRef = useCallback((node: HTMLDivElement | null) => {
+        actions.setPanelElement(node)
+    }, [actions])
 
     if (!state.isOpen) {
         return null
@@ -237,7 +255,7 @@ function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDiv
 
     return (
         <div
-            ref={refs.panelRef}
+            ref={handlePanelRef}
             className={cn(
                 'fixed z-50 flex min-w-48 flex-col overflow-hidden rounded-md border border-secondary bg-primary p-1 shadow-lg',
                 className,

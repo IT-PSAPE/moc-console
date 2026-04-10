@@ -13,7 +13,7 @@ import type { Equipment } from "@/types/equipment"
 import type { MediaItem, Playlist } from "@/types/broadcast"
 import type { CueSheetEvent, Checklist } from "@/types/cue-sheet"
 import { Cast, Calendar, ClipboardList, Drama, FileText, LayoutGrid, ListMusic, Package, Film, Search } from "lucide-react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 export function SearchMenuItem() {
@@ -155,21 +155,23 @@ export function SearchCommandMenuContent() {
     }
 
     // Filter items — only show when there's a query
-    const filteredItems = useMemo(() => {
-        if (!query) return []
-        return items
+    const filteredItems = query
+        ? items
             .filter(item => item.label.toLowerCase().includes(query) || item.description.toLowerCase().includes(query))
             .slice(0, 10)
-    }, [items, query])
+        : []
 
-    const itemGroups = useMemo(() => {
-        const groups: Record<string, SearchableItem[]> = {}
-        for (const item of filteredItems) {
-            if (!groups[item.group]) groups[item.group] = []
-            groups[item.group].push(item)
+    const itemGroups: Array<[string, SearchableItem[]]> = []
+    const itemGroupMap: Record<string, SearchableItem[]> = {}
+
+    for (const item of filteredItems) {
+        if (!itemGroupMap[item.group]) {
+            itemGroupMap[item.group] = []
+            itemGroups.push([item.group, itemGroupMap[item.group]])
         }
-        return Object.entries(groups)
-    }, [filteredItems])
+
+        itemGroupMap[item.group].push(item)
+    }
 
     const hasResults = filteredPages.length > 0 || filteredItems.length > 0
 
