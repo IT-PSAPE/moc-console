@@ -1,4 +1,5 @@
 import { cn } from '@/utils/cn'
+import { createPortal } from 'react-dom'
 import { createContext, useCallback, useContext, useEffect, useId, useMemo, useState, type HTMLAttributes, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import { useAnchorPosition, useClickOutside, type Placement } from './overlay-primitives'
 import { useOverlayStack } from './overlay-provider'
@@ -228,6 +229,7 @@ function DropdownTrigger({ children, onClick, ...props }: HTMLAttributes<HTMLSpa
 
 function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     const { state, actions, elements, meta } = useDropdown()
+    const { state: overlayState } = useOverlayStack()
     const position = useAnchorPosition(elements.triggerElement, elements.panelElement, state.isOpen, state.placement)
     const handlePanelRef = useCallback((node: HTMLDivElement | null) => {
         actions.setPanelElement(node)
@@ -253,11 +255,11 @@ function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDiv
         }
     }
 
-    return (
+    const panel = (
         <div
             ref={handlePanelRef}
             className={cn(
-                'fixed z-50 flex min-w-48 flex-col overflow-hidden rounded-md border border-secondary bg-primary p-1 shadow-lg',
+                'pointer-events-auto fixed z-50 flex min-w-48 flex-col overflow-hidden rounded-md border border-secondary bg-primary p-1 shadow-lg',
                 className,
             )}
             onKeyDown={handleKeyDown}
@@ -269,6 +271,12 @@ function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDiv
             {children}
         </div>
     )
+
+    if (!overlayState.rootElement) {
+        return panel
+    }
+
+    return createPortal(panel, overlayState.rootElement)
 }
 
 // ─── Item ────────────────────────────────────────────────────────────

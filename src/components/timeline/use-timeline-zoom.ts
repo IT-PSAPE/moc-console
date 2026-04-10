@@ -20,12 +20,18 @@ export function useTimelineZoom({ totalMinutes, timelineContainer, currentTimeMi
     const pixelsPerMinute = BASE_PIXELS_PER_MINUTE * effectiveZoom
 
     const fitZoomRef = useRef(fitZoom)
-    fitZoomRef.current = fitZoom
     const maxZoomRef = useRef(maxZoom)
-    maxZoomRef.current = maxZoom
     const currentZoomRef = useRef(clampedZoom)
     const pinchLastDistanceRef = useRef<number | null>(null)
     const activeTouchPointsRef = useRef<Map<number, { clientX: number; clientY: number }>>(new Map())
+
+    useEffect(() => {
+        fitZoomRef.current = fitZoom
+    }, [fitZoom])
+
+    useEffect(() => {
+        maxZoomRef.current = maxZoom
+    }, [maxZoom])
 
     useEffect(() => {
         currentZoomRef.current = clampedZoom
@@ -40,8 +46,13 @@ export function useTimelineZoom({ totalMinutes, timelineContainer, currentTimeMi
             }
         })
         observer.observe(timelineContainer)
-        setContainerWidth(timelineContainer.clientWidth)
-        return () => observer.disconnect()
+        const frameId = window.requestAnimationFrame(() => {
+            setContainerWidth(timelineContainer.clientWidth)
+        })
+        return () => {
+            window.cancelAnimationFrame(frameId)
+            observer.disconnect()
+        }
     }, [timelineContainer])
 
     const updateZoomAnchoredToPlayhead = useCallback((direction: 'in' | 'out') => {

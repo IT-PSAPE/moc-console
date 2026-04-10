@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { routes } from '@/screens/console-routes'
 import { Sidebar } from '../components/navigation/sidebar'
 import { Breadcrumb } from '../components/navigation/breadcrumb'
-import { Cast, Drama, FileText, LayoutGrid, Package } from 'lucide-react'
+import { Cast, Drama, EllipsisVertical, FileText, LayoutGrid, LogOut, Package } from 'lucide-react'
 import { TopBar } from './topbar'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useSidebar } from '../components/navigation/sidebar'
@@ -11,6 +11,10 @@ import { Divider } from '../components/display/divider'
 import { CommandMenu } from '../components/overlays/command-menu'
 import { SearchCommandMenuContent, SearchMenuItem } from './search/search-command-menu'
 import { Avatar } from '@/components/display/avatar'
+import { Dropdown } from '@/components/overlays/dropdown'
+import { Button } from '@/components/controls/button'
+import { useFeedback } from '@/components/feedback/feedback-provider'
+import { useCallback, useState } from 'react'
 
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -18,7 +22,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const { pathname } = useLocation()
 
     const { state, actions } = useSidebar()
-    const { profile, role } = useAuth()
+    const { profile, role, signOut } = useAuth()
+    const { toast } = useFeedback()
+    const [isSigningOut, setIsSigningOut] = useState(false)
 
     // Close mobile sidebar on route change
     useEffect(() => {
@@ -32,6 +38,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     function isActive(route: string) {
         return pathname === `/${route}`
     }
+
+    const userInitials = profile ? `${profile.name[0] ?? ''}${profile.surname[0] ?? ''}` : 'MC'
+    const userDisplayName = profile ? `${profile.name} ${profile.surname}` : 'MoC Member'
+
+    const handleSignOut = useCallback(async () => {
+        if (isSigningOut) return
+        setIsSigningOut(true)
+        try {
+            const { error } = await signOut()
+            actions.closeMobile()
+            if (error) {
+                toast({ title: 'Logged out locally', description: error.message, variant: 'info' })
+            }
+        } finally {
+            window.location.replace(`/${routes.login}`)
+        }
+    }, [actions, isSigningOut, signOut, toast])
 
     return (
         <CommandMenu.Root>
@@ -86,17 +109,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </Sidebar.Content>
 
                     <Sidebar.Footer>
-                        {profile && <Avatar.initials name={`${profile!.name[0]}${profile!.surname[0]}`} />}
+                        <Avatar.initials name={userInitials} />
                         {!state.isCollapsed && (
-                            <div className="flex flex-col">
+                            <div className="flex min-w-0 flex-1 flex-col">
                                 <span className="text-label-sm truncate leading-none">
-                                    {profile ? `${profile.name} ${profile.surname}` : "MoC Member"}
+                                    {userDisplayName}
                                 </span>
                                 <span className="text-paragraph-xs text-quaternary truncate leading-none capitalize">
                                     {role?.name ?? "No role"}
                                 </span>
                             </div>
                         )}
+                        <Dropdown.Root placement="bottom">
+                            <Dropdown.Trigger>
+                                <Button.Icon
+                                    aria-label="Open account options"
+                                    disabled={isSigningOut}
+                                    icon={<EllipsisVertical />}
+                                    variant="ghost"
+                                />
+                            </Dropdown.Trigger>
+                            <Dropdown.Panel>
+                                <Dropdown.Item onClick={handleSignOut}>
+                                    <LogOut className="size-4" />
+                                    <span>{isSigningOut ? 'Logging out...' : 'Log out'}</span>
+                                </Dropdown.Item>
+                            </Dropdown.Panel>
+                        </Dropdown.Root>
                     </Sidebar.Footer>
                 </Sidebar.Panel>
 
