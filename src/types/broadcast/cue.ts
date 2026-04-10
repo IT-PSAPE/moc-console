@@ -7,4 +7,5 @@ export type Cue = {
   mediaItemType: MediaType
   order: number
   durationOverride: number | null // seconds, null = use media default
+  disabled?: boolean // skip this cue during playout
 }

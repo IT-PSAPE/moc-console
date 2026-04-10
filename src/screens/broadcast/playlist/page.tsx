@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { Card } from "@/components/display/card"
 import { Header } from "@/components/display/header"
 import { Button } from "@/components/controls/button"
@@ -10,14 +11,15 @@ import { EmptyState } from "@/components/feedback/empty-state"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { usePlaylistFilters } from "@/features/broadcast/use-broadcast-filters"
 import { PlaylistListItem } from "@/features/broadcast/broadcast-list-item"
-import { PlaylistDetailDrawer } from "@/features/broadcast/broadcast-detail-drawer"
 import type { Playlist } from "@/types/broadcast"
 import { Megaphone, Plus, Search } from "lucide-react"
+import { routes } from "@/screens/console-routes"
 
 export function PlaylistScreen() {
+  const navigate = useNavigate()
   const {
     state: { playlists, isLoadingPlaylists },
-    actions: { loadPlaylists, syncPlaylist, removePlaylist },
+    actions: { loadPlaylists, syncPlaylist },
   } = useBroadcast()
 
   useEffect(() => {
@@ -27,18 +29,6 @@ export function PlaylistScreen() {
   const playlistFilters = usePlaylistFilters(playlists)
   const { filtered, setSearch, filters: state } = playlistFilters
 
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-
-  const selectedPlaylist = selectedPlaylistId
-    ? playlists.find((p) => p.id === selectedPlaylistId) ?? null
-    : null
-
-  function handleSelectPlaylist(playlist: Playlist) {
-    setSelectedPlaylistId(playlist.id)
-    setDrawerOpen(true)
-  }
-
   const handleCreatePlaylist = useCallback(() => {
     const newPlaylist: Playlist = {
       id: `pl-new-${Date.now()}`,
@@ -47,27 +37,20 @@ export function PlaylistScreen() {
       status: "draft",
       createdAt: new Date().toISOString().split("T")[0],
       cues: [],
+      backgroundMusicUrl: null,
+      backgroundMusicName: null,
+      defaultImageDuration: 10,
+      videoSettings: { autoplay: true, loop: false, muted: false },
     }
     syncPlaylist(newPlaylist)
-    setSelectedPlaylistId(newPlaylist.id)
-    setDrawerOpen(true)
-  }, [syncPlaylist])
+    navigate(`/${routes.broadcastPlaylistDetail.replace(":id", newPlaylist.id)}`, {
+      state: { isNew: true },
+    })
+  }, [syncPlaylist, navigate])
 
-  const handleSavePlaylistDetails = useCallback((updated: Playlist) => {
-    syncPlaylist(updated)
-  }, [syncPlaylist])
-
-  const handleDeletePlaylist = useCallback((id: string) => {
-    removePlaylist(id)
-    setSelectedPlaylistId(null)
-  }, [removePlaylist])
-
-  const handleStatusChange = useCallback((id: string, status: Playlist["status"]) => {
-    const playlist = playlists.find((p) => p.id === id)
-    if (playlist) {
-      syncPlaylist({ ...playlist, status })
-    }
-  }, [playlists, syncPlaylist])
+  function handleOpenPlaylist(playlist: Playlist) {
+    navigate(`/${routes.broadcastPlaylistDetail.replace(":id", playlist.id)}`)
+  }
 
   return (
     <section>
@@ -119,7 +102,7 @@ export function PlaylistScreen() {
                     <PlaylistListItem
                       key={playlist.id}
                       playlist={playlist}
-                      onClick={() => handleSelectPlaylist(playlist)}
+                      onClick={() => handleOpenPlaylist(playlist)}
                     />
                   ))
                 )}
@@ -128,15 +111,6 @@ export function PlaylistScreen() {
           </div>
         </Decision.Data>
       </Decision.Root>
-
-      <PlaylistDetailDrawer
-        playlist={selectedPlaylist}
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        onSave={handleSavePlaylistDetails}
-        onDelete={handleDeletePlaylist}
-        onStatusChange={handleStatusChange}
-      />
     </section>
   )
 }

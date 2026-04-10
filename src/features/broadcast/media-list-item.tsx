@@ -3,14 +3,13 @@ import { Badge } from "@/components/display/badge"
 import { Label, Paragraph } from "@/components/display/text"
 import { mediaTypeColor, mediaTypeLabel } from "@/types/broadcast/constants"
 import type { MediaItem } from "@/types/broadcast/media-item"
-import { Image, Music, Video, Layers } from "lucide-react"
+import { Image, Music, Video } from "lucide-react"
 import type { MediaType } from "@/types/broadcast/media-type"
 
 const mediaTypeIcon: Record<MediaType, React.ReactNode> = {
   image: <Image />,
   audio: <Music />,
   video: <Video />,
-  slide: <Layers />,
 }
 
 function formatDuration(seconds: number): string {
@@ -19,20 +18,13 @@ function formatDuration(seconds: number): string {
   return m > 0 ? `${m}:${String(s).padStart(2, "0")}` : `${s}s`
 }
 
-function getTotalSlideDuration(item: MediaItem): number | null {
-  if (item.type === "slide" && item.slides) {
-    return item.slides.reduce((sum, s) => sum + s.duration, 0)
-  }
-  return item.duration
-}
-
 type MediaListItemProps = {
   item: MediaItem
   onClick: () => void
 }
 
 export function MediaListItem({ item, onClick }: MediaListItemProps) {
-  const duration = getTotalSlideDuration(item)
+  const duration = item.duration
 
   return (
     <div

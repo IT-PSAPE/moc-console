@@ -14,7 +14,7 @@ import { playlistStatusColor, playlistStatusLabel, mediaTypeColor, mediaTypeLabe
 import type { Playlist } from "@/types/broadcast/broadcast"
 import type { PlaylistStatus } from "@/types/broadcast/broadcast-status"
 import { routes } from "@/screens/console-routes"
-import { Check, ChevronDown, MoreHorizontal, Trash2, ToggleLeft, Maximize2, X, Loader, FileText, ListMusic } from "lucide-react"
+import { Check, ChevronDown, MoreHorizontal, Trash2, ToggleLeft, Maximize2, X, Loader, FileText, ListMusic, Music, Video, Clock } from "lucide-react"
 
 function formatDuration(seconds: number) {
   const m = Math.floor(seconds / 60)
@@ -157,6 +157,29 @@ function PlaylistDetailDrawerContent({ media, navigate, onDelete, onOpenChange, 
                   placeholder="Describe this playlist..."
                 />
               </MetaRow>
+
+              <MetaRow icon={<Music />} label="Background Music">
+                {playlist.backgroundMusicName ? (
+                  <Paragraph.xs className="truncate">{playlist.backgroundMusicName}</Paragraph.xs>
+                ) : (
+                  <Paragraph.xs className="text-quaternary">None</Paragraph.xs>
+                )}
+              </MetaRow>
+
+              <MetaRow icon={<Clock />} label="Image Duration">
+                <Paragraph.xs>{playlist.defaultImageDuration}s default</Paragraph.xs>
+              </MetaRow>
+
+              <MetaRow icon={<Video />} label="Video Settings">
+                <div className="flex gap-1.5">
+                  {playlist.videoSettings.autoplay && <Badge label="Autoplay" color="blue" />}
+                  {playlist.videoSettings.loop && <Badge label="Loop" color="blue" />}
+                  {playlist.videoSettings.muted && <Badge label="Muted" color="blue" />}
+                  {!playlist.videoSettings.autoplay && !playlist.videoSettings.loop && !playlist.videoSettings.muted && (
+                    <Paragraph.xs className="text-quaternary">Default</Paragraph.xs>
+                  )}
+                </div>
+              </MetaRow>
             </div>
 
             <Divider className="px-4 py-6" />
@@ -171,7 +194,7 @@ function PlaylistDetailDrawerContent({ media, navigate, onDelete, onOpenChange, 
                 <Accordion.Root type="multiple">
                   {playlist.cues.map((cue) => {
                     const mediaItem = media.find((m) => m.id === cue.mediaItemId)
-                    const duration = cue.durationOverride ?? mediaItem?.duration
+                    const duration = cue.durationOverride ?? (cue.mediaItemType === "image" ? playlist.defaultImageDuration : null) ?? mediaItem?.duration
 
                     return (
                       <Accordion.Item key={cue.id} value={cue.id} className="border-b border-secondary last:border-b-0">
@@ -202,18 +225,6 @@ function PlaylistDetailDrawerContent({ media, navigate, onDelete, onOpenChange, 
                                   {formatDuration(duration)}
                                   {cue.durationOverride != null && " (override)"}
                                 </Paragraph.xs>
-                              </div>
-                            )}
-                            {cue.mediaItemType === "slide" && mediaItem?.slides && (
-                              <div className="flex items-center gap-2">
-                                <Paragraph.xs className="text-quaternary shrink-0">Slides:</Paragraph.xs>
-                                <Paragraph.xs>{mediaItem.slides.length} slide{mediaItem.slides.length !== 1 ? "s" : ""}</Paragraph.xs>
-                              </div>
-                            )}
-                            {cue.mediaItemType === "slide" && mediaItem?.audioUrl && (
-                              <div className="flex items-center gap-2">
-                                <Paragraph.xs className="text-quaternary shrink-0">Audio:</Paragraph.xs>
-                                <Paragraph.xs className="truncate">{mediaItem.audioUrl}</Paragraph.xs>
                               </div>
                             )}
                             {!mediaItem && (

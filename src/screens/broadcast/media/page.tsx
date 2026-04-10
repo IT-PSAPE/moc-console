@@ -91,7 +91,6 @@ export function BroadcastMediaScreen() {
                   <SegmentedControl.Item value="image">Images</SegmentedControl.Item>
                   <SegmentedControl.Item value="audio">Audio</SegmentedControl.Item>
                   <SegmentedControl.Item value="video">Video</SegmentedControl.Item>
-                  <SegmentedControl.Item value="slide">Slides</SegmentedControl.Item>
                 </SegmentedControl.Root>
 
                 {/* Media list */}
