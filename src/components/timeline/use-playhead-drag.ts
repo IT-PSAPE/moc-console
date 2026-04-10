@@ -12,9 +12,12 @@ interface UsePlayheadDragOptions {
 
 export function usePlayheadDrag({ pixelsPerMinute, totalMinutes, timelineContainerRef, setCurrentTimeMinutes, isDraggingPlayheadRef, disableTouchInteractions }: UsePlayheadDragOptions) {
     const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false)
-    isDraggingPlayheadRef.current = isDraggingPlayhead
     const playheadPointerClientXRef = useRef<number | null>(null)
     const playheadDragRafRef = useRef<number | null>(null)
+
+    useEffect(() => {
+        isDraggingPlayheadRef.current = isDraggingPlayhead
+    }, [isDraggingPlayhead, isDraggingPlayheadRef])
 
     const updatePlayheadFromPointer = useCallback((clientX: number) => {
         const container = timelineContainerRef.current
@@ -76,8 +79,15 @@ export function usePlayheadDrag({ pixelsPerMinute, totalMinutes, timelineContain
 
     useEffect(() => {
         if (!disableTouchInteractions) return
-        setIsDraggingPlayhead(false)
-        playheadPointerClientXRef.current = null
+
+        const frameId = window.requestAnimationFrame(() => {
+            setIsDraggingPlayhead(false)
+            playheadPointerClientXRef.current = null
+        })
+
+        return () => {
+            window.cancelAnimationFrame(frameId)
+        }
     }, [disableTouchInteractions])
 
     useEffect(() => {

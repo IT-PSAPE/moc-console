@@ -7,7 +7,9 @@ import { useTimeline } from '@/components/timeline'
 import { CUE_TYPE_CONFIG } from '@/components/timeline'
 import { CUE_TYPES } from '@/types/cue-sheet'
 import type { CueType } from '@/types/cue-sheet'
-import { useCallback, useEffect, useState } from 'react'
+import type { Track } from '@/types/cue-sheet'
+import type { CueModalState } from '@/components/timeline/timeline-types'
+import { useCallback, useMemo, useState } from 'react'
 
 // ─── Form State ────────────────────────────────────────────────────
 
@@ -31,6 +33,30 @@ const defaultForm: CueFormState = {
     notes: '',
 }
 
+function getInitialForm(cueModal: CueModalState, tracks: Track[]): CueFormState {
+    if (cueModal.mode === 'create') {
+        return {
+            ...defaultForm,
+            trackId: cueModal.defaultTrackId ?? tracks[0]?.id ?? '',
+            startMin: cueModal.defaultStartMin ?? 0,
+        }
+    }
+
+    if (cueModal.mode === 'edit') {
+        return {
+            label: cueModal.cue.label,
+            trackId: cueModal.trackId,
+            type: cueModal.cue.type,
+            startMin: cueModal.cue.startMin,
+            durationMin: cueModal.cue.durationMin,
+            assignee: cueModal.cue.assignee ?? '',
+            notes: cueModal.cue.notes ?? '',
+        }
+    }
+
+    return defaultForm
+}
+
 // ─── Modal ─────────────────────────────────────────────────────────
 
 export function CueModal() {
@@ -38,28 +64,54 @@ export function CueModal() {
 
     const isOpen = cueModal.mode !== 'closed'
     const isEdit = cueModal.mode === 'edit'
-
-    const [form, setForm] = useState<CueFormState>(defaultForm)
-
-    useEffect(() => {
-        if (cueModal.mode === 'create') {
-            setForm({
-                ...defaultForm,
-                trackId: cueModal.defaultTrackId ?? tracks[0]?.id ?? '',
-                startMin: cueModal.defaultStartMin ?? 0,
-            })
-        } else if (cueModal.mode === 'edit') {
-            setForm({
-                label: cueModal.cue.label,
-                trackId: cueModal.trackId,
-                type: cueModal.cue.type,
-                startMin: cueModal.cue.startMin,
-                durationMin: cueModal.cue.durationMin,
-                assignee: cueModal.cue.assignee ?? '',
-                notes: cueModal.cue.notes ?? '',
-            })
+    const formKey = useMemo(() => {
+        if (cueModal.mode === 'edit') {
+            return `edit-${cueModal.cue.id}-${cueModal.trackId}`
         }
+
+        if (cueModal.mode === 'create') {
+            return `create-${cueModal.defaultTrackId ?? tracks[0]?.id ?? ''}-${cueModal.defaultStartMin ?? 0}`
+        }
+
+        return 'closed'
     }, [cueModal, tracks])
+
+    if (!isOpen) {
+        return (
+            <Modal.Root open={false} onOpenChange={closeCueModal}>
+                <Modal.Portal>
+                    <Modal.Backdrop />
+                </Modal.Portal>
+            </Modal.Root>
+        )
+    }
+
+    return (
+        <CueModalContent
+            key={formKey}
+            addCue={addCue}
+            closeCueModal={closeCueModal}
+            cueModal={cueModal}
+            isEdit={isEdit}
+            moveCue={moveCue}
+            tracks={tracks}
+            updateCue={updateCue}
+        />
+    )
+}
+
+type CueModalContentProps = {
+    addCue: ReturnType<typeof useTimeline>['addCue']
+    closeCueModal: ReturnType<typeof useTimeline>['closeCueModal']
+    cueModal: CueModalState
+    isEdit: boolean
+    moveCue: ReturnType<typeof useTimeline>['moveCue']
+    tracks: Track[]
+    updateCue: ReturnType<typeof useTimeline>['updateCue']
+}
+
+function CueModalContent({ addCue, closeCueModal, cueModal, isEdit, moveCue, tracks, updateCue }: CueModalContentProps) {
+    const [form, setForm] = useState<CueFormState>(() => getInitialForm(cueModal, tracks))
 
     const canSubmit = form.label.trim().length > 0 && form.trackId.length > 0 && form.durationMin > 0
 
@@ -104,7 +156,7 @@ export function CueModal() {
     }, [canSubmit, form, cueModal, addCue, updateCue, moveCue, closeCueModal])
 
     return (
-        <Modal.Root open={isOpen} onOpenChange={(next) => { if (!next) closeCueModal() }}>
+        <Modal.Root open={true} onOpenChange={(next) => { if (!next) closeCueModal() }}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>

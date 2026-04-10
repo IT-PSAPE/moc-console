@@ -42,7 +42,6 @@ function AddMemberPanel({ existingUserIds, onAdd }: Omit<AddMemberPopoverProps, 
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        setIsLoading(true);
         Promise.all([fetchAllUsers(), fetchRoles()])
             .then(([users, fetchedRoles]) => {
                 setAllUsers(users);

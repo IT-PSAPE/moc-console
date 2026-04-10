@@ -1,5 +1,5 @@
 import { cn } from '@/utils/cn'
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react'
 import { useAnchorPosition, useClickOutside, type Placement } from './overlay-primitives'
 import { useOverlayStack } from './overlay-provider'
 
@@ -16,10 +16,12 @@ type PopoverContextValue = {
         open: () => void
         toggle: () => void
         setOpen: (nextOpen: boolean) => void
+        setPanelElement: (node: HTMLDivElement | null) => void
+        setTriggerElement: (node: HTMLSpanElement | null) => void
     }
-    refs: {
-        triggerRef: React.RefObject<HTMLSpanElement | null>
-        panelRef: React.RefObject<HTMLDivElement | null>
+    elements: {
+        triggerElement: HTMLSpanElement | null
+        panelElement: HTMLDivElement | null
     }
 }
 
@@ -49,8 +51,8 @@ type PopoverRootProps = {
 function PopoverRoot({ children, closeOnEscape = true, defaultOpen = false, onOpenChange, open, placement = 'bottom' }: PopoverRootProps) {
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
-    const triggerRef = useRef<HTMLSpanElement | null>(null)
-    const panelRef = useRef<HTMLDivElement | null>(null)
+    const [triggerElement, setTriggerElementState] = useState<HTMLSpanElement | null>(null)
+    const [panelElement, setPanelElementState] = useState<HTMLDivElement | null>(null)
 
     const isOpen = isControlled ? open : uncontrolledOpen
 
@@ -78,8 +80,16 @@ function PopoverRoot({ children, closeOnEscape = true, defaultOpen = false, onOp
         setOpenState(!isOpen)
     }, [isOpen, setOpenState])
 
+    const setTriggerElement = useCallback((node: HTMLSpanElement | null) => {
+        setTriggerElementState(node)
+    }, [])
+
+    const setPanelElement = useCallback((node: HTMLDivElement | null) => {
+        setPanelElementState(node)
+    }, [])
+
     // Click outside to close
-    useClickOutside([triggerRef, panelRef], isOpen, closePopover)
+    useClickOutside([triggerElement, panelElement], isOpen, closePopover)
 
     // Escape key
     useEffect(() => {
@@ -94,7 +104,7 @@ function PopoverRoot({ children, closeOnEscape = true, defaultOpen = false, onOp
 
             event.preventDefault()
             closePopover()
-            triggerRef.current?.focus()
+            triggerElement?.focus()
         }
 
         document.addEventListener('keydown', handleDocumentKeyDown)
@@ -102,7 +112,7 @@ function PopoverRoot({ children, closeOnEscape = true, defaultOpen = false, onOp
         return () => {
             document.removeEventListener('keydown', handleDocumentKeyDown)
         }
-    }, [closePopover, closeOnEscape, isOpen])
+    }, [closePopover, closeOnEscape, isOpen, triggerElement])
 
     const value = useMemo<PopoverContextValue>(() => ({
         state: {
@@ -115,12 +125,14 @@ function PopoverRoot({ children, closeOnEscape = true, defaultOpen = false, onOp
             open: openPopover,
             toggle,
             setOpen: setOpenState,
+            setPanelElement,
+            setTriggerElement,
         },
-        refs: {
-            triggerRef,
-            panelRef,
+        elements: {
+            triggerElement,
+            panelElement,
         },
-    }), [closePopover, isOpen, openPopover, placement, setOpenState, toggle, zIndex])
+    }), [closePopover, isOpen, openPopover, panelElement, placement, setOpenState, setPanelElement, setTriggerElement, toggle, triggerElement, zIndex])
 
     return (
         <PopoverContext.Provider value={value}>
@@ -132,7 +144,10 @@ function PopoverRoot({ children, closeOnEscape = true, defaultOpen = false, onOp
 // ─── Trigger ─────────────────────────────────────────────────────────
 
 function PopoverTrigger({ children, onClick, ...props }: HTMLAttributes<HTMLSpanElement>) {
-    const { state, actions, refs } = usePopover()
+    const { state, actions } = usePopover()
+    const handleTriggerRef = useCallback((node: HTMLSpanElement | null) => {
+        actions.setTriggerElement(node)
+    }, [actions])
 
     function handleClick(event: MouseEvent<HTMLSpanElement>) {
         onClick?.(event)
@@ -146,7 +161,7 @@ function PopoverTrigger({ children, onClick, ...props }: HTMLAttributes<HTMLSpan
 
     return (
         <span
-            ref={refs.triggerRef}
+            ref={handleTriggerRef}
             aria-expanded={state.isOpen}
             aria-haspopup="dialog"
             onClick={handleClick}
@@ -162,16 +177,19 @@ function PopoverTrigger({ children, onClick, ...props }: HTMLAttributes<HTMLSpan
 // ─── Panel ───────────────────────────────────────────────────────────
 
 function PopoverPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    const { state, refs } = usePopover()
-    const position = useAnchorPosition(refs.triggerRef, refs.panelRef, state.isOpen, state.placement)
+    const { state, actions, elements } = usePopover()
+    const position = useAnchorPosition(elements.triggerElement, elements.panelElement, state.isOpen, state.placement)
+    const handlePanelRef = useCallback((node: HTMLDivElement | null) => {
+        actions.setPanelElement(node)
+    }, [actions])
 
     useEffect(() => {
         if (!state.isOpen) {
             return
         }
 
-        refs.panelRef.current?.focus()
-    }, [state.isOpen, refs.panelRef])
+        elements.panelElement?.focus()
+    }, [elements.panelElement, state.isOpen])
 
     if (!state.isOpen) {
         return null
@@ -179,7 +197,7 @@ function PopoverPanel({ children, className, ...props }: HTMLAttributes<HTMLDivE
 
     return (
         <div
-            ref={refs.panelRef}
+            ref={handlePanelRef}
             className={cn(
                 'fixed z-50 flex min-w-48 flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg',
                 className,

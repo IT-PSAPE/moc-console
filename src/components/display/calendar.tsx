@@ -135,16 +135,18 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
 
     const selectedDateEvents = useMemo(() => {
         if (!selectedDate) return []
-        return getEventsForDate(selectedDate)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+        const key = `${selectedDate.getFullYear()}-${selectedDate.getMonth()}-${selectedDate.getDate()}`
+        return eventsByDate.get(key) ?? []
     }, [selectedDate, eventsByDate])
 
+    const drawerTitleContent = cellDrawer?.title
     const drawerTitle = useMemo(() => {
         if (!selectedDate) return ''
-        if (!cellDrawer?.title) return formatDrawerDate(selectedDate)
-        if (typeof cellDrawer.title === 'string') return cellDrawer.title
-        return cellDrawer.title(selectedDate, selectedDateEvents)
-    }, [selectedDate, cellDrawer?.title, selectedDateEvents])
+        if (!drawerTitleContent) return formatDrawerDate(selectedDate)
+        if (typeof drawerTitleContent === 'string') return drawerTitleContent
+        return drawerTitleContent(selectedDate, selectedDateEvents)
+    }, [drawerTitleContent, selectedDate, selectedDateEvents])
 
     return (
         <div className={cn('flex flex-col', className)} {...props}>
