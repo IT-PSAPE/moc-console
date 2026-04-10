@@ -1,0 +1,67 @@
+[
+  {
+    "id": "bc-001",
+    "name": "Sunday Service",
+    "description": "Main Sunday morning service playlist with worship, announcements, and sermon.",
+    "status": "published",
+    "createdAt": "2026-03-28",
+    "cues": [
+      { "id": "cue-001", "mediaItemId": "media-008", "mediaItemName": "Welcome Loop Video", "mediaItemType": "video", "order": 1, "durationOverride": null },
+      { "id": "cue-002", "mediaItemId": "media-001", "mediaItemName": "Sunday Service Welcome", "mediaItemType": "image", "order": 2, "durationOverride": 15 },
+      { "id": "cue-003", "mediaItemId": "media-012", "mediaItemName": "Worship Lyrics - Great Is Thy Faithfulness", "mediaItemType": "slide", "order": 3, "durationOverride": null },
+      { "id": "cue-004", "mediaItemId": "media-011", "mediaItemName": "Weekly Announcements Slides", "mediaItemType": "slide", "order": 4, "durationOverride": null },
+      { "id": "cue-005", "mediaItemId": "media-004", "mediaItemName": "Offering Background", "mediaItemType": "image", "order": 5, "durationOverride": 120 },
+      { "id": "cue-006", "mediaItemId": "media-015", "mediaItemName": "Closing Benediction Background", "mediaItemType": "image", "order": 6, "durationOverride": 30 }
+    ]
+  },
+  {
+    "id": "bc-002",
+    "name": "Easter Sunday Service",
+    "description": "Special Easter celebration playlist with extended worship and Easter-themed media.",
+    "status": "published",
+    "createdAt": "2026-03-15",
+    "cues": [
+      { "id": "cue-007", "mediaItemId": "media-007", "mediaItemName": "Countdown Timer - 5 Min", "mediaItemType": "video", "order": 1, "durationOverride": null },
+      { "id": "cue-008", "mediaItemId": "media-009", "mediaItemName": "Easter Promo Video", "mediaItemType": "video", "order": 2, "durationOverride": null },
+      { "id": "cue-009", "mediaItemId": "media-013", "mediaItemName": "Easter Service Slides", "mediaItemType": "slide", "order": 3, "durationOverride": null },
+      { "id": "cue-010", "mediaItemId": "media-002", "mediaItemName": "Worship Background - Mountains", "mediaItemType": "image", "order": 4, "durationOverride": 60 },
+      { "id": "cue-011", "mediaItemId": "media-004", "mediaItemName": "Offering Background", "mediaItemType": "image", "order": 5, "durationOverride": 120 }
+    ]
+  },
+  {
+    "id": "bc-003",
+    "name": "Midweek Prayer",
+    "description": "Wednesday evening prayer and devotion playlist with ambient backgrounds.",
+    "status": "draft",
+    "createdAt": "2026-04-01",
+    "cues": [
+      { "id": "cue-012", "mediaItemId": "media-002", "mediaItemName": "Worship Background - Mountains", "mediaItemType": "image", "order": 1, "durationOverride": 30 },
+      { "id": "cue-013", "mediaItemId": "media-006", "mediaItemName": "Ambient Pad - Key of G", "mediaItemType": "audio", "order": 2, "durationOverride": null }
+    ]
+  },
+  {
+    "id": "bc-004",
+    "name": "Youth Service",
+    "description": "Friday youth service playlist with contemporary media.",
+    "status": "published",
+    "createdAt": "2026-03-18",
+    "cues": [
+      { "id": "cue-018", "mediaItemId": "media-007", "mediaItemName": "Countdown Timer - 5 Min", "mediaItemType": "video", "order": 1, "durationOverride": null },
+      { "id": "cue-019", "mediaItemId": "media-003", "mediaItemName": "Announcements Background", "mediaItemType": "image", "order": 2, "durationOverride": 20 },
+      { "id": "cue-020", "mediaItemId": "media-005", "mediaItemName": "Worship Instrumental - Piano", "mediaItemType": "audio", "order": 3, "durationOverride": null }
+    ]
+  },
+  {
+    "id": "bc-005",
+    "name": "Worship Night",
+    "description": "Extended worship evening with curated visuals and music.",
+    "status": "draft",
+    "createdAt": "2026-04-02",
+    "cues": [
+      { "id": "cue-021", "mediaItemId": "media-002", "mediaItemName": "Worship Background - Mountains", "mediaItemType": "image", "order": 1, "durationOverride": 60 },
+      { "id": "cue-022", "mediaItemId": "media-014", "mediaItemName": "Pre-Service Background Music", "mediaItemType": "audio", "order": 2, "durationOverride": null },
+      { "id": "cue-023", "mediaItemId": "media-012", "mediaItemName": "Worship Lyrics - Great Is Thy Faithfulness", "mediaItemType": "slide", "order": 3, "durationOverride": null },
+      { "id": "cue-024", "mediaItemId": "media-015", "mediaItemName": "Closing Benediction Background", "mediaItemType": "image", "order": 4, "durationOverride": 30 }
+    ]
+  }
+]

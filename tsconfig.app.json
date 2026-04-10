@@ -5,24 +5,36 @@
     "useDefineForClassFields": true,
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "types": ["vite/client", "vite-plugin-pwa/client"],
+    "types": ["vite/client"],
     "skipLibCheck": true,
+
+    /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@assets/*": ["./src/assets/*"],
+      "@components/*": ["./src/components/*"],
+      "@contexts/*": ["./src/contexts/*"],
+      "@features/*": ["./src/features/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@screens/*": ["./src/screens/*"],
+      "@services/*": ["./src/services/*"],
+      "@types/*": ["./src/types/*"],
+      "@utils/*": ["./src/utils/*"]
+    },
+
+    /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    "noUncheckedSideEffectImports": true
   },
   "include": ["src"]
 }

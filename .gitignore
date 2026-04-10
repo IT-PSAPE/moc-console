@@ -11,15 +11,16 @@ node_modules
 dist
 dist-ssr
 output
+build
 *.local
 
 # Editor directories and files
 .vscode/*
-.playwright-cli
-.claude
 !.vscode/extensions.json
 .idea
 .DS_Store
+.playwright-cli
+.claude
 *.suo
 *.ntvs*
 *.njsproj

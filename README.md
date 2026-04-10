@@ -1,73 +1,189 @@
-# React + TypeScript + Vite
+# MOC Console
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+MOC Console is a React 19 admin application for managing operational workflows across:
 
-Currently, two official plugins are available:
+- requests
+- equipment
+- broadcast media and playlists
+- cue sheet views
+- authenticated users and role-aware navigation
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The UI is built with React, TypeScript, Vite, and Tailwind CSS v4.
 
-## React Compiler
+## Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS v4
+- React Router
+- Supabase Auth and data access
 
-## Expanding the ESLint configuration
+## Feature Areas
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Requests
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- overview dashboard
+- all requests
+- archived requests
+- request detail view
+- request assignees and request duty roles
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Requests are the most complete data flow in the app today. They read and write through Supabase.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Equipment
+
+- overview
+- inventory
+- bookings
+- maintenance
+- equipment detail view
+- reports placeholder
+
+Equipment currently reads from mock JSON files and uses mock mutations.
+
+### Broadcast
+
+- overview
+- media library
+- playlists
+- playlist detail view
+
+Broadcast media and playlists currently read from mock JSON files and use mock mutations.
+
+### Cue Sheet
+
+- overview
+- event
+- checklist
+
+## Authentication
+
+The app uses Supabase Auth for login, signup, reset password, and session handling.
+
+Required environment variables:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
+
+These are read in [src/lib/supabase.ts](/Users/Craig/Developer/Projects/moc-console/src/lib/supabase.ts).
+
+## Getting Started
+
+Install dependencies:
+
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Start the dev server:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
+
+Build for production:
+
+```bash
+npm run build
+```
+
+Run linting:
+
+```bash
+npm run lint
+```
+
+Preview the production build:
+
+```bash
+npm run preview
+```
+
+## Project Structure
+
+Main source folders:
+
+- `src/screens` for route-level screens
+- `src/features` for domain-specific state and UI
+- `src/components` for shared UI primitives and composed components
+- `src/data` for data access and mock data
+- `src/types` for domain models
+- `src/lib` for app infrastructure such as Supabase and auth context
+- `docs` for project documentation
+
+## Data Model Documentation
+
+Two documentation files describe the current codebase schema and expected values:
+
+- [docs/schema-reference.md](/Users/Craig/Developer/Projects/moc-console/docs/schema-reference.md)
+- [docs/value-guide.md](/Users/Craig/Developer/Projects/moc-console/docs/value-guide.md)
+
+Use them together:
+
+- `schema-reference.md` describes fields, types, nullability, relationships, and enum values.
+- `value-guide.md` explains what values should actually be used in practice and calls out current implementation conventions.
+
+Important caveat:
+
+- This schema documentation is inferred from the current TypeScript models, Supabase queries, row mappers, and mock data in the repository.
+- There are no checked-in SQL migrations or generated database types in this repo at the moment.
+
+## Current Data Backing
+
+### Supabase-backed
+
+- requests
+- request assignees
+- request duty roles
+- users
+- user roles
+- roles
+- auth sessions
+
+### Mock-backed
+
+- equipment
+- equipment bookings
+- broadcast media
+- broadcast playlists
+- playlist cues
+
+Mock data lives under `src/data/mock`.
+
+## Routing Summary
+
+Protected routes are mounted in [src/App.tsx](/Users/Craig/Developer/Projects/moc-console/src/App.tsx) and defined in [src/screens/console-routes.ts](/Users/Craig/Developer/Projects/moc-console/src/screens/console-routes.ts).
+
+Main app sections:
+
+- `/dashboard`
+- `/requests`
+- `/requests/all-requests`
+- `/requests/archived`
+- `/requests/:id`
+- `/equipment`
+- `/equipment/inventory`
+- `/equipment/bookings`
+- `/equipment/maintenance`
+- `/equipment/:id`
+- `/broadcast`
+- `/broadcast/media`
+- `/broadcast/playlists`
+- `/broadcast/playlists/:id`
+- `/cue-sheet`
+- `/cue-sheet/event`
+- `/cue-sheet/checklist`
+
+Auth routes:
+
+- `/login`
+- `/signup`
+- `/reset-password`
+
+## Notes For Contributors
+
+- Follow the project rules in `AGENTS.md`.
+- Reuse existing shared components before creating new feature-level UI.
+- Keep business logic in hooks, services, and utilities rather than in presentational components.
+- Match the current domain patterns before introducing new structure.
