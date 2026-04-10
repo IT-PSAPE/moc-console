@@ -103,7 +103,7 @@ export function CueSheetChecklistScreen() {
                                     </Drawer.Root>
                                     <Dropdown.Root placement="bottom">
                                         <Dropdown.Trigger>
-                                            <Button variant='secondary' icon={<Plus />} iconOnly/>
+                                            <Button.Icon variant='secondary' icon={<Plus />} />
                                         </Dropdown.Trigger>
                                         <Dropdown.Panel>
                                             {checklistTemplates.map((checklist) => (

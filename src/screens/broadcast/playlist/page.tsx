@@ -106,7 +106,7 @@ export function PlaylistScreen() {
                     value={state.search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
-                  <Button variant="secondary" icon={<Plus />} iconOnly onClick={handleCreatePlaylist} />
+                  <Button.Icon variant="secondary" icon={<Plus />} onClick={handleCreatePlaylist} />
                 </div>
               </Card.Header>
               <Card.Content ghost className="flex flex-col gap-1">

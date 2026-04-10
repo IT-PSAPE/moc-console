@@ -37,8 +37,8 @@ function ChecklistDrawerContent({ checklist }: { checklist: Checklist }) {
     return (
         <>
             <Drawer.Header className="flex items-center gap-1">
-                <Button variant="ghost" icon={<X />} iconOnly onClick={drawerActions.close} />
-                <Button variant="ghost" icon={<Maximize2 />} iconOnly onClick={handleOpenFullPage} />
+                <Button.Icon variant="ghost" icon={<X />} onClick={drawerActions.close} />
+                <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={handleOpenFullPage} />
                 <div className="flex-1" />
                 <Paragraph.sm className="text-tertiary mr-2">{checked}/{total} done</Paragraph.sm>
 
@@ -52,7 +52,7 @@ function ChecklistDrawerContent({ checklist }: { checklist: Checklist }) {
                     </div>
                     <Dropdown.Root placement="bottom">
                         <Dropdown.Trigger>
-                            <Button variant="ghost" icon={<Plus />} iconOnly />
+                            <Button.Icon variant="ghost" icon={<Plus />} />
                         </Dropdown.Trigger>
                         <Dropdown.Panel>
                             <Dropdown.Item onSelect={() => setAddRequest({ type: 'item', target: 'top' })}>

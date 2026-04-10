@@ -88,7 +88,7 @@ function RequestDetailContent({ request, assignees, setAssignees, syncRequest }:
                 )}
                 <Dropdown.Root placement="bottom">
                     <Dropdown.Trigger>
-                        <Button variant="secondary" icon={<EllipsisVertical />} iconOnly />
+                        <Button.Icon variant="secondary" icon={<EllipsisVertical />} />
                     </Dropdown.Trigger>
                     <Dropdown.Panel>
                         <Dropdown.Item onSelect={handleArchiveToggle}>

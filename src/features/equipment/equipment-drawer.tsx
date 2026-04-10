@@ -170,10 +170,10 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
     <>
       {/* Header */}
       <Drawer.Header className="flex items-center gap-1">
-        <Button variant="ghost" icon={<X />} iconOnly onClick={handleClose} />
-        <Button variant="ghost" icon={<Maximize2 />} iconOnly onClick={handleOpenFullPage} />
+        <Button.Icon variant="ghost" icon={<X />} onClick={handleClose} />
+        <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={handleOpenFullPage} />
         <div className="flex-1" />
-        <Button variant="ghost" icon={<Trash2 />} iconOnly onClick={() => setShowDeleteModal(true)} />
+        <Button.Icon variant="ghost" icon={<Trash2 />} onClick={() => setShowDeleteModal(true)} />
       </Drawer.Header>
 
       <Drawer.Content className="py-4">

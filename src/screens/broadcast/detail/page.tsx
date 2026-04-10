@@ -223,7 +223,7 @@ export function PlaylistDetailScreen() {
         <TopBarActions>
           <Dropdown.Root placement="bottom">
             <Dropdown.Trigger>
-              <Button variant="secondary" icon={<EllipsisVertical />} iconOnly />
+              <Button.Icon variant="secondary" icon={<EllipsisVertical />} />
             </Dropdown.Trigger>
             <Dropdown.Panel>
               <Dropdown.Item onSelect={() => navigate(`/${routes.broadcastPlaylists}`)}>

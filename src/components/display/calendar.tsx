@@ -152,9 +152,9 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
             <div className="flex items-center justify-between pb-4">
                 <span className="title-h5">{MONTH_LABELS[month]} {year}</span>
                 <div className="flex items-center gap-1">
-                    <Button variant="secondary" iconOnly icon={<ChevronLeft />} onClick={() => navigate(-1)} />
+                    <Button.Icon variant="secondary" icon={<ChevronLeft />} onClick={() => navigate(-1)} />
                     <Button variant="secondary" onClick={goToToday}>Today</Button>
-                    <Button variant="secondary" iconOnly icon={<ChevronRight />} onClick={() => navigate(1)} />
+                    <Button.Icon variant="secondary" icon={<ChevronRight />} onClick={() => navigate(1)} />
                 </div>
             </div>
 
@@ -222,7 +222,7 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
                                     </Paragraph.xs>
                                 </div>
                                 <Drawer.Close>
-                                    <Button variant="ghost" iconOnly icon={<ChevronRight />} />
+                                    <Button.Icon variant="ghost" icon={<ChevronRight />} />
                                 </Drawer.Close>
                             </Drawer.Header>
                             <Drawer.Content>

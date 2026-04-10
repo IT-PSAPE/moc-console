@@ -47,7 +47,7 @@ export function CueSheetChecklistDetailScreen() {
                 <Header.Trail>
                     <Dropdown.Root placement="bottom">
                         <Dropdown.Trigger>
-                            <Button variant="secondary" icon={<Plus />} iconOnly />
+                            <Button.Icon variant="secondary" icon={<Plus />} />
                         </Dropdown.Trigger>
                         <Dropdown.Panel>
                             <Dropdown.Item onSelect={() => setAddRequest({ type: 'item', target: 'top' })}>

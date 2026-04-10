@@ -226,7 +226,7 @@ export function RequestAssigneeList({ assignees, onAddMember, onRemoveMember, cl
                 <Label.md>Assignees</Label.md>
                 {onAddMember && (
                     <AddMemberPopover existingUserIds={assignees.map(a => a.id)} onAdd={onAddMember}>
-                        <Button icon={<Plus />} iconOnly variant="ghost" className="cursor-pointer" />
+                        <Button.Icon icon={<Plus />} variant="ghost" className="cursor-pointer" />
                     </AddMemberPopover>
                 )}
             </div>
@@ -239,7 +239,7 @@ export function RequestAssigneeList({ assignees, onAddMember, onRemoveMember, cl
                                 <Label.sm>{a.name} {a.surname}</Label.sm>
                                 {a.duty && <Paragraph.xs className="text-quaternary truncate">{a.duty}</Paragraph.xs>}
                             </div>
-                            {onRemoveMember && <Button icon={<X />} iconOnly variant="ghost" onClick={() => onRemoveMember(a.id)} />}
+                            {onRemoveMember && <Button.Icon icon={<X />} variant="ghost" onClick={() => onRemoveMember(a.id)} />}
                         </div>
                     ))}
                 </div>

@@ -7,7 +7,12 @@ type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "danger-seco
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
     icon?: ReactNode
-    iconOnly?: boolean
+    iconPosition?: "leading" | "trailing"
+    variant?: ButtonVariant
+}
+
+type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+    icon: ReactNode
     variant?: ButtonVariant
 }
 
@@ -46,18 +51,18 @@ const buttonVariants = cv({
                 "disabled:border-disabled disabled:bg-disabled disabled:text-disable",
             ],
         },
-        iconOnly: {
-            false: ["px-3 py-2"],
-            true: ["w-8 px-2 py-2"],
+        size: {
+            default: ["px-3 py-2"],
+            icon: ["w-8 px-2 py-2"],
         },
     },
     defaultVariants: {
         variant: "primary",
-        iconOnly: "false",
+        size: "default",
     },
 });
 
-function ButtonIcon({ icon }: { icon: ReactNode }) {
+function IconSpan({ icon }: { icon: ReactNode }) {
     return (
         <span className="flex shrink-0 items-center justify-center *:size-4">
             {icon}
@@ -65,20 +70,38 @@ function ButtonIcon({ icon }: { icon: ReactNode }) {
     );
 }
 
-export function Button({ children, className, disabled, icon, iconOnly = false, type = "button", variant = "primary", ...props }: ButtonProps) {
-    const showLabel = !iconOnly && children !== null && children !== undefined && children !== false;
+function ButtonRoot({ children, className, disabled, icon, iconPosition = "leading", type = "button", variant = "primary", ...props }: ButtonProps) {
+    const showLabel = children !== null && children !== undefined && children !== false;
     const showIcon = icon !== null && icon !== undefined;
-    const isIconOnly = iconOnly || (!showLabel && showIcon);
+    const trailing = iconPosition === "trailing";
 
     return (
         <button
             type={type}
             disabled={disabled}
-            className={cn(buttonVariants({ variant, iconOnly: isIconOnly ? "true" : "false" }), className)}
+            className={cn(buttonVariants({ variant, size: "default" }), className)}
             {...props}
         >
-            {showIcon ? <ButtonIcon icon={icon} /> : null}
+            {showIcon && !trailing ? <IconSpan icon={icon} /> : null}
             {showLabel ? <Label.sm className="text-[inherit]">{children}</Label.sm> : null}
+            {showIcon && trailing ? <IconSpan icon={icon} /> : null}
         </button>
     );
 }
+
+function IconButton({ icon, className, disabled, type = "button", variant = "primary", ...props }: IconButtonProps) {
+    return (
+        <button
+            type={type}
+            disabled={disabled}
+            className={cn(buttonVariants({ variant, size: "icon" }), className)}
+            {...props}
+        >
+            <IconSpan icon={icon} />
+        </button>
+    );
+}
+
+export const Button = Object.assign(ButtonRoot, {
+    Icon: IconButton,
+});

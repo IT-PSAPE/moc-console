@@ -116,7 +116,7 @@ export function CueSheetOverviewScreen() {
                                 <Label.sm className="flex-1">Event Runs</Label.sm>
                                 <Dropdown.Root placement="bottom">
                                     <Dropdown.Trigger>
-                                        <Button variant="secondary" icon={<Plus />} iconOnly />
+                                        <Button.Icon variant="secondary" icon={<Plus />} />
                                     </Dropdown.Trigger>
                                     <Dropdown.Panel>
                                         {eventTemplates.map((event) => (
@@ -155,7 +155,7 @@ export function CueSheetOverviewScreen() {
                                 <Label.sm className="flex-1">Checklist Runs</Label.sm>
                                 <Dropdown.Root placement="bottom">
                                     <Dropdown.Trigger>
-                                        <Button variant="secondary" icon={<Plus />} iconOnly />
+                                        <Button.Icon variant="secondary" icon={<Plus />} />
                                     </Dropdown.Trigger>
                                     <Dropdown.Panel>
                                         {checklistTemplates.map((checklist) => (

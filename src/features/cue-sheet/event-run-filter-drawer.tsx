@@ -28,7 +28,7 @@ export function EventRunFilterDrawer({ filters }: EventRunFilterDrawerProps) {
                         <Paragraph.xs className="text-tertiary">Narrow runs by schedule, timeline size, and duration.</Paragraph.xs>
                     </div>
                     <Drawer.Close>
-                        <Button variant="ghost" icon={<X />} iconOnly />
+                        <Button.Icon variant="ghost" icon={<X />} />
                     </Drawer.Close>
                 </Drawer.Header>
 

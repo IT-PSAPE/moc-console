@@ -34,7 +34,7 @@ export function ChecklistRunFilterDrawer({ filters }: ChecklistRunFilterDrawerPr
                         <Paragraph.xs className="text-tertiary">Narrow runs by schedule, item count, and completion.</Paragraph.xs>
                     </div>
                     <Drawer.Close>
-                        <Button variant="ghost" icon={<X />} iconOnly />
+                        <Button.Icon variant="ghost" icon={<X />} />
                     </Drawer.Close>
                 </Drawer.Header>
 

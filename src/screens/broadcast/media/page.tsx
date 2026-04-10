@@ -81,7 +81,7 @@ export function BroadcastMediaScreen() {
                     onChange={(e) => setSearch(e.target.value)}
                     className="shrink-0"
                   />
-                  <Button variant="secondary" icon={<Plus />} iconOnly onClick={() => setUploadOpen(true)} />
+                  <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setUploadOpen(true)} />
                 </div>
               </Card.Header>
               <Card.Content className="flex flex-col flex-1 min-h-0 overflow-hidden py-2">

@@ -36,9 +36,8 @@ export function TimelineToolbar({ renderTitle }: TimelineToolbarProps) {
             {/* Filter */}
             <Dropdown.Root>
                 <Dropdown.Trigger>
-                    <Button
+                    <Button.Icon
                         variant={filter !== 'all' ? 'secondary' : 'ghost'}
-                        iconOnly
                         icon={<Filter />}
                     />
                 </Dropdown.Trigger>
@@ -60,8 +59,8 @@ export function TimelineToolbar({ renderTitle }: TimelineToolbarProps) {
 
             {/* Zoom controls */}
             <div className="flex items-center gap-0.5">
-                <Button variant="ghost" iconOnly icon={<Minus />} onClick={() => updateZoomAnchoredToPlayhead('out')} />
-                <Button variant="ghost" iconOnly icon={<Plus />} onClick={() => updateZoomAnchoredToPlayhead('in')} />
+                <Button.Icon variant="ghost" icon={<Minus />} onClick={() => updateZoomAnchoredToPlayhead('out')} />
+                <Button.Icon variant="ghost" icon={<Plus />} onClick={() => updateZoomAnchoredToPlayhead('in')} />
             </div>
 
             {/* Add cue */}

@@ -32,7 +32,7 @@ export function RequestFilterDrawer({ filters }: RequestFilterDrawerProps) {
                         <Paragraph.xs className="text-tertiary">Narrow down and order your requests</Paragraph.xs>
                     </div>
                     <Drawer.Close>
-                        <Button variant="ghost" icon={<X />} iconOnly />
+                        <Button.Icon variant="ghost" icon={<X />} />
                     </Drawer.Close>
                 </Drawer.Header>
 

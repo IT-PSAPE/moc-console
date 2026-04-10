@@ -17,11 +17,12 @@ import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
 import type { Checklist, CueSheetEvent } from '@/types/cue-sheet'
 
 export function CueSheetTemplatesScreen() {
+    const navigate = useNavigate()
+    
     const {
         state: { events, checklists, isLoadingEvents, isLoadingChecklists },
         actions: { loadEvents, loadChecklists, syncEvent, syncChecklist },
     } = useCueSheet()
-    const navigate = useNavigate()
 
     useEffect(() => {
         loadEvents()
@@ -127,7 +128,7 @@ export function CueSheetTemplatesScreen() {
                             <Card.Header className="gap-1.5">
                                 <Calendar className="size-4" />
                                 <Label.sm className="mr-auto">Event Templates</Label.sm>
-                                <Button icon={<Plus />} onClick={() => setShowEventModal(true)}>New Template</Button>
+                                <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setShowEventModal(true)} />
                             </Card.Header>
                             <Card.Content ghost className="flex flex-col gap-1.5">
                                 {filteredEventTemplates.map((event) => (
@@ -145,7 +146,7 @@ export function CueSheetTemplatesScreen() {
                             <Card.Header className="gap-1.5">
                                 <ListChecks className="size-4" />
                                 <Label.sm className="mr-auto">Checklist Templates</Label.sm>
-                                <Button icon={<Plus />} onClick={() => setShowChecklistModal(true)}>New Template</Button>
+                                <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setShowChecklistModal(true)} />
                             </Card.Header>
                             <Card.Content ghost className="flex flex-col gap-1.5">
                                 {filteredChecklistTemplates.map((checklist) => (

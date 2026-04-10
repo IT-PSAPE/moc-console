@@ -149,9 +149,9 @@ function SlidePreview({ item }: { item: MediaItem }) {
 
       {/* Controls */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" icon={<SkipBack />} iconOnly onClick={handlePrevious} />
-        <Button variant="secondary" icon={isPlaying ? <Pause /> : <Play />} iconOnly onClick={handlePlayToggle} />
-        <Button variant="ghost" icon={<SkipForward />} iconOnly onClick={handleNext} />
+        <Button.Icon variant="ghost" icon={<SkipBack />} onClick={handlePrevious} />
+        <Button.Icon variant="secondary" icon={isPlaying ? <Pause /> : <Play />} onClick={handlePlayToggle} />
+        <Button.Icon variant="ghost" icon={<SkipForward />} onClick={handleNext} />
       </div>
 
       {item.audioUrl && <audio key={`${item.id}-audio`} src={item.audioUrl} controls preload="metadata" className="w-full max-w-md" />}

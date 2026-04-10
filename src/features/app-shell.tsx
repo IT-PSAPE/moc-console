@@ -63,14 +63,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                     <Sidebar.MenuItem title={"Overview"} active={isActive(routes.requestsOverview)} onClick={() => navigateToRoute(routes.requestsOverview)} />
                                     <Sidebar.MenuItem title={"All requests"} active={isActive(routes.requestsAllRequests)} onClick={() => navigateToRoute(routes.requestsAllRequests)} />
                                     <Sidebar.MenuItem title={"Archived"} active={isActive(routes.requestsArchived)} onClick={() => navigateToRoute(routes.requestsArchived)} />
-                                    <Sidebar.MenuItem title={"Reports"} active={isActive(routes.requestsReports)} onClick={() => navigateToRoute(routes.requestsReports)} />
                                 </Sidebar.MenuItem>
                                 <Sidebar.MenuItem title={"Equipment"} icon={<Package />}>
                                     <Sidebar.MenuItem title={"Overview"} active={isActive(routes.equipmentOverview)} onClick={() => navigateToRoute(routes.equipmentOverview)} />
                                     <Sidebar.MenuItem title={"Inventory"} active={isActive(routes.equipmentInventory)} onClick={() => navigateToRoute(routes.equipmentInventory)} />
                                     <Sidebar.MenuItem title={"Bookings"} active={isActive(routes.equipmentBookings)} onClick={() => navigateToRoute(routes.equipmentBookings)} />
                                     <Sidebar.MenuItem title={"Maintenance"} active={isActive(routes.equipmentMaintenance)} onClick={() => navigateToRoute(routes.equipmentMaintenance)} />
-                                    <Sidebar.MenuItem title={"Reports"} active={isActive(routes.equipmentReports)} onClick={() => navigateToRoute(routes.equipmentReports)} />
                                 </Sidebar.MenuItem>
                                 <Sidebar.MenuItem title={"Broadcast"} icon={<Cast />}>
                                     <Sidebar.MenuItem title={"Overview"} active={isActive(routes.broadcastOverview)} onClick={() => navigateToRoute(routes.broadcastOverview)} />

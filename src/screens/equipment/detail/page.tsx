@@ -147,7 +147,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
         ) : (
           <Button variant="secondary" icon={<Pencil />}>Edit</Button>
         )}
-        <Button variant="danger-secondary" icon={<Trash2 />} iconOnly onClick={() => setShowDeleteModal(true)} />
+        <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setShowDeleteModal(true)} />
       </TopBarActions>
 
       {/* Header */}
