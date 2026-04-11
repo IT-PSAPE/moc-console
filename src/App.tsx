@@ -27,6 +27,8 @@ import { CueSheetChecklistScreen } from './screens/cue-sheet/checklist/page'
 import { CueSheetChecklistDetailScreen } from './screens/cue-sheet/checklist/detail/page'
 import { CueSheetTemplatesScreen } from './screens/cue-sheet/templates/page'
 import { CueSheetProvider } from './features/cue-sheet/cue-sheet-provider'
+import { UsersProvider } from './features/users/users-provider'
+import { UsersScreen } from './screens/users/page'
 import { BreadcrumbProvider } from './components/navigation/breadcrumb'
 import { SidebarProvider } from './components/navigation/sidebar'
 import { TopBarProvider } from './features/topbar'
@@ -92,6 +94,7 @@ const router = createBrowserRouter([
         children: [
             { index: true, element: <Navigate to={`/${routes.dashboard}`} replace /> },
             { path: routes.dashboard, element: <RequestsProvider><EquipmentProvider><BroadcastProvider><CueSheetProvider><DashboardScreen /></CueSheetProvider></BroadcastProvider></EquipmentProvider></RequestsProvider> },
+            { path: routes.users, element: <UsersProvider><UsersScreen /></UsersProvider> },
             {
                 element: <RequestsProvider><Outlet /></RequestsProvider>,
                 children: [
