@@ -17,6 +17,7 @@ import { Label, Paragraph } from '@/components/display/text'
 import type { Checklist, ChecklistItem, ChecklistSection } from '@/types/cue-sheet'
 import { Check, ChevronDown, GripVertical, Plus } from 'lucide-react'
 import { cn } from '@/utils/cn'
+import { Input } from '@/components/form/input'
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -134,9 +135,9 @@ function InlineItemInput({ onSubmit, onDismiss }: { onSubmit: (value: string) =>
             <span className="shrink-0 text-quaternary"><GripVertical className="size-4 invisible" /></span>
             <div className="flex items-center gap-3 flex-1">
                 <div className="size-5 shrink-0 rounded border border-secondary bg-primary" />
-                <input
+                <Input
                     ref={inputRef}
-                    className="flex-1 bg-transparent text-label-sm text-primary placeholder:text-quaternary outline-none"
+                    className="flex-1 bg-transparent label-sm text-primary placeholder:text-quaternary outline-none"
                     placeholder="Item label..."
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
@@ -160,9 +161,9 @@ function InlineSectionInput({ onSubmit, onDismiss }: { onSubmit: (value: string)
             </div>
             <div className="flex items-center gap-3 px-2 pl-1.5 py-2.5 flex-1">
                 <ChevronDown className="size-4 shrink-0 text-tertiary" />
-                <input
+                <Input
                     ref={inputRef}
-                    className="flex-1 bg-transparent text-label-sm text-primary placeholder:text-quaternary outline-none"
+                    className="flex-1 bg-transparent label-sm text-primary placeholder:text-quaternary outline-none"
                     placeholder="Section name..."
                     value={value}
                     onChange={(e) => setValue(e.target.value)}

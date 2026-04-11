@@ -6,16 +6,25 @@ type InlineEditableTextProps = {
     onSave: (value: string) => void
     className?: string
     placeholder?: string
+    autoEdit?: boolean
 }
 
-export function InlineEditableText({ value, onSave, className, placeholder = 'Untitled' }: InlineEditableTextProps) {
+export function InlineEditableText({ value, onSave, className, placeholder = 'Untitled', autoEdit }: InlineEditableTextProps) {
     const [isEditing, setIsEditing] = useState(false)
     const [draft, setDraft] = useState(value)
     const inputRef = useRef<HTMLInputElement>(null)
+    const hasAutoEdited = useRef(false)
 
     useEffect(() => {
         setDraft(value)
     }, [value])
+
+    useEffect(() => {
+        if (autoEdit && !hasAutoEdited.current) {
+            hasAutoEdited.current = true
+            setIsEditing(true)
+        }
+    }, [autoEdit])
 
     useEffect(() => {
         if (isEditing) {

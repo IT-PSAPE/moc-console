@@ -2,7 +2,7 @@ import { useFeedback } from '@/components/feedback/feedback-provider'
 import { fetchAssigneesByRequestId, type ResolvedAssignee } from '@/data/fetch-assignees'
 import { addRequestAssignee, archiveRequest, deleteRequest, removeRequestAssignee, unarchiveRequest } from '@/data/mutate-requests'
 import type { Request } from '@/types/requests'
-import { useCallback, useEffect, useState, type ChangeEventHandler } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useBlocker, useNavigate } from 'react-router-dom'
 import { useRequestStore } from './use-request-store'
 import { useRequests } from './request-provider'
@@ -127,8 +127,8 @@ export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequ
         }
     }, [navigate, removeRequest, request.id, toast])
 
-    const handleContentChange = useCallback<ChangeEventHandler<HTMLTextAreaElement>>((event) => {
-        updateField('content', event.target.value)
+    const handleContentChange = useCallback((content: string) => {
+        updateField('content', content)
     }, [updateField])
 
     return {

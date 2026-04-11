@@ -1,7 +1,7 @@
 import { useState } from "react"
-import type { FormEvent } from "react"
+import type { ChangeEvent, FormEvent } from "react"
 import { Link } from "react-router-dom"
-import { Mail, Lock } from "lucide-react"
+import { Mail, Lock, User } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/controls/button"
 import { Input } from "@/components/form/input"
@@ -10,6 +10,8 @@ import { AuthLayout } from "./auth-layout"
 
 export function SignupScreen() {
     const { signUp } = useAuth()
+    const [name, setName] = useState("")
+    const [surname, setSurname] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
@@ -17,9 +19,37 @@ export function SignupScreen() {
     const [success, setSuccess] = useState(false)
     const [loading, setLoading] = useState(false)
 
+    function handleNameChange(event: ChangeEvent<HTMLInputElement>) {
+        setName(event.target.value)
+    }
+
+    function handleSurnameChange(event: ChangeEvent<HTMLInputElement>) {
+        setSurname(event.target.value)
+    }
+
+    function handleEmailChange(event: ChangeEvent<HTMLInputElement>) {
+        setEmail(event.target.value)
+    }
+
+    function handlePasswordChange(event: ChangeEvent<HTMLInputElement>) {
+        setPassword(event.target.value)
+    }
+
+    function handleConfirmPasswordChange(event: ChangeEvent<HTMLInputElement>) {
+        setConfirmPassword(event.target.value)
+    }
+
     async function handleSubmit(e: FormEvent) {
         e.preventDefault()
         setError("")
+
+        const trimmedName = name.trim()
+        const trimmedSurname = surname.trim()
+
+        if (!trimmedName || !trimmedSurname) {
+            setError("Name and surname are required")
+            return
+        }
 
         if (password !== confirmPassword) {
             setError("Passwords do not match")
@@ -32,7 +62,7 @@ export function SignupScreen() {
         }
 
         setLoading(true)
-        const { error } = await signUp(email, password)
+        const { error } = await signUp(email, password, trimmedName, trimmedSurname)
         if (error) {
             setError(error.message)
             setLoading(false)
@@ -71,13 +101,37 @@ export function SignupScreen() {
                 )}
 
                 <div className="space-y-1">
+                    <FormLabel label="Name" required />
+                    <Input
+                        type="text"
+                        placeholder="First name"
+                        icon={<User />}
+                        value={name}
+                        onChange={handleNameChange}
+                        required
+                    />
+                </div>
+
+                <div className="space-y-1">
+                    <FormLabel label="Surname" required />
+                    <Input
+                        type="text"
+                        placeholder="Surname"
+                        icon={<User />}
+                        value={surname}
+                        onChange={handleSurnameChange}
+                        required
+                    />
+                </div>
+
+                <div className="space-y-1">
                     <FormLabel label="Email" required />
                     <Input
                         type="email"
                         placeholder="you@example.com"
                         icon={<Mail />}
                         value={email}
-                        onChange={e => setEmail(e.target.value)}
+                        onChange={handleEmailChange}
                         required
                     />
                 </div>
@@ -89,7 +143,7 @@ export function SignupScreen() {
                         placeholder="At least 6 characters"
                         icon={<Lock />}
                         value={password}
-                        onChange={e => setPassword(e.target.value)}
+                        onChange={handlePasswordChange}
                         required
                     />
                 </div>
@@ -101,7 +155,7 @@ export function SignupScreen() {
                         placeholder="Re-enter your password"
                         icon={<Lock />}
                         value={confirmPassword}
-                        onChange={e => setConfirmPassword(e.target.value)}
+                        onChange={handleConfirmPasswordChange}
                         required
                     />
                 </div>

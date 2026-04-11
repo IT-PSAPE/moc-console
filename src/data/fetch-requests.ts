@@ -1,52 +1,32 @@
 import type { Request, Status } from "@/types/requests";
-import { supabase } from "@/lib/supabase";
-import { mapRow } from "./map-request";
+import { findRequestById, listRequests } from "./mock-request-store";
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, 200 + Math.random() * ms));
 
 /** Fetch all non-archived requests */
 export async function fetchRequests(): Promise<Request[]> {
-  const { data, error } = await supabase
-    .from("requests")
-    .select("*")
-    .neq("status", "archived");
-
-  if (error) throw new Error(error.message);
-  return (data ?? []).map(mapRow);
+  await delay(120);
+  return listRequests().filter((request) => request.status !== "archived");
 }
 
 /** Fetch requests filtered by status */
 export async function fetchRequestsByStatus(
   status: Status,
 ): Promise<Request[]> {
-  const { data, error } = await supabase
-    .from("requests")
-    .select("*")
-    .eq("status", status);
-
-  if (error) throw new Error(error.message);
-  return (data ?? []).map(mapRow);
+  await delay(120);
+  return listRequests().filter((request) => request.status === status);
 }
 
 /** Fetch a single request by id */
 export async function fetchRequestById(
   id: string,
 ): Promise<Request | undefined> {
-  const { data, error } = await supabase
-    .from("requests")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error) throw new Error(error.message);
-  return data ? mapRow(data) : undefined;
+  await delay(80);
+  return findRequestById(id);
 }
 
 /** Fetch only archived requests */
 export async function fetchArchivedRequests(): Promise<Request[]> {
-  const { data, error } = await supabase
-    .from("requests")
-    .select("*")
-    .eq("status", "archived");
-
-  if (error) throw new Error(error.message);
-  return (data ?? []).map(mapRow);
+  await delay(120);
+  return listRequests().filter((request) => request.status === "archived");
 }

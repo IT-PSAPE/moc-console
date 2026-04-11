@@ -56,7 +56,7 @@ export function CueSheetEventDetailScreen() {
                         <InlineEditableText
                             value={event.title}
                             onSave={handleTitleChange}
-                            className="text-label-md"
+                            className="label-md"
                         />
                     )}
                 />

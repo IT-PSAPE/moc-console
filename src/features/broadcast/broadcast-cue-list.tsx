@@ -16,6 +16,7 @@ type PlaylistCueListProps = {
   onReorder: (cues: Cue[]) => void
   onRemove: (cueId: string) => void
   onUpdateCue?: (cue: Cue) => void
+  defaultImageDuration?: number
 }
 
 function DropIndicatorLine() {
@@ -28,7 +29,7 @@ function DropIndicatorLine() {
   )
 }
 
-export function PlaylistCueList({ cues, onReorder, onRemove, onUpdateCue }: PlaylistCueListProps) {
+export function PlaylistCueList({ cues, onReorder, onRemove, onUpdateCue, defaultImageDuration }: PlaylistCueListProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
@@ -96,7 +97,7 @@ export function PlaylistCueList({ cues, onReorder, onRemove, onUpdateCue }: Play
           return (
             <div key={cue.id} className="relative">
               {showAbove && <DropIndicatorLine />}
-              <DroppableCueRow cue={cue} onRemove={onRemove} onUpdateCue={onUpdateCue} />
+              <DroppableCueRow cue={cue} onRemove={onRemove} onUpdateCue={onUpdateCue} defaultImageDuration={defaultImageDuration} />
               {showBelow && <DropIndicatorLine />}
             </div>
           )
@@ -108,17 +109,17 @@ export function PlaylistCueList({ cues, onReorder, onRemove, onUpdateCue }: Play
 
 // ─── Droppable + Draggable Cue Row ────────────────────
 
-function DroppableCueRow({ cue, onRemove, onUpdateCue }: { cue: Cue; onRemove: (id: string) => void; onUpdateCue?: (cue: Cue) => void }) {
+function DroppableCueRow({ cue, onRemove, onUpdateCue, defaultImageDuration }: { cue: Cue; onRemove: (id: string) => void; onUpdateCue?: (cue: Cue) => void; defaultImageDuration?: number }) {
   const { setNodeRef: setDropRef } = useDroppable({ id: cue.id })
 
   return (
     <div ref={setDropRef}>
-      <DraggableCueRow cue={cue} onRemove={onRemove} onUpdateCue={onUpdateCue} />
+      <DraggableCueRow cue={cue} onRemove={onRemove} onUpdateCue={onUpdateCue} defaultImageDuration={defaultImageDuration} />
     </div>
   )
 }
 
-function DraggableCueRow({ cue, onRemove, onUpdateCue }: { cue: Cue; onRemove: (id: string) => void; onUpdateCue?: (cue: Cue) => void }) {
+function DraggableCueRow({ cue, onRemove, onUpdateCue, defaultImageDuration }: { cue: Cue; onRemove: (id: string) => void; onUpdateCue?: (cue: Cue) => void; defaultImageDuration?: number }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: cue.id,
     data: { cue },
@@ -131,9 +132,17 @@ function DraggableCueRow({ cue, onRemove, onUpdateCue }: { cue: Cue; onRemove: (
     opacity: isDragging ? 0.4 : undefined,
   }
 
-  const durationText = cue.durationOverride
-    ? `${Math.floor(cue.durationOverride / 60)}:${String(cue.durationOverride % 60).padStart(2, "0")}`
-    : "Default"
+  const isImage = cue.mediaItemType === "image"
+
+  const durationText = (() => {
+    if (cue.durationOverride) {
+      return `${Math.floor(cue.durationOverride / 60)}:${String(cue.durationOverride % 60).padStart(2, "0")}`
+    }
+    if (isImage && defaultImageDuration) {
+      return `${defaultImageDuration}s`
+    }
+    return "Default"
+  })()
 
   function handleDurationSave() {
     const seconds = parseInt(durationValue, 10)

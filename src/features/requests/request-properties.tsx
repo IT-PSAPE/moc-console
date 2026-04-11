@@ -75,11 +75,8 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
                         </Dropdown.Trigger>
                         <Dropdown.Panel>
                             {editableStatuses.map((s) => (
-                                <Dropdown.Item key={s} onSelect={() => onFieldChange("status", s)}>
-                                    <span className="size-4 shrink-0 flex items-center justify-center">
-                                        {s === request.status && <Check className="size-3.5 text-brand_secondary" />}
-                                    </span>
-                                    {statusLabel[s]}
+                                <Dropdown.Item key={s} onSelect={() => onFieldChange("status", s)} className="px-1">
+                                    <Badge label={statusLabel[s]} icon={statusIcon[s]} color={statusColor[s]} />
                                 </Dropdown.Item>
                             ))}
                         </Dropdown.Panel>
@@ -101,13 +98,10 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
                                 className="cursor-pointer"
                             />
                         </Dropdown.Trigger>
-                        <Dropdown.Panel>
+                        <Dropdown.Panel >
                             {allPriorities.map((p) => (
-                                <Dropdown.Item key={p} onSelect={() => onFieldChange("priority", p)}>
-                                    <span className="size-4 shrink-0 flex items-center justify-center">
-                                        {p === request.priority && <Check className="size-3.5 text-brand_secondary" />}
-                                    </span>
-                                    {priorityLabel[p]}
+                                <Dropdown.Item key={p} onSelect={() => onFieldChange("priority", p)} className="px-1">
+                                    <Badge label={priorityLabel[p]} icon={<CircleAlert />} color={priorityColor[p]} />
                                 </Dropdown.Item>
                             ))}
                         </Dropdown.Panel>
@@ -130,11 +124,8 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
                         </Dropdown.Trigger>
                         <Dropdown.Panel>
                             {allCategories.map((c) => (
-                                <Dropdown.Item key={c} onSelect={() => onFieldChange("category", c)}>
-                                    <span className="size-4 shrink-0 flex items-center justify-center">
-                                        {c === request.category && <Check className="size-3.5 text-brand_secondary" />}
-                                    </span>
-                                    {categoryLabel[c]}
+                                <Dropdown.Item key={c} onSelect={() => onFieldChange("category", c)} className="px-1">
+                                    <Badge label={categoryLabel[c]} icon={<Tag />} color="purple"/>
                                 </Dropdown.Item>
                             ))}
                         </Dropdown.Panel>
@@ -147,14 +138,14 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
             {/* Due Date */}
             <MetaRow icon={<Calendar className="size-4" />} label="Due Date">
                 {editable && onFieldChange ? (
-                    <input
+                    <Input
                         type="datetime-local"
                         value={request.dueDate ? toLocalDateTimeValue(request.dueDate) : ""}
                         onChange={(e) => {
                             const v = e.target.value;
                             onFieldChange("dueDate", v ? new Date(v).toISOString() : null);
                         }}
-                        className="bg-transparent text-xs text-primary outline-none cursor-pointer"
+                        style="ghost"
                     />
                 ) : (
                     request.dueDate ? (
@@ -173,6 +164,7 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
                         onChange={(e) => onFieldChange("requestedBy", e.target.value)}
                         placeholder="Requester name"
                         className="max-w-48"
+                        style="ghost"
                     />
                 ) : (
                     request.requestedBy ? (

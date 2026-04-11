@@ -1,12 +1,16 @@
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
+import type { ChangeEvent } from "react"
 import { Modal } from "@/components/overlays/modal"
 import { Button } from "@/components/controls/button"
 import { Input } from "@/components/form/input"
 import { FormLabel } from "@/components/form/form-label"
 import { Label, Paragraph } from "@/components/display/text"
-import type { MediaType } from "@/types/broadcast/media-type"
 import type { MediaItem } from "@/types/broadcast/media-item"
-import { Image, Music, Video, Upload, Link, Check } from "lucide-react"
+import { FileDropzone } from "@/components/form/file-dropzone"
+import { SegmentedControl } from "@/components/controls/segmented-control"
+import { mediaTypeLabel } from "@/types/broadcast/constants"
+import { getDefaultMediaDetails, inferMediaTypeFromSource } from "@/utils/media-source"
+import { Link } from "lucide-react"
 
 type UploadMediaModalProps = {
   open: boolean
@@ -14,62 +18,93 @@ type UploadMediaModalProps = {
   onSubmit: (item: MediaItem) => void
 }
 
-const MEDIA_TYPES: { value: MediaType; label: string; icon: React.ReactNode }[] = [
-  { value: "image", label: "Image", icon: <Image /> },
-  { value: "video", label: "Video", icon: <Video /> },
-  { value: "audio", label: "Audio", icon: <Music /> },
-]
-
 type SourceMode = "url" | "upload"
 
 export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaModalProps) {
-  const [mediaType, setMediaType] = useState<MediaType>("image")
   const [sourceMode, setSourceMode] = useState<SourceMode>("url")
   const [name, setName] = useState("")
   const [url, setUrl] = useState("")
-  const [fileName, setFileName] = useState("")
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [file, setFile] = useState<File | null>(null)
 
   const resetForm = useCallback(() => {
-    setMediaType("image")
     setSourceMode("url")
     setName("")
     setUrl("")
-    setFileName("")
+    setFile(null)
   }, [])
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (file) {
-      setFileName(file.name)
-      if (!name) {
-        // Auto-fill name from file name (without extension)
-        setName(file.name.replace(/\.[^.]+$/, ""))
-      }
-    }
+  const inferredMediaType = useMemo(() => {
+    return inferMediaTypeFromSource({
+      file: sourceMode === "upload" ? file : null,
+      url: sourceMode === "url" ? url : null,
+    })
+  }, [file, sourceMode, url])
+
+  const hasSourceValue = sourceMode === "url" ? Boolean(url.trim()) : Boolean(file)
+  const canSubmit = Boolean(name.trim()) && hasSourceValue && Boolean(inferredMediaType)
+
+  function handleModalOpenChange(nextOpen: boolean) {
+    onOpenChange(nextOpen)
+
+    if (!nextOpen) resetForm()
+  }
+
+  function handleNameChange(event: ChangeEvent<HTMLInputElement>) {
+    setName(event.target.value)
+  }
+
+  function handleUrlChange(event: ChangeEvent<HTMLInputElement>) {
+    setUrl(event.target.value)
+  }
+
+  function handleSourceChange(value: string) {
+    setSourceMode(value as SourceMode)
+  }
+
+  function handleFileSelect(nextFile: File | null) {
+    setFile(nextFile)
   }
 
   function handleSubmit() {
+    if (!inferredMediaType) return
+
+    const trimmedName = name.trim()
+    const sourceUrl = sourceMode === "url" ? url.trim() : `/uploads/${file?.name ?? ""}`
+    const mediaDetails = getDefaultMediaDetails(inferredMediaType)
     const newItem: MediaItem = {
-      id: `media-new-${Date.now()}`,
-      name: name || "Untitled",
-      type: mediaType,
-      url: sourceMode === "url" ? url : `/uploads/${fileName}`,
-      thumbnail: null,
-      duration: mediaType === "image" ? null : 0,
+      id: crypto.randomUUID(),
+      name: trimmedName || "Untitled",
+      type: inferredMediaType,
+      url: sourceUrl,
+      thumbnail: mediaDetails.thumbnail,
+      duration: mediaDetails.duration,
       createdAt: new Date().toISOString().split("T")[0],
-      slides: null,
-      audioUrl: null,
     }
     onSubmit(newItem)
     resetForm()
     onOpenChange(false)
   }
 
-  const canSubmit = name.trim() && (sourceMode === "url" ? url.trim() : fileName)
+  function renderSourceStatus() {
+    if (!hasSourceValue) return null
+
+    if (inferredMediaType) {
+      return (
+        <Paragraph.xs className="text-quaternary">
+          Detected as {mediaTypeLabel[inferredMediaType].toLowerCase()} media.
+        </Paragraph.xs>
+      )
+    }
+
+    return (
+      <Paragraph.xs className="text-utility-red-700">
+        {sourceMode === "url" ? "We couldn't determine the media type from this URL." : "This file type isn't supported."}
+      </Paragraph.xs>
+    )
+  }
 
   return (
-    <Modal.Root open={open} onOpenChange={(next) => { onOpenChange(next); if (!next) resetForm() }}>
+    <Modal.Root open={open} onOpenChange={handleModalOpenChange}>
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
@@ -80,114 +115,40 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
 
             <Modal.Content>
               <div className="flex flex-col gap-4 p-4">
-                {/* Media type selection */}
-                <div className="flex flex-col gap-1.5">
-                  <FormLabel label="Type" />
-                  <div className="grid grid-cols-3 gap-2">
-                    {MEDIA_TYPES.map((t) => (
-                      <button
-                        key={t.value}
-                        type="button"
-                        className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border cursor-pointer transition-colors ${
-                          mediaType === t.value
-                            ? "border-brand bg-brand_secondary"
-                            : "border-secondary hover:bg-primary_hover"
-                        }`}
-                        onClick={() => setMediaType(t.value)}
-                      >
-                        <span className={`*:size-5 ${mediaType === t.value ? "text-brand" : "text-tertiary"}`}>
-                          {t.icon}
-                        </span>
-                        <Label.xs className={mediaType === t.value ? "text-brand" : ""}>{t.label}</Label.xs>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Source mode toggle */}
-                <div className="flex flex-col gap-1.5">
-                  <FormLabel label="Source" />
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border cursor-pointer transition-colors ${
-                        sourceMode === "url"
-                          ? "border-brand bg-brand_secondary"
-                          : "border-secondary hover:bg-primary_hover"
-                      }`}
-                      onClick={() => setSourceMode("url")}
-                    >
-                      <Link className={`size-4 ${sourceMode === "url" ? "text-brand" : "text-tertiary"}`} />
-                      <Label.xs className={sourceMode === "url" ? "text-brand" : ""}>URL</Label.xs>
-                    </button>
-                    <button
-                      type="button"
-                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border cursor-pointer transition-colors ${
-                        sourceMode === "upload"
-                          ? "border-brand bg-brand_secondary"
-                          : "border-secondary hover:bg-primary_hover"
-                      }`}
-                      onClick={() => setSourceMode("upload")}
-                    >
-                      <Upload className={`size-4 ${sourceMode === "upload" ? "text-brand" : "text-tertiary"}`} />
-                      <Label.xs className={sourceMode === "upload" ? "text-brand" : ""}>Upload</Label.xs>
-                    </button>
-                  </div>
-                </div>
-
-                {/* URL or File input */}
-                {sourceMode === "url" ? (
-                  <div className="flex flex-col gap-1.5">
-                    <FormLabel label="URL" />
-                    <Input
-                      icon={<Link />}
-                      value={url}
-                      onChange={(e) => setUrl(e.target.value)}
-                      placeholder="https://example.com/media.mp4"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-1.5">
-                    <FormLabel label="File" />
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      className="hidden"
-                      accept={
-                        mediaType === "image" ? "image/*" :
-                        mediaType === "video" ? "video/*" :
-                        "audio/*"
-                      }
-                      onChange={handleFileChange}
-                    />
-                    <button
-                      type="button"
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-dashed border-secondary hover:border-brand hover:bg-primary_hover cursor-pointer transition-colors"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      {fileName ? (
-                        <>
-                          <Check className="size-4 text-utility-green-700" />
-                          <Paragraph.sm className="truncate flex-1 text-left">{fileName}</Paragraph.sm>
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="size-4 text-tertiary" />
-                          <Paragraph.sm className="text-tertiary">Choose a file...</Paragraph.sm>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
-
-                {/* Name */}
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Name" />
                   <Input
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={handleNameChange}
                     placeholder="Media item name"
                   />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <FormLabel label="Source" />
+                  <SegmentedControl.Root fill value={sourceMode} onValueChange={handleSourceChange}>
+                    <SegmentedControl.Item value="url">URL</SegmentedControl.Item>
+                    <SegmentedControl.Item value="upload">Upload</SegmentedControl.Item>
+                  </SegmentedControl.Root>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <FormLabel label={sourceMode === "url" ? "URL" : "File"} />
+                  {sourceMode === "url" ? (
+                    <Input
+                      icon={<Link />}
+                      value={url}
+                      onChange={handleUrlChange}
+                      placeholder="https://example.com/media.mp4"
+                    />
+                  ) : (
+                    <FileDropzone
+                      accept="image/*,audio/*,video/*"
+                      fileName={file?.name}
+                      onFileSelect={handleFileSelect}
+                    />
+                  )}
+                  {renderSourceStatus()}
                 </div>
               </div>
             </Modal.Content>

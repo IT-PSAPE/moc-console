@@ -274,7 +274,7 @@ function CalendarCell({ date, events, isCurrentMonth, isToday }: CalendarCellPro
             !isCurrentMonth && 'bg-secondary',
         )}>
             <span className={cn(
-                'mb-1 inline-flex size-6 items-center justify-center self-start rounded-full text-paragraph-xs',
+                'mb-1 inline-flex size-6 items-center justify-center self-start rounded-full paragraph-xs',
                 isToday && 'bg-brand_solid text-primary_on-brand',
                 !isToday && isCurrentMonth && 'text-primary',
                 !isToday && !isCurrentMonth && 'text-quaternary',
@@ -286,7 +286,7 @@ function CalendarCell({ date, events, isCurrentMonth, isToday }: CalendarCellPro
                     <div
                         key={i}
                         className={cn(
-                            'truncate rounded px-1.5 py-0.5 text-paragraph-xs',
+                            'truncate rounded px-1.5 py-0.5 paragraph-xs',
                             eventColorMap[event.color ?? 'gray'],
                         )}
                         title={event.label}
@@ -295,7 +295,7 @@ function CalendarCell({ date, events, isCurrentMonth, isToday }: CalendarCellPro
                     </div>
                 ))}
                 {events.length > 2 && (
-                    <span className="px-1.5 text-paragraph-xs text-quaternary">+{events.length - 2} more</span>
+                    <span className="px-1.5 paragraph-xs text-quaternary">+{events.length - 2} more</span>
                 )}
             </div>
         </div>

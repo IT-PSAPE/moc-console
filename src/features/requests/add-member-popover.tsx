@@ -102,7 +102,7 @@ function AddMemberPanel({ existingUserIds, onAdd }: Omit<AddMemberPopoverProps, 
                         return (
                             <button key={a.id} type="button" disabled={alreadyAssigned} onClick={() => handleSelectUser(a)} className={cn("w-full flex items-center rounded-lg py-1 px-2 space-x-2 hover:bg-secondary transition-colors cursor-pointer", alreadyAssigned && "opacity-50 !cursor-not-allowed hover:!bg-transparent")}>
                                 <Avatar.initials size="sm" name={`${a.name[0]}${a.surname[0]}`} />
-                                <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0 text-left">
                                     <Label.sm>{a.name} {a.surname}</Label.sm>
                                 </div>
                                 {alreadyAssigned && <Check className="size-4 text-brand_secondary shrink-0" />}

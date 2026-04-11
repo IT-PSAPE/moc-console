@@ -7,7 +7,6 @@ export const mediaTypeLabel: Record<MediaType, string> = {
   image: "Image",
   audio: "Audio",
   video: "Video",
-  slide: "Slide",
 }
 
 export const playlistStatusLabel: Record<PlaylistStatus, string> = {
@@ -17,11 +16,10 @@ export const playlistStatusLabel: Record<PlaylistStatus, string> = {
 
 // ─── Colors ────────────────────────────────────────────
 
-export const mediaTypeColor: Record<MediaType, "blue" | "green" | "purple" | "yellow"> = {
+export const mediaTypeColor: Record<MediaType, "blue" | "green" | "purple"> = {
   image: "blue",
   audio: "green",
   video: "purple",
-  slide: "yellow",
 }
 
 export const playlistStatusColor: Record<PlaylistStatus, "gray" | "green"> = {

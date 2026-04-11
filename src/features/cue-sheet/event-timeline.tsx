@@ -33,7 +33,7 @@ function TimeRuler({ totalMin }: { totalMin: number }) {
                 return (
                     <span
                         key={m}
-                        className="absolute -translate-x-1/2 text-paragraph-xs text-quaternary"
+                        className="absolute -translate-x-1/2 paragraph-xs text-quaternary"
                         style={{ left: `${pct}%` }}
                     >
                         {formatTime(m)}
@@ -61,7 +61,7 @@ function CueBlock({ cue, trackColor, totalMin }: { cue: Cue; trackColor: string;
             }}
             title={`${cue.label} (${formatTime(cue.startMin)} - ${formatTime(cue.startMin + cue.durationMin)})`}
         >
-            <span className="text-white text-paragraph-xs truncate font-medium leading-none">
+            <span className="text-white paragraph-xs truncate font-medium leading-none">
                 {cue.label}
             </span>
         </div>

@@ -29,7 +29,7 @@ The UI is built with React, TypeScript, Vite, and Tailwind CSS v4.
 - request detail view
 - request assignees and request duty roles
 
-Requests are the most complete data flow in the app today. They read and write through Supabase.
+Requests use local mock JSON data, and request assignees start blank. Adding or removing assignees only updates local app state. The live auth domain still provides users, roles, and auth sessions for sign-in and assignment pickers.
 
 ### Equipment
 
@@ -126,23 +126,24 @@ Use them together:
 
 Important caveat:
 
-- This schema documentation is inferred from the current TypeScript models, Supabase queries, row mappers, and mock data in the repository.
+- This schema documentation is inferred from the current TypeScript models, Supabase queries, and mock data in the repository.
 - There are no checked-in SQL migrations or generated database types in this repo at the moment.
 
 ## Current Data Backing
 
 ### Supabase-backed
 
-- requests
-- request assignees
-- request duty roles
+- auth users
 - users
 - user roles
 - roles
 - auth sessions
+- request duty role presets
 
 ### Mock-backed
 
+- requests
+- request assignees
 - equipment
 - equipment bookings
 - broadcast media
@@ -150,6 +151,8 @@ Important caveat:
 - playlist cues
 
 Mock data lives under `src/data/mock`.
+
+All mock record ids are UUID strings.
 
 ## Routing Summary
 

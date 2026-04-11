@@ -10,13 +10,38 @@ type AuthState = {
     profile: Profile | null
     role: Role | null
     loading: boolean
-    signUp: (email: string, password: string) => Promise<{ error: Error | null }>
+    signUp: (email: string, password: string, name: string, surname: string) => Promise<{ error: Error | null }>
     signIn: (email: string, password: string) => Promise<{ error: Error | null }>
-    signOut: () => Promise<void>
+    signOut: () => Promise<{ error: Error | null }>
     resetPassword: (email: string) => Promise<{ error: Error | null }>
 }
 
 const AuthContext = createContext<AuthState | null>(null)
+
+async function upsertProfile(userId: string, email: string, name: string, surname: string) {
+    const { error } = await supabase
+        .from("users")
+        .upsert({ id: userId, email, name, surname }, { onConflict: "id" })
+
+    return error ? new Error(error.message) : null
+}
+
+function clearSupabaseAuthStorage() {
+    if (typeof window === "undefined") {
+        return
+    }
+
+    const localStorageKeys = Object.keys(window.localStorage).filter((key) => key.startsWith("sb-"))
+    const sessionStorageKeys = Object.keys(window.sessionStorage).filter((key) => key.startsWith("sb-"))
+
+    for (const key of localStorageKeys) {
+        window.localStorage.removeItem(key)
+    }
+
+    for (const key of sessionStorageKeys) {
+        window.sessionStorage.removeItem(key)
+    }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [session, setSession] = useState<Session | null>(null)
@@ -52,15 +77,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!user) return
 
         let isActive = true
+        const metadataName = typeof user.user_metadata?.name === "string" ? user.user_metadata.name : ""
+        const metadataSurname = typeof user.user_metadata?.surname === "string" ? user.user_metadata.surname : ""
 
         supabase
             .from("users")
             .select("id, name, surname, email")
             .eq("id", user.id)
-            .single()
-            .then(({ data }) => {
-                if (isActive) {
-                    setProfile(data as Profile | null)
+            .maybeSingle()
+            .then(async ({ data }) => {
+                if (data) {
+                    if (isActive) {
+                        setProfile(data as Profile | null)
+                    }
+                    return
+                }
+
+                if (!metadataName || !metadataSurname || !user.email) {
+                    if (isActive) {
+                        setProfile(null)
+                    }
+                    return
+                }
+
+                const error = await upsertProfile(user.id, user.email, metadataName, metadataSurname)
+                if (!error && isActive) {
+                    setProfile({
+                        id: user.id,
+                        email: user.email,
+                        name: metadataName,
+                        surname: metadataSurname,
+                    })
                 }
             })
 
@@ -81,9 +128,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [user])
 
-    async function signUp(email: string, password: string) {
-        const { error } = await supabase.auth.signUp({ email, password })
-        return { error: error as Error | null }
+    async function signUp(email: string, password: string, name: string, surname: string) {
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: { name, surname },
+            },
+        })
+
+        if (error) {
+            return { error: error as Error | null }
+        }
+
+        if (data.session && data.user) {
+            const profileError = await upsertProfile(data.user.id, email, name, surname)
+            if (profileError) {
+                return { error: profileError }
+            }
+        }
+
+        return { error: null }
     }
 
     async function signIn(email: string, password: string) {
@@ -92,7 +157,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     async function signOut() {
-        await supabase.auth.signOut()
+        let error: Error | null = null
+        try {
+            const result = await supabase.auth.signOut({ scope: "local" })
+            error = result.error as Error | null
+        } catch (e) {
+            error = e instanceof Error ? e : new Error("Sign-out failed")
+        }
+        clearSupabaseAuthStorage()
+        setSession(null)
+        setUser(null)
+        setProfile(null)
+        setRole(null)
+        return { error }
     }
 
     async function resetPassword(email: string) {
