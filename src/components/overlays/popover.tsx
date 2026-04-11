@@ -1,5 +1,6 @@
 import { cn } from '@/utils/cn'
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type CSSProperties, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react'
 import { useAnchorPosition, useClickOutside, type Placement } from './overlay-primitives'
 import { useOverlayStack } from './overlay-provider'
 
@@ -176,8 +177,9 @@ function PopoverTrigger({ children, onClick, ...props }: HTMLAttributes<HTMLSpan
 
 // ─── Panel ───────────────────────────────────────────────────────────
 
-function PopoverPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+function PopoverPanel({ children, className, style, ...props }: HTMLAttributes<HTMLDivElement>) {
     const { state, actions, elements } = usePopover()
+    const { state: overlayState } = useOverlayStack()
     const position = useAnchorPosition(elements.triggerElement, elements.panelElement, state.isOpen, state.placement)
     const handlePanelRef = useCallback((node: HTMLDivElement | null) => {
         actions.setPanelElement(node)
@@ -195,21 +197,37 @@ function PopoverPanel({ children, className, ...props }: HTMLAttributes<HTMLDivE
         return null
     }
 
-    return (
+    const panelStyle: CSSProperties = {
+        top: position.top,
+        left: position.left,
+        zIndex: state.zIndex,
+        maxWidth: position.maxWidth,
+        maxHeight: position.maxHeight,
+        visibility: position.isPositioned ? 'visible' : 'hidden',
+        ...style,
+    }
+
+    const panel = (
         <div
             ref={handlePanelRef}
             className={cn(
-                'fixed z-50 flex min-w-48 flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg',
+                'pointer-events-auto fixed z-50 flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-xl border border-secondary bg-primary shadow-lg',
                 className,
             )}
             role="dialog"
-            style={{ top: position.top, left: position.left, zIndex: state.zIndex }}
+            style={panelStyle}
             tabIndex={-1}
             {...props}
         >
             {children}
         </div>
     )
+
+    if (!overlayState.rootElement) {
+        return panel
+    }
+
+    return createPortal(panel, overlayState.rootElement)
 }
 
 // ─── Header / Content ────────────────────────────────────────────────
@@ -224,7 +242,7 @@ function PopoverHeader({ children, className, ...props }: HTMLAttributes<HTMLDiv
 
 function PopoverContent({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn('flex flex-1 flex-col overflow-y-auto p-3', className)} {...props}>
+        <div className={cn('min-h-0 flex flex-1 flex-col overflow-y-auto p-3', className)} {...props}>
             {children}
         </div>
     )

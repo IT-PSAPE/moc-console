@@ -4,6 +4,7 @@ import { Button } from '@/components/controls/button'
 import { Divider } from '@/components/display/divider'
 import { Header } from '@/components/display/header'
 import { Label, Title } from '@/components/display/text'
+import { DocEditor } from '@/components/display/doc-editor/doc-editor'
 import { Spinner } from '@/components/feedback/spinner'
 import { fetchAssigneesByRequestId, type ResolvedAssignee } from '@/data/fetch-assignees'
 import type { Request } from '@/types/requests'
@@ -155,12 +156,12 @@ function RequestDetailContent({ request, assignees, setAssignees, syncRequest }:
             <Divider className="px-4 my-2" />
             <div className="p-4">
                 <Label.md className="block pb-3">Content</Label.md>
-                <textarea
-                    className="w-full min-h-64 rounded-lg border border-secondary bg-primary p-4 text-sm text-primary placeholder:text-quaternary outline-none focus:border-brand focus:ring-1 focus:ring-brand resize-y"
-                    placeholder="Add notes, details, or any additional context here..."
-                    value={store.state.draft.content ?? ''}
-                    onChange={handleContentChange}
-                />
+                    <DocEditor
+                        value={store.state.draft.content ?? ''}
+                        onChange={handleContentChange}
+                        placeholder="Add notes, details, or any additional context here..."
+                        className="w-full"
+                    />
             </div>
 
             {/* Navigation guard modal */}

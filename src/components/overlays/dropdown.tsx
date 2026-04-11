@@ -1,6 +1,6 @@
 import { cn } from '@/utils/cn'
 import { createPortal } from 'react-dom'
-import { createContext, useCallback, useContext, useEffect, useId, useMemo, useState, type HTMLAttributes, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useId, useMemo, useState, type CSSProperties, type HTMLAttributes, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import { useAnchorPosition, useClickOutside, type Placement } from './overlay-primitives'
 import { useOverlayStack } from './overlay-provider'
 
@@ -227,7 +227,7 @@ function DropdownTrigger({ children, onClick, ...props }: HTMLAttributes<HTMLSpa
 
 // ─── Panel ───────────────────────────────────────────────────────────
 
-function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+function DropdownPanel({ children, className, style, ...props }: HTMLAttributes<HTMLDivElement>) {
     const { state, actions, elements, meta } = useDropdown()
     const { state: overlayState } = useOverlayStack()
     const position = useAnchorPosition(elements.triggerElement, elements.panelElement, state.isOpen, state.placement)
@@ -255,16 +255,26 @@ function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDiv
         }
     }
 
+    const panelStyle: CSSProperties = {
+        top: position.top,
+        left: position.left,
+        zIndex: state.zIndex,
+        maxWidth: position.maxWidth,
+        maxHeight: position.maxHeight,
+        visibility: position.isPositioned ? 'visible' : 'hidden',
+        ...style,
+    }
+
     const panel = (
         <div
             ref={handlePanelRef}
             className={cn(
-                'pointer-events-auto fixed z-50 flex min-w-48 flex-col overflow-hidden rounded-md border border-secondary bg-primary p-1 shadow-lg',
+                'pointer-events-auto fixed z-50 flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg',
                 className,
             )}
             onKeyDown={handleKeyDown}
             role="menu"
-            style={{ top: position.top, left: position.left, zIndex: state.zIndex }}
+            style={panelStyle}
             tabIndex={-1}
             {...props}
         >
