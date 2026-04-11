@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { routes } from '@/screens/console-routes'
 import { Sidebar } from '../components/navigation/sidebar'
 import { Breadcrumb } from '../components/navigation/breadcrumb'
-import { Cast, Drama, EllipsisVertical, FileText, LayoutGrid, LogOut, Package } from 'lucide-react'
+import { Cast, Drama, EllipsisVertical, FileText, LayoutGrid, LogOut, Package, Users } from 'lucide-react'
 import { TopBar } from './topbar'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useSidebar } from '../components/navigation/sidebar'
@@ -74,6 +74,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <Sidebar.Group>
                             <Sidebar.GroupContent>
                                 <Sidebar.MenuItem title={"Dashboard"} icon={<LayoutGrid />} active={isActive(routes.dashboard)} onClick={() => navigateToRoute(routes.dashboard)} />
+                                {(role?.can_manage_assignees || role?.can_manage_roles) && (
+                                    <Sidebar.MenuItem title={"Users"} icon={<Users />} active={isActive(routes.users)} onClick={() => navigateToRoute(routes.users)} />
+                                )}
                                 <SearchMenuItem />
                             </Sidebar.GroupContent>
                         </Sidebar.Group>
