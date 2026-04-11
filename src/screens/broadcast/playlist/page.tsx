@@ -31,7 +31,7 @@ export function PlaylistScreen() {
 
   const handleCreatePlaylist = useCallback(() => {
     const newPlaylist: Playlist = {
-      id: `pl-new-${Date.now()}`,
+      id: crypto.randomUUID(),
       name: "New Playlist",
       description: "",
       status: "draft",

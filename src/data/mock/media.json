@@ -1,6 +1,6 @@
 [
   {
-    "id": "media-001",
+    "id": "8786e303-5e8d-45c9-a32f-5ae0fcf33820",
     "name": "Sunday Service Welcome",
     "type": "image",
     "url": "https://picsum.photos/id/1018/1280/720.jpg",
@@ -9,7 +9,7 @@
     "createdAt": "2026-03-10"
   },
   {
-    "id": "media-002",
+    "id": "7d547e0f-0764-46a9-9d17-3f04d828c3d3",
     "name": "Worship Background - Mountains",
     "type": "image",
     "url": "https://picsum.photos/id/1015/1280/720.jpg",
@@ -18,7 +18,7 @@
     "createdAt": "2026-03-12"
   },
   {
-    "id": "media-003",
+    "id": "82e35c1f-ed72-479d-994c-6702c451bc70",
     "name": "Announcements Background",
     "type": "image",
     "url": "https://picsum.photos/id/1039/1280/720.jpg",
@@ -27,7 +27,7 @@
     "createdAt": "2026-03-15"
   },
   {
-    "id": "media-004",
+    "id": "1d044fe4-cf16-4e23-b0c8-b2557f885969",
     "name": "Offering Background",
     "type": "image",
     "url": "https://picsum.photos/id/1018/1280/720.jpg",
@@ -36,7 +36,7 @@
     "createdAt": "2026-03-18"
   },
   {
-    "id": "media-005",
+    "id": "830c70a5-ee0e-4a97-a1f1-d21deb80fd1a",
     "name": "Worship Instrumental - Piano",
     "type": "audio",
     "url": "https://samplelib.com/mp3/sample-6s.mp3",
@@ -45,7 +45,7 @@
     "createdAt": "2026-03-08"
   },
   {
-    "id": "media-006",
+    "id": "241f216e-7c54-4b4e-a15d-eea67c7c3f2a",
     "name": "Ambient Pad - Key of G",
     "type": "audio",
     "url": "https://samplelib.com/mp3/sample-12s.mp3",
@@ -54,7 +54,7 @@
     "createdAt": "2026-03-11"
   },
   {
-    "id": "media-007",
+    "id": "daf07e76-08de-4611-9264-039d46414d7b",
     "name": "Countdown Timer - 5 Min",
     "type": "video",
     "url": "https://samplelib.com/mp4/sample-5s.mp4",
@@ -63,7 +63,7 @@
     "createdAt": "2026-03-05"
   },
   {
-    "id": "media-008",
+    "id": "6811b3a8-a779-450a-ad16-1237835f95b2",
     "name": "Welcome Loop Video",
     "type": "video",
     "url": "https://samplelib.com/mp4/sample-10s.mp4",
@@ -72,7 +72,7 @@
     "createdAt": "2026-03-14"
   },
   {
-    "id": "media-009",
+    "id": "3169c450-24e6-405a-bd32-dda3f5b510af",
     "name": "Easter Promo Video",
     "type": "video",
     "url": "https://samplelib.com/mp4/sample-20s.mp4",
@@ -81,7 +81,7 @@
     "createdAt": "2026-03-20"
   },
   {
-    "id": "media-010",
+    "id": "77b667d2-5008-44df-999d-978468bc272d",
     "name": "Sermon Recap - Week 12",
     "type": "video",
     "url": "https://samplelib.com/mp4/sample-30s.mp4",
@@ -90,7 +90,7 @@
     "createdAt": "2026-03-25"
   },
   {
-    "id": "media-014",
+    "id": "0eef7e97-39c6-4015-accb-9ac7574305e8",
     "name": "Pre-Service Background Music",
     "type": "audio",
     "url": "https://samplelib.com/mp3/sample-15s.mp3",
@@ -99,7 +99,7 @@
     "createdAt": "2026-03-30"
   },
   {
-    "id": "media-015",
+    "id": "2ff898e9-c2fd-4aa7-bc00-35e5b9baea47",
     "name": "Closing Benediction Background",
     "type": "image",
     "url": "https://picsum.photos/id/1015/1280/720.jpg",

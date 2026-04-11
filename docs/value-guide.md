@@ -6,24 +6,18 @@ It complements [schema-reference.md](./schema-reference.md).
 
 ## Source Notes
 
-- Requests are the only domain currently wired to real Supabase reads and writes.
-- Equipment, broadcast, and cue-sheet mutations are mock implementations that return the passed data.
-- User signup only creates a Supabase Auth account in the current code. This repository does not show profile-row or role-row creation for `users` and `user_roles`.
+- Requests, equipment, broadcast, and cue-sheet mutations are mock implementations that return the passed data.
+- Request assignees seed from an empty mock file and only mutate in local app state.
+- User signup writes the Supabase Auth account and may also upsert the matching `users` profile row when a session is returned.
+- This repository still does not show `user_roles` creation during signup, so role lookup can still return `null` for new accounts.
 
 ## Global Conventions
 
 ### IDs
 
 - Keep ids as strings.
-- Existing data uses readable prefixes:
-  - Equipment: `eq-001`
-  - Bookings: `bk-001`
-  - Playlists: `bc-001` and temporary new ids like `pl-new-<timestamp>`
-  - Media: `media-001`
-  - Cues: `cue-001`
-  - Slides: `slide-011a`
-- Cue-sheet event, checklist, track, and timeline cue ids currently use UUID-like strings generated with `crypto.randomUUID()` for new records.
-- Request ids come from Supabase and are treated as opaque strings.
+- All mock-backed ids should be UUID strings.
+- New mock records created in the app should also use UUID strings via `crypto.randomUUID()`.
 - `users.id` is expected to match the Supabase Auth user id because profile lookup does `.eq("id", user.id)`.
 
 ### Dates
@@ -48,15 +42,15 @@ It complements [schema-reference.md](./schema-reference.md).
 - Use empty string only where the model requires a string and the codebase already uses blank text.
 - Current patterns:
   - `Request.dueDate`: `null` when not scheduled
-  - `Request.notes`, `Request.flow`, `Request.content`: omitted in app model, persisted as `null`
+  - `Request.notes`, `Request.flow`, `Request.content`: omitted in app model and omitted from mock JSON when absent
   - `Equipment.bookedBy`: `null` when nobody has the item
   - `Equipment.notes`: often `""`, not `null`
   - `Equipment.thumbnail`: `null` when absent
   - `Booking.returnedDate`: `null` until returned
   - `MediaItem.thumbnail`: `null` when absent
-  - `MediaItem.audioUrl`: `null` when absent
-  - `MediaItem.slides`: `null` unless `type === "slide"`
-  - `MediaItem.url`: current slide entries use `""`, even though the field is not nullable
+  - `Playlist.backgroundMusicUrl`: `null` when no background track is selected
+  - `Playlist.backgroundMusicName`: `null` when no background track is selected
+  - `Cue.disabled`: omitted when the cue is active
 - Cue-sheet `Cue.notes`: omitted when absent
 
 ## Requests
@@ -182,8 +176,10 @@ Fields involved:
 
 Expected usage:
 
-- `user_id` should point to a real `users.id`.
-- `duty` can come from `request_roles.name`, but the UI also allows custom free-text duties.
+- The seed file can stay empty when you want requests to start with no assignees.
+- When a user is assigned in the UI, `user_id` should point to a real `users.id`.
+- Assignee adds and removes currently live only in local app state.
+- `duty` can come from the live role preset list, but the UI also allows custom free-text duties.
 
 Good duty examples:
 
@@ -193,7 +189,7 @@ Good duty examples:
 - `Editor`
 - `Camera 1 - main`
 
-## Users And Roles
+## Auth
 
 ### `users`
 
@@ -231,9 +227,10 @@ Current implementation note:
 
 ### Signup caveat
 
-- The signup screen collects only `email` and `password`.
-- No code in this repository creates the matching `users` profile row or `user_roles` row after signup.
-- If those rows do not already exist, profile and role lookup will return `null`.
+- The signup flow also collects `name` and `surname`.
+- When Supabase returns a session for the new user, `AuthProvider.signUp` upserts the matching `users` profile row.
+- No code in this repository creates the matching `user_roles` row after signup.
+- If a role row does not already exist, role lookup will return `null`.
 
 ## Equipment
 
@@ -363,11 +360,20 @@ Expected values:
 - `durationOverride` should be:
   - `null` to inherit the media item duration
   - a positive number of seconds to force a custom duration
+- `disabled` should usually be omitted unless the cue is intentionally skipped during playout.
 
 Operational note:
 
 - Cue fields intentionally duplicate media name and type for display convenience.
 - If a media item is renamed later, existing cues may need resync if strict consistency matters.
+- Disabled cues stay in playlist order but are excluded from runtime totals and active playout logic.
+
+### Playlist playback fields
+
+- `backgroundMusicUrl` and `backgroundMusicName` should both be `null` when no background track is selected.
+- When background music is enabled, `backgroundMusicUrl` should usually come from an existing audio media item and `backgroundMusicName` should mirror that item name.
+- `defaultImageDuration` should be a positive number of seconds.
+- `videoSettings.autoplay`, `videoSettings.loop`, and `videoSettings.muted` should stay explicit booleans.
 
 ### `MediaItem.type`
 
@@ -376,7 +382,6 @@ Allowed values:
 - `image`
 - `audio`
 - `video`
-- `slide`
 
 ### Media-by-type expectations
 
@@ -385,42 +390,18 @@ Allowed values:
 - `url`: required image URL
 - `thumbnail`: optional, but recommended
 - `duration`: `null`
-- `slides`: `null`
-- `audioUrl`: `null`
 
 #### `audio`
 
 - `url`: required audio URL
 - `thumbnail`: usually `null`
 - `duration`: positive number of seconds
-- `slides`: `null`
-- `audioUrl`: `null`
 
 #### `video`
 
 - `url`: required video URL
 - `thumbnail`: recommended
 - `duration`: positive number of seconds
-- `slides`: `null`
-- `audioUrl`: `null`
-
-#### `slide`
-
-- `url`: currently `""` in mock data
-- `thumbnail`: recommended preview image
-- `duration`: `null`
-- `slides`: non-empty array of slide images
-- `audioUrl`: optional overlay track
-
-This is an important current convention:
-
-- The schema allows `slide`, but the current upload UI does not create slide items.
-- Slide media exists only in seeded mock data right now.
-
-### `SlideImage.duration`
-
-- Use seconds as an integer.
-- Each slide can have its own duration even when the parent media item has `duration: null`.
 
 ### Upload flow caveat
 
@@ -541,9 +522,7 @@ Examples of denormalized text fields that are intentionally human-readable:
 - Cue-sheet save/delete/update calls are mock-only.
 - Playlists are embedded objects with nested cues, not normalized DB rows in the current implementation.
 - Cue-sheet checklists and timeline tracks are embedded mock JSON structures, not normalized DB rows in the current implementation.
-- Request data is normalized enough to infer real tables:
-  - `requests`
-  - `request_assignees`
+- Request duty roles, users, user roles, and roles still imply real Supabase tables:
   - `request_roles`
   - `users`
   - `user_roles`

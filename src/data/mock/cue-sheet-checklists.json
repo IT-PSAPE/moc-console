@@ -1,38 +1,78 @@
 [
   {
-    "id": "d4e5f6a7-b8c9-4123-def0-234567890123",
+    "id": "c1635a83-451c-41d2-8e29-bfa68fb4b2a3",
     "kind": "template",
     "name": "Sunday Service Prep",
     "description": "Pre-service preparation checklist",
     "items": [
-      { "id": "e5f6a7b8-c9d0-4234-ef01-345678901234", "label": "Venue unlocked and lights on", "checked": false },
-      { "id": "f6a7b8c9-d0e1-4345-f012-456789012345", "label": "Communion elements prepared", "checked": false }
+      {
+        "id": "1be56abe-9d31-46a6-bfa8-2fde0a7dc3a2",
+        "label": "Venue unlocked and lights on",
+        "checked": false
+      },
+      {
+        "id": "6553805e-1d1d-4af5-a650-7d234960fb12",
+        "label": "Communion elements prepared",
+        "checked": false
+      }
     ],
     "sections": [
       {
-        "id": "01a2b3c4-d5e6-4456-0123-567890123456",
+        "id": "afa506a4-448d-4eab-be9f-7c2d7aecb9e6",
         "name": "Audio Team",
         "items": [
-          { "id": "12b3c4d5-e6f7-4567-1234-678901234567", "label": "Sound check completed", "checked": false },
-          { "id": "23c4d5e6-f7a8-4678-2345-789012345678", "label": "Microphone batteries replaced", "checked": false },
-          { "id": "34d5e6f7-a8b9-4789-3456-890123456789", "label": "Audio mixer levels set", "checked": false }
+          {
+            "id": "42e1ea1e-4189-466f-b9f9-fb8e454f90cb",
+            "label": "Sound check completed",
+            "checked": false
+          },
+          {
+            "id": "3d1798b9-a5a2-483d-8809-1eb7cc441066",
+            "label": "Microphone batteries replaced",
+            "checked": false
+          },
+          {
+            "id": "f5816bec-e4d4-45dc-a0c8-9f6828e3e250",
+            "label": "Audio mixer levels set",
+            "checked": false
+          }
         ]
       },
       {
-        "id": "45e6f7a8-b9c0-4890-4567-901234567890",
+        "id": "990bb295-82be-4aeb-bec8-40e57cd9aa94",
         "name": "Visuals & Streaming",
         "items": [
-          { "id": "56f7a8b9-c0d1-4901-5678-012345678901", "label": "Projector slides loaded", "checked": false },
-          { "id": "67a8b9c0-d1e2-4012-6789-123456789012", "label": "Livestream tested", "checked": false },
-          { "id": "78b9c0d1-e2f3-4123-7890-234567890123", "label": "Recording software running", "checked": false }
+          {
+            "id": "4a699620-336d-4010-bd63-97012465a2ac",
+            "label": "Projector slides loaded",
+            "checked": false
+          },
+          {
+            "id": "a3edf9ca-a11b-4487-9ad1-7436c8f138a4",
+            "label": "Livestream tested",
+            "checked": false
+          },
+          {
+            "id": "1f17d78d-2cb5-4169-a00b-d1b51564d478",
+            "label": "Recording software running",
+            "checked": false
+          }
         ]
       },
       {
-        "id": "89c0d1e2-f3a4-4234-8901-345678901234",
+        "id": "532e5a84-4b90-4725-9903-5c0a6a48394f",
         "name": "Welcome Team",
         "items": [
-          { "id": "90d1e2f3-a4b5-4345-9012-456789012345", "label": "Welcome team briefed", "checked": false },
-          { "id": "a1e2f3a4-b5c6-4456-a123-567890123456", "label": "Bulletins printed and ready", "checked": false }
+          {
+            "id": "872410bd-61bf-4a33-bdf7-43c1da913643",
+            "label": "Welcome team briefed",
+            "checked": false
+          },
+          {
+            "id": "28910b12-95fc-4f54-b5c1-edc1768072f3",
+            "label": "Bulletins printed and ready",
+            "checked": false
+          }
         ]
       }
     ],
@@ -40,43 +80,79 @@
     "updatedAt": "2026-03-28T07:00:00Z"
   },
   {
-    "id": "b2f3a4b5-c6d7-4567-b234-678901234567",
+    "id": "c672ac92-da09-4860-8d20-6334dad9f534",
     "kind": "template",
     "name": "Media Setup",
     "description": "Equipment and media readiness check",
     "items": [
-      { "id": "c3a4b5c6-d7e8-4678-c345-789012345678", "label": "Cameras powered on", "checked": false },
-      { "id": "d4b5c6d7-e8f9-4789-d456-890123456789", "label": "Audio mixer levels set", "checked": false },
-      { "id": "e5c6d7e8-f9a0-4890-e567-901234567890", "label": "Recording software running", "checked": false }
+      {
+        "id": "355a2209-7a1b-4779-a197-04db5d814788",
+        "label": "Cameras powered on",
+        "checked": false
+      },
+      {
+        "id": "46e4441a-51ef-40b4-b686-a15ce7e94634",
+        "label": "Audio mixer levels set",
+        "checked": false
+      },
+      {
+        "id": "50752339-0657-4ab2-a3ad-af9dfa0bf96b",
+        "label": "Recording software running",
+        "checked": false
+      }
     ],
     "sections": [],
     "createdAt": "2026-03-02T07:00:00Z",
     "updatedAt": "2026-03-29T07:00:00Z"
   },
   {
-    "id": "f6d7e8f9-a0b1-4901-f678-012345678901",
+    "id": "e1e40bc0-eb7b-40e4-a724-4700fd684241",
     "kind": "template",
     "name": "Youth Night Prep",
     "description": "Youth event preparation",
     "items": [
-      { "id": "a7e8f9a0-b1c2-4012-a789-123456789012", "label": "Venue setup complete", "checked": false }
+      {
+        "id": "7abd223c-6202-4159-9ad2-9e02f71629ab",
+        "label": "Venue setup complete",
+        "checked": false
+      }
     ],
     "sections": [
       {
-        "id": "b8f9a0b1-c2d3-4123-b890-234567890123",
+        "id": "7a63977a-88a5-465b-9068-8cb47bc53c60",
         "name": "Praise & Worship",
         "items": [
-          { "id": "c9a0b1c2-d3e4-4234-c901-345678901234", "label": "Worship team rehearsed", "checked": false },
-          { "id": "d0b1c2d3-e4f5-4345-d012-456789012345", "label": "Lyrics loaded on screens", "checked": false }
+          {
+            "id": "d3745be4-b8f2-4fde-99cd-7d22aed65e0b",
+            "label": "Worship team rehearsed",
+            "checked": false
+          },
+          {
+            "id": "4e7af527-1656-4c4b-a21e-5719eb0d3f7f",
+            "label": "Lyrics loaded on screens",
+            "checked": false
+          }
         ]
       },
       {
-        "id": "e1c2d3e4-f5a6-4456-e123-567890123456",
+        "id": "fa715d1e-f2fe-46c9-a0ec-73a7ca6e8a20",
         "name": "Activities",
         "items": [
-          { "id": "f2d3e4f5-a6b7-4567-f234-678901234567", "label": "Games equipment ready", "checked": false },
-          { "id": "a3e4f5a6-b7c8-4678-a345-789012345678", "label": "Snacks and drinks set up", "checked": false },
-          { "id": "b4f5a6b7-c8d9-4789-b456-890123456789", "label": "Small group materials printed", "checked": false }
+          {
+            "id": "0fa04ed2-93b9-4523-82b3-32e82d3e9429",
+            "label": "Games equipment ready",
+            "checked": false
+          },
+          {
+            "id": "438a1342-a60d-4545-bc92-7c8ce66ec331",
+            "label": "Snacks and drinks set up",
+            "checked": false
+          },
+          {
+            "id": "73d9067f-5691-4b8f-8d44-d35f3953271d",
+            "label": "Small group materials printed",
+            "checked": false
+          }
         ]
       }
     ],
@@ -84,23 +160,39 @@
     "updatedAt": "2026-03-30T07:00:00Z"
   },
   {
-    "id": "c1111111-1111-4111-8111-111111111111",
+    "id": "74aa8e8e-1603-461c-b7a1-f4881960a869",
     "kind": "instance",
-    "templateId": "d4e5f6a7-b8c9-4123-def0-234567890123",
+    "templateId": "c1635a83-451c-41d2-8e29-bfa68fb4b2a3",
     "name": "Sunday Service Prep - Mar 23",
     "description": "Completed preparation run for Sunday service",
     "scheduledAt": "2026-03-23T06:30:00Z",
     "items": [
-      { "id": "c1111111-1111-4111-8111-111111111101", "label": "Venue unlocked and lights on", "checked": true },
-      { "id": "c1111111-1111-4111-8111-111111111102", "label": "Communion elements prepared", "checked": true }
+      {
+        "id": "54a75c63-27e9-4ff7-b967-97e45df0a304",
+        "label": "Venue unlocked and lights on",
+        "checked": true
+      },
+      {
+        "id": "a6f04ecb-ba66-4631-a4dd-1900013a231d",
+        "label": "Communion elements prepared",
+        "checked": true
+      }
     ],
     "sections": [
       {
-        "id": "c1111111-1111-4111-8111-111111111103",
+        "id": "2eb6f8de-5945-48ca-9795-7d03bf5def90",
         "name": "Audio Team",
         "items": [
-          { "id": "c1111111-1111-4111-8111-111111111104", "label": "Sound check completed", "checked": true },
-          { "id": "c1111111-1111-4111-8111-111111111105", "label": "Microphone batteries replaced", "checked": true }
+          {
+            "id": "b7d04648-60bb-4a96-a056-50416e9332a5",
+            "label": "Sound check completed",
+            "checked": true
+          },
+          {
+            "id": "daa8acd6-0097-4ae4-ab83-c7a34193017a",
+            "label": "Microphone batteries replaced",
+            "checked": true
+          }
         ]
       }
     ],
@@ -108,39 +200,67 @@
     "updatedAt": "2026-03-23T07:45:00Z"
   },
   {
-    "id": "c2222222-2222-4222-8222-222222222222",
+    "id": "e1aeadb3-082d-4e7a-a7be-aa452bb37276",
     "kind": "instance",
-    "templateId": "b2f3a4b5-c6d7-4567-b234-678901234567",
+    "templateId": "c672ac92-da09-4860-8d20-6334dad9f534",
     "name": "Media Setup - Mar 25",
     "description": "Completed midweek media setup run",
     "scheduledAt": "2026-03-25T16:30:00Z",
     "items": [
-      { "id": "c2222222-2222-4222-8222-222222222201", "label": "Cameras powered on", "checked": true },
-      { "id": "c2222222-2222-4222-8222-222222222202", "label": "Audio mixer levels set", "checked": true },
-      { "id": "c2222222-2222-4222-8222-222222222203", "label": "Recording software running", "checked": true }
+      {
+        "id": "49e3664b-cf33-4cf4-8dc3-9f34059e7d08",
+        "label": "Cameras powered on",
+        "checked": true
+      },
+      {
+        "id": "19ea57c5-736f-4dd3-90fe-5c8832c3c6ef",
+        "label": "Audio mixer levels set",
+        "checked": true
+      },
+      {
+        "id": "673718b7-d61a-41d2-b4f2-d0aae2f24160",
+        "label": "Recording software running",
+        "checked": true
+      }
     ],
     "sections": [],
     "createdAt": "2026-03-24T09:00:00Z",
     "updatedAt": "2026-03-25T17:20:00Z"
   },
   {
-    "id": "c3333333-3333-4333-8333-333333333333",
+    "id": "11f01b19-9848-443b-981d-ad494c8143e9",
     "kind": "instance",
-    "templateId": "f6d7e8f9-a0b1-4901-f678-012345678901",
+    "templateId": "e1e40bc0-eb7b-40e4-a724-4700fd684241",
     "name": "Youth Night Prep - Mar 27",
     "description": "Partially completed youth night preparation run",
     "scheduledAt": "2026-03-27T16:00:00Z",
     "items": [
-      { "id": "c3333333-3333-4333-8333-333333333301", "label": "Venue setup complete", "checked": true }
+      {
+        "id": "13df5301-6099-4415-a4ac-3975f4b22b73",
+        "label": "Venue setup complete",
+        "checked": true
+      }
     ],
     "sections": [
       {
-        "id": "c3333333-3333-4333-8333-333333333302",
+        "id": "b38af783-7102-4b43-881f-d2c794dd7e72",
         "name": "Activities",
         "items": [
-          { "id": "c3333333-3333-4333-8333-333333333303", "label": "Games equipment ready", "checked": true },
-          { "id": "c3333333-3333-4333-8333-333333333304", "label": "Snacks and drinks set up", "checked": false },
-          { "id": "c3333333-3333-4333-8333-333333333305", "label": "Small group materials printed", "checked": false }
+          {
+            "id": "2494315d-6177-4051-9730-ef2effb4e7d1",
+            "label": "Games equipment ready",
+            "checked": true
+          },
+          {
+            "id": "eabd1437-f39b-4203-b3b4-d2987ffc0ac5",
+            "label": "Snacks and drinks set up",
+            "checked": false
+          },
+          {
+            "id": "7899cf91-bd5b-49ef-8737-e26f3c73302e",
+            "label": "Small group materials printed",
+            "checked": false
+          }
         ]
       }
     ],
@@ -148,24 +268,44 @@
     "updatedAt": "2026-03-27T17:15:00Z"
   },
   {
-    "id": "c4444444-4444-4444-8444-444444444444",
+    "id": "e93346e0-8ef6-4d7f-a3c3-10cbdb20d80e",
     "kind": "instance",
-    "templateId": "d4e5f6a7-b8c9-4123-def0-234567890123",
+    "templateId": "c1635a83-451c-41d2-8e29-bfa68fb4b2a3",
     "name": "Sunday Service Prep - Apr 3",
     "description": "Past Sunday preparation run with remaining follow-up",
     "scheduledAt": "2026-04-03T06:30:00Z",
     "items": [
-      { "id": "c4444444-4444-4444-8444-444444444401", "label": "Venue unlocked and lights on", "checked": true },
-      { "id": "c4444444-4444-4444-8444-444444444402", "label": "Communion elements prepared", "checked": false }
+      {
+        "id": "2880e81d-ddfd-4741-96ff-4e40dd9b1c05",
+        "label": "Venue unlocked and lights on",
+        "checked": true
+      },
+      {
+        "id": "7b085889-28cc-4710-9a35-e4b8738aa861",
+        "label": "Communion elements prepared",
+        "checked": false
+      }
     ],
     "sections": [
       {
-        "id": "c4444444-4444-4444-8444-444444444403",
+        "id": "c0c189d9-6e4a-42b3-bd59-9d4b494aef26",
         "name": "Visuals & Streaming",
         "items": [
-          { "id": "c4444444-4444-4444-8444-444444444404", "label": "Projector slides loaded", "checked": true },
-          { "id": "c4444444-4444-4444-8444-444444444405", "label": "Livestream tested", "checked": true },
-          { "id": "c4444444-4444-4444-8444-444444444406", "label": "Recording software running", "checked": false }
+          {
+            "id": "013136ff-e56c-4ab6-9660-95e93f89a927",
+            "label": "Projector slides loaded",
+            "checked": true
+          },
+          {
+            "id": "a73cb478-bb62-4556-b645-6d35141d6795",
+            "label": "Livestream tested",
+            "checked": true
+          },
+          {
+            "id": "23b10ab9-91ae-40e6-a69e-fc00a0f83c47",
+            "label": "Recording software running",
+            "checked": false
+          }
         ]
       }
     ],
@@ -173,40 +313,72 @@
     "updatedAt": "2026-04-03T08:00:00Z"
   },
   {
-    "id": "c5555555-5555-4555-8555-555555555555",
+    "id": "360f0dc6-2fe4-4de8-8230-3a45486af1dc",
     "kind": "instance",
-    "templateId": "b2f3a4b5-c6d7-4567-b234-678901234567",
+    "templateId": "c672ac92-da09-4860-8d20-6334dad9f534",
     "name": "Media Setup - Apr 7",
     "description": "Current media setup run",
     "scheduledAt": "2026-04-07T15:30:00Z",
     "items": [
-      { "id": "c5555555-5555-4555-8555-555555555501", "label": "Cameras powered on", "checked": true },
-      { "id": "c5555555-5555-4555-8555-555555555502", "label": "Audio mixer levels set", "checked": false },
-      { "id": "c5555555-5555-4555-8555-555555555503", "label": "Recording software running", "checked": false }
+      {
+        "id": "2fdded31-1a95-4631-a4c0-d126e720deee",
+        "label": "Cameras powered on",
+        "checked": true
+      },
+      {
+        "id": "5630805b-cd5f-4db2-8a99-5da9032fd2b4",
+        "label": "Audio mixer levels set",
+        "checked": false
+      },
+      {
+        "id": "d362f0ca-eb4b-4089-9929-bf0783980738",
+        "label": "Recording software running",
+        "checked": false
+      }
     ],
     "sections": [],
     "createdAt": "2026-04-06T11:00:00Z",
     "updatedAt": "2026-04-07T08:30:00Z"
   },
   {
-    "id": "c6666666-6666-4666-8666-666666666666",
+    "id": "e64e473d-d7b6-450d-bf61-a189219c6ca1",
     "kind": "instance",
-    "templateId": "d4e5f6a7-b8c9-4123-def0-234567890123",
+    "templateId": "c1635a83-451c-41d2-8e29-bfa68fb4b2a3",
     "name": "Sunday Service Prep - Apr 10",
     "description": "Upcoming Sunday service preparation run",
     "scheduledAt": "2026-04-10T06:30:00Z",
     "items": [
-      { "id": "c6666666-6666-4666-8666-666666666601", "label": "Venue unlocked and lights on", "checked": false },
-      { "id": "c6666666-6666-4666-8666-666666666602", "label": "Communion elements prepared", "checked": false }
+      {
+        "id": "c8f8a667-8f91-4985-839b-e2ab4319a774",
+        "label": "Venue unlocked and lights on",
+        "checked": false
+      },
+      {
+        "id": "35b47a8d-08f2-4d4e-8abc-bf9071454fab",
+        "label": "Communion elements prepared",
+        "checked": false
+      }
     ],
     "sections": [
       {
-        "id": "c6666666-6666-4666-8666-666666666603",
+        "id": "f1c1b3c3-9665-4e68-8186-3782790ec338",
         "name": "Audio Team",
         "items": [
-          { "id": "c6666666-6666-4666-8666-666666666604", "label": "Sound check completed", "checked": false },
-          { "id": "c6666666-6666-4666-8666-666666666605", "label": "Microphone batteries replaced", "checked": false },
-          { "id": "c6666666-6666-4666-8666-666666666606", "label": "Audio mixer levels set", "checked": false }
+          {
+            "id": "a79745e7-ec39-4d08-aafb-0e4c98153d16",
+            "label": "Sound check completed",
+            "checked": false
+          },
+          {
+            "id": "be5a4c0f-3d43-498c-a221-06933afd1886",
+            "label": "Microphone batteries replaced",
+            "checked": false
+          },
+          {
+            "id": "7325d9a6-4c83-439e-a471-4b4a2214f30a",
+            "label": "Audio mixer levels set",
+            "checked": false
+          }
         ]
       }
     ],
@@ -214,22 +386,34 @@
     "updatedAt": "2026-04-06T12:00:00Z"
   },
   {
-    "id": "c7777777-7777-4777-8777-777777777777",
+    "id": "bcc5304d-7035-4cd8-ab52-d95cb81e77ad",
     "kind": "instance",
-    "templateId": "f6d7e8f9-a0b1-4901-f678-012345678901",
+    "templateId": "e1e40bc0-eb7b-40e4-a724-4700fd684241",
     "name": "Youth Night Prep - Apr 17",
     "description": "Upcoming youth night preparation run",
     "scheduledAt": "2026-04-17T16:00:00Z",
     "items": [
-      { "id": "c7777777-7777-4777-8777-777777777701", "label": "Venue setup complete", "checked": false }
+      {
+        "id": "4c37de21-22fa-4ded-b3ab-024c31f9615b",
+        "label": "Venue setup complete",
+        "checked": false
+      }
     ],
     "sections": [
       {
-        "id": "c7777777-7777-4777-8777-777777777702",
+        "id": "8dfa906e-eabc-4f8e-bd17-5000b41acf6d",
         "name": "Praise & Worship",
         "items": [
-          { "id": "c7777777-7777-4777-8777-777777777703", "label": "Worship team rehearsed", "checked": false },
-          { "id": "c7777777-7777-4777-8777-777777777704", "label": "Lyrics loaded on screens", "checked": false }
+          {
+            "id": "4239a8ec-e7b5-4297-ae31-56baa51d026f",
+            "label": "Worship team rehearsed",
+            "checked": false
+          },
+          {
+            "id": "93f72807-535a-4fdd-80d3-bc5bf60d5a15",
+            "label": "Lyrics loaded on screens",
+            "checked": false
+          }
         ]
       }
     ],
@@ -237,23 +421,39 @@
     "updatedAt": "2026-04-06T13:00:00Z"
   },
   {
-    "id": "c8888888-8888-4888-8888-888888888888",
+    "id": "b28b9624-82b3-44bd-b735-5aabc61efcc3",
     "kind": "instance",
-    "templateId": "d4e5f6a7-b8c9-4123-def0-234567890123",
+    "templateId": "c1635a83-451c-41d2-8e29-bfa68fb4b2a3",
     "name": "Sunday Service Prep - Apr 19",
     "description": "Future Sunday service preparation run",
     "scheduledAt": "2026-04-19T06:30:00Z",
     "items": [
-      { "id": "c8888888-8888-4888-8888-888888888801", "label": "Venue unlocked and lights on", "checked": false },
-      { "id": "c8888888-8888-4888-8888-888888888802", "label": "Communion elements prepared", "checked": false }
+      {
+        "id": "e029aadb-803e-4217-8e46-b3d9cc69e394",
+        "label": "Venue unlocked and lights on",
+        "checked": false
+      },
+      {
+        "id": "c688bafc-43e7-4c90-bcaa-4314f6ee955b",
+        "label": "Communion elements prepared",
+        "checked": false
+      }
     ],
     "sections": [
       {
-        "id": "c8888888-8888-4888-8888-888888888803",
+        "id": "d5c07b25-07d8-4134-822d-d796d4a60491",
         "name": "Welcome Team",
         "items": [
-          { "id": "c8888888-8888-4888-8888-888888888804", "label": "Welcome team briefed", "checked": false },
-          { "id": "c8888888-8888-4888-8888-888888888805", "label": "Bulletins printed and ready", "checked": false }
+          {
+            "id": "4f9cb624-9878-4457-8533-438d3dba508d",
+            "label": "Welcome team briefed",
+            "checked": false
+          },
+          {
+            "id": "071b157b-ba82-45e5-bc05-61150f894f91",
+            "label": "Bulletins printed and ready",
+            "checked": false
+          }
         ]
       }
     ],
@@ -261,16 +461,28 @@
     "updatedAt": "2026-04-07T07:00:00Z"
   },
   {
-    "id": "c9999999-9999-4999-8999-999999999999",
+    "id": "cede19d1-a0d2-487d-bea0-417b95f479bc",
     "kind": "instance",
-    "templateId": "b2f3a4b5-c6d7-4567-b234-678901234567",
+    "templateId": "c672ac92-da09-4860-8d20-6334dad9f534",
     "name": "Media Setup - Apr 22",
     "description": "Future media setup run",
     "scheduledAt": "2026-04-22T16:30:00Z",
     "items": [
-      { "id": "c9999999-9999-4999-8999-999999999901", "label": "Cameras powered on", "checked": false },
-      { "id": "c9999999-9999-4999-8999-999999999902", "label": "Audio mixer levels set", "checked": false },
-      { "id": "c9999999-9999-4999-8999-999999999903", "label": "Recording software running", "checked": false }
+      {
+        "id": "ffd5e7c0-2543-4f90-8ec4-d43815b19ec0",
+        "label": "Cameras powered on",
+        "checked": false
+      },
+      {
+        "id": "af2a051a-2aee-4f01-917c-e66afff2bec7",
+        "label": "Audio mixer levels set",
+        "checked": false
+      },
+      {
+        "id": "62e109a4-d5f7-4439-9a08-d52e7c3f7f18",
+        "label": "Recording software running",
+        "checked": false
+      }
     ],
     "sections": [],
     "createdAt": "2026-04-07T08:00:00Z",

@@ -28,6 +28,7 @@ import type { Equipment, EquipmentStatus, EquipmentCategory, Booking } from "@/t
 import { Check, ChevronDown, Hash, History, Loader, MapPin, Package, Pencil, Save, Tag, Trash2, Undo2, User } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
+import { Input } from "@/components/form/input";
 
 const allStatuses: EquipmentStatus[] = ["available", "booked", "booked_out", "maintenance"];
 const allCategories: EquipmentCategory[] = ["camera", "lens", "lighting", "audio", "support", "monitor", "cable", "accessory"];
@@ -210,22 +211,22 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
         </MetaRow>
 
         <MetaRow icon={<MapPin />} label="Location">
-          <input
+          <Input
             type="text"
             value={draft.location}
             onChange={(e) => store.actions.updateField("location", e.target.value)}
             placeholder="Enter location"
-            className="w-full bg-transparent text-sm text-primary outline-none placeholder:text-quaternary paragraph-sm"
+            style={'ghost'}
           />
         </MetaRow>
 
         <MetaRow icon={<User />} label="Booked By">
-          <input
+          <Input
             type="text"
             value={draft.bookedBy ?? ""}
             onChange={(e) => store.actions.updateField("bookedBy", e.target.value || null)}
             placeholder="—"
-            className="w-full bg-transparent text-sm text-primary outline-none placeholder:text-quaternary paragraph-sm"
+            style={'ghost'}
           />
         </MetaRow>
       </div>

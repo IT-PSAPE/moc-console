@@ -152,7 +152,7 @@ export function PlaylistDetailScreen() {
   const handleAddMediaToQueue = useCallback((item: MediaItem) => {
     if (!playlist) return
     const newCue: Cue = {
-      id: `cue-new-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: crypto.randomUUID(),
       mediaItemId: item.id,
       mediaItemName: item.name,
       mediaItemType: item.type,
@@ -196,7 +196,7 @@ export function PlaylistDetailScreen() {
       const original = prev.cues[idx]
       const clone: Cue = {
         ...original,
-        id: `cue-dup-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: crypto.randomUUID(),
       }
       const newCues = [...prev.cues]
       newCues.splice(idx + 1, 0, clone)
@@ -316,7 +316,7 @@ export function PlaylistDetailScreen() {
     })()
 
     const newCue: Cue = {
-      id: `cue-new-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: crypto.randomUUID(),
       mediaItemId: mediaItem.id,
       mediaItemName: mediaItem.name,
       mediaItemType: mediaItem.type,

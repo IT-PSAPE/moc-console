@@ -27,6 +27,7 @@ import type { Booking } from "@/types/equipment";
 import { Check, ChevronDown, Hash, History, Loader, MapPin, Maximize2, Package, Tag, Trash2, User, X } from "lucide-react";
 import { useCallback, useEffect, useState, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
+import { Input } from "@/components/form/input";
 
 const allStatuses: EquipmentStatus[] = ["available", "booked", "booked_out", "maintenance"];
 const allCategories: EquipmentCategory[] = ["camera", "lens", "lighting", "audio", "support", "monitor", "cable", "accessory"];
@@ -247,23 +248,23 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
 
           {/* Location — inline input */}
           <MetaRow icon={<MapPin />} label="Location">
-            <input
+            <Input
               type="text"
               value={draft.location}
               onChange={(e) => store.actions.updateField("location", e.target.value)}
               placeholder="Enter location"
-              className="w-full bg-transparent text-sm text-primary outline-none placeholder:text-quaternary paragraph-sm"
+              style={'ghost'}
             />
           </MetaRow>
 
           {/* Booked By — inline input */}
           <MetaRow icon={<User />} label="Booked By">
-            <input
+            <Input
               type="text"
               value={draft.bookedBy ?? ""}
               onChange={(e) => store.actions.updateField("bookedBy", e.target.value || null)}
               placeholder="—"
-              className="w-full bg-transparent text-sm text-primary outline-none placeholder:text-quaternary paragraph-sm"
+              style={'ghost'}
             />
           </MetaRow>
         </div>

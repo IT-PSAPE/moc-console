@@ -72,7 +72,7 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
     const sourceUrl = sourceMode === "url" ? url.trim() : `/uploads/${file?.name ?? ""}`
     const mediaDetails = getDefaultMediaDetails(inferredMediaType)
     const newItem: MediaItem = {
-      id: `media-new-${Date.now()}`,
+      id: crypto.randomUUID(),
       name: trimmedName || "Untitled",
       type: inferredMediaType,
       url: sourceUrl,
