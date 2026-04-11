@@ -97,14 +97,14 @@ type BreadcrumbItemProps = {
 function BreadcrumbItem({ label, isLast, onClick, icon }: BreadcrumbItemProps) {
     if (isLast) {
         return (
-            <span className="text-paragraph-sm text-primary font-medium flex items-center gap-1">
+            <span className="paragraph-sm text-primary font-medium flex items-center gap-1">
                 {icon} {label}
             </span>
         )
     }
 
     return (
-        <button type="button" onClick={onClick} className="text-paragraph-sm text-tertiary hover:text-secondary cursor-pointer flex items-center gap-1" >
+        <button type="button" onClick={onClick} className="paragraph-sm text-tertiary hover:text-secondary cursor-pointer flex items-center gap-1" >
             {icon} {label}
         </button>
     )

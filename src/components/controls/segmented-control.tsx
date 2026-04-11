@@ -80,7 +80,7 @@ function SegmentedControlItem({ children, className, icon, value, ...props }: Se
         <button
             aria-selected={isActive}
             className={cn(
-                'inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-label-sm transition-colors',
+                'inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-1.5 label-sm transition-colors',
                 isActive
                     ? 'bg-primary text-brand_secondary shadow-sm'
                     : 'text-tertiary hover:text-primary',

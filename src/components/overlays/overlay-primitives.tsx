@@ -47,7 +47,7 @@ export function OverlayBackdrop({ className, closeOnClick = true, onClick, onClo
     return (
         <div
             aria-hidden="true"
-            className={cn('pointer-events-auto fixed inset-0 bg-linear-to-t from-black/70 to-black/20 backdrop-blur-xs', className)}
+            className={cn('pointer-events-auto fixed inset-0 bg-linear-to-t from-black/30 to-black/3 backdrop-blur-xs', className)}
             onClick={handleClick}
             {...props}
         />

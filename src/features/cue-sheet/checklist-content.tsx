@@ -137,7 +137,7 @@ function InlineItemInput({ onSubmit, onDismiss }: { onSubmit: (value: string) =>
                 <div className="size-5 shrink-0 rounded border border-secondary bg-primary" />
                 <Input
                     ref={inputRef}
-                    className="flex-1 bg-transparent text-label-sm text-primary placeholder:text-quaternary outline-none"
+                    className="flex-1 bg-transparent label-sm text-primary placeholder:text-quaternary outline-none"
                     placeholder="Item label..."
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
@@ -163,7 +163,7 @@ function InlineSectionInput({ onSubmit, onDismiss }: { onSubmit: (value: string)
                 <ChevronDown className="size-4 shrink-0 text-tertiary" />
                 <Input
                     ref={inputRef}
-                    className="flex-1 bg-transparent text-label-sm text-primary placeholder:text-quaternary outline-none"
+                    className="flex-1 bg-transparent label-sm text-primary placeholder:text-quaternary outline-none"
                     placeholder="Section name..."
                     value={value}
                     onChange={(e) => setValue(e.target.value)}

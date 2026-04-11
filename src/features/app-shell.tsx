@@ -64,8 +64,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <div className="size-9 shrink-0 rounded-lg bg-brand_solid" />
                         {!state.isCollapsed && (
                             <div className="flex flex-col">
-                                <span className="text-label-sm truncate leading-none">MOC Console</span>
-                                <span className="text-paragraph-xs text-quaternary truncate leading-none">Admin Platform</span>
+                                <span className="label-sm truncate leading-none">MOC Console</span>
+                                <span className="paragraph-xs text-quaternary truncate leading-none">Admin Platform</span>
                             </div>
                         )}
                     </Sidebar.Header>
@@ -112,10 +112,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <Avatar.initials name={userInitials} />
                         {!state.isCollapsed && (
                             <div className="flex min-w-0 flex-1 flex-col">
-                                <span className="text-label-sm truncate leading-none">
+                                <span className="label-sm truncate leading-none">
                                     {userDisplayName}
                                 </span>
-                                <span className="text-paragraph-xs text-quaternary truncate leading-none capitalize">
+                                <span className="paragraph-xs text-quaternary truncate leading-none capitalize">
                                     {role?.name ?? "No role"}
                                 </span>
                             </div>

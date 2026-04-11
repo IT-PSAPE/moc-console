@@ -236,7 +236,7 @@ function SortableBlock({
                 ref={setContentRef}
                 contentEditable
                 suppressContentEditableWarning
-                className="doc-block min-h-[1.7em] flex-1 break-words px-0.5 py-px text-paragraph-sm text-primary outline-none"
+                className="doc-block min-h-[1.7em] flex-1 break-words px-0.5 py-px paragraph-sm text-primary outline-none"
                 data-placeholder="Type something..."
                 onKeyDown={handleKeyDown}
                 onInput={e => onUpdate(e.currentTarget.textContent || '')}
