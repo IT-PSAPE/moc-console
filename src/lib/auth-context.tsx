@@ -21,7 +21,7 @@ const AuthContext = createContext<AuthState | null>(null)
 async function upsertProfile(userId: string, email: string, name: string, surname: string) {
     const { error } = await supabase
         .from("users")
-        .upsert({ id: userId, email, name, surname }, { onConflict: "id" })
+        .upsert({ id: userId, email: email, name: name, surname: surname }, { onConflict: "id" })
 
     return error ? new Error(error.message) : null
 }
@@ -129,7 +129,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [user])
 
     async function signUp(email: string, password: string, name: string, surname: string) {
-        const { data, error } = await supabase.auth.signUp({
+        // const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
             email,
             password,
             options: {
@@ -141,12 +142,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return { error: error as Error | null }
         }
 
-        if (data.session && data.user) {
-            const profileError = await upsertProfile(data.user.id, email, name, surname)
-            if (profileError) {
-                return { error: profileError }
-            }
-        }
+        // if (data.session && data.user) {
+        //     const profileError = await upsertProfile(data.user.id, email, name, surname)
+        //     if (profileError) {
+        //         return { error: profileError }
+        //     }
+        // }
 
         return { error: null }
     }
