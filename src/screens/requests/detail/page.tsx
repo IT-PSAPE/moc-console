@@ -132,11 +132,20 @@ function RequestDetailContent({ request, assignees, setAssignees, syncRequest }:
             </div>
 
             {/* Notes & Flow side by side when both present */}
-            {(store.state.draft.notes || store.state.draft.flow) && (
+            {(store.state.draft.notes) && (
                 <>
                     <Divider className="px-4 my-2" />
-                    <div className="p-4 grid grid-cols-2 gap-8">
+                    <div className="p-4">
                         <RequestNotes request={store.state.draft} />
+                    </div>
+                </>
+            )}
+
+            {/* Notes & Flow side by side when both present */}
+            {(store.state.draft.flow) && (
+                <>
+                    <Divider className="px-4 my-2" />
+                    <div className="p-4">
                         <RequestFlow request={store.state.draft} />
                     </div>
                 </>
