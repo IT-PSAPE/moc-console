@@ -1,35 +1,138 @@
-import type { Playlist } from "@/types/broadcast/broadcast"
-import type { Cue } from "@/types/broadcast/cue"
-import type { MediaItem } from "@/types/broadcast/media-item"
+import type { Playlist } from "@/types/broadcast/broadcast";
+import type { Cue } from "@/types/broadcast/cue";
+import type { MediaItem } from "@/types/broadcast/media-item";
+import { supabase } from "@/lib/supabase";
+import { getCurrentWorkspaceId } from "./current-workspace";
+import { fetchPlaylistById } from "./fetch-broadcast";
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms + Math.random() * 100))
+type MediaRow = {
+  id: string;
+  name: string;
+  type: MediaItem["type"];
+  url: string;
+  thumbnail_url: string | null;
+  created_at: string;
+};
 
-// ─── Playlist Mutations ───────────────────────────────
+function mapMediaRow(row: MediaRow, fallbackDuration: number | null): MediaItem {
+  return {
+    id: row.id,
+    name: row.name,
+    type: row.type,
+    url: row.url,
+    thumbnail: row.thumbnail_url,
+    duration: fallbackDuration,
+    createdAt: row.created_at,
+  };
+}
 
 export async function updatePlaylist(playlist: Playlist): Promise<Playlist> {
-  await delay(100)
-  return playlist
+  const workspaceId = await getCurrentWorkspaceId();
+  const payload = {
+    id: playlist.id,
+    workspace_id: workspaceId,
+    name: playlist.name,
+    description: playlist.description,
+    status: playlist.status,
+    music_id: playlist.backgroundMusicId ?? null,
+    default_image_duration: playlist.defaultImageDuration,
+  };
+
+  const { error } = await supabase
+    .from("playlists")
+    .upsert(payload, { onConflict: "id" });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const savedPlaylist = await fetchPlaylistById(playlist.id);
+
+  if (!savedPlaylist) {
+    throw new Error("Saved playlist could not be reloaded");
+  }
+
+  return {
+    ...savedPlaylist,
+    cues: savedPlaylist.cues.length > 0 ? savedPlaylist.cues : playlist.cues,
+    videoSettings: playlist.videoSettings,
+  };
 }
 
-export async function deletePlaylist(_id: string): Promise<void> {
-  void _id
-  await delay(100)
+export async function deletePlaylist(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("playlists")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
-export async function updatePlaylistCues(_playlistId: string, cues: Cue[]): Promise<Cue[]> {
-  void _playlistId
-  await delay(100)
-  return cues
-}
+export async function updatePlaylistCues(playlistId: string, cues: Cue[]): Promise<Cue[]> {
+  const deleteResult = await supabase
+    .from("queue")
+    .delete()
+    .eq("playlist_id", playlistId);
 
-// ─── Media Mutations ──────────────────────────────────
+  if (deleteResult.error) {
+    throw new Error(deleteResult.error.message);
+  }
+
+  if (cues.length === 0) {
+    return [];
+  }
+
+  const { error } = await supabase
+    .from("queue")
+    .insert(cues.map((cue, index) => ({
+      id: cue.id,
+      playlist_id: playlistId,
+      media_id: cue.mediaItemId,
+      sort_order: index + 1,
+      duration: cue.durationOverride,
+      disabled: cue.disabled ?? false,
+    })));
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return cues.map((cue, index) => ({ ...cue, order: index + 1 }));
+}
 
 export async function createMediaItem(item: MediaItem): Promise<MediaItem> {
-  await delay(100)
-  return item
+  const workspaceId = await getCurrentWorkspaceId();
+  const payload = {
+    id: item.id,
+    workspace_id: workspaceId,
+    name: item.name,
+    type: item.type,
+    url: item.url,
+    thumbnail_url: item.thumbnail,
+  };
+
+  const { data, error } = await supabase
+    .from("media")
+    .insert(payload)
+    .select("id, name, type, url, thumbnail_url, created_at")
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapMediaRow(data as MediaRow, item.duration);
 }
 
-export async function deleteMediaItem(_id: string): Promise<void> {
-  void _id
-  await delay(100)
+export async function deleteMediaItem(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("media")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }

@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
-import type { Track, Cue } from '@/types/cue-sheet'
+import type { Track, Cue, TrackColorKey } from '@/types/cue-sheet'
 import type { CueModalState, CueFilter } from './timeline-types'
 import { useTimelineZoom } from './use-timeline-zoom'
 import { useTimelinePlayback } from './use-timeline-playback'
@@ -44,7 +44,7 @@ export interface TimelineContextValue {
     // Track/cue actions
     onTrackClick: (trackId: string, startMinute: number) => void
     onCueClick: (cue: Cue, trackId: string) => void
-    addTrack: (name: string, color?: string) => void
+    addTrack: (name: string, colorKey?: TrackColorKey) => void
     deleteTrack: (trackId: string) => void
     updateTrack: (trackId: string, updates: Partial<Omit<Track, 'id' | 'cues'>>) => void
     deleteCue: (trackId: string, cueId: string) => void
@@ -117,9 +117,9 @@ export function TimelineProvider({ children, tracks, totalMinutes, onChange }: T
         onChangeRef.current?.(next)
     }, [tracks])
 
-    const addTrack = useCallback((name: string, color?: string) => {
-        const COLORS = ['#3b82f6', '#8b5cf6', '#ef4444', '#22c55e', '#f97316', '#ec4899', '#eab308', '#14b8a6']
-        updateTracks((prev) => [...prev, { id: crypto.randomUUID(), name, color: color ?? COLORS[prev.length % COLORS.length], cues: [] }])
+    const addTrack = useCallback((name: string, colorKey?: TrackColorKey) => {
+        const COLORS: TrackColorKey[] = ['blue', 'purple', 'red', 'green', 'orange', 'pink', 'yellow', 'teal']
+        updateTracks((prev) => [...prev, { id: crypto.randomUUID(), name, colorKey: colorKey ?? COLORS[prev.length % COLORS.length], cues: [] }])
     }, [updateTracks])
 
     const deleteTrack = useCallback((trackId: string) => {

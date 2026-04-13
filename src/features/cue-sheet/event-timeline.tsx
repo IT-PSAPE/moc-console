@@ -1,5 +1,6 @@
 import { Label, Paragraph } from '@/components/display/text'
 import type { Track, Cue } from '@/types/cue-sheet'
+import { resolveTrackColor } from '@/types/cue-sheet'
 import { cn } from '@/utils/cn'
 import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/controls/button'
@@ -90,7 +91,7 @@ function TrackRow({ track, totalMin, onDelete }: { track: Track; totalMin: numbe
             {/* Cue lane */}
             <div className="relative flex-1 h-10">
                 {track.cues.map((cue) => (
-                    <CueBlock key={cue.id} cue={cue} trackColor={track.color} totalMin={totalMin} />
+                    <CueBlock key={cue.id} cue={cue} trackColor={resolveTrackColor(track.colorKey)} totalMin={totalMin} />
                 ))}
             </div>
         </div>

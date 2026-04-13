@@ -21,10 +21,9 @@ const circleColorMap: Record<string, string> = {
 
 function toCalendarEvents(requests: Request[]): CalendarEvent<Request>[] {
     return requests
-        .filter((r) => r.dueDate !== null)
         .map((r) => ({
             id: r.id,
-            date: new Date(r.dueDate!),
+            date: new Date(r.dueDate),
             label: r.title,
             color: categoryColor[r.category],
             data: r,

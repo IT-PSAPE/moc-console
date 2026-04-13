@@ -14,7 +14,7 @@ import { playlistStatusColor, playlistStatusLabel, mediaTypeColor, mediaTypeLabe
 import type { Playlist } from "@/types/broadcast/broadcast"
 import type { PlaylistStatus } from "@/types/broadcast/broadcast-status"
 import { routes } from "@/screens/console-routes"
-import { Check, ChevronDown, MoreHorizontal, Trash2, ToggleLeft, Maximize2, X, Loader, FileText, ListMusic, Music, Video, Clock } from "lucide-react"
+import { Check, ChevronDown, MoreHorizontal, Trash2, ToggleLeft, Maximize2, X, Loader, FileText, ListMusic, Music, Clock } from "lucide-react"
 
 function formatDuration(seconds: number) {
   const m = Math.floor(seconds / 60)
@@ -170,16 +170,6 @@ function PlaylistDetailDrawerContent({ media, navigate, onDelete, onOpenChange, 
                 <Paragraph.xs>{playlist.defaultImageDuration}s default</Paragraph.xs>
               </MetaRow>
 
-              <MetaRow icon={<Video />} label="Video Settings">
-                <div className="flex gap-1.5">
-                  {playlist.videoSettings.autoplay && <Badge label="Autoplay" color="blue" />}
-                  {playlist.videoSettings.loop && <Badge label="Loop" color="blue" />}
-                  {playlist.videoSettings.muted && <Badge label="Muted" color="blue" />}
-                  {!playlist.videoSettings.autoplay && !playlist.videoSettings.loop && !playlist.videoSettings.muted && (
-                    <Paragraph.xs className="text-quaternary">Default</Paragraph.xs>
-                  )}
-                </div>
-              </MetaRow>
             </div>
 
             <Divider className="px-4 py-6" />

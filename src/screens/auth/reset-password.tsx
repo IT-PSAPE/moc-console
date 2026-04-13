@@ -1,11 +1,12 @@
 import { useState } from "react"
-import type { FormEvent } from "react"
+import type { ChangeEvent, FormEvent } from "react"
 import { Link } from "react-router-dom"
 import { Mail } from "lucide-react"
-import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/controls/button"
 import { Input } from "@/components/form/input"
 import { FormLabel } from "@/components/form/form-label"
+import { useAuth } from "@/lib/auth-context"
+import { routes } from "@/screens/console-routes"
 import { AuthLayout } from "./auth-layout"
 
 export function ResetPasswordScreen() {
@@ -13,21 +14,27 @@ export function ResetPasswordScreen() {
     const [email, setEmail] = useState("")
     const [error, setError] = useState("")
     const [success, setSuccess] = useState(false)
-    const [loading, setLoading] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
-    async function handleSubmit(e: FormEvent) {
-        e.preventDefault()
+    function handleEmailChange(event: ChangeEvent<HTMLInputElement>) {
+        setEmail(event.target.value)
+    }
+
+    async function handleSubmit(event: FormEvent) {
+        event.preventDefault()
         setError("")
-        setLoading(true)
+        setIsSubmitting(true)
 
-        const { error } = await resetPassword(email)
-        if (error) {
-            setError(error.message)
-            setLoading(false)
-        } else {
-            setSuccess(true)
-            setLoading(false)
+        const { error: resetError } = await resetPassword(email)
+
+        if (resetError) {
+            setError(resetError.message)
+            setIsSubmitting(false)
+            return
         }
+
+        setSuccess(true)
+        setIsSubmitting(false)
     }
 
     if (success) {
@@ -37,9 +44,9 @@ export function ResetPasswordScreen() {
                     <h2 className="title-h6">Check your email</h2>
                     <p className="paragraph-sm text-tertiary">
                         If an account exists for <span className="text-primary font-medium">{email}</span>,
-                        you'll receive a password reset link shortly.
+                        you&apos;ll receive a password reset link shortly.
                     </p>
-                    <Link to="/login">
+                    <Link to={`/${routes.login}`}>
                         <Button variant="secondary" className="w-full mt-2">Back to sign in</Button>
                     </Link>
                 </div>
@@ -53,7 +60,7 @@ export function ResetPasswordScreen() {
                 <div className="space-y-1">
                     <h2 className="title-h6">Reset password</h2>
                     <p className="paragraph-sm text-tertiary">
-                        Enter your email and we'll send you a link to reset your password.
+                        Enter your email and we&apos;ll send you a link to reset your password.
                     </p>
                 </div>
 
@@ -70,18 +77,18 @@ export function ResetPasswordScreen() {
                         placeholder="you@example.com"
                         icon={<Mail />}
                         value={email}
-                        onChange={e => setEmail(e.target.value)}
+                        onChange={handleEmailChange}
                         required
                     />
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Sending link..." : "Send reset link"}
+                <Button type="submit" disabled={isSubmitting} className="w-full">
+                    {isSubmitting ? "Sending link..." : "Send reset link"}
                 </Button>
 
                 <p className="paragraph-sm text-center text-tertiary">
                     Remember your password?{" "}
-                    <Link to="/login" className="text-brand_secondary hover:underline">
+                    <Link to={`/${routes.login}`} className="text-brand_secondary hover:underline">
                         Sign in
                     </Link>
                 </p>

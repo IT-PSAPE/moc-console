@@ -4,6 +4,7 @@ import { Dropdown } from '@/components/overlays/dropdown'
 import { GripVertical, Pause, Pencil, Play, Plus, Trash2 } from 'lucide-react'
 import { useTimeline } from './timeline-context'
 import { TRACK_HEIGHT, TIME_RULER_HEIGHT, SIDEBAR_WIDTH, TRACK_COLORS, formatTimeDisplay } from './timeline-types'
+import { resolveTrackColor } from '@/types/cue-sheet'
 
 export function TimelineSidebar() {
     const {
@@ -19,7 +20,7 @@ export function TimelineSidebar() {
     const [editingTrackName, setEditingTrackName] = useState('')
     const canDeleteTracks = tracks.length > 1
 
-    const handleAddTrackInline = useCallback(() => {
+        const handleAddTrackInline = useCallback(() => {
         if (!newTrackName.trim()) return
         const colorIndex = tracks.length % TRACK_COLORS.length
         addTrack(newTrackName.trim(), TRACK_COLORS[colorIndex])
@@ -106,10 +107,10 @@ export function TimelineSidebar() {
                                                 <button
                                                     key={color}
                                                     type="button"
-                                                    className={`size-6 rounded-full border transition-transform hover:scale-110 ${track.color === color ? 'border-brand ring-2 ring-brand/30' : 'border-secondary'}`}
-                                                    style={{ backgroundColor: color }}
-                                                    onClick={() => updateTrack(track.id, { color })}
-                                                    aria-label={`Set color`}
+                                                    className={`size-6 rounded-full border transition-transform hover:scale-110 ${track.colorKey === color ? 'border-brand ring-2 ring-brand/30' : 'border-secondary'}`}
+                                                    style={{ backgroundColor: resolveTrackColor(color) }}
+                                                    onClick={() => updateTrack(track.id, { colorKey: color })}
+                                                    aria-label={`Set color ${color}`}
                                                 />
                                             ))}
                                         </div>
@@ -132,7 +133,7 @@ export function TimelineSidebar() {
                             <div className="flex min-w-0 flex-1 items-center gap-1.5">
                                 <div
                                     className="size-3.5 shrink-0 rounded-full border border-black/20"
-                                    style={{ backgroundColor: track.color }}
+                                    style={{ backgroundColor: resolveTrackColor(track.colorKey) }}
                                 />
                                 {isEditing ? (
                                     <input

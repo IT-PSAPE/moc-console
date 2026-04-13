@@ -13,6 +13,7 @@ type EquipmentContextValue = {
   actions: {
     loadEquipment: () => Promise<void>;
     loadBookings: () => Promise<void>;
+    addEquipment: (equipment: Equipment) => void;
     syncEquipment: (equipment: Equipment) => void;
     removeEquipment: (id: string) => void;
   };
@@ -30,6 +31,10 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
   const equipmentPromiseRef = useRef<Promise<void> | null>(null);
   const bookingsLoadedRef = useRef(false);
   const bookingsPromiseRef = useRef<Promise<void> | null>(null);
+
+  const addEquipment = useCallback((newItem: Equipment) => {
+    setEquipment((prev) => [newItem, ...prev]);
+  }, []);
 
   const syncEquipment = useCallback((updated: Equipment) => {
     setEquipment((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
@@ -78,9 +83,9 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       state: { equipment, bookings, isLoadingEquipment, isLoadingBookings },
-      actions: { loadEquipment, loadBookings, syncEquipment, removeEquipment },
+      actions: { loadEquipment, loadBookings, addEquipment, syncEquipment, removeEquipment },
     }),
-    [equipment, bookings, isLoadingEquipment, isLoadingBookings, loadEquipment, loadBookings, syncEquipment, removeEquipment],
+    [equipment, bookings, isLoadingEquipment, isLoadingBookings, loadEquipment, loadBookings, addEquipment, syncEquipment, removeEquipment],
   );
 
   return <EquipmentContext.Provider value={value}>{children}</EquipmentContext.Provider>;

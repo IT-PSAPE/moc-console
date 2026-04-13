@@ -8,7 +8,6 @@ import { Paragraph, Title } from '@/components/display/text'
 import { Input } from '@/components/form/input'
 import { CalendarDays, Columns3, Inbox, List, Search, Settings2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Decision } from '@/components/display/decision'
 import { Spinner } from '@/components/feedback/spinner'
 import { EmptyState } from '@/components/feedback/empty-state'
 import { Drawer } from '@/components/overlays/drawer'
@@ -55,29 +54,23 @@ export function RequestsAllRequestsScreen() {
                 </Header.Trail>
             </Header.Root>
 
-            <Decision.Root value={filtered} loading={isLoadingActive}>
-                <Decision.Loading>
-                    <div className="flex justify-center py-16">
-                        <Spinner size="lg" />
-                    </div>
-                </Decision.Loading>
-                <Decision.Empty>
-                    <EmptyState
-                        icon={<Inbox />}
-                        title="No requests found"
-                        description="No requests match your current filters, or none have been created yet."
-                    />
-                </Decision.Empty>
-                <Decision.Data>
-                    {() => (
-                        <>
-                            {view === 'list' && <RequestLists requests={filtered} />}
-                            {view === 'kanban' && <RequestKanban requests={filtered} />}
-                            {view === 'calendar' && <RequestCalendar requests={filtered} />}
-                        </>
-                    )}
-                </Decision.Data>
-            </Decision.Root>
+            {isLoadingActive ? (
+                <div className="flex justify-center py-16">
+                    <Spinner />
+                </div>
+            ) : filtered.length === 0 ? (
+                <EmptyState
+                    icon={<Inbox />}
+                    title="No requests found"
+                    description="No requests match your current filters, or none have been created yet."
+                />
+            ) : (
+                <>
+                    {view === 'list' && <RequestLists requests={filtered} />}
+                    {view === 'kanban' && <RequestKanban requests={filtered} />}
+                    {view === 'calendar' && <RequestCalendar requests={filtered} />}
+                </>
+            )}
         </section>
     )
 }

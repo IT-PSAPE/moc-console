@@ -1,32 +1,65 @@
+import { supabase } from "@/lib/supabase";
+import { getCurrentWorkspaceId } from "./current-workspace";
+import { mapRow } from "./map-request";
 import type { Request, Status } from "@/types/requests";
-import { findRequestById, listRequests } from "./mock-request-store";
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, 200 + Math.random() * ms));
+type RequestRow = Record<string, unknown>;
 
-/** Fetch all non-archived requests */
+function selectRequests(workspaceId: string) {
+  return supabase
+    .from("requests")
+    .select("id, title, priority, status, category, created_at, updated_at, due_date, requested_by, who, what, when_text, where_text, why, how, notes, flow, content")
+    .eq("workspace_id", workspaceId);
+}
+
 export async function fetchRequests(): Promise<Request[]> {
-  await delay(120);
-  return listRequests().filter((request) => request.status !== "archived");
+  const workspaceId = await getCurrentWorkspaceId();
+  const { data, error } = await selectRequests(workspaceId)
+    .neq("status", "archived")
+    .order("due_date", { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as RequestRow[]).map(mapRow);
 }
 
-/** Fetch requests filtered by status */
-export async function fetchRequestsByStatus(
-  status: Status,
-): Promise<Request[]> {
-  await delay(120);
-  return listRequests().filter((request) => request.status === status);
+export async function fetchRequestsByStatus(status: Status): Promise<Request[]> {
+  const workspaceId = await getCurrentWorkspaceId();
+  const { data, error } = await selectRequests(workspaceId)
+    .eq("status", status)
+    .order("due_date", { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as RequestRow[]).map(mapRow);
 }
 
-/** Fetch a single request by id */
-export async function fetchRequestById(
-  id: string,
-): Promise<Request | undefined> {
-  await delay(80);
-  return findRequestById(id);
+export async function fetchRequestById(id: string): Promise<Request | undefined> {
+  const workspaceId = await getCurrentWorkspaceId();
+  const { data, error } = await selectRequests(workspaceId)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data ? mapRow(data as RequestRow) : undefined;
 }
 
-/** Fetch only archived requests */
 export async function fetchArchivedRequests(): Promise<Request[]> {
-  await delay(120);
-  return listRequests().filter((request) => request.status === "archived");
+  const workspaceId = await getCurrentWorkspaceId();
+  const { data, error } = await selectRequests(workspaceId)
+    .eq("status", "archived")
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as RequestRow[]).map(mapRow);
 }

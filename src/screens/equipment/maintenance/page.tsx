@@ -2,11 +2,10 @@ import { Card } from "@/components/display/card";
 import { Badge } from "@/components/display/badge";
 import { Header } from "@/components/display/header";
 import { Paragraph, Title } from "@/components/display/text";
-import { Wrench } from "lucide-react";
+
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Decision } from "@/components/display/decision";
 import { Spinner } from "@/components/feedback/spinner";
-import { EmptyState } from "@/components/feedback/empty-state";
 import { DataTable } from "@/components/display/data-table";
 import { Drawer } from "@/components/overlays/drawer";
 import { useEquipment } from "@/features/equipment/equipment-provider";
@@ -74,33 +73,25 @@ export function EquipmentMaintenanceScreen() {
       </Header.Root>
 
       <div className="flex flex-col gap-4 p-4 mx-auto w-full max-w-content">
-        <Decision.Root value={maintenanceItems} loading={isLoadingEquipment}>
-          <Decision.Loading>
-            <div className="flex justify-center py-16">
-              <Spinner size="lg" />
-            </div>
-          </Decision.Loading>
-          <Decision.Empty>
-            <EmptyState icon={<Wrench />} title="No maintenance records" description="All equipment is in working order." />
-          </Decision.Empty>
-          <Decision.Data>
-            <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
-              <Card.Root>
-                <Card.Content className="!border-secondary overflow-hidden">
-                    <DataTable data={maintenanceItems} columns={columns} emptyMessage="No maintenance records" onRowClick={(row) => setSelectedEquipment(row)} />
-                </Card.Content>
-              </Card.Root>
-              {selectedEquipment && (
-                <EquipmentDrawer
-                  equipment={selectedEquipment}
-                  onEquipmentClose={handleEquipmentClose}
-                  isDirtyRef={isDirtyRef}
-                  requestCloseRef={requestCloseRef}
-                />
+        <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
+          <Card.Root>
+            <Card.Content className="!border-secondary overflow-hidden">
+              {isLoadingEquipment ? (
+                <div className="flex justify-center py-16"><Spinner /></div>
+              ) : (
+                <DataTable data={maintenanceItems} columns={columns} emptyMessage="All equipment is in working order." onRowClick={(row) => setSelectedEquipment(row)} />
               )}
-            </Drawer.Root>
-          </Decision.Data>
-        </Decision.Root>
+            </Card.Content>
+          </Card.Root>
+          {selectedEquipment && (
+            <EquipmentDrawer
+              equipment={selectedEquipment}
+              onEquipmentClose={handleEquipmentClose}
+              isDirtyRef={isDirtyRef}
+              requestCloseRef={requestCloseRef}
+            />
+          )}
+        </Drawer.Root>
       </div>
     </section>
   );

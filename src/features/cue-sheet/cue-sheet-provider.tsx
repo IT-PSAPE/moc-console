@@ -7,6 +7,8 @@ import {
     fetchCueSheetTracksByEventId,
 } from '@/data/fetch-cue-sheet'
 import {
+    createCueSheetChecklistInstance,
+    createCueSheetEventInstance,
     deleteCueSheetChecklist,
     deleteCueSheetEvent,
     saveCueSheetChecklist,
@@ -37,37 +39,6 @@ type CueSheetContextValue = {
         createChecklistInstance: (template: Checklist) => Promise<Checklist>
         removeEvent: (id: string) => Promise<void>
         removeChecklist: (id: string) => Promise<void>
-    }
-}
-
-function duplicateTracks(tracks: Track[]): Track[] {
-    return tracks.map((track) => ({
-        ...track,
-        id: crypto.randomUUID(),
-        cues: track.cues.map((cue) => ({
-            ...cue,
-            id: crypto.randomUUID(),
-        })),
-    }))
-}
-
-function duplicateChecklist(template: Checklist): Checklist {
-    const now = new Date().toISOString()
-    return {
-        ...template,
-        id: crypto.randomUUID(),
-        kind: 'instance',
-        templateId: template.id,
-        name: `${template.name} Run`,
-        scheduledAt: now,
-        createdAt: now,
-        updatedAt: now,
-        items: template.items.map((item) => ({ ...item, id: crypto.randomUUID(), checked: false })),
-        sections: template.sections.map((section) => ({
-            ...section,
-            id: crypto.randomUUID(),
-            items: section.items.map((item) => ({ ...item, id: crypto.randomUUID(), checked: false })),
-        })),
     }
 }
 
@@ -150,32 +121,26 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
     }, [])
 
     const syncTracks = useCallback(async (eventId: string, tracks: Track[]) => {
-        const savedTracks = await saveCueSheetTracks(eventId, tracks)
+        const event = eventsById[eventId]
+
+        if (!event) {
+            return
+        }
+
+        const savedTracks = await saveCueSheetTracks({ id: event.id, kind: event.kind }, tracks)
         setTracksByEventId((prev) => ({ ...prev, [eventId]: savedTracks }))
-    }, [])
+    }, [eventsById])
 
     const createEventInstance = useCallback(async (template: CueSheetEvent) => {
-        const now = new Date().toISOString()
-        const instance: CueSheetEvent = {
-            ...template,
-            id: crypto.randomUUID(),
-            kind: 'instance',
-            templateId: template.id,
-            title: `${template.title} Run`,
-            scheduledAt: now,
-            createdAt: now,
-            updatedAt: now,
-        }
-        const sourceTracks = tracksByEventId[template.id] ?? []
-        const savedEvent = await saveCueSheetEvent(instance)
-        const savedTracks = await saveCueSheetTracks(savedEvent.id, duplicateTracks(sourceTracks))
+        const savedEvent = await createCueSheetEventInstance(template)
+        const savedTracks = await fetchCueSheetTracksByEventId(savedEvent.id)
         setEventsById((prev) => ({ ...prev, [savedEvent.id]: savedEvent }))
         setTracksByEventId((prev) => ({ ...prev, [savedEvent.id]: savedTracks }))
         return savedEvent
-    }, [tracksByEventId])
+    }, [])
 
     const createChecklistInstance = useCallback(async (template: Checklist) => {
-        const savedChecklist = await saveCueSheetChecklist(duplicateChecklist(template))
+        const savedChecklist = await createCueSheetChecklistInstance(template)
         setChecklists((prev) => [...prev, savedChecklist])
         return savedChecklist
     }, [])

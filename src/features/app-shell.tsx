@@ -74,7 +74,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <Sidebar.Group>
                             <Sidebar.GroupContent>
                                 <Sidebar.MenuItem title={"Dashboard"} icon={<LayoutGrid />} active={isActive(routes.dashboard)} onClick={() => navigateToRoute(routes.dashboard)} />
-                                {(role?.can_manage_assignees || role?.can_manage_roles) && (
+                                {role?.can_manage_roles && (
                                     <Sidebar.MenuItem title={"Users"} icon={<Users />} active={isActive(routes.users)} onClick={() => navigateToRoute(routes.users)} />
                                 )}
                                 <SearchMenuItem />

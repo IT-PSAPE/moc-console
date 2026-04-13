@@ -1,4 +1,5 @@
 import type { CueType, Cue } from '@/types/cue-sheet'
+import { TRACK_COLOR_KEYS } from '@/types/cue-sheet'
 
 // ─── Constants ─────────────────────────────────────────────────────
 
@@ -19,20 +20,7 @@ export const TIMELINE_HORIZONTAL_PADDING = 8
 
 // ─── Track Colors ──────────────────────────────────────────────────
 
-export const TRACK_COLORS = [
-    '#3b82f6', // blue
-    '#8b5cf6', // purple
-    '#ef4444', // red
-    '#22c55e', // green
-    '#f97316', // orange
-    '#ec4899', // pink
-    '#eab308', // yellow
-    '#14b8a6', // teal
-    '#6366f1', // indigo
-    '#f43f5e', // rose
-    '#0ea5e9', // sky
-    '#a855f7', // violet
-] as const
+export const TRACK_COLORS = [...TRACK_COLOR_KEYS] as const
 
 // ─── Cue Type Config ───────────────────────────────────────────────
 

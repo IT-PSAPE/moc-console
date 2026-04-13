@@ -18,7 +18,6 @@ import { TopBarActions } from "@/features/topbar"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { useMediaFilters } from "@/features/broadcast/use-media-filters"
 import { Dropdown } from "@/components/overlays/dropdown"
-import { Checkbox } from "@/components/form/checkbox"
 import { playlistStatusColor, playlistStatusLabel, mediaTypeColor, mediaTypeLabel } from "@/types/broadcast"
 import type { Playlist, Cue, MediaItem, MediaType, PlaylistStatus } from "@/types/broadcast"
 import { fetchPlaylistById } from "@/data/fetch-broadcast"
@@ -32,11 +31,13 @@ import {
   closestCenter,
   useDroppable,
   useDraggable,
+  type DraggableAttributes,
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
 } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
+import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities"
 import {
   Radio, Search, Trash2, MoreVertical, Clock, Image, Music, Video,
   EllipsisVertical, Loader, FileText, ListMusic, Check, X, Plus, GripVertical,
@@ -90,9 +91,11 @@ export function PlaylistDetailScreen() {
     if (!id) return
     const fromContext = contextPlaylists.find((p) => p.id === id)
     if (fromContext) {
-      setPlaylist(fromContext)
-      setIsLoading(false)
-      return
+      const timerId = window.setTimeout(() => {
+        setPlaylist(fromContext)
+        setIsLoading(false)
+      }, 0)
+      return () => { window.clearTimeout(timerId) }
     }
     let cancelled = false
     fetchPlaylistById(id).then((data) => {
@@ -130,12 +133,25 @@ export function PlaylistDetailScreen() {
   }, [])
 
   const syncPlaylistUpdate = useCallback((updated: Playlist) => {
+    const previousPlaylist = playlist
+
+    if (!previousPlaylist) {
+      return
+    }
+
     setPlaylist(updated)
     syncPlaylist(updated)
-    updatePlaylist(updated).catch(() => {
-      toast({ title: "Failed to save", description: "The playlist could not be updated. Please try again.", variant: "error" })
-    })
-  }, [syncPlaylist, toast])
+    updatePlaylist(updated)
+      .then((savedPlaylist) => {
+        setPlaylist(savedPlaylist)
+        syncPlaylist(savedPlaylist)
+      })
+      .catch(() => {
+        setPlaylist(previousPlaylist)
+        syncPlaylist(previousPlaylist)
+        toast({ title: "Failed to save", description: "The playlist could not be updated. Please try again.", variant: "error" })
+      })
+  }, [playlist, syncPlaylist, toast])
 
   const handleNameSave = useCallback((name: string) => {
     if (!playlist) return
@@ -509,7 +525,7 @@ export function PlaylistDetailScreen() {
                       <Paragraph.xs className="truncate flex-1">{playlist.backgroundMusicName ?? "Audio"}</Paragraph.xs>
                       <audio src={playlist.backgroundMusicUrl} controls preload="metadata" className="h-6 max-w-40" />
                       <button
-                        onClick={() => syncPlaylistUpdate({ ...playlist, backgroundMusicUrl: null, backgroundMusicName: null })}
+                        onClick={() => syncPlaylistUpdate({ ...playlist, backgroundMusicId: null, backgroundMusicUrl: null, backgroundMusicName: null })}
                         className="p-0.5 rounded hover:bg-secondary cursor-pointer text-quaternary hover:text-secondary transition-colors"
                       >
                         <X className="size-3.5" />
@@ -524,21 +540,26 @@ export function PlaylistDetailScreen() {
                         {media.filter((m) => m.type === "audio").map((audioItem) => (
                           <Dropdown.Item
                             key={audioItem.id}
-                            onSelect={() => syncPlaylistUpdate({ ...playlist, backgroundMusicUrl: audioItem.url, backgroundMusicName: audioItem.name })}
+                            onSelect={() => syncPlaylistUpdate({
+                              ...playlist,
+                              backgroundMusicId: audioItem.id,
+                              backgroundMusicUrl: audioItem.url,
+                              backgroundMusicName: audioItem.name,
+                            })}
                           >
                             <Music className="size-4" />
                             {audioItem.name}
                           </Dropdown.Item>
                         ))}
                         {media.filter((m) => m.type === "audio").length === 0 && (
-                          <Dropdown.Item disabled>No audio items in library</Dropdown.Item>
+                          <div className="px-2 py-1.5 text-sm text-quaternary">No audio items in library</div>
                         )}
                       </Dropdown.Panel>
                     </Dropdown.Root>
                   )}
                 </div>
 
-                {/* Defaults row — image duration + video settings */}
+                {/* Defaults row — image duration */}
                 <div className="flex items-center gap-4 px-3 py-2">
                   <div className="flex items-center gap-1.5">
                     <Image className="size-3.5 text-tertiary shrink-0" />
@@ -554,31 +575,6 @@ export function PlaylistDetailScreen() {
                     />
                     <Paragraph.xs className="text-tertiary">s</Paragraph.xs>
                   </div>
-
-                  <div className="w-px h-4 bg-border-secondary" />
-
-                  <div className="flex items-center gap-1.5">
-                    <Video className="size-3.5 text-tertiary shrink-0" />
-                    <Label.xs className="text-tertiary">Video</Label.xs>
-                  </div>
-                  <Checkbox
-                    checked={playlist.videoSettings.autoplay}
-                    onChange={() => syncPlaylistUpdate({ ...playlist, videoSettings: { ...playlist.videoSettings, autoplay: !playlist.videoSettings.autoplay } })}
-                  >
-                    <Label.xs>Autoplay</Label.xs>
-                  </Checkbox>
-                  <Checkbox
-                    checked={playlist.videoSettings.loop}
-                    onChange={() => syncPlaylistUpdate({ ...playlist, videoSettings: { ...playlist.videoSettings, loop: !playlist.videoSettings.loop } })}
-                  >
-                    <Label.xs>Loop</Label.xs>
-                  </Checkbox>
-                  <Checkbox
-                    checked={playlist.videoSettings.muted}
-                    onChange={() => syncPlaylistUpdate({ ...playlist, videoSettings: { ...playlist.videoSettings, muted: !playlist.videoSettings.muted } })}
-                  >
-                    <Label.xs>Muted</Label.xs>
-                  </Checkbox>
                 </div>
               </div>
             </div>
@@ -767,9 +763,10 @@ function DroppableCueRow({ cue, totalCues, onRemove, onUpdateCue, onDuplicate, o
   )
 }
 
-function CueRow({ cue, totalCues, onRemove, onUpdateCue, onDuplicate, onMoveToTop, onMoveToBottom, onToggleDisable, defaultImageDuration, media, dragListeners, dragAttributes }: { cue: Cue; totalCues: number } & CueRowActions & { defaultImageDuration: number; media: MediaItem[]; dragListeners?: Record<string, unknown>; dragAttributes?: Record<string, unknown> }) {
+function CueRow({ cue, totalCues, onRemove, onUpdateCue, onDuplicate, onMoveToTop, onMoveToBottom, onToggleDisable, defaultImageDuration, media, dragListeners, dragAttributes }: { cue: Cue; totalCues: number } & CueRowActions & { defaultImageDuration: number; media: MediaItem[]; dragListeners?: SyntheticListenerMap; dragAttributes?: DraggableAttributes }) {
   const [editingDuration, setEditingDuration] = useState(false)
   const [durationValue, setDurationValue] = useState(String(cue.durationOverride ?? ""))
+  void totalCues
 
   const mediaItem = media.find((m) => m.id === cue.mediaItemId)
   const isImage = cue.mediaItemType === "image"

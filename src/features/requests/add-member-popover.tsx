@@ -6,8 +6,8 @@ import { Input } from "@/components/form/input";
 import { Radio } from "@/components/form/radio";
 import { Popover, usePopover } from "@/components/overlays/popover";
 import { fetchAllUsers } from "@/data/fetch-assignees";
-import { fetchRoles } from "@/data/fetch-roles";
 import type { User } from "@/types/requests";
+import { requestDuties } from "@/types/requests";
 import { Spinner } from "@/components/feedback/spinner";
 import { Check, Search } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -42,10 +42,10 @@ function AddMemberPanel({ existingUserIds, onAdd }: Omit<AddMemberPopoverProps, 
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        Promise.all([fetchAllUsers(), fetchRoles()])
-            .then(([users, fetchedRoles]) => {
+        fetchAllUsers()
+            .then((users) => {
                 setAllUsers(users);
-                setRoles(fetchedRoles);
+                setRoles([...requestDuties]);
             })
             .finally(() => setIsLoading(false));
     }, []);

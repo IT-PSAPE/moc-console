@@ -2,6 +2,7 @@ export const routes = {
     login: 'login',
     signup: 'signup',
     resetPassword: 'reset-password',
+    passwordRecovery: 'password-recovery',
     dashboard: 'dashboard',
     users: 'users',
     requestsOverview: 'requests',

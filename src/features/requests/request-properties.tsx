@@ -140,19 +140,17 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
                 {editable && onFieldChange ? (
                     <Input
                         type="datetime-local"
-                        value={request.dueDate ? toLocalDateTimeValue(request.dueDate) : ""}
+                        value={toLocalDateTimeValue(request.dueDate)}
                         onChange={(e) => {
                             const v = e.target.value;
-                            onFieldChange("dueDate", v ? new Date(v).toISOString() : null);
+                            if (!v) return;
+                            onFieldChange("dueDate", new Date(v).toISOString());
                         }}
+                        required
                         style="ghost"
                     />
                 ) : (
-                    request.dueDate ? (
-                        <Paragraph.sm>{formatDate(request.dueDate)}</Paragraph.sm>
-                    ) : (
-                        <Paragraph.sm className="text-quaternary">No due date</Paragraph.sm>
-                    )
+                    <Paragraph.sm>{formatDate(request.dueDate)}</Paragraph.sm>
                 )}
             </MetaRow>
 

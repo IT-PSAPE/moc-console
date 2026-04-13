@@ -8,9 +8,7 @@ import { SegmentedControl } from "@/components/controls/segmented-control";
 import { Paragraph, Title } from "@/components/display/text";
 import { CalendarDays, List, Search, Settings2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Decision } from "@/components/display/decision";
 import { Spinner } from "@/components/feedback/spinner";
-import { EmptyState } from "@/components/feedback/empty-state";
 import { DataTable } from "@/components/display/data-table";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 import { EquipmentDrawer } from "@/features/equipment/equipment-drawer";
@@ -128,42 +126,27 @@ export function EquipmentBookingsScreen() {
           </Header.Trail>
         </Header.Root>
 
-        <Decision.Root value={filtered} loading={isLoading}>
-          <Decision.Loading>
-            <div className="flex justify-center py-16">
-              <Spinner size="lg" />
-            </div>
-          </Decision.Loading>
-          <Decision.Empty>
-            <EmptyState icon={<CalendarDays />} title="No bookings found" description="No equipment bookings match your current filters." />
-          </Decision.Empty>
-          <Decision.Data>
-            {() => (
-              <>
-                {view === "table" && (
-                  <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
-                    <Card.Root>
-                      <Card.Content className="!border-secondary overflow-hidden">
-                          <DataTable data={filtered} columns={columns} emptyMessage="No bookings found" onRowClick={handleBookingRowClick} />
-                      </Card.Content>
-                    </Card.Root>
-                    {selectedEquipment && (
-                      <EquipmentDrawer
-                        equipment={selectedEquipment}
-                        onEquipmentClose={handleEquipmentClose}
-                        isDirtyRef={isDirtyRef}
-                        requestCloseRef={requestCloseRef}
-                      />
-                    )}
-                  </Drawer.Root>
-                )}
-                {view === "calendar" && (
-                  <BookingCalendar bookings={filtered} equipmentMap={equipmentMap} />
-                )}
-              </>
+        {isLoading ? (
+          <div className="flex justify-center py-16"><Spinner /></div>
+        ) : view === "table" ? (
+          <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
+            <Card.Root>
+              <Card.Content className="!border-secondary overflow-hidden">
+                <DataTable data={filtered} columns={columns} emptyMessage="No bookings found" onRowClick={handleBookingRowClick} />
+              </Card.Content>
+            </Card.Root>
+            {selectedEquipment && (
+              <EquipmentDrawer
+                equipment={selectedEquipment}
+                onEquipmentClose={handleEquipmentClose}
+                isDirtyRef={isDirtyRef}
+                requestCloseRef={requestCloseRef}
+              />
             )}
-          </Decision.Data>
-        </Decision.Root>
+          </Drawer.Root>
+        ) : (
+          <BookingCalendar bookings={filtered} equipmentMap={equipmentMap} />
+        )}
       </div>
     </section>
   );

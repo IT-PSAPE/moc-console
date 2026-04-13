@@ -1,22 +1,22 @@
 import { Badge } from "@/components/display/badge";
 import { Card } from "@/components/display/card";
 import { DataTable } from "@/components/display/data-table";
-import { Decision } from "@/components/display/decision";
 import { Header } from "@/components/display/header";
 import { MetaRow } from "@/components/display/meta-row";
 import { Paragraph, Title } from "@/components/display/text";
 import { Button } from "@/components/controls/button";
+import { Tabs } from "@/components/layout/tabs";
 import { Input } from "@/components/form/input";
 import { Drawer, useDrawer } from "@/components/overlays/drawer";
 import { Dropdown } from "@/components/overlays/dropdown";
 import { Spinner } from "@/components/feedback/spinner";
-import { EmptyState } from "@/components/feedback/empty-state";
 import { useFeedback } from "@/components/feedback/feedback-provider";
 import { useAuth } from "@/lib/auth-context";
 import { useUsers } from "@/features/users/users-provider";
 import type { UserWithRole } from "@/data/fetch-users";
+import type { Workspace } from "@/types/workspace";
 import { Mail, Search, Shield, User, Users, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { Navigate } from "react-router-dom";
 import { routes } from "@/screens/console-routes";
 
@@ -31,19 +31,64 @@ function getRoleColor(name: string | undefined) {
   return roleColor[name.toLowerCase()] ?? ("gray" as const);
 }
 
+function getWorkspaceNames(workspaceIds: string[], workspaceNameById: Map<string, string>) {
+  return workspaceIds.flatMap((workspaceId) => {
+    const workspaceName = workspaceNameById.get(workspaceId);
+    return workspaceName ? [workspaceName] : [];
+  });
+}
+
+function getWorkspaceSummary(workspaceIds: string[], workspaceNameById: Map<string, string>) {
+  const workspaceNames = getWorkspaceNames(workspaceIds, workspaceNameById);
+
+  if (workspaceNames.length === 0) return null;
+  if (workspaceNames.length === 1) return workspaceNames[0];
+  return `${workspaceNames[0]} +${workspaceNames.length - 1}`;
+}
+
 export function UsersScreen() {
   const { role, profile } = useAuth();
   const {
-    state: { users, isLoading },
+    state: { users, workspaces, isLoading },
     actions: { loadUsers },
   } = useUsers();
   const { toast } = useFeedback();
 
   const [search, setSearch] = useState("");
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState("all");
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
 
-  const canManage = role?.can_manage_assignees === true;
+  const canManage = role?.can_manage_roles === true;
   const currentUserId = profile?.id;
+
+  const workspaceNameById = useMemo(() => {
+    const nextMap = new Map<string, string>();
+
+    for (const workspace of workspaces) {
+      nextMap.set(workspace.id, workspace.name);
+    }
+
+    return nextMap;
+  }, [workspaces]);
+
+  const currentUser = useMemo(() => users.find((user) => user.id === currentUserId), [currentUserId, users]);
+
+  const visibleWorkspaces = useMemo(() => {
+    if (!currentUser?.workspaceIds.length) {
+      return workspaces;
+    }
+
+    return workspaces.filter((workspace) => currentUser.workspaceIds.includes(workspace.id));
+  }, [currentUser, workspaces]);
+  const activeWorkspaceId = useMemo(() => {
+    if (selectedWorkspaceId === "all") {
+      return "all";
+    }
+
+    return visibleWorkspaces.some((workspace) => workspace.id === selectedWorkspaceId)
+      ? selectedWorkspaceId
+      : "all";
+  }, [selectedWorkspaceId, visibleWorkspaces]);
 
   const columns = useMemo(() => [
     {
@@ -68,28 +113,66 @@ export function UsersScreen() {
         />
       ),
     },
-  ], [currentUserId]);
+    {
+      key: "workspaces",
+      header: "Workspaces",
+      render: (_: unknown, row: UserWithRole) => {
+        const workspaceSummary = getWorkspaceSummary(row.workspaceIds, workspaceNameById);
+
+        if (!workspaceSummary) {
+          return <span className="text-tertiary">No workspace</span>;
+        }
+
+        return <Badge label={workspaceSummary} color="gray" />;
+      },
+    },
+  ], [currentUserId, workspaceNameById]);
 
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
 
-  // Redirect viewers who have no read permission on users
-  if (!role?.can_manage_assignees && !role?.can_manage_roles && role !== null) {
-    return <Navigate to={`/${routes.dashboard}`} replace />;
-  }
+  const handleSearchChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setSearch(event.target.value);
+  }, []);
+
+  const handleWorkspaceChange = useCallback((value: string) => {
+    setSelectedWorkspaceId(value);
+  }, []);
+
+  const handleUserSelect = useCallback((row: UserWithRole) => {
+    setSelectedUser(row);
+  }, []);
+
+  const handleDrawerOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      setSelectedUser(null);
+    }
+  }, []);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return users;
+    const visibleWorkspaceIds = new Set(visibleWorkspaces.map((workspace) => workspace.id));
+    const workspaceScopedUsers = activeWorkspaceId === "all"
+      ? (visibleWorkspaceIds.size === 0
+          ? users
+          : users.filter((user) => user.workspaceIds.some((workspaceId) => visibleWorkspaceIds.has(workspaceId))))
+      : users.filter((user) => user.workspaceIds.includes(activeWorkspaceId));
+
+    if (!search.trim()) return workspaceScopedUsers;
     const q = search.toLowerCase();
-    return users.filter(
+    return workspaceScopedUsers.filter(
       (u) =>
         u.name.toLowerCase().includes(q) ||
         u.surname.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
         (u.role?.name ?? "").toLowerCase().includes(q),
     );
-  }, [users, search]);
+  }, [activeWorkspaceId, search, users, visibleWorkspaces]);
+
+  // Redirect viewers who have no read permission on users
+  if (!role?.can_manage_roles && role !== null) {
+    return <Navigate to={`/${routes.dashboard}`} replace />;
+  }
 
   return (
     <section>
@@ -103,37 +186,42 @@ export function UsersScreen() {
       </Header.Root>
 
       <div className="flex flex-col gap-4 p-4 mx-auto w-full max-w-content">
-        <Decision.Root value={filtered} loading={isLoading}>
-          <Decision.Loading>
-            <div className="flex justify-center py-16">
-              <Spinner size="lg" />
-            </div>
-          </Decision.Loading>
-          <Decision.Empty>
-            <EmptyState icon={<Users />} title="No users found" description="Try adjusting your search." />
-          </Decision.Empty>
-          <Decision.Data>
-            <Drawer.Root open={!!selectedUser} onOpenChange={(open) => { if (!open) setSelectedUser(null); }}>
-              <Card.Root>
-                <Card.Header className="gap-2 flex-1 justify-end">
-                  <Input icon={<Search />} placeholder="Search users..." className="w-full max-w-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
-                </Card.Header>
-                <Card.Content className="!border-secondary overflow-hidden">
-                  <DataTable data={filtered} columns={columns} emptyMessage="No users match your search" onRowClick={(row) => setSelectedUser(row)} />
-                </Card.Content>
-              </Card.Root>
-              {selectedUser && (
-                <UserDetailDrawer
-                  user={selectedUser}
-                  canManage={canManage}
-                  onClose={() => setSelectedUser(null)}
-                  onSaved={(msg) => toast({ title: msg, variant: "success" })}
-                  onError={(msg) => toast({ title: "Error", description: msg, variant: "error" })}
-                />
+        <Drawer.Root open={!!selectedUser} onOpenChange={handleDrawerOpenChange}>
+          <Card.Root>
+            <Card.Header className="gap-2 flex-1 justify-end">
+              <div className="flex flex-1 flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <Tabs.Root value={activeWorkspaceId} onValueChange={handleWorkspaceChange}>
+                  <Tabs.List className="border-b-0">
+                    <Tabs.Tab value="all">All Workspaces</Tabs.Tab>
+                    {visibleWorkspaces.map((workspace) => (
+                      <Tabs.Tab key={workspace.id} value={workspace.id}>
+                        {workspace.name}
+                      </Tabs.Tab>
+                    ))}
+                  </Tabs.List>
+                </Tabs.Root>
+                <Input icon={<Search />} placeholder="Search users..." className="w-full max-w-sm" value={search} onChange={handleSearchChange} />
+              </div>
+            </Card.Header>
+            <Card.Content className="!border-secondary overflow-hidden">
+              {isLoading ? (
+                <div className="flex justify-center py-16"><Spinner /></div>
+              ) : (
+                <DataTable data={filtered} columns={columns} emptyMessage="No users match your search" onRowClick={handleUserSelect} />
               )}
-            </Drawer.Root>
-          </Decision.Data>
-        </Decision.Root>
+            </Card.Content>
+          </Card.Root>
+          {selectedUser && (
+            <UserDetailDrawer
+              user={selectedUser}
+              canManage={canManage}
+              workspaces={workspaces}
+              onClose={() => setSelectedUser(null)}
+              onSaved={(msg) => toast({ title: msg, variant: "success" })}
+              onError={(msg) => toast({ title: "Error", description: msg, variant: "error" })}
+            />
+          )}
+        </Drawer.Root>
       </div>
     </section>
   );
@@ -144,12 +232,13 @@ export function UsersScreen() {
 type UserDetailDrawerProps = {
   user: UserWithRole;
   canManage: boolean;
+  workspaces: Workspace[];
   onClose: () => void;
   onSaved: (msg: string) => void;
   onError: (msg: string) => void;
 };
 
-function UserDetailDrawer({ user, canManage, onClose, onSaved, onError }: UserDetailDrawerProps) {
+function UserDetailDrawer({ user, canManage, workspaces, onClose, onSaved, onError }: UserDetailDrawerProps) {
   return (
     <Drawer.Portal>
       <Drawer.Backdrop />
@@ -157,6 +246,7 @@ function UserDetailDrawer({ user, canManage, onClose, onSaved, onError }: UserDe
         <UserDetailDrawerContent
           user={user}
           canManage={canManage}
+          workspaces={workspaces}
           onClose={onClose}
           onSaved={onSaved}
           onError={onError}
@@ -166,7 +256,7 @@ function UserDetailDrawer({ user, canManage, onClose, onSaved, onError }: UserDe
   );
 }
 
-function UserDetailDrawerContent({ user, canManage, onClose, onSaved, onError }: UserDetailDrawerProps) {
+function UserDetailDrawerContent({ user, canManage, workspaces, onClose, onSaved, onError }: UserDetailDrawerProps) {
   const { actions: drawerActions } = useDrawer();
   const {
     state: { roles },
@@ -180,6 +270,16 @@ function UserDetailDrawerContent({ user, canManage, onClose, onSaved, onError }:
 
   const selectedRoleName = roles.find((r) => r.id === selectedRoleId)?.name ?? user.role?.name ?? "No role";
   const hasChanges = name !== user.name || surname !== user.surname || selectedRoleId !== (user.role?.id ?? "");
+  const workspaceNameById = useMemo(() => {
+    const nextMap = new Map<string, string>();
+
+    for (const workspace of workspaces) {
+      nextMap.set(workspace.id, workspace.name);
+    }
+
+    return nextMap;
+  }, [workspaces]);
+  const workspaceSummary = getWorkspaceSummary(user.workspaceIds, workspaceNameById);
 
   const handleClose = useCallback(() => {
     onClose();
@@ -258,6 +358,10 @@ function UserDetailDrawerContent({ user, canManage, onClose, onSaved, onError }:
           {/* Email (always read-only) */}
           <MetaRow icon={<Mail className="size-4" />} label="Email">
             <Paragraph.sm>{user.email}</Paragraph.sm>
+          </MetaRow>
+
+          <MetaRow icon={<Users className="size-4" />} label="Workspaces">
+            {workspaceSummary ? <Badge label={workspaceSummary} color="gray" /> : <Paragraph.sm className="text-tertiary">No workspace</Paragraph.sm>}
           </MetaRow>
 
           {/* Role */}

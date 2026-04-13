@@ -6,20 +6,30 @@ export type UserWithRole = {
   name: string;
   surname: string;
   email: string;
+  telegramChatId: string | null;
+  workspaceIds: string[];
   role: Role | null;
+};
+
+type UserRow = {
+  id: string;
+  name: string;
+  surname: string;
+  email: string;
+  telegram_chat_id: string | null;
 };
 
 /** Fetch all users with their assigned role */
 export async function fetchUsersWithRoles(): Promise<UserWithRole[]> {
   const { data: users, error: usersError } = await supabase
     .from("users")
-    .select("id, name, surname, email");
+    .select("id, name, surname, email, telegram_chat_id");
 
   if (usersError) throw new Error(usersError.message);
 
   const { data: userRoles, error: rolesError } = await supabase
     .from("user_roles")
-    .select("user_id, roles(id, name, can_create, can_read, can_update, can_delete, can_manage_roles, can_manage_assignees)");
+    .select("user_id, roles(id, name, can_create, can_read, can_update, can_delete, can_manage_roles)");
 
   if (rolesError) throw new Error(rolesError.message);
 
@@ -31,8 +41,13 @@ export async function fetchUsersWithRoles(): Promise<UserWithRole[]> {
     }
   }
 
-  return (users ?? []).map((u) => ({
-    ...u,
+  return ((users ?? []) as UserRow[]).map((u) => ({
+    id: u.id,
+    name: u.name,
+    surname: u.surname,
+    email: u.email,
+    telegramChatId: u.telegram_chat_id,
+    workspaceIds: [],
     role: roleByUserId.get(u.id) ?? null,
   }));
 }
@@ -41,7 +56,7 @@ export async function fetchUsersWithRoles(): Promise<UserWithRole[]> {
 export async function fetchAvailableRoles(): Promise<Role[]> {
   const { data, error } = await supabase
     .from("roles")
-    .select("id, name, can_create, can_read, can_update, can_delete, can_manage_roles, can_manage_assignees");
+    .select("id, name, can_create, can_read, can_update, can_delete, can_manage_roles");
 
   if (error) throw new Error(error.message);
   return (data ?? []) as Role[];

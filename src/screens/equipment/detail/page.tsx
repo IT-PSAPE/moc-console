@@ -221,13 +221,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
         </MetaRow>
 
         <MetaRow icon={<User />} label="Booked By">
-          <Input
-            type="text"
-            value={draft.bookedBy ?? ""}
-            onChange={(e) => store.actions.updateField("bookedBy", e.target.value || null)}
-            placeholder="—"
-            style={'ghost'}
-          />
+          <Paragraph.sm>{draft.bookedBy ?? "—"}</Paragraph.sm>
         </MetaRow>
       </div>
 
