@@ -1,0 +1,20 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - heading "Book Equipment" [level=3] [ref=e8]
+    - generic [ref=e10]:
+      - generic [ref=e13]: "1"
+      - generic [ref=e17]: "2"
+      - generic [ref=e21]: "3"
+  - generic [ref=e24]:
+    - generic [ref=e25]:
+      - img [ref=e27]
+      - textbox "Search equipment..." [ref=e30]
+    - status "Loading" [ref=e32]:
+      - img [ref=e33]
+  - generic [ref=e38]:
+    - button "Back" [ref=e39]:
+      - img [ref=e41]
+      - generic [ref=e43]: Back
+    - button "Next" [disabled] [ref=e44]:
+      - generic [ref=e45]: Next
+      - img [ref=e47]

@@ -1,0 +1,18 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - heading "MOC Request Portal" [level=2] [ref=e7]
+    - paragraph [ref=e8]: Submit a production request or book equipment for your next project.
+  - generic [ref=e9]:
+    - generic [ref=e11] [cursor=pointer]:
+      - img [ref=e13]
+      - generic [ref=e16]: Make a Request
+      - paragraph [ref=e17]: Submit a new production or media request with full details.
+    - generic [ref=e19] [cursor=pointer]:
+      - img [ref=e21]
+      - generic [ref=e25]: Book Equipment
+      - paragraph [ref=e26]: Browse available equipment and reserve what you need.
+  - generic [ref=e29]:
+    - generic [ref=e30]: Already submitted?
+    - button "Track a Submission" [ref=e31]:
+      - img [ref=e33]
+      - generic [ref=e36]: Track a Submission

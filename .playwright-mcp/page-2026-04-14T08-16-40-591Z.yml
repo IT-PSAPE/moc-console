@@ -1,0 +1,67 @@
+- generic [ref=e27]:
+  - banner [ref=e28]:
+    - generic [ref=e29]:
+      - button "MOC Request" [ref=e30] [cursor=pointer]:
+        - generic [ref=e32]: MOC Request
+      - button "Go to home page" [ref=e33] [cursor=pointer]:
+        - img [ref=e34]
+        - generic [ref=e37]: Home
+  - generic [ref=e39]:
+    - generic [ref=e40]:
+      - heading "New Request" [level=3] [ref=e41]
+      - paragraph [ref=e42]: Fill in the details for your production request.
+    - generic [ref=e43]:
+      - generic [ref=e44]:
+        - generic [ref=e46]: "1"
+        - generic [ref=e48]:
+          - text: Basic Info
+          - paragraph [ref=e49]: Step 1 of 4
+      - generic [ref=e50]:
+        - generic [ref=e52]: "2"
+        - generic [ref=e54]: Details
+      - generic [ref=e55]:
+        - generic [ref=e57]: "3"
+        - generic [ref=e59]: Flow
+      - generic [ref=e60]:
+        - generic [ref=e62]: "4"
+        - generic [ref=e63]: Review
+    - generic [ref=e66]:
+      - generic [ref=e67]:
+        - generic [ref=e68]:
+          - generic [ref=e69]: Title
+          - generic [ref=e70]: "*"
+        - textbox "e.g. Easter service recap video" [ref=e72]
+      - generic [ref=e73]:
+        - generic [ref=e74]:
+          - generic [ref=e75]: Requested by
+          - generic [ref=e76]: "*"
+        - textbox "e.g. Lead Pastor" [ref=e78]
+      - generic [ref=e79]:
+        - generic [ref=e80]:
+          - generic [ref=e81]:
+            - generic [ref=e82]: Priority
+            - generic [ref=e83]: "*"
+          - button "Medium" [ref=e85]:
+            - generic [ref=e86] [cursor=pointer]:
+              - generic [ref=e87]: Medium
+              - img [ref=e88]
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - generic [ref=e92]: Category
+            - generic [ref=e93]: "*"
+          - button "Video Production" [ref=e95]:
+            - generic [ref=e96] [cursor=pointer]:
+              - generic [ref=e97]: Video Production
+              - img [ref=e98]
+      - generic [ref=e100]:
+        - generic [ref=e101]:
+          - generic [ref=e102]: Due date
+          - generic [ref=e103]: "*"
+        - textbox [ref=e105]
+    - generic [ref=e108]:
+      - button "Back" [ref=e109]:
+        - img [ref=e111]
+        - generic [ref=e113]: Back
+      - button "Next" [disabled] [ref=e114]:
+        - generic [ref=e115]: Next
+        - img [ref=e117]

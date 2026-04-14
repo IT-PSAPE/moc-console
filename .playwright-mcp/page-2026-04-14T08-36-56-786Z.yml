@@ -1,0 +1,43 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - button "MOC Request" [ref=e6] [cursor=pointer]:
+        - generic [ref=e8]: MOC Request
+      - button "Go to home page" [ref=e9] [cursor=pointer]:
+        - img [ref=e10]
+        - generic [ref=e13]: Home
+  - generic [ref=e15]:
+    - generic [ref=e16]:
+      - heading "Book Equipment" [level=3] [ref=e17]
+      - paragraph [ref=e18]: Enter your booking details, then select available equipment.
+    - generic [ref=e19]:
+      - generic [ref=e21]:
+        - img [ref=e75]
+        - generic [ref=e23]: Details
+      - generic [ref=e26]:
+        - generic [ref=e27]: "2"
+        - generic [ref=e28]: Equipment
+      - generic [ref=e31]:
+        - generic [ref=e32]: "3"
+        - generic [ref=e33]: Review
+    - alert [ref=e77]:
+      - img [ref=e79]
+      - generic [ref=e81]:
+        - text: Failed to load equipment
+        - paragraph [ref=e82]: Could not find the function public.public_browse_equipment(p_category, p_checked_out_at, p_expected_return_at, p_search, p_workspace_id) in the schema cache
+    - generic [ref=e83]:
+      - generic [ref=e85]:
+        - img [ref=e87]
+        - textbox "Search equipment..." [ref=e90]
+      - generic [ref=e91]:
+        - img [ref=e93]
+        - generic [ref=e97]:
+          - generic [ref=e98]: No equipment found
+          - paragraph [ref=e99]: No available equipment matches your search. Try a different search term.
+    - generic [ref=e64]:
+      - button "Back" [ref=e65]:
+        - img [ref=e67]
+        - generic [ref=e69]: Back
+      - button "Next" [disabled] [ref=e70]:
+        - generic [ref=e71]: Next
+        - img [ref=e73]

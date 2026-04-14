@@ -1,0 +1,168 @@
+- generic [ref=e24]:
+  - generic [ref=e25]:
+    - heading "Book Equipment" [level=3] [ref=e27]
+    - generic [ref=e29]:
+      - generic [ref=e31]:
+        - generic [ref=e32]: "1"
+        - generic [ref=e33]: Equipment
+      - generic [ref=e36]:
+        - generic [ref=e37]: "2"
+        - generic [ref=e38]: Details
+      - generic [ref=e41]:
+        - generic [ref=e42]: "3"
+        - generic [ref=e43]: Review
+  - generic [ref=e46]:
+    - generic [ref=e47]:
+      - img [ref=e49]
+      - textbox "Search equipment..." [ref=e52]
+    - generic [ref=e53]:
+      - button "Canon RF 24-70mm f/2.8L Lens Studio A SN-LNS-001" [ref=e54] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - generic: Canon RF 24-70mm f/2.8L
+              - generic:
+                - generic: Lens
+            - generic:
+              - img
+              - paragraph: Studio A
+            - paragraph: SN-LNS-001
+      - button "Sigma 18-35mm f/1.8 Art Lens Storage Room B SN-LNS-003" [ref=e55] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - generic: Sigma 18-35mm f/1.8 Art
+              - generic:
+                - generic: Lens
+            - generic:
+              - img
+              - paragraph: Storage Room B
+            - paragraph: SN-LNS-003
+      - button "Nanlite Forza 500 II Lighting Studio B SN-LGT-003" [ref=e56] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - generic: Nanlite Forza 500 II
+              - generic:
+                - generic: Lighting
+            - generic:
+              - img
+              - paragraph: Studio B
+            - paragraph: SN-LGT-003
+      - button "Sennheiser MKH 416 Audio Studio A SN-AUD-001" [ref=e57] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - generic: Sennheiser MKH 416
+              - generic:
+                - generic: Audio
+            - generic:
+              - img
+              - paragraph: Studio A
+            - paragraph: SN-AUD-001
+      - button "Sachtler Ace XL Tripod Support Studio A SN-SUP-002" [ref=e58] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - generic: Sachtler Ace XL Tripod
+              - generic:
+                - generic: Support
+            - generic:
+              - img
+              - paragraph: Studio A
+            - paragraph: SN-SUP-002
+      - button "SDI Cable 50m Cable Storage Room A SN-CBL-001" [ref=e59] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - generic: SDI Cable 50m
+              - generic:
+                - generic: Cable
+            - generic:
+              - img
+              - paragraph: Storage Room A
+            - paragraph: SN-CBL-001
+      - button "HDMI 2.1 Cable 5m Cable Storage Room A SN-CBL-002" [ref=e60] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - generic: HDMI 2.1 Cable 5m
+              - generic:
+                - generic: Cable
+            - generic:
+              - img
+              - paragraph: Storage Room A
+            - paragraph: SN-CBL-002
+      - button "V-Mount Battery 150Wh Accessory Storage Room B SN-ACC-001" [ref=e61] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - generic: V-Mount Battery 150Wh
+              - generic:
+                - generic: Accessory
+            - generic:
+              - img
+              - paragraph: Storage Room B
+            - paragraph: SN-ACC-001
+      - button "Sony NP-FZ100 Battery (x4) Accessory Storage Room B SN-ACC-002" [ref=e62] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - generic: Sony NP-FZ100 Battery (x4)
+              - generic:
+                - generic: Accessory
+            - generic:
+              - img
+              - paragraph: Storage Room B
+            - paragraph: SN-ACC-002
+      - button "Sony A7S III Camera Studio A SN-CAM-001" [ref=e63] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - generic: Sony A7S III
+              - generic:
+                - generic: Camera
+            - generic:
+              - img
+              - paragraph: Studio A
+            - paragraph: SN-CAM-001
+      - button "Aputure 600D Pro Lighting Studio A SN-LGT-001" [ref=e64] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - generic: Aputure 600D Pro
+              - generic:
+                - generic: Lighting
+            - generic:
+              - img
+              - paragraph: Studio A
+            - paragraph: SN-LGT-001
+      - button "SmallHD Cine 7 Monitor Studio A SN-MON-001" [ref=e65] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - generic: SmallHD Cine 7
+              - generic:
+                - generic: Monitor
+            - generic:
+              - img
+              - paragraph: Studio A
+            - paragraph: SN-MON-001
+      - button "DJI RS 3 Pro Support Storage Room B SN-SUP-001" [ref=e66] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic:
+              - generic: DJI RS 3 Pro
+              - generic:
+                - generic: Support
+            - generic:
+              - img
+              - paragraph: Storage Room B
+            - paragraph: SN-SUP-001
+  - generic [ref=e69]:
+    - button "Back" [ref=e70]:
+      - img [ref=e72]
+      - generic [ref=e74]: Back
+    - button "Next" [disabled] [ref=e75]:
+      - generic [ref=e76]: Next
+      - img [ref=e78]
