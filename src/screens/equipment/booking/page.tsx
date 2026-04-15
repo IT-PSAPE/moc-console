@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Spinner } from "@/components/feedback/spinner";
 import { DataTable } from "@/components/display/data-table";
 import { useEquipment } from "@/features/equipment/equipment-provider";
-import { EquipmentDrawer } from "@/features/equipment/equipment-drawer";
+import { BookingDrawer } from "@/features/equipment/booking-drawer";
 import { useBookingFilters } from "@/features/equipment/use-booking-filters";
 import { BookingFilterDrawer } from "@/features/equipment/booking-filter-drawer";
 import { BookingCalendar } from "@/features/equipment/booking-calendar";
@@ -63,7 +63,7 @@ export function EquipmentBookingsScreen() {
   }, [loadBookings, loadEquipment]);
 
   const [view, setView] = useState("table");
-  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const isDirtyRef = useRef(false);
   const requestCloseRef = useRef<(() => void) | null>(null);
 
@@ -71,12 +71,12 @@ export function EquipmentBookingsScreen() {
     if (!open && isDirtyRef.current) {
       requestCloseRef.current?.();
     } else if (!open) {
-      setSelectedEquipment(null);
+      setSelectedBooking(null);
     }
   }, []);
 
-  const handleEquipmentClose = useCallback(() => {
-    setSelectedEquipment(null);
+  const handleBookingClose = useCallback(() => {
+    setSelectedBooking(null);
   }, []);
 
   const bookingFilters = useBookingFilters(bookings);
@@ -89,9 +89,7 @@ export function EquipmentBookingsScreen() {
   }, [equipment]);
 
   function handleBookingRowClick(_: Booking, index: number) {
-    const booking = filtered[index];
-    const eq = equipmentMap.get(booking.equipmentId);
-    if (eq) setSelectedEquipment(eq);
+    setSelectedBooking(filtered[index]);
   }
 
   const isLoading = isLoadingBookings || isLoadingEquipment;
@@ -129,16 +127,16 @@ export function EquipmentBookingsScreen() {
         {isLoading ? (
           <div className="flex justify-center py-16"><Spinner /></div>
         ) : view === "table" ? (
-          <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
+          <Drawer.Root open={!!selectedBooking} onOpenChange={handleOpenChange}>
             <Card.Root>
               <Card.Content className="!border-secondary overflow-hidden">
                 <DataTable data={filtered} columns={columns} emptyMessage="No bookings found" onRowClick={handleBookingRowClick} />
               </Card.Content>
             </Card.Root>
-            {selectedEquipment && (
-              <EquipmentDrawer
-                equipment={selectedEquipment}
-                onEquipmentClose={handleEquipmentClose}
+            {selectedBooking && (
+              <BookingDrawer
+                booking={selectedBooking}
+                onBookingClose={handleBookingClose}
                 isDirtyRef={isDirtyRef}
                 requestCloseRef={requestCloseRef}
               />

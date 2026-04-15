@@ -196,3 +196,33 @@ CREATE TRIGGER sync_equipment_status
   AFTER INSERT OR UPDATE OR DELETE ON public.bookings
   FOR EACH ROW
   EXECUTE FUNCTION public.sync_equipment_status();
+
+-- ============================================================
+-- 5. Auto-populate returned_at on booking return
+--    When a booking's status transitions to 'returned' and
+--    returned_at is still NULL, stamp it with now().
+--    If the user later edits the date manually the trigger
+--    won't overwrite it (only fires when returned_at IS NULL).
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.stamp_booking_returned_at()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF new.status = 'returned'
+     AND (old.status IS DISTINCT FROM 'returned')
+     AND new.returned_at IS NULL
+  THEN
+    new.returned_at = now();
+  END IF;
+
+  RETURN new;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS stamp_booking_returned_at ON public.bookings;
+CREATE TRIGGER stamp_booking_returned_at
+  BEFORE UPDATE ON public.bookings
+  FOR EACH ROW
+  EXECUTE FUNCTION public.stamp_booking_returned_at();

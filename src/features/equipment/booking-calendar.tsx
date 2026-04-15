@@ -6,7 +6,7 @@ import { cn } from "@/utils/cn";
 import type { Booking } from "@/types/equipment";
 import type { Equipment } from "@/types/equipment";
 import { bookingStatusLabel, bookingStatusColor } from "@/types/equipment";
-import { EquipmentDrawer } from "./equipment-drawer";
+import { BookingDrawer } from "./booking-drawer";
 import { useMemo } from "react";
 import { Circle } from "lucide-react";
 
@@ -60,38 +60,32 @@ export function BookingCalendar({ bookings, equipmentMap }: BookingCalendarProps
             const data = event.data;
             if (!data) return null;
 
-            const { booking, equipment } = data;
-
-            const item = (
-              <div
-                key={booking.id}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3",
-                  index > 0 && "border-t border-secondary",
-                  equipment && "cursor-pointer hover:bg-secondary/50 transition-colors",
-                )}
-              >
-                <Circle className={cn("size-2 shrink-0", booking.status === "booked" ? "fill-info text-info" : "fill-warning text-warning")} />
-                <div className="flex-1 min-w-0">
-                  <Label.sm className="truncate">{booking.equipmentName}</Label.sm>
-                  <Paragraph.xs className="text-tertiary">
-                    Due {formatDate(booking.expectedReturnAt)} &middot; {booking.bookedBy}
-                  </Paragraph.xs>
-                </div>
-                <Badge
-                  label={bookingStatusLabel[booking.status]}
-                  color={bookingStatusColor[booking.status]}
-                  variant="filled"
-                />
-              </div>
-            );
-
-            if (!equipment) return item;
+            const { booking } = data;
 
             return (
               <Drawer.Root key={booking.id}>
-                <Drawer.Trigger>{item}</Drawer.Trigger>
-                <EquipmentDrawer equipment={equipment} />
+                <Drawer.Trigger>
+                  <div
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-secondary/50 transition-colors",
+                      index > 0 && "border-t border-secondary",
+                    )}
+                  >
+                    <Circle className={cn("size-2 shrink-0", booking.status === "booked" ? "fill-info text-info" : "fill-warning text-warning")} />
+                    <div className="flex-1 min-w-0">
+                      <Label.sm className="truncate">{booking.equipmentName}</Label.sm>
+                      <Paragraph.xs className="text-tertiary">
+                        Due {formatDate(booking.expectedReturnAt)} &middot; {booking.bookedBy}
+                      </Paragraph.xs>
+                    </div>
+                    <Badge
+                      label={bookingStatusLabel[booking.status]}
+                      color={bookingStatusColor[booking.status]}
+                      variant="filled"
+                    />
+                  </div>
+                </Drawer.Trigger>
+                <BookingDrawer booking={booking} />
               </Drawer.Root>
             );
           },
