@@ -29,6 +29,7 @@ import { Check, ChevronDown, Hash, History, Loader, MapPin, Package, Pencil, Sav
 import { useCallback, useEffect, useState } from "react";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
 import { Input } from "@/components/form/input";
+import { getErrorMessage } from "@/utils/get-error-message";
 
 const allStatuses: EquipmentStatus[] = ["available", "booked", "booked_out", "maintenance"];
 const allCategories: EquipmentCategory[] = ["camera", "lens", "lighting", "audio", "support", "monitor", "cable", "accessory"];
@@ -94,8 +95,8 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
     try {
       await store.actions.save();
       toast({ title: "Equipment saved", variant: "success" });
-    } catch {
-      toast({ title: "Failed to save equipment", variant: "error" });
+    } catch (error) {
+      toast({ title: "Failed to save equipment", description: getErrorMessage(error, "The equipment item could not be saved."), variant: "error" });
     }
   }, [store.actions, toast]);
 
@@ -104,8 +105,8 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
       await store.actions.save();
       toast({ title: "Equipment saved", variant: "success" });
       if (blocker.state === "blocked") blocker.proceed();
-    } catch {
-      toast({ title: "Failed to save equipment", variant: "error" });
+    } catch (error) {
+      toast({ title: "Failed to save equipment", description: getErrorMessage(error, "The equipment item could not be saved."), variant: "error" });
     }
   }
 
@@ -126,8 +127,8 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
       toast({ title: "Equipment deleted", variant: "success" });
       setShowDeleteModal(false);
       navigate("/equipment");
-    } catch {
-      toast({ title: "Failed to delete equipment", variant: "error" });
+    } catch (error) {
+      toast({ title: "Failed to delete equipment", description: getErrorMessage(error, "The equipment item could not be deleted."), variant: "error" });
     } finally {
       setIsDeleting(false);
     }

@@ -195,8 +195,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .eq("user_id", user.id)
             .maybeSingle()
             .then(({ data, error }) => {
-                console.log("[auth] user_roles query for user_id:", user.id)
-                console.log("[auth] user_roles response:", { data, error })
 
                 if (error) {
                     console.error("Failed to fetch user role:", error.message)

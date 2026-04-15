@@ -7,6 +7,7 @@ import { BroadcastMediaScreen } from '@/screens/broadcast/media/page'
 import { BroadcastOverviewScreen } from '@/screens/broadcast/page'
 import { PlaylistScreen } from '@/screens/broadcast/playlist/page'
 import { PlaylistDetailScreen } from '@/screens/broadcast/detail/page'
+import { StreamsScreen } from '@/screens/broadcast/streams/page'
 import { CueSheetEventScreen } from '@/screens/cue-sheet/events/page'
 import { CueSheetEventDetailScreen } from '@/screens/cue-sheet/events/detail/page'
 import { CueSheetOverviewScreen } from '@/screens/cue-sheet/page'
@@ -123,6 +124,7 @@ const router = createBrowserRouter([
                     { path: routes.broadcastMedia, element: <BroadcastMediaScreen /> },
                     { path: routes.broadcastPlaylists, element: <PlaylistScreen /> },
                     { path: routes.broadcastPlaylistDetail, element: <PlaylistDetailScreen /> },
+                    { path: routes.broadcastStreams, element: <StreamsScreen /> },
                 ],
             },
             {

@@ -36,6 +36,8 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 | `media` | Broadcast media library | `id` | `workspace_id -> workspaces.id`; referenced by `playlists.music_id` and `queue.media_id` |
 | `playlists` | Broadcast playlists | `id` | `workspace_id -> workspaces.id`, `music_id -> media.id` |
 | `queue` | Ordered playlist entries | `id` | `playlist_id -> playlists.id`, `media_id -> media.id` |
+| `youtube_connections` | Workspace-level YouTube OAuth credentials | `id` | `workspace_id -> workspaces.id`, `connected_by -> users.id` |
+| `streams` | YouTube live stream records | `id` | `workspace_id -> workspaces.id`, `created_by -> users.id` |
 | `event_templates` | Reusable event templates | `id` | `workspace_id -> workspaces.id`; referenced by `template_tracks.event_template_id` |
 | `template_tracks` | Track templates for event templates | `id` | `event_template_id -> event_templates.id`, `color_id -> colors.id` |
 | `template_cues` | Cue templates for template tracks | `id` | `template_track_id -> template_tracks.id` |
@@ -63,6 +65,7 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 | `media_type` | `image`, `audio`, `video` |
 | `playlist_status` | `draft`, `published` |
 | `cue_type` | `performance`, `technical`, `equipment`, `announcement`, `transition` |
+| `stream_status` | `created`, `ready`, `live`, `complete` |
 
 ## Auth
 
@@ -255,6 +258,61 @@ Additional constraint:
 
 - Add `unique (playlist_id, sort_order)`.
 
+### `youtube_connections`
+
+| Column | Postgres type | Default | Nullable | Unique | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
+| `workspace_id` | `uuid` | None | No | Yes | Foreign key to `workspaces.id`. One connection per workspace. |
+| `channel_id` | `text` | None | No | No | YouTube channel ID. |
+| `channel_title` | `text` | None | No | No | YouTube channel display name. |
+| `access_token` | `text` | None | No | No | Google OAuth access token. |
+| `refresh_token` | `text` | None | No | No | Google OAuth refresh token. |
+| `token_expires_at` | `timestamptz` | None | No | No | Access token expiry timestamp. |
+| `connected_by` | `uuid` | None | No | No | Foreign key to `users.id`. Admin who connected the account. |
+| `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
+| `updated_at` | `timestamptz` | `now()` | No | No | Last update timestamp. |
+
+Important notes:
+
+- One YouTube connection per workspace, enforced by `unique (workspace_id)`.
+- Tokens are managed server-side via Supabase Edge Functions. The client never sees the raw tokens.
+- Only admins (`can_manage_roles`) can insert, update, or delete connections.
+
+### `streams`
+
+| Column | Postgres type | Default | Nullable | Unique | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
+| `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
+| `youtube_broadcast_id` | `text` | None | No | No | YouTube liveBroadcast ID. |
+| `youtube_stream_id` | `text` | None | No | No | YouTube liveStream ID. |
+| `title` | `text` | None | No | No | Stream title. |
+| `description` | `text` | `''` | No | No | Stream description. |
+| `thumbnail_url` | `text` | `null` | Yes | No | Optional thumbnail URL. |
+| `privacy_status` | `text` | `'unlisted'` | No | No | YouTube privacy: `public`, `private`, or `unlisted`. |
+| `is_for_kids` | `boolean` | `false` | No | No | YouTube made-for-kids designation. |
+| `scheduled_start_time` | `timestamptz` | `null` | Yes | No | Scheduled broadcast start. |
+| `actual_start_time` | `timestamptz` | `null` | Yes | No | Actual broadcast start (set by YouTube). |
+| `actual_end_time` | `timestamptz` | `null` | Yes | No | Actual broadcast end (set by YouTube). |
+| `stream_status` | `stream_status` | `'created'` | No | No | Lifecycle state of the stream. |
+| `stream_url` | `text` | `null` | Yes | No | YouTube watch URL. |
+| `stream_key` | `text` | `null` | Yes | No | RTMP stream key for encoder setup. |
+| `ingestion_url` | `text` | `null` | Yes | No | RTMP ingestion server URL. |
+| `created_by` | `uuid` | None | No | No | Foreign key to `users.id`. |
+| `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
+| `updated_at` | `timestamptz` | `now()` | No | No | Last update timestamp. |
+
+Additional constraint:
+
+- Add `unique (workspace_id, youtube_broadcast_id)` to support upsert during YouTube sync.
+
+Important notes:
+
+- Streams are a local cache of YouTube API data. The `syncStreamsFromYouTube()` function reconciles local state with YouTube.
+- `stream_key` and `ingestion_url` are sensitive — only users with `can_create` see them in the UI.
+- Editing a stream is only permitted when `stream_status` is `created`.
+
 ## Cue Sheet
 
 ### `event_templates`
@@ -430,6 +488,8 @@ Use `workspace_id` on top-level operational tables that need direct scoping, wor
 - `events`
 - `checklist_templates`
 - `checklists`
+- `youtube_connections`
+- `streams`
 
 Do not add `workspace_id` to subordinate rows that already inherit scope from their parent:
 

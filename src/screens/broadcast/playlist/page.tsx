@@ -12,6 +12,7 @@ import { usePlaylistFilters } from "@/features/broadcast/use-broadcast-filters"
 import { PlaylistListItem } from "@/features/broadcast/broadcast-list-item"
 import type { Playlist } from "@/types/broadcast"
 import { updatePlaylist } from "@/data/mutate-broadcast"
+import { getErrorMessage } from "@/utils/get-error-message"
 import { Plus, Search } from "lucide-react"
 import { routes } from "@/screens/console-routes"
 
@@ -50,8 +51,8 @@ export function PlaylistScreen() {
       navigate(`/${routes.broadcastPlaylistDetail.replace(":id", newPlaylist.id)}`, {
         state: { isNew: true },
       })
-    } catch {
-      toast({ title: "Failed to create playlist", variant: "error" })
+    } catch (error) {
+      toast({ title: "Failed to create playlist", description: getErrorMessage(error, "The playlist could not be created."), variant: "error" })
     }
   }, [syncPlaylist, navigate, toast])
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 import type { Equipment } from "@/types/equipment";
 import { updateEquipment } from "@/data/mutate-equipment";
+import { getErrorMessage } from "@/utils/get-error-message";
 
 // ─── State ──────────────────────────────────────────────
 
@@ -77,10 +78,11 @@ export function useEquipmentStore(initialEquipment: Equipment, options?: UseEqui
       options?.syncEquipment?.(persisted);
       dispatch({ type: "SAVE_SUCCESS", equipment: persisted });
       return persisted;
-    } catch {
+    } catch (error) {
+      const message = getErrorMessage(error, "Equipment could not be saved. Please review the fields and try again.");
       options?.syncEquipment?.(previous);
-      dispatch({ type: "SAVE_ERROR", error: "Failed to save equipment" });
-      throw new Error("Failed to save equipment");
+      dispatch({ type: "SAVE_ERROR", error: message });
+      throw new Error(message);
     }
   }, [options, state.draft, state.original]);
 
