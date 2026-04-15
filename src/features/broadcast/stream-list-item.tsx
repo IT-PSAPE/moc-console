@@ -3,6 +3,7 @@ import { Badge } from "@/components/display/badge"
 import { Label, Paragraph } from "@/components/display/text"
 import { streamStatusColor, streamStatusLabel } from "@/types/broadcast/stream-constants"
 import type { Stream } from "@/types/broadcast/stream"
+import { formatUtcIsoInTimezone } from "@/utils/zoned-date-time"
 import { Calendar, CheckCircle, Radio } from "lucide-react"
 
 type StreamListItemProps = {
@@ -23,14 +24,7 @@ function getStreamIcon(status: Stream["streamStatus"]) {
 
 function formatScheduledTime(iso: string | null): string {
   if (!iso) return "No schedule"
-  const date = new Date(iso)
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  })
+  return formatUtcIsoInTimezone(iso, Intl.DateTimeFormat().resolvedOptions().timeZone)
 }
 
 export function StreamListItem({ stream, onClick }: StreamListItemProps) {

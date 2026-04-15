@@ -5,7 +5,6 @@ import { disconnectZoom } from "@/data/mutate-zoom"
 import { useFeedback } from "@/components/feedback/feedback-provider"
 import { getErrorMessage } from "@/utils/get-error-message"
 import { IntegrationCard } from "./integration-card"
-import { Video } from "lucide-react"
 import { useCallback, useState } from "react"
 
 export function ZoomConnectionCard() {
@@ -33,7 +32,7 @@ export function ZoomConnectionCard() {
 
   return (
     <IntegrationCard
-      icon={<Video className="size-5 text-utility-blue-700" />}
+      icon={<img src="/resources/logo/Zoom.svg" alt="Zoom" />}
       name="Zoom"
       description="Meetings"
       isLoading={isLoadingZoomConnection}

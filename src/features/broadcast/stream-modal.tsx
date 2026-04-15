@@ -15,6 +15,7 @@ import { streamPrivacyLabel, latencyPreferenceLabel, latencyPreferenceHint } fro
 import type { ThumbnailSource } from "@/data/mutate-streams"
 import { fetchCategories, fetchPlaylists } from "@/data/fetch-streams"
 import { fetchMedia } from "@/data/fetch-broadcast"
+import { formatUtcIsoForDateTimeInput, parseDateTimeInputToUtcIso } from "@/utils/zoned-date-time"
 import { ChevronDown, Image, Link, X } from "lucide-react"
 
 type StreamModalProps = {
@@ -43,6 +44,7 @@ export type StreamFormData = {
 
 export function StreamModal({ open, onOpenChange, onSubmit, stream }: StreamModalProps) {
   const isEditing = Boolean(stream)
+  const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
 
   // ─── Basic fields ──────────────────────────────────────
   const [title, setTitle] = useState(stream?.title ?? "")
@@ -50,7 +52,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream }: StreamModa
   const [privacyStatus, setPrivacyStatus] = useState<StreamPrivacy>(stream?.privacyStatus ?? "unlisted")
   const [isForKids, setIsForKids] = useState(stream?.isForKids ?? false)
   const [scheduledStartTime, setScheduledStartTime] = useState(
-    stream?.scheduledStartTime ? stream.scheduledStartTime.slice(0, 16) : "",
+    stream?.scheduledStartTime ? formatUtcIsoForDateTimeInput(stream.scheduledStartTime, browserTimeZone) : "",
   )
 
   // ─── Thumbnail ─────────────────────────────────────────
@@ -104,7 +106,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream }: StreamModa
     setPrivacyStatus(stream?.privacyStatus ?? "unlisted")
     setIsForKids(stream?.isForKids ?? false)
     setScheduledStartTime(
-      stream?.scheduledStartTime ? stream.scheduledStartTime.slice(0, 16) : "",
+      stream?.scheduledStartTime ? formatUtcIsoForDateTimeInput(stream.scheduledStartTime, browserTimeZone) : "",
     )
     setThumbnail(null)
     setThumbnailFileName(undefined)
@@ -119,7 +121,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream }: StreamModa
     setEnableEmbed(stream?.enableEmbed ?? true)
     setEnableAutoStart(stream?.enableAutoStart ?? false)
     setEnableAutoStop(stream?.enableAutoStop ?? true)
-  }, [stream])
+  }, [browserTimeZone, stream])
 
   function handleModalOpenChange(nextOpen: boolean) {
     onOpenChange(nextOpen)
@@ -186,7 +188,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream }: StreamModa
         description: description.trim(),
         privacyStatus,
         isForKids,
-        scheduledStartTime: scheduledStartTime ? new Date(scheduledStartTime).toISOString() : null,
+        scheduledStartTime: scheduledStartTime ? parseDateTimeInputToUtcIso(scheduledStartTime, browserTimeZone) : null,
         categoryId,
         tags,
         latencyPreference,

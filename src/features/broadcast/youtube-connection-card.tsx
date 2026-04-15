@@ -5,7 +5,6 @@ import { disconnectYouTube } from "@/data/mutate-streams"
 import { useFeedback } from "@/components/feedback/feedback-provider"
 import { getErrorMessage } from "@/utils/get-error-message"
 import { IntegrationCard } from "./integration-card"
-import { Video } from "lucide-react"
 import { useCallback, useState } from "react"
 
 export function YouTubeConnectionCard() {
@@ -33,7 +32,7 @@ export function YouTubeConnectionCard() {
 
   return (
     <IntegrationCard
-      icon={<Video className="size-5 text-utility-red-700" />}
+      icon={<img src="/resources/logo/Youtube.svg" alt="YouTube" />}
       name="YouTube"
       description="Live streams"
       isLoading={isLoadingConnection}

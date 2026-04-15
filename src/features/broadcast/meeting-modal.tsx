@@ -10,6 +10,7 @@ import { SegmentedControl } from "@/components/controls/segmented-control"
 import type { ZoomMeeting, ZoomRecurrenceType } from "@/types/broadcast/zoom"
 import { zoomRecurrenceLabel } from "@/types/broadcast/zoom-constants"
 import type { CreateMeetingParams } from "@/data/mutate-zoom"
+import { formatUtcIsoForDateTimeInput, parseDateTimeInputToUtcIso } from "@/utils/zoned-date-time"
 
 type MeetingModalProps = {
   open: boolean
@@ -39,7 +40,7 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
   const [topic, setTopic] = useState(meeting?.topic ?? "")
   const [description, setDescription] = useState(meeting?.description ?? "")
   const [startTime, setStartTime] = useState(
-    meeting?.startTime ? meeting.startTime.slice(0, 16) : "",
+    meeting?.startTime ? formatUtcIsoForDateTimeInput(meeting.startTime, meeting.timezone) : "",
   )
   const [duration, setDuration] = useState(meeting?.duration ?? 60)
   const [timezone, setTimezone] = useState(meeting?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone)
@@ -55,7 +56,7 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
   const resetForm = useCallback(() => {
     setTopic(meeting?.topic ?? "")
     setDescription(meeting?.description ?? "")
-    setStartTime(meeting?.startTime ? meeting.startTime.slice(0, 16) : "")
+    setStartTime(meeting?.startTime ? formatUtcIsoForDateTimeInput(meeting.startTime, meeting.timezone) : "")
     setDuration(meeting?.duration ?? 60)
     setTimezone(meeting?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone)
     setRecurrenceType(meeting?.recurrenceType ?? "none")
@@ -78,7 +79,7 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
       await onSubmit({
         topic: topic.trim(),
         description: description.trim(),
-        startTime: new Date(startTime).toISOString(),
+        startTime: parseDateTimeInputToUtcIso(startTime, timezone),
         duration,
         timezone,
         recurrenceType,

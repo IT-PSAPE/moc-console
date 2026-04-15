@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context"
 import { streamStatusColor, streamStatusLabel, streamPrivacyLabel } from "@/types/broadcast/stream-constants"
 import type { Stream } from "@/types/broadcast/stream"
 import { latencyPreferenceLabel } from "@/types/broadcast/stream-constants"
+import { formatUtcIsoInTimezone } from "@/utils/zoned-date-time"
 import {
   Calendar,
   Check,
@@ -40,13 +41,7 @@ type StreamDetailDrawerProps = {
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return "Not set"
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  })
+  return formatUtcIsoInTimezone(iso, Intl.DateTimeFormat().resolvedOptions().timeZone)
 }
 
 export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelete }: StreamDetailDrawerProps) {

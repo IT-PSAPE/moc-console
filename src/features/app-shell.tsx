@@ -61,7 +61,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="app-grid md:app-grid-desktop bg-primary text-primary">
                 <Sidebar.Panel>
                     <Sidebar.Header>
-                        <div className="size-9 shrink-0 rounded-lg bg-brand_solid" />
+                        <div className="size-8 shrink-0 rounded-xl bg-brand_solid" >
+                            <img src="logo.svg" alt="" className='w-full h-full' />
+                        </div>
                         {!state.isCollapsed && (
                             <div className="flex flex-col">
                                 <span className="label-sm truncate leading-none">MOC Console</span>

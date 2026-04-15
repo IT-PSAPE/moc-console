@@ -3,23 +3,12 @@ import { Badge } from "@/components/display/badge"
 import { Label, Paragraph } from "@/components/display/text"
 import { zoomRecurrenceLabel } from "@/types/broadcast/zoom-constants"
 import type { ZoomMeeting } from "@/types/broadcast/zoom"
+import { formatUtcIsoInTimezone } from "@/utils/zoned-date-time"
 import { Calendar, Repeat } from "lucide-react"
 
 type MeetingListItemProps = {
   meeting: ZoomMeeting
   onClick: () => void
-}
-
-function formatMeetingTime(iso: string | null, timezone: string): string {
-  if (!iso) return "No schedule"
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: timezone !== "UTC" ? undefined : "UTC",
-  })
 }
 
 function formatDuration(minutes: number): string {
@@ -49,7 +38,7 @@ export function MeetingListItem({ meeting, onClick }: MeetingListItemProps) {
       <div className="flex-1 min-w-0">
         <Label.sm className="truncate block">{meeting.topic}</Label.sm>
         <Paragraph.xs className="text-tertiary">
-          {formatMeetingTime(meeting.startTime, meeting.timezone)} &middot; {formatDuration(meeting.duration)}
+          {formatUtcIsoInTimezone(meeting.startTime, meeting.timezone)} &middot; {formatDuration(meeting.duration)}
         </Paragraph.xs>
       </div>
 

@@ -8,6 +8,7 @@ import { CalendarClock, CheckCircle2, ListChecks } from 'lucide-react'
 import { useState } from 'react'
 import { ChecklistDrawer } from './checklist-drawer'
 import { getChecklistCounts } from './checklist-content'
+import { formatUtcIsoInBrowserTimeZone } from '@/utils/browser-date-time'
 
 const itemVariants = cv({
     base: [
@@ -18,7 +19,7 @@ const itemVariants = cv({
 
 function formatScheduledAt(scheduledAt?: string) {
     if (!scheduledAt) return null
-    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(scheduledAt))
+    return formatUtcIsoInBrowserTimeZone(scheduledAt, { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 export function ChecklistItemCard({ checklist }: { checklist: Checklist }) {

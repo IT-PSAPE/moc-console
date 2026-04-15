@@ -9,6 +9,7 @@ import { bookingStatusLabel, bookingStatusColor } from "@/types/equipment";
 import { BookingDrawer } from "./booking-drawer";
 import { useMemo } from "react";
 import { Circle } from "lucide-react";
+import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
 
 type BookingEventData = {
   booking: Booking;
@@ -34,13 +35,7 @@ function toCalendarEvents(
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatUtcIsoInBrowserTimeZone(dateStr);
 }
 
 type BookingCalendarProps = {

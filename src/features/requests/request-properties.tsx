@@ -11,21 +11,10 @@ import { cn } from "@/utils/cn";
 import { Avatar } from "@/components/display/avatar";
 import { Button } from "@/components/controls/button";
 import { Input } from "@/components/form/input";
-
-function toLocalDateTimeValue(iso: string) {
-    const d = new Date(iso);
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+import { formatUtcIsoForBrowserDateTimeInput, formatUtcIsoInBrowserTimeZone, parseBrowserDateTimeInputToUtcIso } from "@/utils/browser-date-time";
 
 export function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString("en-US", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    return formatUtcIsoInBrowserTimeZone(iso);
 }
 
 // ─── Primitives ─────────────────────────────────────────
@@ -140,11 +129,11 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
                 {editable && onFieldChange ? (
                     <Input
                         type="datetime-local"
-                        value={toLocalDateTimeValue(request.dueDate)}
+                        value={formatUtcIsoForBrowserDateTimeInput(request.dueDate)}
                         onChange={(e) => {
                             const v = e.target.value;
                             if (!v) return;
-                            onFieldChange("dueDate", new Date(v).toISOString());
+                            onFieldChange("dueDate", parseBrowserDateTimeInputToUtcIso(v));
                         }}
                         required
                         style="ghost"

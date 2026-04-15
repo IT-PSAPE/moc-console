@@ -8,6 +8,7 @@ import type { Request } from "@/types/requests";
 import { priorityColor, categoryLabel } from "@/types/requests";
 import { RequestDrawer } from "./request-drawer";
 import { useCallback, useRef, useState } from "react";
+import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
 
 const itemVariants = cv({
     base: [
@@ -65,7 +66,7 @@ export function RequestItem({ request, vertical, onDrawerOpenChange }: { request
                         {request.dueDate && (
                             <Badge
                                 icon={<CalendarFold />}
-                                label={new Date(request.dueDate).toLocaleDateString("en-US", { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                label={formatUtcIsoInBrowserTimeZone(request.dueDate, { day: "2-digit", month: "2-digit", year: "numeric" })}
                                 variant="outline"
                             />
                         )}

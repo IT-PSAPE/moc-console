@@ -8,6 +8,7 @@ import { MetaRow } from "@/components/display/meta-row"
 import { useAuth } from "@/lib/auth-context"
 import { zoomRecurrenceLabel } from "@/types/broadcast/zoom-constants"
 import type { ZoomMeeting } from "@/types/broadcast/zoom"
+import { formatUtcIsoInTimezone } from "@/utils/zoned-date-time"
 import {
   Calendar,
   Check,
@@ -31,18 +32,6 @@ type MeetingDetailDrawerProps = {
   onOpenChange: (open: boolean) => void
   onEdit?: (meeting: ZoomMeeting) => void
   onDelete?: (meeting: ZoomMeeting) => void
-}
-
-function formatDateTime(iso: string | null, timezone: string): string {
-  if (!iso) return "Not set"
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: timezone !== "UTC" ? undefined : "UTC",
-  })
 }
 
 function formatDuration(minutes: number): string {
@@ -95,7 +84,7 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
 
             <div className="px-4 space-y-3">
               <MetaRow icon={<Calendar />} label="Start">
-                <Paragraph.xs>{formatDateTime(meeting.startTime, meeting.timezone)}</Paragraph.xs>
+                <Paragraph.xs>{formatUtcIsoInTimezone(meeting.startTime, meeting.timezone)}</Paragraph.xs>
               </MetaRow>
 
               <MetaRow icon={<Clock />} label="Duration">

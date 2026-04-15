@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 import { zoomApiFetch, revokeZoomToken } from "@/lib/zoom-client"
 import { fetchZoomMeetingById } from "./fetch-zoom"
+import { formatUtcIsoForZoomApi, parseDateTimeInputToUtcIso } from "@/utils/zoned-date-time"
 
 export type CreateMeetingParams = {
   topic: string
@@ -43,6 +44,16 @@ function getMeetingType(recurrenceType: ZoomRecurrenceType): number {
   return 8 // recurring with fixed time
 }
 
+function normalizeZoomStartTime(startTime: string | null, timezone: string): string | null {
+  if (!startTime) return null
+
+  if (/z$/i.test(startTime) || /[+-]\d{2}:\d{2}$/.test(startTime)) {
+    return new Date(startTime).toISOString()
+  }
+
+  return parseDateTimeInputToUtcIso(startTime.slice(0, 19), timezone)
+}
+
 export async function createZoomMeeting(params: CreateMeetingParams): Promise<ZoomMeeting> {
   const workspaceId = await getCurrentWorkspaceId()
   const { data: { user } } = await supabase.auth.getUser()
@@ -57,7 +68,7 @@ export async function createZoomMeeting(params: CreateMeetingParams): Promise<Zo
   const body: Record<string, unknown> = {
     topic: params.topic,
     type: meetingType,
-    start_time: params.startTime,
+    start_time: formatUtcIsoForZoomApi(params.startTime, params.timezone),
     duration: params.duration,
     timezone: params.timezone,
     agenda: params.description,
@@ -140,7 +151,7 @@ export async function updateZoomMeeting(meeting: ZoomMeeting): Promise<ZoomMeeti
 
   const body: Record<string, unknown> = {
     topic: meeting.topic,
-    start_time: meeting.startTime,
+    start_time: meeting.startTime ? formatUtcIsoForZoomApi(meeting.startTime, meeting.timezone) : null,
     duration: meeting.duration,
     timezone: meeting.timezone,
     agenda: meeting.description,
@@ -240,7 +251,7 @@ export async function syncZoomMeetings(): Promise<ZoomMeeting[]> {
       topic: m.topic ?? "Untitled",
       description: m.agenda ?? "",
       meeting_type: m.type === 8 ? "recurring_fixed" : "scheduled",
-      start_time: m.start_time ?? null,
+      start_time: normalizeZoomStartTime(m.start_time ?? null, m.timezone ?? "UTC"),
       duration: m.duration ?? 60,
       timezone: m.timezone ?? "UTC",
       join_url: m.join_url ?? null,

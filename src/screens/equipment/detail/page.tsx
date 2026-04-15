@@ -30,6 +30,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
 import { Input } from "@/components/form/input";
 import { getErrorMessage } from "@/utils/get-error-message";
+import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
 
 const allStatuses: EquipmentStatus[] = ["available", "booked", "booked_out", "maintenance"];
 const allCategories: EquipmentCategory[] = ["camera", "lens", "lighting", "audio", "support", "monitor", "cable", "accessory"];
@@ -248,7 +249,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
                   <div className="flex items-center gap-3">
                     <Label.sm>{b.bookedBy}</Label.sm>
                     <Paragraph.xs className="text-tertiary">
-                      {new Date(b.checkedOutDate).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}
+                      {formatUtcIsoInBrowserTimeZone(b.checkedOutDate, { day: "numeric", month: "short", year: "numeric" })}
                     </Paragraph.xs>
                   </div>
                   <div className="flex items-center gap-2">
@@ -267,13 +268,13 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
                     {b.returnedDate && (
                       <div className="flex items-center gap-2">
                         <Paragraph.xs className="text-quaternary">Returned:</Paragraph.xs>
-                        <Paragraph.xs>{new Date(b.returnedDate).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}</Paragraph.xs>
+                        <Paragraph.xs>{formatUtcIsoInBrowserTimeZone(b.returnedDate, { day: "numeric", month: "short", year: "numeric" })}</Paragraph.xs>
                       </div>
                     )}
                     {!b.returnedDate && (
                       <div className="flex items-center gap-2">
                         <Paragraph.xs className="text-quaternary">Expected:</Paragraph.xs>
-                        <Paragraph.xs>{new Date(b.expectedReturnAt).toLocaleString("en-ZA", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Paragraph.xs>
+                        <Paragraph.xs>{formatUtcIsoInBrowserTimeZone(b.expectedReturnAt)}</Paragraph.xs>
                       </div>
                     )}
                     <div className="flex items-center gap-2">
