@@ -6,6 +6,7 @@ import type { CueSheetEvent } from '@/types/cue-sheet'
 import { CalendarClock, Clock, Layers } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useCueSheet } from './cue-sheet-provider'
+import { formatUtcIsoInBrowserTimeZone } from '@/utils/browser-date-time'
 
 const itemVariants = cv({
     base: [
@@ -24,7 +25,7 @@ function formatDuration(minutes: number) {
 
 function formatScheduledAt(scheduledAt?: string) {
     if (!scheduledAt) return null
-    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(scheduledAt))
+    return formatUtcIsoInBrowserTimeZone(scheduledAt, { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 export function EventItem({ event }: { event: CueSheetEvent }) {

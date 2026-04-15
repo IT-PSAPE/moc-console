@@ -17,6 +17,7 @@ import { BookingFilterDrawer } from "@/features/equipment/booking-filter-drawer"
 import { BookingCalendar } from "@/features/equipment/booking-calendar";
 import { bookingStatusLabel, bookingStatusColor } from "@/types/equipment";
 import type { Booking, Equipment } from "@/types/equipment";
+import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
 
 const columns = [
   { key: "equipmentName", header: "Equipment" },
@@ -31,18 +32,18 @@ const columns = [
   {
     key: "checkedOutDate",
     header: "Checked Out",
-    render: (value: unknown) => new Date(value as string).toLocaleString("en-ZA", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+    render: (value: unknown) => formatUtcIsoInBrowserTimeZone(value as string),
   },
   {
     key: "expectedReturnAt",
     header: "Expected Return",
-    render: (value: unknown) => new Date(value as string).toLocaleString("en-ZA", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+    render: (value: unknown) => formatUtcIsoInBrowserTimeZone(value as string),
   },
   {
     key: "returnedDate",
     header: "Returned",
     render: (value: unknown) =>
-      value ? new Date(value as string).toLocaleString("en-ZA", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : <span className="text-quaternary">—</span>,
+      value ? formatUtcIsoInBrowserTimeZone(value as string) : <span className="text-quaternary">—</span>,
   },
   {
     key: "notes",

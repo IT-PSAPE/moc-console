@@ -18,6 +18,7 @@ export const routes = {
     broadcastMedia: 'broadcast/media',
     broadcastPlaylists: 'broadcast/playlists',
     broadcastPlaylistDetail: 'broadcast/playlists/:id',
+    broadcastStreams: 'broadcast/streams',
     cueSheetOverview: 'cue-sheet',
     cueSheetEvents: 'cue-sheet/events',
     cueSheetEventDetail: 'cue-sheet/events/:id',

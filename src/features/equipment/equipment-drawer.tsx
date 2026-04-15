@@ -28,6 +28,8 @@ import { Check, ChevronDown, Hash, History, Loader, MapPin, Maximize2, Package, 
 import { useCallback, useEffect, useState, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/form/input";
+import { getErrorMessage } from "@/utils/get-error-message";
+import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
 
 const allStatuses: EquipmentStatus[] = ["available", "booked", "booked_out", "maintenance"];
 const allCategories: EquipmentCategory[] = ["camera", "lens", "lighting", "audio", "support", "monitor", "cable", "accessory"];
@@ -122,8 +124,8 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
     try {
       await store.actions.save();
       toast({ title: "Equipment saved", variant: "success" });
-    } catch {
-      toast({ title: "Failed to save equipment", variant: "error" });
+    } catch (error) {
+      toast({ title: "Failed to save equipment", description: getErrorMessage(error, "The equipment item could not be saved."), variant: "error" });
     }
   }, [store.actions, toast]);
 
@@ -134,8 +136,8 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
       toast({ title: "Equipment saved", variant: "success" });
       setShowUnsavedModal(false);
       closeDrawer();
-    } catch {
-      toast({ title: "Failed to save equipment", variant: "error" });
+    } catch (error) {
+      toast({ title: "Failed to save equipment", description: getErrorMessage(error, "The equipment item could not be saved."), variant: "error" });
     }
   }
 
@@ -158,8 +160,8 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
       toast({ title: "Equipment deleted", variant: "success" });
       setShowDeleteModal(false);
       closeDrawer();
-    } catch {
-      toast({ title: "Failed to delete equipment", variant: "error" });
+    } catch (error) {
+      toast({ title: "Failed to delete equipment", description: getErrorMessage(error, "The equipment item could not be deleted."), variant: "error" });
     } finally {
       setIsDeleting(false);
     }
@@ -285,7 +287,7 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
                     <div className="flex items-center gap-3">
                       <Label.sm>{b.bookedBy}</Label.sm>
                       <Paragraph.xs className="text-tertiary">
-                        {new Date(b.checkedOutDate).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}
+                        {formatUtcIsoInBrowserTimeZone(b.checkedOutDate, { day: "numeric", month: "short", year: "numeric" })}
                       </Paragraph.xs>
                     </div>
                     <div className="flex items-center gap-2">
@@ -304,13 +306,13 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
                     {b.returnedDate && (
                       <div className="flex items-center gap-2">
                         <Paragraph.xs className="text-quaternary">Returned:</Paragraph.xs>
-                        <Paragraph.xs>{new Date(b.returnedDate).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}</Paragraph.xs>
+                        <Paragraph.xs>{formatUtcIsoInBrowserTimeZone(b.returnedDate, { day: "numeric", month: "short", year: "numeric" })}</Paragraph.xs>
                       </div>
                     )}
                     {!b.returnedDate && (
                       <div className="flex items-center gap-2">
                         <Paragraph.xs className="text-quaternary">Expected:</Paragraph.xs>
-                        <Paragraph.xs>{new Date(b.expectedReturnAt).toLocaleString("en-ZA", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Paragraph.xs>
+                        <Paragraph.xs>{formatUtcIsoInBrowserTimeZone(b.expectedReturnAt)}</Paragraph.xs>
                       </div>
                     )}
                     <div className="flex items-center gap-2">

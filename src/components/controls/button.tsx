@@ -83,7 +83,7 @@ function ButtonRoot({ children, className, disabled, icon, iconPosition = "leadi
             {...props}
         >
             {showIcon && !trailing ? <IconSpan icon={icon} /> : null}
-            {showLabel ? <Label.sm className="text-[inherit]">{children}</Label.sm> : null}
+            {showLabel ? <Label.sm className="inline-flex items-center justify-center gap-2 text-[inherit]">{children}</Label.sm> : null}
             {showIcon && trailing ? <IconSpan icon={icon} /> : null}
         </button>
     );

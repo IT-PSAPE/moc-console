@@ -2,7 +2,7 @@ import { Drawer, useDrawer } from "@/components/overlays/drawer";
 import { Dropdown } from "@/components/overlays/dropdown";
 import { Badge } from "@/components/display/badge";
 import { Button } from "@/components/controls/button";
-import { Label, Paragraph, Title } from "@/components/display/text";
+import { Paragraph, Title } from "@/components/display/text";
 import { MetaRow } from "@/components/display/meta-row";
 import { Input } from "@/components/form/input";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
@@ -16,14 +16,10 @@ import {
 import type { Booking, BookingStatus } from "@/types/equipment";
 import { Calendar, Check, Clock, Loader, Package, StickyNote, User, X } from "lucide-react";
 import { useCallback, useEffect, useState, type RefObject } from "react";
+import { getErrorMessage } from "@/utils/get-error-message";
+import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@/utils/browser-date-time";
 
 const allStatuses: BookingStatus[] = ["booked", "checked_out", "returned"];
-
-function toLocalDateTimeValue(iso: string) {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 export type BookingDrawerProps = {
   booking: Booking;
@@ -90,8 +86,8 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
     try {
       await store.actions.save();
       toast({ title: "Booking saved", variant: "success" });
-    } catch {
-      toast({ title: "Failed to save booking", variant: "error" });
+    } catch (error) {
+      toast({ title: "Failed to save booking", description: getErrorMessage(error, "The booking could not be saved."), variant: "error" });
     }
   }, [store.actions, toast]);
 
@@ -101,8 +97,8 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
       toast({ title: "Booking saved", variant: "success" });
       setShowUnsavedModal(false);
       closeDrawer();
-    } catch {
-      toast({ title: "Failed to save booking", variant: "error" });
+    } catch (error) {
+      toast({ title: "Failed to save booking", description: getErrorMessage(error, "The booking could not be saved."), variant: "error" });
     }
   }
 
@@ -182,8 +178,8 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
           <MetaRow icon={<Calendar />} label="Checked Out">
             <Input
               type="datetime-local"
-              value={toLocalDateTimeValue(draft.checkedOutDate)}
-              onChange={(e) => store.actions.updateField("checkedOutDate", new Date(e.target.value).toISOString())}
+              value={formatUtcIsoForBrowserDateTimeInput(draft.checkedOutDate)}
+              onChange={(e) => store.actions.updateField("checkedOutDate", parseBrowserDateTimeInputToUtcIso(e.target.value))}
               style="ghost"
             />
           </MetaRow>
@@ -192,8 +188,8 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
           <MetaRow icon={<Clock />} label="Expected Return">
             <Input
               type="datetime-local"
-              value={toLocalDateTimeValue(draft.expectedReturnAt)}
-              onChange={(e) => store.actions.updateField("expectedReturnAt", new Date(e.target.value).toISOString())}
+              value={formatUtcIsoForBrowserDateTimeInput(draft.expectedReturnAt)}
+              onChange={(e) => store.actions.updateField("expectedReturnAt", parseBrowserDateTimeInputToUtcIso(e.target.value))}
               style="ghost"
             />
           </MetaRow>
@@ -202,8 +198,8 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
           <MetaRow icon={<Calendar />} label="Returned">
             <Input
               type="datetime-local"
-              value={draft.returnedDate ? toLocalDateTimeValue(draft.returnedDate) : ""}
-              onChange={(e) => store.actions.updateField("returnedDate", e.target.value ? new Date(e.target.value).toISOString() : null)}
+              value={draft.returnedDate ? formatUtcIsoForBrowserDateTimeInput(draft.returnedDate) : ""}
+              onChange={(e) => store.actions.updateField("returnedDate", e.target.value ? parseBrowserDateTimeInputToUtcIso(e.target.value) : null)}
               style="ghost"
             />
           </MetaRow>

@@ -17,6 +17,7 @@ It separates:
 | Workspace | Supabase with default-workspace fallback | `src/data/current-workspace.ts`, `src/data/fetch-workspaces.ts`, `src/features/users/users-provider.tsx` | Runtime can fall back to the seeded `default-workspace` slug when memberships are missing. |
 | Equipment | Supabase | `src/data/fetch-equipment.ts`, `src/data/mutate-equipment.ts` | Equipment rows remain normalized; booking-derived display fields are added in the mapper. |
 | Broadcast | Supabase | `src/data/fetch-broadcast.ts`, `src/data/mutate-broadcast.ts` | Playlists still expose nested cues in memory, but the stored model is `playlists` plus `queue`. |
+| Streams | Supabase + Edge Functions | `src/data/fetch-streams.ts`, `src/data/mutate-streams.ts`, `src/data/youtube-api.ts` | YouTube API calls go through Supabase Edge Functions (`supabase/functions/youtube-api/`). OAuth handled by `supabase/functions/youtube-oauth-callback/`. Local `streams` table is a cache of YouTube state. |
 | Cue Sheet | Supabase + RPC helpers | `src/data/fetch-cue-sheet.ts`, `src/data/mutate-cue-sheet.ts`, `src/features/cue-sheet/cue-sheet-provider.tsx` | Storage is split between templates and runs; the runtime model still re-combines them behind a `kind` field. |
 | Seed data | Checked-in SQL | `docs/phases/phase-11-seed-data.sql` | Replaces the deleted mock JSON and normalization scripts. |
 

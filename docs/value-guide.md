@@ -17,6 +17,7 @@ Use it with:
 | Equipment | Denormalized inventory and booking objects | Supabase | `bookedBy` stays a runtime convenience field. |
 | Broadcast | Playlists with nested queue entries | Supabase | Queue rows are normalized in storage and re-expanded into cue objects after fetch. |
 | Cue Sheet | Events, checklists, tracks, and cues as nested objects | Supabase | Storage is split into templates and runs even though the runtime API still exposes a combined `kind` model. |
+| Streams | YouTube live streams with workspace-level OAuth | Supabase + Edge Functions | Local `streams` table caches YouTube broadcast data. All YouTube API calls are proxied through Supabase Edge Functions to keep OAuth secrets server-side. |
 
 ## Global Rules
 
@@ -231,6 +232,74 @@ Runtime expectations:
 - use `start` and `duration` conceptually in schema
 - the current app still exposes `startMin` and `durationMin` in its runtime types
 - that is a runtime naming detail, not the target storage naming
+
+## Streams
+
+### YouTube connection entity
+
+Runtime expectations:
+
+- one connection per workspace, managed by admins only
+- the connection carries the YouTube channel ID and display name
+- OAuth tokens are stored server-side and never exposed to the client
+- token refresh is handled automatically by the Edge Function before each API call
+
+Runtime read model:
+
+- `id`
+- `workspaceId`
+- `channelId`
+- `channelTitle`
+- `connectedBy`
+- `createdAt`
+
+### Stream entity
+
+Runtime expectations:
+
+- streams are a local cache of YouTube liveBroadcast data
+- `streamStatus` tracks the lifecycle: `created` -> `ready` -> `live` -> `complete`
+- editing is only permitted when `streamStatus` is `created`
+- `streamKey` and `ingestionUrl` are sensitive and only shown to users with `can_create`
+- `privacyStatus` maps to YouTube's privacy settings: `public`, `private`, `unlisted`
+
+Runtime read model:
+
+- `id`
+- `workspaceId`
+- `youtubeBroadcastId`
+- `youtubeStreamId`
+- `title`
+- `description`
+- `thumbnailUrl`
+- `privacyStatus`
+- `isForKids`
+- `scheduledStartTime`
+- `actualStartTime`
+- `actualEndTime`
+- `streamStatus`
+- `streamUrl`
+- `streamKey`
+- `ingestionUrl`
+- `createdBy`
+- `createdAt`
+- `updatedAt`
+
+### Stream data flow
+
+1. **Create**: Client sends form data to `mutate-streams.ts` -> Edge Function creates YouTube broadcast + stream -> binds them -> returns IDs -> client inserts into local `streams` table
+2. **Sync**: Client calls `syncStreamsFromYouTube()` -> Edge Function fetches all broadcasts from YouTube -> client upserts each into local DB
+3. **Update**: Client sends changes to Edge Function -> YouTube API updates -> local DB updated
+4. **Delete**: Edge Function deletes on YouTube -> local row deleted
+
+### Edge Function architecture
+
+The project uses two Supabase Edge Functions for YouTube integration:
+
+- `youtube-oauth-callback` — handles the Google OAuth redirect, exchanges auth code for tokens, stores in `youtube_connections`, redirects back to the SPA
+- `youtube-api` — proxies all YouTube Data API calls, validates Supabase JWT, auto-refreshes expired tokens, supports actions: `list-streams`, `create-stream`, `update-stream`, `delete-stream`, `get-connection`, `disconnect`
+
+Environment secrets (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`) are set via `supabase secrets set` and never exposed to the client. Only `VITE_GOOGLE_CLIENT_ID` is available client-side for constructing the OAuth consent URL.
 
 ## Current Implementation Gaps
 

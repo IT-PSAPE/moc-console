@@ -14,6 +14,7 @@ import { UploadMediaModal } from "@/features/broadcast/upload-media-modal"
 import type { MediaItem } from "@/types/broadcast"
 import type { MediaType } from "@/types/broadcast"
 import { createMediaItem } from "@/data/mutate-broadcast"
+import { getErrorMessage } from "@/utils/get-error-message"
 import { Film, Plus, Search } from "lucide-react"
 import { SegmentedControl } from "@/components/controls/segmented-control"
 
@@ -44,7 +45,7 @@ export function BroadcastMediaScreen() {
       const savedItem = await createMediaItem(item)
       syncMediaItem(savedItem)
     } catch (error) {
-      toast({ title: "Failed to add media", variant: "error" })
+      toast({ title: "Failed to add media", description: getErrorMessage(error, "The media item could not be added."), variant: "error" })
       throw error
     }
   }
