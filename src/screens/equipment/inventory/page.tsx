@@ -19,6 +19,7 @@ import { createEquipment } from "@/data/mutate-equipment";
 import { equipmentStatusLabel, equipmentStatusColor, equipmentCategoryLabel, equipmentCategoryColor } from "@/types/equipment";
 import type { Equipment, EquipmentCategory } from "@/types/equipment";
 import { EquipmentThumbnail } from "@/features/equipment/equipment-thumbnail";
+import { getErrorMessage } from "@/utils/get-error-message";
 
 
 const columns = [
@@ -84,8 +85,8 @@ export function EquipmentInventoryScreen() {
       addEquipment(saved);
       setShowCreateModal(false);
       toast({ title: "Equipment added", variant: "success" });
-    } catch {
-      toast({ title: "Failed to add equipment", variant: "error" });
+    } catch (error) {
+      toast({ title: "Failed to add equipment", description: getErrorMessage(error, "The equipment item could not be added."), variant: "error" });
     }
   }, [addEquipment, toast]);
   const isDirtyRef = useRef(false);

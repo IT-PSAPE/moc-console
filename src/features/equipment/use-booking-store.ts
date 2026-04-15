@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 import type { Booking } from "@/types/equipment";
 import { updateBooking } from "@/data/mutate-booking";
+import { getErrorMessage } from "@/utils/get-error-message";
 
 // ─── State ──────────────────────────────────────────────
 
@@ -77,10 +78,11 @@ export function useBookingStore(initialBooking: Booking, options?: UseBookingSto
       options?.syncBooking?.(persisted);
       dispatch({ type: "SAVE_SUCCESS", booking: persisted });
       return persisted;
-    } catch {
+    } catch (error) {
+      const message = getErrorMessage(error, "Booking could not be saved. Please review the booking details and try again.");
       options?.syncBooking?.(previous);
-      dispatch({ type: "SAVE_ERROR", error: "Failed to save booking" });
-      throw new Error("Failed to save booking");
+      dispatch({ type: "SAVE_ERROR", error: message });
+      throw new Error(message);
     }
   }, [options, state.draft, state.original]);
 

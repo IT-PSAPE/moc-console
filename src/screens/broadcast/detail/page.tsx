@@ -44,6 +44,7 @@ import {
   Copy, ArrowUpToLine, ArrowDownToLine, EyeOff, Eye, ChevronDown,
 } from "lucide-react"
 import { routes } from "@/screens/console-routes"
+import { getErrorMessage } from "@/utils/get-error-message"
 
 const mediaTypeIcon: Record<MediaType, React.ReactNode> = {
   image: <Image />,
@@ -146,10 +147,10 @@ export function PlaylistDetailScreen() {
         setPlaylist(savedPlaylist)
         syncPlaylist(savedPlaylist)
       })
-      .catch(() => {
+      .catch((error) => {
         setPlaylist(previousPlaylist)
         syncPlaylist(previousPlaylist)
-        toast({ title: "Failed to save", description: "The playlist could not be updated. Please try again.", variant: "error" })
+        toast({ title: "Failed to save", description: getErrorMessage(error, "The playlist could not be updated."), variant: "error" })
       })
   }, [playlist, syncPlaylist, toast])
 
@@ -178,9 +179,9 @@ export function PlaylistDetailScreen() {
     const newCues = [...playlist.cues, newCue]
     const previousCues = playlist.cues
     setPlaylist((prev) => (prev ? { ...prev, cues: newCues } : prev))
-    updatePlaylistCues(playlist.id, newCues).catch(() => {
+    updatePlaylistCues(playlist.id, newCues).catch((error) => {
       setPlaylist((prev) => (prev ? { ...prev, cues: previousCues } : prev))
-      toast({ title: "Failed to save", description: "The cue could not be added. Please try again.", variant: "error" })
+      toast({ title: "Failed to save", description: getErrorMessage(error, "The cue could not be added."), variant: "error" })
     })
   }, [playlist, toast])
 
@@ -312,9 +313,9 @@ export function PlaylistDetailScreen() {
 
       setPlaylist((prev) => (prev ? { ...prev, cues: renumbered } : prev))
 
-      updatePlaylistCues(playlist.id, renumbered).catch(() => {
+      updatePlaylistCues(playlist.id, renumbered).catch((error) => {
         setPlaylist((prev) => (prev ? { ...prev, cues: previousCues } : prev))
-        toast({ title: "Failed to save", description: "Could not reorder cues. Please try again.", variant: "error" })
+        toast({ title: "Failed to save", description: getErrorMessage(error, "The cue order could not be updated."), variant: "error" })
       })
       return
     }
@@ -347,9 +348,9 @@ export function PlaylistDetailScreen() {
 
     setPlaylist((prev) => (prev ? { ...prev, cues: renumbered } : prev))
 
-    updatePlaylistCues(playlist.id, renumbered).catch(() => {
+    updatePlaylistCues(playlist.id, renumbered).catch((error) => {
       setPlaylist((prev) => (prev ? { ...prev, cues: previousCues } : prev))
-      toast({ title: "Failed to save", description: "The cue could not be added. Please try again.", variant: "error" })
+      toast({ title: "Failed to save", description: getErrorMessage(error, "The cue could not be added."), variant: "error" })
     })
   }
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import type { Request } from '@/types/requests'
 import { updateRequest } from '@/data/mutate-requests'
+import { getErrorMessage } from '@/utils/get-error-message'
 
 // ─── State ──────────────────────────────────────────────────────────
 
@@ -80,10 +81,11 @@ export function useRequestStore(initialRequest: Request, options?: UseRequestSto
             options?.syncRequest?.(persistedRequest)
             dispatch({ type: 'SAVE_SUCCESS', request: persistedRequest })
             return persistedRequest
-        } catch {
+        } catch (error) {
+            const message = getErrorMessage(error, 'Request could not be saved. Please review the request details and try again.')
             options?.syncRequest?.(previousRequest)
-            dispatch({ type: 'SAVE_ERROR', error: 'Failed to save request' })
-            throw new Error('Failed to save request')
+            dispatch({ type: 'SAVE_ERROR', error: message })
+            throw new Error(message)
         }
     }, [options, state.draft, state.original])
 

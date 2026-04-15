@@ -93,6 +93,10 @@ const menuItemVarients = cv({
             active: ['bg-brand_primary text-brand_secondary hover:bg-brand_secondary'],
             inactive: ['bg-transparent text-color-secondary hover:bg-secondary'],
         },
+        isCollapsed: {
+            true: ['px-1'],
+            false: []
+        }
     },
     defaultVariants: {
         state: 'inactive',
@@ -216,7 +220,7 @@ function SidebarMenuItem({ title, children, icon, active = false, onClick }: Sid
 
     return (
         <div className={isCollapsed ? "w-fit" : "w-full"}>
-            <button type="button" className={cn(menuItemVarients({ state: itemState }), cursorClassName)} onClick={handleClick} aria-expanded={hasChildren ? isOpen : undefined} title={isCollapsed ? title : undefined} > 
+            <button type="button" className={cn(menuItemVarients({ state: itemState, isCollapsed: isCollapsed ? 'true' : 'false'}), cursorClassName)} onClick={handleClick} aria-expanded={hasChildren ? isOpen : undefined} title={isCollapsed ? title : undefined} > 
                 <div className={cn("flex-1 px-1 flex justify-start items-center gap-1.5", isCollapsed && "justify-center px-0")}>
                     <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
                         {levelState.isChild ? null : icon}

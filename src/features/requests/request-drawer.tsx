@@ -16,6 +16,7 @@ import { Archive, ArchiveRestore, EllipsisVertical, Maximize2, Trash2, X } from 
 import { useCallback, useEffect, useState, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
 import { RequestMetaFields, RequestFiveW, RequestNotes, RequestFlow, RequestAssigneeList } from "./request-properties";
+import { getErrorMessage } from "@/utils/get-error-message";
 
 export type RequestDrawerProps = {
     request: Request;
@@ -106,8 +107,8 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
             await addRequestAssignee(request.id, userId, duty);
             const updated = await fetchAssigneesByRequestId(request.id);
             setAssignees(updated);
-        } catch {
-            toast({ title: "Failed to add member", variant: "error" });
+        } catch (error) {
+            toast({ title: "Failed to add member", description: getErrorMessage(error, "The request member could not be added."), variant: "error" });
         }
     }
 
@@ -116,8 +117,8 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
             await removeRequestAssignee(request.id, userId);
             const updated = await fetchAssigneesByRequestId(request.id);
             setAssignees(updated);
-        } catch {
-            toast({ title: "Failed to remove member", variant: "error" });
+        } catch (error) {
+            toast({ title: "Failed to remove member", description: getErrorMessage(error, "The request member could not be removed."), variant: "error" });
         }
     }
 
@@ -125,8 +126,8 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
         try {
             await store.actions.save();
             toast({ title: 'Request saved', variant: 'success' });
-        } catch {
-            toast({ title: 'Failed to save request', variant: 'error' });
+        } catch (error) {
+            toast({ title: 'Failed to save request', description: getErrorMessage(error, 'The request could not be saved.'), variant: 'error' });
         }
     }, [store.actions, toast]);
 
@@ -137,8 +138,8 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
             toast({ title: 'Request saved', variant: 'success' });
             setShowUnsavedModal(false);
             closeDrawer();
-        } catch {
-            toast({ title: 'Failed to save request', variant: 'error' });
+        } catch (error) {
+            toast({ title: 'Failed to save request', description: getErrorMessage(error, 'The request could not be saved.'), variant: 'error' });
         }
     }
 
@@ -165,8 +166,8 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
                 toast({ title: "Request archived", variant: "success" });
             }
             closeDrawer();
-        } catch {
-            toast({ title: "Failed to update request", variant: "error" });
+        } catch (error) {
+            toast({ title: "Failed to update request", description: getErrorMessage(error, "The request status could not be updated."), variant: "error" });
         }
     }
 
@@ -178,8 +179,8 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
             toast({ title: "Request deleted", variant: "success" });
             setShowDeleteModal(false);
             closeDrawer();
-        } catch {
-            toast({ title: "Failed to delete request", variant: "error" });
+        } catch (error) {
+            toast({ title: "Failed to delete request", description: getErrorMessage(error, "The request could not be deleted."), variant: "error" });
         } finally {
             setIsDeleting(false);
         }

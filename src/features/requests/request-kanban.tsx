@@ -11,6 +11,7 @@ import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, useDropp
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { useCallback, useState } from "react";
+import { getErrorMessage } from "@/utils/get-error-message";
 
 function DraggableRequestItem({ request, vertical }: { request: Request; vertical?: boolean }) {
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -104,10 +105,10 @@ export function RequestKanban({ requests }: { requests: Request[] }) {
         try {
             await updateRequestStatus(request.id, newStatus);
             toast({ title: `Moved to ${statusGroups.find((g) => g.key === newStatus)?.label}`, variant: "success" });
-        } catch {
+        } catch (error) {
             // Rollback on failure
             syncRequest({ ...request, status: previousStatus });
-            toast({ title: "Failed to update status", variant: "error" });
+            toast({ title: "Failed to update status", description: getErrorMessage(error, "The request status could not be updated."), variant: "error" });
         }
     }
 

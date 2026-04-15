@@ -61,7 +61,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="app-grid md:app-grid-desktop bg-primary text-primary">
                 <Sidebar.Panel>
                     <Sidebar.Header>
-                        <div className="size-9 shrink-0 rounded-lg bg-brand_solid" />
+                        <div className="size-8 shrink-0 rounded-xl bg-brand_solid" >
+                            <img src="logo.svg" alt="" className='w-full h-full' />
+                        </div>
                         {!state.isCollapsed && (
                             <div className="flex flex-col">
                                 <span className="label-sm truncate leading-none">MOC Console</span>
@@ -100,6 +102,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                     <Sidebar.MenuItem title={"Overview"} active={isActive(routes.broadcastOverview)} onClick={() => navigateToRoute(routes.broadcastOverview)} />
                                     <Sidebar.MenuItem title={"Media"} active={isActive(routes.broadcastMedia)} onClick={() => navigateToRoute(routes.broadcastMedia)} />
                                     <Sidebar.MenuItem title={"Playlists"} active={isActive(routes.broadcastPlaylists)} onClick={() => navigateToRoute(routes.broadcastPlaylists)} />
+                                    <Sidebar.MenuItem title={"Streams"} active={isActive(routes.broadcastStreams)} onClick={() => navigateToRoute(routes.broadcastStreams)} />
                                 </Sidebar.MenuItem>
                                 <Sidebar.MenuItem title={"Cue Sheet"} icon={<Drama />}>
                                     <Sidebar.MenuItem title={"Overview"} active={isActive(routes.cueSheetOverview)} onClick={() => navigateToRoute(routes.cueSheetOverview)} />

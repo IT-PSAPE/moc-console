@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useBlocker, useNavigate } from 'react-router-dom'
 import { useRequestStore } from './use-request-store'
 import { useRequests } from './request-provider'
+import { getErrorMessage } from '@/utils/get-error-message'
 
 type UseRequestDetailOptions = {
     request: Request
@@ -43,8 +44,8 @@ export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequ
         try {
             await addRequestAssignee(request.id, userId, duty)
             await refreshAssignees()
-        } catch {
-            toast({ title: 'Failed to add member', variant: 'error' })
+        } catch (error) {
+            toast({ title: 'Failed to add member', description: getErrorMessage(error, 'The request member could not be added.'), variant: 'error' })
         }
     }, [refreshAssignees, request.id, toast])
 
@@ -52,8 +53,8 @@ export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequ
         try {
             await removeRequestAssignee(request.id, userId)
             await refreshAssignees()
-        } catch {
-            toast({ title: 'Failed to remove member', variant: 'error' })
+        } catch (error) {
+            toast({ title: 'Failed to remove member', description: getErrorMessage(error, 'The request member could not be removed.'), variant: 'error' })
         }
     }, [refreshAssignees, request.id, toast])
 
@@ -61,8 +62,8 @@ export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequ
         try {
             await save()
             toast({ title: 'Request saved', variant: 'success' })
-        } catch {
-            toast({ title: 'Failed to save request', variant: 'error' })
+        } catch (error) {
+            toast({ title: 'Failed to save request', description: getErrorMessage(error, 'The request could not be saved.'), variant: 'error' })
         }
     }, [save, toast])
 
@@ -71,8 +72,8 @@ export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequ
             await save()
             toast({ title: 'Request saved', variant: 'success' })
             if (blocker.state === 'blocked') blocker.proceed()
-        } catch {
-            toast({ title: 'Failed to save request', variant: 'error' })
+        } catch (error) {
+            toast({ title: 'Failed to save request', description: getErrorMessage(error, 'The request could not be saved.'), variant: 'error' })
         }
     }, [blocker, save, toast])
 
@@ -98,8 +99,8 @@ export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequ
             await archiveRequest(request.id)
             syncRequest({ ...request, status: 'archived', updatedAt })
             toast({ title: 'Request archived', variant: 'success' })
-        } catch {
-            toast({ title: 'Failed to update request', variant: 'error' })
+        } catch (error) {
+            toast({ title: 'Failed to update request', description: getErrorMessage(error, 'The request status could not be updated.'), variant: 'error' })
         }
     }, [request, syncRequest, toast])
 
@@ -120,8 +121,8 @@ export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequ
             toast({ title: 'Request deleted', variant: 'success' })
             setShowDeleteModal(false)
             navigate('/requests/all-requests')
-        } catch {
-            toast({ title: 'Failed to delete request', variant: 'error' })
+        } catch (error) {
+            toast({ title: 'Failed to delete request', description: getErrorMessage(error, 'The request could not be deleted.'), variant: 'error' })
         } finally {
             setIsDeleting(false)
         }

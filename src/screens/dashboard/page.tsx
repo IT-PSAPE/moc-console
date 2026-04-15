@@ -13,6 +13,7 @@ import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { routes } from '@/screens/console-routes'
+import { formatUtcIsoInBrowserTimeZone } from '@/utils/browser-date-time'
 import {
     Activity,
     ArrowRight,
@@ -253,7 +254,7 @@ export function DashboardScreen() {
                                             <div className="flex items-center gap-2 shrink-0 ml-4">
                                                 {event.scheduledAt && (
                                                     <Badge
-                                                        label={new Date(event.scheduledAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                        label={formatUtcIsoInBrowserTimeZone(event.scheduledAt)}
                                                         variant="outline"
                                                     />
                                                 )}
