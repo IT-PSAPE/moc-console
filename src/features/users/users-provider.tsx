@@ -1,12 +1,15 @@
 import { fetchUsersWithRoles, fetchAvailableRoles, updateUserProfile, assignUserRole } from "@/data/fetch-users";
+import { fetchWorkspaceDirectory } from "@/data/fetch-workspaces";
 import type { UserWithRole } from "@/data/fetch-users";
 import type { Role } from "@/types/requests/assignee";
+import type { Workspace } from "@/types/workspace";
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 
 type UsersContextValue = {
   state: {
     users: UserWithRole[];
     roles: Role[];
+    workspaces: Workspace[];
     isLoading: boolean;
   };
   actions: {
@@ -21,6 +24,7 @@ const UsersContext = createContext<UsersContextValue | null>(null);
 export function UsersProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const loadedRef = useRef(false);
@@ -32,9 +36,22 @@ export function UsersProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     promiseRef.current = Promise.all([fetchUsersWithRoles(), fetchAvailableRoles()])
-      .then(([usersData, rolesData]) => {
-        setUsers(usersData);
+      .then(async ([usersData, rolesData]) => {
+        const workspaceDirectory = await fetchWorkspaceDirectory(usersData.map((user) => user.id));
+        const workspaceIdsByUserId = new Map<string, string[]>();
+
+        for (const membership of workspaceDirectory.memberships) {
+          const currentWorkspaceIds = workspaceIdsByUserId.get(membership.userId) ?? [];
+          currentWorkspaceIds.push(membership.workspaceId);
+          workspaceIdsByUserId.set(membership.userId, currentWorkspaceIds);
+        }
+
+        setUsers(usersData.map((user) => ({
+          ...user,
+          workspaceIds: workspaceIdsByUserId.get(user.id) ?? [],
+        })));
         setRoles(rolesData);
+        setWorkspaces(workspaceDirectory.workspaces);
         loadedRef.current = true;
       })
       .finally(() => {
@@ -65,10 +82,10 @@ export function UsersProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
-      state: { users, roles, isLoading },
+      state: { users, roles, workspaces, isLoading },
       actions: { loadUsers, updateProfile, changeRole },
     }),
-    [users, roles, isLoading, loadUsers, updateProfile, changeRole],
+    [users, roles, workspaces, isLoading, loadUsers, updateProfile, changeRole],
   );
 
   return <UsersContext.Provider value={value}>{children}</UsersContext.Provider>;

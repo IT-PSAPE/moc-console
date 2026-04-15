@@ -58,11 +58,11 @@ export function useRequestFilters(requests: Request[]) {
         // Date range
         if (filters.dateRange.start) {
             const start = new Date(filters.dateRange.start);
-            result = result.filter((r) => r.dueDate && new Date(r.dueDate) >= start);
+            result = result.filter((r) => new Date(r.dueDate) >= start);
         }
         if (filters.dateRange.end) {
             const end = new Date(filters.dateRange.end);
-            result = result.filter((r) => r.dueDate && new Date(r.dueDate) <= end);
+            result = result.filter((r) => new Date(r.dueDate) <= end);
         }
 
         // Sort
@@ -72,8 +72,8 @@ export function useRequestFilters(requests: Request[]) {
                 case "title":
                     return dir * a.title.localeCompare(b.title);
                 case "dueDate": {
-                    const da = a.dueDate ? new Date(a.dueDate).getTime() : 0;
-                    const db = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+                    const da = new Date(a.dueDate).getTime();
+                    const db = new Date(b.dueDate).getTime();
                     return dir * (da - db);
                 }
                 case "createdAt":

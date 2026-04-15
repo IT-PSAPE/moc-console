@@ -14,6 +14,7 @@ export type Playlist = {
   status: PlaylistStatus
   createdAt: string
   cues: Cue[]
+  backgroundMusicId?: string | null
   backgroundMusicUrl: string | null
   backgroundMusicName: string | null
   defaultImageDuration: number // seconds

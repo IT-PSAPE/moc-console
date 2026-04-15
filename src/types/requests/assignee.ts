@@ -6,7 +6,6 @@ export type Role = {
   can_update: boolean;
   can_delete: boolean;
   can_manage_roles: boolean;
-  can_manage_assignees: boolean;
 };
 
 export type User = {
@@ -14,6 +13,7 @@ export type User = {
   name: string;
   surname: string;
   email: string;
+  telegramChatId: string | null;
 };
 
 export type RequestAssignee = {

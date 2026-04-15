@@ -7,7 +7,6 @@ import { Label, Paragraph, Title } from '@/components/display/text'
 import { Input } from '@/components/form/input'
 import { Archive, Search, Settings2 } from 'lucide-react'
 import { useEffect } from 'react'
-import { Decision } from '@/components/display/decision'
 import { Spinner } from '@/components/feedback/spinner'
 import { EmptyState } from '@/components/feedback/empty-state'
 import { Drawer } from '@/components/overlays/drawer'
@@ -52,30 +51,24 @@ export function RequestsArchivedScreen() {
                         </div>
                     </Card.Header>
                     <Card.Content ghost>
-                        <Decision.Root value={filtered} loading={isLoadingArchived}>
-                            <Decision.Loading>
-                                <div className="flex justify-center py-8">
-                                    <Spinner />
-                                </div>
-                            </Decision.Loading>
-                            <Decision.Empty>
-                                <EmptyState
-                                    icon={<Archive />}
-                                    title="No archived requests"
-                                    description="Archived requests will appear here."
-                                    className="py-8"
-                                />
-                            </Decision.Empty>
-                            <Decision.Data>
-                                {() => (
-                                    <div className="flex flex-col gap-1.5">
-                                        {filtered.map((r) => (
-                                            <RequestItem key={r.id} request={r} />
-                                        ))}
-                                    </div>
-                                )}
-                            </Decision.Data>
-                        </Decision.Root>
+                        {isLoadingArchived ? (
+                            <div className="flex justify-center py-8">
+                                <Spinner />
+                            </div>
+                        ) : filtered.length === 0 ? (
+                            <EmptyState
+                                icon={<Archive />}
+                                title="No archived requests"
+                                description="Archived requests will appear here."
+                                className="py-8"
+                            />
+                        ) : (
+                            <div className="flex flex-col gap-1.5">
+                                {filtered.map((r) => (
+                                    <RequestItem key={r.id} request={r} />
+                                ))}
+                            </div>
+                        )}
                     </Card.Content>
                 </Card.Root>
             </div>

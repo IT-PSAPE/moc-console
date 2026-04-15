@@ -66,6 +66,7 @@ export function DocEditor({ value, onChange, placeholder = 'Type something...', 
             return
         }
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setBlocks(deserializeDocEditorValue(value))
     }, [value])
 

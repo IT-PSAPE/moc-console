@@ -10,6 +10,7 @@ export {
     categoryLabel,
     priorityColor,
     categoryColor,
+    requestDuties,
     eventColorMap,
     statusGroups,
 } from "./constants";

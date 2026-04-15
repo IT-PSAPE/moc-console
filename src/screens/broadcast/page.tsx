@@ -2,14 +2,12 @@ import { Card } from "@/components/display/card"
 import { Header } from "@/components/display/header"
 import { Badge } from "@/components/display/badge"
 import { Label, Paragraph, TextBlock, Title } from "@/components/display/text"
-import { Decision } from "@/components/display/decision"
 import { Spinner } from "@/components/feedback/spinner"
-import { EmptyState } from "@/components/feedback/empty-state"
 import { DataTable } from "@/components/display/data-table"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { playlistStatusColor, playlistStatusLabel } from "@/types/broadcast"
 import type { Playlist } from "@/types/broadcast"
-import { Radio, ListMusic, CircleCheck, FileEdit, Film } from "lucide-react"
+import { ListMusic, CircleCheck, FileEdit, Film } from "lucide-react"
 import { useEffect, useMemo } from "react"
 
 type PlaylistReadiness = Record<string, unknown> & {
@@ -51,7 +49,6 @@ export function BroadcastOverviewScreen() {
   }, [loadPlaylists, loadMedia])
 
   const isLoading = isLoadingPlaylists || isLoadingMedia
-  const hasData = playlists.length > 0 || media.length > 0
 
   // Stats
   const totalPlaylists = playlists.length
@@ -88,72 +85,64 @@ export function BroadcastOverviewScreen() {
         </Header.Lead>
       </Header.Root>
 
-      <Decision.Root value={hasData || null} loading={isLoading}>
-        <Decision.Loading>
-          <div className="flex justify-center py-16">
-            <Spinner size="lg" />
-          </div>
-        </Decision.Loading>
-        <Decision.Empty>
-          <EmptyState icon={<Radio />} title="No playlists yet" description="Create a playlist and add media to get started." />
-        </Decision.Empty>
-        <Decision.Data>
-          {/* Stats */}
-          <div className="grid grid-cols-4 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2">
-            <Card.Root>
-              <Card.Header className="gap-1.5">
-                <ListMusic className="size-4" />
-                <Label.sm>Total Playlists</Label.sm>
-              </Card.Header>
-              <Card.Content className="p-4">
-                <TextBlock className="title-h4">{totalPlaylists}</TextBlock>
-              </Card.Content>
-            </Card.Root>
-            <Card.Root>
-              <Card.Header className="gap-1.5">
-                <CircleCheck className="size-4" />
-                <Label.sm>Published</Label.sm>
-              </Card.Header>
-              <Card.Content className="p-4">
-                <TextBlock className="title-h4">{publishedCount}</TextBlock>
-              </Card.Content>
-            </Card.Root>
-            <Card.Root>
-              <Card.Header className="gap-1.5">
-                <FileEdit className="size-4" />
-                <Label.sm>Draft</Label.sm>
-              </Card.Header>
-              <Card.Content className="p-4">
-                <TextBlock className="title-h4">{draftCount}</TextBlock>
-              </Card.Content>
-            </Card.Root>
-            <Card.Root>
-              <Card.Header className="gap-1.5">
-                <Film className="size-4" />
-                <Label.sm>Media Items</Label.sm>
-              </Card.Header>
-              <Card.Content className="p-4">
-                <TextBlock className="title-h4">{media.length}</TextBlock>
-              </Card.Content>
-            </Card.Root>
-          </div>
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2">
+        <Card.Root>
+          <Card.Header className="gap-1.5">
+            <ListMusic className="size-4" />
+            <Label.sm>Total Playlists</Label.sm>
+          </Card.Header>
+          <Card.Content className="p-4">
+            <TextBlock className="title-h4">{totalPlaylists}</TextBlock>
+          </Card.Content>
+        </Card.Root>
+        <Card.Root>
+          <Card.Header className="gap-1.5">
+            <CircleCheck className="size-4" />
+            <Label.sm>Published</Label.sm>
+          </Card.Header>
+          <Card.Content className="p-4">
+            <TextBlock className="title-h4">{publishedCount}</TextBlock>
+          </Card.Content>
+        </Card.Root>
+        <Card.Root>
+          <Card.Header className="gap-1.5">
+            <FileEdit className="size-4" />
+            <Label.sm>Draft</Label.sm>
+          </Card.Header>
+          <Card.Content className="p-4">
+            <TextBlock className="title-h4">{draftCount}</TextBlock>
+          </Card.Content>
+        </Card.Root>
+        <Card.Root>
+          <Card.Header className="gap-1.5">
+            <Film className="size-4" />
+            <Label.sm>Media Items</Label.sm>
+          </Card.Header>
+          <Card.Content className="p-4">
+            <TextBlock className="title-h4">{media.length}</TextBlock>
+          </Card.Content>
+        </Card.Root>
+      </div>
 
-          {/* Readiness */}
-          <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
-            <Header.Root>
-              <Header.Lead className="gap-2">
-                <Label.md>Playlist Readiness</Label.md>
-                <Paragraph.xs className="text-tertiary">Published playlists should be ready for people to use immediately.</Paragraph.xs>
-              </Header.Lead>
-            </Header.Root>
-            <Card.Root>
-              <Card.Content className="!border-secondary overflow-hidden">
-                <DataTable data={playlistReadiness} columns={readinessColumns} emptyMessage="No playlists to review" />
-              </Card.Content>
-            </Card.Root>
-          </div>
-        </Decision.Data>
-      </Decision.Root>
+      {/* Readiness */}
+      <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
+        <Header.Root>
+          <Header.Lead className="gap-2">
+            <Label.md>Playlist Readiness</Label.md>
+            <Paragraph.xs className="text-tertiary">Published playlists should be ready for people to use immediately.</Paragraph.xs>
+          </Header.Lead>
+        </Header.Root>
+        <Card.Root>
+          <Card.Content className="!border-secondary overflow-hidden">
+            {isLoading ? (
+              <div className="flex justify-center py-8"><Spinner /></div>
+            ) : (
+              <DataTable data={playlistReadiness} columns={readinessColumns} emptyMessage="No playlists to review" />
+            )}
+          </Card.Content>
+        </Card.Root>
+      </div>
     </section>
   )
 }

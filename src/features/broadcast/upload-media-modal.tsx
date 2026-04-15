@@ -15,7 +15,7 @@ import { Link } from "lucide-react"
 type UploadMediaModalProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (item: MediaItem) => void
+  onSubmit: (item: MediaItem) => Promise<void> | void
 }
 
 type SourceMode = "url" | "upload"
@@ -65,7 +65,7 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
     setFile(nextFile)
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!inferredMediaType) return
 
     const trimmedName = name.trim()
@@ -80,7 +80,7 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
       duration: mediaDetails.duration,
       createdAt: new Date().toISOString().split("T")[0],
     }
-    onSubmit(newItem)
+    await onSubmit(newItem)
     resetForm()
     onOpenChange(false)
   }

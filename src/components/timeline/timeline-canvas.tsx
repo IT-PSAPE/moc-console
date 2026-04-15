@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react'
 import type { Cue, CueType } from '@/types/cue-sheet'
+import { resolveTrackColor } from '@/types/cue-sheet'
 import { useTimeline } from './timeline-context'
 import { TRACK_HEIGHT, TIME_RULER_HEIGHT, TIMELINE_HORIZONTAL_PADDING, CUE_TYPE_CONFIG, formatTimeDisplay, getMarkerInterval, buildTimeMarkers } from './timeline-types'
 import { X, Music, Wrench, Monitor, Megaphone, ArrowRightLeft } from 'lucide-react'
@@ -136,7 +137,7 @@ export function TimelineCanvas() {
                                     style={{
                                         left: cue.startMin * pixelsPerMinute + TIMELINE_HORIZONTAL_PADDING,
                                         width: Math.max(cue.durationMin * pixelsPerMinute, 24),
-                                        backgroundColor: track.color,
+                                        backgroundColor: resolveTrackColor(track.colorKey),
                                         opacity: isFaded ? 0.25 : 1,
                                     }}
                                     onClick={(e) => handleCueClick(e, cue, track.id)}

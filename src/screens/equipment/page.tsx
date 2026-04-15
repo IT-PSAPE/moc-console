@@ -7,9 +7,7 @@ import { Badge } from "@/components/display/badge";
 import { Label, Paragraph, TextBlock, Title } from "@/components/display/text";
 import { ArrowUpRight, CalendarX2Icon, CircleAlert, CircleCheck, Package, Search, Settings2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Decision } from "@/components/display/decision";
 import { Spinner } from "@/components/feedback/spinner";
-import { EmptyState } from "@/components/feedback/empty-state";
 import { DataTable } from "@/components/display/data-table";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 import { useEquipmentFilters } from "@/features/equipment/use-equipment-filters";
@@ -151,17 +149,7 @@ export function EquipmentOverviewScreen() {
         </Header.Lead>
       </Header.Root>
 
-      <Decision.Root value={equipment} loading={isLoadingEquipment || isLoadingBookings}>
-        <Decision.Loading>
-          <div className="flex justify-center py-16">
-            <Spinner size="lg" />
-          </div>
-        </Decision.Loading>
-        <Decision.Empty>
-          <EmptyState icon={<Package />} title="No equipment yet" description="Add equipment to start tracking your inventory." />
-        </Decision.Empty>
-        <Decision.Data>
-          <div className="grid grid-cols-2 gap-4 p-4 pt-8 mx-auto w-full max-w-content md:grid-cols-4 max-mobile:gap-2">
+      <div className="grid grid-cols-2 gap-4 p-4 pt-8 mx-auto w-full max-w-content md:grid-cols-4 max-mobile:gap-2">
             <Card.Root>
               <Card.Header className="gap-1.5">
                 <Package className="size-4" />
@@ -220,12 +208,16 @@ export function EquipmentOverviewScreen() {
                   </div>
                 </Card.Header>
                 <Card.Content className="!border-secondary overflow-hidden">
-                  <DataTable
-                    data={overdueItems}
-                    columns={overdueColumns}
-                    emptyMessage="No overdue equipment"
-                    onRowClick={handleOverdueRowClick}
-                  />
+                  {(isLoadingEquipment || isLoadingBookings) ? (
+                    <div className="flex justify-center py-8"><Spinner /></div>
+                  ) : (
+                    <DataTable
+                      data={overdueItems}
+                      columns={overdueColumns}
+                      emptyMessage="No overdue equipment"
+                      onRowClick={handleOverdueRowClick}
+                    />
+                  )}
                 </Card.Content>
               </Card.Root>
               <Card.Root>
@@ -236,12 +228,16 @@ export function EquipmentOverviewScreen() {
                   </div>
                 </Card.Header>
                 <Card.Content className="!border-secondary overflow-hidden">
-                  <DataTable
-                    data={faultyItems}
-                    columns={faultyColumns}
-                    emptyMessage="No faulty equipment"
-                    onRowClick={handleFaultyRowClick}
-                  />
+                  {(isLoadingEquipment || isLoadingBookings) ? (
+                    <div className="flex justify-center py-8"><Spinner /></div>
+                  ) : (
+                    <DataTable
+                      data={faultyItems}
+                      columns={faultyColumns}
+                      emptyMessage="No faulty equipment"
+                      onRowClick={handleFaultyRowClick}
+                    />
+                  )}
                 </Card.Content>
               </Card.Root>
               {selectedEquipment && (
@@ -254,8 +250,6 @@ export function EquipmentOverviewScreen() {
               )}
             </Drawer.Root>
           </div>
-        </Decision.Data>
-      </Decision.Root>
     </section>
   );
 }

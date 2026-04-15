@@ -1,64 +1,93 @@
+import { supabase } from "@/lib/supabase";
+import { getCurrentWorkspaceId } from "./current-workspace";
+import { mapRow, toRow } from "./map-request";
 import type { Request, Status } from "@/types/requests";
-import {
-  addOrUpdateRequestAssignee,
-  deleteRequestById,
-  removeRequestAssigneeByIds,
-  updateRequestStatusById,
-  upsertRequest,
-} from "./mock-request-store";
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, 200 + Math.random() * ms));
-
-/** Save (insert or update) a request. Returns the persisted request. */
 export async function updateRequest(request: Request): Promise<Request> {
-  await delay(120);
-  return upsertRequest(request);
+  const workspaceId = await getCurrentWorkspaceId();
+  const payload = {
+    ...toRow(request),
+    workspace_id: workspaceId,
+  };
+
+  const { data, error } = await supabase
+    .from("requests")
+    .upsert(payload, { onConflict: "id" })
+    .select("id, title, priority, status, category, created_at, updated_at, due_date, requested_by, who, what, when_text, where_text, why, how, notes, flow, content")
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapRow(data);
 }
 
-/** Archive a request by setting its status to 'archived' */
 export async function archiveRequest(id: string): Promise<void> {
-  await delay(100);
-  const didUpdate = updateRequestStatusById(id, "archived", new Date().toISOString());
-  if (!didUpdate) throw new Error("Request not found");
+  await updateRequestStatus(id, "archived");
 }
 
-/** Unarchive a request by resetting its status to 'not_started' */
 export async function unarchiveRequest(id: string): Promise<void> {
-  await delay(100);
-  const didUpdate = updateRequestStatusById(id, "not_started", new Date().toISOString());
-  if (!didUpdate) throw new Error("Request not found");
+  await updateRequestStatus(id, "not_started");
 }
 
-/** Update just the status of a request */
 export async function updateRequestStatus(id: string, status: Status): Promise<void> {
-  await delay(100);
-  const didUpdate = updateRequestStatusById(id, status, new Date().toISOString());
-  if (!didUpdate) throw new Error("Request not found");
+  const { error } = await supabase
+    .from("requests")
+    .update({
+      status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
-/** Delete a request (cascades to request_assignees) */
 export async function deleteRequest(id: string): Promise<void> {
-  await delay(100);
-  const didDelete = deleteRequestById(id);
-  if (!didDelete) throw new Error("Request not found");
+  const { error } = await supabase
+    .from("requests")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
-/** Add a user to a request with a specific duty */
-export async function addRequestAssignee(
-  requestId: string,
-  userId: string,
-  duty: string,
-): Promise<void> {
-  await delay(100);
-  addOrUpdateRequestAssignee(requestId, userId, duty);
+export async function addRequestAssignee(requestId: string, userId: string, duty: string): Promise<void> {
+  const deleteResult = await supabase
+    .from("request_assignees")
+    .delete()
+    .eq("request_id", requestId)
+    .eq("user_id", userId);
+
+  if (deleteResult.error) {
+    throw new Error(deleteResult.error.message);
+  }
+
+  const { error } = await supabase
+    .from("request_assignees")
+    .insert({
+      request_id: requestId,
+      user_id: userId,
+      duty,
+    });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
-/** Remove a user from a request */
-export async function removeRequestAssignee(
-  requestId: string,
-  userId: string,
-): Promise<void> {
-  await delay(100);
-  const didRemove = removeRequestAssigneeByIds(requestId, userId);
-  if (!didRemove) throw new Error("Request assignee not found");
+export async function removeRequestAssignee(requestId: string, userId: string): Promise<void> {
+  const { error } = await supabase
+    .from("request_assignees")
+    .delete()
+    .eq("request_id", requestId)
+    .eq("user_id", userId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }

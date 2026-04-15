@@ -259,13 +259,7 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
 
           {/* Booked By — inline input */}
           <MetaRow icon={<User />} label="Booked By">
-            <Input
-              type="text"
-              value={draft.bookedBy ?? ""}
-              onChange={(e) => store.actions.updateField("bookedBy", e.target.value || null)}
-              placeholder="—"
-              style={'ghost'}
-            />
+            <Paragraph.sm>{draft.bookedBy ?? "—"}</Paragraph.sm>
           </MetaRow>
         </div>
 

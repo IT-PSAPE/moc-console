@@ -370,6 +370,7 @@ export function useAnchorPosition(
         }
 
         // Synchronous initial calculation to prevent positioning flash
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         calculate()
 
         const resizeObserver = typeof ResizeObserver === 'undefined'

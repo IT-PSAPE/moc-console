@@ -50,6 +50,17 @@ export const categoryColor = {
     education: "green",
 } as const satisfies Record<Category, string>;
 
+export const requestDuties = [
+    "Producer",
+    "Camera 1",
+    "Camera 2",
+    "Audio",
+    "Lighting",
+    "Editor",
+    "Graphics",
+    "Director",
+] as const;
+
 export const eventColorMap: Record<string, string> = {
     red: "bg-error_primary text-error",
     orange: "bg-warning_primary text-warning",

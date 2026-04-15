@@ -10,7 +10,7 @@ export type Request = {
   category: Category;
   createdAt: string;
   updatedAt: string;
-  dueDate: string | null;
+  dueDate: string;
   requestedBy: string;
   who: string;
   what: string;

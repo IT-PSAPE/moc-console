@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Calendar, ClipboardList, ListChecks, Plus, Search } from 'lucide-react'
+import { Calendar, ListChecks, Plus, Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/controls/button'
 import { Card } from '@/components/display/card'
-import { Decision } from '@/components/display/decision'
 import { Header } from '@/components/display/header'
 import { Label, Paragraph, Title } from '@/components/display/text'
-import { EmptyState } from '@/components/feedback/empty-state'
 import { Spinner } from '@/components/feedback/spinner'
 import { Input } from '@/components/form/input'
 import { ChecklistItemCard } from '@/features/cue-sheet/checklist-item'
@@ -49,7 +47,6 @@ export function CueSheetTemplatesScreen() {
     }, [checklistTemplates, search])
 
     const isLoading = isLoadingEvents || isLoadingChecklists
-    const hasTemplates = eventTemplates.length > 0 || checklistTemplates.length > 0
 
     const handleCreateEvent = useCallback(async ({ title, description, duration }: { title: string; description: string; duration: number }) => {
         const now = new Date().toISOString()
@@ -94,74 +91,58 @@ export function CueSheetTemplatesScreen() {
                 </Header.Lead>
             </Header.Root>
 
-            <Decision.Root value={hasTemplates ? [1] : []} loading={isLoading}>
-                <Decision.Loading>
-                    <div className="flex justify-center py-16">
-                        <Spinner size="lg" />
-                    </div>
-                </Decision.Loading>
-                <Decision.Empty>
-                    <EmptyState
-                        icon={<ClipboardList />}
-                        title="No templates yet"
-                        description="Create an event or checklist template to reuse later."
-                        action={
-                            <div className="flex gap-2">
-                                <Button icon={<Plus />} onClick={() => setShowEventModal(true)}>New Event Template</Button>
-                                <Button icon={<Plus />} variant="secondary" onClick={() => setShowChecklistModal(true)}>New Checklist Template</Button>
+            <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
+                <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+                    <Header.Lead className="gap-2">
+                        <Label.md>Templates</Label.md>
+                    </Header.Lead>
+                    <Header.Trail className="gap-2 flex-1 justify-end">
+                        <Input icon={<Search />} placeholder="Search templates..." className="w-full max-w-sm" value={search} onChange={(event) => setSearch(event.target.value)} />
+                    </Header.Trail>
+                </Header.Root>
+
+                <Card.Root>
+                    <Card.Header className="gap-1.5">
+                        <Calendar className="size-4" />
+                        <Label.sm className="mr-auto">Event Templates</Label.sm>
+                        <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setShowEventModal(true)} />
+                    </Card.Header>
+                    <Card.Content ghost className="flex flex-col gap-1.5">
+                        {isLoading ? (
+                            <div className="flex justify-center py-6"><Spinner /></div>
+                        ) : filteredEventTemplates.length > 0 ? (
+                            filteredEventTemplates.map((event) => (
+                                <EventItem key={event.id} event={event} />
+                            ))
+                        ) : (
+                            <div className="py-8 text-center">
+                                <Paragraph.sm className="text-tertiary">No event templates found.</Paragraph.sm>
                             </div>
-                        }
-                    />
-                </Decision.Empty>
-                <Decision.Data>
-                    <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
-                        <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
-                            <Header.Lead className="gap-2">
-                                <Label.md>Templates</Label.md>
-                            </Header.Lead>
-                            <Header.Trail className="gap-2 flex-1 justify-end">
-                                <Input icon={<Search />} placeholder="Search templates..." className="w-full max-w-sm" value={search} onChange={(event) => setSearch(event.target.value)} />
-                            </Header.Trail>
-                        </Header.Root>
+                        )}
+                    </Card.Content>
+                </Card.Root>
 
-                        <Card.Root>
-                            <Card.Header className="gap-1.5">
-                                <Calendar className="size-4" />
-                                <Label.sm className="mr-auto">Event Templates</Label.sm>
-                                <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setShowEventModal(true)} />
-                            </Card.Header>
-                            <Card.Content ghost className="flex flex-col gap-1.5">
-                                {filteredEventTemplates.map((event) => (
-                                    <EventItem key={event.id} event={event} />
-                                ))}
-                                {filteredEventTemplates.length === 0 && (
-                                    <div className="py-8 text-center">
-                                        <Paragraph.sm className="text-tertiary">No event templates match your search.</Paragraph.sm>
-                                    </div>
-                                )}
-                            </Card.Content>
-                        </Card.Root>
-
-                        <Card.Root>
-                            <Card.Header className="gap-1.5">
-                                <ListChecks className="size-4" />
-                                <Label.sm className="mr-auto">Checklist Templates</Label.sm>
-                                <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setShowChecklistModal(true)} />
-                            </Card.Header>
-                            <Card.Content ghost className="flex flex-col gap-1.5">
-                                {filteredChecklistTemplates.map((checklist) => (
-                                    <ChecklistItemCard key={checklist.id} checklist={checklist} />
-                                ))}
-                                {filteredChecklistTemplates.length === 0 && (
-                                    <div className="py-8 text-center">
-                                        <Paragraph.sm className="text-tertiary">No checklist templates match your search.</Paragraph.sm>
-                                    </div>
-                                )}
-                            </Card.Content>
-                        </Card.Root>
-                    </div>
-                </Decision.Data>
-            </Decision.Root>
+                <Card.Root>
+                    <Card.Header className="gap-1.5">
+                        <ListChecks className="size-4" />
+                        <Label.sm className="mr-auto">Checklist Templates</Label.sm>
+                        <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setShowChecklistModal(true)} />
+                    </Card.Header>
+                    <Card.Content ghost className="flex flex-col gap-1.5">
+                        {isLoading ? (
+                            <div className="flex justify-center py-6"><Spinner /></div>
+                        ) : filteredChecklistTemplates.length > 0 ? (
+                            filteredChecklistTemplates.map((checklist) => (
+                                <ChecklistItemCard key={checklist.id} checklist={checklist} />
+                            ))
+                        ) : (
+                            <div className="py-8 text-center">
+                                <Paragraph.sm className="text-tertiary">No checklist templates found.</Paragraph.sm>
+                            </div>
+                        )}
+                    </Card.Content>
+                </Card.Root>
+            </div>
 
             <CreateEventModal open={showEventModal} onOpenChange={setShowEventModal} onCreate={handleCreateEvent} />
             <CreateChecklistModal open={showChecklistModal} onOpenChange={setShowChecklistModal} onCreate={handleCreateChecklist} />

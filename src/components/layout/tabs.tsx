@@ -9,10 +9,25 @@ type TabsContextState = {
 
 const TabContext = createContext<TabsContextState | null>(null);
 
-function TabsRoot({ children, defaultTab }: { children: React.ReactNode, defaultTab?: string }) {
-    const [value, setValue] = useState<string>(defaultTab ?? 'null');
+type TabsRootProps = {
+    children: React.ReactNode
+    defaultTab?: string
+    value?: string
+    onValueChange?: (value: string) => void
+}
 
-    const context: TabsContextState = { value, setValue};
+function TabsRoot({ children, defaultTab, value: controlledValue, onValueChange }: TabsRootProps) {
+    const [uncontrolledValue, setUncontrolledValue] = useState<string>(defaultTab ?? 'null');
+
+    const isControlled = controlledValue !== undefined;
+    const value = isControlled ? controlledValue : uncontrolledValue;
+    const setValue: React.Dispatch<React.SetStateAction<string>> = (next) => {
+        const nextValue = typeof next === 'function' ? next(value) : next;
+        if (!isControlled) setUncontrolledValue(nextValue);
+        onValueChange?.(nextValue);
+    };
+
+    const context: TabsContextState = { value, setValue };
 
     return (
         <TabContext.Provider value={context}>
@@ -39,7 +54,7 @@ function TabsTab({children, className, value}: HTMLAttributes<HTMLDivElement> & 
     }
 
     return (
-        <div className={cn('py-1.5 border-b-2 cursor-pointer', current ? 'border-brand' : 'border-transparent', className)} onClick={handleClick}>
+        <div className={cn('py-1.5 border-b-2 cursor-pointer paragraph-sm', current ? 'border-brand' : 'border-transparent', className)} onClick={handleClick}>
             {children}
         </div>
     )

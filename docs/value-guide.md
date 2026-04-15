@@ -1,531 +1,242 @@
 # Value Guide
 
-This document explains what values the codebase expects in practice, beyond the raw type signatures.
+This document describes the app-facing entities and the runtime value conventions the UI depends on.
 
-It complements [schema-reference.md](./schema-reference.md).
+Use it with:
 
-## Source Notes
+- [schema-reference.md](./schema-reference.md) for the normalized database view
+- [data-flow-reference.md](./data-flow-reference.md) for runtime mapping, seed-data context, and fetch-time shaping
 
-- Requests, equipment, broadcast, and cue-sheet mutations are mock implementations that return the passed data.
-- Request assignees seed from an empty mock file and only mutate in local app state.
-- User signup writes the Supabase Auth account and may also upsert the matching `users` profile row when a session is returned.
-- This repository still does not show `user_roles` creation during signup, so role lookup can still return `null` for new accounts.
+## Runtime Shape Summary
 
-## Global Conventions
+| Domain | App shape | Current source | Important note |
+| --- | --- | --- | --- |
+| Requests | Mostly row-shaped | Supabase | `dueDate` is now treated as required in the app model. |
+| Auth | Profile plus role | Supabase Auth + Supabase | User profiles now include `telegramChatId`, and password recovery completes on a dedicated route. |
+| Workspace | Membership-filtered directory views | Supabase with runtime fallback | Users can belong to multiple workspaces; runtime can fall back to the seeded default workspace for unresolved scope. |
+| Equipment | Denormalized inventory and booking objects | Supabase | `bookedBy` stays a runtime convenience field. |
+| Broadcast | Playlists with nested queue entries | Supabase | Queue rows are normalized in storage and re-expanded into cue objects after fetch. |
+| Cue Sheet | Events, checklists, tracks, and cues as nested objects | Supabase | Storage is split into templates and runs even though the runtime API still exposes a combined `kind` model. |
+
+## Global Rules
 
 ### IDs
 
-- Keep ids as strings.
-- All mock-backed ids should be UUID strings.
-- New mock records created in the app should also use UUID strings via `crypto.randomUUID()`.
-- `users.id` is expected to match the Supabase Auth user id because profile lookup does `.eq("id", user.id)`.
+- Database ids should be `uuid`.
+- Frontend ids remain strings.
+- The app should treat ids as opaque strings.
+- `users.id` should match the Supabase Auth id.
 
 ### Dates
 
-- Requests:
-  - `createdAt`, `updatedAt`, and `dueDate` should be ISO datetime strings.
-  - The request editor uses `datetime-local` and converts back with `new Date(value).toISOString()`.
-  - Example: `2026-04-05T13:30:00.000Z`
-- Equipment and broadcast:
-  - Current mock data uses date-only strings.
-  - Example: `2026-04-05`
-- Equipment bookings:
-  - `checkedOutDate` and `returnedDate` still come from current date-like mock data.
-  - `expectedReturnAt` should be a full ISO datetime string so the app can calculate due-soon and overdue return states by hour.
-- Cue sheet:
-  - `createdAt` and `updatedAt` use ISO datetime strings.
-  - Timeline cues use `startMin` and `durationMin` as numeric minute values, not datetimes.
+- Datetime fields should remain valid ISO strings in the frontend.
+- Required schedule fields should not be modeled as nullable in the app when the schema requires them.
+- UI date comparisons should continue using `new Date(...)`.
 
-### Null vs empty string
+### Naming
 
-- Use `null` when the field truly means “no value”.
-- Use empty string only where the model requires a string and the codebase already uses blank text.
-- Current patterns:
-  - `Request.dueDate`: `null` when not scheduled
-  - `Request.notes`, `Request.flow`, `Request.content`: omitted in app model and omitted from mock JSON when absent
-  - `Equipment.bookedBy`: `null` when nobody has the item
-  - `Equipment.notes`: often `""`, not `null`
-  - `Equipment.thumbnail`: `null` when absent
-  - `Booking.returnedDate`: `null` until returned
-  - `MediaItem.thumbnail`: `null` when absent
-  - `Playlist.backgroundMusicUrl`: `null` when no background track is selected
-  - `Playlist.backgroundMusicName`: `null` when no background track is selected
-  - `Cue.disabled`: omitted when the cue is active
-- Cue-sheet `Cue.notes`: omitted when absent
+- Database rows are `snake_case`.
+- Frontend entities are `camelCase`.
+- Joined and derived fields belong in the mapping layer, not the schema.
 
 ## Requests
 
-### `status`
+### Request entity
 
-Allowed values:
+Runtime expectations:
 
-- `not_started`
-- `in_progress`
-- `completed`
-- `archived`
+- `dueDate` is required.
+- `requestedBy` is required free text.
+- `who`, `what`, `when`, `where`, `why`, and `how` remain short narrative strings.
+- `notes`, `flow`, and `content` remain optional in the app layer.
 
-Expected usage:
+### Request assignees
 
-- Use `not_started` for newly created or restored requests.
-- Use `in_progress` when work has started.
-- Use `completed` when the work is done but should still appear in active/history logic.
-- Use `archived` to hide the request from active request fetches and move it into archived views.
+Runtime storage:
 
-Behavior in the app:
+- request assignments store only the user id plus the free-text duty
 
-- Active request fetches explicitly exclude `archived`.
-- Unarchive sets the status back to `not_started`.
-- Kanban only shows `not_started`, `in_progress`, and `completed`.
+Runtime read model:
 
-### `priority`
+- resolved assignee objects should include:
+  - `id`
+  - `name`
+  - `surname`
+  - `email`
+  - `telegramChatId`
+  - `duty`
 
-Allowed values:
+### Request duty presets
 
-- `low`
-- `medium`
-- `high`
-- `urgent`
-
-Expected usage:
-
-- `low`: informational or low-risk work
-- `medium`: normal default priority
-- `high`: needs prioritization soon
-- `urgent`: immediate attention
-
-### `category`
-
-Allowed values:
-
-- `video_production`
-- `video_shooting`
-- `graphic_design`
-- `event`
-- `education`
-
-Expected usage:
-
-- `video_production`: end-to-end video jobs, editing, post, delivery
-- `video_shooting`: shoot-day execution and capture work
-- `graphic_design`: static or motion design work
-- `event`: event support, coverage, logistics, media needs
-- `education`: training, teaching, internal learning content
-
-### `title`
-
-- Keep it concise and scannable.
-- This is the primary display name in lists, drawers, and breadcrumbs.
-- Good examples:
-  - `Youth Conference Promo Video`
-  - `Sunday Service Graphics Update`
-
-### `requestedBy`
-
-- Keep this as a free-text requester label.
-- Do not link it to teams or users yet; this field is intentionally lightweight.
-
-### `updatedAt`
-
-- Update this whenever request details, archive state, or kanban status changes.
-- Use it as the app’s “last updated” timestamp instead of adding a separate `completedAt` field.
-
-### 5W1H fields: `who`, `what`, `when`, `where`, `why`, `how`
-
-- These fields are treated as required strings in the app model.
-- Use short, direct sentence fragments rather than long documents.
-- Recommended pattern:
-  - `who`: the requester, audience, or responsible party
-  - `what`: the deliverable or job to be done
-  - `when`: timing or deadline context
-  - `where`: location or channel
-  - `why`: purpose or business/ministry reason
-  - `how`: execution approach or constraints
-
-Example:
-
-- `who`: `Media team and worship department`
-- `what`: `Capture and edit opener video`
-- `when`: `Before Sunday 9 AM service`
-- `where`: `Main auditorium and LED screens`
-- `why`: `Support Easter service launch`
-- `how`: `Two-camera shoot with lower-third graphics`
-
-### `dueDate`
-
-- Use `null` if no actual due date exists.
-- Otherwise use a full ISO datetime string.
-- Because overview screens calculate overdue/upcoming by comparing `new Date(dueDate)` to `new Date()`, avoid loose human-readable values here.
-
-### `notes`, `flow`, `content`
-
-- `notes`: secondary context, caveats, reminders
-- `flow`: sequence or run-of-show style notes
-- `content`: larger free-form content block for detailed briefing or body copy
-
-Current implementation note:
-
-- `RequestNotes` and `RequestFlow` only render when the value is truthy.
-- Blank strings behave like “not provided”.
-
-### Assignees and duties
-
-Fields involved:
-
-- `request_assignees.user_id`
-- `request_assignees.duty`
-
-Expected usage:
-
-- The seed file can stay empty when you want requests to start with no assignees.
-- When a user is assigned in the UI, `user_id` should point to a real `users.id`.
-- Assignee adds and removes currently live only in local app state.
-- `duty` can come from the live role preset list, but the UI also allows custom free-text duties.
-
-Good duty examples:
-
-- `Producer`
-- `Camera 1`
-- `Lighting`
-- `Editor`
-- `Camera 1 - main`
+- Duty presets are no longer modeled as a database table.
+- They now belong in code as default suggestions.
+- Custom duty text is still allowed at assignment time.
 
 ## Auth
 
-### `users`
+### User profile entity
 
-Expected values:
+Runtime expectations:
 
-- `name`: given name, not full name
-- `surname`: family name
-- `email`: valid login email
+- `name` and `surname` remain separate fields.
+- `email` remains unique.
+- `telegramChatId` is nullable until the Telegram integration exists.
 
-Why this matters:
+### Password recovery flow
 
-- The UI constructs display names as `${name} ${surname}`.
-- Avatar initials use the first character of `name` and `surname`.
+Runtime expectations:
 
-### `roles`
+- `resetPassword()` should send a Supabase email with `redirectTo` pointing at `/password-recovery`
+- the recovery screen should accept either the Supabase recovery hash or a `code` query param exchange
+- auth state should clear the cached workspace scope whenever the session changes
+- `updatePassword()` should complete inside the recovery route, not by overloading the login screen
 
-Expected values:
+### Role entity
 
-- `name` should be human-readable, such as `admin`, `producer`, or `viewer`.
-- Permission flags should be explicit booleans.
+Runtime expectations:
 
-Permission semantics:
+- keep CRUD flags
+- keep `canManageRoles`
+- remove `canManageAssignees`
 
-- `can_create`: can create records
-- `can_read`: can view records
-- `can_update`: can edit records
-- `can_delete`: can remove records
-- `can_manage_roles`: can administer role assignments or role definitions
-- `can_manage_assignees`: can assign users to requests
+Current code assumption:
 
-Current implementation note:
+- user-management screens now key off `canManageRoles`
 
-- The app reads one role per user via `.single()` on `user_roles`.
-- If the database actually allows multiple roles per user, the current app is not modeling that fully.
+## Workspace
 
-### Signup caveat
+### Workspace entity
 
-- The signup flow also collects `name` and `surname`.
-- When Supabase returns a session for the new user, `AuthProvider.signUp` upserts the matching `users` profile row.
-- No code in this repository creates the matching `user_roles` row after signup.
-- If a role row does not already exist, role lookup will return `null`.
+Runtime expectations:
+
+- workspace records should stay lightweight:
+  - `id`
+  - `name`
+  - `slug`
+- users can belong to multiple workspaces
+- the current signed-in user's memberships should drive workspace tabs in management screens
+- when memberships are absent during bootstrap, the app may temporarily resolve the seeded `default-workspace`
+
+### Workspace membership entity
+
+Runtime expectations:
+
+- membership rows only need:
+  - `workspaceId`
+  - `userId`
+- workspace membership should be the source of truth for which users appear under a selected workspace
+- subordinate records should not duplicate workspace membership when the parent record already carries `workspaceId`
 
 ## Equipment
 
-### `status`
+### Equipment read model
 
-Allowed values:
+Current runtime shape:
 
-- `available`
-- `booked`
-- `booked_out`
-- `maintenance`
+- `id`
+- `name`
+- `serialNumber`
+- `category`
+- `status`
+- `location`
+- `notes`
+- `lastActiveDate`
+- `bookedBy`
+- `thumbnail`
 
-Expected usage:
+Important rule:
 
-- `available`: item is available for assignment
-- `booked`: reserved but not yet checked out
-- `booked_out`: physically out in the field or with a user
-- `maintenance`: not usable because it is being serviced or repaired
+- `bookedBy` is runtime display data only.
+- It should come from the active booking context, not from the `equipment` table itself.
 
-Recommended consistency:
+### Booking read model
 
-- When `status` is `available` or `maintenance`, prefer `bookedBy: null`.
-- When `status` is `booked` or `booked_out`, prefer `bookedBy` containing the responsible person’s name.
+Current runtime shape:
 
-### `category`
+- `id`
+- `equipmentId`
+- `equipmentName`
+- `bookedBy`
+- `checkedOutDate`
+- `expectedReturnAt`
+- `returnedDate`
+- `duration`
+- `notes`
+- `status`
 
-Allowed values:
+Important rules:
 
-- `camera`
-- `lens`
-- `lighting`
-- `audio`
-- `support`
-- `monitor`
-- `cable`
-- `accessory`
-
-Expected usage:
-
-- Choose the broad operational bucket, not a brand or department name.
-- Keep it stable so filters and reports remain useful.
-
-### `serialNumber`
-
-- Use a real asset-tracking identifier where possible.
-- The current mock data uses human-readable prefixes like `SN-CAM-001`.
-
-### `location`
-
-- Use a current physical or operational location.
-- Examples from the existing data:
-  - `Studio A`
-  - `Storage Room B`
-  - `Field`
-  - `Repair Shop`
-
-### `notes`
-
-- Keep as a string.
-- Use `""` when there is no note if you want to stay aligned with the current mock data.
-- Use it for damage, maintenance context, or important handling notes.
-
-### `thumbnail`
-
-- Use a full URL when an image exists.
-- Otherwise use `null`.
-
-### `Booking.status`
-
-Allowed values:
-
-- `booked`
-- `checked_out`
-- `returned`
-
-Expected usage:
-
-- `booked`: reserved, not yet checked out
-- `checked_out`: currently with a user/team
-- `returned`: completed booking
-
-Consistency rules:
-
-- `returnedDate` should be `null` for `booked` and `checked_out`.
-- `returnedDate` should be populated for `returned`.
-- `expectedReturnAt` should be populated for every booking, including active and returned bookings.
-- For active bookings, due-soon/overdue logic compares `expectedReturnAt` to the current time.
-- `duration` is currently human-readable text, not a numeric day count.
+- `equipmentName` is joined from equipment data.
+- `bookedBy` is free text in storage and the runtime model.
+- `duration` is derived in the app.
 
 ## Broadcast
 
-### `Playlist.status`
+### Media entity
 
-Allowed values:
+Current runtime shape still includes a `duration` field in some app flows.
 
-- `draft`
-- `published`
+Schema direction:
 
-Expected usage:
+- storage should not treat media duration as a required table column
+- runtime duration can still exist when extracted from uploaded media metadata
 
-- `draft`: playlist is still being prepared
-- `published`: playlist is ready and immediately available for operational use
+### Playlist entity
 
-Current implementation notes:
+Runtime expectations:
 
-- New playlists default to `draft`.
-- The list and drawer toggle between `draft` and `published`.
+- `musicId` should be the stored relation when background music exists
+- `defaultImageDuration` should remain a positive number
+- queue item duration can override the playlist default
 
-### `Playlist.name` and `description`
+### Queue item entity
 
-- `name` should be short and operationally recognizable.
-- `description` can be empty, but a sentence of context is better for shared playlists.
+Runtime expectations:
 
-Good examples:
+- `mediaId` is the stored relation
+- `duration` is nullable and acts as the item-level override
+- `disabled` defaults to `false`
 
-- `Sunday Service`
-- `Youth Service`
-- `Midweek Prayer`
-
-### `Cue`
-
-Expected values:
-
-- `order` should be a contiguous 1-based sequence.
-- `mediaItemId` should point to an existing media item.
-- `mediaItemName` and `mediaItemType` should match the referenced media item at the time the cue is created.
-- `durationOverride` should be:
-  - `null` to inherit the media item duration
-  - a positive number of seconds to force a custom duration
-- `disabled` should usually be omitted unless the cue is intentionally skipped during playout.
-
-Operational note:
-
-- Cue fields intentionally duplicate media name and type for display convenience.
-- If a media item is renamed later, existing cues may need resync if strict consistency matters.
-- Disabled cues stay in playlist order but are excluded from runtime totals and active playout logic.
-
-### Playlist playback fields
-
-- `backgroundMusicUrl` and `backgroundMusicName` should both be `null` when no background track is selected.
-- When background music is enabled, `backgroundMusicUrl` should usually come from an existing audio media item and `backgroundMusicName` should mirror that item name.
-- `defaultImageDuration` should be a positive number of seconds.
-- `videoSettings.autoplay`, `videoSettings.loop`, and `videoSettings.muted` should stay explicit booleans.
-
-### `MediaItem.type`
-
-Allowed values:
-
-- `image`
-- `audio`
-- `video`
-
-### Media-by-type expectations
-
-#### `image`
-
-- `url`: required image URL
-- `thumbnail`: optional, but recommended
-- `duration`: `null`
-
-#### `audio`
-
-- `url`: required audio URL
-- `thumbnail`: usually `null`
-- `duration`: positive number of seconds
-
-#### `video`
-
-- `url`: required video URL
-- `thumbnail`: recommended
-- `duration`: positive number of seconds
-
-### Upload flow caveat
-
-The current media upload modal creates new items like this:
-
-- `image`:
-  - `duration: null`
-- `video` and `audio`:
-  - `duration: 0`
-
-That means:
-
-- `0` is currently used as a placeholder value for newly created non-image uploads.
-- If downstream logic expects a real runtime duration, replace `0` with the actual duration after ingestion.
+Denormalized runtime fields such as media name or type are acceptable after fetch, but they should not become storage columns.
 
 ## Cue Sheet
 
-### `CueSheetEvent`
+### Event templates vs events
 
-Expected usage:
+- template data and live event data are now conceptually separate
+- the combined `kind` and `templateId` shape is no longer the target schema
+- the current runtime still uses combined objects, but the schema now treats templates and event runs as separate tables
 
-- `title` should be short and operationally recognizable.
-- `description` can be empty, but a concise sentence helps distinguish reusable event templates.
-- `duration` is the full event timeline length in minutes.
-- `createdAt` and `updatedAt` should remain ISO datetime strings.
-- `kind: "template"` means the event is reusable.
-- `kind: "instance"` means the event was created from a template and can be adjusted independently.
-- `templateId` should be set only on instances created from a template.
-- `scheduledAt` is optional for instances and should be an ISO datetime string when used.
+### Checklist templates vs checklists
 
-Good examples:
+- the same separation applies to checklist templates and checklist runs
+- template duplication should copy sections and items into live checklist rows
 
-- `Sunday Service`
-- `Wednesday Bible Study`
-- `Youth Night`
+### Track colors
 
-### `Checklist`
+Runtime rule:
 
-Expected usage:
+- tracks should carry a stable `colorKey`
+- UI code should map `colorKey` to the actual CSS value
+- the underlying storage lookup is now conceptually a shared `colors` table, not a track-only table
 
-- `name` should describe the preparation flow, such as `Sunday Service Prep`.
-- `items` contains ungrouped tasks shown before any sections.
-- `sections` contains grouped tasks and should be an empty array when no grouping is needed.
-- Use `checked: false` for newly created checklist items.
-- `kind: "template"` means the checklist is reusable.
-- `kind: "instance"` means the checklist was created from a template and can be checked off independently.
-- `templateId` should be set only on instances created from a template.
-- `scheduledAt` is optional for instances and should be an ISO datetime string when used.
+Current code update:
 
-### `ChecklistSection`
+- cue-sheet track data now uses color keys instead of raw CSS values
 
-- `name` should be a team, phase, or operational grouping.
-- `items` should stay as an array, even when empty.
-- Section and item ordering is represented by array order.
+### Cue timing
 
-### Cue-sheet timeline `Track`
+Runtime expectations:
 
-- Tracks are stored under their owning event id in `src/data/mock/cue-sheet-tracks.json`.
-- `name` should identify the lane, such as `Audio`, `Visuals`, `Livestream`, or `Stage`.
-- `color` is a CSS color string used by the timeline UI.
-- Track ordering is represented by array order.
-
-### Cue-sheet timeline `Cue`
-
-Allowed `type` values:
-
-- `performance`
-- `technical`
-- `equipment`
-- `announcement`
-- `transition`
-
-Timing rules:
-
-- `startMin` is the offset from the start of the event.
-- `durationMin` is the cue length in minutes.
-- Keep both values numeric so timeline drag, resize, and marker calculations remain stable.
-- Cue ordering within a track is represented by array order and visual position.
-- `assignee` is optional free text for the person responsible for a specific cue.
-
-## Cross-Domain Practical Rules
-
-### Prefer enums exactly as defined
-
-Do not use display labels as stored values.
-
-Use:
-
-- `not_started`
-- `booked_out`
-- `video_production`
-
-Do not use:
-
-- `Not Started`
-- `Booked Out`
-- `Video Production`
-
-### Store human-readable labels only where the model already does it
-
-Examples of denormalized text fields that are intentionally human-readable:
-
-- `Booking.equipmentName`
-- `Booking.bookedBy`
-- `Cue.mediaItemName`
-- `Role.name`
-
-### Keep formats stable
-
-- Datetime comparisons in the app rely on `new Date(...)`.
-- Avoid storing loose text like `tomorrow morning` or `next week` in fields that are already typed as dates.
-- Use the free-text fields for narrative descriptions, not typed/date fields.
+- use `start` and `duration` conceptually in schema
+- the current app still exposes `startMin` and `durationMin` in its runtime types
+- that is a runtime naming detail, not the target storage naming
 
 ## Current Implementation Gaps
 
-- Equipment save/delete calls are mock-only.
-- Broadcast save/delete/update calls are mock-only.
-- Cue-sheet save/delete/update calls are mock-only.
-- Playlists are embedded objects with nested cues, not normalized DB rows in the current implementation.
-- Cue-sheet checklists and timeline tracks are embedded mock JSON structures, not normalized DB rows in the current implementation.
-- Request duty roles, users, user roles, and roles still imply real Supabase tables:
-  - `request_roles`
-  - `users`
-  - `user_roles`
-  - `roles`
+- Cue-sheet events and checklists still use combined template/instance app objects even though the target schema now separates them.
+- Playlist `videoSettings` remain frontend-only runtime data; they are not persisted in the current schema.
+- Media `duration` still exists as a runtime field in some flows even though storage does not require it.
+- Workspace membership is only surfaced explicitly in the users screen today. Other domains resolve one active workspace at fetch time rather than exposing a workspace switcher everywhere.
 
-If the repository later adds migrations or generated database types, this guide should be updated to match them exactly.
+That gap is acceptable for now as long as the schema doc remains the source of truth for storage and the runtime layer keeps the conversions explicit.

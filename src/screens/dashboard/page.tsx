@@ -4,7 +4,6 @@ import { Header } from '@/components/display/header'
 import { Label, Paragraph, TextBlock, Title } from '@/components/display/text'
 import { Badge } from '@/components/display/badge'
 import { Indicator } from '@/components/display/indicator'
-import { Decision } from '@/components/display/decision'
 import { Spinner } from '@/components/feedback/spinner'
 import { RequestItem } from '@/features/requests/request-item'
 import { useRequests } from '@/features/requests/request-provider'
@@ -28,8 +27,8 @@ export function DashboardScreen() {
     const navigate = useNavigate()
 
     const { state: { activeRequests, isLoadingActive }, actions: { loadActiveRequests } } = useRequests()
-    const { state: { equipment, bookings, isLoadingEquipment, isLoadingBookings }, actions: { loadEquipment, loadBookings } } = useEquipment()
-    const { state: { media, playlists, isLoadingMedia, isLoadingPlaylists }, actions: { loadMedia, loadPlaylists } } = useBroadcast()
+    const { state: { equipment, bookings }, actions: { loadEquipment, loadBookings } } = useEquipment()
+    const { state: { media, playlists, isLoadingPlaylists }, actions: { loadMedia, loadPlaylists } } = useBroadcast()
     const { state: { events, checklists, isLoadingEvents, isLoadingChecklists }, actions: { loadEvents, loadChecklists } } = useCueSheet()
 
     useEffect(() => {
@@ -42,8 +41,6 @@ export function DashboardScreen() {
         loadChecklists()
     }, [loadActiveRequests, loadEquipment, loadBookings, loadMedia, loadPlaylists, loadEvents, loadChecklists])
 
-    const isLoading = isLoadingActive || isLoadingEquipment || isLoadingBookings || isLoadingMedia || isLoadingPlaylists || isLoadingEvents || isLoadingChecklists
-    const hasData = activeRequests.length > 0 || equipment.length > 0 || media.length > 0 || events.length > 0
     const [now, setNow] = useState<number | null>(null)
 
     useEffect(() => {
@@ -61,8 +58,8 @@ export function DashboardScreen() {
         (() => {
             if (now === null) return []
             return activeRequests
-                .filter((r) => r.status !== 'archived' && r.status !== 'completed' && r.dueDate && new Date(r.dueDate).getTime() < now)
-                .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
+                .filter((r) => r.status !== 'archived' && r.status !== 'completed' && new Date(r.dueDate).getTime() < now)
+                .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
                 .slice(0, 5)
         })()
     ), [activeRequests, now])
@@ -71,8 +68,8 @@ export function DashboardScreen() {
         (() => {
             if (now === null) return []
             return activeRequests
-                .filter((r) => r.status !== 'archived' && r.status !== 'completed' && r.dueDate && new Date(r.dueDate).getTime() >= now)
-                .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
+                .filter((r) => r.status !== 'archived' && r.status !== 'completed' && new Date(r.dueDate).getTime() >= now)
+                .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
                 .slice(0, 5)
         })()
     ), [activeRequests, now])
@@ -124,18 +121,6 @@ export function DashboardScreen() {
                 </Header.Lead>
             </Header.Root>
 
-            <Decision.Root value={hasData || null} loading={isLoading}>
-                <Decision.Loading>
-                    <div className="flex justify-center py-16">
-                        <Spinner size="lg" />
-                    </div>
-                </Decision.Loading>
-                <Decision.Empty>
-                    <div className="flex justify-center py-16">
-                        <Spinner size="lg" />
-                    </div>
-                </Decision.Empty>
-                <Decision.Data>
                     {/* Summary cards */}
                     <div className='grid grid-cols-2 gap-4 p-4 pt-8 mx-auto w-full max-w-content md:grid-cols-4 max-mobile:gap-2'>
                         <Card.Root className="cursor-pointer hover:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.requestsOverview}`)}>
@@ -204,7 +189,9 @@ export function DashboardScreen() {
                                 <Button variant="ghost" icon={<ArrowRight />} iconPosition="trailing" onClick={() => navigate(`/${routes.requestsOverview}`)}>View all</Button>
                             </Card.Header>
                             <Card.Content ghost className='flex flex-col gap-1.5'>
-                                {overdueRequests.length > 0 ? (
+                                {isLoadingActive ? (
+                                    <div className="flex justify-center py-6"><Spinner /></div>
+                                ) : overdueRequests.length > 0 ? (
                                     overdueRequests.map((r) => (
                                         <RequestItem key={r.id} request={r} />
                                     ))
@@ -226,7 +213,9 @@ export function DashboardScreen() {
                                 <Button variant="ghost" icon={<ArrowRight />} iconPosition="trailing" onClick={() => navigate(`/${routes.requestsOverview}`)}>View all</Button>
                             </Card.Header>
                             <Card.Content ghost className='flex flex-col gap-1.5'>
-                                {upcomingRequests.length > 0 ? (
+                                {isLoadingActive ? (
+                                    <div className="flex justify-center py-6"><Spinner /></div>
+                                ) : upcomingRequests.length > 0 ? (
                                     upcomingRequests.map((r) => (
                                         <RequestItem key={r.id} request={r} />
                                     ))
@@ -248,7 +237,9 @@ export function DashboardScreen() {
                                 <Button variant="ghost" icon={<ArrowRight />} iconPosition="trailing" onClick={() => navigate(`/${routes.cueSheetOverview}`)}>View all</Button>
                             </Card.Header>
                             <Card.Content className={upcomingEvents.length > 0 ? 'divide-y divide-border-tertiary' : ''}>
-                                {upcomingEvents.length > 0 ? (
+                                {isLoadingEvents ? (
+                                    <div className="flex justify-center py-6"><Spinner /></div>
+                                ) : upcomingEvents.length > 0 ? (
                                     upcomingEvents.map((event) => (
                                         <button
                                             key={event.id}
@@ -288,7 +279,9 @@ export function DashboardScreen() {
                                 <Button variant="ghost" icon={<ArrowRight />} iconPosition="trailing" onClick={() => navigate(`/${routes.cueSheetChecklists}`)}>View all</Button>
                             </Card.Header>
                             <Card.Content className={pendingChecklists.length > 0 ? 'divide-y divide-border-tertiary' : ''}>
-                                {pendingChecklists.length > 0 ? (
+                                {isLoadingChecklists ? (
+                                    <div className="flex justify-center py-6"><Spinner /></div>
+                                ) : pendingChecklists.length > 0 ? (
                                     pendingChecklists.map((checklist) => (
                                         <button
                                             key={checklist.id}
@@ -328,7 +321,9 @@ export function DashboardScreen() {
                                 <Button variant="ghost" icon={<ArrowRight />} iconPosition="trailing" onClick={() => navigate(`/${routes.broadcastPlaylists}`)}>View all</Button>
                             </Card.Header>
                             <Card.Content className={playlists.length > 0 ? 'divide-y divide-border-tertiary' : ''}>
-                                {playlists.length > 0 ? (
+                                {isLoadingPlaylists ? (
+                                    <div className="flex justify-center py-6"><Spinner /></div>
+                                ) : playlists.length > 0 ? (
                                     playlists.slice(0, 5).map((playlist) => (
                                         <button
                                             key={playlist.id}
@@ -356,8 +351,6 @@ export function DashboardScreen() {
                             </Card.Content>
                         </Card.Root>
                     </div>
-                </Decision.Data>
-            </Decision.Root>
         </section>
     )
 }

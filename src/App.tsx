@@ -35,6 +35,7 @@ import { TopBarProvider } from './features/topbar'
 import { LoginScreen } from './screens/auth/login'
 import { SignupScreen } from './screens/auth/signup'
 import { ResetPasswordScreen } from './screens/auth/reset-password'
+import { PasswordRecoveryScreen } from './screens/auth/password-recovery'
 
 function RequireAuth() {
     const { session, loading } = useAuth()
@@ -87,6 +88,7 @@ const router = createBrowserRouter([
     { path: routes.login, element: <RedirectIfAuth><LoginScreen /></RedirectIfAuth> },
     { path: routes.signup, element: <RedirectIfAuth><SignupScreen /></RedirectIfAuth> },
     { path: routes.resetPassword, element: <RedirectIfAuth><ResetPasswordScreen /></RedirectIfAuth> },
+    { path: routes.passwordRecovery, element: <PasswordRecoveryScreen /> },
 
     // Protected app routes
     {
