@@ -173,3 +173,162 @@ CREATE POLICY "streams_delete" ON public.streams
     private.is_workspace_member(workspace_id)
     AND private.current_user_can('can_delete')
   );
+
+-- ============================================================
+-- Step 6: Zoom Integration
+-- ============================================================
+
+CREATE TYPE public.zoom_meeting_type AS ENUM (
+  'instant',
+  'scheduled',
+  'recurring_no_fixed',
+  'recurring_fixed'
+);
+
+CREATE TYPE public.zoom_recurrence_type AS ENUM (
+  'none',
+  'daily',
+  'weekly',
+  'monthly'
+);
+
+-- zoom_connections (workspace-level Zoom OAuth credentials)
+CREATE TABLE IF NOT EXISTS public.zoom_connections (
+  id               uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id     uuid        NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
+  zoom_user_id     text        NOT NULL,
+  email            text        NOT NULL,
+  display_name     text        NOT NULL,
+  access_token     text        NOT NULL,
+  refresh_token    text        NOT NULL,
+  token_expires_at timestamptz NOT NULL,
+  connected_by     uuid        NOT NULL REFERENCES public.users(id),
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  updated_at       timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (workspace_id)
+);
+
+-- zoom_meetings
+CREATE TABLE IF NOT EXISTS public.zoom_meetings (
+  id                  uuid                      PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id        uuid                      NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
+  zoom_meeting_id     bigint                    NOT NULL,
+  topic               text                      NOT NULL,
+  description         text                      NOT NULL DEFAULT '',
+  meeting_type        public.zoom_meeting_type  NOT NULL DEFAULT 'scheduled',
+  start_time          timestamptz               NULL,
+  duration            integer                   NOT NULL DEFAULT 60,
+  timezone            text                      NOT NULL DEFAULT 'UTC',
+  join_url            text                      NULL,
+  start_url           text                      NULL,
+  password            text                      NULL,
+  recurrence_type     public.zoom_recurrence_type NOT NULL DEFAULT 'none',
+  recurrence_interval integer                   NULL,
+  recurrence_days     text                      NULL,
+  waiting_room        boolean                   NOT NULL DEFAULT true,
+  mute_on_entry       boolean                   NOT NULL DEFAULT true,
+  continuous_chat     boolean                   NOT NULL DEFAULT false,
+  created_by          uuid                      NOT NULL REFERENCES public.users(id),
+  created_at          timestamptz               NOT NULL DEFAULT now(),
+  updated_at          timestamptz               NOT NULL DEFAULT now(),
+  UNIQUE (workspace_id, zoom_meeting_id)
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_zoom_connections_workspace_id
+  ON public.zoom_connections (workspace_id);
+
+CREATE INDEX IF NOT EXISTS idx_zoom_meetings_workspace_id
+  ON public.zoom_meetings (workspace_id);
+
+CREATE INDEX IF NOT EXISTS idx_zoom_meetings_start_time
+  ON public.zoom_meetings (start_time);
+
+-- Triggers
+CREATE TRIGGER set_zoom_connections_updated_at
+  BEFORE UPDATE ON public.zoom_connections
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TRIGGER set_zoom_meetings_updated_at
+  BEFORE UPDATE ON public.zoom_meetings
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- RLS
+ALTER TABLE public.zoom_connections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.zoom_meetings ENABLE ROW LEVEL SECURITY;
+
+-- zoom_connections (admin-only for connect/disconnect) --------
+
+DROP POLICY IF EXISTS "zoom_connections_select" ON public.zoom_connections;
+CREATE POLICY "zoom_connections_select" ON public.zoom_connections
+  FOR SELECT TO authenticated
+  USING (
+    private.is_workspace_member(workspace_id)
+    AND private.current_user_can('can_read')
+  );
+
+DROP POLICY IF EXISTS "zoom_connections_insert" ON public.zoom_connections;
+CREATE POLICY "zoom_connections_insert" ON public.zoom_connections
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    private.is_workspace_member(workspace_id)
+    AND private.current_user_can('can_manage_roles')
+  );
+
+DROP POLICY IF EXISTS "zoom_connections_update" ON public.zoom_connections;
+CREATE POLICY "zoom_connections_update" ON public.zoom_connections
+  FOR UPDATE TO authenticated
+  USING (
+    private.is_workspace_member(workspace_id)
+    AND private.current_user_can('can_update')
+  )
+  WITH CHECK (
+    private.is_workspace_member(workspace_id)
+    AND private.current_user_can('can_update')
+  );
+
+DROP POLICY IF EXISTS "zoom_connections_delete" ON public.zoom_connections;
+CREATE POLICY "zoom_connections_delete" ON public.zoom_connections
+  FOR DELETE TO authenticated
+  USING (
+    private.is_workspace_member(workspace_id)
+    AND private.current_user_can('can_manage_roles')
+  );
+
+-- zoom_meetings (standard CRUD pattern) ----------------------
+
+DROP POLICY IF EXISTS "zoom_meetings_select" ON public.zoom_meetings;
+CREATE POLICY "zoom_meetings_select" ON public.zoom_meetings
+  FOR SELECT TO authenticated
+  USING (
+    private.is_workspace_member(workspace_id)
+    AND private.current_user_can('can_read')
+  );
+
+DROP POLICY IF EXISTS "zoom_meetings_insert" ON public.zoom_meetings;
+CREATE POLICY "zoom_meetings_insert" ON public.zoom_meetings
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    private.is_workspace_member(workspace_id)
+    AND private.current_user_can('can_create')
+  );
+
+DROP POLICY IF EXISTS "zoom_meetings_update" ON public.zoom_meetings;
+CREATE POLICY "zoom_meetings_update" ON public.zoom_meetings
+  FOR UPDATE TO authenticated
+  USING (
+    private.is_workspace_member(workspace_id)
+    AND private.current_user_can('can_update')
+  )
+  WITH CHECK (
+    private.is_workspace_member(workspace_id)
+    AND private.current_user_can('can_update')
+  );
+
+DROP POLICY IF EXISTS "zoom_meetings_delete" ON public.zoom_meetings;
+CREATE POLICY "zoom_meetings_delete" ON public.zoom_meetings
+  FOR DELETE TO authenticated
+  USING (
+    private.is_workspace_member(workspace_id)
+    AND private.current_user_can('can_delete')
+  );

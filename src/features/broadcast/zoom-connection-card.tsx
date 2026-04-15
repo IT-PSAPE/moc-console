@@ -1,44 +1,44 @@
 import { useAuth } from "@/lib/auth-context"
 import { useBroadcast } from "./broadcast-provider"
-import { useYouTubeOAuth } from "./use-youtube-oauth"
-import { disconnectYouTube } from "@/data/mutate-streams"
+import { useZoomOAuth } from "./use-zoom-oauth"
+import { disconnectZoom } from "@/data/mutate-zoom"
 import { useFeedback } from "@/components/feedback/feedback-provider"
 import { getErrorMessage } from "@/utils/get-error-message"
 import { IntegrationCard } from "./integration-card"
 import { Video } from "lucide-react"
 import { useCallback, useState } from "react"
 
-export function YouTubeConnectionCard() {
+export function ZoomConnectionCard() {
   const { role } = useAuth()
   const { toast } = useFeedback()
   const {
-    state: { youtubeConnection, isLoadingConnection },
-    actions: { setYouTubeConnection },
+    state: { zoomConnection, isLoadingZoomConnection },
+    actions: { setZoomConnection },
   } = useBroadcast()
-  const { startOAuthFlow } = useYouTubeOAuth()
+  const { startOAuthFlow } = useZoomOAuth()
   const [isDisconnecting, setIsDisconnecting] = useState(false)
 
   const handleDisconnect = useCallback(async () => {
     setIsDisconnecting(true)
     try {
-      await disconnectYouTube()
-      setYouTubeConnection(null)
-      toast({ title: "YouTube disconnected", variant: "success" })
+      await disconnectZoom()
+      setZoomConnection(null)
+      toast({ title: "Zoom disconnected", variant: "success" })
     } catch (error) {
-      toast({ title: "Failed to disconnect YouTube", description: getErrorMessage(error, "The YouTube connection could not be removed."), variant: "error" })
+      toast({ title: "Failed to disconnect Zoom", description: getErrorMessage(error, "The Zoom connection could not be removed."), variant: "error" })
     } finally {
       setIsDisconnecting(false)
     }
-  }, [setYouTubeConnection, toast])
+  }, [setZoomConnection, toast])
 
   return (
     <IntegrationCard
-      icon={<Video className="size-5 text-utility-red-700" />}
-      name="YouTube"
-      description="Live streams"
-      isLoading={isLoadingConnection}
-      isConnected={Boolean(youtubeConnection)}
-      accountLabel={youtubeConnection?.channelTitle ?? null}
+      icon={<Video className="size-5 text-utility-blue-700" />}
+      name="Zoom"
+      description="Meetings"
+      isLoading={isLoadingZoomConnection}
+      isConnected={Boolean(zoomConnection)}
+      accountLabel={zoomConnection?.displayName ?? null}
       canManage={role?.can_manage_roles === true}
       onConnect={startOAuthFlow}
       onDisconnect={handleDisconnect}

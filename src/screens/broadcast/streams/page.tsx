@@ -10,13 +10,21 @@ import { useAuth } from "@/lib/auth-context"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { useStreamFilters } from "@/features/broadcast/use-stream-filters"
 import { useYouTubeOAuth } from "@/features/broadcast/use-youtube-oauth"
+import { useZoomOAuth } from "@/features/broadcast/use-zoom-oauth"
 import { YouTubeConnectionCard } from "@/features/broadcast/youtube-connection-card"
+import { ZoomConnectionCard } from "@/features/broadcast/zoom-connection-card"
 import { StreamListItem } from "@/features/broadcast/stream-list-item"
 import { StreamModal } from "@/features/broadcast/stream-modal"
 import type { StreamFormData } from "@/features/broadcast/stream-modal"
 import { StreamDetailDrawer } from "@/features/broadcast/stream-detail-drawer"
+import { MeetingListItem } from "@/features/broadcast/meeting-list-item"
+import { MeetingModal } from "@/features/broadcast/meeting-modal"
+import { MeetingDetailDrawer } from "@/features/broadcast/meeting-detail-drawer"
 import { createStream, updateStream, deleteStream, syncStreamsFromYouTube } from "@/data/mutate-streams"
+import { createZoomMeeting, updateZoomMeeting, deleteZoomMeeting, syncZoomMeetings } from "@/data/mutate-zoom"
+import type { CreateMeetingParams } from "@/data/mutate-zoom"
 import type { Stream } from "@/types/broadcast/stream"
+import type { ZoomMeeting } from "@/types/broadcast/zoom"
 import { getErrorMessage } from "@/utils/get-error-message"
 import { Plus, RefreshCw, Search } from "lucide-react"
 
@@ -24,37 +32,76 @@ export function StreamsScreen() {
   const { role } = useAuth()
   const { toast } = useFeedback()
   const {
-    state: { streams, youtubeConnection, isLoadingStreams, isLoadingConnection },
-    actions: { loadStreams, loadYouTubeConnection, syncStream, removeStream, setStreams },
+    state: {
+      streams, youtubeConnection, isLoadingStreams,
+      zoomConnection, zoomMeetings, isLoadingZoomMeetings,
+    },
+    actions: {
+      loadStreams, loadYouTubeConnection, syncStream, removeStream, setStreams,
+      loadZoomConnection, loadZoomMeetings, syncMeeting, removeMeeting, setZoomMeetings,
+    },
   } = useBroadcast()
 
-  const { handleOAuthCallback } = useYouTubeOAuth()
-  const { filtered, setSearch, filters } = useStreamFilters(streams)
+  const { handleOAuthCallback: handleYouTubeCallback } = useYouTubeOAuth()
+  const { handleOAuthCallback: handleZoomCallback } = useZoomOAuth()
+  const { filtered: filteredStreams, setSearch: setStreamSearch, filters: streamFilters } = useStreamFilters(streams)
 
-  const [modalOpen, setModalOpen] = useState(false)
+  // ─── YouTube state ─────────────────────────────────────
+  const [streamModalOpen, setStreamModalOpen] = useState(false)
   const [editingStream, setEditingStream] = useState<Stream | null>(null)
   const [drawerStream, setDrawerStream] = useState<Stream | null>(null)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [isSyncing, setIsSyncing] = useState(false)
+  const [streamDrawerOpen, setStreamDrawerOpen] = useState(false)
+  const [isSyncingStreams, setIsSyncingStreams] = useState(false)
 
-  const isConnected = Boolean(youtubeConnection)
+  // ─── Zoom state ────────────────────────────────────────
+  const [meetingModalOpen, setMeetingModalOpen] = useState(false)
+  const [editingMeeting, setEditingMeeting] = useState<ZoomMeeting | null>(null)
+  const [drawerMeeting, setDrawerMeeting] = useState<ZoomMeeting | null>(null)
+  const [meetingDrawerOpen, setMeetingDrawerOpen] = useState(false)
+  const [isSyncingMeetings, setIsSyncingMeetings] = useState(false)
+  const [meetingSearch, setMeetingSearch] = useState("")
+
+  const isYouTubeConnected = Boolean(youtubeConnection)
+  const isZoomConnected = Boolean(zoomConnection)
   const canCreate = role?.can_create === true
 
-  // Load data on mount + handle OAuth callback if returning from Google
+  // Filter meetings
+  const filteredMeetings = meetingSearch
+    ? zoomMeetings.filter((m) => m.topic.toLowerCase().includes(meetingSearch.toLowerCase()))
+    : zoomMeetings
+
+  // ─── Init: load data + handle OAuth callbacks ──────────
   useEffect(() => {
     async function init() {
-      const result = await handleOAuthCallback()
-      if (result.connected) {
+      const [ytResult, zoomResult] = await Promise.all([
+        handleYouTubeCallback(),
+        handleZoomCallback(),
+      ])
+
+      if (ytResult.connected) {
         toast({ title: "YouTube connected successfully", variant: "success" })
-      } else if (result.error) {
-        toast({ title: "Failed to connect YouTube", description: result.error, variant: "error" })
+      } else if (ytResult.error) {
+        toast({ title: "Failed to connect YouTube", description: ytResult.error, variant: "error" })
       }
-      // Always load fresh data (callback may have just stored a new connection)
-      await loadYouTubeConnection()
+
+      if (zoomResult.connected) {
+        toast({ title: "Zoom connected successfully", variant: "success" })
+      } else if (zoomResult.error) {
+        toast({ title: "Failed to connect Zoom", description: zoomResult.error, variant: "error" })
+      }
+
+      await Promise.all([
+        loadYouTubeConnection(),
+        loadZoomConnection(),
+      ])
+
       loadStreams()
+      loadZoomMeetings()
     }
     init()
-  }, [handleOAuthCallback, loadYouTubeConnection, loadStreams, toast])
+  }, [handleYouTubeCallback, handleZoomCallback, loadYouTubeConnection, loadZoomConnection, loadStreams, loadZoomMeetings, toast])
+
+  // ─── YouTube handlers ──────────────────────────────────
 
   const handleCreateStream = useCallback(
     async (params: StreamFormData) => {
@@ -97,7 +144,7 @@ export function StreamsScreen() {
       try {
         await deleteStream(stream)
         removeStream(stream.id)
-        setDrawerOpen(false)
+        setStreamDrawerOpen(false)
         toast({ title: "Stream deleted", variant: "success" })
       } catch (error) {
         toast({ title: "Failed to delete stream", description: getErrorMessage(error, "The stream could not be deleted."), variant: "error" })
@@ -106,8 +153,8 @@ export function StreamsScreen() {
     [removeStream, toast],
   )
 
-  const handleSync = useCallback(async () => {
-    setIsSyncing(true)
+  const handleSyncStreams = useCallback(async () => {
+    setIsSyncingStreams(true)
     try {
       const synced = await syncStreamsFromYouTube()
       setStreams(synced)
@@ -115,20 +162,72 @@ export function StreamsScreen() {
     } catch (error) {
       toast({ title: "Failed to sync streams", description: getErrorMessage(error, "Streams could not be synced from YouTube."), variant: "error" })
     } finally {
-      setIsSyncing(false)
+      setIsSyncingStreams(false)
     }
   }, [setStreams, toast])
 
-  const handleStreamClick = useCallback((stream: Stream) => {
-    setDrawerStream(stream)
-    setDrawerOpen(true)
-  }, [])
+  // ─── Zoom handlers ────────────────────────────────────
 
-  const handleEditFromDrawer = useCallback((stream: Stream) => {
-    setDrawerOpen(false)
-    setEditingStream(stream)
-    setModalOpen(true)
-  }, [])
+  const handleCreateMeeting = useCallback(
+    async (params: CreateMeetingParams) => {
+      try {
+        const newMeeting = await createZoomMeeting(params)
+        syncMeeting(newMeeting)
+        toast({ title: "Meeting scheduled", variant: "success" })
+      } catch (error) {
+        const message = getErrorMessage(error, "The meeting could not be scheduled.")
+        toast({ title: "Failed to schedule meeting", description: message, variant: "error" })
+        throw new Error(message)
+      }
+    },
+    [syncMeeting, toast],
+  )
+
+  const handleUpdateMeeting = useCallback(
+    async (params: CreateMeetingParams) => {
+      if (!editingMeeting) return
+      try {
+        const updated = await updateZoomMeeting({ ...editingMeeting, ...params })
+        syncMeeting(updated)
+        setEditingMeeting(null)
+        toast({ title: "Meeting updated", variant: "success" })
+      } catch (error) {
+        const message = getErrorMessage(error, "The meeting could not be updated.")
+        toast({ title: "Failed to update meeting", description: message, variant: "error" })
+        throw new Error(message)
+      }
+    },
+    [editingMeeting, syncMeeting, toast],
+  )
+
+  const handleDeleteMeeting = useCallback(
+    async (meeting: ZoomMeeting) => {
+      try {
+        await deleteZoomMeeting(meeting)
+        removeMeeting(meeting.id)
+        setMeetingDrawerOpen(false)
+        toast({ title: "Meeting deleted", variant: "success" })
+      } catch (error) {
+        toast({ title: "Failed to delete meeting", description: getErrorMessage(error, "The meeting could not be deleted."), variant: "error" })
+      }
+    },
+    [removeMeeting, toast],
+  )
+
+  const handleSyncMeetings = useCallback(async () => {
+    setIsSyncingMeetings(true)
+    try {
+      const synced = await syncZoomMeetings()
+      setZoomMeetings(synced)
+      toast({ title: "Meetings synced from Zoom", variant: "success" })
+    } catch (error) {
+      toast({ title: "Failed to sync meetings", description: getErrorMessage(error, "Meetings could not be synced from Zoom."), variant: "error" })
+    } finally {
+      setIsSyncingMeetings(false)
+    }
+  }, [setZoomMeetings, toast])
+
+  // ─── Render ────────────────────────────────────────────
 
   return (
     <section>
@@ -136,96 +235,160 @@ export function StreamsScreen() {
         <Header.Lead className="gap-2">
           <Title.h6>Streams</Title.h6>
           <Paragraph.sm className="text-tertiary max-w-2xl">
-            Manage your YouTube live streams. Connect your YouTube account to create and schedule broadcasts.
+            Manage your live streams and scheduled meetings. Connect YouTube and Zoom to get started.
           </Paragraph.sm>
         </Header.Lead>
       </Header.Root>
 
       <div className="flex flex-col gap-4 p-4 pt-0 mx-auto w-full max-w-content">
-        {/* YouTube connection status */}
-        {!isLoadingConnection && !isConnected && <YouTubeConnectionCard />}
+        {/* Connection cards — side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <YouTubeConnectionCard />
+          <ZoomConnectionCard />
+        </div>
 
-        {/* Connection info when connected */}
-        {isConnected && <YouTubeConnectionCard />}
-
-        {/* Streams list */}
-        <Card.Root>
-          <Card.Header className="gap-2 justify-between">
-            <Label.sm>Streams</Label.sm>
-            <div className="flex gap-1 items-center shrink-0">
-              <Input
-                icon={<Search />}
-                placeholder="Search streams..."
-                value={filters.search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              {isConnected && (
-                <>
-                  <Button.Icon
-                    variant="secondary"
-                    icon={<RefreshCw className={isSyncing ? "animate-spin" : ""} />}
-                    onClick={handleSync}
-                    disabled={isSyncing}
-                  />
-                  {canCreate && (
+        {/* Content cards — side by side */}
+        <div className="space-y-4">
+          {/* YouTube Streams */}
+          <Card.Root>
+            <Card.Header className="gap-2 justify-between">
+              <Label.sm>YouTube Streams</Label.sm>
+              <div className="flex gap-1 items-center shrink-0">
+                <Input
+                  icon={<Search />}
+                  placeholder="Search..."
+                  value={streamFilters.search}
+                  onChange={(e) => setStreamSearch(e.target.value)}
+                />
+                {isYouTubeConnected && (
+                  <>
                     <Button.Icon
                       variant="secondary"
-                      icon={<Plus />}
-                      onClick={() => {
-                        setEditingStream(null)
-                        setModalOpen(true)
-                      }}
+                      icon={<RefreshCw className={isSyncingStreams ? "animate-spin" : ""} />}
+                      onClick={handleSyncStreams}
+                      disabled={isSyncingStreams}
                     />
-                  )}
-                </>
+                    {canCreate && (
+                      <Button.Icon
+                        variant="secondary"
+                        icon={<Plus />}
+                        onClick={() => { setEditingStream(null); setStreamModalOpen(true) }}
+                      />
+                    )}
+                  </>
+                )}
+              </div>
+            </Card.Header>
+            <Card.Content ghost className="flex flex-col gap-1">
+              {isLoadingStreams ? (
+                <div className="flex justify-center py-12"><Spinner /></div>
+              ) : !isYouTubeConnected ? (
+                <div className="flex items-center justify-center py-12">
+                  <Paragraph.sm className="text-tertiary">Connect YouTube to view streams.</Paragraph.sm>
+                </div>
+              ) : filteredStreams.length === 0 ? (
+                <div className="flex items-center justify-center py-12">
+                  <Paragraph.sm className="text-tertiary">
+                    {streamFilters.search ? "No streams match your search." : "No streams yet."}
+                  </Paragraph.sm>
+                </div>
+              ) : (
+                filteredStreams.map((stream) => (
+                  <StreamListItem
+                    key={stream.id}
+                    stream={stream}
+                    onClick={() => { setDrawerStream(stream); setStreamDrawerOpen(true) }}
+                  />
+                ))
               )}
-            </div>
-          </Card.Header>
-          <Card.Content ghost className="flex flex-col gap-1">
-            {isLoadingStreams ? (
-              <div className="flex justify-center py-12">
-                <Spinner />
-              </div>
-            ) : !isConnected ? (
-              <div className="flex items-center justify-center py-12">
-                <Paragraph.sm className="text-tertiary">
-                  Connect YouTube to view and manage streams.
-                </Paragraph.sm>
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <Paragraph.sm className="text-tertiary">
-                  {filters.search ? "No streams match your search." : "No streams yet. Create your first stream to get started."}
-                </Paragraph.sm>
-              </div>
-            ) : (
-              filtered.map((stream) => (
-                <StreamListItem
-                  key={stream.id}
-                  stream={stream}
-                  onClick={() => handleStreamClick(stream)}
+            </Card.Content>
+          </Card.Root>
+
+          {/* Zoom Meetings */}
+          <Card.Root>
+            <Card.Header className="gap-2 justify-between">
+              <Label.sm>Zoom Meetings</Label.sm>
+              <div className="flex gap-1 items-center shrink-0">
+                <Input
+                  icon={<Search />}
+                  placeholder="Search..."
+                  value={meetingSearch}
+                  onChange={(e) => setMeetingSearch(e.target.value)}
                 />
-              ))
-            )}
-          </Card.Content>
-        </Card.Root>
+                {isZoomConnected && (
+                  <>
+                    <Button.Icon
+                      variant="secondary"
+                      icon={<RefreshCw className={isSyncingMeetings ? "animate-spin" : ""} />}
+                      onClick={handleSyncMeetings}
+                      disabled={isSyncingMeetings}
+                    />
+                    {canCreate && (
+                      <Button.Icon
+                        variant="secondary"
+                        icon={<Plus />}
+                        onClick={() => { setEditingMeeting(null); setMeetingModalOpen(true) }}
+                      />
+                    )}
+                  </>
+                )}
+              </div>
+            </Card.Header>
+            <Card.Content ghost className="flex flex-col gap-1">
+              {isLoadingZoomMeetings ? (
+                <div className="flex justify-center py-12"><Spinner /></div>
+              ) : !isZoomConnected ? (
+                <div className="flex items-center justify-center py-12">
+                  <Paragraph.sm className="text-tertiary">Connect Zoom to view meetings.</Paragraph.sm>
+                </div>
+              ) : filteredMeetings.length === 0 ? (
+                <div className="flex items-center justify-center py-12">
+                  <Paragraph.sm className="text-tertiary">
+                    {meetingSearch ? "No meetings match your search." : "No meetings scheduled."}
+                  </Paragraph.sm>
+                </div>
+              ) : (
+                filteredMeetings.map((meeting) => (
+                  <MeetingListItem
+                    key={meeting.id}
+                    meeting={meeting}
+                    onClick={() => { setDrawerMeeting(meeting); setMeetingDrawerOpen(true) }}
+                  />
+                ))
+              )}
+            </Card.Content>
+          </Card.Root>
+        </div>
       </div>
 
-      {/* Create / Edit modal */}
+      {/* YouTube modals/drawers */}
       <StreamModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
+        open={streamModalOpen}
+        onOpenChange={setStreamModalOpen}
         onSubmit={editingStream ? handleUpdateStream : handleCreateStream}
         stream={editingStream}
       />
-
-      {/* Detail drawer */}
       <StreamDetailDrawer
         stream={drawerStream}
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        onEdit={handleEditFromDrawer}
+        open={streamDrawerOpen}
+        onOpenChange={setStreamDrawerOpen}
+        onEdit={(s) => { setStreamDrawerOpen(false); setEditingStream(s); setStreamModalOpen(true) }}
         onDelete={handleDeleteStream}
+      />
+
+      {/* Zoom modals/drawers */}
+      <MeetingModal
+        open={meetingModalOpen}
+        onOpenChange={setMeetingModalOpen}
+        onSubmit={editingMeeting ? handleUpdateMeeting : handleCreateMeeting}
+        meeting={editingMeeting}
+      />
+      <MeetingDetailDrawer
+        meeting={drawerMeeting}
+        open={meetingDrawerOpen}
+        onOpenChange={setMeetingDrawerOpen}
+        onEdit={(m) => { setMeetingDrawerOpen(false); setEditingMeeting(m); setMeetingModalOpen(true) }}
+        onDelete={handleDeleteMeeting}
       />
     </section>
   )

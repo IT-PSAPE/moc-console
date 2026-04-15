@@ -39,8 +39,48 @@ function interceptYouTubeOAuthRedirect() {
   window.history.replaceState({}, "", cleanUrl.toString())
 }
 
-// Intercept Google OAuth redirects before Supabase tries to exchange the code as PKCE.
-// Google includes `scope`, `authuser`, and `prompt` alongside the YouTube OAuth code.
+const zoomOAuthCodeKey = "zoom_oauth_code"
+const zoomOAuthErrorKey = "zoom_oauth_error"
+const zoomOAuthPendingKey = "zoom_oauth_pending"
+
+function interceptZoomOAuthRedirect() {
+  const params = new URLSearchParams(window.location.search)
+  const isPending = sessionStorage.getItem(zoomOAuthPendingKey) === "true"
+
+  if (!isPending) return
+
+  const code = params.get("code")
+  const error = params.get("error")
+
+  if (!code && !error) return
+
+  // Clear the pending flag
+  sessionStorage.removeItem(zoomOAuthPendingKey)
+
+  if (code) {
+    sessionStorage.setItem(zoomOAuthCodeKey, code)
+    sessionStorage.removeItem(zoomOAuthErrorKey)
+  }
+
+  if (error) {
+    const description = params.get("error_description")
+    const message = description ? `${error}: ${description}` : (error ?? "Zoom OAuth was rejected")
+    sessionStorage.setItem(zoomOAuthErrorKey, message)
+    sessionStorage.removeItem(zoomOAuthCodeKey)
+  }
+
+  const cleanUrl = new URL(window.location.href)
+  cleanUrl.searchParams.delete("code")
+  cleanUrl.searchParams.delete("error")
+  cleanUrl.searchParams.delete("error_description")
+  cleanUrl.searchParams.delete("state")
+  window.history.replaceState({}, "", cleanUrl.toString())
+}
+
+// Intercept OAuth redirects before Supabase tries to exchange the code as PKCE.
+// Zoom: detected via a pending flag set before redirect.
+// Google/YouTube: detected by the presence of `scope` param.
+interceptZoomOAuthRedirect()
 interceptYouTubeOAuthRedirect()
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
