@@ -19,6 +19,13 @@ export function useZoomOAuth() {
       response_type: "code",
       client_id: ZOOM_CLIENT_ID,
       redirect_uri: REDIRECT_URI,
+      scope: [
+        "meeting:read:meeting",
+        "meeting:read:list_meetings",
+        "meeting:write:meeting",
+        "meeting:delete:meeting",
+        "user:read:user",
+      ].join(" "),
     })
 
     window.location.href = `https://zoom.us/oauth/authorize?${params}`

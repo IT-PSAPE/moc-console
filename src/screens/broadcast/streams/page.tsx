@@ -5,10 +5,14 @@ import { Button } from "@/components/controls/button"
 import { Input } from "@/components/form/input"
 import { Label, Paragraph, Title } from "@/components/display/text"
 import { Spinner } from "@/components/feedback/spinner"
+import { Drawer } from "@/components/overlays/drawer"
 import { useFeedback } from "@/components/feedback/feedback-provider"
 import { useAuth } from "@/lib/auth-context"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { useStreamFilters } from "@/features/broadcast/use-stream-filters"
+import { useZoomMeetingFilters } from "@/features/broadcast/use-zoom-meeting-filters"
+import { StreamFilterDrawer } from "@/features/broadcast/stream-filter-drawer"
+import { ZoomMeetingFilterDrawer } from "@/features/broadcast/zoom-meeting-filter-drawer"
 import { useYouTubeOAuth } from "@/features/broadcast/use-youtube-oauth"
 import { useZoomOAuth } from "@/features/broadcast/use-zoom-oauth"
 import { YouTubeConnectionCard } from "@/features/broadcast/youtube-connection-card"
@@ -26,7 +30,7 @@ import type { CreateMeetingParams } from "@/data/mutate-zoom"
 import type { Stream } from "@/types/broadcast/stream"
 import type { ZoomMeeting } from "@/types/broadcast/zoom"
 import { getErrorMessage } from "@/utils/get-error-message"
-import { Plus, RefreshCw, Search } from "lucide-react"
+import { Plus, RefreshCw, Search, Settings2 } from "lucide-react"
 
 export function StreamsScreen() {
   const { role } = useAuth()
@@ -44,7 +48,9 @@ export function StreamsScreen() {
 
   const { handleOAuthCallback: handleYouTubeCallback } = useYouTubeOAuth()
   const { handleOAuthCallback: handleZoomCallback } = useZoomOAuth()
-  const { filtered: filteredStreams, setSearch: setStreamSearch, filters: streamFilters } = useStreamFilters(streams)
+
+  const streamFilters = useStreamFilters(streams)
+  const meetingFilters = useZoomMeetingFilters(zoomMeetings)
 
   // ─── YouTube state ─────────────────────────────────────
   const [streamModalOpen, setStreamModalOpen] = useState(false)
@@ -59,16 +65,10 @@ export function StreamsScreen() {
   const [drawerMeeting, setDrawerMeeting] = useState<ZoomMeeting | null>(null)
   const [meetingDrawerOpen, setMeetingDrawerOpen] = useState(false)
   const [isSyncingMeetings, setIsSyncingMeetings] = useState(false)
-  const [meetingSearch, setMeetingSearch] = useState("")
 
   const isYouTubeConnected = Boolean(youtubeConnection)
   const isZoomConnected = Boolean(zoomConnection)
   const canCreate = role?.can_create === true
-
-  // Filter meetings
-  const filteredMeetings = meetingSearch
-    ? zoomMeetings.filter((m) => m.topic.toLowerCase().includes(meetingSearch.toLowerCase()))
-    : zoomMeetings
 
   // ─── Init: load data + handle OAuth callbacks ──────────
   useEffect(() => {
@@ -247,7 +247,7 @@ export function StreamsScreen() {
           <ZoomConnectionCard />
         </div>
 
-        {/* Content cards — side by side */}
+        {/* Content cards */}
         <div className="space-y-4">
           {/* YouTube Streams */}
           <Card.Root>
@@ -257,9 +257,18 @@ export function StreamsScreen() {
                 <Input
                   icon={<Search />}
                   placeholder="Search..."
-                  value={streamFilters.search}
-                  onChange={(e) => setStreamSearch(e.target.value)}
+                  value={streamFilters.filters.search}
+                  onChange={(e) => streamFilters.setSearch(e.target.value)}
                 />
+                <Drawer.Root>
+                  <Drawer.Trigger>
+                    <Button.Icon
+                      variant={streamFilters.hasActiveFilters ? "primary" : "secondary"}
+                      icon={<Settings2 />}
+                    />
+                  </Drawer.Trigger>
+                  <StreamFilterDrawer filters={streamFilters} />
+                </Drawer.Root>
                 {isYouTubeConnected && (
                   <>
                     <Button.Icon
@@ -286,14 +295,16 @@ export function StreamsScreen() {
                 <div className="flex items-center justify-center py-12">
                   <Paragraph.sm className="text-tertiary">Connect YouTube to view streams.</Paragraph.sm>
                 </div>
-              ) : filteredStreams.length === 0 ? (
+              ) : streamFilters.filtered.length === 0 ? (
                 <div className="flex items-center justify-center py-12">
                   <Paragraph.sm className="text-tertiary">
-                    {streamFilters.search ? "No streams match your search." : "No streams yet."}
+                    {streamFilters.filters.search || streamFilters.hasActiveFilters
+                      ? "No streams match your filters."
+                      : "No streams yet."}
                   </Paragraph.sm>
                 </div>
               ) : (
-                filteredStreams.map((stream) => (
+                streamFilters.filtered.map((stream) => (
                   <StreamListItem
                     key={stream.id}
                     stream={stream}
@@ -312,9 +323,18 @@ export function StreamsScreen() {
                 <Input
                   icon={<Search />}
                   placeholder="Search..."
-                  value={meetingSearch}
-                  onChange={(e) => setMeetingSearch(e.target.value)}
+                  value={meetingFilters.filters.search}
+                  onChange={(e) => meetingFilters.setSearch(e.target.value)}
                 />
+                <Drawer.Root>
+                  <Drawer.Trigger>
+                    <Button.Icon
+                      variant={meetingFilters.hasActiveFilters ? "primary" : "secondary"}
+                      icon={<Settings2 />}
+                    />
+                  </Drawer.Trigger>
+                  <ZoomMeetingFilterDrawer filters={meetingFilters} />
+                </Drawer.Root>
                 {isZoomConnected && (
                   <>
                     <Button.Icon
@@ -341,14 +361,16 @@ export function StreamsScreen() {
                 <div className="flex items-center justify-center py-12">
                   <Paragraph.sm className="text-tertiary">Connect Zoom to view meetings.</Paragraph.sm>
                 </div>
-              ) : filteredMeetings.length === 0 ? (
+              ) : meetingFilters.filtered.length === 0 ? (
                 <div className="flex items-center justify-center py-12">
                   <Paragraph.sm className="text-tertiary">
-                    {meetingSearch ? "No meetings match your search." : "No meetings scheduled."}
+                    {meetingFilters.filters.search || meetingFilters.hasActiveFilters
+                      ? "No meetings match your filters."
+                      : "No meetings scheduled."}
                   </Paragraph.sm>
                 </div>
               ) : (
-                filteredMeetings.map((meeting) => (
+                meetingFilters.filtered.map((meeting) => (
                   <MeetingListItem
                     key={meeting.id}
                     meeting={meeting}
