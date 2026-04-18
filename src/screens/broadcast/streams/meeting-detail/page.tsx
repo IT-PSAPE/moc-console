@@ -22,23 +22,7 @@ import type { ZoomMeeting } from "@/types/broadcast/zoom"
 import { formatUtcIsoInTimezone } from "@/utils/zoned-date-time"
 import { getErrorMessage } from "@/utils/get-error-message"
 import { Modal } from "@/components/overlays/modal"
-import {
-  Calendar,
-  Check,
-  Clock,
-  Copy,
-  ExternalLink,
-  Globe,
-  Key,
-  MessageCircle,
-  Mic,
-  Pencil,
-  Repeat,
-  ShieldCheck,
-  Trash2,
-  TriangleAlert,
-  Video,
-} from "lucide-react"
+import { Calendar, Check, Clock, Copy, ExternalLink, Globe, Key, MessageCircle, Mic, Pencil, Repeat, ShieldCheck, Trash2, TriangleAlert, Video} from "lucide-react"
 
 function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} minutes`
@@ -163,9 +147,6 @@ export function MeetingDetailScreen() {
           <div className="flex items-center gap-2 flex-wrap">
             <Title.h5>{meeting.topic}</Title.h5>
             <Badge label={isPast ? "Past" : "Upcoming"} color={isPast ? "gray" : "green"} />
-            {meeting.recurrenceType !== "none" && (
-              <Badge label={zoomRecurrenceLabel[meeting.recurrenceType]} color="blue" />
-            )}
           </div>
           {meeting.description && (
             <Paragraph.sm className="text-tertiary">{meeting.description}</Paragraph.sm>

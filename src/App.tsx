@@ -39,6 +39,10 @@ import { LoginScreen } from './screens/auth/login'
 import { SignupScreen } from './screens/auth/signup'
 import { ResetPasswordScreen } from './screens/auth/reset-password'
 import { PasswordRecoveryScreen } from './screens/auth/password-recovery'
+import { PrivacyPolicyScreen } from './screens/public/privacy'
+import { TermsOfUseScreen } from './screens/public/terms'
+import { SupportScreen } from './screens/public/support'
+import { ZoomDocsScreen } from './screens/public/zoom-docs'
 
 function RequireAuth() {
     const { session, loading } = useAuth()
@@ -92,6 +96,12 @@ const router = createBrowserRouter([
     { path: routes.signup, element: <RedirectIfAuth><SignupScreen /></RedirectIfAuth> },
     { path: routes.resetPassword, element: <RedirectIfAuth><ResetPasswordScreen /></RedirectIfAuth> },
     { path: routes.passwordRecovery, element: <PasswordRecoveryScreen /> },
+
+    // Public pages — no auth required
+    { path: routes.privacy, element: <PrivacyPolicyScreen /> },
+    { path: routes.terms, element: <TermsOfUseScreen /> },
+    { path: routes.support, element: <SupportScreen /> },
+    { path: routes.zoomDocs, element: <ZoomDocsScreen /> },
 
     // Protected app routes
     {

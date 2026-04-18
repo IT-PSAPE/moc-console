@@ -17,37 +17,12 @@ import { StreamModal } from "@/features/broadcast/stream-modal"
 import type { StreamFormData } from "@/features/broadcast/stream-modal"
 import { updateStream, deleteStream } from "@/data/mutate-streams"
 import { fetchStreamById } from "@/data/fetch-streams"
-import {
-  streamStatusColor,
-  streamStatusLabel,
-  streamPrivacyLabel,
-  latencyPreferenceLabel,
-} from "@/types/broadcast/stream-constants"
+import { streamStatusColor, streamStatusLabel, streamPrivacyLabel, latencyPreferenceLabel } from "@/types/broadcast/stream-constants"
 import type { Stream } from "@/types/broadcast/stream"
 import { formatUtcIsoInTimezone } from "@/utils/zoned-date-time"
 import { getErrorMessage } from "@/utils/get-error-message"
 import { Modal } from "@/components/overlays/modal"
-import {
-  Calendar,
-  Check,
-  Code,
-  Copy,
-  ExternalLink,
-  Eye,
-  Gauge,
-  Key,
-  ListVideo,
-  Loader,
-  Monitor,
-  Pencil,
-  Play,
-  Radio,
-  Shield,
-  Square,
-  Tag,
-  Trash2,
-  TriangleAlert,
-} from "lucide-react"
+import { Calendar, Check, Code, Copy, ExternalLink, Eye, Gauge, Key, ListVideo, Loader, Monitor, Pencil, Play, Radio, Shield, Square, Tag, Trash2, TriangleAlert} from "lucide-react"
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return "Not set"
@@ -178,13 +153,7 @@ export function StreamDetailScreen() {
       {/* Header */}
       <Header.Root className="px-4 pt-8">
         <Header.Lead className="gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
             <Title.h5>{stream.title}</Title.h5>
-            <Badge
-              label={streamStatusLabel[stream.streamStatus]}
-              color={streamStatusColor[stream.streamStatus]}
-            />
-          </div>
           {stream.description && (
             <Paragraph.sm className="text-tertiary">{stream.description}</Paragraph.sm>
           )}
