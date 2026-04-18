@@ -118,8 +118,8 @@ export function EquipmentInventoryScreen() {
       <div className="flex flex-col gap-4 p-4 mx-auto w-full max-w-content">
         <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
           <Card.Root>
-            <Card.Header className="gap-2 flex-1 justify-end">
-              <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-sm" value={state.search} onChange={(e) => setSearch(e.target.value)} />
+            <Card.Header className="gap-2 flex-1 justify-end max-mobile:flex-wrap">
+              <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-sm max-mobile:flex-[1_1_100%]" value={state.search} onChange={(e) => setSearch(e.target.value)} />
               <Drawer.Root>
                 <Drawer.Trigger>
                   <Button icon={<Settings2 />} variant="secondary">Filter</Button>

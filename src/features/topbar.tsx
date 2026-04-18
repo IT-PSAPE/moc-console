@@ -53,7 +53,7 @@ export function TopBar({ children }: HTMLAttributes<HTMLDivElement>) {
             <button
                 type="button"
                 onClick={handleClick}
-                className="size-8 flex items-center justify-center rounded-md hover:bg-[var(--background-color-secondary_hover)] text-[var(--text-color-secondary)] cursor-pointer"
+                className="size-11 flex items-center justify-center rounded-md hover:bg-[var(--background-color-secondary_hover)] active:bg-[var(--background-color-secondary_hover)] text-[var(--text-color-secondary)] cursor-pointer"
                 aria-label={label}
             >
                 <Icon className="size-5" />

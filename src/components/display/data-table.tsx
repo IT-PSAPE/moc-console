@@ -36,6 +36,7 @@ export function DataTable<T extends Record<string, unknown>>({
   }
 
   return (
+    <div className="overflow-x-auto">
     <Table className={cn("w-full", className)}>
       <Table.ColGroup>
         {columns.map((col) => (
@@ -103,5 +104,6 @@ export function DataTable<T extends Record<string, unknown>>({
         )}
       </Table.Body>
     </Table>
+    </div>
   );
 }

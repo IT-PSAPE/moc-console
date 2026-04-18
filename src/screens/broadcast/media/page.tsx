@@ -61,7 +61,7 @@ export function BroadcastMediaScreen() {
         </Header.Lead>
       </Header.Root>
 
-      <div className="flex-1 min-h-0 flex gap-2 p-4 pt-0 mx-auto w-full max-w-content">
+      <div className="flex-1 min-h-0 flex gap-2 p-4 pt-0 mx-auto w-full max-w-content max-mobile:flex-col">
         {/* Left panel — media list in a Card */}
         <Card.Root className="w-100 shrink-0 flex flex-col max-mobile:w-full overflow-hidden">
           <Card.Header className="gap-2 justify-between">

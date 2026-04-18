@@ -91,7 +91,7 @@ const menuItemVarients = cv({
     variants: {
         state: {
             active: ['bg-brand_primary text-brand_secondary hover:bg-brand_secondary'],
-            inactive: ['bg-transparent text-color-secondary hover:bg-secondary'],
+            inactive: ['bg-transparent text-color-secondary hover:bg-secondary active:bg-secondary'],
         },
         isCollapsed: {
             true: ['px-1'],
