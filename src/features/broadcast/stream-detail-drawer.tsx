@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Drawer } from "@/components/overlays/drawer"
 import { Button } from "@/components/controls/button"
 import { Badge } from "@/components/display/badge"
@@ -6,6 +7,7 @@ import { Label, Paragraph, Title } from "@/components/display/text"
 import { Divider } from "@/components/display/divider"
 import { MetaRow } from "@/components/display/meta-row"
 import { useAuth } from "@/lib/auth-context"
+import { routes } from "@/screens/console-routes"
 import { streamStatusColor, streamStatusLabel, streamPrivacyLabel } from "@/types/broadcast/stream-constants"
 import type { Stream } from "@/types/broadcast/stream"
 import { latencyPreferenceLabel } from "@/types/broadcast/stream-constants"
@@ -21,6 +23,7 @@ import {
   Key,
   ListVideo,
   Loader,
+  Maximize2,
   Monitor,
   Pencil,
   Play,
@@ -46,6 +49,7 @@ function formatDateTime(iso: string | null): string {
 
 export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelete }: StreamDetailDrawerProps) {
   const { role } = useAuth()
+  const navigate = useNavigate()
   const [copiedField, setCopiedField] = useState<string | null>(null)
 
   const canEdit = role?.can_update === true && stream?.streamStatus === "created"
@@ -58,6 +62,12 @@ export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelet
     setTimeout(() => setCopiedField(null), 2000)
   }, [])
 
+  const handleOpenFullPage = useCallback(() => {
+    if (!stream) return
+    onOpenChange(false)
+    navigate(`/${routes.broadcastStreamDetail.replace(":id", stream.id)}`)
+  }, [stream, navigate, onOpenChange])
+
   if (!stream) return null
 
   return (
@@ -67,6 +77,7 @@ export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelet
         <Drawer.Panel className="!max-w-lg">
           <Drawer.Header className="flex items-center gap-1">
             <Button.Icon variant="ghost" icon={<X />} onClick={() => onOpenChange(false)} />
+            <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={handleOpenFullPage} />
             <div className="flex-1" />
             {canEdit && (
               <Button.Icon

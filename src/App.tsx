@@ -8,6 +8,8 @@ import { BroadcastOverviewScreen } from '@/screens/broadcast/page'
 import { PlaylistScreen } from '@/screens/broadcast/playlist/page'
 import { PlaylistDetailScreen } from '@/screens/broadcast/detail/page'
 import { StreamsScreen } from '@/screens/broadcast/streams/page'
+import { StreamDetailScreen } from '@/screens/broadcast/streams/stream-detail/page'
+import { MeetingDetailScreen } from '@/screens/broadcast/streams/meeting-detail/page'
 import { CueSheetEventScreen } from '@/screens/cue-sheet/events/page'
 import { CueSheetEventDetailScreen } from '@/screens/cue-sheet/events/detail/page'
 import { CueSheetOverviewScreen } from '@/screens/cue-sheet/page'
@@ -37,6 +39,10 @@ import { LoginScreen } from './screens/auth/login'
 import { SignupScreen } from './screens/auth/signup'
 import { ResetPasswordScreen } from './screens/auth/reset-password'
 import { PasswordRecoveryScreen } from './screens/auth/password-recovery'
+import { PrivacyPolicyScreen } from './screens/public/privacy'
+import { TermsOfUseScreen } from './screens/public/terms'
+import { SupportScreen } from './screens/public/support'
+import { ZoomDocsScreen } from './screens/public/zoom-docs'
 
 function RequireAuth() {
     const { session, loading } = useAuth()
@@ -91,6 +97,12 @@ const router = createBrowserRouter([
     { path: routes.resetPassword, element: <RedirectIfAuth><ResetPasswordScreen /></RedirectIfAuth> },
     { path: routes.passwordRecovery, element: <PasswordRecoveryScreen /> },
 
+    // Public pages — no auth required
+    { path: routes.privacy, element: <PrivacyPolicyScreen /> },
+    { path: routes.terms, element: <TermsOfUseScreen /> },
+    { path: routes.support, element: <SupportScreen /> },
+    { path: routes.zoomDocs, element: <ZoomDocsScreen /> },
+
     // Protected app routes
     {
         element: <RequireAuth />,
@@ -125,6 +137,8 @@ const router = createBrowserRouter([
                     { path: routes.broadcastPlaylists, element: <PlaylistScreen /> },
                     { path: routes.broadcastPlaylistDetail, element: <PlaylistDetailScreen /> },
                     { path: routes.broadcastStreams, element: <StreamsScreen /> },
+                    { path: routes.broadcastStreamDetail, element: <StreamDetailScreen /> },
+                    { path: routes.broadcastMeetingDetail, element: <MeetingDetailScreen /> },
                 ],
             },
             {
