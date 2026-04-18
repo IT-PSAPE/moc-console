@@ -27,27 +27,27 @@ const buttonVariants = cv({
         variant: {
             primary: [
                 "border-transparent bg-brand_solid text-primary_on-brand",
-                "hover:bg-brand_solid-hover",
+                "hover:bg-brand_solid-hover active:bg-brand_solid-hover",
                 "disabled:border-disabled disabled:bg-disabled disabled:text-disable",
             ],
             secondary: [
                 "border-secondary bg-primary text-secondary",
-                "hover:bg-primary_hover",
+                "hover:bg-primary_hover active:bg-primary_hover",
                 "disabled:border-disabled disabled:bg-disabled disabled:text-disable",
             ],
             ghost: [
                 "border-transparent bg-transparent text-secondary",
-                "hover:bg-primary_hover",
+                "hover:bg-primary_hover active:bg-primary_hover",
                 "disabled:text-disable",
             ],
             danger: [
                 "border-error bg-error_solid text-white",
-                "hover:border-error hover:bg-error_solid-hover",
+                "hover:border-error hover:bg-error_solid-hover active:bg-error_solid-hover",
                 "disabled:border-disabled disabled:bg-disabled disabled:text-disable",
             ],
             "danger-secondary": [
                 "border-secondary bg-primary text-secondary hover:text-white",
-                "hover:border-error hover:bg-error_solid-hover",
+                "hover:border-error hover:bg-error_solid-hover active:bg-error_solid-hover",
                 "disabled:border-disabled disabled:bg-disabled disabled:text-disable",
             ],
         },

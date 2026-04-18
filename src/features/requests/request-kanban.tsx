@@ -119,11 +119,13 @@ export function RequestKanban({ requests }: { requests: Request[] }) {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
         >
-            <div className="flex gap-3 p-4 pt-0 mx-auto w-full max-w-content *:flex-1 *:min-w-sm">
-                {statusGroups.map((group) => {
-                    const items = requests.filter((r) => r.status === group.key);
-                    return <DroppableColumn key={group.key} group={group} items={items} />;
-                })}
+            <div className="overflow-x-auto w-full">
+                <div className="flex gap-3 p-4 pt-0 mx-auto w-full max-w-content *:flex-1 *:min-w-sm">
+                    {statusGroups.map((group) => {
+                        const items = requests.filter((r) => r.status === group.key);
+                        return <DroppableColumn key={group.key} group={group} items={items} />;
+                    })}
+                </div>
             </div>
 
             <DragOverlay>

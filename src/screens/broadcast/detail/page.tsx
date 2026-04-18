@@ -457,9 +457,9 @@ export function PlaylistDetailScreen() {
         <Divider className="px-4 my-2" />
 
         {/* Queue section — media left, cues right */}
-        <div className="flex-1 min-h-0 flex gap-2 p-4 pt-2 mx-auto w-full max-w-content">
+        <div className="flex-1 min-h-0 flex gap-2 p-4 pt-2 mx-auto w-full max-w-content max-mobile:flex-col">
           {/* Left panel — media library (draggable items) */}
-          <div ref={mediaPanelRef} className="w-80 shrink-0 flex flex-col overflow-hidden">
+          <div ref={mediaPanelRef} className="w-80 shrink-0 flex flex-col overflow-hidden max-mobile:w-full max-mobile:shrink max-mobile:h-64">
             <Card.Root className="flex-1 flex flex-col overflow-hidden">
               <Card.Header className="gap-2 justify-between">
                 <Label.sm>Media</Label.sm>
@@ -480,7 +480,7 @@ export function PlaylistDetailScreen() {
           </div>
 
           {/* Right panel — cue queue + playback settings */}
-          <div className="flex-1 min-w-0 flex flex-col gap-2 overflow-hidden">
+          <div className="flex-1 min-w-0 flex flex-col gap-2 overflow-hidden max-mobile:min-h-0">
             <Card.Root className="flex-1 min-h-0 flex flex-col overflow-hidden">
               <Card.Header className="gap-2 justify-between">
                 <div className="flex items-center gap-2">

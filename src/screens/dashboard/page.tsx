@@ -124,12 +124,12 @@ export function DashboardScreen() {
 
                     {/* Summary cards */}
                     <div className='grid grid-cols-2 gap-4 p-4 pt-8 mx-auto w-full max-w-content md:grid-cols-4 max-mobile:gap-2'>
-                        <Card.Root className="cursor-pointer hover:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.requestsOverview}`)}>
+                        <Card.Root className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.requestsOverview}`)}>
                             <Card.Header className='gap-1.5'>
                                 <Activity className='size-4' />
                                 <Label.sm>Active Requests</Label.sm>
                             </Card.Header>
-                            <Card.Content className='p-4 flex items-end justify-between'>
+                            <Card.Content className='h-full p-4 flex items-end justify-between gap-1 flex-wrap'>
                                 <TextBlock className='title-h4'>{activeRequestCount}</TextBlock>
                                 {overdueRequests.length > 0 && (
                                     <Badge label={`${overdueRequests.length} overdue`} color="red" />
@@ -137,12 +137,12 @@ export function DashboardScreen() {
                             </Card.Content>
                         </Card.Root>
 
-                        <Card.Root className="cursor-pointer hover:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.equipmentOverview}`)}>
+                        <Card.Root className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.equipmentOverview}`)}>
                             <Card.Header className='gap-1.5'>
                                 <Package className='size-4' />
                                 <Label.sm>Equipment</Label.sm>
                             </Card.Header>
-                            <Card.Content className='p-4 flex items-end justify-between'>
+                            <Card.Content className='h-full p-4 flex items-end justify-between gap-1 flex-wrap'>
                                 <TextBlock className='title-h4'>{equipment.length}</TextBlock>
                                 {(overdueBookings > 0 || maintenanceCount > 0) && (
                                     <div className="flex gap-1">
@@ -153,23 +153,23 @@ export function DashboardScreen() {
                             </Card.Content>
                         </Card.Root>
 
-                        <Card.Root className="cursor-pointer hover:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.broadcastOverview}`)}>
+                        <Card.Root className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.broadcastOverview}`)}>
                             <Card.Header className='gap-1.5'>
                                 <Film className='size-4' />
                                 <Label.sm>Media Library</Label.sm>
                             </Card.Header>
-                            <Card.Content className='p-4 flex items-end justify-between'>
+                            <Card.Content className='h-full p-4 flex items-end justify-between gap-1 flex-wrap'>
                                 <TextBlock className='title-h4'>{media.length}</TextBlock>
                                 <Badge label={`${playlists.length} playlists`} />
                             </Card.Content>
                         </Card.Root>
 
-                        <Card.Root className="cursor-pointer hover:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.cueSheetOverview}`)}>
+                        <Card.Root className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.cueSheetOverview}`)}>
                             <Card.Header className='gap-1.5'>
                                 <CalendarClock className='size-4' />
                                 <Label.sm>Upcoming Events</Label.sm>
                             </Card.Header>
-                            <Card.Content className='p-4 flex items-end justify-between'>
+                            <Card.Content className='h-full p-4 flex items-end justify-between gap-1 flex-wrap'>
                                 <TextBlock className='title-h4'>{upcomingEvents.length}</TextBlock>
                                 {pendingChecklists.length > 0 && (
                                     <Badge label={`${pendingChecklists.length} checklists`} color="blue" />
@@ -204,7 +204,7 @@ export function DashboardScreen() {
                             </Card.Content>
                             {overdueRequests.length > 4 && (
                                 <button
-                                    className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 border-t border-border-tertiary hover:bg-background-primary-hover transition-colors"
+                                    className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 border-t border-border-tertiary hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors"
                                     onClick={() => navigate(`/${routes.requestsOverview}`)}
                                 >
                                     <Paragraph.xs className="text-tertiary">View more</Paragraph.xs>
@@ -237,7 +237,7 @@ export function DashboardScreen() {
                             </Card.Content>
                             {upcomingRequests.length > 4 && (
                                 <button
-                                    className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 border-t border-border-tertiary hover:bg-background-primary-hover transition-colors"
+                                    className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 border-t border-border-tertiary hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors"
                                     onClick={() => navigate(`/${routes.requestsOverview}`)}
                                 >
                                     <Paragraph.xs className="text-tertiary">View more</Paragraph.xs>
@@ -262,7 +262,7 @@ export function DashboardScreen() {
                                     upcomingEvents.slice(0, 4).map((event) => (
                                         <button
                                             key={event.id}
-                                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-background-primary-hover transition-colors text-left"
+                                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors text-left"
                                             onClick={() => navigate(`/${routes.cueSheetEvents}/${event.id}`)}
                                         >
                                             <div>
@@ -287,7 +287,7 @@ export function DashboardScreen() {
                                 )}
                                 {upcomingEvents.length > 4 && (
                                     <button
-                                        className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 hover:bg-background-primary-hover transition-colors border-t border-border-tertiary"
+                                        className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors border-t border-border-tertiary"
                                         onClick={() => navigate(`/${routes.cueSheetOverview}`)}
                                     >
                                         <Paragraph.xs className="text-tertiary">View more</Paragraph.xs>
@@ -313,7 +313,7 @@ export function DashboardScreen() {
                                     pendingChecklists.slice(0, 4).map((checklist) => (
                                         <button
                                             key={checklist.id}
-                                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-background-primary-hover transition-colors text-left"
+                                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors text-left"
                                             onClick={() => navigate(`/${routes.cueSheetChecklists}/${checklist.id}`)}
                                         >
                                             <div>
@@ -338,7 +338,7 @@ export function DashboardScreen() {
                                 )}
                                 {pendingChecklists.length > 4 && (
                                     <button
-                                        className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 hover:bg-background-primary-hover transition-colors border-t border-border-tertiary"
+                                        className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors border-t border-border-tertiary"
                                         onClick={() => navigate(`/${routes.cueSheetChecklists}`)}
                                     >
                                         <Paragraph.xs className="text-tertiary">View more</Paragraph.xs>
@@ -364,7 +364,7 @@ export function DashboardScreen() {
                                     playlists.slice(0, 4).map((playlist) => (
                                         <button
                                             key={playlist.id}
-                                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-background-primary-hover transition-colors text-left"
+                                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors text-left"
                                             onClick={() => navigate(`/${routes.broadcastPlaylists}/${playlist.id}`)}
                                         >
                                             <div>
@@ -387,7 +387,7 @@ export function DashboardScreen() {
                                 )}
                                 {playlists.length > 4 && (
                                     <button
-                                        className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 hover:bg-background-primary-hover transition-colors border-t border-border-tertiary"
+                                        className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors border-t border-border-tertiary"
                                         onClick={() => navigate(`/${routes.broadcastPlaylists}`)}
                                     >
                                         <Paragraph.xs className="text-tertiary">View more</Paragraph.xs>

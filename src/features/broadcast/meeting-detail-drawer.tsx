@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Drawer } from "@/components/overlays/drawer"
 import { Button } from "@/components/controls/button"
 import { Badge } from "@/components/display/badge"
@@ -6,6 +7,7 @@ import { Label, Paragraph, Title } from "@/components/display/text"
 import { Divider } from "@/components/display/divider"
 import { MetaRow } from "@/components/display/meta-row"
 import { useAuth } from "@/lib/auth-context"
+import { routes } from "@/screens/console-routes"
 import { zoomRecurrenceLabel } from "@/types/broadcast/zoom-constants"
 import type { ZoomMeeting } from "@/types/broadcast/zoom"
 import { formatUtcIsoInTimezone } from "@/utils/zoned-date-time"
@@ -17,6 +19,7 @@ import {
   ExternalLink,
   Globe,
   Key,
+  Maximize2,
   MessageCircle,
   Mic,
   Pencil,
@@ -43,6 +46,7 @@ function formatDuration(minutes: number): string {
 
 export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDelete }: MeetingDetailDrawerProps) {
   const { role } = useAuth()
+  const navigate = useNavigate()
   const [copiedField, setCopiedField] = useState<string | null>(null)
 
   const canEdit = role?.can_update === true
@@ -53,6 +57,12 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
     setCopiedField(field)
     setTimeout(() => setCopiedField(null), 2000)
   }, [])
+
+  const handleOpenFullPage = useCallback(() => {
+    if (!meeting) return
+    onOpenChange(false)
+    navigate(`/${routes.broadcastMeetingDetail.replace(":id", meeting.id)}`)
+  }, [meeting, navigate, onOpenChange])
 
   if (!meeting) return null
 
@@ -65,6 +75,7 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
         <Drawer.Panel className="!max-w-lg">
           <Drawer.Header className="flex items-center gap-1">
             <Button.Icon variant="ghost" icon={<X />} onClick={() => onOpenChange(false)} />
+            <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={handleOpenFullPage} />
             <div className="flex-1" />
             {canEdit && (
               <Button.Icon variant="ghost" icon={<Pencil />} onClick={() => onEdit?.(meeting)} />

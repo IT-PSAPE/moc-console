@@ -35,7 +35,7 @@ export function RequestsAllRequestsScreen() {
                 </Header.Lead>
             </Header.Root>
 
-            <Header.Root className='p-4 pt-8 mx-auto max-w-content'>
+            <Header.Root className='p-4 pt-8 mx-auto max-w-content max-mobile:flex-col max-mobile:gap-2 *:max-mobile:w-full'>
                 <Header.Lead className='gap-2'>
                     <SegmentedControl.Root defaultValue="list" onValueChange={(value) => setView(value)}>
                         <SegmentedControl.Item value="list" icon={<List />}>List</SegmentedControl.Item>
