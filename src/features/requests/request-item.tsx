@@ -54,7 +54,8 @@ export function RequestItem({ request, vertical, onDrawerOpenChange }: { request
                 <div className={cn(itemVariants({ vertical: vertical ? 'true' : 'false' }), 'cursor-pointer hover:bg-background-primary-hover transition-colors')}>
                     <div>
                         <Label.sm>{request.title}</Label.sm>
-                        <Paragraph.sm className="text-tertiary">{request.what}</Paragraph.sm>
+                        <Paragraph.sm className="text-tertiary line-clamp-2
+                        ">{request.what}</Paragraph.sm>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                         <Badge
