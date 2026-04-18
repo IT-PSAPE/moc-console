@@ -19,6 +19,8 @@ export const routes = {
     broadcastPlaylists: 'broadcast/playlists',
     broadcastPlaylistDetail: 'broadcast/playlists/:id',
     broadcastStreams: 'broadcast/streams',
+    broadcastStreamDetail: 'broadcast/streams/stream/:id',
+    broadcastMeetingDetail: 'broadcast/streams/meeting/:id',
     cueSheetOverview: 'cue-sheet',
     cueSheetEvents: 'cue-sheet/events',
     cueSheetEventDetail: 'cue-sheet/events/:id',

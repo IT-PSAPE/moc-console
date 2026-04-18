@@ -129,7 +129,7 @@ export function DashboardScreen() {
                                 <Activity className='size-4' />
                                 <Label.sm>Active Requests</Label.sm>
                             </Card.Header>
-                            <Card.Content className='p-4 flex items-end justify-between'>
+                            <Card.Content className='h-full p-4 flex items-end justify-between gap-1 flex-wrap'>
                                 <TextBlock className='title-h4'>{activeRequestCount}</TextBlock>
                                 {overdueRequests.length > 0 && (
                                     <Badge label={`${overdueRequests.length} overdue`} color="red" />
@@ -142,7 +142,7 @@ export function DashboardScreen() {
                                 <Package className='size-4' />
                                 <Label.sm>Equipment</Label.sm>
                             </Card.Header>
-                            <Card.Content className='p-4 flex items-end justify-between'>
+                            <Card.Content className='h-full p-4 flex items-end justify-between gap-1 flex-wrap'>
                                 <TextBlock className='title-h4'>{equipment.length}</TextBlock>
                                 {(overdueBookings > 0 || maintenanceCount > 0) && (
                                     <div className="flex gap-1">
@@ -158,7 +158,7 @@ export function DashboardScreen() {
                                 <Film className='size-4' />
                                 <Label.sm>Media Library</Label.sm>
                             </Card.Header>
-                            <Card.Content className='p-4 flex items-end justify-between'>
+                            <Card.Content className='h-full p-4 flex items-end justify-between gap-1 flex-wrap'>
                                 <TextBlock className='title-h4'>{media.length}</TextBlock>
                                 <Badge label={`${playlists.length} playlists`} />
                             </Card.Content>
@@ -169,7 +169,7 @@ export function DashboardScreen() {
                                 <CalendarClock className='size-4' />
                                 <Label.sm>Upcoming Events</Label.sm>
                             </Card.Header>
-                            <Card.Content className='p-4 flex items-end justify-between'>
+                            <Card.Content className='h-full p-4 flex items-end justify-between gap-1 flex-wrap'>
                                 <TextBlock className='title-h4'>{upcomingEvents.length}</TextBlock>
                                 {pendingChecklists.length > 0 && (
                                     <Badge label={`${pendingChecklists.length} checklists`} color="blue" />

@@ -9,7 +9,7 @@ import { Label, Paragraph, Title } from "@/components/display/text"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { useMediaFilters } from "@/features/broadcast/use-media-filters"
 import { MediaListItem } from "@/features/broadcast/media-list-item"
-import { MediaPreview } from "@/features/broadcast/media-preview"
+import { MediaDetailDrawer } from "@/features/broadcast/media-detail-drawer"
 import { UploadMediaModal } from "@/features/broadcast/upload-media-modal"
 import type { MediaItem } from "@/types/broadcast"
 import type { MediaType } from "@/types/broadcast"
@@ -61,9 +61,8 @@ export function BroadcastMediaScreen() {
         </Header.Lead>
       </Header.Root>
 
-      <div className="flex-1 min-h-0 flex gap-2 p-4 pt-0 mx-auto w-full max-w-content max-mobile:flex-col">
-        {/* Left panel — media list in a Card */}
-        <Card.Root className="w-100 shrink-0 flex flex-col max-mobile:w-full overflow-hidden">
+      <div className="flex-1 min-h-0 flex p-4 pt-0 mx-auto w-full max-w-content">
+        <Card.Root className="flex-1 flex flex-col overflow-hidden">
           <Card.Header className="gap-2 justify-between">
             <Label.sm>Library</Label.sm>
             <div className="flex gap-1 items-center">
@@ -104,14 +103,13 @@ export function BroadcastMediaScreen() {
             </div>
           </Card.Content>
         </Card.Root>
-
-        {/* Right panel — preview */}
-        <Card.Root className="flex-1 min-w-0 flex flex-col max-mobile:hidden overflow-hidden">
-          <Card.Content className="flex-1 flex flex-col min-h-0">
-            <MediaPreview item={selectedItem} />
-          </Card.Content>
-        </Card.Root>
       </div>
+
+      <MediaDetailDrawer
+        item={selectedItem}
+        open={selectedItem !== null}
+        onOpenChange={(open) => { if (!open) setSelectedItem(null) }}
+      />
 
       <UploadMediaModal
         open={uploadOpen}
