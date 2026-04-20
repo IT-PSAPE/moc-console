@@ -4,6 +4,7 @@ import { defineConfig, loadEnv } from 'vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
+import { VitePWA } from 'vite-plugin-pwa'
 import { proxyZoomApiRequest } from './server/zoom-api'
 import { exchangeZoomCode, refreshZoomToken, resolveZoomOAuthConfig, revokeZoomAccessToken } from './server/zoom-oauth'
 
@@ -164,6 +165,39 @@ export default defineConfig(({ mode }) => {
       react(),
       babel({ presets: [reactCompilerPreset()] }),
       tailwindcss(),
+      VitePWA({
+        registerType: 'prompt',
+        includeAssets: ['favicon.svg', 'logo.svg', 'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png'],
+        manifest: {
+          name: 'MOC Console',
+          short_name: 'MOC Console',
+          description: 'Production operations console for broadcast teams — streams, meetings, cues, requests.',
+          start_url: '/',
+          scope: '/',
+          display: 'standalone',
+          orientation: 'any',
+          theme_color: '#E33483',
+          background_color: '#ffffff',
+          icons: [
+            { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+            { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+            { src: '/logo.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          ],
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,svg,png,ico,webp,woff,woff2}'],
+          // Don't precache source maps or dev artifacts; skip large preload chunks.
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          // Exclude API calls + Supabase + Zoom/YouTube endpoints from the SPA
+          // navigation fallback; they must always hit the network.
+          navigateFallback: '/index.html',
+          navigateFallbackDenylist: [/^\/api\//, /^\/auth\//],
+          cleanupOutdatedCaches: true,
+        },
+        devOptions: {
+          enabled: false,
+        },
+      }),
     ],
     resolve: {
       alias: aliasEntries,
