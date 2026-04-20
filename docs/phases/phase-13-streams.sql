@@ -19,11 +19,15 @@ CREATE TYPE public.stream_status AS ENUM (
 -- ============================================================
 
 -- youtube_connections (workspace-level OAuth credentials)
+-- presets: optional JSON blob of default StreamModal settings (title, description, schedule,
+--          thumbnailUrl, privacy, category, tags, latency, advanced toggles) to pre-fill when
+--          creating a new stream. Single row per workspace, always overwritten on save.
 CREATE TABLE IF NOT EXISTS public.youtube_connections (
   id               uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id     uuid        NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
   channel_id       text        NOT NULL,
   channel_title    text        NOT NULL,
+  presets          jsonb       NULL,
   access_token     text        NOT NULL,
   refresh_token    text        NOT NULL,
   token_expires_at timestamptz NOT NULL,

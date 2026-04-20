@@ -125,8 +125,8 @@ export function StreamDetailScreen() {
     )
   }
 
-  const canEdit = role?.can_update === true && stream.streamStatus === "created"
-  const canDelete = role?.can_delete === true && stream.streamStatus === "created"
+  const canEdit = role?.can_update === true
+  const canDelete = role?.can_delete === true
   const canViewStreamKey = role?.can_create === true
 
   return (

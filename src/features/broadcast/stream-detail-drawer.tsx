@@ -52,8 +52,8 @@ export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelet
   const navigate = useNavigate()
   const [copiedField, setCopiedField] = useState<string | null>(null)
 
-  const canEdit = role?.can_update === true && stream?.streamStatus === "created"
-  const canDelete = role?.can_delete === true && stream?.streamStatus === "created"
+  const canEdit = role?.can_update === true
+  const canDelete = role?.can_delete === true
   const canViewStreamKey = role?.can_create === true
 
   const handleCopy = useCallback((text: string, field: string) => {

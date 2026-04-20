@@ -24,7 +24,7 @@ import { StreamDetailDrawer } from "@/features/broadcast/stream-detail-drawer"
 import { MeetingListItem } from "@/features/broadcast/meeting-list-item"
 import { MeetingModal } from "@/features/broadcast/meeting-modal"
 import { MeetingDetailDrawer } from "@/features/broadcast/meeting-detail-drawer"
-import { createStream, updateStream, deleteStream, syncStreamsFromYouTube } from "@/data/mutate-streams"
+import { createStream, updateStream, deleteStream, syncStreamsFromYouTube, saveStreamPreset } from "@/data/mutate-streams"
 import { createZoomMeeting, updateZoomMeeting, deleteZoomMeeting, syncZoomMeetings } from "@/data/mutate-zoom"
 import type { CreateMeetingParams } from "@/data/mutate-zoom"
 import type { Stream } from "@/types/broadcast/stream"
@@ -108,6 +108,28 @@ export function StreamsScreen() {
       try {
         const newStream = await createStream(params)
         syncStream(newStream)
+        if (params.savePreset) {
+          // Fire-and-forget: preset persistence shouldn't block the success toast
+          // or roll back a successful stream creation if the write fails.
+          // Use newStream.thumbnailUrl (the YouTube-hosted URL after upload) so file
+          // uploads are serializable; raw File objects can't live in JSONB.
+          saveStreamPreset({
+            title: params.title,
+            description: params.description,
+            scheduledStartTime: params.scheduledStartTime,
+            thumbnailUrl: newStream.thumbnailUrl,
+            privacyStatus: params.privacyStatus,
+            isForKids: params.isForKids,
+            categoryId: params.categoryId,
+            tags: params.tags,
+            latencyPreference: params.latencyPreference,
+            enableDvr: params.enableDvr,
+            enableEmbed: params.enableEmbed,
+            enableAutoStart: params.enableAutoStart,
+            enableAutoStop: params.enableAutoStop,
+            playlistId: params.playlistId,
+          }).catch(() => { /* non-fatal */ })
+        }
         toast({ title: "Stream created", variant: "success" })
       } catch (error) {
         const message = getErrorMessage(error, "The stream could not be created.")
@@ -389,6 +411,7 @@ export function StreamsScreen() {
         onOpenChange={setStreamModalOpen}
         onSubmit={editingStream ? handleUpdateStream : handleCreateStream}
         stream={editingStream}
+        preset={youtubeConnection?.presets ?? null}
       />
       <StreamDetailDrawer
         stream={drawerStream}

@@ -1,4 +1,4 @@
-import type { Stream, StreamPrivacy, LatencyPreference } from "@/types/broadcast/stream"
+import type { Stream, StreamPreset, StreamPrivacy, LatencyPreference } from "@/types/broadcast/stream"
 import { supabase } from "@/lib/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 import {
@@ -329,18 +329,24 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
     throw new Error("Not authenticated")
   }
 
-  // Fetch from YouTube
-  const response = await youtubeApiFetch(
-    "/liveBroadcasts?part=snippet,status,contentDetails&broadcastType=all&mine=true&maxResults=50",
-  )
+  // Fetch from YouTube, paginating through all pages
+  const broadcasts: any[] = []
+  let pageToken: string | undefined = undefined
+  do {
+    const pageParam = pageToken ? `&pageToken=${pageToken}` : ""
+    const response = await youtubeApiFetch(
+      `/liveBroadcasts?part=snippet,status,contentDetails&broadcastType=all&mine=true&maxResults=50${pageParam}`,
+    )
 
-  if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to fetch broadcasts: ${err}`)
-  }
+    if (!response.ok) {
+      const err = await response.text()
+      throw new Error(`Failed to fetch broadcasts: ${err}`)
+    }
 
-  const data = await response.json()
-  const broadcasts = data.items ?? []
+    const data = await response.json()
+    broadcasts.push(...(data.items ?? []))
+    pageToken = data.nextPageToken
+  } while (pageToken)
 
   // Map YouTube lifecycle status to our stream_status enum
   function mapLifecycleStatus(status: string): Stream["streamStatus"] {
@@ -389,6 +395,20 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
       .upsert(payload, { onConflict: "workspace_id,youtube_broadcast_id" })
   }
 
+  const remoteIds = broadcasts.map((b) => b.id).filter(Boolean)
+  let deleteQuery = supabase
+    .from("streams")
+    .delete()
+    .eq("workspace_id", workspaceId)
+  if (remoteIds.length > 0) {
+    const quoted = remoteIds.map((id) => `"${id}"`).join(",")
+    deleteQuery = deleteQuery.not("youtube_broadcast_id", "in", `(${quoted})`)
+  }
+  const { error: deleteError } = await deleteQuery
+  if (deleteError) {
+    throw new Error(deleteError.message)
+  }
+
   // Fetch all streams from local DB to return fresh data
   const { data: rows, error } = await supabase
     .from("streams")
@@ -429,6 +449,20 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }))
+}
+
+// Writes the workspace-level stream preset JSON onto youtube_connections.presets.
+// One row per workspace, always overwritten (no preset history).
+export async function saveStreamPreset(preset: StreamPreset): Promise<void> {
+  const workspaceId = await getCurrentWorkspaceId()
+  const { error } = await supabase
+    .from("youtube_connections")
+    .update({ presets: preset })
+    .eq("workspace_id", workspaceId)
+
+  if (error) {
+    throw new Error(error.message)
+  }
 }
 
 export async function disconnectYouTube(): Promise<void> {
