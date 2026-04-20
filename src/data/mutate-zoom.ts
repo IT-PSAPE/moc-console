@@ -234,15 +234,24 @@ export async function syncZoomMeetings(): Promise<ZoomMeeting[]> {
     throw new Error("Not authenticated")
   }
 
-  const response = await zoomApiFetch("/users/me/meetings?type=upcoming&page_size=100")
+  const [upcomingRes, previousRes] = await Promise.all([
+    zoomApiFetch("/users/me/meetings?type=upcoming&page_size=300"),
+    zoomApiFetch("/users/me/meetings?type=previous_meetings&page_size=300"),
+  ])
 
-  if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to fetch Zoom meetings: ${err}`)
+  if (!upcomingRes.ok) {
+    throw new Error(`Failed to fetch Zoom meetings: ${await upcomingRes.text()}`)
+  }
+  if (!previousRes.ok) {
+    throw new Error(`Failed to fetch Zoom meetings: ${await previousRes.text()}`)
   }
 
-  const data = await response.json()
-  const meetings = data.meetings ?? []
+  const upcomingData = await upcomingRes.json()
+  const previousData = await previousRes.json()
+  const byId = new Map<number, any>()
+  for (const m of upcomingData.meetings ?? []) byId.set(m.id, m)
+  for (const m of previousData.meetings ?? []) if (!byId.has(m.id)) byId.set(m.id, m)
+  const meetings = Array.from(byId.values())
 
   for (const m of meetings) {
     const payload = {
@@ -261,6 +270,19 @@ export async function syncZoomMeetings(): Promise<ZoomMeeting[]> {
     await supabase
       .from("zoom_meetings")
       .upsert(payload, { onConflict: "workspace_id,zoom_meeting_id" })
+  }
+
+  const remoteIds = Array.from(byId.keys())
+  let deleteQuery = supabase
+    .from("zoom_meetings")
+    .delete()
+    .eq("workspace_id", workspaceId)
+  if (remoteIds.length > 0) {
+    deleteQuery = deleteQuery.not("zoom_meeting_id", "in", `(${remoteIds.join(",")})`)
+  }
+  const { error: deleteError } = await deleteQuery
+  if (deleteError) {
+    throw new Error(deleteError.message)
   }
 
   const { data: rows, error } = await supabase

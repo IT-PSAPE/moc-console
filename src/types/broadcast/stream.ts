@@ -33,6 +33,26 @@ export type Stream = {
   updatedAt: string
 }
 
+// Default settings remembered for the workspace, applied when creating a new stream.
+// Thumbnails are stored as a URL (the YouTube-hosted thumbnailUrl of the stream that
+// was used to save the preset). Raw File uploads can't be serialized into JSONB.
+export type StreamPreset = {
+  title: string
+  description: string
+  scheduledStartTime: string | null
+  thumbnailUrl: string | null
+  privacyStatus: StreamPrivacy
+  isForKids: boolean
+  categoryId: string | null
+  tags: string[]
+  latencyPreference: LatencyPreference
+  enableDvr: boolean
+  enableEmbed: boolean
+  enableAutoStart: boolean
+  enableAutoStop: boolean
+  playlistId: string | null
+}
+
 export type YouTubeConnection = {
   id: string
   workspaceId: string
@@ -40,6 +60,7 @@ export type YouTubeConnection = {
   channelTitle: string
   connectedBy: string
   createdAt: string
+  presets: StreamPreset | null
 }
 
 export type YouTubeCategory = {

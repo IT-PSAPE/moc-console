@@ -102,6 +102,31 @@ export async function updatePlaylistCues(playlistId: string, cues: Cue[]): Promi
   return cues.map((cue, index) => ({ ...cue, order: index + 1 }));
 }
 
+// Uploads a file to the public `media` Supabase Storage bucket and returns
+// the resulting public URL. Objects are keyed by workspace_id/<uuid>.<ext>
+// so the originating workspace is recoverable from the path without leaking
+// anything sensitive (workspace_id is already known to all members).
+export async function uploadMediaFile(file: File): Promise<string> {
+  const workspaceId = await getCurrentWorkspaceId();
+  const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
+  const path = `${workspaceId}/${crypto.randomUUID()}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("media")
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type || undefined,
+    });
+
+  if (uploadError) {
+    throw new Error(uploadError.message);
+  }
+
+  const { data } = supabase.storage.from("media").getPublicUrl(path);
+  return data.publicUrl;
+}
+
 export async function createMediaItem(item: MediaItem): Promise<MediaItem> {
   const workspaceId = await getCurrentWorkspaceId();
   const payload = {

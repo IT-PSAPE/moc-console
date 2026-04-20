@@ -10,6 +10,7 @@ import { FileDropzone } from "@/components/form/file-dropzone"
 import { SegmentedControl } from "@/components/controls/segmented-control"
 import { mediaTypeLabel } from "@/types/broadcast/constants"
 import { getDefaultMediaDetails, inferMediaTypeFromSource } from "@/utils/media-source"
+import { uploadMediaFile } from "@/data/mutate-broadcast"
 import { Link } from "lucide-react"
 
 type UploadMediaModalProps = {
@@ -25,12 +26,16 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
   const [name, setName] = useState("")
   const [url, setUrl] = useState("")
   const [file, setFile] = useState<File | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const resetForm = useCallback(() => {
     setSourceMode("url")
     setName("")
     setUrl("")
     setFile(null)
+    setIsSubmitting(false)
+    setUploadError(null)
   }, [])
 
   const inferredMediaType = useMemo(() => {
@@ -41,7 +46,7 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
   }, [file, sourceMode, url])
 
   const hasSourceValue = sourceMode === "url" ? Boolean(url.trim()) : Boolean(file)
-  const canSubmit = Boolean(name.trim()) && hasSourceValue && Boolean(inferredMediaType)
+  const canSubmit = Boolean(name.trim()) && hasSourceValue && Boolean(inferredMediaType) && !isSubmitting
 
   function handleModalOpenChange(nextOpen: boolean) {
     onOpenChange(nextOpen)
@@ -67,22 +72,35 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
 
   async function handleSubmit() {
     if (!inferredMediaType) return
+    if (sourceMode === "upload" && !file) return
 
-    const trimmedName = name.trim()
-    const sourceUrl = sourceMode === "url" ? url.trim() : `/uploads/${file?.name ?? ""}`
-    const mediaDetails = getDefaultMediaDetails(inferredMediaType)
-    const newItem: MediaItem = {
-      id: crypto.randomUUID(),
-      name: trimmedName || "Untitled",
-      type: inferredMediaType,
-      url: sourceUrl,
-      thumbnail: mediaDetails.thumbnail,
-      duration: mediaDetails.duration,
-      createdAt: new Date().toISOString().split("T")[0],
+    setIsSubmitting(true)
+    setUploadError(null)
+    try {
+      const trimmedName = name.trim()
+      const sourceUrl =
+        sourceMode === "url"
+          ? url.trim()
+          : await uploadMediaFile(file as File)
+      const mediaDetails = getDefaultMediaDetails(inferredMediaType)
+      const newItem: MediaItem = {
+        id: crypto.randomUUID(),
+        name: trimmedName || "Untitled",
+        type: inferredMediaType,
+        url: sourceUrl,
+        thumbnail: mediaDetails.thumbnail,
+        duration: mediaDetails.duration,
+        createdAt: new Date().toISOString().split("T")[0],
+      }
+      await onSubmit(newItem)
+      resetForm()
+      onOpenChange(false)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Upload failed."
+      setUploadError(message)
+    } finally {
+      setIsSubmitting(false)
     }
-    await onSubmit(newItem)
-    resetForm()
-    onOpenChange(false)
   }
 
   function renderSourceStatus() {
@@ -149,16 +167,19 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
                     />
                   )}
                   {renderSourceStatus()}
+                  {uploadError && (
+                    <Paragraph.xs className="text-utility-red-700">{uploadError}</Paragraph.xs>
+                  )}
                 </div>
               </div>
             </Modal.Content>
 
             <Modal.Footer>
               <Button variant="primary" disabled={!canSubmit} onClick={handleSubmit}>
-                Add Media
+                {isSubmitting ? (sourceMode === "upload" ? "Uploading..." : "Adding...") : "Add Media"}
               </Button>
               <Modal.Close>
-                <Button variant="secondary">Cancel</Button>
+                <Button variant="secondary" disabled={isSubmitting}>Cancel</Button>
               </Modal.Close>
             </Modal.Footer>
           </Modal.Panel>
