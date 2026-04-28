@@ -1,11 +1,13 @@
 import { Label, Paragraph } from '@/components/display/text'
 import { Badge } from '@/components/display/badge'
+import { Drawer } from '@/components/overlays/drawer'
 import { cn } from '@/utils/cn'
 import { cv } from '@/utils/cv'
 import type { CueSheetEvent } from '@/types/cue-sheet'
 import { CalendarClock, Clock, Layers } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { useCueSheet } from './cue-sheet-provider'
+import { EventDrawer } from './event-drawer'
 import { formatUtcIsoInBrowserTimeZone } from '@/utils/browser-date-time'
 
 const itemVariants = cv({
@@ -29,30 +31,29 @@ function formatScheduledAt(scheduledAt?: string) {
 }
 
 export function EventItem({ event }: { event: CueSheetEvent }) {
-    const navigate = useNavigate()
+    const [open, setOpen] = useState(false)
     const { state: { tracksByEventId } } = useCueSheet()
     const trackCount = tracksByEventId[event.id]?.length ?? 0
     const scheduledAt = formatScheduledAt(event.scheduledAt)
 
     return (
-        <div
-            className={cn(itemVariants(), 'cursor-pointer hover:bg-background-primary-hover transition-colors')}
-            onClick={() => navigate(`/cue-sheet/events/${event.id}`)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/cue-sheet/events/${event.id}`) }}
-        >
-            <div>
-                <Label.sm>{event.title}</Label.sm>
-                <Paragraph.sm className="text-tertiary">{event.description}</Paragraph.sm>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-                {scheduledAt && <Badge label={scheduledAt} icon={<CalendarClock />} color="purple" />}
-                <Badge label={formatDuration(event.duration)} icon={<Clock />} variant="outline" />
-                {trackCount > 0 && (
-                    <Badge label={`${trackCount} track${trackCount !== 1 ? 's' : ''}`} icon={<Layers />} color="blue" />
-                )}
-            </div>
-        </div>
+        <Drawer.Root open={open} onOpenChange={setOpen}>
+            <Drawer.Trigger>
+                <div className={cn(itemVariants(), 'cursor-pointer hover:bg-background-primary-hover transition-colors')}>
+                    <div>
+                        <Label.sm>{event.title}</Label.sm>
+                        <Paragraph.sm className="text-tertiary">{event.description}</Paragraph.sm>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {scheduledAt && <Badge label={scheduledAt} icon={<CalendarClock />} color="purple" />}
+                        <Badge label={formatDuration(event.duration)} icon={<Clock />} variant="outline" />
+                        {trackCount > 0 && (
+                            <Badge label={`${trackCount} track${trackCount !== 1 ? 's' : ''}`} icon={<Layers />} color="blue" />
+                        )}
+                    </div>
+                </div>
+            </Drawer.Trigger>
+            <EventDrawer event={event} />
+        </Drawer.Root>
     )
 }

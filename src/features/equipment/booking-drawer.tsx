@@ -5,16 +5,19 @@ import { Button } from "@/components/controls/button";
 import { Paragraph, Title } from "@/components/display/text";
 import { MetaRow } from "@/components/display/meta-row";
 import { Input } from "@/components/form/input";
+import { Modal } from "@/components/overlays/modal";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { useBookingStore } from "./use-booking-store";
 import { useEquipment } from "./equipment-provider";
 import { useFeedback } from "@/components/feedback/feedback-provider";
+import { fetchEquipmentById } from "@/data/fetch-equipment";
+import { deleteBooking } from "@/data/mutate-booking";
 import {
   bookingStatusLabel,
   bookingStatusColor,
 } from "@/types/equipment";
 import type { Booking, BookingStatus } from "@/types/equipment";
-import { Calendar, Check, Clock, Loader, Package, StickyNote, User, X } from "lucide-react";
+import { Calendar, Check, Clock, Loader, Package, StickyNote, Trash2, User, X } from "lucide-react";
 import { useCallback, useEffect, useState, type RefObject } from "react";
 import { getErrorMessage } from "@/utils/get-error-message";
 import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@/utils/browser-date-time";
@@ -45,11 +48,13 @@ export function BookingDrawer({ booking, onBookingClose, isDirtyRef, requestClos
 }
 
 function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestCloseRef }: BookingDrawerProps) {
-  const { actions: drawerActions } = useDrawer();
-  const { toast } = useFeedback();
-  const { actions: { syncBooking } } = useEquipment();
+    const { actions: drawerActions } = useDrawer();
+    const { toast } = useFeedback();
+    const { actions: { syncBooking, syncEquipment, removeBooking } } = useEquipment();
 
-  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
   const store = useBookingStore(booking, { syncBooking });
 
@@ -84,16 +89,24 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
 
   const handleSave = useCallback(async () => {
     try {
-      await store.actions.save();
+      const savedBooking = await store.actions.save();
+      const refreshedEquipment = await fetchEquipmentById(savedBooking.equipmentId);
+      if (refreshedEquipment) {
+        syncEquipment(refreshedEquipment);
+      }
       toast({ title: "Booking saved", variant: "success" });
     } catch (error) {
       toast({ title: "Failed to save booking", description: getErrorMessage(error, "The booking could not be saved."), variant: "error" });
     }
-  }, [store.actions, toast]);
+  }, [store.actions, syncEquipment, toast]);
 
   async function handleModalSave() {
     try {
-      await store.actions.save();
+      const savedBooking = await store.actions.save();
+      const refreshedEquipment = await fetchEquipmentById(savedBooking.equipmentId);
+      if (refreshedEquipment) {
+        syncEquipment(refreshedEquipment);
+      }
       toast({ title: "Booking saved", variant: "success" });
       setShowUnsavedModal(false);
       closeDrawer();
@@ -112,6 +125,25 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
     setShowUnsavedModal(false);
   }
 
+  const handleDelete = useCallback(async () => {
+    setIsDeleting(true);
+    try {
+      await deleteBooking(booking.id);
+      removeBooking(booking.id);
+      const refreshedEquipment = await fetchEquipmentById(booking.equipmentId);
+      if (refreshedEquipment) {
+        syncEquipment(refreshedEquipment);
+      }
+      toast({ title: "Booking deleted", variant: "success" });
+      setDeleteOpen(false);
+      closeDrawer();
+    } catch (error) {
+      toast({ title: "Failed to delete booking", description: getErrorMessage(error, "The booking could not be deleted."), variant: "error" });
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [booking.equipmentId, booking.id, closeDrawer, removeBooking, syncEquipment, toast]);
+
   const draft = store.state.draft;
 
   return (
@@ -119,6 +151,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
       <Drawer.Header className="flex items-center gap-1">
         <Button.Icon variant="ghost" icon={<X />} onClick={handleClose} />
         <div className="flex-1" />
+        <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setDeleteOpen(true)} />
       </Drawer.Header>
 
       <Drawer.Content className="py-4">
@@ -238,6 +271,30 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         onCancel={handleModalCancel}
         isSaving={store.state.isSaving}
       />
+
+      <Modal.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <Modal.Portal>
+          <Modal.Backdrop />
+          <Modal.Positioner>
+            <Modal.Panel>
+              <Modal.Header>
+                <Title.h6>Delete Booking</Title.h6>
+              </Modal.Header>
+              <Modal.Content className="p-4">
+                <Paragraph.sm className="text-secondary">
+                  Are you sure you want to delete this booking? This action cannot be undone.
+                </Paragraph.sm>
+              </Modal.Content>
+              <Modal.Footer className="justify-end">
+                <Button variant="secondary" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+                <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
+                  {isDeleting ? "Deleting..." : "Delete Booking"}
+                </Button>
+              </Modal.Footer>
+            </Modal.Panel>
+          </Modal.Positioner>
+        </Modal.Portal>
+      </Modal.Root>
     </>
   );
 }

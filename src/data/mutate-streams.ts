@@ -33,6 +33,101 @@ type CreateStreamParams = {
   thumbnail: ThumbnailSource
 }
 
+type YouTubeBroadcastSyncRow = {
+  id: string
+  snippet: {
+    title: string
+    description?: string
+    thumbnails?: {
+      default?: {
+        url?: string
+      }
+    }
+    scheduledStartTime?: string | null
+    actualStartTime?: string | null
+    actualEndTime?: string | null
+  }
+  status: {
+    privacyStatus: string
+    madeForKids?: boolean
+    lifeCycleStatus: string
+  }
+  contentDetails?: {
+    boundStreamId?: string
+    enableDvr?: boolean
+    enableEmbed?: boolean
+    enableAutoStart?: boolean
+    enableAutoStop?: boolean
+    latencyPreference?: string
+  }
+}
+
+type LocalStreamInsertPayload = {
+  id?: string
+  workspace_id: string
+  youtube_broadcast_id: string
+  youtube_stream_id: string
+  title: string
+  description: string
+  thumbnail_url: string | null
+  privacy_status: string
+  is_for_kids: boolean
+  scheduled_start_time: string | null
+  actual_start_time?: string | null
+  actual_end_time?: string | null
+  stream_status: Stream["streamStatus"]
+  stream_url: string | null
+  stream_key?: string | null
+  ingestion_url?: string | null
+  category_id: string | null
+  tags: string[]
+  latency_preference: string
+  enable_dvr: boolean
+  enable_embed: boolean
+  enable_auto_start: boolean
+  enable_auto_stop: boolean
+  playlist_id: string | null
+  created_by: string
+}
+
+async function insertLocalStream(payload: LocalStreamInsertPayload): Promise<void> {
+  const { error } = await supabase.from("streams").insert(payload)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+}
+
+async function restoreLocalStream(stream: Stream): Promise<void> {
+  await insertLocalStream({
+    id: stream.id,
+    workspace_id: stream.workspaceId,
+    youtube_broadcast_id: stream.youtubeBroadcastId,
+    youtube_stream_id: stream.youtubeStreamId,
+    title: stream.title,
+    description: stream.description,
+    thumbnail_url: stream.thumbnailUrl,
+    privacy_status: stream.privacyStatus,
+    is_for_kids: stream.isForKids,
+    scheduled_start_time: stream.scheduledStartTime,
+    actual_start_time: stream.actualStartTime,
+    actual_end_time: stream.actualEndTime,
+    stream_status: stream.streamStatus,
+    stream_url: stream.streamUrl,
+    stream_key: stream.streamKey,
+    ingestion_url: stream.ingestionUrl,
+    category_id: stream.categoryId,
+    tags: stream.tags,
+    latency_preference: stream.latencyPreference,
+    enable_dvr: stream.enableDvr,
+    enable_embed: stream.enableEmbed,
+    enable_auto_start: stream.enableAutoStart,
+    enable_auto_stop: stream.enableAutoStop,
+    playlist_id: stream.playlistId,
+    created_by: stream.createdBy,
+  })
+}
+
 export async function createStream(params: CreateStreamParams): Promise<Stream> {
   const workspaceId = await getCurrentWorkspaceId()
   const { data: { user } } = await supabase.auth.getUser()
@@ -179,10 +274,20 @@ export async function createStream(params: CreateStreamParams): Promise<Stream> 
     created_by: user.id,
   }
 
-  const { error } = await supabase.from("streams").insert(payload)
+  try {
+    await insertLocalStream(payload)
+  } catch (error) {
+    const rollbackResponse = await youtubeApiFetch(
+      `/liveBroadcasts?id=${broadcast.id}`,
+      { method: "DELETE" },
+    )
 
-  if (error) {
-    throw new Error(error.message)
+    if (!rollbackResponse.ok) {
+      const rollbackError = await rollbackResponse.text()
+      throw new Error(`Local stream save failed after YouTube creation, and rollback also failed: ${rollbackError}`)
+    }
+
+    throw error
   }
 
   const saved = await fetchStreamById(payload.id)
@@ -299,18 +404,6 @@ export async function updateStream(
 }
 
 export async function deleteStream(stream: Stream): Promise<void> {
-  // Delete on YouTube
-  const response = await youtubeApiFetch(
-    `/liveBroadcasts?id=${stream.youtubeBroadcastId}`,
-    { method: "DELETE" },
-  )
-
-  if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to delete broadcast: ${err}`)
-  }
-
-  // Delete locally
   const { error } = await supabase
     .from("streams")
     .delete()
@@ -318,6 +411,23 @@ export async function deleteStream(stream: Stream): Promise<void> {
 
   if (error) {
     throw new Error(error.message)
+  }
+
+  const response = await youtubeApiFetch(
+    `/liveBroadcasts?id=${stream.youtubeBroadcastId}`,
+    { method: "DELETE" },
+  )
+
+  if (!response.ok) {
+    try {
+      await restoreLocalStream(stream)
+    } catch (restoreError) {
+      const err = await response.text()
+      throw new Error(`Failed to delete broadcast and could not restore the local stream: ${err}; ${(restoreError as Error).message}`)
+    }
+
+    const err = await response.text()
+    throw new Error(`Failed to delete broadcast: ${err}`)
   }
 }
 
@@ -331,7 +441,7 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
 
   // Fetch only upcoming (scheduled) and active (live) broadcasts. Completed
   // broadcasts stay in our DB and are not re-fetched.
-  const broadcasts: any[] = []
+  const broadcasts: YouTubeBroadcastSyncRow[] = []
   for (const broadcastStatus of ["upcoming", "active"] as const) {
     let pageToken: string | undefined = undefined
     do {
@@ -345,7 +455,7 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
         throw new Error(`Failed to fetch broadcasts: ${err}`)
       }
 
-      const data = await response.json()
+      const data = await response.json() as { items?: YouTubeBroadcastSyncRow[]; nextPageToken?: string }
       broadcasts.push(...(data.items ?? []))
       pageToken = data.nextPageToken
     } while (pageToken)
@@ -393,9 +503,13 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
       created_by: user.id,
     }
 
-    await supabase
+    const { error } = await supabase
       .from("streams")
       .upsert(payload, { onConflict: "workspace_id,youtube_broadcast_id" })
+
+    if (error) {
+      throw new Error(error.message)
+    }
   }
 
   // Remove local non-complete streams that are no longer present remotely

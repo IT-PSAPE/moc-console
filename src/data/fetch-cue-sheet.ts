@@ -244,16 +244,19 @@ export async function fetchCueSheetEvents(): Promise<CueSheetEvent[]> {
 }
 
 export async function fetchCueSheetEventById(id: string): Promise<CueSheetEvent | undefined> {
+  const workspaceId = await getCurrentWorkspaceId();
   const [templateResult, runResult] = await Promise.all([
     supabase
       .from("event_templates")
       .select("id, title, description, duration, created_at, updated_at")
       .eq("id", id)
+      .eq("workspace_id", workspaceId)
       .maybeSingle(),
     supabase
       .from("events")
       .select("id, title, description, scheduled_at, duration, created_at, updated_at")
       .eq("id", id)
+      .eq("workspace_id", workspaceId)
       .maybeSingle(),
   ]);
 
@@ -296,28 +299,46 @@ export async function fetchCueSheetEventById(id: string): Promise<CueSheetEvent 
 }
 
 export async function fetchCueSheetChecklists(): Promise<Checklist[]> {
-  const [[templateResult, runResult], [templateSectionsResult, templateItemsResult, sectionsResult, itemsResult]] = await Promise.all([
-    fetchWorkspaceScopedChecklists(),
-    Promise.all([
-      supabase.from("template_sections").select("id, checklist_template_id, name, sort_order"),
-      supabase.from("template_items").select("id, checklist_template_id, template_section_id, label, sort_order"),
-      supabase.from("checklist_sections").select("id, checklist_id, name, sort_order"),
-      supabase.from("checklist_items").select("id, checklist_id, section_id, label, checked, sort_order"),
-    ]),
-  ]);
+  const [templateResult, runResult] = await fetchWorkspaceScopedChecklists();
 
-  for (const result of [templateResult, runResult, templateSectionsResult, templateItemsResult, sectionsResult, itemsResult]) {
+  for (const result of [templateResult, runResult]) {
     if (result.error) {
       throw new Error(result.error.message);
     }
   }
 
-  const templates = ((templateResult.data ?? []) as ChecklistTemplateRow[]).map((template) => mapTemplateChecklist(
+  const templatesData = (templateResult.data ?? []) as ChecklistTemplateRow[];
+  const runsData = (runResult.data ?? []) as ChecklistRunRow[];
+  const templateIds = templatesData.map((template) => template.id);
+  const runIds = runsData.map((run) => run.id);
+
+  const [templateSectionsResult, templateItemsResult, sectionsResult, itemsResult] = await Promise.all([
+    templateIds.length > 0
+      ? supabase.from("template_sections").select("id, checklist_template_id, name, sort_order").in("checklist_template_id", templateIds)
+      : Promise.resolve({ data: [], error: null }),
+    templateIds.length > 0
+      ? supabase.from("template_items").select("id, checklist_template_id, template_section_id, label, sort_order").in("checklist_template_id", templateIds)
+      : Promise.resolve({ data: [], error: null }),
+    runIds.length > 0
+      ? supabase.from("checklist_sections").select("id, checklist_id, name, sort_order").in("checklist_id", runIds)
+      : Promise.resolve({ data: [], error: null }),
+    runIds.length > 0
+      ? supabase.from("checklist_items").select("id, checklist_id, section_id, label, checked, sort_order").in("checklist_id", runIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  for (const result of [templateSectionsResult, templateItemsResult, sectionsResult, itemsResult]) {
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+  }
+
+  const templates = templatesData.map((template) => mapTemplateChecklist(
     template,
     (templateSectionsResult.data ?? []) as TemplateSectionRow[],
     (templateItemsResult.data ?? []) as TemplateItemRow[],
   ));
-  const runs = ((runResult.data ?? []) as ChecklistRunRow[]).map((run) => mapRunChecklist(
+  const runs = runsData.map((run) => mapRunChecklist(
     run,
     (sectionsResult.data ?? []) as ChecklistSectionRow[],
     (itemsResult.data ?? []) as ChecklistItemRow[],
@@ -332,29 +353,58 @@ export async function fetchCueSheetChecklistById(id: string): Promise<Checklist 
 }
 
 export async function fetchCueSheetTracks(): Promise<Record<string, Track[]>> {
+  const workspaceId = await getCurrentWorkspaceId();
+  const [templateOwnersResult, eventOwnersResult] = await Promise.all([
+    supabase
+      .from("event_templates")
+      .select("id")
+      .eq("workspace_id", workspaceId),
+    supabase
+      .from("events")
+      .select("id")
+      .eq("workspace_id", workspaceId),
+  ]);
+
+  if (templateOwnersResult.error) {
+    throw new Error(templateOwnersResult.error.message);
+  }
+
+  if (eventOwnersResult.error) {
+    throw new Error(eventOwnersResult.error.message);
+  }
+
+  const templateOwnerIds = ((templateOwnersResult.data ?? []) as Array<{ id: string }>).map((row) => row.id);
+  const eventOwnerIds = ((eventOwnersResult.data ?? []) as Array<{ id: string }>).map((row) => row.id);
+
   const [templateTracksResult, eventTracksResult] = await Promise.all([
-    supabase
-      .from("template_tracks")
-      .select(`
-        id,
-        event_template_id,
-        name,
-        sort_order,
-        colors:color_id(key),
-        template_cues(id, label, start, duration, type, assignee, notes)
-      `)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("tracks")
-      .select(`
-        id,
-        event_id,
-        name,
-        sort_order,
-        colors:color_id(key),
-        cues(id, label, start, duration, type, assignee, notes)
-      `)
-      .order("sort_order", { ascending: true }),
+    templateOwnerIds.length > 0
+      ? supabase
+          .from("template_tracks")
+          .select(`
+            id,
+            event_template_id,
+            name,
+            sort_order,
+            colors:color_id(key),
+            template_cues(id, label, start, duration, type, assignee, notes)
+          `)
+          .in("event_template_id", templateOwnerIds)
+          .order("sort_order", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+    eventOwnerIds.length > 0
+      ? supabase
+          .from("tracks")
+          .select(`
+            id,
+            event_id,
+            name,
+            sort_order,
+            colors:color_id(key),
+            cues(id, label, start, duration, type, assignee, notes)
+          `)
+          .in("event_id", eventOwnerIds)
+          .order("sort_order", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
   if (templateTracksResult.error) {

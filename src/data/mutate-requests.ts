@@ -57,14 +57,19 @@ export async function deleteRequest(id: string): Promise<void> {
 }
 
 export async function addRequestAssignee(requestId: string, userId: string, duty: string): Promise<void> {
-  const deleteResult = await supabase
+  const updateResult = await supabase
     .from("request_assignees")
-    .delete()
+    .update({ duty })
     .eq("request_id", requestId)
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .select("id");
 
-  if (deleteResult.error) {
-    throw new Error(deleteResult.error.message);
+  if (updateResult.error) {
+    throw new Error(updateResult.error.message);
+  }
+
+  if ((updateResult.data ?? []).length > 0) {
+    return;
   }
 
   const { error } = await supabase

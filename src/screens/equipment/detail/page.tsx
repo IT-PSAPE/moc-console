@@ -64,7 +64,7 @@ export function EquipmentDetailScreen() {
 function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
   const navigate = useNavigate();
   const { toast } = useFeedback();
-  const { actions: { syncEquipment, removeEquipment } } = useEquipment();
+  const { actions: { syncEquipment, removeEquipment, removeBookingsByEquipmentId } } = useEquipment();
 
   const store = useEquipmentStore(equipment, { syncEquipment });
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -125,6 +125,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
     try {
       await deleteEquipment(equipment.id);
       removeEquipment(equipment.id);
+      removeBookingsByEquipmentId(equipment.id);
       toast({ title: "Equipment deleted", variant: "success" });
       setShowDeleteModal(false);
       navigate("/equipment");

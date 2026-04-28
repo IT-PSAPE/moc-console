@@ -1,4 +1,4 @@
-import { resolveZoomOAuthConfig, revokeZoomAccessToken } from "../../../server/zoom-oauth"
+import { resolveZoomOAuthConfig, revokeZoomAccessToken } from "../../../server/zoom-oauth.js"
 
 type ApiRequest = {
   method?: string

@@ -6,27 +6,42 @@ import { Header } from '@/components/display/header'
 import { Label, Paragraph, Title } from '@/components/display/text'
 import { Spinner } from '@/components/feedback/spinner'
 import { Badge } from '@/components/display/badge'
+import { Modal } from '@/components/overlays/modal'
+import { InlineEditableText } from '@/components/form/inline-editable-text'
+import { useFeedback } from '@/components/feedback/feedback-provider'
 import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
 import { ChecklistContent, getChecklistCounts, type AddRequest } from '@/features/cue-sheet/checklist-content'
-import { FolderPlus, ListChecks, Plus, SquarePlus } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import type { Checklist } from '@/types/cue-sheet'
+import { FolderPlus, ListChecks, Plus, SquarePlus, Trash2, TriangleAlert } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 
 export function CueSheetChecklistDetailScreen() {
     const { id } = useParams<{ id: string }>()
     const {
         state: { checklists },
-        actions: { loadChecklists, syncChecklist },
+        actions: { loadChecklists, syncChecklist, removeChecklist },
     } = useCueSheet()
+    const { toast } = useFeedback()
+    const navigate = useNavigate()
 
     const checklist = checklists.find((c) => c.id === id) ?? null
     const [addRequest, setAddRequest] = useState<AddRequest>(null)
+    const [deleteOpen, setDeleteOpen] = useState(false)
 
     useBreadcrumbOverride(id ?? '', checklist?.name)
 
     useEffect(() => {
         loadChecklists()
     }, [loadChecklists])
+
+    const handleChecklistUpdate = useCallback(async (nextChecklist: Checklist) => {
+        try {
+            await syncChecklist(nextChecklist)
+        } catch (error) {
+            toast({ title: 'Failed to save checklist', description: error instanceof Error ? error.message : 'The checklist could not be saved.', variant: 'error' })
+        }
+    }, [syncChecklist, toast])
 
     if (!checklist) {
         return (
@@ -38,13 +53,28 @@ export function CueSheetChecklistDetailScreen() {
 
     const { total, checked } = getChecklistCounts(checklist)
 
+    async function handleDelete() {
+        if (!id) return
+
+        try {
+            await removeChecklist(id)
+            toast({ title: 'Checklist deleted', variant: 'success' })
+            navigate('/cue-sheet/checklist')
+        } catch (error) {
+            toast({ title: 'Failed to delete checklist', description: error instanceof Error ? error.message : 'The checklist could not be deleted.', variant: 'error' })
+        }
+    }
+
     return (
         <section className="mx-auto max-w-content-sm">
             <Header.Root className="px-4 pt-12">
                 <Header.Lead className="gap-2">
-                    <Title.h5>{checklist.name}</Title.h5>
+                    <Title.h5>
+                        <InlineEditableText value={checklist.name} onSave={(name) => { void handleChecklistUpdate({ ...checklist, name }) }} className="title-h5" />
+                    </Title.h5>
                 </Header.Lead>
                 <Header.Trail>
+                    <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setDeleteOpen(true)} />
                     <Dropdown.Root placement="bottom">
                         <Dropdown.Trigger>
                             <Button.Icon variant="secondary" icon={<Plus />} />
@@ -69,9 +99,9 @@ export function CueSheetChecklistDetailScreen() {
                     icon={<ListChecks />}
                     color={checked === total && total > 0 ? 'green' : 'gray'}
                 />
-                {checklist.description && (
-                    <Paragraph.sm className="text-tertiary">{checklist.description}</Paragraph.sm>
-                )}
+                <Paragraph.sm className="text-tertiary">
+                    <InlineEditableText value={checklist.description} onSave={(description) => { void handleChecklistUpdate({ ...checklist, description }) }} className="text-sm text-tertiary" placeholder="Add description" />
+                </Paragraph.sm>
             </div>
 
             <Divider className="px-4 my-6" />
@@ -81,12 +111,34 @@ export function CueSheetChecklistDetailScreen() {
                 <div className="rounded-lg border border-secondary overflow-hidden">
                     <ChecklistContent
                         checklist={checklist}
-                        onUpdate={syncChecklist}
+                        onUpdate={(nextChecklist) => { void handleChecklistUpdate(nextChecklist) }}
                         addRequest={addRequest}
                         onAddRequestDismiss={() => setAddRequest(null)}
                     />
                 </div>
             </div>
+            <Modal.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <Modal.Portal>
+                    <Modal.Backdrop />
+                    <Modal.Positioner>
+                        <Modal.Panel>
+                            <Modal.Header>
+                                <Label.md>Delete Checklist</Label.md>
+                            </Modal.Header>
+                            <Modal.Content className="p-4 flex-row gap-4">
+                                <TriangleAlert className="size-8 shrink-0 text-utility-red-600" />
+                                <Paragraph.sm className="text-secondary">
+                                    Are you sure you want to delete this checklist? This action cannot be undone.
+                                </Paragraph.sm>
+                            </Modal.Content>
+                            <Modal.Footer className="justify-end">
+                                <Button variant="secondary" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+                                <Button variant="danger" onClick={handleDelete}>Delete Checklist</Button>
+                            </Modal.Footer>
+                        </Modal.Panel>
+                    </Modal.Positioner>
+                </Modal.Portal>
+            </Modal.Root>
         </section>
     )
 }

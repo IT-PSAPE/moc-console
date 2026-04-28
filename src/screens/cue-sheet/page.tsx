@@ -5,21 +5,28 @@ import { Label, Paragraph, TextBlock, Title } from '@/components/display/text'
 import { Spinner } from '@/components/feedback/spinner'
 import { EmptyState } from '@/components/feedback/empty-state'
 import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
+import { CreateChecklistRunModal, type ChecklistRunSubmit } from '@/features/cue-sheet/create-checklist-run-modal'
+import { CreateEventRunModal, type EventRunSubmit } from '@/features/cue-sheet/create-event-run-modal'
 import { EventItem } from '@/features/cue-sheet/event-item'
 import { ChecklistItemCard } from '@/features/cue-sheet/checklist-item'
 import { Dropdown } from '@/components/overlays/dropdown'
 import type { CueSheetEvent, Checklist } from '@/types/cue-sheet'
 import { routes } from '@/screens/console-routes'
-import { Calendar, ListChecks, Plus } from 'lucide-react'
-import { useCallback, useEffect, useMemo } from 'react'
+import { isChecklistRunPastOrComplete, isEventRunPast, sortOverviewChecklistRuns, sortOverviewEventRuns } from '@/features/cue-sheet/run-status'
+import { Calendar, FilePlus2, ListChecks, Plus } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 export function CueSheetOverviewScreen() {
     const {
         state: { events, checklists, isLoadingEvents, isLoadingChecklists },
-        actions: { loadEvents, loadChecklists, createEventInstance, createChecklistInstance },
+        actions: { loadEvents, loadChecklists, createEventInstance, createBlankEvent, createChecklistInstance, createBlankChecklist },
     } = useCueSheet()
     const navigate = useNavigate()
+    const [eventModalOpen, setEventModalOpen] = useState(false)
+    const [eventModalTemplate, setEventModalTemplate] = useState<CueSheetEvent | null>(null)
+    const [checklistModalOpen, setChecklistModalOpen] = useState(false)
+    const [checklistModalTemplate, setChecklistModalTemplate] = useState<Checklist | null>(null)
 
     useEffect(() => {
         loadEvents()
@@ -30,15 +37,50 @@ export function CueSheetOverviewScreen() {
     const eventInstances = useMemo(() => events.filter((event) => event.kind === 'instance'), [events])
     const checklistTemplates = useMemo(() => checklists.filter((checklist) => checklist.kind === 'template'), [checklists])
     const checklistInstances = useMemo(() => checklists.filter((checklist) => checklist.kind === 'instance'), [checklists])
+    const [now] = useState(() => Date.now())
+    const overviewEventRuns = useMemo(
+        () => sortOverviewEventRuns(eventInstances.filter((event) => !isEventRunPast(event, now))),
+        [eventInstances, now],
+    )
+    const overviewChecklistRuns = useMemo(
+        () => sortOverviewChecklistRuns(checklistInstances.filter((checklist) => !isChecklistRunPastOrComplete(checklist, now))),
+        [checklistInstances, now],
+    )
 
-    const handleCreateInstance = useCallback(async (template: CueSheetEvent) => {
-        const instance = await createEventInstance(template)
+    const handlePickBlankEvent = useCallback(() => {
+        setEventModalTemplate(null)
+        setEventModalOpen(true)
+    }, [])
+
+    const handlePickEventTemplate = useCallback((template: CueSheetEvent) => {
+        setEventModalTemplate(template)
+        setEventModalOpen(true)
+    }, [])
+
+    const handleEventSubmit = useCallback(async (input: EventRunSubmit) => {
+        const instance = input.kind === 'template'
+            ? await createEventInstance(input.template, { title: input.title, description: input.description, scheduledAt: input.scheduledAt })
+            : await createBlankEvent({ title: input.title, description: input.description, scheduledAt: input.scheduledAt, duration: input.duration })
         navigate(`/cue-sheet/events/${instance.id}`)
-    }, [createEventInstance, navigate])
+    }, [createBlankEvent, createEventInstance, navigate])
 
-    const handleCreateChecklistRun = useCallback(async (template: Checklist) => {
-        await createChecklistInstance(template)
-    }, [createChecklistInstance])
+    const handlePickBlankChecklist = useCallback(() => {
+        setChecklistModalTemplate(null)
+        setChecklistModalOpen(true)
+    }, [])
+
+    const handlePickChecklistTemplate = useCallback((template: Checklist) => {
+        setChecklistModalTemplate(template)
+        setChecklistModalOpen(true)
+    }, [])
+
+    const handleChecklistSubmit = useCallback(async (input: ChecklistRunSubmit) => {
+        if (input.kind === 'template') {
+            await createChecklistInstance(input.template, { name: input.name, description: input.description, scheduledAt: input.scheduledAt })
+        } else {
+            await createBlankChecklist({ name: input.name, description: input.description, scheduledAt: input.scheduledAt })
+        }
+    }, [createBlankChecklist, createChecklistInstance])
 
     const handleOpenTemplates = useCallback(() => {
         navigate(`/${routes.cueSheetTemplates}`)
@@ -72,7 +114,7 @@ export function CueSheetOverviewScreen() {
                         <Label.sm>Event Runs</Label.sm>
                     </Card.Header>
                     <Card.Content className="p-4">
-                        <TextBlock className="title-h4">{eventInstances.length}</TextBlock>
+                        <TextBlock className="title-h4">{overviewEventRuns.length}</TextBlock>
                     </Card.Content>
                 </Card.Root>
                 <Card.Root>
@@ -81,7 +123,7 @@ export function CueSheetOverviewScreen() {
                         <Label.sm>Checklist Runs</Label.sm>
                     </Card.Header>
                     <Card.Content className="p-4">
-                        <TextBlock className="title-h4">{checklistInstances.length}</TextBlock>
+                        <TextBlock className="title-h4">{overviewChecklistRuns.length}</TextBlock>
                     </Card.Content>
                 </Card.Root>
             </div>
@@ -97,8 +139,13 @@ export function CueSheetOverviewScreen() {
                                 <Button.Icon variant="secondary" icon={<Plus />} />
                             </Dropdown.Trigger>
                             <Dropdown.Panel>
+                                <Dropdown.Item onSelect={handlePickBlankEvent}>
+                                    <FilePlus2 className="size-4" />
+                                    Blank event
+                                </Dropdown.Item>
+                                {eventTemplates.length > 0 && <Dropdown.Separator />}
                                 {eventTemplates.map((event) => (
-                                    <Dropdown.Item key={event.id} onSelect={() => void handleCreateInstance(event)}>
+                                    <Dropdown.Item key={event.id} onSelect={() => handlePickEventTemplate(event)}>
                                         {event.title}
                                     </Dropdown.Item>
                                 ))}
@@ -113,8 +160,8 @@ export function CueSheetOverviewScreen() {
                     <Card.Content ghost className="flex flex-col gap-1.5">
                         {isLoadingEvents ? (
                             <div className="flex justify-center py-6"><Spinner /></div>
-                        ) : eventInstances.length > 0 ? (
-                            eventInstances.map((event) => (
+                        ) : overviewEventRuns.length > 0 ? (
+                            overviewEventRuns.map((event) => (
                                 <EventItem key={event.id} event={event} />
                             ))
                         ) : (
@@ -139,8 +186,13 @@ export function CueSheetOverviewScreen() {
                                 <Button.Icon variant="secondary" icon={<Plus />} />
                             </Dropdown.Trigger>
                             <Dropdown.Panel>
+                                <Dropdown.Item onSelect={handlePickBlankChecklist}>
+                                    <FilePlus2 className="size-4" />
+                                    Blank checklist
+                                </Dropdown.Item>
+                                {checklistTemplates.length > 0 && <Dropdown.Separator />}
                                 {checklistTemplates.map((checklist) => (
-                                    <Dropdown.Item key={checklist.id} onSelect={() => void handleCreateChecklistRun(checklist)}>
+                                    <Dropdown.Item key={checklist.id} onSelect={() => handlePickChecklistTemplate(checklist)}>
                                         {checklist.name}
                                     </Dropdown.Item>
                                 ))}
@@ -155,8 +207,8 @@ export function CueSheetOverviewScreen() {
                     <Card.Content ghost className="flex flex-col gap-1.5">
                         {isLoadingChecklists ? (
                             <div className="flex justify-center py-6"><Spinner /></div>
-                        ) : checklistInstances.length > 0 ? (
-                            checklistInstances.map((checklist) => (
+                        ) : overviewChecklistRuns.length > 0 ? (
+                            overviewChecklistRuns.map((checklist) => (
                                 <ChecklistItemCard key={checklist.id} checklist={checklist} />
                             ))
                         ) : (
@@ -170,6 +222,8 @@ export function CueSheetOverviewScreen() {
                 </Card.Root>
             </div>
 
+            <CreateEventRunModal open={eventModalOpen} onOpenChange={setEventModalOpen} template={eventModalTemplate} onSubmit={handleEventSubmit} />
+            <CreateChecklistRunModal open={checklistModalOpen} onOpenChange={setChecklistModalOpen} template={checklistModalTemplate} onSubmit={handleChecklistSubmit} />
         </section>
     )
 }

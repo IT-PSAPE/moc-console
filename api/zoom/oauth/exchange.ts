@@ -1,4 +1,4 @@
-import { exchangeZoomCode, resolveZoomOAuthConfig } from "../../../server/zoom-oauth"
+import { exchangeZoomCode, resolveZoomOAuthConfig } from "../../../server/zoom-oauth.js"
 
 type ApiRequest = {
   method?: string

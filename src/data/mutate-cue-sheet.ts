@@ -3,293 +3,111 @@ import { supabase } from "@/lib/supabase";
 import { getCurrentWorkspaceId } from "./current-workspace";
 import { fetchCueSheetChecklistById, fetchCueSheetEventById, fetchCueSheetTracksByEventId } from "./fetch-cue-sheet";
 
-async function resolveColorIdByKey(colorKey: Track["colorKey"]) {
-  const { data, error } = await supabase
-    .from("colors")
-    .select("id")
-    .eq("key", colorKey)
-    .maybeSingle();
+async function replaceTemplateTracks(eventTemplateId: string, tracks: Track[]) {
+  const { error } = await supabase.rpc("save_template_tracks", {
+    p_event_template_id: eventTemplateId,
+    p_tracks: tracks.map((track, index) => ({
+      id: track.id,
+      name: track.name,
+      color_key: track.colorKey,
+      sort_order: index + 1,
+      cues: track.cues.map((cue) => ({
+        id: cue.id,
+        label: cue.label,
+        start: cue.startMin,
+        duration: cue.durationMin,
+        type: cue.type,
+        assignee: cue.assignee ?? null,
+        notes: cue.notes ?? null,
+      })),
+    })),
+  });
 
   if (error) {
     throw new Error(error.message);
   }
-
-  if (!data?.id) {
-    throw new Error(`Track color '${colorKey}' not found`);
-  }
-
-  return data.id as string;
-}
-
-async function replaceTemplateTracks(eventTemplateId: string, tracks: Track[]) {
-  const existingResult = await supabase
-    .from("template_tracks")
-    .select("id")
-    .eq("event_template_id", eventTemplateId);
-
-  if (existingResult.error) {
-    throw new Error(existingResult.error.message);
-  }
-
-  const existingTrackIds = ((existingResult.data ?? []) as Array<{ id: string }>).map((track) => track.id);
-
-  if (existingTrackIds.length > 0) {
-    const deleteCuesResult = await supabase
-      .from("template_cues")
-      .delete()
-      .in("template_track_id", existingTrackIds);
-
-    if (deleteCuesResult.error) {
-      throw new Error(deleteCuesResult.error.message);
-    }
-  }
-
-  const deleteTracksResult = await supabase
-    .from("template_tracks")
-    .delete()
-    .eq("event_template_id", eventTemplateId);
-
-  if (deleteTracksResult.error) {
-    throw new Error(deleteTracksResult.error.message);
-  }
-
-  for (const [trackIndex, track] of tracks.entries()) {
-    const colorId = await resolveColorIdByKey(track.colorKey);
-    const trackInsert = await supabase
-      .from("template_tracks")
-      .insert({
-        id: track.id,
-        event_template_id: eventTemplateId,
-        name: track.name,
-        color_id: colorId,
-        sort_order: trackIndex + 1,
-      });
-
-    if (trackInsert.error) {
-      throw new Error(trackInsert.error.message);
-    }
-
-    if (track.cues.length === 0) {
-      continue;
-    }
-
-    const cueInsert = await supabase
-      .from("template_cues")
-      .insert(track.cues.map((cue) => ({
-        id: cue.id,
-        template_track_id: track.id,
-        label: cue.label,
-        start: cue.startMin,
-        duration: cue.durationMin,
-        type: cue.type,
-        assignee: cue.assignee ?? null,
-        notes: cue.notes ?? null,
-      })));
-
-    if (cueInsert.error) {
-      throw new Error(cueInsert.error.message);
-    }
-  }
 }
 
 async function replaceEventTracks(eventId: string, tracks: Track[]) {
-  const existingResult = await supabase
-    .from("tracks")
-    .select("id")
-    .eq("event_id", eventId);
-
-  if (existingResult.error) {
-    throw new Error(existingResult.error.message);
-  }
-
-  const existingTrackIds = ((existingResult.data ?? []) as Array<{ id: string }>).map((track) => track.id);
-
-  if (existingTrackIds.length > 0) {
-    const deleteCuesResult = await supabase
-      .from("cues")
-      .delete()
-      .in("track_id", existingTrackIds);
-
-    if (deleteCuesResult.error) {
-      throw new Error(deleteCuesResult.error.message);
-    }
-  }
-
-  const deleteTracksResult = await supabase
-    .from("tracks")
-    .delete()
-    .eq("event_id", eventId);
-
-  if (deleteTracksResult.error) {
-    throw new Error(deleteTracksResult.error.message);
-  }
-
-  for (const [trackIndex, track] of tracks.entries()) {
-    const colorId = await resolveColorIdByKey(track.colorKey);
-    const trackInsert = await supabase
-      .from("tracks")
-      .insert({
-        id: track.id,
-        event_id: eventId,
-        name: track.name,
-        color_id: colorId,
-        sort_order: trackIndex + 1,
-      });
-
-    if (trackInsert.error) {
-      throw new Error(trackInsert.error.message);
-    }
-
-    if (track.cues.length === 0) {
-      continue;
-    }
-
-    const cueInsert = await supabase
-      .from("cues")
-      .insert(track.cues.map((cue) => ({
+  const { error } = await supabase.rpc("save_event_tracks", {
+    p_event_id: eventId,
+    p_tracks: tracks.map((track, index) => ({
+      id: track.id,
+      name: track.name,
+      color_key: track.colorKey,
+      sort_order: index + 1,
+      cues: track.cues.map((cue) => ({
         id: cue.id,
-        track_id: track.id,
         label: cue.label,
         start: cue.startMin,
         duration: cue.durationMin,
         type: cue.type,
         assignee: cue.assignee ?? null,
         notes: cue.notes ?? null,
-      })));
+      })),
+    })),
+  });
 
-    if (cueInsert.error) {
-      throw new Error(cueInsert.error.message);
-    }
+  if (error) {
+    throw new Error(error.message);
   }
 }
 
 async function replaceTemplateChecklistStructure(checklistTemplateId: string, checklist: Checklist) {
-  const deleteItemsResult = await supabase
-    .from("template_items")
-    .delete()
-    .eq("checklist_template_id", checklistTemplateId);
-
-  if (deleteItemsResult.error) {
-    throw new Error(deleteItemsResult.error.message);
-  }
-
-  const deleteSectionsResult = await supabase
-    .from("template_sections")
-    .delete()
-    .eq("checklist_template_id", checklistTemplateId);
-
-  if (deleteSectionsResult.error) {
-    throw new Error(deleteSectionsResult.error.message);
-  }
-
-  if (checklist.sections.length > 0) {
-    const sectionInsert = await supabase
-      .from("template_sections")
-      .insert(checklist.sections.map((section, index) => ({
-        id: section.id,
-        checklist_template_id: checklistTemplateId,
-        name: section.name,
+  const { error } = await supabase.rpc("save_template_checklist_structure", {
+    p_checklist_template_id: checklistTemplateId,
+    p_checklist: {
+      items: checklist.items.map((item, index) => ({
+        id: item.id,
+        label: item.label,
+        checked: false,
         sort_order: index + 1,
-      })));
+      })),
+      sections: checklist.sections.map((section, sectionIndex) => ({
+        id: section.id,
+        name: section.name,
+        sort_order: sectionIndex + 1,
+        items: section.items.map((item, itemIndex) => ({
+          id: item.id,
+          label: item.label,
+          checked: false,
+          sort_order: itemIndex + 1,
+        })),
+      })),
+    },
+  });
 
-    if (sectionInsert.error) {
-      throw new Error(sectionInsert.error.message);
-    }
-  }
-
-  const itemsPayload = [
-    ...checklist.items.map((item, index) => ({
-      id: item.id,
-      checklist_template_id: checklistTemplateId,
-      template_section_id: null,
-      label: item.label,
-      sort_order: index + 1,
-    })),
-    ...checklist.sections.flatMap((section) => section.items.map((item, index) => ({
-      id: item.id,
-      checklist_template_id: checklistTemplateId,
-      template_section_id: section.id,
-      label: item.label,
-      sort_order: index + 1,
-    }))),
-  ];
-
-  if (itemsPayload.length === 0) {
-    return;
-  }
-
-  const itemInsert = await supabase
-    .from("template_items")
-    .insert(itemsPayload);
-
-  if (itemInsert.error) {
-    throw new Error(itemInsert.error.message);
+  if (error) {
+    throw new Error(error.message);
   }
 }
 
 async function replaceChecklistStructure(checklistId: string, checklist: Checklist) {
-  const deleteItemsResult = await supabase
-    .from("checklist_items")
-    .delete()
-    .eq("checklist_id", checklistId);
-
-  if (deleteItemsResult.error) {
-    throw new Error(deleteItemsResult.error.message);
-  }
-
-  const deleteSectionsResult = await supabase
-    .from("checklist_sections")
-    .delete()
-    .eq("checklist_id", checklistId);
-
-  if (deleteSectionsResult.error) {
-    throw new Error(deleteSectionsResult.error.message);
-  }
-
-  if (checklist.sections.length > 0) {
-    const sectionInsert = await supabase
-      .from("checklist_sections")
-      .insert(checklist.sections.map((section, index) => ({
-        id: section.id,
-        checklist_id: checklistId,
-        name: section.name,
+  const { error } = await supabase.rpc("save_checklist_structure", {
+    p_checklist_id: checklistId,
+    p_checklist: {
+      items: checklist.items.map((item, index) => ({
+        id: item.id,
+        label: item.label,
+        checked: item.checked,
         sort_order: index + 1,
-      })));
+      })),
+      sections: checklist.sections.map((section, sectionIndex) => ({
+        id: section.id,
+        name: section.name,
+        sort_order: sectionIndex + 1,
+        items: section.items.map((item, itemIndex) => ({
+          id: item.id,
+          label: item.label,
+          checked: item.checked,
+          sort_order: itemIndex + 1,
+        })),
+      })),
+    },
+  });
 
-    if (sectionInsert.error) {
-      throw new Error(sectionInsert.error.message);
-    }
-  }
-
-  const itemsPayload = [
-    ...checklist.items.map((item, index) => ({
-      id: item.id,
-      checklist_id: checklistId,
-      section_id: null,
-      label: item.label,
-      checked: item.checked,
-      sort_order: index + 1,
-    })),
-    ...checklist.sections.flatMap((section) => section.items.map((item, index) => ({
-      id: item.id,
-      checklist_id: checklistId,
-      section_id: section.id,
-      label: item.label,
-      checked: item.checked,
-      sort_order: index + 1,
-    }))),
-  ];
-
-  if (itemsPayload.length === 0) {
-    return;
-  }
-
-  const itemInsert = await supabase
-    .from("checklist_items")
-    .insert(itemsPayload);
-
-  if (itemInsert.error) {
-    throw new Error(itemInsert.error.message);
+  if (error) {
+    throw new Error(error.message);
   }
 }
 
@@ -429,12 +247,37 @@ export async function saveCueSheetTracks(event: Pick<CueSheetEvent, "id" | "kind
   return fetchCueSheetTracksByEventId(event.id);
 }
 
-export async function createCueSheetEventInstance(template: CueSheetEvent): Promise<CueSheetEvent> {
+export type CreateEventInstanceOverrides = {
+  title?: string;
+  description?: string;
+  scheduledAt?: string;
+};
+
+export type CreateBlankEventInput = {
+  title: string;
+  description: string;
+  duration: number;
+  scheduledAt: string;
+};
+
+export type CreateChecklistInstanceOverrides = {
+  name?: string;
+  description?: string;
+  scheduledAt?: string;
+};
+
+export type CreateBlankChecklistInput = {
+  name: string;
+  description: string;
+  scheduledAt: string;
+};
+
+export async function createCueSheetEventInstance(template: CueSheetEvent, overrides: CreateEventInstanceOverrides = {}): Promise<CueSheetEvent> {
   const { data, error } = await supabase.rpc("create_event_from_template", {
     p_template_id: template.id,
-    p_scheduled_at: new Date().toISOString(),
-    p_title: `${template.title} Run`,
-    p_description: template.description,
+    p_scheduled_at: overrides.scheduledAt ?? new Date().toISOString(),
+    p_title: overrides.title ?? `${template.title} Run`,
+    p_description: overrides.description ?? template.description,
   });
 
   if (error) {
@@ -456,12 +299,28 @@ export async function createCueSheetEventInstance(template: CueSheetEvent): Prom
   return event;
 }
 
-export async function createCueSheetChecklistInstance(template: Checklist): Promise<Checklist> {
+export async function createCueSheetBlankEvent(input: CreateBlankEventInput): Promise<CueSheetEvent> {
+  const now = new Date().toISOString();
+  const event: CueSheetEvent = {
+    id: crypto.randomUUID(),
+    kind: "instance",
+    title: input.title,
+    description: input.description,
+    duration: input.duration,
+    scheduledAt: input.scheduledAt,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  return saveCueSheetEvent(event);
+}
+
+export async function createCueSheetChecklistInstance(template: Checklist, overrides: CreateChecklistInstanceOverrides = {}): Promise<Checklist> {
   const { data, error } = await supabase.rpc("create_checklist_from_template", {
     p_template_id: template.id,
-    p_scheduled_at: new Date().toISOString(),
-    p_name: `${template.name} Run`,
-    p_description: template.description,
+    p_scheduled_at: overrides.scheduledAt ?? new Date().toISOString(),
+    p_name: overrides.name ?? `${template.name} Run`,
+    p_description: overrides.description ?? template.description,
   });
 
   if (error) {
@@ -481,4 +340,21 @@ export async function createCueSheetChecklistInstance(template: Checklist): Prom
   }
 
   return checklist;
+}
+
+export async function createCueSheetBlankChecklist(input: CreateBlankChecklistInput): Promise<Checklist> {
+  const now = new Date().toISOString();
+  const checklist: Checklist = {
+    id: crypto.randomUUID(),
+    kind: "instance",
+    name: input.name,
+    description: input.description,
+    scheduledAt: input.scheduledAt,
+    items: [],
+    sections: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  return saveCueSheetChecklist(checklist);
 }

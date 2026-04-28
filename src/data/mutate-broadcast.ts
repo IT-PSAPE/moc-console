@@ -26,6 +26,22 @@ function mapMediaRow(row: MediaRow, fallbackDuration: number | null): MediaItem 
   };
 }
 
+function getManagedMediaStoragePath(url: string): string | null {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+  if (!supabaseUrl) {
+    return null;
+  }
+
+  const publicPrefix = `${supabaseUrl}/storage/v1/object/public/media/`;
+
+  if (!url.startsWith(publicPrefix)) {
+    return null;
+  }
+
+  return decodeURIComponent(url.slice(publicPrefix.length));
+}
+
 export async function updatePlaylist(playlist: Playlist): Promise<Playlist> {
   const workspaceId = await getCurrentWorkspaceId();
   const payload = {
@@ -71,29 +87,16 @@ export async function deletePlaylist(id: string): Promise<void> {
 }
 
 export async function updatePlaylistCues(playlistId: string, cues: Cue[]): Promise<Cue[]> {
-  const deleteResult = await supabase
-    .from("queue")
-    .delete()
-    .eq("playlist_id", playlistId);
-
-  if (deleteResult.error) {
-    throw new Error(deleteResult.error.message);
-  }
-
-  if (cues.length === 0) {
-    return [];
-  }
-
-  const { error } = await supabase
-    .from("queue")
-    .insert(cues.map((cue, index) => ({
+  const { error } = await supabase.rpc("save_playlist_queue", {
+    p_playlist_id: playlistId,
+    p_cues: cues.map((cue, index) => ({
       id: cue.id,
-      playlist_id: playlistId,
       media_id: cue.mediaItemId,
       sort_order: index + 1,
       duration: cue.durationOverride,
       disabled: cue.disabled ?? false,
-    })));
+    })),
+  });
 
   if (error) {
     throw new Error(error.message);
@@ -151,11 +154,23 @@ export async function createMediaItem(item: MediaItem): Promise<MediaItem> {
   return mapMediaRow(data as MediaRow, item.duration);
 }
 
-export async function deleteMediaItem(id: string): Promise<void> {
+export async function deleteMediaItem(item: Pick<MediaItem, "id" | "url">): Promise<void> {
+  const storagePath = getManagedMediaStoragePath(item.url);
+
+  if (storagePath) {
+    const { error: storageError } = await supabase.storage
+      .from("media")
+      .remove([storagePath]);
+
+    if (storageError) {
+      throw new Error(storageError.message);
+    }
+  }
+
   const { error } = await supabase
     .from("media")
     .delete()
-    .eq("id", id);
+    .eq("id", item.id);
 
   if (error) {
     throw new Error(error.message);

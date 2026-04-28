@@ -15,8 +15,13 @@ import { BookingDrawer } from "@/features/equipment/booking-drawer";
 import { useBookingFilters } from "@/features/equipment/use-booking-filters";
 import { BookingFilterDrawer } from "@/features/equipment/booking-filter-drawer";
 import { BookingCalendar } from "@/features/equipment/booking-calendar";
+import { CreateBookingModal } from "@/features/equipment/create-booking-modal";
 import { bookingStatusLabel, bookingStatusColor } from "@/types/equipment";
 import type { Booking, Equipment } from "@/types/equipment";
+import { createBooking } from "@/data/mutate-booking";
+import { fetchEquipmentById } from "@/data/fetch-equipment";
+import { useFeedback } from "@/components/feedback/feedback-provider";
+import { getErrorMessage } from "@/utils/get-error-message";
 import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
 
 const columns = [
@@ -55,8 +60,9 @@ const columns = [
 export function EquipmentBookingsScreen() {
   const {
     state: { bookings, isLoadingBookings, equipment, isLoadingEquipment },
-    actions: { loadBookings, loadEquipment },
+    actions: { loadBookings, loadEquipment, syncBooking, syncEquipment },
   } = useEquipment();
+  const { toast } = useFeedback();
 
   useEffect(() => {
     loadBookings();
@@ -65,6 +71,7 @@ export function EquipmentBookingsScreen() {
 
   const [view, setView] = useState("table");
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const isDirtyRef = useRef(false);
   const requestCloseRef = useRef<(() => void) | null>(null);
 
@@ -95,6 +102,22 @@ export function EquipmentBookingsScreen() {
 
   const isLoading = isLoadingBookings || isLoadingEquipment;
 
+  const handleCreateBooking = useCallback(async (params: { equipmentId: string; equipmentName: string; bookedBy: string; checkedOutDate: string; expectedReturnAt: string; notes: string; status: Booking["status"] }) => {
+    try {
+      const savedBooking = await createBooking(params);
+      syncBooking(savedBooking);
+      const refreshedEquipment = await fetchEquipmentById(savedBooking.equipmentId);
+      if (refreshedEquipment) {
+        syncEquipment(refreshedEquipment);
+      }
+      toast({ title: "Booking created", variant: "success" });
+    } catch (error) {
+      const message = getErrorMessage(error, "The booking could not be created.");
+      toast({ title: "Failed to create booking", description: message, variant: "error" });
+      throw new Error(message);
+    }
+  }, [syncBooking, syncEquipment, toast]);
+
   return (
     <section>
       <Header.Root className="p-4 pt-8 mx-auto max-w-content">
@@ -116,6 +139,7 @@ export function EquipmentBookingsScreen() {
           </Header.Lead>
           <Header.Trail className="gap-2 flex-1 justify-end">
             <Input icon={<Search />} placeholder="Search bookings..." className="w-full max-w-sm" value={state.search} onChange={(e) => setSearch(e.target.value)} />
+            <Button onClick={() => setCreateOpen(true)}>New Booking</Button>
             <Drawer.Root>
               <Drawer.Trigger>
                 <Button icon={<Settings2 />} variant="secondary">Filter</Button>
@@ -147,6 +171,7 @@ export function EquipmentBookingsScreen() {
           <BookingCalendar bookings={filtered} equipmentMap={equipmentMap} />
         )}
       </div>
+      <CreateBookingModal open={createOpen} onOpenChange={setCreateOpen} equipment={equipment} onCreate={handleCreateBooking} />
     </section>
   );
 }
