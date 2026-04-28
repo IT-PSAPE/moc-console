@@ -1,10 +1,13 @@
 import { useCallback, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Drawer } from "@/components/overlays/drawer"
 import { Button } from "@/components/controls/button"
 import { Badge } from "@/components/display/badge"
 import { Label, Paragraph, Title } from "@/components/display/text"
 import { Divider } from "@/components/display/divider"
 import { MetaRow } from "@/components/display/meta-row"
+import { useAuth } from "@/lib/auth-context"
+import { routes } from "@/screens/console-routes"
 import { mediaTypeColor, mediaTypeLabel } from "@/types/broadcast/constants"
 import type { MediaItem } from "@/types/broadcast/media-item"
 import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time"
@@ -15,7 +18,9 @@ import {
   Copy,
   ExternalLink,
   FileType,
+  Maximize2,
   Play,
+  Trash2,
   X,
 } from "lucide-react"
 
@@ -23,6 +28,7 @@ type MediaDetailDrawerProps = {
   item: MediaItem | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  onDelete?: (item: MediaItem) => void
 }
 
 function formatDuration(seconds: number): string {
@@ -31,14 +37,24 @@ function formatDuration(seconds: number): string {
   return m > 0 ? `${m}:${String(s).padStart(2, "0")}` : `${s}s`
 }
 
-export function MediaDetailDrawer({ item, open, onOpenChange }: MediaDetailDrawerProps) {
+export function MediaDetailDrawer({ item, open, onOpenChange, onDelete }: MediaDetailDrawerProps) {
+  const { role } = useAuth()
+  const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
+
+  const canDelete = role?.can_delete === true
 
   const handleCopy = useCallback((text: string) => {
     navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }, [])
+
+  const handleOpenFullPage = useCallback(() => {
+    if (!item) return
+    onOpenChange(false)
+    navigate(`/${routes.broadcastMediaDetail.replace(":id", item.id)}`)
+  }, [item, navigate, onOpenChange])
 
   if (!item) return null
 
@@ -49,7 +65,15 @@ export function MediaDetailDrawer({ item, open, onOpenChange }: MediaDetailDrawe
         <Drawer.Panel className="!max-w-lg">
           <Drawer.Header className="flex items-center gap-1">
             <Button.Icon variant="ghost" icon={<X />} onClick={() => onOpenChange(false)} />
+            <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={handleOpenFullPage} />
             <div className="flex-1" />
+            {canDelete && (
+              <Button.Icon
+                variant="ghost"
+                icon={<Trash2 />}
+                onClick={() => onDelete?.(item)}
+              />
+            )}
           </Drawer.Header>
 
           <Drawer.Content className="py-4">

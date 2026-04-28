@@ -175,8 +175,9 @@ export default defineConfig(({ mode }) => {
           start_url: '/',
           scope: '/',
           display: 'standalone',
+          display_override: ['edge-to-edge', 'standalone'],
           orientation: 'any',
-          theme_color: '#E33483',
+          theme_color: '#ffffff',
           background_color: '#ffffff',
           icons: [
             { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },

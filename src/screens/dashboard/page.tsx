@@ -189,7 +189,7 @@ export function DashboardScreen() {
                                 </div>
                                 <Button variant="ghost" icon={<ArrowRight />} iconPosition="trailing" onClick={() => navigate(`/${routes.requestsOverview}`)}>View all</Button>
                             </Card.Header>
-                            <Card.Content ghost className='flex flex-col gap-1.5'>
+                            <Card.Content ghost={overdueRequests.length > 0} className={overdueRequests.length > 0 ? 'flex flex-col gap-1.5' : ''}>
                                 {isLoadingActive ? (
                                     <div className="flex justify-center py-6"><Spinner /></div>
                                 ) : overdueRequests.length > 0 ? (
@@ -222,7 +222,7 @@ export function DashboardScreen() {
                                 </div>
                                 <Button variant="ghost" icon={<ArrowRight />} iconPosition="trailing" onClick={() => navigate(`/${routes.requestsOverview}`)}>View all</Button>
                             </Card.Header>
-                            <Card.Content ghost className='flex flex-col gap-1.5'>
+                            <Card.Content ghost={upcomingRequests.length > 0} className={upcomingRequests.length > 0 ? 'flex flex-col gap-1.5' : ''}>
                                 {isLoadingActive ? (
                                     <div className="flex justify-center py-6"><Spinner /></div>
                                 ) : upcomingRequests.length > 0 ? (

@@ -329,24 +329,27 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
     throw new Error("Not authenticated")
   }
 
-  // Fetch from YouTube, paginating through all pages
+  // Fetch only upcoming (scheduled) and active (live) broadcasts. Completed
+  // broadcasts stay in our DB and are not re-fetched.
   const broadcasts: any[] = []
-  let pageToken: string | undefined = undefined
-  do {
-    const pageParam = pageToken ? `&pageToken=${pageToken}` : ""
-    const response = await youtubeApiFetch(
-      `/liveBroadcasts?part=snippet,status,contentDetails&broadcastType=all&mine=true&maxResults=50${pageParam}`,
-    )
+  for (const broadcastStatus of ["upcoming", "active"] as const) {
+    let pageToken: string | undefined = undefined
+    do {
+      const pageParam = pageToken ? `&pageToken=${pageToken}` : ""
+      const response = await youtubeApiFetch(
+        `/liveBroadcasts?part=snippet,status,contentDetails&broadcastStatus=${broadcastStatus}&broadcastType=all&maxResults=50${pageParam}`,
+      )
 
-    if (!response.ok) {
-      const err = await response.text()
-      throw new Error(`Failed to fetch broadcasts: ${err}`)
-    }
+      if (!response.ok) {
+        const err = await response.text()
+        throw new Error(`Failed to fetch broadcasts: ${err}`)
+      }
 
-    const data = await response.json()
-    broadcasts.push(...(data.items ?? []))
-    pageToken = data.nextPageToken
-  } while (pageToken)
+      const data = await response.json()
+      broadcasts.push(...(data.items ?? []))
+      pageToken = data.nextPageToken
+    } while (pageToken)
+  }
 
   // Map YouTube lifecycle status to our stream_status enum
   function mapLifecycleStatus(status: string): Stream["streamStatus"] {
@@ -395,11 +398,14 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
       .upsert(payload, { onConflict: "workspace_id,youtube_broadcast_id" })
   }
 
+  // Remove local non-complete streams that are no longer present remotely
+  // (cancelled before going live). Completed streams are preserved.
   const remoteIds = broadcasts.map((b) => b.id).filter(Boolean)
   let deleteQuery = supabase
     .from("streams")
     .delete()
     .eq("workspace_id", workspaceId)
+    .neq("stream_status", "complete")
   if (remoteIds.length > 0) {
     const quoted = remoteIds.map((id) => `"${id}"`).join(",")
     deleteQuery = deleteQuery.not("youtube_broadcast_id", "in", `(${quoted})`)

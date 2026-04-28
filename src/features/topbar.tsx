@@ -49,17 +49,21 @@ export function TopBar({ children }: HTMLAttributes<HTMLDivElement>) {
         : (state.isCollapsed ? 'Expand sidebar' : 'Collapse sidebar')
 
     return (
-        <header className="area-topbar h-header border-b border-secondary flex items-center gap-2 px-4">
-            <button
-                type="button"
-                onClick={handleClick}
-                className="size-11 flex items-center justify-center rounded-md hover:bg-[var(--background-color-secondary_hover)] active:bg-[var(--background-color-secondary_hover)] text-[var(--text-color-secondary)] cursor-pointer"
-                aria-label={label}
-            >
-                <Icon className="size-5" />
-            </button>
-            {children}
-            <div ref={slotRef} className="ml-auto flex items-center gap-2" />
+        <header
+            className="area-topbar bg-primary border-b border-secondary flex items-center gap-2 px-4 pt-[env(safe-area-inset-top)]"
+        >
+            <div className="flex items-center gap-2 w-full h-header">
+                <button
+                    type="button"
+                    onClick={handleClick}
+                    className="size-11 flex items-center justify-center rounded-md hover:bg-[var(--background-color-secondary_hover)] active:bg-[var(--background-color-secondary_hover)] text-[var(--text-color-secondary)] cursor-pointer"
+                    aria-label={label}
+                >
+                    <Icon className="size-5" />
+                </button>
+                {children}
+                <div ref={slotRef} className="ml-auto flex items-center gap-2" />
+            </div>
         </header>
     )
 }

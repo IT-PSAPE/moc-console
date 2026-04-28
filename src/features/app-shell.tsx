@@ -158,7 +158,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Breadcrumb.Root />
                 </TopBar>
 
-                <main className="area-content min-h-0 overflow-y-auto bg-[var(--background-color-primary)]">
+                <main className="area-content min-h-0 overflow-y-auto bg-[var(--background-color-primary)] pb-[env(safe-area-inset-bottom)]">
                     {children}
                 </main>
             </div>

@@ -12,6 +12,7 @@ dist
 dist-ssr
 output
 build
+.notes
 *.local
 
 # Editor directories and files

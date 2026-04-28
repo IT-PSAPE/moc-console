@@ -41,6 +41,7 @@ type ConnectionRow = {
   presets: StreamPreset | null
   connected_by: string
   created_at: string
+  token_expires_at: string
 }
 
 function mapStreamRow(row: StreamRow): Stream {
@@ -84,6 +85,7 @@ function mapConnectionRow(row: ConnectionRow): YouTubeConnection {
     presets: row.presets ?? null,
     connectedBy: row.connected_by,
     createdAt: row.created_at,
+    tokenExpiresAt: row.token_expires_at,
   }
 }
 
@@ -124,7 +126,7 @@ export async function fetchYouTubeConnection(): Promise<YouTubeConnection | null
   const workspaceId = await getCurrentWorkspaceId()
   const { data, error } = await supabase
     .from("youtube_connections")
-    .select("id, workspace_id, channel_id, channel_title, presets, connected_by, created_at")
+    .select("id, workspace_id, channel_id, channel_title, presets, connected_by, created_at, token_expires_at")
     .eq("workspace_id", workspaceId)
     .maybeSingle()
 

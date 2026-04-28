@@ -60,6 +60,7 @@ export type YouTubeConnection = {
   channelTitle: string
   connectedBy: string
   createdAt: string
+  tokenExpiresAt: string
   presets: StreamPreset | null
 }
 
