@@ -57,7 +57,7 @@ export function BroadcastMediaScreen() {
     if (!pendingDelete) return
     setIsDeleting(true)
     try {
-      await deleteMediaItem(pendingDelete.id)
+      await deleteMediaItem(pendingDelete)
       removeMediaItem(pendingDelete.id)
       toast({ title: "Media deleted", variant: "success" })
       setSelectedItem(null)

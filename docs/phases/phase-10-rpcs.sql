@@ -156,3 +156,294 @@ BEGIN
   RETURN v_checklist_id;
 END;
 $$;
+
+-- 3. save_playlist_queue
+CREATE OR REPLACE FUNCTION public.save_playlist_queue(
+  p_playlist_id uuid,
+  p_cues jsonb
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $$
+BEGIN
+  DELETE FROM public.queue
+  WHERE playlist_id = p_playlist_id;
+
+  INSERT INTO public.queue (id, playlist_id, media_id, sort_order, duration, disabled)
+  SELECT
+    cue.id,
+    p_playlist_id,
+    cue.media_id,
+    cue.sort_order,
+    cue.duration,
+    cue.disabled
+  FROM jsonb_to_recordset(coalesce(p_cues, '[]'::jsonb)) AS cue(
+    id uuid,
+    media_id uuid,
+    sort_order integer,
+    duration integer,
+    disabled boolean
+  );
+END;
+$$;
+
+-- 4. save_template_tracks
+CREATE OR REPLACE FUNCTION public.save_template_tracks(
+  p_event_template_id uuid,
+  p_tracks jsonb
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $$
+DECLARE
+  v_track_ids uuid[];
+BEGIN
+  SELECT coalesce(array_agg(id), '{}')
+  INTO v_track_ids
+  FROM public.template_tracks
+  WHERE event_template_id = p_event_template_id;
+
+  IF cardinality(v_track_ids) > 0 THEN
+    DELETE FROM public.template_cues
+    WHERE template_track_id = ANY(v_track_ids);
+  END IF;
+
+  DELETE FROM public.template_tracks
+  WHERE event_template_id = p_event_template_id;
+
+  INSERT INTO public.template_tracks (id, event_template_id, name, color_id, sort_order)
+  SELECT
+    track.id,
+    p_event_template_id,
+    track.name,
+    colors.id,
+    track.sort_order
+  FROM jsonb_to_recordset(coalesce(p_tracks, '[]'::jsonb)) AS track(
+    id uuid,
+    name text,
+    color_key text,
+    sort_order integer,
+    cues jsonb
+  )
+  JOIN public.colors ON colors.key = track.color_key;
+
+  INSERT INTO public.template_cues (id, template_track_id, label, start, duration, type, assignee, notes)
+  SELECT
+    cue.id,
+    (track.value->>'id')::uuid,
+    cue.label,
+    cue.start,
+    cue.duration,
+    cue.type,
+    cue.assignee,
+    cue.notes
+  FROM jsonb_array_elements(coalesce(p_tracks, '[]'::jsonb)) AS track(value)
+  CROSS JOIN LATERAL jsonb_to_recordset(coalesce(track.value->'cues', '[]'::jsonb)) AS cue(
+    id uuid,
+    label text,
+    start integer,
+    duration integer,
+    type public.cue_type,
+    assignee text,
+    notes text
+  );
+END;
+$$;
+
+-- 5. save_event_tracks
+CREATE OR REPLACE FUNCTION public.save_event_tracks(
+  p_event_id uuid,
+  p_tracks jsonb
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $$
+DECLARE
+  v_track_ids uuid[];
+BEGIN
+  SELECT coalesce(array_agg(id), '{}')
+  INTO v_track_ids
+  FROM public.tracks
+  WHERE event_id = p_event_id;
+
+  IF cardinality(v_track_ids) > 0 THEN
+    DELETE FROM public.cues
+    WHERE track_id = ANY(v_track_ids);
+  END IF;
+
+  DELETE FROM public.tracks
+  WHERE event_id = p_event_id;
+
+  INSERT INTO public.tracks (id, event_id, name, color_id, sort_order)
+  SELECT
+    track.id,
+    p_event_id,
+    track.name,
+    colors.id,
+    track.sort_order
+  FROM jsonb_to_recordset(coalesce(p_tracks, '[]'::jsonb)) AS track(
+    id uuid,
+    name text,
+    color_key text,
+    sort_order integer,
+    cues jsonb
+  )
+  JOIN public.colors ON colors.key = track.color_key;
+
+  INSERT INTO public.cues (id, track_id, label, start, duration, type, assignee, notes)
+  SELECT
+    cue.id,
+    (track.value->>'id')::uuid,
+    cue.label,
+    cue.start,
+    cue.duration,
+    cue.type,
+    cue.assignee,
+    cue.notes
+  FROM jsonb_array_elements(coalesce(p_tracks, '[]'::jsonb)) AS track(value)
+  CROSS JOIN LATERAL jsonb_to_recordset(coalesce(track.value->'cues', '[]'::jsonb)) AS cue(
+    id uuid,
+    label text,
+    start integer,
+    duration integer,
+    type public.cue_type,
+    assignee text,
+    notes text
+  );
+END;
+$$;
+
+-- 6. save_template_checklist_structure
+-- Drop both possible signatures first so PostgREST/Supabase schema cache
+-- doesn't keep resolving an older parameter order.
+DROP FUNCTION IF EXISTS public.save_template_checklist_structure(uuid, jsonb);
+DROP FUNCTION IF EXISTS public.save_template_checklist_structure(jsonb, uuid);
+
+CREATE OR REPLACE FUNCTION public.save_template_checklist_structure(
+  p_checklist_template_id uuid,
+  p_checklist jsonb
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $$
+BEGIN
+  DELETE FROM public.template_items
+  WHERE checklist_template_id = p_checklist_template_id;
+
+  DELETE FROM public.template_sections
+  WHERE checklist_template_id = p_checklist_template_id;
+
+  INSERT INTO public.template_sections (id, checklist_template_id, name, sort_order)
+  SELECT
+    section.id,
+    p_checklist_template_id,
+    section.name,
+    section.sort_order
+  FROM jsonb_to_recordset(coalesce(p_checklist->'sections', '[]'::jsonb)) AS section(
+    id uuid,
+    name text,
+    sort_order integer,
+    items jsonb
+  );
+
+  INSERT INTO public.template_items (id, checklist_template_id, template_section_id, label, sort_order)
+  SELECT
+    item.id,
+    p_checklist_template_id,
+    NULL,
+    item.label,
+    item.sort_order
+  FROM jsonb_to_recordset(coalesce(p_checklist->'items', '[]'::jsonb)) AS item(
+    id uuid,
+    label text,
+    checked boolean,
+    sort_order integer
+  );
+
+  INSERT INTO public.template_items (id, checklist_template_id, template_section_id, label, sort_order)
+  SELECT
+    item.id,
+    p_checklist_template_id,
+    (section.value->>'id')::uuid,
+    item.label,
+    item.sort_order
+  FROM jsonb_array_elements(coalesce(p_checklist->'sections', '[]'::jsonb)) AS section(value)
+  CROSS JOIN LATERAL jsonb_to_recordset(coalesce(section.value->'items', '[]'::jsonb)) AS item(
+    id uuid,
+    label text,
+    checked boolean,
+    sort_order integer
+  );
+END;
+$$;
+
+-- 7. save_checklist_structure
+-- Drop both possible signatures first so PostgREST/Supabase schema cache
+-- doesn't keep resolving an older parameter order.
+DROP FUNCTION IF EXISTS public.save_checklist_structure(uuid, jsonb);
+DROP FUNCTION IF EXISTS public.save_checklist_structure(jsonb, uuid);
+
+CREATE OR REPLACE FUNCTION public.save_checklist_structure(
+  p_checklist_id uuid,
+  p_checklist jsonb
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $$
+BEGIN
+  DELETE FROM public.checklist_items
+  WHERE checklist_id = p_checklist_id;
+
+  DELETE FROM public.checklist_sections
+  WHERE checklist_id = p_checklist_id;
+
+  INSERT INTO public.checklist_sections (id, checklist_id, name, sort_order)
+  SELECT
+    section.id,
+    p_checklist_id,
+    section.name,
+    section.sort_order
+  FROM jsonb_to_recordset(coalesce(p_checklist->'sections', '[]'::jsonb)) AS section(
+    id uuid,
+    name text,
+    sort_order integer,
+    items jsonb
+  );
+
+  INSERT INTO public.checklist_items (id, checklist_id, section_id, label, checked, sort_order)
+  SELECT
+    item.id,
+    p_checklist_id,
+    NULL,
+    item.label,
+    item.checked,
+    item.sort_order
+  FROM jsonb_to_recordset(coalesce(p_checklist->'items', '[]'::jsonb)) AS item(
+    id uuid,
+    label text,
+    checked boolean,
+    sort_order integer
+  );
+
+  INSERT INTO public.checklist_items (id, checklist_id, section_id, label, checked, sort_order)
+  SELECT
+    item.id,
+    p_checklist_id,
+    (section.value->>'id')::uuid,
+    item.label,
+    item.checked,
+    item.sort_order
+  FROM jsonb_array_elements(coalesce(p_checklist->'sections', '[]'::jsonb)) AS section(value)
+  CROSS JOIN LATERAL jsonb_to_recordset(coalesce(section.value->'items', '[]'::jsonb)) AS item(
+    id uuid,
+    label text,
+    checked boolean,
+    sort_order integer
+  );
+END;
+$$;

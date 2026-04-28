@@ -18,7 +18,7 @@ export type ChecklistRunFilters = {
 
 const defaultFilters: ChecklistRunFilters = {
     search: '',
-    includePast: false,
+    includePast: true,
     dateRange: { start: '', end: '' },
     itemCount: { min: '', max: '' },
     completion: 'all',

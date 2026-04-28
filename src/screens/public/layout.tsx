@@ -9,7 +9,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
         <div className="mx-auto max-w-content-md flex items-center gap-4 px-6 py-4">
           <Link to="/" className="flex items-center gap-2">
             <div className="size-7 rounded-lg bg-brand_solid">
-              <img src="/logo.svg" alt="" className="w-full h-full" />
+              <img src="./logo.svg" alt="" className="w-full h-full" />
             </div>
             <span className="label-md">MOC Console</span>
           </Link>

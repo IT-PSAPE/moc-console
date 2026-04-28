@@ -28,10 +28,12 @@ function mapUserRow(row: UserRow): User {
 }
 
 export async function fetchAssigneesByRequestId(requestId: string): Promise<ResolvedAssignee[]> {
+  const workspaceId = await getCurrentWorkspaceId();
   const { data, error } = await supabase
     .from("request_assignees")
-    .select("duty, users(id, name, surname, email, telegram_chat_id)")
-    .eq("request_id", requestId);
+    .select("duty, users(id, name, surname, email, telegram_chat_id), requests!inner(workspace_id)")
+    .eq("request_id", requestId)
+    .eq("requests.workspace_id", workspaceId);
 
   if (error) {
     throw new Error(error.message);

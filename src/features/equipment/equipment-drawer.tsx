@@ -61,7 +61,7 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
   const { state: drawerState, actions: drawerActions } = useDrawer();
   const navigate = useNavigate();
   const { toast } = useFeedback();
-  const { actions: { syncEquipment, removeEquipment } } = useEquipment();
+  const { actions: { syncEquipment, removeEquipment, removeBookingsByEquipmentId } } = useEquipment();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(false);
@@ -157,6 +157,7 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
     try {
       await deleteEquipment(equipment.id);
       removeEquipment(equipment.id);
+      removeBookingsByEquipmentId(equipment.id);
       toast({ title: "Equipment deleted", variant: "success" });
       setShowDeleteModal(false);
       closeDrawer();

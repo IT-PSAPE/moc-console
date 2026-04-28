@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, Plus, Search, Settings2 } from 'lucide-react'
+import { Calendar, FilePlus2, Plus, Search, Settings2 } from 'lucide-react'
 import { Button } from '@/components/controls/button'
 import { Card } from '@/components/display/card'
 import { Header } from '@/components/display/header'
@@ -9,9 +9,11 @@ import { Spinner } from '@/components/feedback/spinner'
 import { Input } from '@/components/form/input'
 import { Drawer } from '@/components/overlays/drawer'
 import { Dropdown } from '@/components/overlays/dropdown'
+import { CreateEventRunModal, type EventRunSubmit } from '@/features/cue-sheet/create-event-run-modal'
 import { EventItem } from '@/features/cue-sheet/event-item'
 import { EventRunFilterDrawer } from '@/features/cue-sheet/event-run-filter-drawer'
 import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
+import { partitionEventRuns } from '@/features/cue-sheet/run-status'
 import { useEventRunFilters } from '@/features/cue-sheet/use-event-run-filters'
 import type { CueSheetEvent } from '@/types/cue-sheet'
 import { routes } from '@/screens/console-routes'
@@ -19,9 +21,11 @@ import { routes } from '@/screens/console-routes'
 export function CueSheetEventScreen() {
     const {
         state: { events, tracksByEventId, isLoadingEvents },
-        actions: { loadEvents, createEventInstance },
+        actions: { loadEvents, createEventInstance, createBlankEvent },
     } = useCueSheet()
     const navigate = useNavigate()
+    const [modalOpen, setModalOpen] = useState(false)
+    const [modalTemplate, setModalTemplate] = useState<CueSheetEvent | null>(null)
 
     useEffect(() => {
         loadEvents()
@@ -31,11 +35,24 @@ export function CueSheetEventScreen() {
     const eventRuns = useMemo(() => events.filter((event) => event.kind === 'instance'), [events])
     const eventFilters = useEventRunFilters(eventRuns, tracksByEventId)
     const { filtered, filters, setSearch } = eventFilters
+    const { active: activeEventRuns, past: pastEventRuns } = useMemo(() => partitionEventRuns(filtered), [filtered])
 
-    const handleCreateRun = useCallback(async (template: CueSheetEvent) => {
-        const instance = await createEventInstance(template)
+    const handlePickBlank = useCallback(() => {
+        setModalTemplate(null)
+        setModalOpen(true)
+    }, [])
+
+    const handlePickTemplate = useCallback((template: CueSheetEvent) => {
+        setModalTemplate(template)
+        setModalOpen(true)
+    }, [])
+
+    const handleSubmit = useCallback(async (input: EventRunSubmit) => {
+        const instance = input.kind === 'template'
+            ? await createEventInstance(input.template, { title: input.title, description: input.description, scheduledAt: input.scheduledAt })
+            : await createBlankEvent({ title: input.title, description: input.description, scheduledAt: input.scheduledAt, duration: input.duration })
         navigate(`/cue-sheet/events/${instance.id}`)
-    }, [createEventInstance, navigate])
+    }, [createBlankEvent, createEventInstance, navigate])
 
     const handleOpenTemplates = useCallback(() => {
         navigate(`/${routes.cueSheetTemplates}`)
@@ -72,14 +89,19 @@ export function CueSheetEventScreen() {
                                     <Button.Icon variant='secondary' icon={<Plus />} />
                                 </Dropdown.Trigger>
                                 <Dropdown.Panel>
+                                    <Dropdown.Item onSelect={handlePickBlank}>
+                                        <FilePlus2 className="size-4" />
+                                        Blank event
+                                    </Dropdown.Item>
+                                    {eventTemplates.length > 0 && <Dropdown.Separator />}
                                     {eventTemplates.map((event) => (
-                                        <Dropdown.Item key={event.id} onSelect={() => void handleCreateRun(event)}>
+                                        <Dropdown.Item key={event.id} onSelect={() => handlePickTemplate(event)}>
                                             {event.title}
                                         </Dropdown.Item>
                                     ))}
                                     {eventTemplates.length === 0 && (
                                         <Dropdown.Item onSelect={handleOpenTemplates}>
-                                            Create event template
+                                            Manage event templates
                                         </Dropdown.Item>
                                     )}
                                 </Dropdown.Panel>
@@ -90,9 +112,24 @@ export function CueSheetEventScreen() {
                         {isLoadingEvents ? (
                             <div className="flex justify-center py-6"><Spinner /></div>
                         ) : filtered.length > 0 ? (
-                            filtered.map((event) => (
-                                <EventItem key={event.id} event={event} />
-                            ))
+                            <>
+                                {activeEventRuns.length > 0 && (
+                                    <>
+                                        <Label.sm className="px-4 pt-2 text-tertiary">Upcoming & In Progress</Label.sm>
+                                        {activeEventRuns.map((event) => (
+                                            <EventItem key={event.id} event={event} />
+                                        ))}
+                                    </>
+                                )}
+                                {pastEventRuns.length > 0 && (
+                                    <>
+                                        <Label.sm className="px-4 pt-4 text-tertiary">Past</Label.sm>
+                                        {pastEventRuns.map((event) => (
+                                            <EventItem key={event.id} event={event} />
+                                        ))}
+                                    </>
+                                )}
+                            </>
                         ) : (
                             <div className="py-8 text-center">
                                 <Paragraph.sm className="text-tertiary">No event runs match your filters.</Paragraph.sm>
@@ -101,6 +138,8 @@ export function CueSheetEventScreen() {
                     </Card.Content>
                 </Card.Root>
             </div>
+
+            <CreateEventRunModal open={modalOpen} onOpenChange={setModalOpen} template={modalTemplate} onSubmit={handleSubmit} />
         </section>
     )
 }

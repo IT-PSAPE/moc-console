@@ -62,7 +62,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Sidebar.Panel>
                     <Sidebar.Header>
                         <div className="size-8 shrink-0 rounded-xl bg-brand_solid" >
-                            <img src="logo.svg" alt="" className='w-full h-full' />
+                            <img src="./logo.svg" alt="" className='w-full h-full' />
                         </div>
                         {!state.isCollapsed && (
                             <div className="flex flex-col">

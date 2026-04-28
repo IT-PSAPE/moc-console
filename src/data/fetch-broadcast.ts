@@ -121,10 +121,12 @@ export async function fetchMedia(): Promise<MediaItem[]> {
 }
 
 export async function fetchMediaById(id: string): Promise<MediaItem | undefined> {
+  const workspaceId = await getCurrentWorkspaceId();
   const { data, error } = await supabase
     .from("media")
     .select("id, name, type, url, thumbnail_url, created_at")
     .eq("id", id)
+    .eq("workspace_id", workspaceId)
     .maybeSingle();
 
   if (error) {

@@ -17,6 +17,8 @@ type EquipmentContextValue = {
     syncEquipment: (equipment: Equipment) => void;
     removeEquipment: (id: string) => void;
     syncBooking: (booking: Booking) => void;
+    removeBooking: (id: string) => void;
+    removeBookingsByEquipmentId: (equipmentId: string) => void;
   };
 };
 
@@ -46,7 +48,22 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const syncBooking = useCallback((updated: Booking) => {
-    setBookings((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+    setBookings((prev) => {
+      const exists = prev.some((booking) => booking.id === updated.id);
+      if (!exists) {
+        return [updated, ...prev];
+      }
+
+      return prev.map((booking) => (booking.id === updated.id ? updated : booking));
+    });
+  }, []);
+
+  const removeBooking = useCallback((id: string) => {
+    setBookings((prev) => prev.filter((booking) => booking.id !== id));
+  }, []);
+
+  const removeBookingsByEquipmentId = useCallback((equipmentId: string) => {
+    setBookings((prev) => prev.filter((booking) => booking.equipmentId !== equipmentId));
   }, []);
 
   const loadEquipment = useCallback(async () => {
@@ -88,9 +105,9 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       state: { equipment, bookings, isLoadingEquipment, isLoadingBookings },
-      actions: { loadEquipment, loadBookings, addEquipment, syncEquipment, removeEquipment, syncBooking },
+      actions: { loadEquipment, loadBookings, addEquipment, syncEquipment, removeEquipment, syncBooking, removeBooking, removeBookingsByEquipmentId },
     }),
-    [equipment, bookings, isLoadingEquipment, isLoadingBookings, loadEquipment, loadBookings, addEquipment, syncEquipment, removeEquipment, syncBooking],
+    [equipment, bookings, isLoadingEquipment, isLoadingBookings, loadEquipment, loadBookings, addEquipment, syncEquipment, removeEquipment, syncBooking, removeBooking, removeBookingsByEquipmentId],
   );
 
   return <EquipmentContext.Provider value={value}>{children}</EquipmentContext.Provider>;

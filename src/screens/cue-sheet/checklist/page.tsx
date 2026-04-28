@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo } from 'react'
-import { ListChecks, Plus, Search, Settings2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { FilePlus2, ListChecks, Plus, Search, Settings2 } from 'lucide-react'
 import { Button } from '@/components/controls/button'
 import { Card } from '@/components/display/card'
 import { Header } from '@/components/display/header'
@@ -10,7 +10,9 @@ import { Drawer } from '@/components/overlays/drawer'
 import { Dropdown } from '@/components/overlays/dropdown'
 import { ChecklistItemCard } from '@/features/cue-sheet/checklist-item'
 import { ChecklistRunFilterDrawer } from '@/features/cue-sheet/checklist-run-filter-drawer'
+import { CreateChecklistRunModal, type ChecklistRunSubmit } from '@/features/cue-sheet/create-checklist-run-modal'
 import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
+import { partitionChecklistRuns } from '@/features/cue-sheet/run-status'
 import { useChecklistRunFilters } from '@/features/cue-sheet/use-checklist-run-filters'
 import { routes } from '@/screens/console-routes'
 import type { Checklist } from '@/types/cue-sheet'
@@ -19,9 +21,11 @@ import { useNavigate } from 'react-router-dom'
 export function CueSheetChecklistScreen() {
     const {
         state: { checklists, isLoadingChecklists },
-        actions: { loadChecklists, createChecklistInstance },
+        actions: { loadChecklists, createChecklistInstance, createBlankChecklist },
     } = useCueSheet()
     const navigate = useNavigate()
+    const [modalOpen, setModalOpen] = useState(false)
+    const [modalTemplate, setModalTemplate] = useState<Checklist | null>(null)
 
     useEffect(() => {
         loadChecklists()
@@ -31,10 +35,25 @@ export function CueSheetChecklistScreen() {
     const checklistRuns = useMemo(() => checklists.filter((checklist) => checklist.kind === 'instance'), [checklists])
     const checklistFilters = useChecklistRunFilters(checklistRuns)
     const { filtered, filters, setSearch } = checklistFilters
+    const { active: activeChecklistRuns, past: pastChecklistRuns } = useMemo(() => partitionChecklistRuns(filtered), [filtered])
 
-    const handleCreateRun = useCallback(async (template: Checklist) => {
-        await createChecklistInstance(template)
-    }, [createChecklistInstance])
+    const handlePickBlank = useCallback(() => {
+        setModalTemplate(null)
+        setModalOpen(true)
+    }, [])
+
+    const handlePickTemplate = useCallback((template: Checklist) => {
+        setModalTemplate(template)
+        setModalOpen(true)
+    }, [])
+
+    const handleSubmit = useCallback(async (input: ChecklistRunSubmit) => {
+        if (input.kind === 'template') {
+            await createChecklistInstance(input.template, { name: input.name, description: input.description, scheduledAt: input.scheduledAt })
+        } else {
+            await createBlankChecklist({ name: input.name, description: input.description, scheduledAt: input.scheduledAt })
+        }
+    }, [createBlankChecklist, createChecklistInstance])
 
     const handleOpenTemplates = useCallback(() => {
         navigate(`/${routes.cueSheetTemplates}`)
@@ -71,14 +90,19 @@ export function CueSheetChecklistScreen() {
                                     <Button.Icon variant='secondary' icon={<Plus />} />
                                 </Dropdown.Trigger>
                                 <Dropdown.Panel>
+                                    <Dropdown.Item onSelect={handlePickBlank}>
+                                        <FilePlus2 className="size-4" />
+                                        Blank checklist
+                                    </Dropdown.Item>
+                                    {checklistTemplates.length > 0 && <Dropdown.Separator />}
                                     {checklistTemplates.map((checklist) => (
-                                        <Dropdown.Item key={checklist.id} onSelect={() => void handleCreateRun(checklist)}>
+                                        <Dropdown.Item key={checklist.id} onSelect={() => handlePickTemplate(checklist)}>
                                             {checklist.name}
                                         </Dropdown.Item>
                                     ))}
                                     {checklistTemplates.length === 0 && (
                                         <Dropdown.Item onSelect={handleOpenTemplates}>
-                                            Create checklist template
+                                            Manage checklist templates
                                         </Dropdown.Item>
                                     )}
                                 </Dropdown.Panel>
@@ -89,9 +113,24 @@ export function CueSheetChecklistScreen() {
                         {isLoadingChecklists ? (
                             <div className="flex justify-center py-6"><Spinner /></div>
                         ) : filtered.length > 0 ? (
-                            filtered.map((checklist) => (
-                                <ChecklistItemCard key={checklist.id} checklist={checklist} />
-                            ))
+                            <>
+                                {activeChecklistRuns.length > 0 && (
+                                    <>
+                                        <Label.sm className="px-4 pt-2 text-tertiary">Upcoming & In Progress</Label.sm>
+                                        {activeChecklistRuns.map((checklist) => (
+                                            <ChecklistItemCard key={checklist.id} checklist={checklist} />
+                                        ))}
+                                    </>
+                                )}
+                                {pastChecklistRuns.length > 0 && (
+                                    <>
+                                        <Label.sm className="px-4 pt-4 text-tertiary">Past & Completed</Label.sm>
+                                        {pastChecklistRuns.map((checklist) => (
+                                            <ChecklistItemCard key={checklist.id} checklist={checklist} />
+                                        ))}
+                                    </>
+                                )}
+                            </>
                         ) : (
                             <div className="py-8 text-center">
                                 <Paragraph.sm className="text-tertiary">No checklist runs match your filters.</Paragraph.sm>
@@ -100,6 +139,8 @@ export function CueSheetChecklistScreen() {
                     </Card.Content>
                 </Card.Root>
             </div>
+
+            <CreateChecklistRunModal open={modalOpen} onOpenChange={setModalOpen} template={modalTemplate} onSubmit={handleSubmit} />
         </section>
     )
 }

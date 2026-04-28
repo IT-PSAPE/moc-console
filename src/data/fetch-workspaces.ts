@@ -17,22 +17,6 @@ export type WorkspaceDirectory = {
   memberships: WorkspaceMembership[];
 };
 
-const fallbackWorkspace: Workspace = {
-  id: "default-workspace",
-  name: "Default Workspace",
-  slug: "default-workspace",
-};
-
-function getFallbackDirectory(userIds: string[]): WorkspaceDirectory {
-  return {
-    workspaces: [fallbackWorkspace],
-    memberships: userIds.map((userId) => ({
-      workspaceId: fallbackWorkspace.id,
-      userId,
-    })),
-  };
-}
-
 export async function fetchWorkspaceDirectory(userIds: string[]): Promise<WorkspaceDirectory> {
   if (userIds.length === 0) {
     return { workspaces: [], memberships: [] };
@@ -43,8 +27,12 @@ export async function fetchWorkspaceDirectory(userIds: string[]): Promise<Worksp
     supabase.from("workspace_users").select("workspace_id, user_id").in("user_id", userIds),
   ]);
 
-  if (workspaceError || membershipError || !(workspaceData && workspaceData.length > 0)) {
-    return getFallbackDirectory(userIds);
+  if (workspaceError) {
+    throw new Error(workspaceError.message);
+  }
+
+  if (membershipError) {
+    throw new Error(membershipError.message);
   }
 
   return {

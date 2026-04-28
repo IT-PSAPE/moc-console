@@ -78,6 +78,7 @@ export function PlaylistDetailScreen() {
   const [dragActiveItem, setDragActiveItem] = useState<MediaItem | null>(null)
   const [dragActiveCue, setDragActiveCue] = useState<Cue | null>(null)
   const [dropInsertIndex, setDropInsertIndex] = useState<number | null>(null)
+  const persistedPlaylistRef = useRef<Playlist | null>(null)
   const mediaPanelRef = useRef<HTMLDivElement>(null)
   const handleBrowseMedia = useCallback(() => {
     const input = mediaPanelRef.current?.querySelector("input")
@@ -93,6 +94,7 @@ export function PlaylistDetailScreen() {
     const fromContext = contextPlaylists.find((p) => p.id === id)
     if (fromContext) {
       const timerId = window.setTimeout(() => {
+        persistedPlaylistRef.current = fromContext
         setPlaylist(fromContext)
         setIsLoading(false)
       }, 0)
@@ -101,6 +103,7 @@ export function PlaylistDetailScreen() {
     let cancelled = false
     fetchPlaylistById(id).then((data) => {
       if (!cancelled) {
+        persistedPlaylistRef.current = data ?? null
         setPlaylist(data ?? null)
         setIsLoading(false)
       }
@@ -133,36 +136,96 @@ export function PlaylistDetailScreen() {
     setPlaylist((prev) => (prev ? { ...prev, [field]: value } : prev))
   }, [])
 
-  const syncPlaylistUpdate = useCallback((updated: Playlist) => {
-    const previousPlaylist = playlist
-
-    if (!previousPlaylist) {
-      return
-    }
-
+  const persistPlaylistMetadata = useCallback((updated: Playlist, previous: Playlist) => {
     setPlaylist(updated)
     syncPlaylist(updated)
     updatePlaylist(updated)
       .then((savedPlaylist) => {
-        setPlaylist(savedPlaylist)
-        syncPlaylist(savedPlaylist)
+        const nextPlaylist = {
+          ...savedPlaylist,
+          cues: previous.cues,
+          videoSettings: updated.videoSettings,
+        }
+        persistedPlaylistRef.current = nextPlaylist
+        setPlaylist(nextPlaylist)
+        syncPlaylist(nextPlaylist)
       })
       .catch((error) => {
-        setPlaylist(previousPlaylist)
-        syncPlaylist(previousPlaylist)
+        setPlaylist(previous)
+        syncPlaylist(previous)
         toast({ title: "Failed to save", description: getErrorMessage(error, "The playlist could not be updated."), variant: "error" })
       })
-  }, [playlist, syncPlaylist, toast])
+  }, [syncPlaylist, toast])
+
+  const persistPlaylistQueue = useCallback((updated: Playlist, previous: Playlist) => {
+    setPlaylist(updated)
+    syncPlaylist(updated)
+
+    Promise.all([
+      updatePlaylist(updated),
+      updatePlaylistCues(updated.id, updated.cues),
+    ])
+      .then(([savedPlaylist, savedCues]) => {
+        const nextPlaylist = {
+          ...savedPlaylist,
+          cues: savedCues,
+          videoSettings: updated.videoSettings,
+        }
+        persistedPlaylistRef.current = nextPlaylist
+        setPlaylist(nextPlaylist)
+        syncPlaylist(nextPlaylist)
+      })
+      .catch((error) => {
+        setPlaylist(previous)
+        syncPlaylist(previous)
+        toast({ title: "Failed to save", description: getErrorMessage(error, "The playlist could not be updated."), variant: "error" })
+      })
+  }, [syncPlaylist, toast])
 
   const handleNameSave = useCallback((name: string) => {
     if (!playlist) return
-    syncPlaylistUpdate({ ...playlist, name })
-  }, [playlist, syncPlaylistUpdate])
+    persistPlaylistMetadata({ ...playlist, name }, playlist)
+  }, [persistPlaylistMetadata, playlist])
 
   const handleStatusChange = useCallback((status: PlaylistStatus) => {
     if (!playlist) return
-    syncPlaylistUpdate({ ...playlist, status })
-  }, [playlist, syncPlaylistUpdate])
+    persistPlaylistMetadata({ ...playlist, status }, playlist)
+  }, [persistPlaylistMetadata, playlist])
+
+  const handleDescriptionChange = useCallback((value: string) => {
+    updateField("description", value)
+  }, [updateField])
+
+  const handleDescriptionBlur = useCallback(() => {
+    const persistedPlaylist = persistedPlaylistRef.current
+
+    if (!playlist || !persistedPlaylist || playlist.description === persistedPlaylist.description) {
+      return
+    }
+
+    persistPlaylistMetadata(playlist, playlist)
+  }, [persistPlaylistMetadata, playlist])
+
+  const handleDefaultImageDurationChange = useCallback((value: string) => {
+    const nextValue = parseInt(value, 10)
+    if (!Number.isNaN(nextValue) && nextValue > 0) {
+      updateField("defaultImageDuration", nextValue)
+    }
+  }, [updateField])
+
+  const handleDefaultImageDurationBlur = useCallback(() => {
+    const persistedPlaylist = persistedPlaylistRef.current
+
+    if (!playlist) {
+      return
+    }
+
+    if (!persistedPlaylist || playlist.defaultImageDuration === persistedPlaylist.defaultImageDuration) {
+      return
+    }
+
+    persistPlaylistMetadata(playlist, playlist)
+  }, [persistPlaylistMetadata, playlist])
 
   // ─── Add media to queue ─────────────────────────────
 
@@ -177,83 +240,66 @@ export function PlaylistDetailScreen() {
       durationOverride: null,
     }
     const newCues = [...playlist.cues, newCue]
-    const previousCues = playlist.cues
-    setPlaylist((prev) => (prev ? { ...prev, cues: newCues } : prev))
-    updatePlaylistCues(playlist.id, newCues).catch((error) => {
-      setPlaylist((prev) => (prev ? { ...prev, cues: previousCues } : prev))
-      toast({ title: "Failed to save", description: getErrorMessage(error, "The cue could not be added."), variant: "error" })
-    })
-  }, [playlist, toast])
+    persistPlaylistQueue({ ...playlist, cues: newCues }, playlist)
+  }, [persistPlaylistQueue, playlist])
 
   // ─── Cue mutations ──────────────────────────────────
 
   const handleRemoveCue = useCallback((cueId: string) => {
-    setPlaylist((prev) => {
-      if (!prev) return prev
-      const cues = prev.cues
-        .filter((c) => c.id !== cueId)
-        .map((c, i) => ({ ...c, order: i + 1 }))
-      return { ...prev, cues }
-    })
-  }, [])
+    if (!playlist) return
+    const cues = playlist.cues
+      .filter((c) => c.id !== cueId)
+      .map((c, i) => ({ ...c, order: i + 1 }))
+    persistPlaylistQueue({ ...playlist, cues }, playlist)
+  }, [persistPlaylistQueue, playlist])
 
   const handleUpdateCue = useCallback((updatedCue: Cue) => {
-    setPlaylist((prev) => {
-      if (!prev) return prev
-      const cues = prev.cues.map((c) => c.id === updatedCue.id ? updatedCue : c)
-      return { ...prev, cues }
-    })
-  }, [])
+    if (!playlist) return
+    const cues = playlist.cues.map((cue) => cue.id === updatedCue.id ? updatedCue : cue)
+    persistPlaylistQueue({ ...playlist, cues }, playlist)
+  }, [persistPlaylistQueue, playlist])
 
   const handleDuplicateCue = useCallback((cueId: string) => {
-    setPlaylist((prev) => {
-      if (!prev) return prev
-      const idx = prev.cues.findIndex((c) => c.id === cueId)
-      if (idx === -1) return prev
-      const original = prev.cues[idx]
-      const clone: Cue = {
-        ...original,
-        id: crypto.randomUUID(),
-      }
-      const newCues = [...prev.cues]
-      newCues.splice(idx + 1, 0, clone)
-      return { ...prev, cues: newCues.map((c, i) => ({ ...c, order: i + 1 })) }
-    })
-  }, [])
+    if (!playlist) return
+    const idx = playlist.cues.findIndex((cue) => cue.id === cueId)
+    if (idx === -1) return
+    const original = playlist.cues[idx]
+    const clone: Cue = {
+      ...original,
+      id: crypto.randomUUID(),
+    }
+    const newCues = [...playlist.cues]
+    newCues.splice(idx + 1, 0, clone)
+    persistPlaylistQueue({ ...playlist, cues: newCues.map((cue, index) => ({ ...cue, order: index + 1 })) }, playlist)
+  }, [persistPlaylistQueue, playlist])
 
   const handleMoveToTop = useCallback((cueId: string) => {
-    setPlaylist((prev) => {
-      if (!prev) return prev
-      const idx = prev.cues.findIndex((c) => c.id === cueId)
-      if (idx <= 0) return prev
-      const cues = [...prev.cues]
-      const [moved] = cues.splice(idx, 1)
-      cues.unshift(moved)
-      return { ...prev, cues: cues.map((c, i) => ({ ...c, order: i + 1 })) }
-    })
-  }, [])
+    if (!playlist) return
+    const idx = playlist.cues.findIndex((cue) => cue.id === cueId)
+    if (idx <= 0) return
+    const cues = [...playlist.cues]
+    const [moved] = cues.splice(idx, 1)
+    cues.unshift(moved)
+    persistPlaylistQueue({ ...playlist, cues: cues.map((cue, index) => ({ ...cue, order: index + 1 })) }, playlist)
+  }, [persistPlaylistQueue, playlist])
 
   const handleMoveToBottom = useCallback((cueId: string) => {
-    setPlaylist((prev) => {
-      if (!prev) return prev
-      const idx = prev.cues.findIndex((c) => c.id === cueId)
-      if (idx === -1 || idx === prev.cues.length - 1) return prev
-      const cues = [...prev.cues]
-      const [moved] = cues.splice(idx, 1)
-      cues.push(moved)
-      return { ...prev, cues: cues.map((c, i) => ({ ...c, order: i + 1 })) }
-    })
-  }, [])
+    if (!playlist) return
+    const idx = playlist.cues.findIndex((cue) => cue.id === cueId)
+    if (idx === -1 || idx === playlist.cues.length - 1) return
+    const cues = [...playlist.cues]
+    const [moved] = cues.splice(idx, 1)
+    cues.push(moved)
+    persistPlaylistQueue({ ...playlist, cues: cues.map((cue, index) => ({ ...cue, order: index + 1 })) }, playlist)
+  }, [persistPlaylistQueue, playlist])
 
   const handleToggleDisable = useCallback((cueId: string) => {
-    setPlaylist((prev) => {
-      if (!prev) return prev
-      return {
-        ...prev,
-        cues: prev.cues.map((c) => c.id === cueId ? { ...c, disabled: !c.disabled } : c),
-      }
-    })
-  }, [])
+    if (!playlist) return
+    persistPlaylistQueue({
+      ...playlist,
+      cues: playlist.cues.map((cue) => cue.id === cueId ? { ...cue, disabled: !cue.disabled } : cue),
+    }, playlist)
+  }, [persistPlaylistQueue, playlist])
 
   // ─── Drag from media → queue ────────────────────────
 
@@ -305,18 +351,12 @@ export function PlaylistDetailScreen() {
       const overIndex = playlist.cues.findIndex((c) => c.id === overId)
       if (overIndex === -1) return
 
-      const previousCues = playlist.cues
       const reordered = [...playlist.cues]
       const [moved] = reordered.splice(activeCueIndex, 1)
       reordered.splice(overIndex, 0, moved)
       const renumbered = reordered.map((c, i) => ({ ...c, order: i + 1 }))
 
-      setPlaylist((prev) => (prev ? { ...prev, cues: renumbered } : prev))
-
-      updatePlaylistCues(playlist.id, renumbered).catch((error) => {
-        setPlaylist((prev) => (prev ? { ...prev, cues: previousCues } : prev))
-        toast({ title: "Failed to save", description: getErrorMessage(error, "The cue order could not be updated."), variant: "error" })
-      })
+      persistPlaylistQueue({ ...playlist, cues: renumbered }, playlist)
       return
     }
 
@@ -341,17 +381,11 @@ export function PlaylistDetailScreen() {
       durationOverride: null,
     }
 
-    const previousCues = playlist.cues
     const newCues = [...playlist.cues]
     newCues.splice(insertAt, 0, newCue)
     const renumbered = newCues.map((c, i) => ({ ...c, order: i + 1 }))
 
-    setPlaylist((prev) => (prev ? { ...prev, cues: renumbered } : prev))
-
-    updatePlaylistCues(playlist.id, renumbered).catch((error) => {
-      setPlaylist((prev) => (prev ? { ...prev, cues: previousCues } : prev))
-      toast({ title: "Failed to save", description: getErrorMessage(error, "The cue could not be added."), variant: "error" })
-    })
+    persistPlaylistQueue({ ...playlist, cues: renumbered }, playlist)
   }
 
   function handleDragCancel() {
@@ -445,7 +479,8 @@ export function PlaylistDetailScreen() {
                     className="all-unset w-full text-xs text-primary placeholder:text-quaternary resize-none"
                     rows={2}
                     value={playlist.description}
-                    onChange={(e) => updateField("description", e.target.value)}
+                    onChange={(e) => handleDescriptionChange(e.target.value)}
+                    onBlur={handleDescriptionBlur}
                     placeholder="Describe this playlist..."
                   />
                 </MetaRow>
@@ -526,7 +561,7 @@ export function PlaylistDetailScreen() {
                       <Paragraph.xs className="truncate flex-1">{playlist.backgroundMusicName ?? "Audio"}</Paragraph.xs>
                       <audio src={playlist.backgroundMusicUrl} controls preload="metadata" className="h-6 max-w-40" />
                       <button
-                        onClick={() => syncPlaylistUpdate({ ...playlist, backgroundMusicId: null, backgroundMusicUrl: null, backgroundMusicName: null })}
+                        onClick={() => persistPlaylistMetadata({ ...playlist, backgroundMusicId: null, backgroundMusicUrl: null, backgroundMusicName: null }, playlist)}
                         className="p-0.5 rounded hover:bg-secondary cursor-pointer text-quaternary hover:text-secondary transition-colors"
                       >
                         <X className="size-3.5" />
@@ -541,12 +576,12 @@ export function PlaylistDetailScreen() {
                         {media.filter((m) => m.type === "audio").map((audioItem) => (
                           <Dropdown.Item
                             key={audioItem.id}
-                            onSelect={() => syncPlaylistUpdate({
+                            onSelect={() => persistPlaylistMetadata({
                               ...playlist,
                               backgroundMusicId: audioItem.id,
                               backgroundMusicUrl: audioItem.url,
                               backgroundMusicName: audioItem.name,
-                            })}
+                            }, playlist)}
                           >
                             <Music className="size-4" />
                             {audioItem.name}
@@ -567,10 +602,8 @@ export function PlaylistDetailScreen() {
                     <Label.xs className="text-tertiary">Image</Label.xs>
                     <Input
                       value={String(playlist.defaultImageDuration)}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value, 10)
-                        if (!isNaN(val) && val > 0) updateField("defaultImageDuration", val)
-                      }}
+                      onChange={(e) => handleDefaultImageDurationChange(e.target.value)}
+                      onBlur={handleDefaultImageDurationBlur}
                       placeholder="sec"
                       className="!w-14 !py-0.5 !px-1.5"
                     />

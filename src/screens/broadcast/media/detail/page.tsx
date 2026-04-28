@@ -87,7 +87,7 @@ export function MediaDetailScreen() {
     if (!item) return
     setIsDeleting(true)
     try {
-      await deleteMediaItem(item.id)
+      await deleteMediaItem(item)
       removeMediaItem(item.id)
       toast({ title: "Media deleted", variant: "success" })
       navigate("/broadcast/media")

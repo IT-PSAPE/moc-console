@@ -7,6 +7,8 @@ import {
     fetchCueSheetTracksByEventId,
 } from '@/data/fetch-cue-sheet'
 import {
+    createCueSheetBlankChecklist,
+    createCueSheetBlankEvent,
     createCueSheetChecklistInstance,
     createCueSheetEventInstance,
     deleteCueSheetChecklist,
@@ -14,6 +16,10 @@ import {
     saveCueSheetChecklist,
     saveCueSheetEvent,
     saveCueSheetTracks,
+    type CreateBlankChecklistInput,
+    type CreateBlankEventInput,
+    type CreateChecklistInstanceOverrides,
+    type CreateEventInstanceOverrides,
 } from '@/data/mutate-cue-sheet'
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 
@@ -35,8 +41,10 @@ type CueSheetContextValue = {
         syncChecklist: (checklist: Checklist) => Promise<void>
         syncEvent: (event: CueSheetEvent) => Promise<void>
         syncTracks: (eventId: string, tracks: Track[]) => Promise<void>
-        createEventInstance: (template: CueSheetEvent) => Promise<CueSheetEvent>
-        createChecklistInstance: (template: Checklist) => Promise<Checklist>
+        createEventInstance: (template: CueSheetEvent, overrides?: CreateEventInstanceOverrides) => Promise<CueSheetEvent>
+        createBlankEvent: (input: CreateBlankEventInput) => Promise<CueSheetEvent>
+        createChecklistInstance: (template: Checklist, overrides?: CreateChecklistInstanceOverrides) => Promise<Checklist>
+        createBlankChecklist: (input: CreateBlankChecklistInput) => Promise<Checklist>
         removeEvent: (id: string) => Promise<void>
         removeChecklist: (id: string) => Promise<void>
     }
@@ -107,13 +115,26 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
     }, [eventsById, tracksByEventId])
 
     const syncChecklist = useCallback(async (checklist: Checklist) => {
-        const savedChecklist = await saveCueSheetChecklist(checklist)
+        const previousChecklists = checklists
+
         setChecklists((prev) => {
-            const idx = prev.findIndex((c) => c.id === savedChecklist.id)
-            if (idx === -1) return [...prev, savedChecklist]
-            return prev.map((c) => (c.id === savedChecklist.id ? savedChecklist : c))
+            const idx = prev.findIndex((c) => c.id === checklist.id)
+            if (idx === -1) return [...prev, checklist]
+            return prev.map((c) => (c.id === checklist.id ? checklist : c))
         })
-    }, [])
+
+        try {
+            const savedChecklist = await saveCueSheetChecklist(checklist)
+            setChecklists((prev) => {
+                const idx = prev.findIndex((c) => c.id === savedChecklist.id)
+                if (idx === -1) return [...prev, savedChecklist]
+                return prev.map((c) => (c.id === savedChecklist.id ? savedChecklist : c))
+            })
+        } catch (error) {
+            setChecklists(previousChecklists)
+            throw error
+        }
+    }, [checklists])
 
     const syncEvent = useCallback(async (event: CueSheetEvent) => {
         const savedEvent = await saveCueSheetEvent(event)
@@ -131,16 +152,29 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
         setTracksByEventId((prev) => ({ ...prev, [eventId]: savedTracks }))
     }, [eventsById])
 
-    const createEventInstance = useCallback(async (template: CueSheetEvent) => {
-        const savedEvent = await createCueSheetEventInstance(template)
+    const createEventInstance = useCallback(async (template: CueSheetEvent, overrides?: CreateEventInstanceOverrides) => {
+        const savedEvent = await createCueSheetEventInstance(template, overrides)
         const savedTracks = await fetchCueSheetTracksByEventId(savedEvent.id)
         setEventsById((prev) => ({ ...prev, [savedEvent.id]: savedEvent }))
         setTracksByEventId((prev) => ({ ...prev, [savedEvent.id]: savedTracks }))
         return savedEvent
     }, [])
 
-    const createChecklistInstance = useCallback(async (template: Checklist) => {
-        const savedChecklist = await createCueSheetChecklistInstance(template)
+    const createBlankEvent = useCallback(async (input: CreateBlankEventInput) => {
+        const savedEvent = await createCueSheetBlankEvent(input)
+        setEventsById((prev) => ({ ...prev, [savedEvent.id]: savedEvent }))
+        setTracksByEventId((prev) => ({ ...prev, [savedEvent.id]: [] }))
+        return savedEvent
+    }, [])
+
+    const createChecklistInstance = useCallback(async (template: Checklist, overrides?: CreateChecklistInstanceOverrides) => {
+        const savedChecklist = await createCueSheetChecklistInstance(template, overrides)
+        setChecklists((prev) => [...prev, savedChecklist])
+        return savedChecklist
+    }, [])
+
+    const createBlankChecklist = useCallback(async (input: CreateBlankChecklistInput) => {
+        const savedChecklist = await createCueSheetBlankChecklist(input)
         setChecklists((prev) => [...prev, savedChecklist])
         return savedChecklist
     }, [])
@@ -183,11 +217,13 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
             syncEvent,
             syncTracks,
             createEventInstance,
+            createBlankEvent,
             createChecklistInstance,
+            createBlankChecklist,
             removeEvent,
             removeChecklist,
         },
-    }), [events, checklists, eventsById, tracksByEventId, isLoadingEvents, isLoadingChecklists, loadEvents, loadChecklists, loadEvent, syncChecklist, syncEvent, syncTracks, createEventInstance, createChecklistInstance, removeEvent, removeChecklist])
+    }), [events, checklists, eventsById, tracksByEventId, isLoadingEvents, isLoadingChecklists, loadEvents, loadChecklists, loadEvent, syncChecklist, syncEvent, syncTracks, createEventInstance, createBlankEvent, createChecklistInstance, createBlankChecklist, removeEvent, removeChecklist])
 
     return <CueSheetContext.Provider value={value}>{children}</CueSheetContext.Provider>
 }

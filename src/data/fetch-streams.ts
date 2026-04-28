@@ -107,12 +107,14 @@ export async function fetchStreams(): Promise<Stream[]> {
 }
 
 export async function fetchStreamById(id: string): Promise<Stream | undefined> {
+  const workspaceId = await getCurrentWorkspaceId()
   const { data, error } = await supabase
     .from("streams")
     .select(
       "id, workspace_id, youtube_broadcast_id, youtube_stream_id, title, description, thumbnail_url, privacy_status, is_for_kids, scheduled_start_time, actual_start_time, actual_end_time, stream_status, stream_url, stream_key, ingestion_url, category_id, tags, latency_preference, enable_dvr, enable_embed, enable_auto_start, enable_auto_stop, playlist_id, created_by, created_at, updated_at",
     )
     .eq("id", id)
+    .eq("workspace_id", workspaceId)
     .maybeSingle()
 
   if (error) {

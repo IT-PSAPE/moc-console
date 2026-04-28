@@ -17,7 +17,7 @@ export type EventRunFilters = {
 
 const defaultFilters: EventRunFilters = {
     search: '',
-    includePast: false,
+    includePast: true,
     dateRange: { start: '', end: '' },
     trackCount: { min: '', max: '' },
     cueCount: { min: '', max: '' },

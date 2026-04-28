@@ -108,10 +108,12 @@ export async function fetchZoomMeetings(): Promise<ZoomMeeting[]> {
 }
 
 export async function fetchZoomMeetingById(id: string): Promise<ZoomMeeting | undefined> {
+  const workspaceId = await getCurrentWorkspaceId()
   const { data, error } = await supabase
     .from("zoom_meetings")
     .select(MEETING_COLUMNS)
     .eq("id", id)
+    .eq("workspace_id", workspaceId)
     .maybeSingle()
 
   if (error) {

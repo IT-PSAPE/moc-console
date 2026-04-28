@@ -15,9 +15,10 @@ import { CSS } from '@dnd-kit/utilities'
 import { Accordion } from '@/components/display/accordion'
 import { Label, Paragraph } from '@/components/display/text'
 import type { Checklist, ChecklistItem, ChecklistSection } from '@/types/cue-sheet'
-import { Check, ChevronDown, GripVertical, Plus } from 'lucide-react'
+import { Check, ChevronDown, GripVertical, Plus, Trash2 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { Input } from '@/components/form/input'
+import { InlineEditableText } from '@/components/form/inline-editable-text'
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -177,7 +178,14 @@ function InlineSectionInput({ onSubmit, onDismiss }: { onSubmit: (value: string)
 
 // ─── Draggable check row ────────────────────────────────────────────
 
-function DraggableCheckRow({ item, onToggle }: { item: ChecklistItem; onToggle: (id: string) => void }) {
+type DraggableCheckRowProps = {
+    item: ChecklistItem
+    onToggle: (id: string) => void
+    onRename: (id: string, label: string) => void
+    onDelete: (id: string) => void
+}
+
+function DraggableCheckRow({ item, onToggle, onRename, onDelete }: DraggableCheckRowProps) {
     const { attributes, listeners, setNodeRef: setDragRef, transform, isDragging } = useDraggable({ id: `item:${item.id}` })
     const { setNodeRef: setDropRef } = useDroppable({ id: `item:${item.id}` })
 
@@ -192,22 +200,33 @@ function DraggableCheckRow({ item, onToggle }: { item: ChecklistItem; onToggle: 
                 <span {...listeners} {...attributes} className="cursor-grab text-quaternary hover:text-secondary shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity">
                     <GripVertical className="size-4" />
                 </span>
+                <div className="flex flex-1 items-center gap-3 min-w-0">
+                    <button
+                        type="button"
+                        className="flex items-center gap-3 text-left"
+                        onClick={() => onToggle(item.id)}
+                    >
+                        <div
+                            className={cn(
+                                'size-5 shrink-0 rounded border flex items-center justify-center transition-colors',
+                                item.checked ? 'bg-brand_solid border-transparent' : 'border-secondary bg-primary',
+                            )}
+                        >
+                            {item.checked && <Check className="size-3.5 text-white" />}
+                        </div>
+                    </button>
+                    <InlineEditableText
+                        value={item.label}
+                        onSave={(label) => onRename(item.id, label)}
+                        className={cn('label-sm min-w-0 flex-1', item.checked && 'line-through text-tertiary')}
+                    />
+                </div>
                 <button
                     type="button"
-                    className="flex items-center gap-3 flex-1 text-left"
-                    onClick={() => onToggle(item.id)}
+                    className="shrink-0 rounded p-1 text-quaternary opacity-0 transition-opacity hover:bg-background-primary-hover hover:text-secondary group-hover/item:opacity-100"
+                    onClick={() => onDelete(item.id)}
                 >
-                    <div
-                        className={cn(
-                            'size-5 shrink-0 rounded border flex items-center justify-center transition-colors',
-                            item.checked ? 'bg-brand_solid border-transparent' : 'border-secondary bg-primary',
-                        )}
-                    >
-                        {item.checked && <Check className="size-3.5 text-white" />}
-                    </div>
-                    <Label.sm className={cn(item.checked && 'line-through text-tertiary')}>
-                        {item.label}
-                    </Label.sm>
+                    <Trash2 className="size-4" />
                 </button>
             </div>
         </div>
@@ -283,6 +302,10 @@ type SectionRowProps = {
     section: ChecklistSection
     onToggle: (id: string) => void
     onAddItem: (sectionId: string, label: string) => void
+    onRenameItem: (id: string, label: string) => void
+    onDeleteItem: (id: string) => void
+    onRenameSection: (sectionId: string, name: string) => void
+    onDeleteSection: (sectionId: string) => void
     activeItemId: string | null
     overItemId: string | null
     isAddingItem: boolean
@@ -290,7 +313,7 @@ type SectionRowProps = {
     onDismissAdd: () => void
 }
 
-function SectionRow({ section, onToggle, onAddItem, activeItemId, overItemId, isAddingItem, onRequestAddItem, onDismissAdd }: SectionRowProps) {
+function SectionRow({ section, onToggle, onAddItem, onRenameItem, onDeleteItem, onRenameSection, onDeleteSection, activeItemId, overItemId, isAddingItem, onRequestAddItem, onDismissAdd }: SectionRowProps) {
     const { setNodeRef: setSectionDropRef } = useDroppable({ id: `section:${section.id}` })
     const checkedCount = section.items.filter((i) => i.checked).length
 
@@ -307,7 +330,7 @@ function SectionRow({ section, onToggle, onAddItem, activeItemId, overItemId, is
                     </div>
                     <Accordion.Trigger className="flex items-center gap-3 px-2 pl-1.5 py-2.5 hover:bg-background-primary-hover transition-colors">
                         <ChevronDown className="size-4 shrink-0 text-tertiary transition-transform data-[state=open]:rotate-180" />
-                        <Label.sm className="text-left">{section.name}</Label.sm>
+                        <InlineEditableText value={section.name} onSave={(name) => onRenameSection(section.id, name)} className="label-sm text-left" />
                         <Paragraph.xs className="text-tertiary shrink-0">{checkedCount}/{section.items.length}</Paragraph.xs>
                     </Accordion.Trigger>
                     <button
@@ -316,6 +339,13 @@ function SectionRow({ section, onToggle, onAddItem, activeItemId, overItemId, is
                         onClick={(e) => { e.stopPropagation(); onRequestAddItem(section.id) }}
                     >
                         <Plus className="size-4" />
+                    </button>
+                    <button
+                        type="button"
+                        className="shrink-0 mr-2 p-1 rounded text-quaternary hover:text-secondary hover:bg-background-primary-hover transition-colors"
+                        onClick={(e) => { e.stopPropagation(); onDeleteSection(section.id) }}
+                    >
+                        <Trash2 className="size-4" />
                     </button>
                 </div>
 
@@ -330,7 +360,7 @@ function SectionRow({ section, onToggle, onAddItem, activeItemId, overItemId, is
                             return (
                                 <div key={item.id} className="relative">
                                     {showAbove && <DropIndicatorLine />}
-                                    <DraggableCheckRow item={item} onToggle={onToggle} />
+                                    <DraggableCheckRow item={item} onToggle={onToggle} onRename={onRenameItem} onDelete={onDeleteItem} />
                                     {showBelow && <DropIndicatorLine />}
                                 </div>
                             )
@@ -415,6 +445,47 @@ export function ChecklistContent({ checklist, onUpdate, addRequest = null, onAdd
     function handleAddSection(name: string) {
         const newSection: ChecklistSection = { id: crypto.randomUUID(), name, items: [] }
         onUpdate({ ...checklist, sections: [...checklist.sections, newSection] })
+    }
+
+    function handleRenameItem(itemId: string, label: string) {
+        const topItem = checklist.items.find((item) => item.id === itemId)
+        if (topItem) {
+            onUpdate({
+                ...checklist,
+                items: checklist.items.map((item) => item.id === itemId ? { ...item, label } : item),
+            })
+            return
+        }
+
+        onUpdate({
+            ...checklist,
+            sections: checklist.sections.map((section) => ({
+                ...section,
+                items: section.items.map((item) => item.id === itemId ? { ...item, label } : item),
+            })),
+        })
+    }
+
+    function handleDeleteItem(itemId: string) {
+        onUpdate(removeItemFrom(checklist, itemId))
+    }
+
+    function handleRenameSection(sectionId: string, name: string) {
+        onUpdate({
+            ...checklist,
+            sections: checklist.sections.map((section) => section.id === sectionId ? { ...section, name } : section),
+        })
+    }
+
+    function handleDeleteSection(sectionId: string) {
+        const section = checklist.sections.find((entry) => entry.id === sectionId)
+        if (!section) return
+
+        onUpdate({
+            ...checklist,
+            items: [...checklist.items, ...section.items],
+            sections: checklist.sections.filter((entry) => entry.id !== sectionId),
+        })
     }
 
     // ── Section + button triggers add ───────────────────────
@@ -546,7 +617,7 @@ export function ChecklistContent({ checklist, onUpdate, addRequest = null, onAdd
                         return (
                             <div key={item.id} className="relative">
                                 {showAbove && <DropIndicatorLine />}
-                                <DraggableCheckRow item={item} onToggle={handleToggle} />
+                                <DraggableCheckRow item={item} onToggle={handleToggle} onRename={handleRenameItem} onDelete={handleDeleteItem} />
                                 {showBelow && <DropIndicatorLine />}
                             </div>
                         )
@@ -568,6 +639,10 @@ export function ChecklistContent({ checklist, onUpdate, addRequest = null, onAdd
                                 section={section}
                                 onToggle={handleToggle}
                                 onAddItem={handleAddSectionItem}
+                                onRenameItem={handleRenameItem}
+                                onDeleteItem={handleDeleteItem}
+                                onRenameSection={handleRenameSection}
+                                onDeleteSection={handleDeleteSection}
                                 activeItemId={activeId}
                                 overItemId={overId}
                                 isAddingItem={currentAdd?.type === 'item' && currentAdd.target === section.id}
