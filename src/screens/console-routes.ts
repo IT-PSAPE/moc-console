@@ -16,6 +16,7 @@ export const routes = {
     equipmentDetail: 'equipment/:id',
     broadcastOverview: 'broadcast',
     broadcastMedia: 'broadcast/media',
+    broadcastMediaDetail: 'broadcast/media/:id',
     broadcastPlaylists: 'broadcast/playlists',
     broadcastPlaylistDetail: 'broadcast/playlists/:id',
     broadcastStreams: 'broadcast/streams',

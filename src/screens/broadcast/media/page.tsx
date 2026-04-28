@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useFeedback } from "@/components/feedback/feedback-provider"
 import { Card } from "@/components/display/card"
 import { Header } from "@/components/display/header"
@@ -6,6 +6,7 @@ import { Input } from "@/components/form/input"
 import { Button } from "@/components/controls/button"
 import { Spinner } from "@/components/feedback/spinner"
 import { Label, Paragraph, Title } from "@/components/display/text"
+import { Modal } from "@/components/overlays/modal"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { useMediaFilters } from "@/features/broadcast/use-media-filters"
 import { MediaListItem } from "@/features/broadcast/media-list-item"
@@ -13,16 +14,16 @@ import { MediaDetailDrawer } from "@/features/broadcast/media-detail-drawer"
 import { UploadMediaModal } from "@/features/broadcast/upload-media-modal"
 import type { MediaItem } from "@/types/broadcast"
 import type { MediaType } from "@/types/broadcast"
-import { createMediaItem } from "@/data/mutate-broadcast"
+import { createMediaItem, deleteMediaItem } from "@/data/mutate-broadcast"
 import { getErrorMessage } from "@/utils/get-error-message"
-import { Film, Plus, Search } from "lucide-react"
+import { Film, Plus, Search, TriangleAlert } from "lucide-react"
 import { SegmentedControl } from "@/components/controls/segmented-control"
 
 
 export function BroadcastMediaScreen() {
   const {
     state: { media, isLoadingMedia },
-    actions: { loadMedia, syncMediaItem },
+    actions: { loadMedia, syncMediaItem, removeMediaItem },
   } = useBroadcast()
   const { toast } = useFeedback()
 
@@ -35,6 +36,8 @@ export function BroadcastMediaScreen() {
 
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
   const [uploadOpen, setUploadOpen] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<MediaItem | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   function handleTabChange(tab: string) {
     setType(tab === "all" ? null : (tab as MediaType))
@@ -49,6 +52,22 @@ export function BroadcastMediaScreen() {
       throw error
     }
   }
+
+  const handleDelete = useCallback(async () => {
+    if (!pendingDelete) return
+    setIsDeleting(true)
+    try {
+      await deleteMediaItem(pendingDelete.id)
+      removeMediaItem(pendingDelete.id)
+      toast({ title: "Media deleted", variant: "success" })
+      setSelectedItem(null)
+      setPendingDelete(null)
+    } catch (error) {
+      toast({ title: "Failed to delete media", description: getErrorMessage(error, "The media item could not be deleted."), variant: "error" })
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [pendingDelete, removeMediaItem, toast])
 
   return (
     <section className="h-full flex flex-col">
@@ -109,6 +128,7 @@ export function BroadcastMediaScreen() {
         item={selectedItem}
         open={selectedItem !== null}
         onOpenChange={(open) => { if (!open) setSelectedItem(null) }}
+        onDelete={(item) => setPendingDelete(item)}
       />
 
       <UploadMediaModal
@@ -116,6 +136,31 @@ export function BroadcastMediaScreen() {
         onOpenChange={setUploadOpen}
         onSubmit={handleUploadSubmit}
       />
+
+      <Modal.Root open={pendingDelete !== null} onOpenChange={(o) => { if (!o) setPendingDelete(null) }}>
+        <Modal.Portal>
+          <Modal.Backdrop />
+          <Modal.Positioner>
+            <Modal.Panel>
+              <Modal.Header>
+                <Label.md>Delete Media</Label.md>
+              </Modal.Header>
+              <Modal.Content className="p-4 flex-row gap-4">
+                <TriangleAlert className="size-8 shrink-0 text-utility-red-600" />
+                <Paragraph.sm className="text-secondary">
+                  Are you sure you want to delete this media item? Playlist cues that reference it may be affected. This action cannot be undone.
+                </Paragraph.sm>
+              </Modal.Content>
+              <Modal.Footer className="justify-end">
+                <Button variant="secondary" onClick={() => setPendingDelete(null)}>Cancel</Button>
+                <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
+                  {isDeleting ? "Deleting..." : "Delete Media"}
+                </Button>
+              </Modal.Footer>
+            </Modal.Panel>
+          </Modal.Positioner>
+        </Modal.Portal>
+      </Modal.Root>
     </section>
   )
 }

@@ -136,8 +136,8 @@ function SidebarPanel({ children, className }: HTMLAttributes<HTMLDivElement>) {
 function SidebarHeader({ children, className }: HTMLAttributes<HTMLDivElement>) {
     const { state } = useSidebar()
     return (
-        <header className={cn("h-header px-2 py-2 border-b border-secondary inline-flex justify-start items-center overflow-hidden", className)}>
-            <div className={cn("flex-1 flex justify-start items-center gap-2.5", state.isCollapsed && "justify-center")}>
+        <header className={cn("px-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-2 border-b border-secondary inline-flex justify-start items-center overflow-hidden", className)}>
+            <div className={cn("flex-1 flex justify-start items-center gap-2.5 h-8", state.isCollapsed && "justify-center")}>
                 {children}
             </div>
         </header>
@@ -156,7 +156,7 @@ function SidebarContent({ children, className }: HTMLAttributes<HTMLDivElement>)
 function SidebarFooter({ children, className }: HTMLAttributes<HTMLDivElement>) {
     const { state } = useSidebar()
     return (
-        <div className={cn("px-2 py-3 border-t border-secondary inline-flex justify-start items-center overflow-hidden", className)}>
+        <div className={cn("px-2 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] border-t border-secondary inline-flex justify-start items-center overflow-hidden", className)}>
             <div className={cn("flex-1 rounded-lg flex justify-start items-center gap-2", state.isCollapsed && "justify-center")}>
                 {children}
             </div>

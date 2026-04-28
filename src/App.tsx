@@ -4,6 +4,7 @@ import { Spinner } from '@/components/feedback/spinner'
 import { useAuth } from './lib/auth-context'
 import { AppShell } from './features/app-shell'
 import { BroadcastMediaScreen } from '@/screens/broadcast/media/page'
+import { MediaDetailScreen } from '@/screens/broadcast/media/detail/page'
 import { BroadcastOverviewScreen } from '@/screens/broadcast/page'
 import { PlaylistScreen } from '@/screens/broadcast/playlist/page'
 import { PlaylistDetailScreen } from '@/screens/broadcast/detail/page'
@@ -134,6 +135,7 @@ const router = createBrowserRouter([
                 children: [
                     { path: routes.broadcastOverview, element: <BroadcastOverviewScreen /> },
                     { path: routes.broadcastMedia, element: <BroadcastMediaScreen /> },
+                    { path: routes.broadcastMediaDetail, element: <MediaDetailScreen /> },
                     { path: routes.broadcastPlaylists, element: <PlaylistScreen /> },
                     { path: routes.broadcastPlaylistDetail, element: <PlaylistDetailScreen /> },
                     { path: routes.broadcastStreams, element: <StreamsScreen /> },
