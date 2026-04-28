@@ -1,4 +1,4 @@
-import { proxyZoomApiRequest } from "../../../../server/zoom-api.js"
+import { proxyZoomApiRequest } from "../../../server/zoom-api.js"
 
 type ApiRequest = {
   body?: Buffer | string
