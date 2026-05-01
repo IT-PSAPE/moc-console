@@ -14,7 +14,7 @@ function formatTime(minutes: number) {
 }
 
 function generateMarkers(totalMin: number) {
-    const step = totalMin <= 60 ? 5 : totalMin <= 120 ? 10 : 15
+    const step = totalMin <= 60 ? 5 : totalMin <= 240 ? 10 : 15
     const markers: number[] = []
     for (let m = 0; m <= totalMin; m += step) {
         markers.push(m)
