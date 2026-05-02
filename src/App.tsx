@@ -44,6 +44,8 @@ import { PrivacyPolicyScreen } from './screens/public/privacy'
 import { TermsOfUseScreen } from './screens/public/terms'
 import { SupportScreen } from './screens/public/support'
 import { ZoomDocsScreen } from './screens/public/zoom-docs'
+import { ProfileScreen } from './screens/account/profile'
+import { SettingsScreen } from './screens/account/settings'
 
 function RequireAuth() {
     const { session, loading } = useAuth()
@@ -111,6 +113,8 @@ const router = createBrowserRouter([
             { index: true, element: <Navigate to={`/${routes.dashboard}`} replace /> },
             { path: routes.dashboard, element: <RequestsProvider><EquipmentProvider><BroadcastProvider><CueSheetProvider><DashboardScreen /></CueSheetProvider></BroadcastProvider></EquipmentProvider></RequestsProvider> },
             { path: routes.users, element: <UsersProvider><UsersScreen /></UsersProvider> },
+            { path: routes.profile, element: <ProfileScreen /> },
+            { path: routes.settings, element: <SettingsScreen /> },
             {
                 element: <RequestsProvider><Outlet /></RequestsProvider>,
                 children: [

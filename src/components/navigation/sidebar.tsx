@@ -86,7 +86,7 @@ const nestedSidebarMenuLevelContextValue: SidebarMenuLevelContextValue = {
 
 const menuItemVarients = cv({
     base: [
-        'py-1 rounded-md inline-flex justify-start items-center gap-2 overflow-hidden w-full ',
+        'py-1 rounded-md inline-flex justify-start items-center gap-2 overflow-hidden w-full min-h-9',
     ],
     variants: {
         state: {
