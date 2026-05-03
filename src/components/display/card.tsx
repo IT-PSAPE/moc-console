@@ -8,9 +8,9 @@ function CardRoot({ children, className }: HTMLAttributes<HTMLDivElement>) {
         </div>
     )
 }
-function CardHeader({ children, className }: HTMLAttributes<HTMLDivElement>) {
+function CardHeader({ children, className, tight = false }: HTMLAttributes<HTMLDivElement> & { tight?: boolean }) {
     return (
-        <div className={cn("min-h-8 px-1.5 flex items-center", className)}>
+        <div className={cn("min-h-8 px-1.5 flex items-center", !tight && "max-mobile:flex-col max-mobile:items-start", className)}>
             {children}
         </div>
     )

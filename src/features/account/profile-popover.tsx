@@ -1,0 +1,145 @@
+import { Avatar } from '@/components/display/avatar'
+import { Label } from '@/components/display/text'
+// Note: Popover.Trigger renders a <span>; do not place <p> elements (Paragraph) inside it
+// or browsers will auto-close the span and break the layout. Use Label.xs (span) instead.
+import { Popover } from '@/components/overlays/popover'
+import { useSidebar } from '@/components/navigation/sidebar'
+import { useAuth } from '@/lib/auth-context'
+import { routes } from '@/screens/console-routes'
+import { cn } from '@/utils/cn'
+import {
+    Bug,
+    ChevronsUpDown,
+    FileText,
+    HelpCircle,
+    LogOut,
+    Settings,
+    Shield,
+    User,
+} from 'lucide-react'
+import { useCallback, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { ReportBugModal } from './report-bug-modal'
+
+type ProfilePopoverProps = {
+    onSignOut: () => void
+    isSigningOut: boolean
+}
+
+export function ProfilePopover({ onSignOut, isSigningOut }: ProfilePopoverProps) {
+    const { state: sidebarState } = useSidebar()
+    const { profile, role } = useAuth()
+    const navigate = useNavigate()
+    const [open, setOpen] = useState(false)
+    const [bugOpen, setBugOpen] = useState(false)
+
+    const userInitials = profile ? `${profile.name[0] ?? ''}${profile.surname[0] ?? ''}` : 'MC'
+    const userDisplayName = profile ? `${profile.name} ${profile.surname}` : 'MoC Member'
+    const roleName = role?.name ?? 'No role'
+    const email = profile?.email ?? ''
+
+    const handleNavigate = useCallback((route: string) => {
+        setOpen(false)
+        navigate(`/${route}`)
+    }, [navigate])
+
+    const handleOpenBug = useCallback(() => {
+        setOpen(false)
+        setBugOpen(true)
+    }, [])
+
+    const handleSignOut = useCallback(() => {
+        setOpen(false)
+        onSignOut()
+    }, [onSignOut])
+
+    return (
+        <div className="w-full [&>span]:!flex [&>span]:!w-full">
+            <Popover.Root placement="top" open={open} onOpenChange={setOpen}>
+                <Popover.Trigger
+                    className={cn(
+                        '!flex !w-full !items-center gap-2 rounded-lg p-1 -m-1 cursor-pointer hover:bg-secondary',
+                        sidebarState.isCollapsed && 'justify-center',
+                    )}
+                >
+                    <Avatar.initials name={userInitials} size="sm" />
+                    {!sidebarState.isCollapsed && (
+                        <>
+                            <span className="flex min-w-0 flex-1 flex-col text-left">
+                                <Label.sm className="truncate leading-none">{userDisplayName}</Label.sm>
+                                <Label.xs className="text-quaternary truncate leading-none capitalize">{roleName}</Label.xs>
+                            </span>
+                            <ChevronsUpDown className="size-4 shrink-0 text-tertiary" aria-hidden />
+                        </>
+                    )}
+                </Popover.Trigger>
+
+                <Popover.Panel className="!min-w-72 !p-1.5">
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-3 px-2 py-3">
+                            <Avatar.initials name={userInitials} size="md" />
+                            <span className="flex min-w-0 flex-1 flex-col">
+                                <Label.sm className="truncate leading-tight">{userDisplayName}</Label.sm>
+                                <Label.xs className="text-tertiary truncate leading-tight">{email}</Label.xs>
+                                <Label.xs className="text-quaternary truncate leading-tight capitalize">{roleName}</Label.xs>
+                            </span>
+                        </div>
+
+                        <Separator />
+
+                        <MenuRow icon={<User className="size-4" />} label="Profile" onSelect={() => handleNavigate(routes.profile)} />
+                        <MenuRow icon={<Settings className="size-4" />} label="Settings" onSelect={() => handleNavigate(routes.settings)} />
+
+                        <Separator />
+
+                        <MenuRow icon={<HelpCircle className="size-4" />} label="Help center" onSelect={() => handleNavigate(routes.support)} />
+                        <MenuRow icon={<FileText className="size-4" />} label="Terms of Service" onSelect={() => handleNavigate(routes.terms)} />
+                        <MenuRow icon={<Shield className="size-4" />} label="Privacy Policy" onSelect={() => handleNavigate(routes.privacy)} />
+                        <MenuRow icon={<Bug className="size-4" />} label="Report a bug" onSelect={handleOpenBug} />
+
+                        <Separator />
+
+                        <MenuRow
+                            icon={<LogOut className="size-4 text-error" />}
+                            label={isSigningOut ? 'Logging out...' : 'Log out'}
+                            labelClassName="text-error"
+                            onSelect={handleSignOut}
+                            disabled={isSigningOut}
+                        />
+                    </div>
+                </Popover.Panel>
+            </Popover.Root>
+
+            <ReportBugModal open={bugOpen} onOpenChange={setBugOpen} />
+        </div>
+    )
+}
+
+function Separator() {
+    return <div className="my-1 h-px bg-secondary mx-1" role="separator" />
+}
+
+type MenuRowProps = {
+    icon: ReactNode
+    label: string
+    labelClassName?: string
+    disabled?: boolean
+    onSelect: () => void
+}
+
+function MenuRow({ icon, label, labelClassName, disabled, onSelect }: MenuRowProps) {
+    return (
+        <button
+            type="button"
+            disabled={disabled}
+            onClick={onSelect}
+            className={cn(
+                'flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left',
+                'hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed',
+            )}
+        >
+            <span className="flex size-5 shrink-0 items-center justify-center text-secondary">{icon}</span>
+            <Label.sm className={cn('flex-1 truncate', labelClassName)}>{label}</Label.sm>
+        </button>
+    )
+}

@@ -35,7 +35,7 @@ export function CreateEventModal({ open, onOpenChange, onCreate }: CreateEventMo
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
-                    <Modal.Panel className="max-w-md">
+                    <Modal.Panel className="w-full max-w-md">
                         <Modal.Header>
                             <Label.md>New Event</Label.md>
                         </Modal.Header>

@@ -6,11 +6,12 @@ import { Divider } from '@/components/display/divider'
 import { Label, Paragraph, Title } from '@/components/display/text'
 import { InlineEditableText } from '@/components/form/inline-editable-text'
 import { useFeedback } from '@/components/feedback/feedback-provider'
-import { CalendarClock, Clock, Layers, Maximize2, Trash2, TriangleAlert, X } from 'lucide-react'
+import { CalendarClock, Clock, Layers, Maximize2, Pencil, Trash2, TriangleAlert, X } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { CueSheetEvent } from '@/types/cue-sheet'
 import { useCueSheet } from './cue-sheet-provider'
+import { EditEventModal } from './edit-event-modal'
 import { formatUtcIsoInBrowserTimeZone } from '@/utils/browser-date-time'
 
 function formatDuration(minutes: number) {
@@ -30,7 +31,7 @@ export function EventDrawer({ event }: { event: CueSheetEvent }) {
     return (
         <Drawer.Portal>
             <Drawer.Backdrop />
-            <Drawer.Panel className="!max-w-lg">
+            <Drawer.Panel className="max-w-lg">
                 <EventDrawerContent event={event} />
             </Drawer.Panel>
         </Drawer.Portal>
@@ -43,6 +44,7 @@ function EventDrawerContent({ event }: { event: CueSheetEvent }) {
     const { toast } = useFeedback()
     const navigate = useNavigate()
     const [deleteOpen, setDeleteOpen] = useState(false)
+    const [editOpen, setEditOpen] = useState(false)
 
     const trackCount = tracksByEventId[event.id]?.length ?? 0
     const scheduledAt = formatScheduledAt(event.scheduledAt)
@@ -68,6 +70,7 @@ function EventDrawerContent({ event }: { event: CueSheetEvent }) {
             <Drawer.Header className="flex items-center gap-1">
                 <Button.Icon variant="ghost" icon={<X />} onClick={drawerActions.close} />
                 <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={handleOpenFullPage} />
+                <Button.Icon variant="ghost" icon={<Pencil />} onClick={() => setEditOpen(true)} />
                 <div className="flex-1" />
                 <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setDeleteOpen(true)} />
             </Drawer.Header>
@@ -126,6 +129,13 @@ function EventDrawerContent({ event }: { event: CueSheetEvent }) {
                 <Button variant="secondary" onClick={drawerActions.close}>Close</Button>
                 <Button icon={<Maximize2 />} onClick={handleOpenFullPage}>Open timeline</Button>
             </Drawer.Footer>
+
+            <EditEventModal
+                open={editOpen}
+                onOpenChange={setEditOpen}
+                initial={{ title: event.title, description: event.description, duration: event.duration }}
+                onSave={(next) => syncEvent({ ...event, ...next })}
+            />
 
             <Modal.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <Modal.Portal>

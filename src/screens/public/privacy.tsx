@@ -6,7 +6,7 @@ export function PrivacyPolicyScreen() {
   return (
     <PublicLayout>
       <Title.h3 className="mb-2">Privacy Policy</Title.h3>
-      <Paragraph.sm className="text-tertiary mb-8">Last updated: 18 April 2026</Paragraph.sm>
+      <Paragraph.sm className="text-tertiary mb-8">Last updated: 3 May 2026</Paragraph.sm>
 
       <Paragraph.md className="mb-8">
         This Privacy Policy describes how PSAPE ("we," "us," or "our") collects, uses, shares,
@@ -16,6 +16,7 @@ export function PrivacyPolicyScreen() {
 
       <Section title="1. Information We Collect">
         <Paragraph.md className="mb-3"><strong>Account information.</strong> When you create an account or are invited to a workspace, we collect your name, email address, and the organization/workspace you belong to. Authentication is handled by Supabase Auth.</Paragraph.md>
+        <Paragraph.md className="mb-3"><strong>Bug reports.</strong> When you submit a bug report through the in-app "Report a bug" form, we collect the description you write together with diagnostic context captured from your browser at the moment of submission: the page URL you were on, your user-agent string and platform, viewport size, device pixel ratio, timezone, locale, and the app version. This is the minimum information we need to reproduce the issue and is not used for any other purpose.</Paragraph.md>
         <Paragraph.md className="mb-3"><strong>Zoom information.</strong> When you connect a Zoom account, we receive and store:</Paragraph.md>
         <ul className="list-disc pl-6 space-y-1 mb-3">
           <li><Paragraph.md>Your Zoom user profile (Zoom user ID, email address, display name).</Paragraph.md></li>
@@ -31,7 +32,7 @@ export function PrivacyPolicyScreen() {
           <li><Paragraph.md>To provide, maintain, and improve the Service.</Paragraph.md></li>
           <li><Paragraph.md>To authenticate you and secure your account.</Paragraph.md></li>
           <li><Paragraph.md>To sync Zoom meetings to your workspace and apply changes you make through the Service back to Zoom on your behalf.</Paragraph.md></li>
-          <li><Paragraph.md>To respond to your support requests and communicate with you about the Service.</Paragraph.md></li>
+          <li><Paragraph.md>To respond to your support requests and bug reports, reproduce reported issues, and communicate with you about the Service.</Paragraph.md></li>
           <li><Paragraph.md>To detect, prevent, and address fraud, abuse, and security incidents.</Paragraph.md></li>
           <li><Paragraph.md>To comply with legal obligations.</Paragraph.md></li>
         </ul>
@@ -53,6 +54,7 @@ export function PrivacyPolicyScreen() {
           <li><Paragraph.md><strong>Synced meeting metadata</strong> is retained while your workspace is active so you can view historical schedules. You can delete individual meetings at any time.</Paragraph.md></li>
           <li><Paragraph.md><strong>Account data</strong> is retained for the life of your account. If you delete your account, we remove your personal information within 30 days, except where longer retention is required by law (e.g., tax, audit, or legal-hold obligations).</Paragraph.md></li>
           <li><Paragraph.md><strong>Server logs</strong> are retained for up to 90 days.</Paragraph.md></li>
+          <li><Paragraph.md><strong>Bug reports</strong> are retained for up to 12 months after a report is marked resolved, after which we delete them. You can request earlier deletion of your own reports at any time.</Paragraph.md></li>
         </ul>
       </Section>
 

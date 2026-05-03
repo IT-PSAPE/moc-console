@@ -200,7 +200,7 @@ export function UsersScreen() {
                     ))}
                   </Tabs.List>
                 </Tabs.Root>
-                <Input icon={<Search />} placeholder="Search users..." className="w-full max-w-sm" value={search} onChange={handleSearchChange} />
+                <Input icon={<Search />} placeholder="Search users..." className="w-full max-w-md" value={search} onChange={handleSearchChange} />
               </div>
             </Card.Header>
             <Card.Content className="!border-secondary overflow-hidden">
@@ -242,7 +242,7 @@ function UserDetailDrawer({ user, canManage, workspaces, onClose, onSaved, onErr
   return (
     <Drawer.Portal>
       <Drawer.Backdrop />
-      <Drawer.Panel className="!max-w-lg">
+      <Drawer.Panel className="max-w-lg">
         <UserDetailDrawerContent
           user={user}
           canManage={canManage}

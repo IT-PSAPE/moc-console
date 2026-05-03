@@ -14,9 +14,11 @@ import { Drawer } from '@/components/overlays/drawer'
 import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
 import { useRequestFilters } from '@/features/requests/use-request-filters'
 import { useRequests } from '@/features/requests/request-provider'
+import { useIsMobile } from '@/hooks/use-is-mobile'
 
 export function RequestsAllRequestsScreen() {
     const [view, setView] = useState('list');
+    const isMobile = useIsMobile()
     const { state: { activeRequests: requests, isLoadingActive }, actions: { loadActiveRequests } } = useRequests()
 
     useEffect(() => {
@@ -36,15 +38,15 @@ export function RequestsAllRequestsScreen() {
             </Header.Root>
 
             <Header.Root className='p-4 pt-8 mx-auto max-w-content max-mobile:flex-col max-mobile:gap-2 *:max-mobile:w-full'>
-                <Header.Lead className='gap-2'>
-                    <SegmentedControl.Root defaultValue="list" onValueChange={(value) => setView(value)}>
+                <Header.Lead className='gap-2 w-full'>
+                    <SegmentedControl.Root defaultValue="list" onValueChange={(value) => setView(value)} fill={isMobile}>
                         <SegmentedControl.Item value="list" icon={<List />}>List</SegmentedControl.Item>
                         <SegmentedControl.Item value="kanban" icon={<Columns3 />}>Kanban</SegmentedControl.Item>
                         <SegmentedControl.Item value="calendar" icon={<CalendarDays />}>Calendar</SegmentedControl.Item>
                     </SegmentedControl.Root>
                 </Header.Lead>
                 <Header.Trail className='gap-2 flex-1 justify-end '>
-                    <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-sm' value={state.search} onChange={(e) => setSearch(e.target.value)} />
+                    <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-md' value={state.search} onChange={(e) => setSearch(e.target.value)} />
                     <Drawer.Root>
                         <Drawer.Trigger>
                             <Button icon={<Settings2 />} variant='secondary'>Filter</Button>

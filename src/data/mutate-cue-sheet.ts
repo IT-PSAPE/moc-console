@@ -2,6 +2,7 @@ import type { Checklist, CueSheetEvent, Track } from "@/types/cue-sheet";
 import { supabase } from "@/lib/supabase";
 import { getCurrentWorkspaceId } from "./current-workspace";
 import { fetchCueSheetChecklistById, fetchCueSheetEventById, fetchCueSheetTracksByEventId } from "./fetch-cue-sheet";
+import { randomId } from "@/utils/random-id";
 
 async function replaceTemplateTracks(eventTemplateId: string, tracks: Track[]) {
   const { error } = await supabase.rpc("save_template_tracks", {
@@ -302,7 +303,7 @@ export async function createCueSheetEventInstance(template: CueSheetEvent, overr
 export async function createCueSheetBlankEvent(input: CreateBlankEventInput): Promise<CueSheetEvent> {
   const now = new Date().toISOString();
   const event: CueSheetEvent = {
-    id: crypto.randomUUID(),
+    id: randomId(),
     kind: "instance",
     title: input.title,
     description: input.description,
@@ -345,7 +346,7 @@ export async function createCueSheetChecklistInstance(template: Checklist, overr
 export async function createCueSheetBlankChecklist(input: CreateBlankChecklistInput): Promise<Checklist> {
   const now = new Date().toISOString();
   const checklist: Checklist = {
-    id: crypto.randomUUID(),
+    id: randomId(),
     kind: "instance",
     name: input.name,
     description: input.description,

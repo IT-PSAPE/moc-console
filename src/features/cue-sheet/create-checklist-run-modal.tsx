@@ -54,7 +54,7 @@ export function CreateChecklistRunModal({ open, onOpenChange, template, onSubmit
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
-                    <Modal.Panel className="max-w-md">
+                    <Modal.Panel className="w-full max-w-md">
                         <Modal.Header>
                             <Label.md>{template ? `New Run from "${template.name}"` : 'New Blank Checklist Run'}</Label.md>
                         </Modal.Header>

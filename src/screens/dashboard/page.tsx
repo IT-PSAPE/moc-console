@@ -125,7 +125,7 @@ export function DashboardScreen() {
                     {/* Summary cards */}
                     <div className='grid grid-cols-2 gap-4 p-4 pt-8 mx-auto w-full max-w-content md:grid-cols-4 max-mobile:gap-2'>
                         <Card.Root className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.requestsOverview}`)}>
-                            <Card.Header className='gap-1.5'>
+                            <Card.Header tight className='gap-1.5'>
                                 <Activity className='size-4' />
                                 <Label.sm>Active Requests</Label.sm>
                             </Card.Header>
@@ -138,7 +138,7 @@ export function DashboardScreen() {
                         </Card.Root>
 
                         <Card.Root className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.equipmentOverview}`)}>
-                            <Card.Header className='gap-1.5'>
+                            <Card.Header tight className='gap-1.5'>
                                 <Package className='size-4' />
                                 <Label.sm>Equipment</Label.sm>
                             </Card.Header>
@@ -154,7 +154,7 @@ export function DashboardScreen() {
                         </Card.Root>
 
                         <Card.Root className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.broadcastOverview}`)}>
-                            <Card.Header className='gap-1.5'>
+                            <Card.Header tight className='gap-1.5'>
                                 <Film className='size-4' />
                                 <Label.sm>Media Library</Label.sm>
                             </Card.Header>
@@ -165,7 +165,7 @@ export function DashboardScreen() {
                         </Card.Root>
 
                         <Card.Root className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.cueSheetOverview}`)}>
-                            <Card.Header className='gap-1.5'>
+                            <Card.Header tight className='gap-1.5'>
                                 <CalendarClock className='size-4' />
                                 <Label.sm>Upcoming Events</Label.sm>
                             </Card.Header>

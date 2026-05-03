@@ -43,7 +43,7 @@ export function CreateEquipmentModal({ open, onOpenChange, onCreate }: CreateEqu
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
-          <Modal.Panel className="max-w-md">
+          <Modal.Panel className="w-full max-w-md">
             <Modal.Header>
               <Label.md>New Equipment</Label.md>
             </Modal.Header>

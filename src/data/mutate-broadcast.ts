@@ -4,6 +4,7 @@ import type { MediaItem } from "@/types/broadcast/media-item";
 import { supabase } from "@/lib/supabase";
 import { getCurrentWorkspaceId } from "./current-workspace";
 import { fetchPlaylistById } from "./fetch-broadcast";
+import { randomId } from "@/utils/random-id";
 
 type MediaRow = {
   id: string;
@@ -112,7 +113,7 @@ export async function updatePlaylistCues(playlistId: string, cues: Cue[]): Promi
 export async function uploadMediaFile(file: File): Promise<string> {
   const workspaceId = await getCurrentWorkspaceId();
   const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
-  const path = `${workspaceId}/${crypto.randomUUID()}.${ext}`;
+  const path = `${workspaceId}/${randomId()}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from("media")

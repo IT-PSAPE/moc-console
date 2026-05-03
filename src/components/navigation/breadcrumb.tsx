@@ -1,6 +1,7 @@
 import { ChevronRight } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/utils/cn'
+import { useIsMobile } from '@/hooks/use-is-mobile'
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
 
 // ─── Label overrides context ────────────────────────────
@@ -120,6 +121,10 @@ function BreadcrumbRoot({ className }: { className?: string }) {
     const { pathname } = useLocation()
     const navigate = useNavigate()
     const { overrides } = useContext(BreadcrumbOverridesContext)
+    const isMobile = useIsMobile()
+
+    if (isMobile) return null
+
     const crumbs = deriveBreadcrumbs(pathname, overrides)
 
     return (

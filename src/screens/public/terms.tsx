@@ -6,7 +6,7 @@ export function TermsOfUseScreen() {
   return (
     <PublicLayout>
       <Title.h3 className="mb-2">Terms of Use</Title.h3>
-      <Paragraph.sm className="text-tertiary mb-8">Last updated: 18 April 2026</Paragraph.sm>
+      <Paragraph.sm className="text-tertiary mb-8">Last updated: 3 May 2026</Paragraph.sm>
 
       <Paragraph.md className="mb-8">
         These Terms of Use ("Terms") form a legally binding agreement between you ("you") and
@@ -56,7 +56,18 @@ export function TermsOfUseScreen() {
         </Paragraph.md>
       </Section>
 
-      <Section title="5. Your Content">
+      <Section title="5. Feedback and Bug Reports">
+        <Paragraph.md>
+          The Service includes an in-app "Report a bug" feature. When you submit a bug report, you grant us a
+          worldwide, perpetual, irrevocable, royalty-free license to use the contents of the report — together
+          with the diagnostic context the Service captures automatically (page URL, user-agent, platform,
+          viewport, timezone, locale, and app version) — to investigate, reproduce, and fix issues, and to
+          improve the Service. We treat the personal information attached to a report (such as the user
+          account that submitted it) in accordance with the Privacy Policy.
+        </Paragraph.md>
+      </Section>
+
+      <Section title="6. Your Content">
         <Paragraph.md>
           You retain all rights to the content you submit, upload, or otherwise make available through the
           Service ("Your Content"). By using the Service, you grant us a limited, worldwide, non-exclusive,
@@ -67,7 +78,7 @@ export function TermsOfUseScreen() {
         </Paragraph.md>
       </Section>
 
-      <Section title="6. Our Intellectual Property">
+      <Section title="7. Our Intellectual Property">
         <Paragraph.md>
           The Service, including its software, design, text, graphics, and logos (other than Your Content and
           third-party marks such as Zoom and YouTube), is owned by PSAPE and protected by
@@ -76,7 +87,7 @@ export function TermsOfUseScreen() {
         </Paragraph.md>
       </Section>
 
-      <Section title="7. Fees">
+      <Section title="8. Fees">
         <Paragraph.md>
           The Service may be offered on a free, paid, or trial basis. If fees apply to your account, they will
           be communicated to you before you incur them. Fees are non-refundable except where required by law
@@ -84,7 +95,7 @@ export function TermsOfUseScreen() {
         </Paragraph.md>
       </Section>
 
-      <Section title="8. Termination">
+      <Section title="9. Termination">
         <ul className="list-disc pl-6 space-y-2">
           <li><Paragraph.md>You may stop using the Service at any time. You may also delete your account from your profile settings or by contacting us.</Paragraph.md></li>
           <li><Paragraph.md>We may suspend or terminate your access, in whole or in part, with or without notice, if we believe you have violated these Terms or if we need to do so to comply with law or protect the Service or its users.</Paragraph.md></li>
@@ -92,7 +103,7 @@ export function TermsOfUseScreen() {
         </ul>
       </Section>
 
-      <Section title="9. Disclaimer of Warranties">
+      <Section title="10. Disclaimer of Warranties">
         <Paragraph.md>
           THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE," WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR
           IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND
@@ -101,7 +112,7 @@ export function TermsOfUseScreen() {
         </Paragraph.md>
       </Section>
 
-      <Section title="10. Limitation of Liability">
+      <Section title="11. Limitation of Liability">
         <Paragraph.md>
           TO THE MAXIMUM EXTENT PERMITTED BY LAW, PSAPE AND ITS AFFILIATES, OFFICERS, EMPLOYEES, AND
           AGENTS WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES,
@@ -113,7 +124,7 @@ export function TermsOfUseScreen() {
         </Paragraph.md>
       </Section>
 
-      <Section title="11. Indemnification">
+      <Section title="12. Indemnification">
         <Paragraph.md>
           You agree to indemnify, defend, and hold harmless PSAPE and its affiliates from and against
           any claims, damages, liabilities, losses, and expenses (including reasonable attorneys' fees) arising
@@ -122,7 +133,7 @@ export function TermsOfUseScreen() {
         </Paragraph.md>
       </Section>
 
-      <Section title="12. Changes to the Service or These Terms">
+      <Section title="13. Changes to the Service or These Terms">
         <Paragraph.md>
           We may modify or discontinue the Service, or update these Terms, at any time. Material changes to
           these Terms will be communicated by posting the updated Terms on this page with a new "Last updated"
@@ -131,7 +142,7 @@ export function TermsOfUseScreen() {
         </Paragraph.md>
       </Section>
 
-      <Section title="13. Contact">
+      <Section title="14. Contact">
         <Paragraph.md>If you have questions about these Terms, contact us at:</Paragraph.md>
         <ul className="list-none pl-0 mt-3 space-y-1">
           <li><Paragraph.md><strong>PSAPE</strong></Paragraph.md></li>

@@ -239,7 +239,7 @@ function CommandMenuPanel({ children, className, ...props }: HTMLAttributes<HTML
                 ref={panelRef}
                 aria-modal="true"
                 className={cn(
-                    'pointer-events-auto flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg',
+                    'pointer-events-auto flex max-w-lg flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg',
                     className,
                 )}
                 onKeyDown={handleKeyDown}

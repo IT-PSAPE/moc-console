@@ -46,36 +46,44 @@ export function RequestsOverviewScreen() {
 
             <div className='grid grid-cols-4 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2'>
                 <Card.Root>
-                    <Card.Header className='gap-1.5'>
-                        <Activity className='size-4' />
-                        <Label.sm>Active Requests</Label.sm>
+                    <Card.Header tight>
+                        <span className='flex gap-1.5 items-center'>
+                            <Activity className='size-4' />
+                            <Label.sm>Active Requests</Label.sm>
+                        </span>
                     </Card.Header>
                     <Card.Content className='p-4'>
                         <TextBlock className='title-h4'>{activeCount}</TextBlock>
                     </Card.Content>
                 </Card.Root>
                 <Card.Root>
-                    <Card.Header className='gap-1.5'>
-                        <CalendarClock className='size-4' />
-                        <Label.sm>Upcoming Requests</Label.sm>
+                    <Card.Header tight>
+                        <span className='flex gap-1.5 items-center'>
+                            <CalendarClock className='size-4' />
+                            <Label.sm>Upcoming Requests</Label.sm>
+                        </span>
                     </Card.Header>
                     <Card.Content className='p-4'>
                         <TextBlock className='title-h4'>{upcomingCount}</TextBlock>
                     </Card.Content>
                 </Card.Root>
                 <Card.Root>
-                    <Card.Header className='gap-1.5'>
-                        <CircleAlert className='size-4' />
-                        <Label.sm>Overdue Requests</Label.sm>
+                    <Card.Header tight>
+                        <span className='flex gap-1.5 items-center'>
+                            <CircleAlert className='size-4' />
+                            <Label.sm>Overdue Requests</Label.sm>
+                        </span>
                     </Card.Header>
                     <Card.Content className='p-4'>
                         <TextBlock className='title-h4'>{overdueCount}</TextBlock>
                     </Card.Content>
                 </Card.Root>
                 <Card.Root>
-                    <Card.Header className='gap-1.5'>
-                        <CircleCheck className='size-4' />
-                        <Label.sm>Completed Requests</Label.sm>
+                    <Card.Header tight>
+                        <span className='flex gap-1.5 items-center'>
+                            <CircleCheck className='size-4' />
+                            <Label.sm>Completed Requests</Label.sm>
+                        </span>
                     </Card.Header>
                     <Card.Content className='p-4'>
                         <TextBlock className='title-h4'>{completedCount}</TextBlock>
@@ -89,7 +97,7 @@ export function RequestsOverviewScreen() {
                         <Label.md>Schedule</Label.md>
                     </Header.Lead>
                     <Header.Trail className='gap-2 flex-1 justify-end '>
-                        <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-sm' value={state.search} onChange={(e) => setSearch(e.target.value)} />
+                        <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-md' value={state.search} onChange={(e) => setSearch(e.target.value)} />
                         <Drawer.Root>
                             <Drawer.Trigger>
                                 <Button icon={<Settings2 />} variant='secondary'>Filter</Button>
@@ -100,9 +108,11 @@ export function RequestsOverviewScreen() {
                 </Header.Root>
 
                 <Card.Root>
-                    <Card.Header className='gap-1.5'>
-                        <Indicator color='red' className='size-6' />
-                        <Label.sm>Overdue Requests</Label.sm>
+                    <Card.Header tight>
+                        <span className='flex gap-1.5 items-center'>
+                            <Indicator color='red' className='size-6' />
+                            <Label.sm>Overdue Requests</Label.sm>
+                        </span>
                     </Card.Header>
                     <Card.Content ghost className='flex flex-col gap-1.5'>
                         {isLoadingActive ? (
@@ -118,9 +128,11 @@ export function RequestsOverviewScreen() {
                 </Card.Root>
 
                 <Card.Root>
-                    <Card.Header className='gap-1.5'>
-                        <Indicator className='size-6' />
-                        <Label.sm>Upcoming Requests</Label.sm>
+                    <Card.Header tight>
+                        <span className='flex gap-1.5 items-center'>
+                            <Indicator className='size-6' />
+                            <Label.sm>Upcoming Requests</Label.sm>
+                        </span>
                     </Card.Header>
                     <Card.Content ghost className='flex flex-col gap-1.5'>
                         {isLoadingActive ? (

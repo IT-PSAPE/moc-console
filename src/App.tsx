@@ -1,6 +1,7 @@
-import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet, RouterProvider, useLocation } from 'react-router-dom'
 import { routes } from './screens/console-routes'
 import { Spinner } from '@/components/feedback/spinner'
+import { ErrorBoundary } from '@/components/feedback/error-boundary'
 import { useAuth } from './lib/auth-context'
 import { AppShell } from './features/app-shell'
 import { BroadcastMediaScreen } from '@/screens/broadcast/media/page'
@@ -44,6 +45,9 @@ import { PrivacyPolicyScreen } from './screens/public/privacy'
 import { TermsOfUseScreen } from './screens/public/terms'
 import { SupportScreen } from './screens/public/support'
 import { ZoomDocsScreen } from './screens/public/zoom-docs'
+import { ProfileScreen } from './screens/account/profile'
+import { SettingsScreen } from './screens/account/settings'
+import { CueSheetShareScreen } from './screens/public/cue-sheet-share/page'
 
 function RequireAuth() {
     const { session, loading } = useAuth()
@@ -65,12 +69,19 @@ function RequireAuth() {
             <SidebarProvider>
                 <TopBarProvider>
                     <AppShell>
-                        <Outlet />
+                        <RouteErrorBoundary>
+                            <Outlet />
+                        </RouteErrorBoundary>
                     </AppShell>
                 </TopBarProvider>
             </SidebarProvider>
         </BreadcrumbProvider>
     )
+}
+
+function RouteErrorBoundary({ children }: { children: React.ReactNode }) {
+    const location = useLocation()
+    return <ErrorBoundary key={location.pathname}>{children}</ErrorBoundary>
 }
 
 function RedirectIfAuth({ children }: { children: React.ReactNode }) {
@@ -103,6 +114,7 @@ const router = createBrowserRouter([
     { path: routes.terms, element: <TermsOfUseScreen /> },
     { path: routes.support, element: <SupportScreen /> },
     { path: routes.zoomDocs, element: <ZoomDocsScreen /> },
+    { path: routes.publicEventShare, element: <CueSheetShareScreen /> },
 
     // Protected app routes
     {
@@ -111,6 +123,8 @@ const router = createBrowserRouter([
             { index: true, element: <Navigate to={`/${routes.dashboard}`} replace /> },
             { path: routes.dashboard, element: <RequestsProvider><EquipmentProvider><BroadcastProvider><CueSheetProvider><DashboardScreen /></CueSheetProvider></BroadcastProvider></EquipmentProvider></RequestsProvider> },
             { path: routes.users, element: <UsersProvider><UsersScreen /></UsersProvider> },
+            { path: routes.profile, element: <ProfileScreen /> },
+            { path: routes.settings, element: <SettingsScreen /> },
             {
                 element: <RequestsProvider><Outlet /></RequestsProvider>,
                 children: [

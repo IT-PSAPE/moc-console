@@ -13,7 +13,7 @@ export function RequestLists({ requests }: { requests: Request[] }) {
                 if (items.length === 0) return null;
                 return (
                     <Card.Root key={group.key}>
-                        <Card.Header className='gap-1.5'>
+                        <Card.Header tight className='gap-1.5'>
                             <Indicator color={group.color} className='size-6' />
                             <Label.sm>{group.label}</Label.sm>
                         </Card.Header>

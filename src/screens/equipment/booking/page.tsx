@@ -23,6 +23,7 @@ import { fetchEquipmentById } from "@/data/fetch-equipment";
 import { useFeedback } from "@/components/feedback/feedback-provider";
 import { getErrorMessage } from "@/utils/get-error-message";
 import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 
 const columns = [
   { key: "equipmentName", header: "Equipment" },
@@ -74,6 +75,7 @@ export function EquipmentBookingsScreen() {
   const [createOpen, setCreateOpen] = useState(false);
   const isDirtyRef = useRef(false);
   const requestCloseRef = useRef<(() => void) | null>(null);
+  const isMobile = useIsMobile()
 
   const handleOpenChange = useCallback((open: boolean) => {
     if (!open && isDirtyRef.current) {
@@ -132,13 +134,13 @@ export function EquipmentBookingsScreen() {
       <div className="flex flex-col gap-4 p-4 mx-auto w-full max-w-content">
         <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
           <Header.Lead className="gap-2">
-            <SegmentedControl.Root defaultValue="table" onValueChange={(value) => setView(value)}>
+            <SegmentedControl.Root defaultValue="table" onValueChange={(value) => setView(value)} fill={isMobile}>
               <SegmentedControl.Item value="table" icon={<List />}>Table</SegmentedControl.Item>
               <SegmentedControl.Item value="calendar" icon={<CalendarDays />}>Calendar</SegmentedControl.Item>
             </SegmentedControl.Root>
           </Header.Lead>
           <Header.Trail className="gap-2 flex-1 justify-end">
-            <Input icon={<Search />} placeholder="Search bookings..." className="w-full max-w-sm" value={state.search} onChange={(e) => setSearch(e.target.value)} />
+            <Input icon={<Search />} placeholder="Search bookings..." className="w-full max-w-md" value={state.search} onChange={(e) => setSearch(e.target.value)} />
             <Button onClick={() => setCreateOpen(true)}>New Booking</Button>
             <Drawer.Root>
               <Drawer.Trigger>

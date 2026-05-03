@@ -203,7 +203,7 @@ function ModalPanel({ children, className, ...props }: HTMLAttributes<HTMLDivEle
             aria-describedby={meta.descriptionId}
             aria-labelledby={meta.titleId}
             aria-modal="true"
-            className={cn('pointer-events-auto flex w-full max-w-sm flex-col rounded-xl border border-secondary bg-primary', className)}
+            className={cn('pointer-events-auto flex w-full max-w-md flex-col rounded-xl border border-secondary bg-primary', className)}
             role="dialog"
             tabIndex={-1}
             {...props}

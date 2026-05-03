@@ -4,6 +4,7 @@ import { getCurrentWorkspaceId } from "./current-workspace"
 import { zoomApiFetch, revokeZoomToken } from "@/lib/zoom-client"
 import { fetchZoomMeetingById } from "./fetch-zoom"
 import { formatUtcIsoForZoomApi, parseDateTimeInputToUtcIso } from "@/utils/zoned-date-time"
+import { randomId } from "@/utils/random-id"
 
 export type CreateMeetingParams = {
   topic: string
@@ -163,7 +164,7 @@ export async function createZoomMeeting(params: CreateMeetingParams): Promise<Zo
 
   // Store in local database
   const payload: LocalZoomMeetingInsertPayload = {
-    id: crypto.randomUUID(),
+    id: randomId(),
     workspace_id: workspaceId,
     zoom_meeting_id: meeting.id,
     topic: params.topic,

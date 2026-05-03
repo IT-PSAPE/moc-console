@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { randomId } from "@/utils/random-id"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 import { Card } from "@/components/display/card"
 import { Header } from "@/components/display/header"
@@ -232,7 +233,7 @@ export function PlaylistDetailScreen() {
   const handleAddMediaToQueue = useCallback((item: MediaItem) => {
     if (!playlist) return
     const newCue: Cue = {
-      id: crypto.randomUUID(),
+      id: randomId(),
       mediaItemId: item.id,
       mediaItemName: item.name,
       mediaItemType: item.type,
@@ -266,7 +267,7 @@ export function PlaylistDetailScreen() {
     const original = playlist.cues[idx]
     const clone: Cue = {
       ...original,
-      id: crypto.randomUUID(),
+      id: randomId(),
     }
     const newCues = [...playlist.cues]
     newCues.splice(idx + 1, 0, clone)
@@ -373,7 +374,7 @@ export function PlaylistDetailScreen() {
     })()
 
     const newCue: Cue = {
-      id: crypto.randomUUID(),
+      id: randomId(),
       mediaItemId: mediaItem.id,
       mediaItemName: mediaItem.name,
       mediaItemType: mediaItem.type,

@@ -45,7 +45,7 @@ export function EquipmentDrawer({ equipment, onEquipmentClose, isDirtyRef, reque
   return (
     <Drawer.Portal>
       <Drawer.Backdrop />
-      <Drawer.Panel className="!max-w-lg">
+      <Drawer.Panel className="max-w-lg">
         <EquipmentDrawerContent
           equipment={equipment}
           onEquipmentClose={onEquipmentClose}

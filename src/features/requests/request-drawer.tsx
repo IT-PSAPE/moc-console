@@ -29,7 +29,7 @@ export function RequestDrawer({ request, onRequestClose, isDirtyRef, requestClos
     return (
         <Drawer.Portal>
             <Drawer.Backdrop />
-            <Drawer.Panel className="!max-w-lg">
+            <Drawer.Panel className="max-w-lg">
                 <RequestDrawerContent
                     request={request}
                     onRequestClose={onRequestClose}

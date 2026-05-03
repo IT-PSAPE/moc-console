@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react"
+import { randomId } from "@/utils/random-id"
 import type { ChangeEvent } from "react"
 import { Modal } from "@/components/overlays/modal"
 import { Button } from "@/components/controls/button"
@@ -84,7 +85,7 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
           : await uploadMediaFile(file as File)
       const mediaDetails = getDefaultMediaDetails(inferredMediaType)
       const newItem: MediaItem = {
-        id: crypto.randomUUID(),
+        id: randomId(),
         name: trimmedName || "Untitled",
         type: inferredMediaType,
         url: sourceUrl,
@@ -126,7 +127,7 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
-          <Modal.Panel className="max-w-md">
+          <Modal.Panel className="w-full max-w-md">
             <Modal.Header>
               <Label.md>Add Media</Label.md>
             </Modal.Header>

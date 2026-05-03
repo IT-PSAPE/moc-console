@@ -78,7 +78,7 @@ export function CueSheetChecklistScreen() {
                             <Label.sm>All Checklist Runs</Label.sm>
                         </div>
                         <div className="flex items-center gap-1.5 max-mobile:w-full max-mobile:flex-col">
-                            <Input icon={<Search />} placeholder="Search checklist runs..." className="w-full max-w-sm" value={filters.search} onChange={(event) => setSearch(event.target.value)} />
+                            <Input icon={<Search />} placeholder="Search checklist runs..." className="w-full max-w-md" value={filters.search} onChange={(event) => setSearch(event.target.value)} />
                             <Drawer.Root>
                                 <Drawer.Trigger>
                                     <Button icon={<Settings2 />} variant="secondary">Filter</Button>
