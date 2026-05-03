@@ -35,7 +35,7 @@ export function BookingDrawer({ booking, onBookingClose, isDirtyRef, requestClos
   return (
     <Drawer.Portal>
       <Drawer.Backdrop />
-      <Drawer.Panel className="!max-w-lg">
+      <Drawer.Panel className="max-w-lg">
         <BookingDrawerContent
           booking={booking}
           onBookingClose={onBookingClose}

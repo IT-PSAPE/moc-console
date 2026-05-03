@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { randomId } from '@/utils/random-id'
 import { Calendar, ListChecks, Plus, Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/controls/button'
@@ -51,7 +52,7 @@ export function CueSheetTemplatesScreen() {
     const handleCreateEvent = useCallback(async ({ title, description, duration }: { title: string; description: string; duration: number }) => {
         const now = new Date().toISOString()
         const newEvent: CueSheetEvent = {
-            id: crypto.randomUUID(),
+            id: randomId(),
             kind: 'template',
             title,
             description,
@@ -67,7 +68,7 @@ export function CueSheetTemplatesScreen() {
     const handleCreateChecklist = useCallback(async ({ name, description }: { name: string; description: string }) => {
         const now = new Date().toISOString()
         const newChecklist: Checklist = {
-            id: crypto.randomUUID(),
+            id: randomId(),
             kind: 'template',
             name,
             description,
@@ -97,14 +98,16 @@ export function CueSheetTemplatesScreen() {
                         <Label.md>Templates</Label.md>
                     </Header.Lead>
                     <Header.Trail className="gap-2 flex-1 justify-end">
-                        <Input icon={<Search />} placeholder="Search templates..." className="w-full max-w-sm" value={search} onChange={(event) => setSearch(event.target.value)} />
+                        <Input icon={<Search />} placeholder="Search templates..." className="w-full max-w-md" value={search} onChange={(event) => setSearch(event.target.value)} />
                     </Header.Trail>
                 </Header.Root>
 
                 <Card.Root>
-                    <Card.Header className="gap-1.5">
-                        <Calendar className="size-4" />
-                        <Label.sm className="mr-auto">Event Templates</Label.sm>
+                    <Card.Header tight className="gap-1.5">
+                        <div className="flex flex-1 items-center gap-1.5">
+                            <Calendar className="size-4" />
+                            <Label.sm>Event Templates</Label.sm>
+                        </div>
                         <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setShowEventModal(true)} />
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
@@ -123,9 +126,11 @@ export function CueSheetTemplatesScreen() {
                 </Card.Root>
 
                 <Card.Root>
-                    <Card.Header className="gap-1.5">
-                        <ListChecks className="size-4" />
-                        <Label.sm className="mr-auto">Checklist Templates</Label.sm>
+                    <Card.Header tight className="gap-1.5">
+                        <div className="flex flex-1 items-center gap-1.5">
+                            <ListChecks className="size-4" />
+                            <Label.sm>Checklist Templates</Label.sm>
+                        </div>
                         <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setShowChecklistModal(true)} />
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">

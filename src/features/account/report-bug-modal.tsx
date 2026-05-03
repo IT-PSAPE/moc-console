@@ -2,8 +2,13 @@ import { Button } from '@/components/controls/button'
 import { Label, Paragraph } from '@/components/display/text'
 import { useFeedback } from '@/components/feedback/feedback-provider'
 import { Modal } from '@/components/overlays/modal'
-import { captureBugReportContext, submitBugReport } from '@/data/bug-reports'
+import {
+    captureBugReportContext,
+    submitBugReport,
+    type BugReportErrorContext,
+} from '@/data/bug-reports'
 import { useAuth } from '@/lib/auth-context'
+import { AlertTriangle } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 const MAX_LENGTH = 2000
@@ -12,9 +17,10 @@ const MIN_LENGTH = 10
 type Props = {
     open: boolean
     onOpenChange: (open: boolean) => void
+    errorContext?: BugReportErrorContext | null
 }
 
-export function ReportBugModal({ open, onOpenChange }: Props) {
+export function ReportBugModal({ open, onOpenChange, errorContext }: Props) {
     const { profile } = useAuth()
     const { toast } = useFeedback()
     const [description, setDescription] = useState('')
@@ -39,6 +45,7 @@ export function ReportBugModal({ open, onOpenChange }: Props) {
                 userId: profile.id,
                 description: description.trim(),
                 ...context,
+                errorContext: errorContext ?? null,
             })
             toast({ title: 'Bug report sent', description: 'Thanks — the team will take a look.', variant: 'success' })
             onOpenChange(false)
@@ -51,7 +58,7 @@ export function ReportBugModal({ open, onOpenChange }: Props) {
         } finally {
             setIsSubmitting(false)
         }
-    }, [canSubmit, description, onOpenChange, profile, toast])
+    }, [canSubmit, description, errorContext, onOpenChange, profile, toast])
 
     const remaining = MAX_LENGTH - description.length
 
@@ -60,7 +67,7 @@ export function ReportBugModal({ open, onOpenChange }: Props) {
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
-                    <Modal.Panel className="!max-w-md">
+                    <Modal.Panel className="w-full !max-w-md">
                         <Modal.Header>
                             <div className="flex flex-col gap-0.5">
                                 <Label.md>Report a bug</Label.md>
@@ -70,7 +77,16 @@ export function ReportBugModal({ open, onOpenChange }: Props) {
                             </div>
                         </Modal.Header>
                         <Modal.Content>
-                            <div className="flex flex-col gap-2 p-4">
+                            <div className="flex flex-col gap-3 p-4">
+                                {errorContext && (
+                                    <div className="flex items-start gap-2 rounded-md border border-utility-red-200 bg-utility-red-50 p-2.5">
+                                        <AlertTriangle className="size-4 shrink-0 mt-0.5 text-utility-red-600" />
+                                        <Paragraph.xs className="text-utility-red-700">
+                                            An error report from this page will be attached automatically.
+                                            You don't need to describe the technical details — just tell us what you were doing.
+                                        </Paragraph.xs>
+                                    </div>
+                                )}
                                 <textarea
                                     autoFocus
                                     rows={6}

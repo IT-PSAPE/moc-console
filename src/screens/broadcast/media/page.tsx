@@ -7,6 +7,7 @@ import { Button } from "@/components/controls/button"
 import { Spinner } from "@/components/feedback/spinner"
 import { Label, Paragraph, Title } from "@/components/display/text"
 import { Modal } from "@/components/overlays/modal"
+import { ScrollArea } from "@/components/display/scroll-area"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { useMediaFilters } from "@/features/broadcast/use-media-filters"
 import { MediaListItem } from "@/features/broadcast/media-list-item"
@@ -84,13 +85,13 @@ export function BroadcastMediaScreen() {
         <Card.Root className="flex-1 flex flex-col overflow-hidden">
           <Card.Header className="gap-2 justify-between">
             <Label.sm>Library</Label.sm>
-            <div className="flex gap-1 items-center">
+            <div className="flex gap-1 items-center max-mobile:w-full">
               <Input
                 icon={<Search />}
                 placeholder="Search media..."
                 value={state.search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="shrink-0"
+                className="shrink-0 max-mobile:flex-1"
               />
               <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setUploadOpen(true)} />
             </div>
@@ -102,24 +103,31 @@ export function BroadcastMediaScreen() {
               <SegmentedControl.Item value="audio">Audio</SegmentedControl.Item>
               <SegmentedControl.Item value="video">Video</SegmentedControl.Item>
             </SegmentedControl.Root>
-            <div className="flex-1 py-2 overflow-y-auto">
-              {isLoadingMedia ? (
-                <div className="flex justify-center py-8"><Spinner /></div>
-              ) : filtered.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-8">
-                  <Film className="size-6 text-quaternary" />
-                  <Paragraph.sm className="text-quaternary">No media items found.</Paragraph.sm>
-                </div>
-              ) : (
-                filtered.map((item) => (
-                  <MediaListItem
-                    key={item.id}
-                    item={item}
-                    onClick={() => setSelectedItem(item)}
-                  />
-                ))
-              )}
-            </div>
+            <ScrollArea.Root className="flex-1 min-h-0">
+              <ScrollArea.Viewport className="py-2 pr-2">
+                <ScrollArea.Content>
+                  {isLoadingMedia ? (
+                    <div className="flex justify-center py-8"><Spinner /></div>
+                  ) : filtered.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 py-8">
+                      <Film className="size-6 text-quaternary" />
+                      <Paragraph.sm className="text-quaternary">No media items found.</Paragraph.sm>
+                    </div>
+                  ) : (
+                    filtered.map((item) => (
+                      <MediaListItem
+                        key={item.id}
+                        item={item}
+                        onClick={() => setSelectedItem(item)}
+                      />
+                    ))
+                  )}
+                </ScrollArea.Content>
+              </ScrollArea.Viewport>
+              <ScrollArea.Scrollbar orientation="vertical">
+                <ScrollArea.Thumb />
+              </ScrollArea.Scrollbar>
+            </ScrollArea.Root>
           </Card.Content>
         </Card.Root>
       </div>

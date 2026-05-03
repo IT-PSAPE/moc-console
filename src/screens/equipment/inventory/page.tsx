@@ -1,4 +1,5 @@
 import { Card } from "@/components/display/card";
+import { randomId } from "@/utils/random-id";
 import { Button } from "@/components/controls/button";
 import { Input } from "@/components/form/input";
 import { Header } from "@/components/display/header";
@@ -69,7 +70,7 @@ export function EquipmentInventoryScreen() {
     name: string; serialNumber: string; category: EquipmentCategory; location: string
   }) => {
     const newEquipment: Equipment = {
-      id: crypto.randomUUID(),
+      id: randomId(),
       name,
       serialNumber,
       category,
@@ -118,15 +119,15 @@ export function EquipmentInventoryScreen() {
       <div className="flex flex-col gap-4 p-4 mx-auto w-full max-w-content">
         <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
           <Card.Root>
-            <Card.Header className="gap-2 flex-1 justify-end max-mobile:flex-wrap">
-              <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-sm max-mobile:flex-[1_1_100%]" value={state.search} onChange={(e) => setSearch(e.target.value)} />
-              <Drawer.Root>
-                <Drawer.Trigger>
-                  <Button icon={<Settings2 />} variant="secondary">Filter</Button>
-                </Drawer.Trigger>
-                <EquipmentFilterDrawer filters={equipmentFilters} />
-              </Drawer.Root>
-              <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setShowCreateModal(true)} />
+            <Card.Header tight className="gap-2 flex-1 justify-end">
+              <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-md max-mobile:flex-[1_1_100%]" value={state.search} onChange={(e) => setSearch(e.target.value)} />
+                <Drawer.Root>
+                  <Drawer.Trigger>
+                    <Button icon={<Settings2 />} variant="secondary">Filter</Button>
+                  </Drawer.Trigger>
+                  <EquipmentFilterDrawer filters={equipmentFilters} />
+                </Drawer.Root>
+                <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setShowCreateModal(true)} />
             </Card.Header>
             <Card.Content className="!border-secondary overflow-hidden">
               {isLoadingEquipment ? (

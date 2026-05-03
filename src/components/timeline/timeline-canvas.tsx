@@ -19,7 +19,7 @@ const CUE_TYPE_ICONS: Record<CueType, React.ReactNode> = {
 
 export function TimelineCanvas() {
     const {
-        tracks, totalMinutes, filter,
+        tracks, totalMinutes, filter, readOnly,
         pixelsPerMinute, effectiveZoom, currentTimeMinutes,
         setCurrentTimeMinutes, handlePlayheadPointerDown,
         startCueDrag, justDraggedRef, cueDragState,
@@ -46,19 +46,21 @@ export function TimelineCanvas() {
         : null
 
     const handleTimeRulerClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        if (readOnly) return
         if (!timelineContainerRef.current) return
         const rect = timelineContainerRef.current.getBoundingClientRect()
         const x = e.clientX - rect.left + timelineContainerRef.current.scrollLeft - TIMELINE_HORIZONTAL_PADDING
         setCurrentTimeMinutes(Math.max(0, Math.min(totalMinutes, x / pixelsPerMinute)))
-    }, [timelineContainerRef, setCurrentTimeMinutes, totalMinutes, pixelsPerMinute])
+    }, [timelineContainerRef, setCurrentTimeMinutes, totalMinutes, pixelsPerMinute, readOnly])
 
     const handleTrackRowClick = useCallback((trackId: string, e: React.MouseEvent<HTMLDivElement>) => {
+        if (readOnly) return
         if (!timelineContainerRef.current) return
         const rect = timelineContainerRef.current.getBoundingClientRect()
         const x = e.clientX - rect.left + timelineContainerRef.current.scrollLeft - TIMELINE_HORIZONTAL_PADDING
         const startMinute = Math.floor(x / pixelsPerMinute)
         onTrackClick(trackId, startMinute)
-    }, [timelineContainerRef, pixelsPerMinute, onTrackClick])
+    }, [timelineContainerRef, pixelsPerMinute, onTrackClick, readOnly])
 
     const handleCueClick = useCallback((e: React.MouseEvent, cue: Cue, trackId: string) => {
         e.stopPropagation()
@@ -103,7 +105,7 @@ export function TimelineCanvas() {
                     <div
                         key={track.id}
                         data-track-id={track.id}
-                        className="border-b border-secondary relative cursor-crosshair"
+                        className={`border-b border-secondary relative ${readOnly ? '' : 'cursor-crosshair'}`}
                         style={{ height: TRACK_HEIGHT }}
                         onPointerDown={(e) => { lastPointerTypeRef.current = e.pointerType }}
                         onClick={(e) => {
@@ -133,7 +135,7 @@ export function TimelineCanvas() {
                             return (
                                 <div
                                     key={cue.id}
-                                    className={`absolute top-1 bottom-1 rounded-lg p-0.5 flex flex-col shadow-sm group select-none overflow-hidden touch-none cursor-move transition-opacity ${isBeingDragged ? 'ring-2 ring-white/50 z-10' : ''}`}
+                                    className={`absolute top-1 bottom-1 rounded-lg p-0.5 flex flex-col shadow-sm group select-none overflow-hidden ${readOnly ? '' : 'touch-none cursor-move'} transition-opacity ${isBeingDragged ? 'ring-2 ring-white/50 z-10' : ''}`}
                                     style={{
                                         left: cue.startMin * pixelsPerMinute + TIMELINE_HORIZONTAL_PADDING,
                                         width: Math.max(cue.durationMin * pixelsPerMinute, 24),
@@ -141,30 +143,34 @@ export function TimelineCanvas() {
                                         opacity: isFaded ? 0.25 : 1,
                                     }}
                                     onClick={(e) => handleCueClick(e, cue, track.id)}
-                                    onPointerDown={(e) => startCueDrag(e, cue, track.id, 'move')}
+                                    onPointerDown={readOnly ? undefined : (e) => startCueDrag(e, cue, track.id, 'move')}
                                 >
                                     {/* Left resize handle */}
-                                    <div
-                                        className="absolute left-0 top-0 bottom-0 w-2 rounded-l-lg z-10 touch-none cursor-ew-resize hover:bg-black/10"
-                                        onPointerDown={(e) => startCueDrag(e, cue, track.id, 'resize-left')}
-                                    />
+                                    {!readOnly && (
+                                        <div
+                                            className="absolute left-0 top-0 bottom-0 w-2 rounded-l-lg z-10 touch-none cursor-ew-resize hover:bg-black/10"
+                                            onPointerDown={(e) => startCueDrag(e, cue, track.id, 'resize-left')}
+                                        />
+                                    )}
 
                                     {/* Meta row */}
                                     <div className="flex items-center px-1.5 py-0.5 min-w-0 gap-1">
                                         <p className="text-[11px] leading-tight text-white/80 truncate flex-1 pointer-events-none">
                                             {metaText}
                                         </p>
-                                        <button
-                                            type="button"
-                                            className="shrink-0 w-4 h-4 flex items-center justify-center rounded text-white/60 hover:text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                deleteCue(track.id, cue.id)
-                                            }}
-                                            title="Delete cue"
-                                        >
-                                            <X className="size-2.5" />
-                                        </button>
+                                        {!readOnly && (
+                                            <button
+                                                type="button"
+                                                className="shrink-0 w-4 h-4 flex items-center justify-center rounded text-white/60 hover:text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    deleteCue(track.id, cue.id)
+                                                }}
+                                                title="Delete cue"
+                                            >
+                                                <X className="size-2.5" />
+                                            </button>
+                                        )}
                                     </div>
 
                                     {/* Title area */}
@@ -176,10 +182,12 @@ export function TimelineCanvas() {
                                     </div>
 
                                     {/* Right resize handle */}
-                                    <div
-                                        className="absolute right-0 top-0 bottom-0 w-2 rounded-r-lg z-10 touch-none cursor-ew-resize hover:bg-black/10"
-                                        onPointerDown={(e) => startCueDrag(e, cue, track.id, 'resize-right')}
-                                    />
+                                    {!readOnly && (
+                                        <div
+                                            className="absolute right-0 top-0 bottom-0 w-2 rounded-r-lg z-10 touch-none cursor-ew-resize hover:bg-black/10"
+                                            onPointerDown={(e) => startCueDrag(e, cue, track.id, 'resize-right')}
+                                        />
+                                    )}
                                 </div>
                             )
                         })}
@@ -195,15 +203,17 @@ export function TimelineCanvas() {
                 ))}
 
                 {/* Empty row for add track */}
-                <div className="border-b border-secondary/50 relative" style={{ height: TRACK_HEIGHT }}>
-                    {timeMarkers.map((minute) => (
-                        <div
-                            key={minute}
-                            className="absolute top-0 bottom-0 w-px bg-secondary/50"
-                            style={{ left: minute * pixelsPerMinute + TIMELINE_HORIZONTAL_PADDING }}
-                        />
-                    ))}
-                </div>
+                {!readOnly && (
+                    <div className="border-b border-secondary/50 relative" style={{ height: TRACK_HEIGHT }}>
+                        {timeMarkers.map((minute) => (
+                            <div
+                                key={minute}
+                                className="absolute top-0 bottom-0 w-px bg-secondary/50"
+                                style={{ left: minute * pixelsPerMinute + TIMELINE_HORIZONTAL_PADDING }}
+                            />
+                        ))}
+                    </div>
+                )}
 
                 {/* Playhead line */}
                 <div
@@ -214,9 +224,10 @@ export function TimelineCanvas() {
                 {/* Playhead handle */}
                 <button
                     type="button"
-                    onPointerDown={handlePlayheadPointerDown}
+                    onPointerDown={readOnly ? undefined : handlePlayheadPointerDown}
                     aria-label="Drag playhead"
-                    className="absolute top-0 z-30 h-10 w-10 -translate-x-1/2 flex items-center justify-center pb-2 text-utility-green-500 touch-none"
+                    disabled={readOnly}
+                    className={`absolute top-0 z-30 h-10 w-10 -translate-x-1/2 flex items-center justify-center pb-2 text-utility-green-500 ${readOnly ? '' : 'touch-none'}`}
                     style={{ left: playheadLeft }}
                 >
                     <svg height="100%" viewBox="0 0 20 41" fill="none" xmlns="http://www.w3.org/2000/svg">

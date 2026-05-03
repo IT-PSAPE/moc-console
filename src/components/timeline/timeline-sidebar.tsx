@@ -8,7 +8,7 @@ import { resolveTrackColor } from '@/types/cue-sheet'
 
 export function TimelineSidebar() {
     const {
-        tracks, totalMinutes,
+        tracks, totalMinutes, readOnly,
         currentTimeMinutes, isPlaying, handlePlayPause,
         addTrack, deleteTrack, updateTrack,
         trackDragState, handleTrackDragStart,
@@ -79,7 +79,10 @@ export function TimelineSidebar() {
                                 </div>
                             )}
 
-                            {/* Drag handle with dropdown */}
+                            {/* Drag handle with dropdown — hidden in read-only mode */}
+                            {readOnly ? (
+                                <div className="shrink-0 size-5" aria-hidden />
+                            ) : (
                             <Dropdown.Root>
                                 <Dropdown.Trigger>
                                     <div
@@ -128,6 +131,7 @@ export function TimelineSidebar() {
                                     )}
                                 </Dropdown.Panel>
                             </Dropdown.Root>
+                            )}
 
                             {/* Track info */}
                             <div className="flex min-w-0 flex-1 items-center gap-1.5">
@@ -156,7 +160,8 @@ export function TimelineSidebar() {
                     )
                 })}
 
-                {/* Add track row */}
+                {/* Add track row — hidden in read-only mode */}
+                {!readOnly && (
                 <div className="border-b border-secondary/50 px-3 flex items-center" style={{ height: TRACK_HEIGHT }}>
                     {isAddingTrack ? (
                         <div className="flex items-center gap-2 w-full">
@@ -189,6 +194,7 @@ export function TimelineSidebar() {
                         </button>
                     )}
                 </div>
+                )}
             </div>
         </div>
     )

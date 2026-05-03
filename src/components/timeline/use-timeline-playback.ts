@@ -6,14 +6,16 @@ interface UseTimelinePlaybackOptions {
     pixelsPerMinute: number
     timelineContainerRef: React.RefObject<HTMLDivElement | null>
     isDraggingPlayheadRef: React.RefObject<boolean>
+    /** When true, the local ticker is suppressed — playhead position is driven entirely by external updates (followers in live sync). */
+    suppressLocalTicker?: boolean
 }
 
-export function useTimelinePlayback({ totalMinutes, pixelsPerMinute, timelineContainerRef, isDraggingPlayheadRef }: UseTimelinePlaybackOptions) {
+export function useTimelinePlayback({ totalMinutes, pixelsPerMinute, timelineContainerRef, isDraggingPlayheadRef, suppressLocalTicker }: UseTimelinePlaybackOptions) {
     const [currentTimeMinutes, setCurrentTimeMinutes] = useState(0)
     const [isPlaying, setIsPlaying] = useState(false)
 
     useEffect(() => {
-        if (!isPlaying) return
+        if (!isPlaying || suppressLocalTicker) return
 
         let lastTickAt = performance.now()
         const interval = setInterval(() => {
@@ -33,7 +35,7 @@ export function useTimelinePlayback({ totalMinutes, pixelsPerMinute, timelineCon
         }, PLAYBACK_TICK_MS)
 
         return () => clearInterval(interval)
-    }, [isPlaying, totalMinutes])
+    }, [isPlaying, totalMinutes, suppressLocalTicker])
 
     // Auto-follow playhead during playback
     useEffect(() => {

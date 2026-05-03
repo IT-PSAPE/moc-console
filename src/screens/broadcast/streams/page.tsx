@@ -275,12 +275,13 @@ export function StreamsScreen() {
           <Card.Root>
             <Card.Header className="gap-2 justify-between">
               <Label.sm>YouTube Streams</Label.sm>
-              <div className="flex gap-1 items-center shrink-0">
+              <div className="flex gap-1 items-center shrink-0 max-mobile:w-full">
                 <Input
                   icon={<Search />}
                   placeholder="Search..."
                   value={streamFilters.filters.search}
                   onChange={(e) => streamFilters.setSearch(e.target.value)}
+                  className="max-mobile:flex-1"
                 />
                 <Drawer.Root>
                   <Drawer.Trigger>
@@ -341,12 +342,13 @@ export function StreamsScreen() {
           <Card.Root>
             <Card.Header className="gap-2 justify-between">
               <Label.sm>Zoom Meetings</Label.sm>
-              <div className="flex gap-1 items-center shrink-0">
+              <div className="flex gap-1 items-center shrink-0 max-mobile:w-full">
                 <Input
                   icon={<Search />}
                   placeholder="Search..."
                   value={meetingFilters.filters.search}
                   onChange={(e) => meetingFilters.setSearch(e.target.value)}
+                  className="max-mobile:flex-1"
                 />
                 <Drawer.Root>
                   <Drawer.Trigger>

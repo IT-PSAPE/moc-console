@@ -74,7 +74,7 @@ export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelet
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
         <Drawer.Backdrop />
-        <Drawer.Panel className="!max-w-lg">
+        <Drawer.Panel className="max-w-lg">
           <Drawer.Header className="flex items-center gap-1">
             <Button.Icon variant="ghost" icon={<X />} onClick={() => onOpenChange(false)} />
             <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={handleOpenFullPage} />

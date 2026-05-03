@@ -53,7 +53,7 @@ function SegmentedControlRoot({ children, className, defaultValue = '', fill = f
             <div
                 className={cn(
                     'inline-flex items-center gap-1 rounded-lg bg-secondary p-1',
-                    fill && 'flex',
+                    fill && 'flex w-full',
                     className,
                 )}
                 role="tablist"

@@ -12,9 +12,19 @@ export type BugReportContext = {
   appVersion: string | null
 }
 
+export type BugReportErrorContext = {
+  name: string | null
+  message: string | null
+  stack: string | null
+  componentStack: string | null
+  occurredAt: string
+  url: string | null
+}
+
 export type SubmitBugReportInput = {
   userId: string
   description: string
+  errorContext?: BugReportErrorContext | null
 } & BugReportContext
 
 export function captureBugReportContext(): BugReportContext {
@@ -65,7 +75,27 @@ export async function submitBugReport(input: SubmitBugReportInput) {
     timezone: input.timezone,
     locale: input.locale,
     app_version: input.appVersion,
+    error_context: input.errorContext ?? null,
   })
 
   if (error) throw new Error(error.message)
+}
+
+export function captureBugReportErrorContext(
+  error: unknown,
+  componentStack: string | null,
+): BugReportErrorContext {
+  const isError = error instanceof Error
+  const name = isError ? error.name : typeof error === "string" ? "Error" : "UnknownError"
+  const message = isError ? error.message : typeof error === "string" ? error : null
+  const stack = isError ? error.stack ?? null : null
+
+  return {
+    name,
+    message,
+    stack,
+    componentStack,
+    occurredAt: new Date().toISOString(),
+    url: typeof window !== "undefined" ? window.location.href : null,
+  }
 }

@@ -40,8 +40,8 @@ export function RequestsArchivedScreen() {
                             <Indicator color='gray' className='size-6' />
                             <Label.sm>Archived Tasks</Label.sm>
                         </div>
-                        <div className='flex items-center gap-1.5'>
-                            <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-sm' value={state.search} onChange={(e) => setSearch(e.target.value)} />
+                        <div className='flex items-center gap-1.5 max-mobile:w-full'>
+                            <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-md' value={state.search} onChange={(e) => setSearch(e.target.value)} />
                             <Drawer.Root>
                                 <Drawer.Trigger>
                                     <Button icon={<Settings2 />} variant='secondary'>Filter</Button>

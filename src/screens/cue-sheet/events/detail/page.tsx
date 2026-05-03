@@ -3,12 +3,18 @@ import { InlineEditableText } from '@/components/form/inline-editable-text'
 import { Button } from '@/components/controls/button'
 import { Label, Paragraph } from '@/components/display/text'
 import { Modal } from '@/components/overlays/modal'
+import { Dropdown } from '@/components/overlays/dropdown'
 import { Spinner } from '@/components/feedback/spinner'
 import { useFeedback } from '@/components/feedback/feedback-provider'
 import { Timeline } from '@/components/timeline'
+import { useTimeline } from '@/components/timeline/timeline-context'
+import { useAuth } from '@/lib/auth-context'
 import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
 import { CueModal } from '@/features/cue-sheet/cue-modal'
-import { Trash2, TriangleAlert } from 'lucide-react'
+import { EditEventModal } from '@/features/cue-sheet/edit-event-modal'
+import { ShareEventModal } from '@/features/cue-sheet/share-event-modal'
+import { TopBarActions } from '@/features/topbar'
+import { MoreVertical, Pencil, Plus, Share2, Trash2, TriangleAlert } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { Track } from '@/types/cue-sheet'
@@ -19,12 +25,17 @@ export function CueSheetEventDetailScreen() {
         state: { eventsById, tracksByEventId },
         actions: { loadEvent, syncTracks, syncEvent, removeEvent },
     } = useCueSheet()
+    const { role } = useAuth()
     const { toast } = useFeedback()
     const navigate = useNavigate()
     const [deleteOpen, setDeleteOpen] = useState(false)
+    const [editOpen, setEditOpen] = useState(false)
+    const [shareOpen, setShareOpen] = useState(false)
 
     const event = id ? eventsById[id] ?? null : null
     const tracks = id ? tracksByEventId[id] ?? [] : []
+    const canControl = role?.can_update === true
+    const canShare = role?.can_update === true
 
     useBreadcrumbOverride(id ?? '', event?.title)
 
@@ -42,6 +53,14 @@ export function CueSheetEventDetailScreen() {
         if (!event) return
         syncEvent({ ...event, title })
     }, [event, syncEvent])
+
+    const handleEditSave = useCallback(
+        (next: { title: string; description: string; duration: number }) => {
+            if (!event) return
+            syncEvent({ ...event, ...next })
+        },
+        [event, syncEvent],
+    )
 
     const handleDelete = useCallback(async () => {
         if (!id) return
@@ -63,6 +82,9 @@ export function CueSheetEventDetailScreen() {
         )
     }
 
+    // Only "instance" events live in events table (templates use event_templates and aren't shareable here)
+    const liveSyncEnabled = event.kind === 'instance'
+
     return (
         <section className="h-full flex flex-col">
             <Timeline.Root
@@ -70,43 +92,125 @@ export function CueSheetEventDetailScreen() {
                 totalMin={event.duration}
                 onChange={handleTracksChange}
                 className="flex-1 min-h-0"
+                playbackSync={liveSyncEnabled ? {
+                    eventId: event.id,
+                    role: canControl ? 'controller' : 'follower',
+                    persistToDatabase: canControl,
+                } : null}
             >
                 <Timeline.Toolbar
+                    showAddCue={false}
                     renderTitle={() => (
-                        <div className="flex items-center gap-2">
-                            <InlineEditableText
-                                value={event.title}
-                                onSave={handleTitleChange}
-                                className="label-md"
-                            />
-                            <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setDeleteOpen(true)} />
-                        </div>
+                        <InlineEditableText
+                            value={event.title}
+                            onSave={handleTitleChange}
+                            className="label-md"
+                        />
                     )}
+                    renderActions={canShare && liveSyncEnabled ? () => (
+                        <Button variant="ghost" icon={<Share2 />} onClick={() => setShareOpen(true)}>
+                            Share
+                        </Button>
+                    ) : undefined}
                 />
                 <CueModal />
+
+                {canControl && (
+                    <TopBarActions>
+                        <DetailTopBarActions
+                            onEdit={() => setEditOpen(true)}
+                            onDelete={() => setDeleteOpen(true)}
+                        />
+                    </TopBarActions>
+                )}
             </Timeline.Root>
-            <Modal.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
-                <Modal.Portal>
-                    <Modal.Backdrop />
-                    <Modal.Positioner>
-                        <Modal.Panel>
-                            <Modal.Header>
-                                <Label.md>Delete Event</Label.md>
-                            </Modal.Header>
-                            <Modal.Content className="p-4 flex-row gap-4">
-                                <TriangleAlert className="size-8 shrink-0 text-utility-red-600" />
-                                <Paragraph.sm className="text-secondary">
-                                    Are you sure you want to delete this event? This action cannot be undone.
-                                </Paragraph.sm>
-                            </Modal.Content>
-                            <Modal.Footer className="justify-end">
-                                <Button variant="secondary" onClick={() => setDeleteOpen(false)}>Cancel</Button>
-                                <Button variant="danger" onClick={handleDelete}>Delete Event</Button>
-                            </Modal.Footer>
-                        </Modal.Panel>
-                    </Modal.Positioner>
-                </Modal.Portal>
-            </Modal.Root>
+
+            {liveSyncEnabled && (
+                <ShareEventModal
+                    open={shareOpen}
+                    onOpenChange={setShareOpen}
+                    eventId={event.id}
+                    eventTitle={event.title}
+                />
+            )}
+
+            <EditEventModal
+                open={editOpen}
+                onOpenChange={setEditOpen}
+                initial={{ title: event.title, description: event.description, duration: event.duration }}
+                onSave={handleEditSave}
+            />
+
+            <DeleteEventModal
+                open={deleteOpen}
+                onOpenChange={setDeleteOpen}
+                onConfirm={handleDelete}
+            />
         </section>
+    )
+}
+
+function DetailTopBarActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+    const { openCreateModal, readOnly } = useTimeline()
+
+    return (
+        <>
+            {!readOnly && (
+                <Button variant="secondary" icon={<Plus />} onClick={() => openCreateModal()}>
+                    Add Cue
+                </Button>
+            )}
+            <Dropdown.Root placement="bottom">
+                <Dropdown.Trigger>
+                    <Button.Icon variant="ghost" icon={<MoreVertical />} />
+                </Dropdown.Trigger>
+                <Dropdown.Panel>
+                    <Dropdown.Item onSelect={onEdit}>
+                        <Pencil className="size-4" />
+                        Edit
+                    </Dropdown.Item>
+                    <Dropdown.Separator />
+                    <Dropdown.Item onSelect={onDelete}>
+                        <Trash2 className="size-4 text-error" />
+                        <span className="text-error">Delete</span>
+                    </Dropdown.Item>
+                </Dropdown.Panel>
+            </Dropdown.Root>
+        </>
+    )
+}
+
+function DeleteEventModal({
+    open,
+    onOpenChange,
+    onConfirm,
+}: {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    onConfirm: () => void
+}) {
+    return (
+        <Modal.Root open={open} onOpenChange={onOpenChange}>
+            <Modal.Portal>
+                <Modal.Backdrop />
+                <Modal.Positioner>
+                    <Modal.Panel className="w-full max-w-md">
+                        <Modal.Header>
+                            <Label.md>Delete Event</Label.md>
+                        </Modal.Header>
+                        <Modal.Content className="p-4 flex-row gap-4">
+                            <TriangleAlert className="size-8 shrink-0 text-utility-red-600" />
+                            <Paragraph.sm className="text-secondary">
+                                Are you sure you want to delete this event? This action cannot be undone.
+                            </Paragraph.sm>
+                        </Modal.Content>
+                        <Modal.Footer className="justify-end">
+                            <Button variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
+                            <Button variant="danger" onClick={onConfirm}>Delete Event</Button>
+                        </Modal.Footer>
+                    </Modal.Panel>
+                </Modal.Positioner>
+            </Modal.Portal>
+        </Modal.Root>
     )
 }

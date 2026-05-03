@@ -1,10 +1,12 @@
 import { Button } from '@/components/controls/button'
+import { Label } from '@/components/display/text'
 import { CUE_TYPES } from '@/types/cue-sheet'
 import type { CueType } from '@/types/cue-sheet'
 import { Dropdown } from '@/components/overlays/dropdown'
-import { Filter, Minus, Plus, Music, Wrench, Monitor, Megaphone, ArrowRightLeft } from 'lucide-react'
+import { Filter, Minus, Plus, Music, Wrench, Monitor, Megaphone, ArrowRightLeft, Radio } from 'lucide-react'
 import { useTimeline } from './timeline-context'
 import { CUE_TYPE_CONFIG } from './timeline-types'
+import { cn } from '@/utils/cn'
 import type { ReactNode } from 'react'
 
 // ─── Cue type → Lucide icon ───────────────────────────────────────
@@ -21,10 +23,12 @@ const CUE_TYPE_ICONS: Record<CueType, ReactNode> = {
 
 type TimelineToolbarProps = {
     renderTitle?: () => ReactNode
+    renderActions?: () => ReactNode
+    showAddCue?: boolean
 }
 
-export function TimelineToolbar({ renderTitle }: TimelineToolbarProps) {
-    const { filter, setFilter, updateZoomAnchoredToPlayhead, openCreateModal } = useTimeline()
+export function TimelineToolbar({ renderTitle, renderActions, showAddCue = true }: TimelineToolbarProps) {
+    const { filter, setFilter, updateZoomAnchoredToPlayhead, openCreateModal, readOnly, playbackSync } = useTimeline()
 
     return (
         <div className="flex items-center gap-2 px-3 py-2 border-b border-secondary bg-secondary_alt">
@@ -32,6 +36,27 @@ export function TimelineToolbar({ renderTitle }: TimelineToolbarProps) {
             <div className="flex-1 min-w-0">
                 {renderTitle ? renderTitle() : null}
             </div>
+
+            {/* Live sync indicator */}
+            {playbackSync && (
+                <span
+                    className={cn(
+                        'flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium uppercase tracking-wide',
+                        playbackSync.role === 'controller'
+                            ? 'bg-utility-green-500/15 text-utility-green-500'
+                            : 'bg-utility-blue-500/15 text-utility-blue-500',
+                    )}
+                    title={playbackSync.role === 'controller' ? 'Broadcasting playback to all viewers' : 'Following live playback'}
+                >
+                    <Radio className="size-3 animate-pulse" />
+                    <Label.xs className="text-[10px] uppercase tracking-wide leading-none">
+                        {playbackSync.role === 'controller' ? 'Live' : 'Following'}
+                    </Label.xs>
+                </span>
+            )}
+
+            {/* Custom actions slot (e.g. Share button) */}
+            {renderActions ? renderActions() : null}
 
             {/* Filter */}
             <Dropdown.Root>
@@ -64,9 +89,11 @@ export function TimelineToolbar({ renderTitle }: TimelineToolbarProps) {
             </div>
 
             {/* Add cue */}
-            <Button variant="secondary" icon={<Plus />} onClick={() => openCreateModal()}>
-                Add Cue
-            </Button>
+            {!readOnly && showAddCue && (
+                <Button variant="secondary" icon={<Plus />} onClick={() => openCreateModal()}>
+                    Add Cue
+                </Button>
+            )}
         </div>
     )
 }

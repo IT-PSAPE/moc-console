@@ -10,6 +10,7 @@ import {
   addVideoToPlaylist,
 } from "@/lib/youtube-client"
 import { fetchStreamById } from "./fetch-streams"
+import { randomId } from "@/utils/random-id"
 
 export type ThumbnailSource =
   | { type: "file"; file: File }
@@ -249,7 +250,7 @@ export async function createStream(params: CreateStreamParams): Promise<Stream> 
 
   // 7. Store in local database
   const payload = {
-    id: crypto.randomUUID(),
+    id: randomId(),
     workspace_id: workspaceId,
     youtube_broadcast_id: broadcast.id,
     youtube_stream_id: stream.id,

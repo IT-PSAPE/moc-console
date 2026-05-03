@@ -34,4 +34,5 @@ export const routes = {
     terms: 'legal/terms',
     support: 'support',
     zoomDocs: 'docs/zoom',
+    publicEventShare: 'share/events/:token',
 } as const

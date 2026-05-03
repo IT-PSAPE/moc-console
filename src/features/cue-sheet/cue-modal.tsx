@@ -160,7 +160,7 @@ function CueModalContent({ addCue, closeCueModal, cueModal, isEdit, moveCue, tra
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
-                    <Modal.Panel className="max-w-md">
+                    <Modal.Panel className="w-full max-w-md">
                         <Modal.Header>
                             <Label.md>{isEdit ? 'Edit Cue' : 'New Cue'}</Label.md>
                         </Modal.Header>

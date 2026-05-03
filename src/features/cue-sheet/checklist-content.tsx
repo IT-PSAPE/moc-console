@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { randomId } from '@/utils/random-id'
 import {
     DndContext,
     DragOverlay,
@@ -428,12 +429,12 @@ export function ChecklistContent({ checklist, onUpdate, addRequest = null, onAdd
 
     // ── Add items / sections ────────────────────────────────
     function handleAddTopItem(label: string) {
-        const newItem: ChecklistItem = { id: crypto.randomUUID(), label, checked: false }
+        const newItem: ChecklistItem = { id: randomId(), label, checked: false }
         onUpdate({ ...checklist, items: [...checklist.items, newItem] })
     }
 
     function handleAddSectionItem(sectionId: string, label: string) {
-        const newItem: ChecklistItem = { id: crypto.randomUUID(), label, checked: false }
+        const newItem: ChecklistItem = { id: randomId(), label, checked: false }
         onUpdate({
             ...checklist,
             sections: checklist.sections.map((s) =>
@@ -443,7 +444,7 @@ export function ChecklistContent({ checklist, onUpdate, addRequest = null, onAdd
     }
 
     function handleAddSection(name: string) {
-        const newSection: ChecklistSection = { id: crypto.randomUUID(), name, items: [] }
+        const newSection: ChecklistSection = { id: randomId(), name, items: [] }
         onUpdate({ ...checklist, sections: [...checklist.sections, newSection] })
     }
 

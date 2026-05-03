@@ -88,7 +88,7 @@ export function BroadcastOverviewScreen() {
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2">
         <Card.Root>
-          <Card.Header className="gap-1.5">
+          <Card.Header tight className="gap-1.5">
             <ListMusic className="size-4" />
             <Label.sm>Total Playlists</Label.sm>
           </Card.Header>
@@ -97,7 +97,7 @@ export function BroadcastOverviewScreen() {
           </Card.Content>
         </Card.Root>
         <Card.Root>
-          <Card.Header className="gap-1.5">
+          <Card.Header tight className="gap-1.5">
             <CircleCheck className="size-4" />
             <Label.sm>Published</Label.sm>
           </Card.Header>
@@ -106,7 +106,7 @@ export function BroadcastOverviewScreen() {
           </Card.Content>
         </Card.Root>
         <Card.Root>
-          <Card.Header className="gap-1.5">
+          <Card.Header tight className="gap-1.5">
             <FileEdit className="size-4" />
             <Label.sm>Draft</Label.sm>
           </Card.Header>
@@ -115,7 +115,7 @@ export function BroadcastOverviewScreen() {
           </Card.Content>
         </Card.Root>
         <Card.Root>
-          <Card.Header className="gap-1.5">
+          <Card.Header tight className="gap-1.5">
             <Film className="size-4" />
             <Label.sm>Media Items</Label.sm>
           </Card.Header>

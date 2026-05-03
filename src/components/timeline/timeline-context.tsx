@@ -6,12 +6,23 @@ import { useTimelinePlayback } from './use-timeline-playback'
 import { useCueDrag } from './use-cue-drag'
 import { usePlayheadDrag } from './use-playhead-drag'
 import { useTrackDrag } from './use-track-drag'
+import { usePlaybackSync, type PlaybackSyncRole } from './use-playback-sync'
+import { randomId } from '@/utils/random-id'
 
 // ─── Context Type ──────────────────────────────────────────────────
+
+export type TimelinePlaybackSync = {
+    eventId: string
+    role: PlaybackSyncRole
+    /** When true (controllers), debounced state is persisted to event_playback_state. */
+    persistToDatabase?: boolean
+}
 
 export interface TimelineContextValue {
     tracks: Track[]
     totalMinutes: number
+    readOnly: boolean
+    playbackSync: TimelinePlaybackSync | null
 
     // Zoom
     effectiveZoom: number
@@ -78,9 +89,14 @@ interface TimelineProviderProps {
     tracks: Track[]
     totalMinutes: number
     onChange?: (tracks: Track[]) => void
+    readOnly?: boolean
+    /** Optional: opt into Realtime playback sync via Supabase broadcast. */
+    playbackSync?: TimelinePlaybackSync | null
+    /** Initial playback state (used when joining an in-progress live session). */
+    initialPlayback?: { currentTimeMinutes: number; isPlaying: boolean }
 }
 
-export function TimelineProvider({ children, tracks, totalMinutes, onChange }: TimelineProviderProps) {
+export function TimelineProvider({ children, tracks, totalMinutes, onChange, readOnly = false, playbackSync = null, initialPlayback }: TimelineProviderProps) {
     const timelineContainerRef = useRef<HTMLDivElement | null>(null)
     const [timelineContainerEl, setTimelineContainerEl] = useState<HTMLDivElement | null>(null)
     const onTimelineContainerRef = useCallback((node: HTMLDivElement | null) => {
@@ -95,11 +111,13 @@ export function TimelineProvider({ children, tracks, totalMinutes, onChange }: T
     // ── Modal state ────────────────────────────────────────────────
     const [cueModal, setCueModal] = useState<CueModalState>({ mode: 'closed' })
     const openCreateModal = useCallback((defaultTrackId?: string, defaultStartMin?: number) => {
+        if (readOnly) return
         setCueModal({ mode: 'create', defaultTrackId, defaultStartMin })
-    }, [])
+    }, [readOnly])
     const openEditModal = useCallback((cue: Cue, trackId: string) => {
+        if (readOnly) return
         setCueModal({ mode: 'edit', cue, trackId })
-    }, [])
+    }, [readOnly])
     const closeCueModal = useCallback(() => setCueModal({ mode: 'closed' }), [])
 
     // ── Filter state (fade, not hide) ──────────────────────────────
@@ -113,13 +131,14 @@ export function TimelineProvider({ children, tracks, totalMinutes, onChange }: T
     }, [onChange])
 
     const updateTracks = useCallback((updater: (prev: Track[]) => Track[]) => {
+        if (readOnly) return
         const next = updater(tracks)
         onChangeRef.current?.(next)
-    }, [tracks])
+    }, [tracks, readOnly])
 
     const addTrack = useCallback((name: string, colorKey?: TrackColorKey) => {
         const COLORS: TrackColorKey[] = ['blue', 'purple', 'red', 'green', 'orange', 'pink', 'yellow', 'teal']
-        updateTracks((prev) => [...prev, { id: crypto.randomUUID(), name, colorKey: colorKey ?? COLORS[prev.length % COLORS.length], cues: [] }])
+        updateTracks((prev) => [...prev, { id: randomId(), name, colorKey: colorKey ?? COLORS[prev.length % COLORS.length], cues: [] }])
     }, [updateTracks])
 
     const deleteTrack = useCallback((trackId: string) => {
@@ -144,7 +163,7 @@ export function TimelineProvider({ children, tracks, totalMinutes, onChange }: T
     }, [updateTracks])
 
     const addCue = useCallback((trackId: string, data: Omit<Cue, 'id'>) => {
-        updateTracks((prev) => prev.map((t) => t.id === trackId ? { ...t, cues: [...t.cues, { ...data, id: crypto.randomUUID() }] } : t))
+        updateTracks((prev) => prev.map((t) => t.id === trackId ? { ...t, cues: [...t.cues, { ...data, id: randomId() }] } : t))
     }, [updateTracks])
 
     const updateCue = useCallback((trackId: string, cueId: string, updates: Partial<Omit<Cue, 'id'>>) => {
@@ -169,30 +188,59 @@ export function TimelineProvider({ children, tracks, totalMinutes, onChange }: T
 
     // ── Hooks ──────────────────────────────────────────────────────
     const zoom = useTimelineZoom({ totalMinutes, timelineContainer: timelineContainerEl, currentTimeMinutesRef, onPinchStateChange: setIsPinchGestureActive })
-    const playback = useTimelinePlayback({ totalMinutes, pixelsPerMinute: zoom.pixelsPerMinute, timelineContainerRef, isDraggingPlayheadRef })
+
+    // Followers don't run their own ticker — playhead is driven entirely by inbound broadcasts.
+    const isFollower = playbackSync?.role === 'follower'
+    const playback = useTimelinePlayback({ totalMinutes, pixelsPerMinute: zoom.pixelsPerMinute, timelineContainerRef, isDraggingPlayheadRef, suppressLocalTicker: isFollower })
+
+    // Seed initial playback state once
+    const initialPlaybackAppliedRef = useRef(false)
+    useEffect(() => {
+        if (initialPlaybackAppliedRef.current || !initialPlayback) return
+        initialPlaybackAppliedRef.current = true
+        playback.setCurrentTimeMinutes(initialPlayback.currentTimeMinutes)
+        playback.setIsPlaying(initialPlayback.isPlaying)
+    }, [initialPlayback, playback])
 
     useEffect(() => {
         currentTimeMinutesRef.current = playback.currentTimeMinutes
     }, [playback.currentTimeMinutes])
 
-    const playheadDrag = usePlayheadDrag({ pixelsPerMinute: zoom.pixelsPerMinute, totalMinutes, timelineContainerRef, setCurrentTimeMinutes: playback.setCurrentTimeMinutes, isDraggingPlayheadRef, disableTouchInteractions: isPinchGestureActive })
+    // Live sync: subscribe to broadcast channel and apply remote state
+    const applyRemoteState = useCallback((next: { isPlaying: boolean; currentTimeMinutes: number }) => {
+        playback.setIsPlaying(next.isPlaying)
+        playback.setCurrentTimeMinutes(next.currentTimeMinutes)
+    }, [playback])
 
-    const cueDrag = useCueDrag({ tracks, totalMinutes, pixelsPerMinute: zoom.pixelsPerMinute, trackRowsRef, disableTouchInteractions: isPinchGestureActive, onMoveCue: moveCue, onUpdateCue: updateCue })
+    usePlaybackSync({
+        eventId: playbackSync?.eventId ?? null,
+        role: playbackSync?.role ?? 'follower',
+        isPlaying: playback.isPlaying,
+        currentTimeMinutes: playback.currentTimeMinutes,
+        applyRemoteState,
+        persistToDatabase: playbackSync?.persistToDatabase ?? false,
+    })
 
-    const trackDrag = useTrackDrag({ tracks, onReorderTracks: reorderTracks, disableTouchInteractions: isPinchGestureActive })
+    const playheadDrag = usePlayheadDrag({ pixelsPerMinute: zoom.pixelsPerMinute, totalMinutes, timelineContainerRef, setCurrentTimeMinutes: playback.setCurrentTimeMinutes, isDraggingPlayheadRef, disableTouchInteractions: isPinchGestureActive || readOnly })
+
+    const cueDrag = useCueDrag({ tracks, totalMinutes, pixelsPerMinute: zoom.pixelsPerMinute, trackRowsRef, disableTouchInteractions: isPinchGestureActive || readOnly, onMoveCue: moveCue, onUpdateCue: updateCue })
+
+    const trackDrag = useTrackDrag({ tracks, onReorderTracks: reorderTracks, disableTouchInteractions: isPinchGestureActive || readOnly })
 
     // ── Click handlers ─────────────────────────────────────────────
     const onTrackClick = useCallback((trackId: string, startMinute: number) => {
+        if (readOnly) return
         openCreateModal(trackId, startMinute)
-    }, [openCreateModal])
+    }, [openCreateModal, readOnly])
 
     const onCueClick = useCallback((cue: Cue, trackId: string) => {
+        if (readOnly) return
         openEditModal(cue, trackId)
-    }, [openEditModal])
+    }, [openEditModal, readOnly])
 
     // ── Context value ──────────────────────────────────────────────
     const value = useMemo<TimelineContextValue>(() => ({
-        tracks, totalMinutes,
+        tracks, totalMinutes, readOnly, playbackSync,
         effectiveZoom: zoom.effectiveZoom, pixelsPerMinute: zoom.pixelsPerMinute, updateZoomAnchoredToPlayhead: zoom.updateZoomAnchoredToPlayhead,
         currentTimeMinutes: playback.currentTimeMinutes, setCurrentTimeMinutes: playback.setCurrentTimeMinutes, isPlaying: playback.isPlaying, handlePlayPause: playback.handlePlayPause,
         handlePlayheadPointerDown: playheadDrag.handlePlayheadPointerDown,
@@ -204,7 +252,7 @@ export function TimelineProvider({ children, tracks, totalMinutes, onChange }: T
         cueModal, openCreateModal, openEditModal, closeCueModal,
         filter, setFilter,
     }),
-    [tracks, totalMinutes, zoom, playback, playheadDrag, cueDrag, trackDrag, onTimelineContainerRef, timelineContainerRef, trackRowsRef, onTrackClick, onCueClick, addTrack, deleteTrack, updateTrack, deleteCue, addCue, updateCue, moveCue, cueModal, openCreateModal, openEditModal, closeCueModal, filter, setFilter])
+    [tracks, totalMinutes, readOnly, playbackSync, zoom, playback, playheadDrag, cueDrag, trackDrag, onTimelineContainerRef, timelineContainerRef, trackRowsRef, onTrackClick, onCueClick, addTrack, deleteTrack, updateTrack, deleteCue, addCue, updateCue, moveCue, cueModal, openCreateModal, openEditModal, closeCueModal, filter, setFilter])
 
     return <TimelineContext.Provider value={value}>{children}</TimelineContext.Provider>
 }

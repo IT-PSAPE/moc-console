@@ -163,8 +163,8 @@ function DrawerBackdrop(props: HTMLAttributes<HTMLDivElement>) {
 // ─── Panel ───────────────────────────────────────────────────────────
 
 const panelClassesBySide: Record<Side, string> = {
-    left: 'inset-y-0 left-0 w-full max-w-sm',
-    right: 'inset-y-0 right-0 w-full max-w-sm',
+    left: 'inset-y-0 left-0 w-full max-w-md',
+    right: 'inset-y-0 right-0 w-full max-w-md',
     top: 'inset-x-0 top-0 h-auto max-h-[80vh]',
     bottom: 'inset-x-0 bottom-0 h-auto max-h-[80vh]',
 }
@@ -182,19 +182,10 @@ function DrawerPanel({ children, className, ...props }: HTMLAttributes<HTMLDivEl
     }, [state.isOpen, state.isTopmost])
 
     return (
-        <div
-            ref={panelRef}
-            aria-modal="true"
-            className={cn(
-                'pointer-events-auto fixed flex flex-col border border-secondary bg-primary rounded-lg m-2',
-                panelClassesBySide[state.side],
-                className,
-            )}
-            role="dialog"
-            tabIndex={-1}
-            {...props}
-        >
-            {children}
+        <div ref={panelRef} aria-modal="true" className={cn('p-2 fixed w-full', panelClassesBySide[state.side], className)} role="dialog" tabIndex={-1} {...props}>
+            <div className={cn('h-full pointer-events-auto flex flex-col border border-secondary bg-primary rounded-lg')}>
+                {children}
+            </div>
         </div>
     )
 }

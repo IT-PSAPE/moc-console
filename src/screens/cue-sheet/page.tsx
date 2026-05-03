@@ -100,7 +100,7 @@ export function CueSheetOverviewScreen() {
             {/* Stat cards */}
             <div className="grid grid-cols-3 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2">
                 <Card.Root>
-                    <Card.Header className="gap-1.5">
+                    <Card.Header tight className="gap-1.5">
                         <Calendar className="size-4" />
                         <Label.sm>Templates</Label.sm>
                     </Card.Header>
@@ -109,7 +109,7 @@ export function CueSheetOverviewScreen() {
                     </Card.Content>
                 </Card.Root>
                 <Card.Root>
-                    <Card.Header className="gap-1.5">
+                    <Card.Header tight className="gap-1.5">
                         <Calendar className="size-4" />
                         <Label.sm>Event Runs</Label.sm>
                     </Card.Header>
@@ -118,7 +118,7 @@ export function CueSheetOverviewScreen() {
                     </Card.Content>
                 </Card.Root>
                 <Card.Root>
-                    <Card.Header className="gap-1.5">
+                    <Card.Header tight className="gap-1.5">
                         <ListChecks className="size-4" />
                         <Label.sm>Checklist Runs</Label.sm>
                     </Card.Header>
@@ -131,9 +131,11 @@ export function CueSheetOverviewScreen() {
             {/* Event Runs */}
             <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
                 <Card.Root>
-                    <Card.Header className="gap-1.5">
-                        <Calendar className="size-4" />
-                        <Label.sm className="flex-1">Event Runs</Label.sm>
+                    <Card.Header tight className="gap-1.5">
+                        <div className="flex flex-1 items-center gap-1.5">
+                            <Calendar className="size-4" />
+                            <Label.sm>Event Runs</Label.sm>
+                        </div>
                         <Dropdown.Root placement="bottom">
                             <Dropdown.Trigger>
                                 <Button.Icon variant="secondary" icon={<Plus />} />
@@ -178,9 +180,11 @@ export function CueSheetOverviewScreen() {
             {/* Checklist Runs */}
             <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
                 <Card.Root>
-                    <Card.Header className="gap-1.5">
-                        <ListChecks className="size-4" />
-                        <Label.sm className="flex-1">Checklist Runs</Label.sm>
+                    <Card.Header tight className="gap-1.5">
+                        <div className="flex flex-1 items-center gap-1.5">
+                            <ListChecks className="size-4" />
+                            <Label.sm>Checklist Runs</Label.sm>
+                        </div>
                         <Dropdown.Root placement="bottom">
                             <Dropdown.Trigger>
                                 <Button.Icon variant="secondary" icon={<Plus />} />

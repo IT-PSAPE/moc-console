@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react"
+import { randomId } from "@/utils/random-id"
 import { useFeedback } from "@/components/feedback/feedback-provider"
 import { useNavigate } from "react-router-dom"
 import { Card } from "@/components/display/card"
@@ -33,7 +34,7 @@ export function PlaylistScreen() {
 
   const handleCreatePlaylist = useCallback(async () => {
     const newPlaylist: Playlist = {
-      id: crypto.randomUUID(),
+      id: randomId(),
       name: "New Playlist",
       description: "",
       status: "draft",
@@ -56,10 +57,6 @@ export function PlaylistScreen() {
     }
   }, [syncPlaylist, navigate, toast])
 
-  function handleOpenPlaylist(playlist: Playlist) {
-    navigate(`/${routes.broadcastPlaylistDetail.replace(":id", playlist.id)}`)
-  }
-
   return (
     <section>
       <Header.Root className="p-4 pt-8 mx-auto max-w-content">
@@ -75,12 +72,13 @@ export function PlaylistScreen() {
         <Card.Root>
           <Card.Header className="gap-2 justify-between">
             <Label.sm>Playlists</Label.sm>
-            <div className="flex gap-1 items-center shrink-0">
+            <div className="flex gap-1 items-center shrink-0 max-mobile:w-full">
               <Input
                 icon={<Search />}
                 placeholder="Search playlists..."
                 value={state.search}
                 onChange={(e) => setSearch(e.target.value)}
+                className="max-mobile:flex-1"
               />
               <Button.Icon variant="secondary" icon={<Plus />} onClick={handleCreatePlaylist} />
             </div>
@@ -94,11 +92,7 @@ export function PlaylistScreen() {
               </div>
             ) : (
               filtered.map((playlist) => (
-                <PlaylistListItem
-                  key={playlist.id}
-                  playlist={playlist}
-                  onClick={() => handleOpenPlaylist(playlist)}
-                />
+                <PlaylistListItem key={playlist.id} playlist={playlist} />
               ))
             )}
           </Card.Content>

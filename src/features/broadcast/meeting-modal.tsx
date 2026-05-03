@@ -101,7 +101,7 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
-          <Modal.Panel className="max-w-md">
+          <Modal.Panel className="w-full max-w-md">
             <Modal.Header>
               <Label.md>{isEditing ? "Edit Meeting" : "Schedule Meeting"}</Label.md>
             </Modal.Header>

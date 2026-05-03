@@ -152,7 +152,7 @@ export function EquipmentOverviewScreen() {
 
       <div className="grid grid-cols-2 gap-4 p-4 pt-8 mx-auto w-full max-w-content md:grid-cols-4 max-mobile:gap-2">
             <Card.Root>
-              <Card.Header className="gap-1.5">
+              <Card.Header tight className="gap-1.5">
                 <Package className="size-4" />
                 <Label.sm>Total Equipment</Label.sm>
               </Card.Header>
@@ -161,7 +161,7 @@ export function EquipmentOverviewScreen() {
               </Card.Content>
             </Card.Root>
             <Card.Root>
-              <Card.Header className="gap-1.5">
+              <Card.Header tight className="gap-1.5">
                 <CircleCheck className="size-4" />
                 <Label.sm>Available</Label.sm>
               </Card.Header>
@@ -170,7 +170,7 @@ export function EquipmentOverviewScreen() {
               </Card.Content>
             </Card.Root>
             <Card.Root>
-              <Card.Header className="gap-1.5">
+              <Card.Header tight className="gap-1.5">
                 <ArrowUpRight className="size-4" />
                 <Label.sm>Booked Out</Label.sm>
               </Card.Header>
@@ -179,7 +179,7 @@ export function EquipmentOverviewScreen() {
               </Card.Content>
             </Card.Root>
             <Card.Root>
-              <Card.Header className="gap-1.5">
+              <Card.Header tight className="gap-1.5">
                 <CalendarX2Icon className="size-4" />
                 <Label.sm>Overdue</Label.sm>
               </Card.Header>
@@ -198,8 +198,8 @@ export function EquipmentOverviewScreen() {
                     <CircleAlert className="size-4 text-tertiary" />
                     <Label.md>Overdue Equipment</Label.md>
                   </div>
-                  <div className="ml-auto flex items-center gap-1">
-                    <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-sm" value={state.search} onChange={(e) => setSearch(e.target.value)} />
+                  <div className="ml-auto flex items-center gap-1 max-mobile:w-full">
+                    <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-md" value={state.search} onChange={(e) => setSearch(e.target.value)} />
                     <Drawer.Root>
                       <Drawer.Trigger>
                         <Button icon={<Settings2 />} variant="secondary">Filter</Button>
