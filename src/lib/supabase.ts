@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js"
 
 const youtubeOAuthCodeKey = "youtube_oauth_code"
 const youtubeOAuthErrorKey = "youtube_oauth_error"
+const youtubeOAuthStateKey = "youtube_oauth_state"
 
 function interceptYouTubeOAuthRedirect() {
   const params = new URLSearchParams(window.location.search)
@@ -13,14 +14,24 @@ function interceptYouTubeOAuthRedirect() {
   }
 
   if (hasYouTubeCode) {
-    const code = params.get("code")
-    if (code) {
-      sessionStorage.setItem(youtubeOAuthCodeKey, code)
+    const expectedState = sessionStorage.getItem(youtubeOAuthStateKey)
+    const returnedState = params.get("state")
+    sessionStorage.removeItem(youtubeOAuthStateKey)
+
+    if (!expectedState || !returnedState || expectedState !== returnedState) {
+      sessionStorage.setItem(youtubeOAuthErrorKey, "OAuth state mismatch — possible CSRF attempt. Please try again.")
+      sessionStorage.removeItem(youtubeOAuthCodeKey)
+    } else {
+      const code = params.get("code")
+      if (code) {
+        sessionStorage.setItem(youtubeOAuthCodeKey, code)
+      }
+      sessionStorage.removeItem(youtubeOAuthErrorKey)
     }
-    sessionStorage.removeItem(youtubeOAuthErrorKey)
   }
 
   if (hasYouTubeError) {
+    sessionStorage.removeItem(youtubeOAuthStateKey)
     const error = params.get("error")
     const description = params.get("error_description")
     const message = description ? `${error ?? "oauth_error"}: ${description}` : (error ?? "OAuth request was rejected")
@@ -31,6 +42,7 @@ function interceptYouTubeOAuthRedirect() {
   const cleanUrl = new URL(window.location.href)
   cleanUrl.searchParams.delete("code")
   cleanUrl.searchParams.delete("scope")
+  cleanUrl.searchParams.delete("state")
   cleanUrl.searchParams.delete("iss")
   cleanUrl.searchParams.delete("authuser")
   cleanUrl.searchParams.delete("prompt")
@@ -42,6 +54,7 @@ function interceptYouTubeOAuthRedirect() {
 const zoomOAuthCodeKey = "zoom_oauth_code"
 const zoomOAuthErrorKey = "zoom_oauth_error"
 const zoomOAuthPendingKey = "zoom_oauth_pending"
+const zoomOAuthStateKey = "zoom_oauth_state"
 
 function interceptZoomOAuthRedirect() {
   const params = new URLSearchParams(window.location.search)
@@ -58,11 +71,21 @@ function interceptZoomOAuthRedirect() {
   sessionStorage.removeItem(zoomOAuthPendingKey)
 
   if (code) {
-    sessionStorage.setItem(zoomOAuthCodeKey, code)
-    sessionStorage.removeItem(zoomOAuthErrorKey)
+    const expectedState = sessionStorage.getItem(zoomOAuthStateKey)
+    const returnedState = params.get("state")
+    sessionStorage.removeItem(zoomOAuthStateKey)
+
+    if (!expectedState || !returnedState || expectedState !== returnedState) {
+      sessionStorage.setItem(zoomOAuthErrorKey, "OAuth state mismatch — possible CSRF attempt. Please try again.")
+      sessionStorage.removeItem(zoomOAuthCodeKey)
+    } else {
+      sessionStorage.setItem(zoomOAuthCodeKey, code)
+      sessionStorage.removeItem(zoomOAuthErrorKey)
+    }
   }
 
   if (error) {
+    sessionStorage.removeItem(zoomOAuthStateKey)
     const description = params.get("error_description")
     const message = description ? `${error}: ${description}` : (error ?? "Zoom OAuth was rejected")
     sessionStorage.setItem(zoomOAuthErrorKey, message)

@@ -69,7 +69,7 @@ async function fetchProfileForUser(user: User): Promise<Profile | null> {
         .eq("id", user.id)
         .maybeSingle()
 
-    if (error) {
+    if (error && import.meta.env.DEV) {
         console.error("Failed to fetch user profile:", error.message)
     }
 
@@ -202,7 +202,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (isActive) setProfile(next)
             })
             .catch((error) => {
-                console.error("Failed to fetch user profile:", error)
+                if (import.meta.env.DEV) {
+                    console.error("Failed to fetch user profile:", error)
+                }
             })
 
         supabase
@@ -212,7 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .maybeSingle()
             .then(({ data, error }) => {
 
-                if (error) {
+                if (error && import.meta.env.DEV) {
                     console.error("Failed to fetch user role:", error.message)
                 }
 

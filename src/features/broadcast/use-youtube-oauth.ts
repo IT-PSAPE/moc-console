@@ -1,12 +1,14 @@
 import { useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 import { getCurrentWorkspaceId } from "@/data/current-workspace"
-import { exchangeCodeForTokens, fetchChannelInfo } from "@/lib/youtube-client"
+import { exchangeCodeForTokens } from "@/lib/youtube-client"
+import { generateOAuthState } from "@/lib/oauth-state"
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 const REDIRECT_URI = import.meta.env.VITE_GOOGLE_REDIRECT_URI
 const YOUTUBE_OAUTH_CODE_KEY = "youtube_oauth_code"
 const YOUTUBE_OAUTH_ERROR_KEY = "youtube_oauth_error"
+const YOUTUBE_OAUTH_STATE_KEY = "youtube_oauth_state"
 
 const SCOPES = [
   "https://www.googleapis.com/auth/youtube",
@@ -16,6 +18,9 @@ const SCOPES = [
 export function useYouTubeOAuth() {
   /** Redirect to Google consent screen. */
   const startOAuthFlow = useCallback(() => {
+    const state = generateOAuthState()
+    sessionStorage.setItem(YOUTUBE_OAUTH_STATE_KEY, state)
+
     const params = new URLSearchParams({
       client_id: GOOGLE_CLIENT_ID,
       redirect_uri: REDIRECT_URI,
@@ -23,6 +28,7 @@ export function useYouTubeOAuth() {
       scope: SCOPES,
       access_type: "offline",
       prompt: "consent",
+      state,
     })
 
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`
@@ -51,19 +57,13 @@ export function useYouTubeOAuth() {
     sessionStorage.removeItem(YOUTUBE_OAUTH_CODE_KEY)
 
     try {
-      // Exchange the auth code for tokens
-      const tokens = await exchangeCodeForTokens(code, REDIRECT_URI)
+      const { channel, ...tokens } = await exchangeCodeForTokens(code, REDIRECT_URI)
 
-      // Fetch channel info using the new access token
-      const channel = await fetchChannelInfo(tokens.access_token)
-
-      // Get current user and workspace
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("Not authenticated")
 
       const workspaceId = await getCurrentWorkspaceId()
 
-      // Store the connection in Supabase
       const { error: dbError } = await supabase
         .from("youtube_connections")
         .upsert(
@@ -86,7 +86,9 @@ export function useYouTubeOAuth() {
       return { connected: true, error: null }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to connect YouTube"
-      console.error("YouTube OAuth callback failed:", err)
+      if (import.meta.env.DEV) {
+        console.error("YouTube OAuth callback failed:", err)
+      }
       return { connected: false, error: message }
     }
   }, [])

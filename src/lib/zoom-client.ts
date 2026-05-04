@@ -1,4 +1,5 @@
 import { supabase } from "./supabase"
+import { buildSessionHeaders } from "./api-auth"
 import { getCurrentWorkspaceId } from "@/data/current-workspace"
 
 type ConnectionTokens = {
@@ -45,10 +46,12 @@ async function getValidAccessToken(): Promise<string> {
     return connection.access_token
   }
 
+  const sessionHeaders = await buildSessionHeaders()
   const response = await fetch("/api/zoom/oauth/refresh", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...sessionHeaders,
     },
     body: JSON.stringify({
       refreshToken: connection.refresh_token,
@@ -83,10 +86,12 @@ async function getValidAccessToken(): Promise<string> {
 
 /** Exchange an authorization code for tokens. */
 export async function exchangeZoomCodeForTokens(code: string, redirectUri: string) {
+  const sessionHeaders = await buildSessionHeaders()
   const response = await fetch("/api/zoom/oauth/exchange", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...sessionHeaders,
     },
     body: JSON.stringify({
       code,
@@ -116,6 +121,7 @@ export async function zoomApiFetch(
   options: RequestInit = {},
 ): Promise<Response> {
   const accessToken = await getValidAccessToken()
+  const sessionHeaders = await buildSessionHeaders()
   const url = path.startsWith("http") ? path : `/api/zoom/v2${path}`
 
   return fetch(url, {
@@ -123,6 +129,7 @@ export async function zoomApiFetch(
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
+      ...sessionHeaders,
       ...options.headers,
     },
   })
@@ -130,10 +137,12 @@ export async function zoomApiFetch(
 
 /** Revoke Zoom OAuth token. */
 export async function revokeZoomToken(accessToken: string): Promise<void> {
+  const sessionHeaders = await buildSessionHeaders()
   const response = await fetch("/api/zoom/oauth/revoke", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...sessionHeaders,
     },
     body: JSON.stringify({ token: accessToken }),
   })

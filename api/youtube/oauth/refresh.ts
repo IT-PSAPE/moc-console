@@ -1,4 +1,4 @@
-import { resolveZoomOAuthConfig, revokeZoomAccessToken } from "../../../server/zoom-oauth.js"
+import { refreshYouTubeToken, resolveYouTubeOAuthConfig } from "../../../server/youtube-oauth.js"
 import { AuthError, requireAuthenticatedUser } from "../../../server/auth-guard.js"
 
 type ApiRequest = {
@@ -14,7 +14,7 @@ type ApiResponse = {
 }
 
 type RequestBody = {
-  token?: unknown
+  refreshToken?: unknown
 }
 
 export default async function handler(request: ApiRequest, response: ApiResponse) {
@@ -37,19 +37,19 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   }
 
   const body = (request.body ?? {}) as RequestBody
-  const token = typeof body.token === "string" ? body.token : null
+  const refreshTokenValue = typeof body.refreshToken === "string" ? body.refreshToken : null
 
-  if (!token) {
-    response.status(400).json({ error: "Missing access token" })
+  if (!refreshTokenValue) {
+    response.status(400).json({ error: "Missing refresh token" })
     return
   }
 
   try {
-    const config = resolveZoomOAuthConfig(process.env)
-    await revokeZoomAccessToken(config, token)
-    response.status(200).json({ ok: true })
+    const config = resolveYouTubeOAuthConfig(process.env)
+    const result = await refreshYouTubeToken(config, refreshTokenValue)
+    response.status(200).json(result)
   } catch (error) {
-    console.error("Zoom token revoke failed:", error)
-    response.status(500).json({ error: "Zoom token revoke failed" })
+    console.error("YouTube token refresh failed:", error)
+    response.status(500).json({ error: "YouTube token refresh failed" })
   }
 }

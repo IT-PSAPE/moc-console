@@ -1,8 +1,10 @@
 import { refreshZoomToken, resolveZoomOAuthConfig } from "../../../server/zoom-oauth.js"
+import { AuthError, requireAuthenticatedUser } from "../../../server/auth-guard.js"
 
 type ApiRequest = {
   method?: string
   body?: unknown
+  headers?: Record<string, string | undefined>
 }
 
 type ApiResponse = {
@@ -23,6 +25,17 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
+  try {
+    await requireAuthenticatedUser(request.headers)
+  } catch (error) {
+    if (error instanceof AuthError) {
+      response.status(401).json({ error: "Unauthorized" })
+      return
+    }
+    response.status(500).json({ error: "Authentication check failed" })
+    return
+  }
+
   const body = (request.body ?? {}) as RequestBody
   const refreshTokenValue = typeof body.refreshToken === "string" ? body.refreshToken : null
 
@@ -36,7 +49,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     const result = await refreshZoomToken(config, refreshTokenValue)
     response.status(200).json(result)
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Zoom token refresh failed"
-    response.status(500).json({ error: message })
+    console.error("Zoom token refresh failed:", error)
+    response.status(500).json({ error: "Zoom token refresh failed" })
   }
 }
