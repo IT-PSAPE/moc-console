@@ -159,6 +159,42 @@ async function handleForumTopicMessage(message: TelegramMessage): Promise<boolea
   return false
 }
 
+// Captures topics that existed before the bot was added (or any topic whose
+// `forum_topic_created` we missed). Inserts a placeholder row keyed by
+// thread_id; never overwrites a row that already has a real name.
+async function handleGroupTopicHint(message: TelegramMessage): Promise<void> {
+  const chat = message.chat
+  const threadId = message.message_thread_id
+  if (typeof threadId !== "number") return
+  if (!chat?.id) return
+  if (chat.type !== "group" && chat.type !== "supergroup") return
+
+  const admin = getSupabaseAdmin()
+  const groupChatId = String(chat.id)
+
+  // Defensive: ensure the group row exists if it predates my_chat_member tracking.
+  await admin.from("telegram_groups").upsert(
+    {
+      chat_id: groupChatId,
+      title: chat.title ?? "",
+      type: chat.type,
+      is_forum: chat.is_forum ?? true,
+      removed_at: null,
+    },
+    { onConflict: "chat_id", ignoreDuplicates: true },
+  )
+
+  await admin.from("telegram_group_topics").upsert(
+    {
+      group_chat_id: groupChatId,
+      thread_id: threadId,
+      name: `Topic #${threadId}`,
+      closed: false,
+    },
+    { onConflict: "group_chat_id,thread_id", ignoreDuplicates: true },
+  )
+}
+
 async function handleStartCommand(message: TelegramMessage): Promise<void> {
   const chatId = message.chat?.id
   const text = message.text
@@ -264,6 +300,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       return
     }
 
+    await handleGroupTopicHint(message)
     await handleStartCommand(message)
     response.status(200).json({ ok: true })
   } catch (error) {
