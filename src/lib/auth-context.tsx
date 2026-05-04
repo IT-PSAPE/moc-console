@@ -13,7 +13,7 @@ type AuthState = {
     role: Role | null
     isPasswordRecovery: boolean
     loading: boolean
-    signUp: (email: string, password: string, name: string, surname: string) => Promise<{ error: Error | null }>
+    signUp: (email: string, password: string, name: string, surname: string, workspaceSlug?: string) => Promise<{ error: Error | null }>
     signIn: (email: string, password: string) => Promise<{ error: Error | null }>
     signOut: () => Promise<{ error: Error | null }>
     resetPassword: (email: string) => Promise<{ error: Error | null }>
@@ -227,13 +227,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [user])
 
-    async function signUp(email: string, password: string, name: string, surname: string) {
-        // const { data, error } = await supabase.auth.signUp({
+    async function signUp(email: string, password: string, name: string, surname: string, workspaceSlug?: string) {
+        const metadata: Record<string, string> = { name, surname }
+        if (workspaceSlug) {
+            metadata.workspace_slug = workspaceSlug
+        }
+
         const { error } = await supabase.auth.signUp({
             email,
             password,
             options: {
-                data: { name, surname },
+                data: metadata,
             },
         })
 

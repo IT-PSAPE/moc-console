@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { routes } from '@/screens/console-routes'
 import { Sidebar } from '../components/navigation/sidebar'
 import { Breadcrumb } from '../components/navigation/breadcrumb'
-import { Cast, Drama, FileText, LayoutGrid, MessagesSquare, Package, Users } from 'lucide-react'
+import { Cast, Drama, FileText, LayoutGrid, Package } from 'lucide-react'
 import { TopBar } from './topbar'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useSidebar } from '../components/navigation/sidebar'
@@ -20,7 +20,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const { pathname } = useLocation()
 
     const { state, actions } = useSidebar()
-    const { role, signOut } = useAuth()
+    const { signOut } = useAuth()
     const { toast } = useFeedback()
     const [isSigningOut, setIsSigningOut] = useState(false)
 
@@ -71,12 +71,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <Sidebar.Group>
                             <Sidebar.GroupContent>
                                 <Sidebar.MenuItem title={"Dashboard"} icon={<LayoutGrid />} active={isActive(routes.dashboard)} onClick={() => navigateToRoute(routes.dashboard)} />
-                                {role?.can_manage_roles && (
-                                    <Sidebar.MenuItem title={"Users"} icon={<Users />} active={isActive(routes.users)} onClick={() => navigateToRoute(routes.users)} />
-                                )}
-                                {role?.can_manage_roles && (
-                                    <Sidebar.MenuItem title={"Telegram Groups"} icon={<MessagesSquare />} active={isActive(routes.telegramGroups)} onClick={() => navigateToRoute(routes.telegramGroups)} />
-                                )}
                                 <SearchMenuItem />
                             </Sidebar.GroupContent>
                         </Sidebar.Group>

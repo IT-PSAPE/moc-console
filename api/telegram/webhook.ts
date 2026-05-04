@@ -49,8 +49,8 @@ type TelegramUpdate = {
 
 const TELEGRAM_API = "https://api.telegram.org"
 const START_COMMAND = /^\/start(?:@\w+)?(?:\s+(\S+))?\s*$/
-const REGISTER_TOPIC_COMMAND = /^\/register_topic(?:@\w+)?(?:\s+(.+))?\s*$/
-const PRESENT_STATUSES = new Set(["member", "administrator", "creator", "restricted"])
+const REGISTER_GROUP_COMMAND = /^\/register_group(?:@\w+)?(?:\s+(\S+))?\s*$/
+const REGISTER_TOPIC_COMMAND = /^\/register_topic(?:@\w+)?(?:\s+(\S+))?\s*$/
 const ABSENT_STATUSES = new Set(["left", "kicked"])
 
 function safeEqual(a: string, b: string): boolean {
@@ -112,35 +112,95 @@ async function editMessageText(
   }
 }
 
+// Adding the bot to a group no longer auto-creates a row — registration is
+// explicit via /register_group <slug>. We only act on the *removal* path so
+// that already-registered groups get soft-deleted when the bot is kicked.
 async function handleMyChatMember(update: TelegramChatMemberUpdated): Promise<void> {
   const chat = update.chat
   const status = update.new_chat_member?.status
   if (!chat?.id || !chat.type || !status) return
   if (chat.type !== "group" && chat.type !== "supergroup") return
+  if (!ABSENT_STATUSES.has(status)) return
 
   const admin = getSupabaseAdmin()
-  const chatIdStr = String(chat.id)
+  await admin
+    .from("telegram_groups")
+    .update({ removed_at: new Date().toISOString() })
+    .eq("chat_id", String(chat.id))
+}
 
-  if (PRESENT_STATUSES.has(status)) {
-    await admin.from("telegram_groups").upsert(
-      {
-        chat_id: chatIdStr,
-        title: chat.title ?? "",
-        type: chat.type,
-        is_forum: chat.is_forum ?? false,
-        removed_at: null,
-      },
-      { onConflict: "chat_id" },
-    )
-    return
+type ResolvedWorkspace = { id: string; slug: string }
+
+async function resolveWorkspaceBySlug(slug: string): Promise<ResolvedWorkspace | null> {
+  const admin = getSupabaseAdmin()
+  const { data } = await admin
+    .from("workspaces")
+    .select("id, slug")
+    .eq("slug", slug)
+    .maybeSingle()
+  return data ?? null
+}
+
+function slugErrorText(providedSlug: string | null, command: string): string {
+  if (!providedSlug) {
+    return `Please run ${command} with a workspace slug, e.g. ${command} default-workspace`
+  }
+  return `Workspace "${providedSlug}" not found. Run ${command} with a valid workspace slug.`
+}
+
+async function handleRegisterGroupCommand(message: TelegramMessage): Promise<boolean> {
+  const text = message.text
+  if (typeof text !== "string") return false
+  const match = text.match(REGISTER_GROUP_COMMAND)
+  if (!match) return false
+
+  const chat = message.chat
+  const chatId = chat?.id
+  if (chatId === undefined) return true
+
+  const threadId = message.message_thread_id
+
+  if (chat?.type !== "group" && chat?.type !== "supergroup") {
+    await sendMessage(chatId, "Use /register_group inside the Telegram group you want to register.")
+    return true
   }
 
-  if (ABSENT_STATUSES.has(status)) {
-    await admin
-      .from("telegram_groups")
-      .update({ removed_at: new Date().toISOString() })
-      .eq("chat_id", chatIdStr)
+  const slug = match[1]?.trim() || null
+  if (!slug) {
+    await sendMessage(chatId, slugErrorText(null, "/register_group"), { threadId })
+    return true
   }
+
+  const workspace = await resolveWorkspaceBySlug(slug)
+  if (!workspace) {
+    await sendMessage(chatId, slugErrorText(slug, "/register_group"), { threadId })
+    return true
+  }
+
+  const admin = getSupabaseAdmin()
+  const { error } = await admin.from("telegram_groups").upsert(
+    {
+      chat_id: String(chatId),
+      title: chat.title ?? "",
+      type: chat.type,
+      is_forum: chat.is_forum ?? false,
+      workspace_id: workspace.id,
+      removed_at: null,
+    },
+    { onConflict: "chat_id" },
+  )
+
+  if (error) {
+    await sendMessage(chatId, `Couldn't register this group: ${error.message}`, { threadId })
+    return true
+  }
+
+  await sendMessage(
+    chatId,
+    `✅ Registered "${chat.title ?? "this group"}" to workspace "${workspace.slug}".`,
+    { threadId },
+  )
+  return true
 }
 
 async function handleForumTopicMessage(message: TelegramMessage): Promise<boolean> {
@@ -200,19 +260,22 @@ async function handleForumTopicMessage(message: TelegramMessage): Promise<boolea
   return false
 }
 
-// `/register_topic` — explicit registration of the topic the command was sent in.
-// Slash commands always reach the bot regardless of privacy mode, so this is the
-// reliable way to capture pre-existing topics.
+// `/register_topic [slug]` — explicit registration of the topic the command
+// was sent in. If the parent group isn't registered yet, the slug is required
+// and registers both the group and the topic against that workspace. If the
+// group is already registered, the topic inherits its workspace and the slug
+// (if provided) must match — otherwise we tell the caller.
 //
-// Name resolution: the Telegram Bot API has no method to look up a topic's name.
-// The trick: the topic root message id == message_thread_id, and that root is
-// always a `forum_topic_created` service message. By replying to it we coax
+// Name resolution: the Telegram Bot API has no method to look up a topic's
+// name. Trick: the topic root message id == message_thread_id, and that root
+// is always a `forum_topic_created` service message. By replying to it we coax
 // Telegram into returning that service message in the response's
 // `reply_to_message`, which carries the real topic name.
 async function handleRegisterTopicCommand(message: TelegramMessage): Promise<boolean> {
   const text = message.text
   if (typeof text !== "string") return false
-  if (!REGISTER_TOPIC_COMMAND.test(text)) return false
+  const match = text.match(REGISTER_TOPIC_COMMAND)
+  if (!match) return false
 
   const chat = message.chat
   const chatId = chat?.id
@@ -231,18 +294,67 @@ async function handleRegisterTopicCommand(message: TelegramMessage): Promise<boo
 
   const groupChatId = String(chatId)
   const admin = getSupabaseAdmin()
+  const providedSlug = match[1]?.trim() || null
 
-  // Defensive group upsert (covers bot-already-in-group case).
-  await admin.from("telegram_groups").upsert(
-    {
+  // Look up the parent group.
+  const { data: existingGroup } = await admin
+    .from("telegram_groups")
+    .select("workspace_id, workspaces(slug)")
+    .eq("chat_id", groupChatId)
+    .maybeSingle()
+
+  type GroupRow = { workspace_id: string; workspaces: { slug: string } | { slug: string }[] | null }
+  const existing = existingGroup as GroupRow | null
+  const existingSlug = existing
+    ? Array.isArray(existing.workspaces)
+      ? existing.workspaces[0]?.slug
+      : existing.workspaces?.slug
+    : undefined
+
+  let workspaceId: string
+  let workspaceSlug: string
+
+  if (existing) {
+    workspaceId = existing.workspace_id
+    workspaceSlug = existingSlug ?? ""
+    if (providedSlug && providedSlug !== workspaceSlug) {
+      await sendMessage(
+        chatId,
+        `This group is already registered to workspace "${workspaceSlug}". To move it, run /register_group ${providedSlug} first.`,
+        { threadId },
+      )
+      return true
+    }
+  } else {
+    if (!providedSlug) {
+      await sendMessage(
+        chatId,
+        "This group isn't registered yet. Run /register_group <slug> first, or /register_topic <slug> to register both at once.",
+        { threadId },
+      )
+      return true
+    }
+    const workspace = await resolveWorkspaceBySlug(providedSlug)
+    if (!workspace) {
+      await sendMessage(chatId, slugErrorText(providedSlug, "/register_topic"), { threadId })
+      return true
+    }
+    workspaceId = workspace.id
+    workspaceSlug = workspace.slug
+
+    const { error: groupErr } = await admin.from("telegram_groups").insert({
       chat_id: groupChatId,
       title: chat.title ?? "",
       type: chat.type,
       is_forum: chat.is_forum ?? true,
+      workspace_id: workspaceId,
       removed_at: null,
-    },
-    { onConflict: "chat_id", ignoreDuplicates: true },
-  )
+    })
+    if (groupErr) {
+      await sendMessage(chatId, `Couldn't register this group: ${groupErr.message}`, { threadId })
+      return true
+    }
+  }
 
   // Reply to the topic root to fetch the real topic name from Telegram.
   const sent = await sendMessage(chatId, "Registering topic…", {
@@ -264,8 +376,8 @@ async function handleRegisterTopicCommand(message: TelegramMessage): Promise<boo
 
   if (sent?.message_id !== undefined) {
     const finalText = resolvedName
-      ? `✅ Registered "${resolvedName}".`
-      : `✅ Registered topic #${threadId}. (Couldn't read the topic name from Telegram — rename it in Telegram and I'll pick it up.)`
+      ? `✅ Registered "${resolvedName}" in workspace "${workspaceSlug}".`
+      : `✅ Registered topic #${threadId} in workspace "${workspaceSlug}". (Couldn't read the topic name — rename it in Telegram and I'll pick it up.)`
     await editMessageText(chatId, sent.message_id, finalText)
   }
 
@@ -377,8 +489,12 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       return
     }
 
-    const registered = await handleRegisterTopicCommand(message)
-    if (registered) {
+    if (await handleRegisterGroupCommand(message)) {
+      response.status(200).json({ ok: true })
+      return
+    }
+
+    if (await handleRegisterTopicCommand(message)) {
       response.status(200).json({ ok: true })
       return
     }

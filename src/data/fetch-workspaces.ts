@@ -17,6 +17,26 @@ export type WorkspaceDirectory = {
   memberships: WorkspaceMembership[];
 };
 
+type SignupWorkspaceRow = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+export async function fetchSignupWorkspaces(): Promise<Workspace[]> {
+  const { data, error } = await supabase.rpc("list_signup_workspaces");
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as SignupWorkspaceRow[]).map((row) => ({
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+  }));
+}
+
 export async function fetchWorkspaceDirectory(userIds: string[]): Promise<WorkspaceDirectory> {
   if (userIds.length === 0) {
     return { workspaces: [], memberships: [] };

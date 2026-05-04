@@ -1,7 +1,8 @@
 import { fetchEquipment, fetchBookings } from "@/data/fetch-equipment";
 import type { Equipment } from "@/types/equipment/equipment";
 import type { Booking } from "@/types/equipment/booking";
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { useWorkspace } from "@/lib/workspace-context";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 type EquipmentContextValue = {
   state: {
@@ -34,6 +35,14 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
   const equipmentPromiseRef = useRef<Promise<void> | null>(null);
   const bookingsLoadedRef = useRef(false);
   const bookingsPromiseRef = useRef<Promise<void> | null>(null);
+
+  const { currentWorkspaceId } = useWorkspace();
+  useEffect(() => {
+    equipmentLoadedRef.current = false;
+    bookingsLoadedRef.current = false;
+    setEquipment([]);
+    setBookings([]);
+  }, [currentWorkspaceId]);
 
   const addEquipment = useCallback((newItem: Equipment) => {
     setEquipment((prev) => [newItem, ...prev]);

@@ -13,10 +13,6 @@ import { useStreamFilters } from "@/features/broadcast/use-stream-filters"
 import { useZoomMeetingFilters } from "@/features/broadcast/use-zoom-meeting-filters"
 import { StreamFilterDrawer } from "@/features/broadcast/stream-filter-drawer"
 import { ZoomMeetingFilterDrawer } from "@/features/broadcast/zoom-meeting-filter-drawer"
-import { useYouTubeOAuth } from "@/features/broadcast/use-youtube-oauth"
-import { useZoomOAuth } from "@/features/broadcast/use-zoom-oauth"
-import { YouTubeConnectionCard } from "@/features/broadcast/youtube-connection-card"
-import { ZoomConnectionCard } from "@/features/broadcast/zoom-connection-card"
 import { StreamListItem } from "@/features/broadcast/stream-list-item"
 import { StreamModal } from "@/features/broadcast/stream-modal"
 import type { StreamFormData } from "@/features/broadcast/stream-modal"
@@ -46,9 +42,6 @@ export function StreamsScreen() {
     },
   } = useBroadcast()
 
-  const { handleOAuthCallback: handleYouTubeCallback } = useYouTubeOAuth()
-  const { handleOAuthCallback: handleZoomCallback } = useZoomOAuth()
-
   const streamFilters = useStreamFilters(streams)
   const meetingFilters = useZoomMeetingFilters(zoomMeetings)
 
@@ -70,36 +63,14 @@ export function StreamsScreen() {
   const isZoomConnected = Boolean(zoomConnection)
   const canCreate = role?.can_create === true
 
-  // ─── Init: load data + handle OAuth callbacks ──────────
+  // Connection state is needed for sync-button visibility; the cards themselves
+  // (and OAuth callback handling) live in Settings → Streams.
   useEffect(() => {
-    async function init() {
-      const [ytResult, zoomResult] = await Promise.all([
-        handleYouTubeCallback(),
-        handleZoomCallback(),
-      ])
-
-      if (ytResult.connected) {
-        toast({ title: "YouTube connected successfully", variant: "success" })
-      } else if (ytResult.error) {
-        toast({ title: "Failed to connect YouTube", description: ytResult.error, variant: "error" })
-      }
-
-      if (zoomResult.connected) {
-        toast({ title: "Zoom connected successfully", variant: "success" })
-      } else if (zoomResult.error) {
-        toast({ title: "Failed to connect Zoom", description: zoomResult.error, variant: "error" })
-      }
-
-      await Promise.all([
-        loadYouTubeConnection(),
-        loadZoomConnection(),
-      ])
-
-      loadStreams()
-      loadZoomMeetings()
-    }
-    init()
-  }, [handleYouTubeCallback, handleZoomCallback, loadYouTubeConnection, loadZoomConnection, loadStreams, loadZoomMeetings, toast])
+    void loadYouTubeConnection()
+    void loadZoomConnection()
+    void loadStreams()
+    void loadZoomMeetings()
+  }, [loadYouTubeConnection, loadZoomConnection, loadStreams, loadZoomMeetings])
 
   // ─── YouTube handlers ──────────────────────────────────
 
@@ -257,18 +228,12 @@ export function StreamsScreen() {
         <Header.Lead className="gap-2">
           <Title.h6>Streams</Title.h6>
           <Paragraph.sm className="text-tertiary max-w-2xl">
-            Manage your live streams and scheduled meetings. Connect YouTube and Zoom to get started.
+            Manage your live streams and scheduled meetings.
           </Paragraph.sm>
         </Header.Lead>
       </Header.Root>
 
       <div className="flex flex-col gap-4 p-4 pt-0 mx-auto w-full max-w-content">
-        {/* Connection cards — side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <YouTubeConnectionCard />
-          <ZoomConnectionCard />
-        </div>
-
         {/* Content cards */}
         <div className="space-y-4">
           {/* YouTube Streams */}
@@ -316,7 +281,7 @@ export function StreamsScreen() {
                 <div className="flex justify-center py-12"><Spinner /></div>
               ) : !isYouTubeConnected ? (
                 <div className="flex items-center justify-center py-12">
-                  <Paragraph.sm className="text-tertiary">Connect YouTube to view streams.</Paragraph.sm>
+                  <Paragraph.sm className="text-tertiary">Connect YouTube in Settings &rsaquo; Streams to view streams.</Paragraph.sm>
                 </div>
               ) : streamFilters.filtered.length === 0 ? (
                 <div className="flex items-center justify-center py-12">
@@ -383,7 +348,7 @@ export function StreamsScreen() {
                 <div className="flex justify-center py-12"><Spinner /></div>
               ) : !isZoomConnected ? (
                 <div className="flex items-center justify-center py-12">
-                  <Paragraph.sm className="text-tertiary">Connect Zoom to view meetings.</Paragraph.sm>
+                  <Paragraph.sm className="text-tertiary">Connect Zoom in Settings &rsaquo; Streams to view meetings.</Paragraph.sm>
                 </div>
               ) : meetingFilters.filtered.length === 0 ? (
                 <div className="flex items-center justify-center py-12">

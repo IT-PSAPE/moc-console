@@ -3,7 +3,8 @@ import { fetchWorkspaceDirectory } from "@/data/fetch-workspaces";
 import type { UserWithRole } from "@/data/fetch-users";
 import type { Role } from "@/types/requests/assignee";
 import type { Workspace } from "@/types/workspace";
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { useWorkspace } from "@/lib/workspace-context";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 type UsersContextValue = {
   state: {
@@ -29,6 +30,12 @@ export function UsersProvider({ children }: { children: ReactNode }) {
 
   const loadedRef = useRef(false);
   const promiseRef = useRef<Promise<void> | null>(null);
+
+  const { currentWorkspaceId } = useWorkspace();
+  useEffect(() => {
+    loadedRef.current = false;
+    setUsers([]);
+  }, [currentWorkspaceId]);
 
   const loadUsers = useCallback(async () => {
     if (loadedRef.current) return;
