@@ -61,7 +61,11 @@ async function getValidAccessToken(): Promise<string> {
 
   const tokens = await response.json()
 
-  await supabase
+  // Must throw if persistence fails: Zoom invalidates rotated refresh tokens,
+  // so returning an unpersisted access token would force the next call to
+  // refresh again with a now-dead refresh token, silently breaking the
+  // integration until the workspace reconnects.
+  const { error } = await supabase
     .from("zoom_connections")
     .update({
       access_token: tokens.access_token,
@@ -69,6 +73,10 @@ async function getValidAccessToken(): Promise<string> {
       token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
     })
     .eq("id", connection.id)
+
+  if (error) {
+    throw new Error(`Failed to persist refreshed Zoom tokens: ${error.message}`)
+  }
 
   return tokens.access_token
 }
