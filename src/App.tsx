@@ -1,63 +1,73 @@
+import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate, Outlet, RouterProvider, useLocation } from 'react-router-dom'
 import { routes } from './screens/console-routes'
 import { Spinner } from '@/components/feedback/spinner'
 import { ErrorBoundary } from '@/components/feedback/error-boundary'
 import { useAuth } from './lib/auth-context'
 import { AppShell } from './features/app-shell'
-import { BroadcastMediaScreen } from '@/screens/broadcast/media/page'
-import { MediaDetailScreen } from '@/screens/broadcast/media/detail/page'
-import { BroadcastOverviewScreen } from '@/screens/broadcast/page'
-import { PlaylistScreen } from '@/screens/broadcast/playlist/page'
-import { PlaylistDetailScreen } from '@/screens/broadcast/detail/page'
-import { StreamsScreen } from '@/screens/broadcast/streams/page'
-import { StreamDetailScreen } from '@/screens/broadcast/streams/stream-detail/page'
-import { MeetingDetailScreen } from '@/screens/broadcast/streams/meeting-detail/page'
-import { CueSheetEventScreen } from '@/screens/cue-sheet/events/page'
-import { CueSheetEventDetailScreen } from '@/screens/cue-sheet/events/detail/page'
-import { CueSheetOverviewScreen } from '@/screens/cue-sheet/page'
-import { DashboardScreen } from '@/screens/dashboard/page'
-import { EquipmentBookingsScreen } from '@/screens/equipment/booking/page'
-import { EquipmentInventoryScreen } from '@/screens/equipment/inventory/page'
-import { EquipmentMaintenanceScreen } from '@/screens/equipment/maintenance/page'
-import { EquipmentOverviewScreen } from '@/screens/equipment/page'
-import { EquipmentDetailScreen } from '@/screens/equipment/detail/page'
-import { RequestsAllRequestsScreen } from '@/screens/requests/all-requests/page'
-import { RequestsArchivedScreen } from '@/screens/requests/archived/page'
-import { RequestsOverviewScreen } from '@/screens/requests/page'
-import { RequestDetailScreen } from '@/screens/requests/detail/page'
 import { RequestsProvider } from '@/features/requests/request-provider'
 import { EquipmentProvider } from '@/features/equipment/equipment-provider'
 import { BroadcastProvider } from '@/features/broadcast/broadcast-provider'
-import { CueSheetChecklistScreen } from './screens/cue-sheet/checklist/page'
-import { CueSheetChecklistDetailScreen } from './screens/cue-sheet/checklist/detail/page'
-import { CueSheetTemplatesScreen } from './screens/cue-sheet/templates/page'
 import { CueSheetProvider } from './features/cue-sheet/cue-sheet-provider'
 import { UsersProvider } from './features/users/users-provider'
-import { UsersScreen } from './screens/users/page'
 import { BreadcrumbProvider } from './components/navigation/breadcrumb'
 import { SidebarProvider } from './components/navigation/sidebar'
 import { TopBarProvider } from './features/topbar'
-import { LoginScreen } from './screens/auth/login'
-import { SignupScreen } from './screens/auth/signup'
-import { ResetPasswordScreen } from './screens/auth/reset-password'
-import { PasswordRecoveryScreen } from './screens/auth/password-recovery'
-import { PrivacyPolicyScreen } from './screens/public/privacy'
-import { TermsOfUseScreen } from './screens/public/terms'
-import { SupportScreen } from './screens/public/support'
-import { ZoomDocsScreen } from './screens/public/zoom-docs'
-import { ProfileScreen } from './screens/account/profile'
-import { SettingsScreen } from './screens/account/settings'
-import { CueSheetShareScreen } from './screens/public/cue-sheet-share/page'
+
+const BroadcastMediaScreen = lazy(() => import('@/screens/broadcast/media/page').then((m) => ({ default: m.BroadcastMediaScreen })))
+const MediaDetailScreen = lazy(() => import('@/screens/broadcast/media/detail/page').then((m) => ({ default: m.MediaDetailScreen })))
+const BroadcastOverviewScreen = lazy(() => import('@/screens/broadcast/page').then((m) => ({ default: m.BroadcastOverviewScreen })))
+const PlaylistScreen = lazy(() => import('@/screens/broadcast/playlist/page').then((m) => ({ default: m.PlaylistScreen })))
+const PlaylistDetailScreen = lazy(() => import('@/screens/broadcast/detail/page').then((m) => ({ default: m.PlaylistDetailScreen })))
+const StreamsScreen = lazy(() => import('@/screens/broadcast/streams/page').then((m) => ({ default: m.StreamsScreen })))
+const StreamDetailScreen = lazy(() => import('@/screens/broadcast/streams/stream-detail/page').then((m) => ({ default: m.StreamDetailScreen })))
+const MeetingDetailScreen = lazy(() => import('@/screens/broadcast/streams/meeting-detail/page').then((m) => ({ default: m.MeetingDetailScreen })))
+const CueSheetEventScreen = lazy(() => import('@/screens/cue-sheet/events/page').then((m) => ({ default: m.CueSheetEventScreen })))
+const CueSheetEventDetailScreen = lazy(() => import('@/screens/cue-sheet/events/detail/page').then((m) => ({ default: m.CueSheetEventDetailScreen })))
+const CueSheetOverviewScreen = lazy(() => import('@/screens/cue-sheet/page').then((m) => ({ default: m.CueSheetOverviewScreen })))
+const DashboardScreen = lazy(() => import('@/screens/dashboard/page').then((m) => ({ default: m.DashboardScreen })))
+const EquipmentBookingsScreen = lazy(() => import('@/screens/equipment/booking/page').then((m) => ({ default: m.EquipmentBookingsScreen })))
+const EquipmentInventoryScreen = lazy(() => import('@/screens/equipment/inventory/page').then((m) => ({ default: m.EquipmentInventoryScreen })))
+const EquipmentMaintenanceScreen = lazy(() => import('@/screens/equipment/maintenance/page').then((m) => ({ default: m.EquipmentMaintenanceScreen })))
+const EquipmentOverviewScreen = lazy(() => import('@/screens/equipment/page').then((m) => ({ default: m.EquipmentOverviewScreen })))
+const EquipmentDetailScreen = lazy(() => import('@/screens/equipment/detail/page').then((m) => ({ default: m.EquipmentDetailScreen })))
+const RequestsAllRequestsScreen = lazy(() => import('@/screens/requests/all-requests/page').then((m) => ({ default: m.RequestsAllRequestsScreen })))
+const RequestsArchivedScreen = lazy(() => import('@/screens/requests/archived/page').then((m) => ({ default: m.RequestsArchivedScreen })))
+const RequestsOverviewScreen = lazy(() => import('@/screens/requests/page').then((m) => ({ default: m.RequestsOverviewScreen })))
+const RequestDetailScreen = lazy(() => import('@/screens/requests/detail/page').then((m) => ({ default: m.RequestDetailScreen })))
+const CueSheetChecklistScreen = lazy(() => import('./screens/cue-sheet/checklist/page').then((m) => ({ default: m.CueSheetChecklistScreen })))
+const CueSheetChecklistDetailScreen = lazy(() => import('./screens/cue-sheet/checklist/detail/page').then((m) => ({ default: m.CueSheetChecklistDetailScreen })))
+const CueSheetTemplatesScreen = lazy(() => import('./screens/cue-sheet/templates/page').then((m) => ({ default: m.CueSheetTemplatesScreen })))
+const UsersScreen = lazy(() => import('./screens/users/page').then((m) => ({ default: m.UsersScreen })))
+const LoginScreen = lazy(() => import('./screens/auth/login').then((m) => ({ default: m.LoginScreen })))
+const SignupScreen = lazy(() => import('./screens/auth/signup').then((m) => ({ default: m.SignupScreen })))
+const ResetPasswordScreen = lazy(() => import('./screens/auth/reset-password').then((m) => ({ default: m.ResetPasswordScreen })))
+const PasswordRecoveryScreen = lazy(() => import('./screens/auth/password-recovery').then((m) => ({ default: m.PasswordRecoveryScreen })))
+const PrivacyPolicyScreen = lazy(() => import('./screens/public/privacy').then((m) => ({ default: m.PrivacyPolicyScreen })))
+const TermsOfUseScreen = lazy(() => import('./screens/public/terms').then((m) => ({ default: m.TermsOfUseScreen })))
+const SupportScreen = lazy(() => import('./screens/public/support').then((m) => ({ default: m.SupportScreen })))
+const ZoomDocsScreen = lazy(() => import('./screens/public/zoom-docs').then((m) => ({ default: m.ZoomDocsScreen })))
+const ProfileScreen = lazy(() => import('./screens/account/profile').then((m) => ({ default: m.ProfileScreen })))
+const SettingsScreen = lazy(() => import('./screens/account/settings').then((m) => ({ default: m.SettingsScreen })))
+const CueSheetShareScreen = lazy(() => import('./screens/public/cue-sheet-share/page').then((m) => ({ default: m.CueSheetShareScreen })))
+
+function FullScreenSpinner() {
+    return (
+        <div className="flex min-h-dvh items-center justify-center">
+            <Spinner size="lg" />
+        </div>
+    )
+}
+
+function SuspenseRoute({ children }: { children: React.ReactNode }) {
+    return <Suspense fallback={<FullScreenSpinner />}>{children}</Suspense>
+}
 
 function RequireAuth() {
     const { session, loading } = useAuth()
 
     if (loading) {
-        return (
-            <div className="flex min-h-dvh items-center justify-center">
-                <Spinner size="lg" />
-            </div>
-        )
+        return <FullScreenSpinner />
     }
 
     if (!session) {
@@ -70,7 +80,9 @@ function RequireAuth() {
                 <TopBarProvider>
                     <AppShell>
                         <RouteErrorBoundary>
-                            <Outlet />
+                            <Suspense fallback={<FullScreenSpinner />}>
+                                <Outlet />
+                            </Suspense>
                         </RouteErrorBoundary>
                     </AppShell>
                 </TopBarProvider>
@@ -88,11 +100,7 @@ function RedirectIfAuth({ children }: { children: React.ReactNode }) {
     const { session, loading } = useAuth()
 
     if (loading) {
-        return (
-            <div className="flex min-h-dvh items-center justify-center">
-                <Spinner size="lg" />
-            </div>
-        )
+        return <FullScreenSpinner />
     }
 
     if (session) {
@@ -104,17 +112,17 @@ function RedirectIfAuth({ children }: { children: React.ReactNode }) {
 
 const router = createBrowserRouter([
     // Auth routes — redirect to dashboard if already signed in
-    { path: routes.login, element: <RedirectIfAuth><LoginScreen /></RedirectIfAuth> },
-    { path: routes.signup, element: <RedirectIfAuth><SignupScreen /></RedirectIfAuth> },
-    { path: routes.resetPassword, element: <RedirectIfAuth><ResetPasswordScreen /></RedirectIfAuth> },
-    { path: routes.passwordRecovery, element: <PasswordRecoveryScreen /> },
+    { path: routes.login, element: <RedirectIfAuth><SuspenseRoute><LoginScreen /></SuspenseRoute></RedirectIfAuth> },
+    { path: routes.signup, element: <RedirectIfAuth><SuspenseRoute><SignupScreen /></SuspenseRoute></RedirectIfAuth> },
+    { path: routes.resetPassword, element: <RedirectIfAuth><SuspenseRoute><ResetPasswordScreen /></SuspenseRoute></RedirectIfAuth> },
+    { path: routes.passwordRecovery, element: <SuspenseRoute><PasswordRecoveryScreen /></SuspenseRoute> },
 
     // Public pages — no auth required
-    { path: routes.privacy, element: <PrivacyPolicyScreen /> },
-    { path: routes.terms, element: <TermsOfUseScreen /> },
-    { path: routes.support, element: <SupportScreen /> },
-    { path: routes.zoomDocs, element: <ZoomDocsScreen /> },
-    { path: routes.publicEventShare, element: <CueSheetShareScreen /> },
+    { path: routes.privacy, element: <SuspenseRoute><PrivacyPolicyScreen /></SuspenseRoute> },
+    { path: routes.terms, element: <SuspenseRoute><TermsOfUseScreen /></SuspenseRoute> },
+    { path: routes.support, element: <SuspenseRoute><SupportScreen /></SuspenseRoute> },
+    { path: routes.zoomDocs, element: <SuspenseRoute><ZoomDocsScreen /></SuspenseRoute> },
+    { path: routes.publicEventShare, element: <SuspenseRoute><CueSheetShareScreen /></SuspenseRoute> },
 
     // Protected app routes
     {
