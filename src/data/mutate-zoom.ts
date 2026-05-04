@@ -61,30 +61,6 @@ async function insertLocalZoomMeeting(payload: LocalZoomMeetingInsertPayload): P
   }
 }
 
-async function restoreLocalZoomMeeting(meeting: ZoomMeeting): Promise<void> {
-  await insertLocalZoomMeeting({
-    id: meeting.id,
-    workspace_id: meeting.workspaceId,
-    zoom_meeting_id: meeting.zoomMeetingId,
-    topic: meeting.topic,
-    description: meeting.description,
-    meeting_type: meeting.meetingType,
-    start_time: meeting.startTime,
-    duration: meeting.duration,
-    timezone: meeting.timezone,
-    join_url: meeting.joinUrl,
-    start_url: meeting.startUrl,
-    password: meeting.password,
-    recurrence_type: meeting.recurrenceType,
-    recurrence_interval: meeting.recurrenceInterval,
-    recurrence_days: meeting.recurrenceDays,
-    waiting_room: meeting.waitingRoom,
-    mute_on_entry: meeting.muteOnEntry,
-    continuous_chat: meeting.continuousChat,
-    created_by: meeting.createdBy,
-  })
-}
-
 function mapRecurrenceToZoomApi(params: CreateMeetingParams) {
   if (params.recurrenceType === "none") return undefined
 
@@ -286,6 +262,17 @@ export async function updateZoomMeeting(meeting: ZoomMeeting): Promise<ZoomMeeti
 }
 
 export async function deleteZoomMeeting(meeting: ZoomMeeting): Promise<void> {
+  // Delete remote first: a failure here just throws, leaving the local row
+  // intact. If we deleted locally first and the remote call failed, a rollback
+  // could itself fail and leave the two systems permanently out of sync.
+  const response = await zoomApiFetch(`/meetings/${meeting.zoomMeetingId}`, {
+    method: "DELETE",
+  })
+
+  if (!response.ok && response.status !== 204) {
+    throw new Error(`Failed to delete Zoom meeting: ${await response.text()}`)
+  }
+
   const { error } = await supabase
     .from("zoom_meetings")
     .delete()
@@ -293,20 +280,6 @@ export async function deleteZoomMeeting(meeting: ZoomMeeting): Promise<void> {
 
   if (error) {
     throw new Error(error.message)
-  }
-
-  const response = await zoomApiFetch(`/meetings/${meeting.zoomMeetingId}`, {
-    method: "DELETE",
-  })
-
-  if (!response.ok && response.status !== 204) {
-    try {
-      await restoreLocalZoomMeeting(meeting)
-    } catch (restoreError) {
-      throw new Error(`Failed to delete Zoom meeting and could not restore the local row: ${await response.text()}; ${(restoreError as Error).message}`)
-    }
-
-    throw new Error(`Failed to delete Zoom meeting: ${await response.text()}`)
   }
 }
 
