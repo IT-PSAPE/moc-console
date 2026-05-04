@@ -9,11 +9,13 @@ import { GeneralTab } from './general-tab'
 import { UsersTab } from './users-tab'
 import { TelegramTab } from './telegram-tab'
 import { StreamsTab } from './streams-tab'
+import { WorkspaceTab } from './workspace-tab'
 
-type TabKey = 'general' | 'users' | 'telegram' | 'streams'
+type TabKey = 'general' | 'workspace' | 'users' | 'telegram' | 'streams'
 
 const TAB_LABELS: Record<TabKey, string> = {
     general: 'General',
+    workspace: 'Workspace',
     users: 'Users',
     telegram: 'Telegram',
     streams: 'Streams',
@@ -21,6 +23,7 @@ const TAB_LABELS: Record<TabKey, string> = {
 
 const TAB_DESCRIPTIONS: Record<TabKey, string> = {
     general: 'Workspace preferences and platform information.',
+    workspace: 'Edit the name, slug, and description of the current workspace.',
     users: 'View and manage all users and their assigned roles.',
     telegram: 'Groups the bot has been added to. Toggle a group active to allow the app to send event notifications there.',
     streams: 'Connect YouTube and Zoom so the workspace can publish streams and meetings.',
@@ -35,7 +38,7 @@ export function SettingsScreen() {
     const availableTabs = useMemo<TabKey[]>(() => {
         const tabs: TabKey[] = ['general']
         if (canManage) {
-            tabs.push('users', 'telegram', 'streams')
+            tabs.push('workspace', 'users', 'telegram', 'streams')
         }
         return tabs
     }, [canManage])
@@ -88,6 +91,7 @@ export function SettingsScreen() {
 
             <div className="p-4">
                 {activeTab === 'general' && <GeneralTab />}
+                {activeTab === 'workspace' && canManage && <WorkspaceTab />}
                 {activeTab === 'users' && canManage && <UsersTab />}
                 {activeTab === 'telegram' && canManage && <TelegramTab />}
                 {activeTab === 'streams' && canManage && <StreamsTab />}

@@ -13,6 +13,7 @@ type WorkspaceContextValue = {
     currentWorkspaceId: string | null
     loading: boolean
     setCurrentWorkspaceId: (id: string) => void
+    refresh: () => Promise<void>
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null)
@@ -48,6 +49,38 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
     const userId = profile?.id ?? null
 
+    const loadWorkspaces = useCallback(
+        async (uid: string, options: { setLoadingState?: boolean } = {}) => {
+            const { setLoadingState = true } = options
+            if (setLoadingState) setLoading(true)
+            try {
+                const directory = await fetchWorkspaceDirectory([uid])
+
+                const memberWorkspaceIds = new Set(
+                    directory.memberships.filter((m) => m.userId === uid).map((m) => m.workspaceId),
+                )
+                const myWorkspaces = directory.workspaces.filter((w) => memberWorkspaceIds.has(w.id))
+
+                setWorkspaces(myWorkspaces)
+
+                setCurrentWorkspaceIdState((prev) => {
+                    const stored = readStoredWorkspaceId()
+                    const next =
+                        (prev && myWorkspaces.some((w) => w.id === prev) && prev) ||
+                        (stored && myWorkspaces.some((w) => w.id === stored) && stored) ||
+                        myWorkspaces[0]?.id ||
+                        null
+                    setCurrentWorkspaceIdMirror(next)
+                    writeStoredWorkspaceId(next)
+                    return next
+                })
+            } finally {
+                if (setLoadingState) setLoading(false)
+            }
+        },
+        [],
+    )
+
     useEffect(() => {
         if (!userId) {
             setWorkspaces([])
@@ -58,30 +91,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         }
 
         let cancelled = false
-        setLoading(true)
-
         void (async () => {
             try {
-                const directory = await fetchWorkspaceDirectory([userId])
-                if (cancelled) return
-
-                const memberWorkspaceIds = new Set(
-                    directory.memberships.filter((m) => m.userId === userId).map((m) => m.workspaceId),
-                )
-                const myWorkspaces = directory.workspaces.filter((w) => memberWorkspaceIds.has(w.id))
-
-                setWorkspaces(myWorkspaces)
-
-                const stored = readStoredWorkspaceId()
-                const initial =
-                    (stored && myWorkspaces.some((w) => w.id === stored) && stored) ||
-                    myWorkspaces[0]?.id ||
-                    null
-
-                setCurrentWorkspaceIdState(initial)
-                setCurrentWorkspaceIdMirror(initial)
-                writeStoredWorkspaceId(initial)
-            } finally {
+                await loadWorkspaces(userId)
+            } catch {
                 if (!cancelled) setLoading(false)
             }
         })()
@@ -89,7 +102,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         return () => {
             cancelled = true
         }
-    }, [userId])
+    }, [userId, loadWorkspaces])
+
+    const refresh = useCallback(async () => {
+        if (!userId) return
+        await loadWorkspaces(userId, { setLoadingState: false })
+    }, [userId, loadWorkspaces])
 
     const setCurrentWorkspaceId = useCallback(
         (id: string) => {
@@ -105,8 +123,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     )
 
     const value = useMemo(
-        () => ({ workspaces, currentWorkspaceId, loading, setCurrentWorkspaceId }),
-        [workspaces, currentWorkspaceId, loading, setCurrentWorkspaceId],
+        () => ({ workspaces, currentWorkspaceId, loading, setCurrentWorkspaceId, refresh }),
+        [workspaces, currentWorkspaceId, loading, setCurrentWorkspaceId, refresh],
     )
 
     return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>
