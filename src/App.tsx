@@ -39,6 +39,7 @@ const CueSheetChecklistScreen = lazy(() => import('./screens/cue-sheet/checklist
 const CueSheetChecklistDetailScreen = lazy(() => import('./screens/cue-sheet/checklist/detail/page').then((m) => ({ default: m.CueSheetChecklistDetailScreen })))
 const CueSheetTemplatesScreen = lazy(() => import('./screens/cue-sheet/templates/page').then((m) => ({ default: m.CueSheetTemplatesScreen })))
 const UsersScreen = lazy(() => import('./screens/users/page').then((m) => ({ default: m.UsersScreen })))
+const TelegramGroupsScreen = lazy(() => import('./screens/admin/telegram-groups/page').then((m) => ({ default: m.TelegramGroupsScreen })))
 const LoginScreen = lazy(() => import('./screens/auth/login').then((m) => ({ default: m.LoginScreen })))
 const SignupScreen = lazy(() => import('./screens/auth/signup').then((m) => ({ default: m.SignupScreen })))
 const ResetPasswordScreen = lazy(() => import('./screens/auth/reset-password').then((m) => ({ default: m.ResetPasswordScreen })))
@@ -131,6 +132,7 @@ const router = createBrowserRouter([
             { index: true, element: <Navigate to={`/${routes.dashboard}`} replace /> },
             { path: routes.dashboard, element: <RequestsProvider><EquipmentProvider><BroadcastProvider><CueSheetProvider><DashboardScreen /></CueSheetProvider></BroadcastProvider></EquipmentProvider></RequestsProvider> },
             { path: routes.users, element: <UsersProvider><UsersScreen /></UsersProvider> },
+            { path: routes.telegramGroups, element: <TelegramGroupsScreen /> },
             { path: routes.profile, element: <ProfileScreen /> },
             { path: routes.settings, element: <SettingsScreen /> },
             {

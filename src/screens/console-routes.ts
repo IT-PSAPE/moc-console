@@ -5,6 +5,7 @@ export const routes = {
     passwordRecovery: 'password-recovery',
     dashboard: 'dashboard',
     users: 'users',
+    telegramGroups: 'admin/telegram-groups',
     requestsOverview: 'requests',
     requestsAllRequests: 'requests/all-requests',
     requestsArchived: 'requests/archived',
