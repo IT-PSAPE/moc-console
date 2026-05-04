@@ -7,7 +7,7 @@ type BadgeProps = {
     icon?: React.ReactNode;
     label?: string;
     variant?: 'filled' | 'outline';
-    color?: 'yellow' | 'green' | 'blue' | 'gray' | 'purple' | 'red';
+    color?: 'yellow' | 'green' | 'blue' | 'gray' | 'purple' | 'red' | 'orange';
     className?: string
 }
 
@@ -27,6 +27,7 @@ const variants = cv({
             blue: ['bg-utility-blue-50 text-utility-blue-700'],
             gray: ['bg-utility-gray-50 text-utility-gray-700'],
             purple: ['bg-utility-purple-50 text-utility-purple-700'],
+            orange: ['bg-utility-orange-50 text-utility-orange-700'],
         },
     },
     defaultVariants: {
