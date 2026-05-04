@@ -24,10 +24,12 @@ type TelegramForumTopicCreated = { name?: string }
 type TelegramForumTopicEdited = { name?: string }
 
 type TelegramMessage = {
+  message_id?: number
   chat?: TelegramChat
   text?: string
   from?: { username?: string }
   message_thread_id?: number
+  reply_to_message?: TelegramMessage
   forum_topic_created?: TelegramForumTopicCreated
   forum_topic_edited?: TelegramForumTopicEdited
   forum_topic_closed?: Record<string, never>
@@ -46,7 +48,8 @@ type TelegramUpdate = {
 }
 
 const TELEGRAM_API = "https://api.telegram.org"
-const START_COMMAND = /^\/start(?:\s+(\S+))?\s*$/
+const START_COMMAND = /^\/start(?:@\w+)?(?:\s+(\S+))?\s*$/
+const REGISTER_TOPIC_COMMAND = /^\/register_topic(?:@\w+)?(?:\s+(.+))?\s*$/
 const PRESENT_STATUSES = new Set(["member", "administrator", "creator", "restricted"])
 const ABSENT_STATUSES = new Set(["left", "kicked"])
 
@@ -57,17 +60,55 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(ab, bb)
 }
 
-async function sendMessage(chatId: number | string, text: string): Promise<void> {
+type SendMessageOptions = {
+  threadId?: number
+  replyToMessageId?: number
+}
+
+async function sendMessage(
+  chatId: number | string,
+  text: string,
+  options: SendMessageOptions = {},
+): Promise<TelegramMessage | null> {
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  if (!token) return null
+  try {
+    const body: Record<string, unknown> = { chat_id: chatId, text }
+    if (typeof options.threadId === "number") body.message_thread_id = options.threadId
+    if (typeof options.replyToMessageId === "number") {
+      body.reply_parameters = {
+        message_id: options.replyToMessageId,
+        allow_sending_without_reply: true,
+      }
+    }
+    const res = await fetch(`${TELEGRAM_API}/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    const json = (await res.json()) as { ok?: boolean; result?: TelegramMessage }
+    return json.ok ? json.result ?? null : null
+  } catch {
+    // Telegram already received its 200; failure to reply is non-fatal.
+    return null
+  }
+}
+
+async function editMessageText(
+  chatId: number | string,
+  messageId: number,
+  text: string,
+): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN
   if (!token) return
   try {
-    await fetch(`${TELEGRAM_API}/bot${token}/sendMessage`, {
+    await fetch(`${TELEGRAM_API}/bot${token}/editMessageText`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text }),
+      body: JSON.stringify({ chat_id: chatId, message_id: messageId, text }),
     })
   } catch {
-    // Telegram already received its 200; failure to reply is non-fatal.
+    // non-fatal
   }
 }
 
@@ -159,20 +200,39 @@ async function handleForumTopicMessage(message: TelegramMessage): Promise<boolea
   return false
 }
 
-// Captures topics that existed before the bot was added (or any topic whose
-// `forum_topic_created` we missed). Inserts a placeholder row keyed by
-// thread_id; never overwrites a row that already has a real name.
-async function handleGroupTopicHint(message: TelegramMessage): Promise<void> {
+// `/register_topic` — explicit registration of the topic the command was sent in.
+// Slash commands always reach the bot regardless of privacy mode, so this is the
+// reliable way to capture pre-existing topics.
+//
+// Name resolution: the Telegram Bot API has no method to look up a topic's name.
+// The trick: the topic root message id == message_thread_id, and that root is
+// always a `forum_topic_created` service message. By replying to it we coax
+// Telegram into returning that service message in the response's
+// `reply_to_message`, which carries the real topic name.
+async function handleRegisterTopicCommand(message: TelegramMessage): Promise<boolean> {
+  const text = message.text
+  if (typeof text !== "string") return false
+  if (!REGISTER_TOPIC_COMMAND.test(text)) return false
+
   const chat = message.chat
+  const chatId = chat?.id
+  if (chatId === undefined) return true
+
+  if (chat?.type !== "group" && chat?.type !== "supergroup") {
+    await sendMessage(chatId, "Use /register_topic inside a Telegram group, in the topic you want to register.")
+    return true
+  }
+
   const threadId = message.message_thread_id
-  if (typeof threadId !== "number") return
-  if (!chat?.id) return
-  if (chat.type !== "group" && chat.type !== "supergroup") return
+  if (typeof threadId !== "number") {
+    await sendMessage(chatId, "Run /register_topic from inside a forum topic. Messages sent without a topic id go to General.")
+    return true
+  }
 
+  const groupChatId = String(chatId)
   const admin = getSupabaseAdmin()
-  const groupChatId = String(chat.id)
 
-  // Defensive: ensure the group row exists if it predates my_chat_member tracking.
+  // Defensive group upsert (covers bot-already-in-group case).
   await admin.from("telegram_groups").upsert(
     {
       chat_id: groupChatId,
@@ -184,15 +244,32 @@ async function handleGroupTopicHint(message: TelegramMessage): Promise<void> {
     { onConflict: "chat_id", ignoreDuplicates: true },
   )
 
+  // Reply to the topic root to fetch the real topic name from Telegram.
+  const sent = await sendMessage(chatId, "Registering topic…", {
+    threadId,
+    replyToMessageId: threadId,
+  })
+
+  const resolvedName = sent?.reply_to_message?.forum_topic_created?.name?.trim()
+
   await admin.from("telegram_group_topics").upsert(
     {
       group_chat_id: groupChatId,
       thread_id: threadId,
-      name: `Topic #${threadId}`,
+      name: resolvedName || `Topic #${threadId}`,
       closed: false,
     },
-    { onConflict: "group_chat_id,thread_id", ignoreDuplicates: true },
+    { onConflict: "group_chat_id,thread_id" },
   )
+
+  if (sent?.message_id !== undefined) {
+    const finalText = resolvedName
+      ? `✅ Registered "${resolvedName}".`
+      : `✅ Registered topic #${threadId}. (Couldn't read the topic name from Telegram — rename it in Telegram and I'll pick it up.)`
+    await editMessageText(chatId, sent.message_id, finalText)
+  }
+
+  return true
 }
 
 async function handleStartCommand(message: TelegramMessage): Promise<void> {
@@ -300,7 +377,12 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       return
     }
 
-    await handleGroupTopicHint(message)
+    const registered = await handleRegisterTopicCommand(message)
+    if (registered) {
+      response.status(200).json({ ok: true })
+      return
+    }
+
     await handleStartCommand(message)
     response.status(200).json({ ok: true })
   } catch (error) {
