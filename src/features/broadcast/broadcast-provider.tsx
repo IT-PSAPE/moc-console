@@ -6,7 +6,8 @@ import type { Playlist } from "@/types/broadcast/broadcast"
 import type { Stream } from "@/types/broadcast/stream"
 import type { YouTubeConnection } from "@/types/broadcast/stream"
 import type { ZoomConnection, ZoomMeeting } from "@/types/broadcast/zoom"
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react"
+import { useWorkspace } from "@/lib/workspace-context"
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
 type BroadcastContextValue = {
   state: {
@@ -73,6 +74,22 @@ export function BroadcastProvider({ children }: { children: ReactNode }) {
   const zoomConnectionPromiseRef = useRef<Promise<void> | null>(null)
   const zoomMeetingsLoadedRef = useRef(false)
   const zoomMeetingsPromiseRef = useRef<Promise<void> | null>(null)
+
+  const { currentWorkspaceId } = useWorkspace()
+  useEffect(() => {
+    mediaLoadedRef.current = false
+    playlistsLoadedRef.current = false
+    streamsLoadedRef.current = false
+    connectionLoadedRef.current = false
+    zoomConnectionLoadedRef.current = false
+    zoomMeetingsLoadedRef.current = false
+    setMedia([])
+    setPlaylists([])
+    setStreams([])
+    setYouTubeConnection(null)
+    setZoomConnectionState(null)
+    setZoomMeetings([])
+  }, [currentWorkspaceId])
 
   // ─── Playlist actions ──────────────────────────────────
 

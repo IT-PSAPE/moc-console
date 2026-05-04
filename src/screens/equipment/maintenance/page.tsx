@@ -1,8 +1,8 @@
-import { Card } from "@/components/display/card";
+import { Button } from "@/components/controls/button";
 import { Badge } from "@/components/display/badge";
 import { Header } from "@/components/display/header";
+import { Input } from "@/components/form/input";
 import { Paragraph, Title } from "@/components/display/text";
-
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Spinner } from "@/components/feedback/spinner";
@@ -10,8 +10,11 @@ import { DataTable } from "@/components/display/data-table";
 import { Drawer } from "@/components/overlays/drawer";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 import { EquipmentDrawer } from "@/features/equipment/equipment-drawer";
+import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
+import { useEquipmentFilters } from "@/features/equipment/use-equipment-filters";
 import { equipmentCategoryLabel, equipmentCategoryColor } from "@/types/equipment";
 import type { Equipment } from "@/types/equipment";
+import { Search, Settings2 } from "lucide-react";
 
 const columns = [
   { key: "name", header: "Equipment" },
@@ -45,6 +48,9 @@ export function EquipmentMaintenanceScreen() {
     [equipment],
   );
 
+  const equipmentFilters = useEquipmentFilters(maintenanceItems);
+  const { filtered, setSearch, filters: state } = equipmentFilters;
+
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const isDirtyRef = useRef(false);
   const requestCloseRef = useRef<(() => void) | null>(null);
@@ -73,16 +79,37 @@ export function EquipmentMaintenanceScreen() {
       </Header.Root>
 
       <div className="flex flex-col gap-4 p-4 mx-auto w-full max-w-content">
+        <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+          <Header.Lead className="gap-2" />
+          <Header.Trail className="gap-2 flex-1 justify-end">
+            <Input
+              icon={<Search />}
+              placeholder="Search maintenance..."
+              className="w-full max-w-md"
+              value={state.search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Drawer.Root>
+              <Drawer.Trigger>
+                <Button icon={<Settings2 />} variant="secondary">Filter</Button>
+              </Drawer.Trigger>
+              <EquipmentFilterDrawer filters={equipmentFilters} />
+            </Drawer.Root>
+          </Header.Trail>
+        </Header.Root>
+
         <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
-          <Card.Root>
-            <Card.Content className="!border-secondary overflow-hidden">
-              {isLoadingEquipment ? (
-                <div className="flex justify-center py-16"><Spinner /></div>
-              ) : (
-                <DataTable data={maintenanceItems} columns={columns} emptyMessage="All equipment is in working order." onRowClick={(row) => setSelectedEquipment(row)} />
-              )}
-            </Card.Content>
-          </Card.Root>
+          {isLoadingEquipment ? (
+            <div className="flex justify-center py-16"><Spinner /></div>
+          ) : (
+            <DataTable
+              data={filtered}
+              columns={columns}
+              emptyMessage="All equipment is in working order."
+              onRowClick={(row) => setSelectedEquipment(row)}
+              className="rounded-lg border border-secondary overflow-hidden"
+            />
+          )}
           {selectedEquipment && (
             <EquipmentDrawer
               equipment={selectedEquipment}

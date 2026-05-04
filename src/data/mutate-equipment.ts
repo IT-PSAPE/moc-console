@@ -85,6 +85,17 @@ export async function updateEquipment(equipment: Equipment): Promise<Equipment> 
   return mapEquipmentRow(data as EquipmentRow, equipment);
 }
 
+export async function updateEquipmentStatus(id: string, status: Equipment["status"]): Promise<void> {
+  const { error } = await supabase
+    .from("equipment")
+    .update({ status })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 export async function deleteEquipment(id: string): Promise<void> {
   const { error } = await supabase
     .from("equipment")

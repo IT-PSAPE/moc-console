@@ -4,6 +4,13 @@ import type { BookingStatus } from "./booking";
 
 // ─── Labels ────────────────────────────────────────────
 
+export const equipmentStatusGroup = [
+    { key: "available", label: "Available", color: "green" },
+    { key: "booked", label: "Booked", color: "blue" },
+    { key: "booked_out", label: "Booked Out", color: "yellow" },
+    { key: "maintenance", label: "Maintenance", color: "red" },
+] as const;
+
 export const equipmentStatusLabel: Record<EquipmentStatus, string> = {
   available: "Available",
   booked: "Booked",

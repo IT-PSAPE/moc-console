@@ -9,10 +9,10 @@ import { RequestsProvider } from '@/features/requests/request-provider'
 import { EquipmentProvider } from '@/features/equipment/equipment-provider'
 import { BroadcastProvider } from '@/features/broadcast/broadcast-provider'
 import { CueSheetProvider } from './features/cue-sheet/cue-sheet-provider'
-import { UsersProvider } from './features/users/users-provider'
 import { BreadcrumbProvider } from './components/navigation/breadcrumb'
 import { SidebarProvider } from './components/navigation/sidebar'
 import { TopBarProvider } from './features/topbar'
+import { WorkspaceProvider } from './lib/workspace-context'
 
 const BroadcastMediaScreen = lazy(() => import('@/screens/broadcast/media/page').then((m) => ({ default: m.BroadcastMediaScreen })))
 const MediaDetailScreen = lazy(() => import('@/screens/broadcast/media/detail/page').then((m) => ({ default: m.MediaDetailScreen })))
@@ -38,8 +38,6 @@ const RequestDetailScreen = lazy(() => import('@/screens/requests/detail/page').
 const CueSheetChecklistScreen = lazy(() => import('./screens/cue-sheet/checklist/page').then((m) => ({ default: m.CueSheetChecklistScreen })))
 const CueSheetChecklistDetailScreen = lazy(() => import('./screens/cue-sheet/checklist/detail/page').then((m) => ({ default: m.CueSheetChecklistDetailScreen })))
 const CueSheetTemplatesScreen = lazy(() => import('./screens/cue-sheet/templates/page').then((m) => ({ default: m.CueSheetTemplatesScreen })))
-const UsersScreen = lazy(() => import('./screens/users/page').then((m) => ({ default: m.UsersScreen })))
-const TelegramGroupsScreen = lazy(() => import('./screens/admin/telegram-groups/page').then((m) => ({ default: m.TelegramGroupsScreen })))
 const LoginScreen = lazy(() => import('./screens/auth/login').then((m) => ({ default: m.LoginScreen })))
 const SignupScreen = lazy(() => import('./screens/auth/signup').then((m) => ({ default: m.SignupScreen })))
 const ResetPasswordScreen = lazy(() => import('./screens/auth/reset-password').then((m) => ({ default: m.ResetPasswordScreen })))
@@ -49,7 +47,7 @@ const TermsOfUseScreen = lazy(() => import('./screens/public/terms').then((m) =>
 const SupportScreen = lazy(() => import('./screens/public/support').then((m) => ({ default: m.SupportScreen })))
 const ZoomDocsScreen = lazy(() => import('./screens/public/zoom-docs').then((m) => ({ default: m.ZoomDocsScreen })))
 const ProfileScreen = lazy(() => import('./screens/account/profile').then((m) => ({ default: m.ProfileScreen })))
-const SettingsScreen = lazy(() => import('./screens/account/settings').then((m) => ({ default: m.SettingsScreen })))
+const SettingsScreen = lazy(() => import('./screens/account/settings/page').then((m) => ({ default: m.SettingsScreen })))
 const CueSheetShareScreen = lazy(() => import('./screens/public/cue-sheet-share/page').then((m) => ({ default: m.CueSheetShareScreen })))
 
 function FullScreenSpinner() {
@@ -76,19 +74,21 @@ function RequireAuth() {
     }
 
     return (
-        <BreadcrumbProvider>
-            <SidebarProvider>
-                <TopBarProvider>
-                    <AppShell>
-                        <RouteErrorBoundary>
-                            <Suspense fallback={<FullScreenSpinner />}>
-                                <Outlet />
-                            </Suspense>
-                        </RouteErrorBoundary>
-                    </AppShell>
-                </TopBarProvider>
-            </SidebarProvider>
-        </BreadcrumbProvider>
+        <WorkspaceProvider>
+            <BreadcrumbProvider>
+                <SidebarProvider>
+                    <TopBarProvider>
+                        <AppShell>
+                            <RouteErrorBoundary>
+                                <Suspense fallback={<FullScreenSpinner />}>
+                                    <Outlet />
+                                </Suspense>
+                            </RouteErrorBoundary>
+                        </AppShell>
+                    </TopBarProvider>
+                </SidebarProvider>
+            </BreadcrumbProvider>
+        </WorkspaceProvider>
     )
 }
 
@@ -131,8 +131,6 @@ const router = createBrowserRouter([
         children: [
             { index: true, element: <Navigate to={`/${routes.dashboard}`} replace /> },
             { path: routes.dashboard, element: <RequestsProvider><EquipmentProvider><BroadcastProvider><CueSheetProvider><DashboardScreen /></CueSheetProvider></BroadcastProvider></EquipmentProvider></RequestsProvider> },
-            { path: routes.users, element: <UsersProvider><UsersScreen /></UsersProvider> },
-            { path: routes.telegramGroups, element: <TelegramGroupsScreen /> },
             { path: routes.profile, element: <ProfileScreen /> },
             { path: routes.settings, element: <SettingsScreen /> },
             {

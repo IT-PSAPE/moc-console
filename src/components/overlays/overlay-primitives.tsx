@@ -72,7 +72,7 @@ export function OverlayTrigger({ children, onClick, onOpen, ...props }: OverlayT
     }
 
     return (
-        <span onClick={handleClick} {...props} role="button">
+        <span onClick={handleClick} {...props} className={cn('contents', props.className)} role="button">
             {children}
         </span>
     )

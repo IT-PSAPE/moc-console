@@ -1,5 +1,6 @@
 import { fetchArchivedRequests, fetchRequestById, fetchRequests } from '@/data/fetch-requests'
 import type { Request } from '@/types/requests'
+import { useWorkspace } from '@/lib/workspace-context'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 type RequestsContextValue = {
@@ -44,6 +45,13 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         requestsByIdRef.current = requestsById
     }, [requestsById])
+
+    const { currentWorkspaceId } = useWorkspace()
+    useEffect(() => {
+        activeLoadedRef.current = false
+        archivedLoadedRef.current = false
+        setRequestsById({})
+    }, [currentWorkspaceId])
 
     const syncRequest = useCallback((request: Request) => {
         setRequestsById((previous) => ({ ...previous, [request.id]: request }))
