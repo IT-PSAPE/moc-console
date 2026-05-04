@@ -21,9 +21,10 @@ export async function proxyZoomApiRequest({ authorization, body, contentType, me
     headers["Content-Type"] = contentType
   }
 
+  const hasBody = body && method !== "GET" && method !== "HEAD"
   return fetch(`${ZOOM_API}${path}`, {
     method,
     headers,
-    body: method === "GET" || method === "HEAD" ? undefined : body,
+    body: hasBody ? new Uint8Array(body.buffer, body.byteOffset, body.byteLength) : undefined,
   })
 }
