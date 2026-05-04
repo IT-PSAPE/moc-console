@@ -94,33 +94,33 @@ export function EquipmentBookingsScreen() {
 
   return (
     <section>
-      <Header.Root className="p-4 pt-8 mx-auto max-w-content">
+      <Header className="p-4 pt-8 mx-auto max-w-content">
         <Header.Lead className="gap-2">
           <Title.h6>Bookings</Title.h6>
           <Paragraph.sm className="text-tertiary max-w-2xl">
             Track equipment check-outs and returns.
           </Paragraph.sm>
         </Header.Lead>
-      </Header.Root>
+      </Header>
 
       <div className="flex flex-col gap-4 p-4 mx-auto w-full max-w-content">
-        <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+        <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
           <Header.Lead className="gap-2">
-            <SegmentedControl.Root defaultValue="table" onValueChange={(value) => setView(value)} fill={isMobile}>
+            <SegmentedControl defaultValue="table" onValueChange={(value) => setView(value)} fill={isMobile}>
               <SegmentedControl.Item value="table" icon={<List />}>Table</SegmentedControl.Item>
               <SegmentedControl.Item value="calendar" icon={<CalendarDays />}>Calendar</SegmentedControl.Item>
-            </SegmentedControl.Root>
+            </SegmentedControl>
           </Header.Lead>
           <Header.Trail className="gap-2 flex-1 justify-end">
             <Input icon={<Search />} placeholder="Search bookings..." className="w-full max-w-md" value={state.search} onChange={(e) => setSearch(e.target.value)} />
-            <Drawer.Root>
+            <Drawer>
               <Drawer.Trigger>
                 <Button icon={<Settings2 />} variant="secondary">Filter</Button>
               </Drawer.Trigger>
               <BookingFilterDrawer filters={bookingFilters} />
-            </Drawer.Root>
+            </Drawer>
           </Header.Trail>
-        </Header.Root>
+        </Header>
 
         {isLoading ? (
           <div className="flex justify-center py-16"><Spinner /></div>
@@ -133,7 +133,7 @@ export function EquipmentBookingsScreen() {
               onRowClick={(row) => setSelectedBooking(row)}
               className="rounded-lg border border-secondary overflow-hidden"
             />
-            <Drawer.Root open={!!selectedBooking} onOpenChange={handleOpenChange}>
+            <Drawer open={!!selectedBooking} onOpenChange={handleOpenChange}>
               {selectedBooking && (
                 <BookingDrawer
                   booking={selectedBooking}
@@ -142,7 +142,7 @@ export function EquipmentBookingsScreen() {
                   requestCloseRef={requestCloseRef}
                 />
               )}
-            </Drawer.Root>
+            </Drawer>
           </>
         ) : (
           <BookingCalendar bookings={filtered} equipmentMap={equipmentMap} />

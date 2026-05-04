@@ -37,7 +37,7 @@ export function EventItem({ event }: { event: CueSheetEvent }) {
     const scheduledAt = formatScheduledAt(event.scheduledAt)
 
     return (
-        <Drawer.Root open={open} onOpenChange={setOpen}>
+        <Drawer open={open} onOpenChange={setOpen}>
             <Drawer.Trigger>
                 <div className={cn(itemVariants(), 'cursor-pointer hover:bg-background-primary-hover transition-colors')}>
                     <div>
@@ -54,6 +54,6 @@ export function EventItem({ event }: { event: CueSheetEvent }) {
                 </div>
             </Drawer.Trigger>
             <EventDrawer event={event} />
-        </Drawer.Root>
+        </Drawer>
     )
 }

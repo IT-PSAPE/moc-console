@@ -52,7 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }, [actions, isSigningOut, signOut, toast])
 
     return (
-        <CommandMenu.Root>
+        <CommandMenu>
             <div className="app-grid md:app-grid-desktop bg-primary text-primary">
                 <Sidebar.Panel>
                     <Sidebar.Header>
@@ -121,7 +121,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 )}
 
                 <TopBar>
-                    <Breadcrumb.Root />
+                    <Breadcrumb />
                 </TopBar>
 
                 <main className="area-content min-h-0 overflow-y-auto bg-[var(--background-color-primary)]">
@@ -130,6 +130,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
 
             <SearchCommandMenuContent />
-        </CommandMenu.Root>
+        </CommandMenu>
     )
 }

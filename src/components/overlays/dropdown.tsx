@@ -38,7 +38,7 @@ export function useDropdown() {
     const context = useContext(DropdownContext)
 
     if (!context) {
-        throw new Error('useDropdown must be used within a Dropdown.Root')
+        throw new Error('useDropdown must be used within a Dropdown')
     }
 
     return context
@@ -380,11 +380,10 @@ function DropdownClose({ children, onClick, ...props }: HTMLAttributes<HTMLSpanE
 
 // ─── Compound Export ─────────────────────────────────────────────────
 
-export const Dropdown = {
-    Root: DropdownRoot,
+export const Dropdown = Object.assign(DropdownRoot, {
     Trigger: DropdownTrigger,
     Panel: DropdownPanel,
     Item: DropdownItem,
     Separator: DropdownSeparator,
     Close: DropdownClose,
-}
+})

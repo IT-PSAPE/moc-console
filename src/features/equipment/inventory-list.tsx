@@ -17,7 +17,7 @@ export function InventoryLists({ equipment }: { equipment: Equipment[] }) {
                 const items = visible.filter((e) => e.status === group.key);
                 if (items.length === 0) return null;
                 return (
-                    <Card.Root key={group.key}>
+                    <Card key={group.key}>
                         <Card.Header tight className="gap-1.5">
                             <Indicator color={group.color} className="size-6" />
                             <Label.sm>{group.label}</Label.sm>
@@ -28,7 +28,7 @@ export function InventoryLists({ equipment }: { equipment: Equipment[] }) {
                                 <EquipmentItem key={e.id} equipment={e} />
                             ))}
                         </Card.Content>
-                    </Card.Root>
+                    </Card>
                 );
             })}
         </div>

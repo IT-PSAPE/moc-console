@@ -111,7 +111,7 @@ function PlaylistDetailDrawerContent({ playlist }: { playlist: Playlist }) {
                 <Button icon={<Maximize2 />} onClick={handleOpenFullPage}>Open Playlist</Button>
             </Drawer.Footer>
 
-            <Modal.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <Modal open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <Modal.Portal>
                     <Modal.Backdrop />
                     <Modal.Positioner>
@@ -132,7 +132,7 @@ function PlaylistDetailDrawerContent({ playlist }: { playlist: Playlist }) {
                         </Modal.Panel>
                     </Modal.Positioner>
                 </Modal.Portal>
-            </Modal.Root>
+            </Modal>
         </>
     )
 }

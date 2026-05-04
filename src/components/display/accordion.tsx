@@ -12,7 +12,7 @@ const AccordionContext = createContext<AccordionContextValue | null>(null);
 
 function useAccordion() {
   const context = useContext(AccordionContext);
-  if (!context) throw new Error("Accordion components must be used within Accordion.Root");
+  if (!context) throw new Error("Accordion components must be used within Accordion");
   return context;
 }
 
@@ -138,11 +138,10 @@ function AccordionContent({ children, className, ...props }: AccordionContentPro
 
 // ─── Compound Export ────────────────────────────────────
 
-export const Accordion = {
-  Root: AccordionRoot,
+export const Accordion = Object.assign(AccordionRoot, {
   Item: AccordionItem,
   Trigger: AccordionTrigger,
   Content: AccordionContent,
-};
+});
 
 export { useAccordionItem };

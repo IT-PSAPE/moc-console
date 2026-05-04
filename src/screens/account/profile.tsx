@@ -63,14 +63,14 @@ export function ProfileScreen() {
 
     return (
         <section className="mx-auto max-w-content-sm">
-            <Header.Root className="p-4 pt-8">
+            <Header className="p-4 pt-8">
                 <Header.Lead className="gap-2">
                     <Title.h6>Profile</Title.h6>
                     <Paragraph.sm className="text-tertiary">
                         Update your personal details. Your email and role are managed by an administrator.
                     </Paragraph.sm>
                 </Header.Lead>
-            </Header.Root>
+            </Header>
 
             <Divider className="px-4 my-2" />
 

@@ -14,7 +14,7 @@ export function useSegmentedControl() {
     const context = useContext(SegmentedControlContext)
 
     if (!context) {
-        throw new Error('useSegmentedControl must be used within a SegmentedControl.Root')
+        throw new Error('useSegmentedControl must be used within a SegmentedControl')
     }
 
     return context
@@ -99,7 +99,6 @@ function SegmentedControlItem({ children, className, icon, value, ...props }: Se
 
 // ─── Compound Export ─────────────────────────────────────
 
-export const SegmentedControl = {
-    Root: SegmentedControlRoot,
+export const SegmentedControl = Object.assign(SegmentedControlRoot, {
     Item: SegmentedControlItem,
-}
+})

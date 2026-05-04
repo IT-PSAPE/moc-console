@@ -48,7 +48,7 @@ export function BookingCalendar({ bookings, equipmentMap }: BookingCalendarProps
 
   return (
     <div className="p-4 pt-0 mx-auto w-full max-w-content">
-      <Calendar.Root
+      <Calendar
         events={events}
         cellDrawer={{
           renderItem: (event, index) => {
@@ -58,7 +58,7 @@ export function BookingCalendar({ bookings, equipmentMap }: BookingCalendarProps
             const { booking } = data;
 
             return (
-              <Drawer.Root key={booking.id}>
+              <Drawer key={booking.id}>
                 <Drawer.Trigger>
                   <div
                     className={cn(
@@ -81,7 +81,7 @@ export function BookingCalendar({ bookings, equipmentMap }: BookingCalendarProps
                   </div>
                 </Drawer.Trigger>
                 <BookingDrawer booking={booking} />
-              </Drawer.Root>
+              </Drawer>
             );
           },
         }}

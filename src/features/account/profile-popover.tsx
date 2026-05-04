@@ -60,7 +60,7 @@ export function ProfilePopover({ onSignOut, isSigningOut }: ProfilePopoverProps)
 
     return (
         <div className="w-full [&>span]:!flex [&>span]:!w-full">
-            <Popover.Root placement="top" open={open} onOpenChange={setOpen}>
+            <Popover placement="top" open={open} onOpenChange={setOpen}>
                 <Popover.Trigger
                     className={cn(
                         '!flex !w-full !items-center gap-2 rounded-lg p-1 -m-1 cursor-pointer hover:bg-secondary',
@@ -117,7 +117,7 @@ export function ProfilePopover({ onSignOut, isSigningOut }: ProfilePopoverProps)
                         />
                     </div>
                 </Popover.Panel>
-            </Popover.Root>
+            </Popover>
 
             <ReportBugModal open={bugOpen} onOpenChange={setBugOpen} />
         </div>

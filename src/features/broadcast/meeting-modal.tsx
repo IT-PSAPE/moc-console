@@ -97,7 +97,7 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
   }
 
   return (
-    <Modal.Root open={open} onOpenChange={handleModalOpenChange}>
+    <Modal open={open} onOpenChange={handleModalOpenChange}>
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
@@ -168,7 +168,7 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
                 {/* Recurrence */}
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Repeat" />
-                  <SegmentedControl.Root
+                  <SegmentedControl
                     fill
                     value={recurrenceType}
                     onValueChange={(v: string) => setRecurrenceType(v as ZoomRecurrenceType)}
@@ -178,7 +178,7 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
                         {zoomRecurrenceLabel[key]}
                       </SegmentedControl.Item>
                     ))}
-                  </SegmentedControl.Root>
+                  </SegmentedControl>
                 </div>
 
                 {/* Recurrence days (contextual) */}
@@ -245,6 +245,6 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
           </Modal.Panel>
         </Modal.Positioner>
       </Modal.Portal>
-    </Modal.Root>
+    </Modal>
   )
 }

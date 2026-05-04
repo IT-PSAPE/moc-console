@@ -66,17 +66,17 @@ export function SettingsScreen() {
 
     return (
         <section className="mx-auto max-w-content">
-            <Header.Root className="p-4 pt-8">
+            <Header className="p-4 pt-8">
                 <Header.Lead className="gap-2">
                     <Title.h6>Settings</Title.h6>
                     <Paragraph.sm className="text-tertiary">
                         {TAB_DESCRIPTIONS[activeTab]}
                     </Paragraph.sm>
                 </Header.Lead>
-            </Header.Root>
+            </Header>
 
             <div className="px-4 pt-2">
-                <Tabs.Root value={activeTab} onValueChange={handleTabChange}>
+                <Tabs value={activeTab} onValueChange={handleTabChange}>
                     <Tabs.List>
                         {availableTabs.map((tab) => (
                             <Tabs.Tab key={tab} value={tab}>
@@ -84,7 +84,7 @@ export function SettingsScreen() {
                             </Tabs.Tab>
                         ))}
                     </Tabs.List>
-                </Tabs.Root>
+                </Tabs>
             </div>
 
             <Divider className="my-2" />

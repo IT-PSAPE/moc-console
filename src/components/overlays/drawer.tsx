@@ -30,7 +30,7 @@ export function useDrawer() {
     const context = useContext(DrawerContext)
 
     if (!context) {
-        throw new Error('useDrawer must be used within a Drawer.Root')
+        throw new Error('useDrawer must be used within a Drawer')
     }
 
     return context
@@ -206,8 +206,7 @@ function DrawerFooter(props: HTMLAttributes<HTMLDivElement>) {
 
 // ─── Compound Export ─────────────────────────────────────────────────
 
-export const Drawer = {
-    Root: DrawerRoot,
+export const Drawer = Object.assign(DrawerRoot, {
     Trigger: DrawerTrigger,
     Portal: DrawerPortal,
     Backdrop: DrawerBackdrop,
@@ -216,4 +215,4 @@ export const Drawer = {
     Content: DrawerContent,
     Footer: DrawerFooter,
     Close: DrawerClose,
-}
+})

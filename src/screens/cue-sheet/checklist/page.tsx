@@ -61,29 +61,29 @@ export function CueSheetChecklistScreen() {
 
     return (
         <section>
-            <Header.Root className="p-4 pt-8 mx-auto max-w-content">
+            <Header className="p-4 pt-8 mx-auto max-w-content">
                 <Header.Lead className="gap-2">
                     <Title.h6>Checklist Runs</Title.h6>
                     <Paragraph.sm className="text-tertiary max-w-2xl">
                         View preparation checklist runs created from reusable checklist templates.
                     </Paragraph.sm>
                 </Header.Lead>
-            </Header.Root>
+            </Header>
 
             <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
-                <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+                <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
                     <Header.Lead className="gap-2">
                         <Label.md>Checklists</Label.md>
                     </Header.Lead>
                     <Header.Trail className="gap-2 flex-1 justify-end">
                         <Input icon={<Search />} placeholder="Search checklist runs..." className="w-full max-w-md" value={filters.search} onChange={(event) => setSearch(event.target.value)} />
-                        <Drawer.Root>
+                        <Drawer>
                             <Drawer.Trigger>
                                 <Button icon={<Settings2 />} variant="secondary">Filter</Button>
                             </Drawer.Trigger>
                             <ChecklistRunFilterDrawer filters={checklistFilters} />
-                        </Drawer.Root>
-                        <Dropdown.Root placement="bottom">
+                        </Drawer>
+                        <Dropdown placement="bottom">
                             <Dropdown.Trigger>
                                 <Button.Icon variant='secondary' icon={<Plus />} />
                             </Dropdown.Trigger>
@@ -104,11 +104,11 @@ export function CueSheetChecklistScreen() {
                                     </Dropdown.Item>
                                 )}
                             </Dropdown.Panel>
-                        </Dropdown.Root>
+                        </Dropdown>
                     </Header.Trail>
-                </Header.Root>
+                </Header>
 
-                <Card.Root>
+                <Card>
                     <Card.Header tight className="gap-1.5">
                         <div className="flex flex-1 items-center gap-1.5">
                             <ListChecks className="size-4" />
@@ -143,7 +143,7 @@ export function CueSheetChecklistScreen() {
                             </div>
                         )}
                     </Card.Content>
-                </Card.Root>
+                </Card>
             </div>
 
             <CreateChecklistRunModal open={modalOpen} onOpenChange={setModalOpen} template={modalTemplate} onSubmit={handleSubmit} />

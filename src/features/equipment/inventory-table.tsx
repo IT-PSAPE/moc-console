@@ -1,12 +1,13 @@
 import { Badge } from "@/components/display/badge";
 import { DataTable } from "@/components/display/data-table";
 import { Drawer } from "@/components/overlays/drawer";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { equipmentStatusColor, equipmentStatusLabel, equipmentCategoryLabel, equipmentCategoryColor } from "@/types/equipment/constants";
 import type { Equipment } from "@/types/equipment";
 import { EquipmentThumbnail } from "./equipment-thumbnail";
 import { EquipmentDrawer } from "./equipment-drawer";
 import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
+import { useTableRowDrawer } from "@/hooks/use-drawer-item";
 
 const empty = <span className="text-quaternary">—</span>;
 
@@ -49,24 +50,10 @@ const columns = [
 ];
 
 export function InventoryTable({ equipment }: { equipment: Equipment[] }) {
-    const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
-
-    const isDirtyRef = useRef(false);
-    const requestCloseRef = useRef<(() => void) | null>(null);
+    const { selected, setSelected, isDirtyRef, requestCloseRef, handleOpenChange, handleClose } =
+        useTableRowDrawer<Equipment>();
 
     const visible = useMemo(() => equipment.filter((e) => e.status !== "maintenance"), [equipment]);
-
-    const handleOpenChange = useCallback((open: boolean) => {
-        if (!open && isDirtyRef.current) {
-            requestCloseRef.current?.();
-        } else if (!open) {
-            setSelectedEquipment(null);
-        }
-    }, []);
-
-    const handleEquipmentClose = useCallback(() => {
-        setSelectedEquipment(null);
-    }, []);
 
     return (
         <div className="p-4 pt-0 mx-auto w-full max-w-content">
@@ -74,19 +61,19 @@ export function InventoryTable({ equipment }: { equipment: Equipment[] }) {
                 data={visible}
                 columns={columns}
                 emptyMessage="No equipment found"
-                onRowClick={(row) => setSelectedEquipment(row)}
+                onRowClick={(row) => setSelected(row)}
                 className="rounded-lg border border-secondary overflow-hidden"
             />
-            <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
-                {selectedEquipment && (
+            <Drawer open={!!selected} onOpenChange={handleOpenChange}>
+                {selected && (
                     <EquipmentDrawer
-                        equipment={selectedEquipment}
-                        onEquipmentClose={handleEquipmentClose}
+                        equipment={selected}
+                        onEquipmentClose={handleClose}
                         isDirtyRef={isDirtyRef}
                         requestCloseRef={requestCloseRef}
                     />
                 )}
-            </Drawer.Root>
+            </Drawer>
         </div>
     );
 }

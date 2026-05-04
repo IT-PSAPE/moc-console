@@ -4,34 +4,15 @@ import { cn } from "@/utils/cn";
 import type { Equipment } from "@/types/equipment";
 import { EquipmentDrawer } from "./equipment-drawer";
 import { EquipmentThumbnail } from "./equipment-thumbnail";
-import { useCallback, useRef, useState } from "react";
+import { useDrawerItem } from "@/hooks/use-drawer-item";
 
 const baseCard = "w-full bg-background-primary rounded-lg shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] outline outline-1 outline-offset-[-1px] outline-border-secondary cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors";
 
 export function EquipmentItem({ equipment, onDrawerOpenChange }: { equipment: Equipment; onDrawerOpenChange?: (open: boolean) => void }) {
-    const [open, setOpen] = useState(false);
-    const isDirtyRef = useRef(false);
-    const requestCloseRef = useRef<(() => void) | null>(null);
-
-    const handleOpenChange = useCallback((nextOpen: boolean) => {
-        if (nextOpen) {
-            setOpen(true);
-            onDrawerOpenChange?.(true);
-        } else if (isDirtyRef.current) {
-            requestCloseRef.current?.();
-        } else {
-            setOpen(false);
-            onDrawerOpenChange?.(false);
-        }
-    }, [onDrawerOpenChange]);
-
-    const handleEquipmentClose = useCallback(() => {
-        setOpen(false);
-        onDrawerOpenChange?.(false);
-    }, [onDrawerOpenChange]);
+    const { open, isDirtyRef, requestCloseRef, handleOpenChange, handleClose } = useDrawerItem(onDrawerOpenChange);
 
     return (
-        <Drawer.Root open={open} onOpenChange={handleOpenChange}>
+        <Drawer open={open} onOpenChange={handleOpenChange}>
             <Drawer.Trigger>
                 <div className={cn(baseCard, "flex items-start gap-3 p-3")}>
                     <EquipmentThumbnail equipment={equipment} size="lg" />
@@ -44,10 +25,10 @@ export function EquipmentItem({ equipment, onDrawerOpenChange }: { equipment: Eq
             </Drawer.Trigger>
             <EquipmentDrawer
                 equipment={equipment}
-                onEquipmentClose={handleEquipmentClose}
+                onEquipmentClose={handleClose}
                 isDirtyRef={isDirtyRef}
                 requestCloseRef={requestCloseRef}
             />
-        </Drawer.Root>
+        </Drawer>
     );
 }

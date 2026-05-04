@@ -74,17 +74,17 @@ export function EquipmentOverviewScreen() {
 
   return (
     <section>
-      <Header.Root className="p-4 pt-8 mx-auto max-w-content">
+      <Header className="p-4 pt-8 mx-auto max-w-content">
         <Header.Lead className="gap-2">
           <Title.h6>Equipment</Title.h6>
           <Paragraph.sm className="text-tertiary max-w-2xl">
             Manage and track all equipment. View availability, bookings, and maintenance at a glance.
           </Paragraph.sm>
         </Header.Lead>
-      </Header.Root>
+      </Header>
 
       <div className="grid grid-cols-2 gap-4 p-4 pt-8 mx-auto w-full max-w-content md:grid-cols-4 max-mobile:gap-2">
-        <Card.Root>
+        <Card>
           <Card.Header tight className="gap-1.5">
             <Package className="size-4" />
             <Label.sm>Total Equipment</Label.sm>
@@ -92,8 +92,8 @@ export function EquipmentOverviewScreen() {
           <Card.Content className="p-4">
             <TextBlock className="title-h4">{totalCount}</TextBlock>
           </Card.Content>
-        </Card.Root>
-        <Card.Root>
+        </Card>
+        <Card>
           <Card.Header tight className="gap-1.5">
             <CircleCheck className="size-4" />
             <Label.sm>Available</Label.sm>
@@ -101,8 +101,8 @@ export function EquipmentOverviewScreen() {
           <Card.Content className="p-4">
             <TextBlock className="title-h4">{availableCount}</TextBlock>
           </Card.Content>
-        </Card.Root>
-        <Card.Root>
+        </Card>
+        <Card>
           <Card.Header tight className="gap-1.5">
             <ArrowUpRight className="size-4" />
             <Label.sm>Booked Out</Label.sm>
@@ -110,8 +110,8 @@ export function EquipmentOverviewScreen() {
           <Card.Content className="p-4">
             <TextBlock className="title-h4">{bookedOutCount}</TextBlock>
           </Card.Content>
-        </Card.Root>
-        <Card.Root>
+        </Card>
+        <Card>
           <Card.Header tight className="gap-1.5">
             <CalendarX2Icon className="size-4" />
             <Label.sm>Overdue</Label.sm>
@@ -119,26 +119,26 @@ export function EquipmentOverviewScreen() {
           <Card.Content className="p-4">
             <TextBlock className="title-h4">{overdueCount}</TextBlock>
           </Card.Content>
-        </Card.Root>
+        </Card>
       </div>
 
       <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
-        <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+        <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
           <Header.Lead className="gap-2">
             <Label.md>Schedule</Label.md>
           </Header.Lead>
           <Header.Trail className="gap-2 flex-1 justify-end">
             <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-md" value={state.search} onChange={(e) => setSearch(e.target.value)} />
-            <Drawer.Root>
+            <Drawer>
               <Drawer.Trigger>
                 <Button icon={<Settings2 />} variant="secondary">Filter</Button>
               </Drawer.Trigger>
               <EquipmentFilterDrawer filters={equipmentFilters} />
-            </Drawer.Root>
+            </Drawer>
           </Header.Trail>
-        </Header.Root>
+        </Header>
 
-        <Card.Root>
+        <Card>
           <Card.Header tight>
             <span className="flex gap-1.5 items-center">
               <Indicator color="red" className="size-6" />
@@ -158,9 +158,9 @@ export function EquipmentOverviewScreen() {
               </div>
             )}
           </Card.Content>
-        </Card.Root>
+        </Card>
 
-        <Card.Root>
+        <Card>
           <Card.Header tight>
             <span className="flex gap-1.5 items-center">
               <Indicator className="size-6" />
@@ -180,7 +180,7 @@ export function EquipmentOverviewScreen() {
               </div>
             )}
           </Card.Content>
-        </Card.Root>
+        </Card>
       </div>
     </section>
   );

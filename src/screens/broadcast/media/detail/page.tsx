@@ -146,11 +146,11 @@ export function MediaDetailScreen() {
       </div>
 
       {/* Header */}
-      <Header.Root className="px-4 pt-8">
+      <Header className="px-4 pt-8">
         <Header.Lead className="gap-2">
           <Title.h5>{item.name}</Title.h5>
         </Header.Lead>
-      </Header.Root>
+      </Header>
 
       {/* Properties */}
       <div className="p-4">
@@ -188,7 +188,7 @@ export function MediaDetailScreen() {
         </div>
       </div>
 
-      <Modal.Root open={deleteOpen} onOpenChange={(o) => { if (!o) setDeleteOpen(false) }}>
+      <Modal open={deleteOpen} onOpenChange={(o) => { if (!o) setDeleteOpen(false) }}>
         <Modal.Portal>
           <Modal.Backdrop />
           <Modal.Positioner>
@@ -211,7 +211,7 @@ export function MediaDetailScreen() {
             </Modal.Panel>
           </Modal.Positioner>
         </Modal.Portal>
-      </Modal.Root>
+      </Modal>
     </section>
   )
 }

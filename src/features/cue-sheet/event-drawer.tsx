@@ -137,7 +137,7 @@ function EventDrawerContent({ event }: { event: CueSheetEvent }) {
                 onSave={(next) => syncEvent({ ...event, ...next })}
             />
 
-            <Modal.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <Modal open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <Modal.Portal>
                     <Modal.Backdrop />
                     <Modal.Positioner>
@@ -158,7 +158,7 @@ function EventDrawerContent({ event }: { event: CueSheetEvent }) {
                         </Modal.Panel>
                     </Modal.Positioner>
                 </Modal.Portal>
-            </Modal.Root>
+            </Modal>
         </>
     )
 }

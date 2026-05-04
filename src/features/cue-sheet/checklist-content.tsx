@@ -633,7 +633,7 @@ export function ChecklistContent({ checklist, onUpdate, addRequest = null, onAdd
 
                 {/* Sections with accordion */}
                 {hasSections && (
-                    <Accordion.Root type="multiple" defaultValue={checklist.sections.map((s) => s.id)} data-main>
+                    <Accordion type="multiple" defaultValue={checklist.sections.map((s) => s.id)} data-main>
                         {checklist.sections.map((section) => (
                             <SectionRow
                                 key={section.id}
@@ -651,7 +651,7 @@ export function ChecklistContent({ checklist, onUpdate, addRequest = null, onAdd
                                 onDismissAdd={dismissAdd}
                             />
                         ))}
-                    </Accordion.Root>
+                    </Accordion>
                 )}
 
                 {/* Add section input — only when triggered */}

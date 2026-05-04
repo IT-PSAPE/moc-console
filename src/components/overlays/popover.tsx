@@ -32,7 +32,7 @@ export function usePopover() {
     const context = useContext(PopoverContext)
 
     if (!context) {
-        throw new Error('usePopover must be used within a Popover.Root')
+        throw new Error('usePopover must be used within a Popover')
     }
 
     return context
@@ -272,11 +272,10 @@ function PopoverClose({ children, onClick, ...props }: HTMLAttributes<HTMLSpanEl
 
 // ─── Compound Export ─────────────────────────────────────────────────
 
-export const Popover = {
-    Root: PopoverRoot,
+export const Popover = Object.assign(PopoverRoot, {
     Trigger: PopoverTrigger,
     Panel: PopoverPanel,
     Header: PopoverHeader,
     Content: PopoverContent,
     Close: PopoverClose,
-}
+})

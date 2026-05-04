@@ -93,7 +93,7 @@ export function CreateBookingModal({ open, onOpenChange, equipment, onCreate }: 
   }, [availableEquipment, bookedBy, canSubmit, checkedOutDate, equipmentId, expectedReturnAt, notes, onCreate, onOpenChange, resetForm]);
 
   return (
-    <Modal.Root open={open} onOpenChange={handleOpenChange}>
+    <Modal open={open} onOpenChange={handleOpenChange}>
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
@@ -144,6 +144,6 @@ export function CreateBookingModal({ open, onOpenChange, equipment, onCreate }: 
           </Modal.Panel>
         </Modal.Positioner>
       </Modal.Portal>
-    </Modal.Root>
+    </Modal>
   );
 }

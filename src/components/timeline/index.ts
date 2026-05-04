@@ -3,12 +3,11 @@ import { TimelineToolbar } from './timeline-toolbar'
 import { TimelineCanvas } from './timeline-canvas'
 import { TimelineSidebar } from './timeline-sidebar'
 
-export const Timeline = {
-    Root: TimelineRoot,
+export const Timeline = Object.assign(TimelineRoot, {
     Toolbar: TimelineToolbar,
     Canvas: TimelineCanvas,
     Sidebar: TimelineSidebar,
-}
+})
 
 export { useTimeline } from './timeline-context'
 export type { TimelineContextValue, TimelinePlaybackSync } from './timeline-context'

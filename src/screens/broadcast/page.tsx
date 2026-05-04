@@ -88,18 +88,18 @@ export function BroadcastOverviewScreen() {
 
   return (
     <section>
-      <Header.Root className="p-4 pt-8 mx-auto max-w-content">
+      <Header className="p-4 pt-8 mx-auto max-w-content">
         <Header.Lead className="gap-2">
           <Title.h6>Broadcast</Title.h6>
           <Paragraph.sm className="text-tertiary max-w-2xl">
             Overview of your broadcast playlists and media library.
           </Paragraph.sm>
         </Header.Lead>
-      </Header.Root>
+      </Header>
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2">
-        <Card.Root>
+        <Card>
           <Card.Header tight className="gap-1.5">
             <ListMusic className="size-4" />
             <Label.sm>Total Playlists</Label.sm>
@@ -107,8 +107,8 @@ export function BroadcastOverviewScreen() {
           <Card.Content className="p-4">
             <TextBlock className="title-h4">{totalPlaylists}</TextBlock>
           </Card.Content>
-        </Card.Root>
-        <Card.Root>
+        </Card>
+        <Card>
           <Card.Header tight className="gap-1.5">
             <CircleCheck className="size-4" />
             <Label.sm>Published</Label.sm>
@@ -116,8 +116,8 @@ export function BroadcastOverviewScreen() {
           <Card.Content className="p-4">
             <TextBlock className="title-h4">{publishedCount}</TextBlock>
           </Card.Content>
-        </Card.Root>
-        <Card.Root>
+        </Card>
+        <Card>
           <Card.Header tight className="gap-1.5">
             <FileEdit className="size-4" />
             <Label.sm>Draft</Label.sm>
@@ -125,8 +125,8 @@ export function BroadcastOverviewScreen() {
           <Card.Content className="p-4">
             <TextBlock className="title-h4">{draftCount}</TextBlock>
           </Card.Content>
-        </Card.Root>
-        <Card.Root>
+        </Card>
+        <Card>
           <Card.Header tight className="gap-1.5">
             <Film className="size-4" />
             <Label.sm>Media Items</Label.sm>
@@ -134,12 +134,12 @@ export function BroadcastOverviewScreen() {
           <Card.Content className="p-4">
             <TextBlock className="title-h4">{media.length}</TextBlock>
           </Card.Content>
-        </Card.Root>
+        </Card>
       </div>
 
       {/* Readiness */}
       <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
-        <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+        <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
           <Header.Lead className="gap-2">
             <Label.md>Playlist Readiness</Label.md>
             <Paragraph.xs className="text-tertiary">Published playlists should be ready for people to use immediately.</Paragraph.xs>
@@ -152,7 +152,7 @@ export function BroadcastOverviewScreen() {
               value={filterState.search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <Dropdown.Root placement="bottom">
+            <Dropdown placement="bottom">
               <Dropdown.Trigger>
                 <Button icon={<Settings2 />} variant={hasActiveFilters ? "primary" : "secondary"}>Filter</Button>
               </Dropdown.Trigger>
@@ -169,9 +169,9 @@ export function BroadcastOverviewScreen() {
                   )
                 })}
               </Dropdown.Panel>
-            </Dropdown.Root>
+            </Dropdown>
           </Header.Trail>
-        </Header.Root>
+        </Header>
         {isLoading ? (
           <div className="flex justify-center py-8"><Spinner /></div>
         ) : (

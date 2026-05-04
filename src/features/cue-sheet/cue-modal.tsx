@@ -78,11 +78,11 @@ export function CueModal() {
 
     if (!isOpen) {
         return (
-            <Modal.Root open={false} onOpenChange={closeCueModal}>
+            <Modal open={false} onOpenChange={closeCueModal}>
                 <Modal.Portal>
                     <Modal.Backdrop />
                 </Modal.Portal>
-            </Modal.Root>
+            </Modal>
         )
     }
 
@@ -156,7 +156,7 @@ function CueModalContent({ addCue, closeCueModal, cueModal, isEdit, moveCue, tra
     }, [canSubmit, form, cueModal, addCue, updateCue, moveCue, closeCueModal])
 
     return (
-        <Modal.Root open={true} onOpenChange={(next) => { if (!next) closeCueModal() }}>
+        <Modal open={true} onOpenChange={(next) => { if (!next) closeCueModal() }}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
@@ -258,6 +258,6 @@ function CueModalContent({ addCue, closeCueModal, cueModal, isEdit, moveCue, tra
                     </Modal.Panel>
                 </Modal.Positioner>
             </Modal.Portal>
-        </Modal.Root>
+        </Modal>
     )
 }

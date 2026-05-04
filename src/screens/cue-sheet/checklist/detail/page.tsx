@@ -67,7 +67,7 @@ export function CueSheetChecklistDetailScreen() {
 
     return (
         <section className="mx-auto max-w-content-sm">
-            <Header.Root className="px-4 pt-12">
+            <Header className="px-4 pt-12">
                 <Header.Lead className="gap-2">
                     <Title.h5>
                         <InlineEditableText value={checklist.name} onSave={(name) => { void handleChecklistUpdate({ ...checklist, name }) }} className="title-h5" />
@@ -75,7 +75,7 @@ export function CueSheetChecklistDetailScreen() {
                 </Header.Lead>
                 <Header.Trail>
                     <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setDeleteOpen(true)} />
-                    <Dropdown.Root placement="bottom">
+                    <Dropdown placement="bottom">
                         <Dropdown.Trigger>
                             <Button.Icon variant="secondary" icon={<Plus />} />
                         </Dropdown.Trigger>
@@ -89,9 +89,9 @@ export function CueSheetChecklistDetailScreen() {
                                 Section
                             </Dropdown.Item>
                         </Dropdown.Panel>
-                    </Dropdown.Root>
+                    </Dropdown>
                 </Header.Trail>
-            </Header.Root>
+            </Header>
 
             <div className="px-4 pt-2 flex items-center gap-3">
                 <Badge
@@ -117,7 +117,7 @@ export function CueSheetChecklistDetailScreen() {
                     />
                 </div>
             </div>
-            <Modal.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <Modal open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <Modal.Portal>
                     <Modal.Backdrop />
                     <Modal.Positioner>
@@ -138,7 +138,7 @@ export function CueSheetChecklistDetailScreen() {
                         </Modal.Panel>
                     </Modal.Positioner>
                 </Modal.Portal>
-            </Modal.Root>
+            </Modal>
         </section>
     )
 }

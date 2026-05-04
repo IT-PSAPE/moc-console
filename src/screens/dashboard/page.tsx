@@ -115,16 +115,16 @@ export function DashboardScreen() {
 
     return (
         <section>
-            <Header.Root className='p-4 pt-8 mx-auto max-w-content'>
+            <Header className='p-4 pt-8 mx-auto max-w-content'>
                 <Header.Lead className='gap-2'>
                     <Title.h6>Dashboard</Title.h6>
                     <Paragraph.sm className="text-tertiary max-w-2xl">Overview of requests, equipment, broadcasts, and upcoming events.</Paragraph.sm>
                 </Header.Lead>
-            </Header.Root>
+            </Header>
 
                     {/* Summary cards */}
                     <div className='grid grid-cols-2 gap-4 p-4 pt-8 mx-auto w-full max-w-content md:grid-cols-4 max-mobile:gap-2'>
-                        <Card.Root className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.requestsOverview}`)}>
+                        <Card className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.requestsOverview}`)}>
                             <Card.Header tight className='gap-1.5'>
                                 <Activity className='size-4' />
                                 <Label.sm>Active Requests</Label.sm>
@@ -135,9 +135,9 @@ export function DashboardScreen() {
                                     <Badge label={`${overdueRequests.length} overdue`} color="red" />
                                 )}
                             </Card.Content>
-                        </Card.Root>
+                        </Card>
 
-                        <Card.Root className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.equipmentOverview}`)}>
+                        <Card className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.equipmentOverview}`)}>
                             <Card.Header tight className='gap-1.5'>
                                 <Package className='size-4' />
                                 <Label.sm>Equipment</Label.sm>
@@ -151,9 +151,9 @@ export function DashboardScreen() {
                                     </div>
                                 )}
                             </Card.Content>
-                        </Card.Root>
+                        </Card>
 
-                        <Card.Root className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.broadcastOverview}`)}>
+                        <Card className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.broadcastOverview}`)}>
                             <Card.Header tight className='gap-1.5'>
                                 <Film className='size-4' />
                                 <Label.sm>Media Library</Label.sm>
@@ -162,9 +162,9 @@ export function DashboardScreen() {
                                 <TextBlock className='title-h4'>{media.length}</TextBlock>
                                 <Badge label={`${playlists.length} playlists`} />
                             </Card.Content>
-                        </Card.Root>
+                        </Card>
 
-                        <Card.Root className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.cueSheetOverview}`)}>
+                        <Card className="cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors" onClick={() => navigate(`/${routes.cueSheetOverview}`)}>
                             <Card.Header tight className='gap-1.5'>
                                 <CalendarClock className='size-4' />
                                 <Label.sm>Upcoming Events</Label.sm>
@@ -175,13 +175,13 @@ export function DashboardScreen() {
                                     <Badge label={`${pendingChecklists.length} checklists`} color="blue" />
                                 )}
                             </Card.Content>
-                        </Card.Root>
+                        </Card>
                     </div>
 
                     {/* Detail sections */}
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-4 p-4 pt-4 mx-auto w-full max-w-content'>
                         {/* Overdue requests */}
-                        <Card.Root>
+                        <Card>
                             <Card.Header className='gap-1.5 justify-between'>
                                 <div className="flex items-center gap-1.5">
                                     <Indicator color='red' className='size-6' />
@@ -211,10 +211,10 @@ export function DashboardScreen() {
                                     <ArrowRight className="size-3 text-tertiary" />
                                 </button>
                             )}
-                        </Card.Root>
+                        </Card>
 
                         {/* Upcoming requests */}
-                        <Card.Root>
+                        <Card>
                             <Card.Header className='gap-1.5 justify-between'>
                                 <div className="flex items-center gap-1.5">
                                     <Indicator className='size-6' />
@@ -244,10 +244,10 @@ export function DashboardScreen() {
                                     <ArrowRight className="size-3 text-tertiary" />
                                 </button>
                             )}
-                        </Card.Root>
+                        </Card>
 
                         {/* Upcoming events */}
-                        <Card.Root>
+                        <Card>
                             <Card.Header className='gap-1.5 justify-between'>
                                 <div className="flex items-center gap-1.5">
                                     <CalendarClock className="size-4" />
@@ -295,10 +295,10 @@ export function DashboardScreen() {
                                     </button>
                                 )}
                             </Card.Content>
-                        </Card.Root>
+                        </Card>
 
                         {/* Active checklists */}
-                        <Card.Root>
+                        <Card>
                             <Card.Header className='gap-1.5 justify-between'>
                                 <div className="flex items-center gap-1.5">
                                     <ClipboardList className="size-4" />
@@ -346,10 +346,10 @@ export function DashboardScreen() {
                                     </button>
                                 )}
                             </Card.Content>
-                        </Card.Root>
+                        </Card>
 
                         {/* Recent playlists */}
-                        <Card.Root className="md:col-span-2">
+                        <Card className="md:col-span-2">
                             <Card.Header className='gap-1.5 justify-between'>
                                 <div className="flex items-center gap-1.5">
                                     <ListMusic className="size-4" />
@@ -395,7 +395,7 @@ export function DashboardScreen() {
                                     </button>
                                 )}
                             </Card.Content>
-                        </Card.Root>
+                        </Card>
                     </div>
         </section>
     )

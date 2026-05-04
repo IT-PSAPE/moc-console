@@ -58,7 +58,7 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
             {/* Status */}
             <MetaRow icon={<Loader />} label="Status">
                 {editable && onFieldChange ? (
-                    <Dropdown.Root placement="bottom">
+                    <Dropdown placement="bottom">
                         <Dropdown.Trigger>
                             <Badge label={statusLabel[request.status]} icon={statusIcon[request.status]} color={statusColor[request.status]} className="cursor-pointer" />
                         </Dropdown.Trigger>
@@ -69,7 +69,7 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
                                 </Dropdown.Item>
                             ))}
                         </Dropdown.Panel>
-                    </Dropdown.Root>
+                    </Dropdown>
                 ) : (
                     <Badge label={statusLabel[request.status]} icon={statusIcon[request.status]} color={statusColor[request.status]} />
                 )}
@@ -78,7 +78,7 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
             {/* Priority */}
             <MetaRow icon={<CircleChevronDown />} label="Priority">
                 {editable && onFieldChange ? (
-                    <Dropdown.Root placement="bottom">
+                    <Dropdown placement="bottom">
                         <Dropdown.Trigger>
                             <Badge
                                 label={request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
@@ -94,7 +94,7 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
                                 </Dropdown.Item>
                             ))}
                         </Dropdown.Panel>
-                    </Dropdown.Root>
+                    </Dropdown>
                 ) : (
                     <Badge
                         label={request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
@@ -107,7 +107,7 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
             {/* Type / Category */}
             <MetaRow icon={<Tag />} label="Type">
                 {editable && onFieldChange ? (
-                    <Dropdown.Root placement="bottom">
+                    <Dropdown placement="bottom">
                         <Dropdown.Trigger>
                             <Badge label={categoryLabel[request.category]} icon={<Tag />} color="purple" className="cursor-pointer" />
                         </Dropdown.Trigger>
@@ -118,7 +118,7 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
                                 </Dropdown.Item>
                             ))}
                         </Dropdown.Panel>
-                    </Dropdown.Root>
+                    </Dropdown>
                 ) : (
                     <Badge label={categoryLabel[request.category]} icon={<Tag />} color="purple" />
                 )}

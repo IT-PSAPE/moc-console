@@ -151,14 +151,14 @@ export function StreamDetailScreen() {
       )}
 
       {/* Header */}
-      <Header.Root className="px-4 pt-8">
+      <Header className="px-4 pt-8">
         <Header.Lead className="gap-2">
             <Title.h5>{stream.title}</Title.h5>
           {stream.description && (
             <Paragraph.sm className="text-tertiary">{stream.description}</Paragraph.sm>
           )}
         </Header.Lead>
-      </Header.Root>
+      </Header>
 
       {/* Properties */}
       <div className="p-4">
@@ -306,7 +306,7 @@ export function StreamDetailScreen() {
         stream={stream}
       />
 
-      <Modal.Root open={deleteOpen} onOpenChange={(o) => { if (!o) setDeleteOpen(false) }}>
+      <Modal open={deleteOpen} onOpenChange={(o) => { if (!o) setDeleteOpen(false) }}>
         <Modal.Portal>
           <Modal.Backdrop />
           <Modal.Positioner>
@@ -329,7 +329,7 @@ export function StreamDetailScreen() {
             </Modal.Panel>
           </Modal.Positioner>
         </Modal.Portal>
-      </Modal.Root>
+      </Modal>
     </section>
   )
 }

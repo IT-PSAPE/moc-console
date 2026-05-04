@@ -189,7 +189,7 @@ function DraggableCueRow({ cue, onRemove, onUpdateCue, defaultImageDuration }: {
       )}
 
       {/* Options dropdown */}
-      <Dropdown.Root>
+      <Dropdown>
         <Dropdown.Trigger>
           <button className="p-0.5 rounded hover:bg-secondary cursor-pointer text-quaternary hover:text-secondary transition-colors">
             <MoreVertical className="size-4" />
@@ -205,7 +205,7 @@ function DraggableCueRow({ cue, onRemove, onUpdateCue, defaultImageDuration }: {
             <span className="text-error">Remove</span>
           </Dropdown.Item>
         </Dropdown.Panel>
-      </Dropdown.Root>
+      </Dropdown>
     </div>
   )
 }

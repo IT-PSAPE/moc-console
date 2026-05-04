@@ -33,7 +33,7 @@ export function EventRunFilterDrawer({ filters }: EventRunFilterDrawerProps) {
                 </Drawer.Header>
 
                 <Drawer.Content>
-                    <Tabs.Root defaultTab="filters">
+                    <Tabs defaultTab="filters">
                         <Tabs.List>
                             <Tabs.Tab value="filters"><Label.sm>Filters</Label.sm></Tabs.Tab>
                             <Tabs.Tab value="sort"><Label.sm>Sort</Label.sm></Tabs.Tab>
@@ -131,7 +131,7 @@ export function EventRunFilterDrawer({ filters }: EventRunFilterDrawerProps) {
                                 </div>
                             </Tabs.Panel>
                         </Tabs.Panels>
-                    </Tabs.Root>
+                    </Tabs>
                 </Drawer.Content>
 
                 <Drawer.Footer className="*:w-full">

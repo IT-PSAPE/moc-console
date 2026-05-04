@@ -69,17 +69,17 @@ export function EquipmentMaintenanceScreen() {
 
   return (
     <section>
-      <Header.Root className="p-4 pt-8 mx-auto max-w-content">
+      <Header className="p-4 pt-8 mx-auto max-w-content">
         <Header.Lead className="gap-2">
           <Title.h6>Maintenance</Title.h6>
           <Paragraph.sm className="text-tertiary max-w-2xl">
             Equipment currently flagged as faulty or under repair.
           </Paragraph.sm>
         </Header.Lead>
-      </Header.Root>
+      </Header>
 
       <div className="flex flex-col gap-4 p-4 mx-auto w-full max-w-content">
-        <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+        <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
           <Header.Lead className="gap-2" />
           <Header.Trail className="gap-2 flex-1 justify-end">
             <Input
@@ -89,16 +89,16 @@ export function EquipmentMaintenanceScreen() {
               value={state.search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <Drawer.Root>
+            <Drawer>
               <Drawer.Trigger>
                 <Button icon={<Settings2 />} variant="secondary">Filter</Button>
               </Drawer.Trigger>
               <EquipmentFilterDrawer filters={equipmentFilters} />
-            </Drawer.Root>
+            </Drawer>
           </Header.Trail>
-        </Header.Root>
+        </Header>
 
-        <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
+        <Drawer open={!!selectedEquipment} onOpenChange={handleOpenChange}>
           {isLoadingEquipment ? (
             <div className="flex justify-center py-16"><Spinner /></div>
           ) : (
@@ -118,7 +118,7 @@ export function EquipmentMaintenanceScreen() {
               requestCloseRef={requestCloseRef}
             />
           )}
-        </Drawer.Root>
+        </Drawer>
       </div>
     </section>
   );

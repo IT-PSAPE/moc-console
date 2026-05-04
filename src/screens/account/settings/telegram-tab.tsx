@@ -88,7 +88,7 @@ export function TelegramTab() {
                 />
             ) : (
                 groups.map((group) => (
-                    <Card.Root key={group.chatId}>
+                    <Card key={group.chatId}>
                         <Card.Header>
                             <div className="flex flex-1 flex-col gap-1">
                                 <div className="flex items-center gap-2">
@@ -124,7 +124,7 @@ export function TelegramTab() {
                                 ))}
                             </Card.Content>
                         )}
-                    </Card.Root>
+                    </Card>
                 ))
             )}
         </div>

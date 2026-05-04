@@ -87,7 +87,7 @@ function RequestDetailContent({ request, assignees, setAssignees, syncRequest }:
                 ) : (
                     <Button variant='secondary' icon={<Pencil />}>Edit</Button>
                 )}
-                <Dropdown.Root placement="bottom">
+                <Dropdown placement="bottom">
                     <Dropdown.Trigger>
                         <Button.Icon variant="secondary" icon={<EllipsisVertical />} />
                     </Dropdown.Trigger>
@@ -105,15 +105,15 @@ function RequestDetailContent({ request, assignees, setAssignees, syncRequest }:
                             <span className="text-utility-red-600">Delete</span>
                         </Dropdown.Item>
                     </Dropdown.Panel>
-                </Dropdown.Root>
+                </Dropdown>
             </TopBarActions>
 
             {/* Header */}
-            <Header.Root className='px-4 pt-12'>
+            <Header className='px-4 pt-12'>
                 <Header.Lead className='gap-2'>
                     <Title.h5>{store.state.draft.title}</Title.h5>
                 </Header.Lead>
-            </Header.Root>
+            </Header>
 
             {/* Properties */}
             <div className="p-4">

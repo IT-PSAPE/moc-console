@@ -71,7 +71,7 @@ export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelet
   if (!stream) return null
 
   return (
-    <Drawer.Root open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
         <Drawer.Backdrop />
         <Drawer.Panel className="max-w-lg">
@@ -243,6 +243,6 @@ export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelet
           </Drawer.Content>
         </Drawer.Panel>
       </Drawer.Portal>
-    </Drawer.Root>
+    </Drawer>
   )
 }

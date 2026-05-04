@@ -59,17 +59,17 @@ export function PlaylistScreen() {
 
   return (
     <section>
-      <Header.Root className="p-4 pt-8 mx-auto max-w-content">
+      <Header className="p-4 pt-8 mx-auto max-w-content">
         <Header.Lead className="gap-2">
           <Title.h6>Playlists</Title.h6>
           <Paragraph.sm className="text-tertiary max-w-2xl">
             Manage your broadcast playlists. Click a playlist to view and edit its details.
           </Paragraph.sm>
         </Header.Lead>
-      </Header.Root>
+      </Header>
 
       <div className="flex flex-col gap-4 p-4 pt-0 mx-auto w-full max-w-content">
-        <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+        <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
           <Header.Lead className="gap-2">
             <Label.md>Playlists</Label.md>
           </Header.Lead>
@@ -83,9 +83,9 @@ export function PlaylistScreen() {
             />
             <Button.Icon variant="secondary" icon={<Plus />} onClick={handleCreatePlaylist} />
           </Header.Trail>
-        </Header.Root>
+        </Header>
 
-        <Card.Root>
+        <Card>
           <Card.Content ghost className="flex flex-col gap-1">
             {isLoadingPlaylists ? (
               <div className="flex justify-center py-12"><Spinner /></div>
@@ -99,7 +99,7 @@ export function PlaylistScreen() {
               ))
             )}
           </Card.Content>
-        </Card.Root>
+        </Card>
       </div>
     </section>
   )

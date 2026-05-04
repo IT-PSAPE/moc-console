@@ -104,18 +104,18 @@ export function CueSheetOverviewScreen() {
 
     return (
         <section>
-            <Header.Root className="p-4 pt-8 mx-auto max-w-content">
+            <Header className="p-4 pt-8 mx-auto max-w-content">
                 <Header.Lead className="gap-2">
                     <Title.h6>Cue Sheet</Title.h6>
                     <Paragraph.sm className="text-tertiary max-w-2xl">
                         Manage upcoming event and checklist runs from reusable templates.
                     </Paragraph.sm>
                 </Header.Lead>
-            </Header.Root>
+            </Header>
 
             {/* Stat cards */}
             <div className="grid grid-cols-3 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2">
-                <Card.Root>
+                <Card>
                     <Card.Header tight className="gap-1.5">
                         <Calendar className="size-4" />
                         <Label.sm>Templates</Label.sm>
@@ -123,8 +123,8 @@ export function CueSheetOverviewScreen() {
                     <Card.Content className="p-4">
                         <TextBlock className="title-h4">{eventTemplates.length + checklistTemplates.length}</TextBlock>
                     </Card.Content>
-                </Card.Root>
-                <Card.Root>
+                </Card>
+                <Card>
                     <Card.Header tight className="gap-1.5">
                         <Calendar className="size-4" />
                         <Label.sm>Event Runs</Label.sm>
@@ -132,8 +132,8 @@ export function CueSheetOverviewScreen() {
                     <Card.Content className="p-4">
                         <TextBlock className="title-h4">{upcomingEventRuns.length}</TextBlock>
                     </Card.Content>
-                </Card.Root>
-                <Card.Root>
+                </Card>
+                <Card>
                     <Card.Header tight className="gap-1.5">
                         <ListChecks className="size-4" />
                         <Label.sm>Checklist Runs</Label.sm>
@@ -141,11 +141,11 @@ export function CueSheetOverviewScreen() {
                     <Card.Content className="p-4">
                         <TextBlock className="title-h4">{upcomingChecklistRuns.length}</TextBlock>
                     </Card.Content>
-                </Card.Root>
+                </Card>
             </div>
 
             <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
-                <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+                <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
                     <Header.Lead className="gap-2">
                         <Label.md>Q Sheets</Label.md>
                     </Header.Lead>
@@ -157,7 +157,7 @@ export function CueSheetOverviewScreen() {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
-                        <Dropdown.Root placement="bottom">
+                        <Dropdown placement="bottom">
                             <Dropdown.Trigger>
                                 <Button.Icon variant="secondary" icon={<Plus />} />
                             </Dropdown.Trigger>
@@ -192,11 +192,11 @@ export function CueSheetOverviewScreen() {
                                     </>
                                 )}
                             </Dropdown.Panel>
-                        </Dropdown.Root>
+                        </Dropdown>
                     </Header.Trail>
-                </Header.Root>
+                </Header>
 
-                <Card.Root>
+                <Card>
                     <Card.Header tight className="gap-1.5">
                         <div className="flex flex-1 items-center gap-1.5">
                             <Calendar className="size-4" />
@@ -218,9 +218,9 @@ export function CueSheetOverviewScreen() {
                             />
                         )}
                     </Card.Content>
-                </Card.Root>
+                </Card>
 
-                <Card.Root>
+                <Card>
                     <Card.Header tight className="gap-1.5">
                         <div className="flex flex-1 items-center gap-1.5">
                             <ListChecks className="size-4" />
@@ -242,7 +242,7 @@ export function CueSheetOverviewScreen() {
                             />
                         )}
                     </Card.Content>
-                </Card.Root>
+                </Card>
             </div>
 
             <CreateEventRunModal open={eventModalOpen} onOpenChange={setEventModalOpen} template={eventModalTemplate} onSubmit={handleEventSubmit} />

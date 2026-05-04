@@ -59,7 +59,7 @@ export function MediaDetailDrawer({ item, open, onOpenChange, onDelete }: MediaD
   if (!item) return null
 
   return (
-    <Drawer.Root open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
         <Drawer.Backdrop />
         <Drawer.Panel className="max-w-lg">
@@ -126,7 +126,7 @@ export function MediaDetailDrawer({ item, open, onOpenChange, onDelete }: MediaD
           </Drawer.Content>
         </Drawer.Panel>
       </Drawer.Portal>
-    </Drawer.Root>
+    </Drawer>
   )
 }
 

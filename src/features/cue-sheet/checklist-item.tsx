@@ -29,7 +29,7 @@ export function ChecklistItemCard({ checklist }: { checklist: Checklist }) {
     const scheduledAt = formatScheduledAt(checklist.scheduledAt)
 
     return (
-        <Drawer.Root open={open} onOpenChange={setOpen}>
+        <Drawer open={open} onOpenChange={setOpen}>
             <Drawer.Trigger>
                 <div className={cn(itemVariants(), 'cursor-pointer hover:bg-background-primary-hover transition-colors')}>
                     <div>
@@ -50,6 +50,6 @@ export function ChecklistItemCard({ checklist }: { checklist: Checklist }) {
                 </div>
             </Drawer.Trigger>
             <ChecklistDrawer checklist={checklist} />
-        </Drawer.Root>
+        </Drawer>
     )
 }

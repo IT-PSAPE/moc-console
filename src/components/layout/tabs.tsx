@@ -88,10 +88,9 @@ export function useTabContext() {
     return context;
 }
 
-export const Tabs = {
-    Root: TabsRoot,
+export const Tabs = Object.assign(TabsRoot, {
     List: TabsList,
     Tab: TabsTab,
     Panels: TabsPanels,
     Panel: TabsPanel,
-}
+})

@@ -209,7 +209,7 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
 
             {/* Cell drawer */}
             {cellDrawer && (
-                <Drawer.Root
+                <Drawer
                     open={selectedDate !== null}
                     onOpenChange={(open) => { if (!open) setSelectedDate(null) }}
                 >
@@ -242,7 +242,7 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
                             </Drawer.Content>
                         </Drawer.Panel>
                     </Drawer.Portal>
-                </Drawer.Root>
+                </Drawer>
             )}
         </div>
     )
@@ -304,7 +304,6 @@ function CalendarCell({ date, events, isCurrentMonth, isToday }: CalendarCellPro
 
 // ─── Compound Export ─────────────────────────────────────
 
-export const Calendar = {
-    Root: CalendarRoot,
+export const Calendar = Object.assign(CalendarRoot, {
     Cell: CalendarCell,
-}
+})

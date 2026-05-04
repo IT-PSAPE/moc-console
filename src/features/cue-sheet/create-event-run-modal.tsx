@@ -52,7 +52,7 @@ export function CreateEventRunModal({ open, onOpenChange, template, onSubmit }: 
     }, [canSubmit, description, duration, onOpenChange, onSubmit, scheduledAt, template, title])
 
     return (
-        <Modal.Root open={open} onOpenChange={onOpenChange}>
+        <Modal open={open} onOpenChange={onOpenChange}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
@@ -93,6 +93,6 @@ export function CreateEventRunModal({ open, onOpenChange, template, onSubmit }: 
                     </Modal.Panel>
                 </Modal.Positioner>
             </Modal.Portal>
-        </Modal.Root>
+        </Modal>
     )
 }

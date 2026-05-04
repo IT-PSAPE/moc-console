@@ -125,7 +125,7 @@ function UsersTabContent() {
     }, [currentWorkspaceId, search, users]);
 
     return (
-        <Drawer.Root open={!!selectedUser} onOpenChange={handleDrawerOpenChange}>
+        <Drawer open={!!selectedUser} onOpenChange={handleDrawerOpenChange}>
             <div className="flex flex-col gap-4">
                 <div className="flex flex-1 justify-end">
                     <Input icon={<Search />} placeholder="Search users..." className="w-full max-w-md" value={search} onChange={handleSearchChange} />
@@ -152,7 +152,7 @@ function UsersTabContent() {
                     onError={(msg) => toast({ title: "Error", description: msg, variant: "error" })}
                 />
             )}
-        </Drawer.Root>
+        </Drawer>
     );
 }
 
@@ -290,7 +290,7 @@ function UserDetailDrawerContent({ user, canManage, workspaces, onClose, onSaved
 
                     <MetaRow icon={<Shield className="size-4" />} label="Role">
                         {canManage ? (
-                            <Dropdown.Root placement="bottom">
+                            <Dropdown placement="bottom">
                                 <Dropdown.Trigger>
                                     <Badge
                                         label={selectedRoleName}
@@ -306,7 +306,7 @@ function UserDetailDrawerContent({ user, canManage, workspaces, onClose, onSaved
                                         </Dropdown.Item>
                                     ))}
                                 </Dropdown.Panel>
-                            </Dropdown.Root>
+                            </Dropdown>
                         ) : (
                             <Badge label={user.role?.name ?? "No role"} color={getRoleColor(user.role?.name)} icon={<Shield />} />
                         )}

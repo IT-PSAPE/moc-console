@@ -33,7 +33,7 @@ export function useCommandMenu() {
     const context = useContext(CommandMenuContext)
 
     if (!context) {
-        throw new Error('useCommandMenu must be used within a CommandMenu.Root')
+        throw new Error('useCommandMenu must be used within a CommandMenu')
     }
 
     return context
@@ -382,8 +382,7 @@ function CommandMenuEmpty({ children, className, ...props }: HTMLAttributes<HTML
 
 // ─── Compound Export ─────────────────────────────────────────────────
 
-export const CommandMenu = {
-    Root: CommandMenuRoot,
+export const CommandMenu = Object.assign(CommandMenuRoot, {
     Portal: CommandMenuPortal,
     Backdrop: CommandMenuBackdrop,
     Panel: CommandMenuPanel,
@@ -393,4 +392,4 @@ export const CommandMenu = {
     Item: CommandMenuItem,
     Empty: CommandMenuEmpty,
     Close: CommandMenuClose,
-}
+})

@@ -20,12 +20,12 @@ type AddMemberPopoverProps = {
 
 export function AddMemberPopover({ existingUserIds, onAdd, children }: AddMemberPopoverProps) {
     return (
-        <Popover.Root placement="bottom">
+        <Popover placement="bottom">
             <Popover.Trigger>{children}</Popover.Trigger>
             <Popover.Panel className="w-72">
                 <AddMemberPanel existingUserIds={existingUserIds} onAdd={onAdd} />
             </Popover.Panel>
-        </Popover.Root>
+        </Popover>
     );
 }
 

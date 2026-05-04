@@ -23,8 +23,7 @@ function CardContent({ children, className, ghost = false }: HTMLAttributes<HTML
     )
 }
 
-export const Card = {
-    Root: CardRoot,
+export const Card = Object.assign(CardRoot, {
     Header: CardHeader,
     Content: CardContent,
-}
+})

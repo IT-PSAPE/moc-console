@@ -31,32 +31,32 @@ export function RequestsAllRequestsScreen() {
 
     return (
         <section>
-            <Header.Root className='p-4 pt-8 mx-auto max-w-content'>
+            <Header className='p-4 pt-8 mx-auto max-w-content'>
                 <Header.Lead className='gap-2'>
                     <Title.h6>All Requests</Title.h6>
                     <Paragraph.sm className="text-tertiary max-w-2xl">Browse, search, and filter all submitted requests across every status and category.</Paragraph.sm>
                 </Header.Lead>
-            </Header.Root>
+            </Header>
 
-            <Header.Root className='p-4 pt-8 mx-auto max-w-content max-mobile:flex-col max-mobile:gap-2 *:max-mobile:w-full'>
+            <Header className='p-4 pt-8 mx-auto max-w-content max-mobile:flex-col max-mobile:gap-2 *:max-mobile:w-full'>
                 <Header.Lead className='gap-2 w-full'>
-                    <SegmentedControl.Root defaultValue="list" onValueChange={(value) => setView(value)} fill={isMobile}>
+                    <SegmentedControl defaultValue="list" onValueChange={(value) => setView(value)} fill={isMobile}>
                         <SegmentedControl.Item value="list" icon={<List />}>List</SegmentedControl.Item>
                         <SegmentedControl.Item value="table" icon={<TableIcon />}>Table</SegmentedControl.Item>
                         <SegmentedControl.Item value="kanban" icon={<Columns3 />}>Kanban</SegmentedControl.Item>
                         <SegmentedControl.Item value="calendar" icon={<CalendarDays />}>Calendar</SegmentedControl.Item>
-                    </SegmentedControl.Root>
+                    </SegmentedControl>
                 </Header.Lead>
                 <Header.Trail className='gap-2 flex-1 justify-end '>
                     <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-md' value={state.search} onChange={(e) => setSearch(e.target.value)} />
-                    <Drawer.Root>
+                    <Drawer>
                         <Drawer.Trigger>
                             <Button icon={<Settings2 />} variant='secondary'>Filter</Button>
                         </Drawer.Trigger>
                         <RequestFilterDrawer filters={requestFilters} />
-                    </Drawer.Root>
+                    </Drawer>
                 </Header.Trail>
-            </Header.Root>
+            </Header>
 
             {isLoadingActive ? (
                 <div className="flex justify-center py-16">

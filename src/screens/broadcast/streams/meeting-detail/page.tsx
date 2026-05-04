@@ -142,7 +142,7 @@ export function MeetingDetailScreen() {
       </TopBarActions>
 
       {/* Header */}
-      <Header.Root className="px-4 pt-12">
+      <Header className="px-4 pt-12">
         <Header.Lead className="gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             <Title.h5>{meeting.topic}</Title.h5>
@@ -152,7 +152,7 @@ export function MeetingDetailScreen() {
             <Paragraph.sm className="text-tertiary">{meeting.description}</Paragraph.sm>
           )}
         </Header.Lead>
-      </Header.Root>
+      </Header>
 
       {/* Schedule */}
       <div className="p-4">
@@ -239,7 +239,7 @@ export function MeetingDetailScreen() {
         meeting={meeting}
       />
 
-      <Modal.Root open={deleteOpen} onOpenChange={(o) => { if (!o) setDeleteOpen(false) }}>
+      <Modal open={deleteOpen} onOpenChange={(o) => { if (!o) setDeleteOpen(false) }}>
         <Modal.Portal>
           <Modal.Backdrop />
           <Modal.Positioner>
@@ -262,7 +262,7 @@ export function MeetingDetailScreen() {
             </Modal.Panel>
           </Modal.Positioner>
         </Modal.Portal>
-      </Modal.Root>
+      </Modal>
     </section>
   )
 }

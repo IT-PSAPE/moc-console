@@ -3,10 +3,11 @@ import { DataTable } from "@/components/display/data-table";
 import { Drawer } from "@/components/overlays/drawer";
 import { RequestDrawer } from "./request-drawer";
 import { CircleAlert, Tag } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import type { Request } from "@/types/requests";
 import { statusColor, statusLabel, priorityColor, priorityLabel, categoryLabel, categoryColor } from "@/types/requests";
 import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
+import { useTableRowDrawer } from "@/hooks/use-drawer-item";
 
 const empty = <span className="text-quaternary">—</span>;
 
@@ -51,24 +52,10 @@ const columns = [
 ];
 
 export function RequestTable({ requests }: { requests: Request[] }) {
-    const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
-
-    const isDirtyRef = useRef(false);
-    const requestCloseRef = useRef<(() => void) | null>(null);
+    const { selected, setSelected, isDirtyRef, requestCloseRef, handleOpenChange, handleClose } =
+        useTableRowDrawer<Request>();
 
     const visible = useMemo(() => requests.filter((r) => r.status !== "archived"), [requests]);
-
-    const handleOpenChange = useCallback((open: boolean) => {
-        if (!open && isDirtyRef.current) {
-            requestCloseRef.current?.();
-        } else if (!open) {
-            setSelectedRequest(null);
-        }
-    }, []);
-
-    const handleRequestClose = useCallback(() => {
-        setSelectedRequest(null);
-    }, []);
 
     return (
         <div className="p-4 pt-0 mx-auto w-full max-w-content">
@@ -76,19 +63,19 @@ export function RequestTable({ requests }: { requests: Request[] }) {
                 data={visible}
                 columns={columns}
                 emptyMessage="No requests"
-                onRowClick={(row) => setSelectedRequest(row)}
+                onRowClick={(row) => setSelected(row)}
                 className="rounded-lg border border-secondary overflow-hidden"
             />
-            <Drawer.Root open={!!selectedRequest} onOpenChange={handleOpenChange}>
-                {selectedRequest && (
+            <Drawer open={!!selected} onOpenChange={handleOpenChange}>
+                {selected && (
                     <RequestDrawer
-                        request={selectedRequest}
-                        onRequestClose={handleRequestClose}
+                        request={selected}
+                        onRequestClose={handleClose}
                         isDirtyRef={isDirtyRef}
                         requestCloseRef={requestCloseRef}
                     />
                 )}
-            </Drawer.Root>
+            </Drawer>
         </div>
     );
 }

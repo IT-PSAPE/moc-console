@@ -236,17 +236,17 @@ export function StreamsScreen() {
 
   return (
     <section>
-      <Header.Root className="p-4 pt-8 mx-auto max-w-content">
+      <Header className="p-4 pt-8 mx-auto max-w-content">
         <Header.Lead className="gap-2">
           <Title.h6>Streams</Title.h6>
           <Paragraph.sm className="text-tertiary max-w-2xl">
             Manage your live streams and scheduled meetings.
           </Paragraph.sm>
         </Header.Lead>
-      </Header.Root>
+      </Header>
 
       <div className="flex flex-col gap-4 p-4 pt-0 mx-auto w-full max-w-content">
-        <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+        <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
           <Header.Lead className="gap-2">
             <Label.md>Live</Label.md>
           </Header.Lead>
@@ -258,7 +258,7 @@ export function StreamsScreen() {
               value={universalSearch}
               onChange={(e) => setUniversalSearch(e.target.value)}
             />
-            <Dropdown.Root placement="bottom">
+            <Dropdown placement="bottom">
               <Dropdown.Trigger>
                 <Button icon={<MoreHorizontal />} variant="secondary">Options</Button>
               </Dropdown.Trigger>
@@ -297,21 +297,21 @@ export function StreamsScreen() {
                   </Dropdown.Item>
                 )}
               </Dropdown.Panel>
-            </Dropdown.Root>
+            </Dropdown>
           </Header.Trail>
-        </Header.Root>
+        </Header>
 
-        <Drawer.Root open={streamFilterOpen} onOpenChange={setStreamFilterOpen}>
+        <Drawer open={streamFilterOpen} onOpenChange={setStreamFilterOpen}>
           <StreamFilterDrawer filters={streamFilters} />
-        </Drawer.Root>
-        <Drawer.Root open={meetingFilterOpen} onOpenChange={setMeetingFilterOpen}>
+        </Drawer>
+        <Drawer open={meetingFilterOpen} onOpenChange={setMeetingFilterOpen}>
           <ZoomMeetingFilterDrawer filters={meetingFilters} />
-        </Drawer.Root>
+        </Drawer>
 
         {/* Content cards */}
         <div className="space-y-4">
           {/* YouTube Streams */}
-          <Card.Root>
+          <Card>
             <Card.Header tight className="gap-1.5">
               <Tv className="size-4" />
               <Label.sm>YouTube Streams</Label.sm>
@@ -341,10 +341,10 @@ export function StreamsScreen() {
                 ))
               )}
             </Card.Content>
-          </Card.Root>
+          </Card>
 
           {/* Zoom Meetings */}
-          <Card.Root>
+          <Card>
             <Card.Header tight className="gap-1.5">
               <Video className="size-4" />
               <Label.sm>Zoom Meetings</Label.sm>
@@ -374,7 +374,7 @@ export function StreamsScreen() {
                 ))
               )}
             </Card.Content>
-          </Card.Root>
+          </Card>
         </div>
       </div>
 

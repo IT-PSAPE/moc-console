@@ -46,7 +46,7 @@ export function ZoomMeetingFilterDrawer({ filters }: ZoomMeetingFilterDrawerProp
         </Drawer.Header>
 
         <Drawer.Content>
-          <Tabs.Root defaultTab="filters">
+          <Tabs defaultTab="filters">
             <Tabs.List>
               <Tabs.Tab value="filters">
                 <Label.sm>Filters</Label.sm>
@@ -159,7 +159,7 @@ export function ZoomMeetingFilterDrawer({ filters }: ZoomMeetingFilterDrawerProp
                 </div>
               </Tabs.Panel>
             </Tabs.Panels>
-          </Tabs.Root>
+          </Tabs>
         </Drawer.Content>
 
         <Drawer.Footer className="*:w-full">
