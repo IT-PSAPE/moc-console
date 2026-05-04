@@ -12,6 +12,7 @@ export type TelegramGroup = {
   type: string;
   isForum: boolean;
   active: boolean;
+  workspaceId: string;
   addedAt: string;
   removedAt: string | null;
   topics: TelegramGroupTopic[];
@@ -23,6 +24,7 @@ type GroupRow = {
   type: string;
   is_forum: boolean;
   active: boolean;
+  workspace_id: string;
   added_at: string;
   removed_at: string | null;
   telegram_group_topics: TopicRow[] | null;
@@ -34,13 +36,14 @@ type TopicRow = {
   closed: boolean;
 };
 
-/** Fetch all telegram groups the bot has been added to (and not removed from), with their topics. */
-export async function fetchTelegramGroups(): Promise<TelegramGroup[]> {
+/** Fetch telegram groups registered to the given workspace, with their topics. */
+export async function fetchTelegramGroups(workspaceId: string): Promise<TelegramGroup[]> {
   const { data, error } = await supabase
     .from("telegram_groups")
     .select(
-      "chat_id, title, type, is_forum, active, added_at, removed_at, telegram_group_topics(thread_id, name, closed)",
+      "chat_id, title, type, is_forum, active, workspace_id, added_at, removed_at, telegram_group_topics(thread_id, name, closed)",
     )
+    .eq("workspace_id", workspaceId)
     .is("removed_at", null)
     .order("added_at", { ascending: false });
 
@@ -52,6 +55,7 @@ export async function fetchTelegramGroups(): Promise<TelegramGroup[]> {
     type: row.type,
     isForum: row.is_forum,
     active: row.active,
+    workspaceId: row.workspace_id,
     addedAt: row.added_at,
     removedAt: row.removed_at,
     topics: (row.telegram_group_topics ?? [])

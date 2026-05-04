@@ -13,6 +13,7 @@ type WorkspaceRow = {
 let cachedUserId: string | null = null;
 let cachedWorkspaceId: string | null = null;
 let pendingWorkspaceIdPromise: Promise<string> | null = null;
+let currentWorkspaceIdMirror: string | null = null;
 
 async function resolveFallbackWorkspaceId(): Promise<string> {
   const { data, error } = await supabase
@@ -35,6 +36,10 @@ async function resolveFallbackWorkspaceId(): Promise<string> {
 }
 
 export async function getCurrentWorkspaceId(): Promise<string> {
+  if (currentWorkspaceIdMirror) {
+    return currentWorkspaceIdMirror;
+  }
+
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
   if (userError) {
@@ -79,8 +84,16 @@ export async function getCurrentWorkspaceId(): Promise<string> {
   return pendingWorkspaceIdPromise;
 }
 
+export function setCurrentWorkspaceIdMirror(id: string | null) {
+  currentWorkspaceIdMirror = id;
+  if (id) {
+    cachedWorkspaceId = id;
+  }
+}
+
 export function clearCurrentWorkspaceCache() {
   cachedUserId = null;
   cachedWorkspaceId = null;
   pendingWorkspaceIdPromise = null;
+  currentWorkspaceIdMirror = null;
 }

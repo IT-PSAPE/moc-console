@@ -21,7 +21,8 @@ import {
     type CreateChecklistInstanceOverrides,
     type CreateEventInstanceOverrides,
 } from '@/data/mutate-cue-sheet'
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useWorkspace } from '@/lib/workspace-context'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 // ─── Context ────────────────────────────────────────────────────────
 
@@ -63,6 +64,15 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
     const checklistsLoadedRef = useRef(false)
     const eventsPromiseRef = useRef<Promise<void> | null>(null)
     const checklistsPromiseRef = useRef<Promise<void> | null>(null)
+
+    const { currentWorkspaceId } = useWorkspace()
+    useEffect(() => {
+        eventsLoadedRef.current = false
+        checklistsLoadedRef.current = false
+        setEventsById({})
+        setChecklists([])
+        setTracksByEventId({})
+    }, [currentWorkspaceId])
 
     const loadEvents = useCallback(async () => {
         if (eventsLoadedRef.current) return
