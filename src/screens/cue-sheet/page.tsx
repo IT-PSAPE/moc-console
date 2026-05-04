@@ -1,6 +1,7 @@
 import { Card } from '@/components/display/card'
 import { Header } from '@/components/display/header'
 import { Button } from '@/components/controls/button'
+import { Input } from '@/components/form/input'
 import { Label, Paragraph, TextBlock, Title } from '@/components/display/text'
 import { Spinner } from '@/components/feedback/spinner'
 import { EmptyState } from '@/components/feedback/empty-state'
@@ -13,7 +14,7 @@ import { Dropdown } from '@/components/overlays/dropdown'
 import type { CueSheetEvent, Checklist } from '@/types/cue-sheet'
 import { routes } from '@/screens/console-routes'
 import { isChecklistRunPastOrComplete, isEventRunPast, sortOverviewChecklistRuns, sortOverviewEventRuns } from '@/features/cue-sheet/run-status'
-import { Calendar, FilePlus2, ListChecks, Plus } from 'lucide-react'
+import { Calendar, ListChecks, Plus, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -27,6 +28,7 @@ export function CueSheetOverviewScreen() {
     const [eventModalTemplate, setEventModalTemplate] = useState<CueSheetEvent | null>(null)
     const [checklistModalOpen, setChecklistModalOpen] = useState(false)
     const [checklistModalTemplate, setChecklistModalTemplate] = useState<Checklist | null>(null)
+    const [search, setSearch] = useState('')
 
     useEffect(() => {
         loadEvents()
@@ -38,14 +40,28 @@ export function CueSheetOverviewScreen() {
     const checklistTemplates = useMemo(() => checklists.filter((checklist) => checklist.kind === 'template'), [checklists])
     const checklistInstances = useMemo(() => checklists.filter((checklist) => checklist.kind === 'instance'), [checklists])
     const [now] = useState(() => Date.now())
-    const overviewEventRuns = useMemo(
+    const upcomingEventRuns = useMemo(
         () => sortOverviewEventRuns(eventInstances.filter((event) => !isEventRunPast(event, now))),
         [eventInstances, now],
     )
-    const overviewChecklistRuns = useMemo(
+    const upcomingChecklistRuns = useMemo(
         () => sortOverviewChecklistRuns(checklistInstances.filter((checklist) => !isChecklistRunPastOrComplete(checklist, now))),
         [checklistInstances, now],
     )
+    const overviewEventRuns = useMemo(() => {
+        const query = search.trim().toLowerCase()
+        if (!query) return upcomingEventRuns
+        return upcomingEventRuns.filter((event) =>
+            event.title.toLowerCase().includes(query) || event.description.toLowerCase().includes(query),
+        )
+    }, [upcomingEventRuns, search])
+    const overviewChecklistRuns = useMemo(() => {
+        const query = search.trim().toLowerCase()
+        if (!query) return upcomingChecklistRuns
+        return upcomingChecklistRuns.filter((checklist) =>
+            checklist.name.toLowerCase().includes(query) || checklist.description.toLowerCase().includes(query),
+        )
+    }, [upcomingChecklistRuns, search])
 
     const handlePickBlankEvent = useCallback(() => {
         setEventModalTemplate(null)
@@ -114,7 +130,7 @@ export function CueSheetOverviewScreen() {
                         <Label.sm>Event Runs</Label.sm>
                     </Card.Header>
                     <Card.Content className="p-4">
-                        <TextBlock className="title-h4">{overviewEventRuns.length}</TextBlock>
+                        <TextBlock className="title-h4">{upcomingEventRuns.length}</TextBlock>
                     </Card.Content>
                 </Card.Root>
                 <Card.Root>
@@ -123,41 +139,69 @@ export function CueSheetOverviewScreen() {
                         <Label.sm>Checklist Runs</Label.sm>
                     </Card.Header>
                     <Card.Content className="p-4">
-                        <TextBlock className="title-h4">{overviewChecklistRuns.length}</TextBlock>
+                        <TextBlock className="title-h4">{upcomingChecklistRuns.length}</TextBlock>
                     </Card.Content>
                 </Card.Root>
             </div>
 
-            {/* Event Runs */}
             <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
-                <Card.Root>
-                    <Card.Header tight className="gap-1.5">
-                        <div className="flex flex-1 items-center gap-1.5">
-                            <Calendar className="size-4" />
-                            <Label.sm>Event Runs</Label.sm>
-                        </div>
+                <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+                    <Header.Lead className="gap-2">
+                        <Label.md>Q Sheets</Label.md>
+                    </Header.Lead>
+                    <Header.Trail className="gap-2 flex-1 justify-end">
+                        <Input
+                            icon={<Search />}
+                            placeholder="Search runs..."
+                            className="w-full max-w-md"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
                         <Dropdown.Root placement="bottom">
                             <Dropdown.Trigger>
                                 <Button.Icon variant="secondary" icon={<Plus />} />
                             </Dropdown.Trigger>
                             <Dropdown.Panel>
                                 <Dropdown.Item onSelect={handlePickBlankEvent}>
-                                    <FilePlus2 className="size-4" />
-                                    Blank event
+                                    <Calendar className="size-4" />
+                                    Blank event run
                                 </Dropdown.Item>
-                                {eventTemplates.length > 0 && <Dropdown.Separator />}
+                                <Dropdown.Item onSelect={handlePickBlankChecklist}>
+                                    <ListChecks className="size-4" />
+                                    Blank checklist run
+                                </Dropdown.Item>
+                                {(eventTemplates.length > 0 || checklistTemplates.length > 0) && <Dropdown.Separator />}
                                 {eventTemplates.map((event) => (
                                     <Dropdown.Item key={event.id} onSelect={() => handlePickEventTemplate(event)}>
+                                        <Calendar className="size-4" />
                                         {event.title}
                                     </Dropdown.Item>
                                 ))}
-                                {eventTemplates.length === 0 && (
-                                    <Dropdown.Item onSelect={handleOpenTemplates}>
-                                        Manage event templates
+                                {checklistTemplates.map((checklist) => (
+                                    <Dropdown.Item key={checklist.id} onSelect={() => handlePickChecklistTemplate(checklist)}>
+                                        <ListChecks className="size-4" />
+                                        {checklist.name}
                                     </Dropdown.Item>
+                                ))}
+                                {eventTemplates.length === 0 && checklistTemplates.length === 0 && (
+                                    <>
+                                        <Dropdown.Separator />
+                                        <Dropdown.Item onSelect={handleOpenTemplates}>
+                                            Manage templates
+                                        </Dropdown.Item>
+                                    </>
                                 )}
                             </Dropdown.Panel>
                         </Dropdown.Root>
+                    </Header.Trail>
+                </Header.Root>
+
+                <Card.Root>
+                    <Card.Header tight className="gap-1.5">
+                        <div className="flex flex-1 items-center gap-1.5">
+                            <Calendar className="size-4" />
+                            <Label.sm>Event Runs</Label.sm>
+                        </div>
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
                         {isLoadingEvents ? (
@@ -169,44 +213,19 @@ export function CueSheetOverviewScreen() {
                         ) : (
                             <EmptyState
                                 icon={<Calendar />}
-                                title="No event runs yet"
-                                description="Create a run from a template when you need an editable event copy."
+                                title={search.trim() ? 'No event runs match your search' : 'No event runs yet'}
+                                description={search.trim() ? 'Try a different search term.' : 'Create a run from a template when you need an editable event copy.'}
                             />
                         )}
                     </Card.Content>
                 </Card.Root>
-            </div>
 
-            {/* Checklist Runs */}
-            <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
                 <Card.Root>
                     <Card.Header tight className="gap-1.5">
                         <div className="flex flex-1 items-center gap-1.5">
                             <ListChecks className="size-4" />
                             <Label.sm>Checklist Runs</Label.sm>
                         </div>
-                        <Dropdown.Root placement="bottom">
-                            <Dropdown.Trigger>
-                                <Button.Icon variant="secondary" icon={<Plus />} />
-                            </Dropdown.Trigger>
-                            <Dropdown.Panel>
-                                <Dropdown.Item onSelect={handlePickBlankChecklist}>
-                                    <FilePlus2 className="size-4" />
-                                    Blank checklist
-                                </Dropdown.Item>
-                                {checklistTemplates.length > 0 && <Dropdown.Separator />}
-                                {checklistTemplates.map((checklist) => (
-                                    <Dropdown.Item key={checklist.id} onSelect={() => handlePickChecklistTemplate(checklist)}>
-                                        {checklist.name}
-                                    </Dropdown.Item>
-                                ))}
-                                {checklistTemplates.length === 0 && (
-                                    <Dropdown.Item onSelect={handleOpenTemplates}>
-                                        Manage checklist templates
-                                    </Dropdown.Item>
-                                )}
-                            </Dropdown.Panel>
-                        </Dropdown.Root>
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
                         {isLoadingChecklists ? (
@@ -218,8 +237,8 @@ export function CueSheetOverviewScreen() {
                         ) : (
                             <EmptyState
                                 icon={<ListChecks />}
-                                title="No checklist runs yet"
-                                description="Create a run from a checklist template when you need an editable preparation copy."
+                                title={search.trim() ? 'No checklist runs match your search' : 'No checklist runs yet'}
+                                description={search.trim() ? 'Try a different search term.' : 'Create a run from a checklist template when you need an editable preparation copy.'}
                             />
                         )}
                     </Card.Content>

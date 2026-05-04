@@ -3,67 +3,16 @@ import { Button } from "@/components/controls/button";
 import { Input } from "@/components/form/input";
 import { Header } from "@/components/display/header";
 import { Drawer } from "@/components/overlays/drawer";
-import { Badge } from "@/components/display/badge";
 import { Label, Paragraph, TextBlock, Title } from "@/components/display/text";
-import { ArrowUpRight, CalendarX2Icon, CircleAlert, CircleCheck, Package, Search, Settings2, Wrench } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowUpRight, CalendarX2Icon, CircleCheck, Package, Search, Settings2 } from "lucide-react";
+import { useEffect, useMemo } from "react";
 import { Spinner } from "@/components/feedback/spinner";
-import { DataTable } from "@/components/display/data-table";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 import { useEquipmentFilters } from "@/features/equipment/use-equipment-filters";
 import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
-import { EquipmentDrawer } from "@/features/equipment/equipment-drawer";
-import { equipmentStatusColor, equipmentStatusLabel } from "@/types/equipment";
+import { EquipmentItem } from "@/features/equipment/equipment-item";
 import type { Equipment } from "@/types/equipment";
-import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
-
-type OverdueBookingItem = Record<string, unknown> & {
-  id: string;
-  equipmentId: string;
-  equipmentName: string;
-  bookedBy: string;
-  checkedOutDate: string;
-  expectedReturnAt: string;
-};
-
-type FaultyEquipmentItem = Record<string, unknown> & Equipment;
-
-const overdueColumns = [
-  { key: "equipmentName", header: "Equipment" },
-  { key: "bookedBy", header: "Booked By" },
-  {
-    key: "checkedOutDate",
-    header: "Checked Out",
-    render: (value: unknown) => formatUtcIsoInBrowserTimeZone(value as string),
-  },
-  {
-    key: "expectedReturnAt",
-    header: "Expected Return",
-    render: (value: unknown) => formatUtcIsoInBrowserTimeZone(value as string),
-  },
-];
-
-const faultyColumns = [
-  { key: "name", header: "Equipment" },
-  { key: "location", header: "Location" },
-  {
-    key: "status",
-    header: "Status",
-    render: (_: unknown, row: FaultyEquipmentItem) => (
-      <Badge label={equipmentStatusLabel[row.status]} color={equipmentStatusColor[row.status]} />
-    ),
-  },
-  {
-    key: "lastActiveDate",
-    header: "Last Active",
-    render: (value: unknown) => formatUtcIsoInBrowserTimeZone(value as string, { day: "numeric", month: "short", year: "numeric" }),
-  },
-  {
-    key: "notes",
-    header: "Issue",
-    render: (value: unknown) => (value as string) || <span className="text-quaternary">No note</span>,
-  },
-];
+import { Indicator } from "@/components/display/indicator";
 
 export function EquipmentOverviewScreen() {
   const {
@@ -92,52 +41,36 @@ export function EquipmentOverviewScreen() {
 
   const filteredEquipmentIds = useMemo(() => new Set(filtered.map((item) => item.id)), [filtered]);
 
-  const overdueItems = useMemo<OverdueBookingItem[]>(() => {
+  const overdueEquipment = useMemo<Equipment[]>(() => {
     const now = new Date();
+    const seen = new Set<string>();
     return bookings
-      .filter((booking) => booking.status !== "returned" && !booking.returnedDate && filteredEquipmentIds.has(booking.equipmentId) && new Date(booking.expectedReturnAt) < now)
-      .map((booking) => ({
-        id: booking.id,
-        equipmentId: booking.equipmentId,
-        equipmentName: booking.equipmentName,
-        bookedBy: booking.bookedBy,
-        checkedOutDate: booking.checkedOutDate,
-        expectedReturnAt: booking.expectedReturnAt,
-      }))
+      .filter((booking) =>
+        booking.status !== "returned" &&
+        !booking.returnedDate &&
+        filteredEquipmentIds.has(booking.equipmentId) &&
+        new Date(booking.expectedReturnAt) < now,
+      )
       .sort((a, b) => new Date(a.expectedReturnAt).getTime() - new Date(b.expectedReturnAt).getTime())
-      .slice(0, 10);
-  }, [bookings, filteredEquipmentIds]);
+      .slice(0, 10)
+      .reduce<Equipment[]>((acc, booking) => {
+        if (seen.has(booking.equipmentId)) return acc;
+        const item = equipmentMap.get(booking.equipmentId);
+        if (item) {
+          seen.add(booking.equipmentId);
+          acc.push(item);
+        }
+        return acc;
+      }, []);
+  }, [bookings, filteredEquipmentIds, equipmentMap]);
 
-  const faultyItems = useMemo<FaultyEquipmentItem[]>(() => (
+  const faultyEquipment = useMemo<Equipment[]>(() => (
     filtered
       .filter((item) => item.status === "maintenance")
       .sort((a, b) => new Date(a.lastActiveDate).getTime() - new Date(b.lastActiveDate).getTime())
   ), [filtered]);
 
-  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
-  const isDirtyRef = useRef(false);
-  const requestCloseRef = useRef<(() => void) | null>(null);
-
-  const handleOpenChange = useCallback((open: boolean) => {
-    if (!open && isDirtyRef.current) {
-      requestCloseRef.current?.();
-    } else if (!open) {
-      setSelectedEquipment(null);
-    }
-  }, []);
-
-  const handleEquipmentClose = useCallback(() => {
-    setSelectedEquipment(null);
-  }, []);
-
-  const handleOverdueRowClick = useCallback((row: OverdueBookingItem) => {
-    const item = equipmentMap.get(row.equipmentId);
-    if (item) setSelectedEquipment(item);
-  }, [equipmentMap]);
-
-  const handleFaultyRowClick = useCallback((row: FaultyEquipmentItem) => {
-    setSelectedEquipment(row);
-  }, []);
+  const overdueCount = overdueEquipment.length;
 
   return (
     <section>
@@ -151,106 +84,104 @@ export function EquipmentOverviewScreen() {
       </Header.Root>
 
       <div className="grid grid-cols-2 gap-4 p-4 pt-8 mx-auto w-full max-w-content md:grid-cols-4 max-mobile:gap-2">
-            <Card.Root>
-              <Card.Header tight className="gap-1.5">
-                <Package className="size-4" />
-                <Label.sm>Total Equipment</Label.sm>
-              </Card.Header>
-              <Card.Content className="p-4">
-                <TextBlock className="title-h4">{totalCount}</TextBlock>
-              </Card.Content>
-            </Card.Root>
-            <Card.Root>
-              <Card.Header tight className="gap-1.5">
-                <CircleCheck className="size-4" />
-                <Label.sm>Available</Label.sm>
-              </Card.Header>
-              <Card.Content className="p-4">
-                <TextBlock className="title-h4">{availableCount}</TextBlock>
-              </Card.Content>
-            </Card.Root>
-            <Card.Root>
-              <Card.Header tight className="gap-1.5">
-                <ArrowUpRight className="size-4" />
-                <Label.sm>Booked Out</Label.sm>
-              </Card.Header>
-              <Card.Content className="p-4">
-                <TextBlock className="title-h4">{bookedOutCount}</TextBlock>
-              </Card.Content>
-            </Card.Root>
-            <Card.Root>
-              <Card.Header tight className="gap-1.5">
-                <CalendarX2Icon className="size-4" />
-                <Label.sm>Overdue</Label.sm>
-              </Card.Header>
-              <Card.Content className="p-4">
-                <TextBlock className="title-h4">{overdueItems.length}</TextBlock>
-              </Card.Content>
-            </Card.Root>
-          </div>
+        <Card.Root>
+          <Card.Header tight className="gap-1.5">
+            <Package className="size-4" />
+            <Label.sm>Total Equipment</Label.sm>
+          </Card.Header>
+          <Card.Content className="p-4">
+            <TextBlock className="title-h4">{totalCount}</TextBlock>
+          </Card.Content>
+        </Card.Root>
+        <Card.Root>
+          <Card.Header tight className="gap-1.5">
+            <CircleCheck className="size-4" />
+            <Label.sm>Available</Label.sm>
+          </Card.Header>
+          <Card.Content className="p-4">
+            <TextBlock className="title-h4">{availableCount}</TextBlock>
+          </Card.Content>
+        </Card.Root>
+        <Card.Root>
+          <Card.Header tight className="gap-1.5">
+            <ArrowUpRight className="size-4" />
+            <Label.sm>Booked Out</Label.sm>
+          </Card.Header>
+          <Card.Content className="p-4">
+            <TextBlock className="title-h4">{bookedOutCount}</TextBlock>
+          </Card.Content>
+        </Card.Root>
+        <Card.Root>
+          <Card.Header tight className="gap-1.5">
+            <CalendarX2Icon className="size-4" />
+            <Label.sm>Overdue</Label.sm>
+          </Card.Header>
+          <Card.Content className="p-4">
+            <TextBlock className="title-h4">{overdueCount}</TextBlock>
+          </Card.Content>
+        </Card.Root>
+      </div>
 
-          <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
-
-            <Drawer.Root open={!!selectedEquipment} onOpenChange={handleOpenChange}>
-              <Card.Root>
-                <Card.Header className="gap-2">
-                  <div className="flex items-center gap-2">
-                    <CircleAlert className="size-4 text-tertiary" />
-                    <Label.md>Overdue Equipment</Label.md>
-                  </div>
-                  <div className="ml-auto flex items-center gap-1 max-mobile:w-full">
-                    <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-md" value={state.search} onChange={(e) => setSearch(e.target.value)} />
-                    <Drawer.Root>
-                      <Drawer.Trigger>
-                        <Button icon={<Settings2 />} variant="secondary">Filter</Button>
-                      </Drawer.Trigger>
-                      <EquipmentFilterDrawer filters={equipmentFilters} />
-                    </Drawer.Root>
-                  </div>
-                </Card.Header>
-                <Card.Content className="!border-secondary overflow-hidden">
-                  {(isLoadingEquipment || isLoadingBookings) ? (
-                    <div className="flex justify-center py-8"><Spinner /></div>
-                  ) : (
-                    <DataTable
-                      data={overdueItems}
-                      columns={overdueColumns}
-                      emptyMessage="No overdue equipment"
-                      onRowClick={handleOverdueRowClick}
-                    />
-                  )}
-                </Card.Content>
-              </Card.Root>
-              <Card.Root>
-                <Card.Header className="gap-2">
-                  <div className="flex items-center gap-2">
-                    <Wrench className="size-4 text-tertiary" />
-                    <Label.md>Faulty Equipment</Label.md>
-                  </div>
-                </Card.Header>
-                <Card.Content className="!border-secondary overflow-hidden">
-                  {(isLoadingEquipment || isLoadingBookings) ? (
-                    <div className="flex justify-center py-8"><Spinner /></div>
-                  ) : (
-                    <DataTable
-                      data={faultyItems}
-                      columns={faultyColumns}
-                      emptyMessage="No faulty equipment"
-                      onRowClick={handleFaultyRowClick}
-                    />
-                  )}
-                </Card.Content>
-              </Card.Root>
-              {selectedEquipment && (
-                <EquipmentDrawer
-                  equipment={selectedEquipment}
-                  onEquipmentClose={handleEquipmentClose}
-                  isDirtyRef={isDirtyRef}
-                  requestCloseRef={requestCloseRef}
-                />
-              )}
+      <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
+        <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+          <Header.Lead className="gap-2">
+            <Label.md>Schedule</Label.md>
+          </Header.Lead>
+          <Header.Trail className="gap-2 flex-1 justify-end">
+            <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-md" value={state.search} onChange={(e) => setSearch(e.target.value)} />
+            <Drawer.Root>
+              <Drawer.Trigger>
+                <Button icon={<Settings2 />} variant="secondary">Filter</Button>
+              </Drawer.Trigger>
+              <EquipmentFilterDrawer filters={equipmentFilters} />
             </Drawer.Root>
-          </div>
+          </Header.Trail>
+        </Header.Root>
+
+        <Card.Root>
+          <Card.Header tight>
+            <span className="flex gap-1.5 items-center">
+              <Indicator color="red" className="size-6" />
+              <Label.sm>Overdue Equipment</Label.sm>
+            </span>
+          </Card.Header>
+          <Card.Content ghost className="flex flex-col gap-1.5">
+            {(isLoadingEquipment || isLoadingBookings) ? (
+              <div className="flex justify-center py-8"><Spinner /></div>
+            ) : overdueEquipment.length > 0 ? (
+              overdueEquipment.map((item) => (
+                <EquipmentItem key={item.id} equipment={item} />
+              ))
+            ) : (
+              <div className="px-4 py-6 text-center">
+                <Paragraph.sm className="text-quaternary">No overdue equipment</Paragraph.sm>
+              </div>
+            )}
+          </Card.Content>
+        </Card.Root>
+
+        <Card.Root>
+          <Card.Header tight>
+            <span className="flex gap-1.5 items-center">
+              <Indicator className="size-6" />
+              <Label.sm>Faulty Equipment</Label.sm>
+            </span>
+          </Card.Header>
+          <Card.Content ghost className="flex flex-col gap-1.5">
+            {(isLoadingEquipment || isLoadingBookings) ? (
+              <div className="flex justify-center py-8"><Spinner /></div>
+            ) : faultyEquipment.length > 0 ? (
+              faultyEquipment.map((item) => (
+                <EquipmentItem key={item.id} equipment={item} />
+              ))
+            ) : (
+              <div className="px-4 py-6 text-center">
+                <Paragraph.sm className="text-quaternary">No faulty equipment</Paragraph.sm>
+              </div>
+            )}
+          </Card.Content>
+        </Card.Root>
+      </div>
     </section>
   );
 }

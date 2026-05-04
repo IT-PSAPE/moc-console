@@ -8,6 +8,7 @@ import { Header } from '@/components/display/header'
 import { Label, Paragraph, Title } from '@/components/display/text'
 import { Spinner } from '@/components/feedback/spinner'
 import { Input } from '@/components/form/input'
+import { Dropdown } from '@/components/overlays/dropdown'
 import { ChecklistItemCard } from '@/features/cue-sheet/checklist-item'
 import { CreateChecklistModal } from '@/features/cue-sheet/create-checklist-modal'
 import { CreateEventModal } from '@/features/cue-sheet/create-event-modal'
@@ -99,6 +100,21 @@ export function CueSheetTemplatesScreen() {
                     </Header.Lead>
                     <Header.Trail className="gap-2 flex-1 justify-end">
                         <Input icon={<Search />} placeholder="Search templates..." className="w-full max-w-md" value={search} onChange={(event) => setSearch(event.target.value)} />
+                        <Dropdown.Root placement="bottom">
+                            <Dropdown.Trigger>
+                                <Button.Icon variant="secondary" icon={<Plus />} />
+                            </Dropdown.Trigger>
+                            <Dropdown.Panel>
+                                <Dropdown.Item onSelect={() => setShowEventModal(true)}>
+                                    <Calendar className="size-4" />
+                                    New event template
+                                </Dropdown.Item>
+                                <Dropdown.Item onSelect={() => setShowChecklistModal(true)}>
+                                    <ListChecks className="size-4" />
+                                    New checklist template
+                                </Dropdown.Item>
+                            </Dropdown.Panel>
+                        </Dropdown.Root>
                     </Header.Trail>
                 </Header.Root>
 
@@ -108,7 +124,6 @@ export function CueSheetTemplatesScreen() {
                             <Calendar className="size-4" />
                             <Label.sm>Event Templates</Label.sm>
                         </div>
-                        <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setShowEventModal(true)} />
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
                         {isLoading ? (
@@ -131,7 +146,6 @@ export function CueSheetTemplatesScreen() {
                             <ListChecks className="size-4" />
                             <Label.sm>Checklist Templates</Label.sm>
                         </div>
-                        <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setShowChecklistModal(true)} />
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
                         {isLoading ? (

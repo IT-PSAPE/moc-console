@@ -1,5 +1,4 @@
 import { Badge } from "@/components/display/badge";
-import { Card } from "@/components/display/card";
 import { DataTable } from "@/components/display/data-table";
 import { MetaRow } from "@/components/display/meta-row";
 import { Paragraph, Title } from "@/components/display/text";
@@ -127,20 +126,22 @@ function UsersTabContent() {
 
     return (
         <Drawer.Root open={!!selectedUser} onOpenChange={handleDrawerOpenChange}>
-            <Card.Root>
-                <Card.Header className="gap-2 flex-1 justify-end">
-                    <div className="flex flex-1 justify-end">
-                        <Input icon={<Search />} placeholder="Search users..." className="w-full max-w-md" value={search} onChange={handleSearchChange} />
-                    </div>
-                </Card.Header>
-                <Card.Content className="!border-secondary overflow-hidden">
-                    {isLoading ? (
-                        <div className="flex justify-center py-16"><Spinner /></div>
-                    ) : (
-                        <DataTable data={filtered} columns={columns} emptyMessage="No users match your search" onRowClick={handleUserSelect} />
-                    )}
-                </Card.Content>
-            </Card.Root>
+            <div className="flex flex-col gap-4">
+                <div className="flex flex-1 justify-end">
+                    <Input icon={<Search />} placeholder="Search users..." className="w-full max-w-md" value={search} onChange={handleSearchChange} />
+                </div>
+                {isLoading ? (
+                    <div className="flex justify-center py-16"><Spinner /></div>
+                ) : (
+                    <DataTable
+                        data={filtered}
+                        columns={columns}
+                        emptyMessage="No users match your search"
+                        onRowClick={handleUserSelect}
+                        className="rounded-lg border border-secondary overflow-hidden"
+                    />
+                )}
+            </div>
             {selectedUser && (
                 <UserDetailDrawer
                     user={selectedUser}

@@ -81,28 +81,33 @@ export function BroadcastMediaScreen() {
         </Header.Lead>
       </Header.Root>
 
-      <div className="flex-1 min-h-0 flex p-4 pt-0 mx-auto w-full max-w-content">
+      <div className="flex-1 min-h-0 flex flex-col gap-4 p-4 pt-0 mx-auto w-full max-w-content">
+        <Header.Root className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+          <Header.Lead className="gap-2">
+            <Label.md>Library</Label.md>
+          </Header.Lead>
+          <Header.Trail className="gap-2 flex-1 justify-end">
+            <Input
+              icon={<Search />}
+              placeholder="Search media..."
+              className="w-full max-w-md"
+              value={state.search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setUploadOpen(true)} />
+          </Header.Trail>
+        </Header.Root>
+
         <Card.Root className="flex-1 flex flex-col overflow-hidden">
-          <Card.Header className="gap-2 justify-between">
-            <Label.sm>Library</Label.sm>
-            <div className="flex gap-1 items-center max-mobile:w-full">
-              <Input
-                icon={<Search />}
-                placeholder="Search media..."
-                value={state.search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="shrink-0 max-mobile:flex-1"
-              />
-              <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setUploadOpen(true)} />
-            </div>
-          </Card.Header>
-          <Card.Content className="flex flex-col flex-1 min-h-0 overflow-hidden py-2">
-            <SegmentedControl.Root defaultValue="all" onValueChange={(value) => handleTabChange(value)} className="mx-2">
+          <Card.Header>
+            <SegmentedControl.Root defaultValue="all" onValueChange={(value) => handleTabChange(value)} fill>
               <SegmentedControl.Item value="all">All</SegmentedControl.Item>
               <SegmentedControl.Item value="image">Images</SegmentedControl.Item>
               <SegmentedControl.Item value="audio">Audio</SegmentedControl.Item>
               <SegmentedControl.Item value="video">Video</SegmentedControl.Item>
             </SegmentedControl.Root>
+          </Card.Header>
+          <Card.Content className="flex flex-col flex-1">
             <ScrollArea.Root className="flex-1 min-h-0">
               <ScrollArea.Viewport className="py-2 pr-2">
                 <ScrollArea.Content>

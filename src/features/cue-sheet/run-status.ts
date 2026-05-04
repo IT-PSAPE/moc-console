@@ -38,6 +38,11 @@ export function isChecklistRunPastOrComplete(checklist: Checklist, now = Date.no
     return checklist.scheduledAt !== undefined && new Date(checklist.scheduledAt).getTime() < now
 }
 
+export function isChecklistRunCompleted(checklist: Checklist, now = Date.now()) {
+    if (!isChecklistRunComplete(checklist)) return false
+    return checklist.scheduledAt !== undefined && new Date(checklist.scheduledAt).getTime() < now
+}
+
 export function sortOverviewEventRuns(events: CueSheetEvent[]) {
     return [...events].sort((left, right) => compareScheduledTimeAsc(left.scheduledAt, right.scheduledAt))
 }
@@ -57,11 +62,11 @@ export function partitionEventRuns(events: CueSheetEvent[], now = Date.now()) {
 }
 
 export function partitionChecklistRuns(checklists: Checklist[], now = Date.now()) {
-    const active = checklists.filter((checklist) => !isChecklistRunPastOrComplete(checklist, now))
-    const past = checklists.filter((checklist) => isChecklistRunPastOrComplete(checklist, now))
+    const active = checklists.filter((checklist) => !isChecklistRunCompleted(checklist, now))
+    const completed = checklists.filter((checklist) => isChecklistRunCompleted(checklist, now))
 
     return {
         active: [...active].sort((left, right) => compareScheduledTimeAsc(left.scheduledAt, right.scheduledAt)),
-        past: [...past].sort((left, right) => compareScheduledTimeDesc(left.scheduledAt, right.scheduledAt)),
+        completed: [...completed].sort((left, right) => compareScheduledTimeDesc(left.scheduledAt, right.scheduledAt)),
     }
 }
