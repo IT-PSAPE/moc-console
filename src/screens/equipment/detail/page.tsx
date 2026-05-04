@@ -25,7 +25,7 @@ import {
   bookingStatusColor,
 } from "@/types/equipment";
 import type { Equipment, EquipmentStatus, EquipmentCategory, Booking } from "@/types/equipment";
-import { Check, ChevronDown, Hash, History, Loader, MapPin, Package, Pencil, Save, Tag, Trash2, Undo2, User } from "lucide-react";
+import { Check, ChevronDown, Hash, History, Loader, MapPin, Package, Pencil, Save, StickyNote, Tag, Trash2, Undo2, User } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
 import { Input } from "@/components/form/input";
@@ -226,6 +226,26 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
         <MetaRow icon={<User />} label="Booked By">
           <Paragraph.sm>{draft.bookedBy ?? "—"}</Paragraph.sm>
         </MetaRow>
+      </div>
+
+      {/* Notes */}
+      <Divider className="px-4 my-2" />
+      <div className="p-4">
+        <div className="flex items-center gap-2 pb-3">
+          <StickyNote className="size-4 text-tertiary" />
+          <Label.md>Notes</Label.md>
+        </div>
+        <textarea
+          rows={4}
+          value={draft.notes}
+          onChange={(e) => store.actions.updateField("notes", e.target.value)}
+          placeholder={
+            draft.status === "maintenance"
+              ? "Describe the issue or maintenance required..."
+              : "Add notes about this equipment..."
+          }
+          className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 paragraph-sm focus:border-brand focus:outline-none focus:ring-3 focus:ring-border-brand/10 resize-none"
+        />
       </div>
 
       {/* Booking History */}
