@@ -80,3 +80,32 @@ export async function assignUserRole(userId: string, roleId: string) {
 
   if (error) throw new Error(error.message);
 }
+
+/** Create a one-time token for the Telegram bot deep-link flow. */
+export async function createTelegramLinkToken(userId: string): Promise<{ token: string }> {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const token = btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+  await supabase.from("telegram_link_tokens").delete().eq("user_id", userId);
+
+  const { error } = await supabase
+    .from("telegram_link_tokens")
+    .insert({ token, user_id: userId });
+
+  if (error) throw new Error(error.message);
+  return { token };
+}
+
+/** Clear the user's telegram_chat_id. */
+export async function unlinkTelegram(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from("users")
+    .update({ telegram_chat_id: null })
+    .eq("id", userId);
+
+  if (error) throw new Error(error.message);
+}

@@ -15,6 +15,7 @@ import { streamPrivacyLabel, latencyPreferenceLabel, latencyPreferenceHint } fro
 import type { ThumbnailSource } from "@/data/mutate-streams"
 import { fetchCategories, fetchPlaylists } from "@/data/fetch-streams"
 import { fetchMedia } from "@/data/fetch-broadcast"
+import { useFeedback } from "@/components/feedback/feedback-provider"
 import { formatUtcIsoForDateTimeInput, parseDateTimeInputToUtcIso } from "@/utils/zoned-date-time"
 import { ChevronDown, Image, Link, X } from "lucide-react"
 
@@ -49,6 +50,7 @@ export type StreamFormData = {
 export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: StreamModalProps) {
   const isEditing = Boolean(stream)
   const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const { toast } = useFeedback()
 
   // In edit mode, seed state from the stream being edited.
   // In create mode, seed state from the workspace preset (if any).
@@ -100,13 +102,34 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
   // Filter media to only images (thumbnails must be images)
   const imageMedia = mediaItems.filter((m) => m.type === "image")
 
-  // Fetch categories, playlists, and media when modal opens
+  // Fetch categories, playlists, and media when modal opens.
+  // Collect failures and surface a single toast so a network outage doesn't
+  // fire three notifications at once.
   useEffect(() => {
     if (!open) return
-    fetchCategories().then(setCategories).catch(() => { })
-    fetchPlaylists().then(setPlaylists).catch(() => { })
-    fetchMedia().then(setMediaItems).catch(() => { })
-  }, [open])
+    const failures: string[] = []
+    void Promise.all([
+      fetchCategories().then(setCategories).catch((e) => {
+        console.error("Failed to load YouTube categories", e)
+        failures.push("categories")
+      }),
+      fetchPlaylists().then(setPlaylists).catch((e) => {
+        console.error("Failed to load YouTube playlists", e)
+        failures.push("playlists")
+      }),
+      fetchMedia().then(setMediaItems).catch((e) => {
+        console.error("Failed to load media library", e)
+        failures.push("media library")
+      }),
+    ]).then(() => {
+      if (failures.length === 0) return
+      toast({
+        title: "Some options could not be loaded",
+        description: `Failed to load ${failures.join(", ")}. Try reopening the modal.`,
+        variant: "error",
+      })
+    })
+  }, [open, toast])
 
   // Re-seed the form every time the modal opens. The modal stays mounted,
   // so useState initializers only run once — on first render, before the

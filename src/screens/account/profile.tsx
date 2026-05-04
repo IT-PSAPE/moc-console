@@ -8,6 +8,7 @@ import { useFeedback } from '@/components/feedback/feedback-provider'
 import { Input } from '@/components/form/input'
 import { updateUserProfile } from '@/data/fetch-users'
 import { useAuth } from '@/lib/auth-context'
+import { TelegramLinkRow } from '@/screens/account/telegram-link-row'
 import { Mail, MessageCircle, Shield, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
@@ -115,9 +116,9 @@ export function ProfileScreen() {
                     </MetaRow>
 
                     <MetaRow icon={<MessageCircle className="size-4" />} label="Telegram">
-                        <Paragraph.sm className="text-tertiary">
-                            {profile?.telegramChatId ?? 'Not linked'}
-                        </Paragraph.sm>
+                        {profile && (
+                            <TelegramLinkRow userId={profile.id} telegramChatId={profile.telegramChatId} />
+                        )}
                     </MetaRow>
                 </div>
             </div>

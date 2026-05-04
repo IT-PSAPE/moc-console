@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import type { ReactNode } from "react"
 import type { Session, User } from "@supabase/supabase-js"
 import type { User as Profile, Role } from "@/types/requests/assignee"
@@ -18,6 +18,7 @@ type AuthState = {
     signOut: () => Promise<{ error: Error | null }>
     resetPassword: (email: string) => Promise<{ error: Error | null }>
     updatePassword: (password: string) => Promise<{ error: Error | null }>
+    refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -56,6 +57,43 @@ function getResetPasswordRedirectUrl() {
     }
 
     return new URL(`/${routes.passwordRecovery}`, window.location.origin).toString()
+}
+
+async function fetchProfileForUser(user: User): Promise<Profile | null> {
+    const metadataName = typeof user.user_metadata?.name === "string" ? user.user_metadata.name : ""
+    const metadataSurname = typeof user.user_metadata?.surname === "string" ? user.user_metadata.surname : ""
+
+    const { data, error } = await supabase
+        .from("users")
+        .select("id, name, surname, email, telegram_chat_id")
+        .eq("id", user.id)
+        .maybeSingle()
+
+    if (error) {
+        console.error("Failed to fetch user profile:", error.message)
+    }
+
+    if (data) {
+        return {
+            id: data.id,
+            email: data.email,
+            name: data.name,
+            surname: data.surname,
+            telegramChatId: data.telegram_chat_id,
+        }
+    }
+
+    if (metadataName && metadataSurname && user.email) {
+        return {
+            id: user.id,
+            email: user.email,
+            name: metadataName,
+            surname: metadataSurname,
+            telegramChatId: null,
+        }
+    }
+
+    return null
 }
 
 async function exchangeAuthCodeFromUrl() {
@@ -148,45 +186,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [])
 
+    const refreshProfile = useCallback(async () => {
+        if (!user) return
+        const next = await fetchProfileForUser(user)
+        setProfile(next)
+    }, [user])
+
     useEffect(() => {
         if (!user) return
 
         let isActive = true
-        const metadataName = typeof user.user_metadata?.name === "string" ? user.user_metadata.name : ""
-        const metadataSurname = typeof user.user_metadata?.surname === "string" ? user.user_metadata.surname : ""
 
-        supabase
-            .from("users")
-            .select("id, name, surname, email, telegram_chat_id")
-            .eq("id", user.id)
-            .maybeSingle()
-            .then(({ data, error }) => {
-                if (error) {
-                    console.error("Failed to fetch user profile:", error.message)
-                }
-
-                if (data) {
-                    if (isActive) {
-                        setProfile({
-                            id: data.id,
-                            email: data.email,
-                            name: data.name,
-                            surname: data.surname,
-                            telegramChatId: data.telegram_chat_id,
-                        })
-                    }
-                    return
-                }
-
-                if (isActive) {
-                    setProfile(metadataName && metadataSurname && user.email ? {
-                        id: user.id,
-                        email: user.email,
-                        name: metadataName,
-                        surname: metadataSurname,
-                        telegramChatId: null,
-                    } : null)
-                }
+        fetchProfileForUser(user)
+            .then((next) => {
+                if (isActive) setProfile(next)
+            })
+            .catch((error) => {
+                console.error("Failed to fetch user profile:", error)
             })
 
         supabase
@@ -277,7 +293,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return (
-        <AuthContext value={{ session, user, profile, role, isPasswordRecovery, loading, signUp, signIn, signOut, resetPassword, updatePassword }}>
+        <AuthContext value={{ session, user, profile, role, isPasswordRecovery, loading, signUp, signIn, signOut, resetPassword, updatePassword, refreshProfile }}>
             {children}
         </AuthContext>
     )
