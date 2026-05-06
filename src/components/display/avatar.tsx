@@ -3,7 +3,7 @@ import { cn } from "@/utils/cn";
 
 
 type AvatarProps = {
-    size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+    size?: '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
     className?: string
 }
 
@@ -12,6 +12,7 @@ const variants = cv({
     base: [ 'overflow-clip shrink-0 bg-brand_primary flex items-center justify-center text-brand_secondary' ],
     variants: {
         size: {
+            '2xs': ['size-5 rounded-full text-[9px] leading-none'],
             xs: ['size-6 rounded-md'],
             sm: ['size-8 rounded-lg'],
             md: ['size-10 rounded-lg'],

@@ -27,6 +27,11 @@ function mapUserRow(row: UserRow): User {
   };
 }
 
+function mapAssigneeRow(row: { duty: string; users: UserRow | UserRow[] | null }): ResolvedAssignee | null {
+  const user = Array.isArray(row.users) ? row.users[0] : row.users;
+  return user ? { ...mapUserRow(user), duty: row.duty } : null;
+}
+
 export async function fetchAssigneesByRequestId(requestId: string): Promise<ResolvedAssignee[]> {
   const workspaceId = await getCurrentWorkspaceId();
   const { data, error } = await supabase
@@ -39,10 +44,63 @@ export async function fetchAssigneesByRequestId(requestId: string): Promise<Reso
     throw new Error(error.message);
   }
 
-  return ((data ?? []) as RequestAssigneeRow[]).flatMap((assignment) => {
-    const user = Array.isArray(assignment.users) ? assignment.users[0] : assignment.users;
-    return user ? [{ ...mapUserRow(user), duty: assignment.duty }] : [];
-  });
+  return ((data ?? []) as RequestAssigneeRow[])
+    .map(mapAssigneeRow)
+    .filter((assignee): assignee is ResolvedAssignee => assignee !== null);
+}
+
+export async function fetchAssigneesByCueId(cueId: string): Promise<ResolvedAssignee[]> {
+  const { data, error } = await supabase
+    .from("cue_assignees")
+    .select("duty, users(id, name, surname, email, telegram_chat_id)")
+    .eq("cue_id", cueId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as Array<{ duty: string; users: UserRow | UserRow[] | null }>)
+    .map(mapAssigneeRow)
+    .filter((assignee): assignee is ResolvedAssignee => assignee !== null);
+}
+
+export async function fetchAssigneesByChecklistItemId(checklistItemId: string): Promise<ResolvedAssignee[]> {
+  const { data, error } = await supabase
+    .from("checklist_item_assignees")
+    .select("duty, users(id, name, surname, email, telegram_chat_id)")
+    .eq("checklist_item_id", checklistItemId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data ?? []) as Array<{ duty: string; users: UserRow | UserRow[] | null }>)
+    .map(mapAssigneeRow)
+    .filter((assignee): assignee is ResolvedAssignee => assignee !== null);
+}
+
+export async function fetchAssigneesByChecklistId(checklistId: string): Promise<Map<string, ResolvedAssignee[]>> {
+  const { data, error } = await supabase
+    .from("checklist_item_assignees")
+    .select("checklist_item_id, duty, users(id, name, surname, email, telegram_chat_id), checklist_items!inner(checklist_id)")
+    .eq("checklist_items.checklist_id", checklistId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const result = new Map<string, ResolvedAssignee[]>();
+  for (const row of (data ?? []) as Array<{ checklist_item_id: string; duty: string; users: UserRow | UserRow[] | null }>) {
+    const assignee = mapAssigneeRow(row);
+    if (!assignee) continue;
+    const existing = result.get(row.checklist_item_id);
+    if (existing) {
+      existing.push(assignee);
+    } else {
+      result.set(row.checklist_item_id, [assignee]);
+    }
+  }
+  return result;
 }
 
 export async function fetchAllUsers(): Promise<User[]> {

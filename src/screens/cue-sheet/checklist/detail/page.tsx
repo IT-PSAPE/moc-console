@@ -11,6 +11,8 @@ import { InlineEditableText } from '@/components/form/inline-editable-text'
 import { useFeedback } from '@/components/feedback/feedback-provider'
 import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
 import { ChecklistContent, getChecklistCounts, type AddRequest } from '@/features/cue-sheet/checklist-content'
+import { useChecklistAssignees } from '@/features/cue-sheet/use-checklist-assignees'
+import { TopBarActions } from '@/features/topbar'
 import type { Checklist } from '@/types/cue-sheet'
 import { FolderPlus, ListChecks, Plus, SquarePlus, Trash2, TriangleAlert } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
@@ -28,6 +30,7 @@ export function CueSheetChecklistDetailScreen() {
     const checklist = checklists.find((c) => c.id === id) ?? null
     const [addRequest, setAddRequest] = useState<AddRequest>(null)
     const [deleteOpen, setDeleteOpen] = useState(false)
+    const { renderItemSlot } = useChecklistAssignees(id ?? '')
 
     useBreadcrumbOverride(id ?? '', checklist?.name)
 
@@ -67,30 +70,31 @@ export function CueSheetChecklistDetailScreen() {
 
     return (
         <section className="mx-auto max-w-content-sm">
+            <TopBarActions>
+                <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setDeleteOpen(true)} />
+                <Dropdown placement="bottom">
+                    <Dropdown.Trigger>
+                        <Button.Icon variant="secondary" icon={<Plus />} />
+                    </Dropdown.Trigger>
+                    <Dropdown.Panel>
+                        <Dropdown.Item onSelect={() => setAddRequest({ type: 'item', target: 'top' })}>
+                            <SquarePlus className="size-4" />
+                            Item
+                        </Dropdown.Item>
+                        <Dropdown.Item onSelect={() => setAddRequest({ type: 'section' })}>
+                            <FolderPlus className="size-4" />
+                            Section
+                        </Dropdown.Item>
+                    </Dropdown.Panel>
+                </Dropdown>
+            </TopBarActions>
+
             <Header className="px-4 pt-12">
                 <Header.Lead className="gap-2">
                     <Title.h5>
                         <InlineEditableText value={checklist.name} onSave={(name) => { void handleChecklistUpdate({ ...checklist, name }) }} className="title-h5" />
                     </Title.h5>
                 </Header.Lead>
-                <Header.Trail>
-                    <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setDeleteOpen(true)} />
-                    <Dropdown placement="bottom">
-                        <Dropdown.Trigger>
-                            <Button.Icon variant="secondary" icon={<Plus />} />
-                        </Dropdown.Trigger>
-                        <Dropdown.Panel>
-                            <Dropdown.Item onSelect={() => setAddRequest({ type: 'item', target: 'top' })}>
-                                <SquarePlus className="size-4" />
-                                Item
-                            </Dropdown.Item>
-                            <Dropdown.Item onSelect={() => setAddRequest({ type: 'section' })}>
-                                <FolderPlus className="size-4" />
-                                Section
-                            </Dropdown.Item>
-                        </Dropdown.Panel>
-                    </Dropdown>
-                </Header.Trail>
             </Header>
 
             <div className="px-4 pt-2 flex items-center gap-3">
@@ -114,6 +118,7 @@ export function CueSheetChecklistDetailScreen() {
                         onUpdate={(nextChecklist) => { void handleChecklistUpdate(nextChecklist) }}
                         addRequest={addRequest}
                         onAddRequestDismiss={() => setAddRequest(null)}
+                        renderItemSlot={renderItemSlot}
                     />
                 </div>
             </div>
