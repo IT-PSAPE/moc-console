@@ -16,7 +16,7 @@ export function PlaylistListItem({ playlist }: PlaylistListItemProps) {
   const [open, setOpen] = useState(false)
 
   return (
-    <Drawer.Root open={open} onOpenChange={setOpen}>
+    <Drawer open={open} onOpenChange={setOpen}>
       <Drawer.Trigger>
         <div
           className={cn(
@@ -36,6 +36,6 @@ export function PlaylistListItem({ playlist }: PlaylistListItemProps) {
         </div>
       </Drawer.Trigger>
       <PlaylistDetailDrawer playlist={playlist} />
-    </Drawer.Root>
+    </Drawer>
   )
 }

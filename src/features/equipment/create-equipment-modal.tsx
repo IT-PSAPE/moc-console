@@ -3,12 +3,11 @@ import { Button } from "@/components/controls/button"
 import { Input } from "@/components/form/input"
 import { FormLabel } from "@/components/form/form-label"
 import { Label } from "@/components/display/text"
-import { Badge } from "@/components/display/badge"
 import { Dropdown } from "@/components/overlays/dropdown"
-import { Check } from "lucide-react"
+import { Check, ChevronDown } from "lucide-react"
 import { useCallback, useState } from "react"
 import type { EquipmentCategory } from "@/types/equipment"
-import { equipmentCategoryLabel, equipmentCategoryColor } from "@/types/equipment"
+import { equipmentCategoryLabel } from "@/types/equipment"
 
 type CreateEquipmentModalProps = {
   open: boolean
@@ -39,7 +38,7 @@ export function CreateEquipmentModal({ open, onOpenChange, onCreate }: CreateEqu
   }, [canSubmit, form, onCreate, resetForm])
 
   return (
-    <Modal.Root open={open} onOpenChange={(next) => { onOpenChange(next); if (!next) resetForm() }}>
+    <Modal open={open} onOpenChange={(next) => { onOpenChange(next); if (!next) resetForm() }}>
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
@@ -67,13 +66,10 @@ export function CreateEquipmentModal({ open, onOpenChange, onCreate }: CreateEqu
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Category" required />
-                  <Dropdown.Root placement="bottom">
-                    <Dropdown.Trigger>
-                      <Badge
-                        label={equipmentCategoryLabel[form.category]}
-                        color={equipmentCategoryColor[form.category]}
-                        className="cursor-pointer"
-                      />
+                  <Dropdown placement="bottom">
+                    <Dropdown.Trigger className="w-full flex items-center justify-between gap-1.5 py-2 px-3 rounded-lg border border-secondary bg-primary cursor-pointer paragraph-sm">
+                      <span>{equipmentCategoryLabel[form.category]}</span>
+                      <ChevronDown className="size-4 text-tertiary" />
                     </Dropdown.Trigger>
                     <Dropdown.Panel>
                       {allCategories.map((c) => (
@@ -85,7 +81,7 @@ export function CreateEquipmentModal({ open, onOpenChange, onCreate }: CreateEqu
                         </Dropdown.Item>
                       ))}
                     </Dropdown.Panel>
-                  </Dropdown.Root>
+                  </Dropdown>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Location" optional />
@@ -106,6 +102,6 @@ export function CreateEquipmentModal({ open, onOpenChange, onCreate }: CreateEqu
           </Modal.Panel>
         </Modal.Positioner>
       </Modal.Portal>
-    </Modal.Root>
+    </Modal>
   )
 }

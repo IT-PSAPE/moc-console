@@ -170,7 +170,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         <div className="px-4 space-y-3">
           {/* Status */}
           <MetaRow icon={<Loader />} label="Status">
-            <Dropdown.Root placement="bottom">
+            <Dropdown placement="bottom">
               <Dropdown.Trigger>
                 <Badge
                   label={bookingStatusLabel[draft.status]}
@@ -193,7 +193,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
                   </Dropdown.Item>
                 ))}
               </Dropdown.Panel>
-            </Dropdown.Root>
+            </Dropdown>
           </MetaRow>
 
           {/* Booked By */}
@@ -272,7 +272,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         isSaving={store.state.isSaving}
       />
 
-      <Modal.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
+      <Modal open={deleteOpen} onOpenChange={setDeleteOpen}>
         <Modal.Portal>
           <Modal.Backdrop />
           <Modal.Positioner>
@@ -294,7 +294,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
             </Modal.Panel>
           </Modal.Positioner>
         </Modal.Portal>
-      </Modal.Root>
+      </Modal>
     </>
   );
 }

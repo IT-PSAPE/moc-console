@@ -1,8 +1,10 @@
 import { resolveZoomOAuthConfig, revokeZoomAccessToken } from "../../../server/zoom-oauth.js"
+import { AuthError, requireAuthenticatedUser } from "../../../server/auth-guard.js"
 
 type ApiRequest = {
   method?: string
   body?: unknown
+  headers?: Record<string, string | undefined>
 }
 
 type ApiResponse = {
@@ -23,6 +25,17 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
+  try {
+    await requireAuthenticatedUser(request.headers)
+  } catch (error) {
+    if (error instanceof AuthError) {
+      response.status(401).json({ error: "Unauthorized" })
+      return
+    }
+    response.status(500).json({ error: "Authentication check failed" })
+    return
+  }
+
   const body = (request.body ?? {}) as RequestBody
   const token = typeof body.token === "string" ? body.token : null
 
@@ -36,7 +49,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     await revokeZoomAccessToken(config, token)
     response.status(200).json({ ok: true })
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Zoom token revoke failed"
-    response.status(500).json({ error: message })
+    console.error("Zoom token revoke failed:", error)
+    response.status(500).json({ error: "Zoom token revoke failed" })
   }
 }

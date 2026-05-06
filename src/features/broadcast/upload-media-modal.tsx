@@ -123,7 +123,7 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
   }
 
   return (
-    <Modal.Root open={open} onOpenChange={handleModalOpenChange}>
+    <Modal open={open} onOpenChange={handleModalOpenChange}>
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
@@ -145,10 +145,10 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
 
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Source" />
-                  <SegmentedControl.Root fill value={sourceMode} onValueChange={handleSourceChange}>
+                  <SegmentedControl fill value={sourceMode} onValueChange={handleSourceChange}>
                     <SegmentedControl.Item value="url">URL</SegmentedControl.Item>
                     <SegmentedControl.Item value="upload">Upload</SegmentedControl.Item>
-                  </SegmentedControl.Root>
+                  </SegmentedControl>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
@@ -186,6 +186,6 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
           </Modal.Panel>
         </Modal.Positioner>
       </Modal.Portal>
-    </Modal.Root>
+    </Modal>
   )
 }

@@ -12,7 +12,7 @@ type DeleteRequestModalProps = {
 
 export function DeleteRequestModal({ open, onDelete, onCancel, isDeleting = false }: DeleteRequestModalProps) {
     return (
-        <Modal.Root open={open} onOpenChange={(o) => { if (!o) onCancel() }}>
+        <Modal open={open} onOpenChange={(o) => { if (!o) onCancel() }}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
@@ -37,6 +37,6 @@ export function DeleteRequestModal({ open, onDelete, onCancel, isDeleting = fals
                     </Modal.Panel>
                 </Modal.Positioner>
             </Modal.Portal>
-        </Modal.Root>
+        </Modal>
     )
 }

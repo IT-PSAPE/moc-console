@@ -1,10 +1,14 @@
 import { cn } from "@/utils/cn"
+import { cv } from "@/utils/cv"
 import type { HTMLAttributes } from "react"
 import React, { createContext, useContext, useState } from "react"
+
+type TabsVariant = 'default' | 'pill'
 
 type TabsContextState = {
     value?: string
     setValue: React.Dispatch<React.SetStateAction<string>>
+    variant: TabsVariant
 }
 
 const TabContext = createContext<TabsContextState | null>(null);
@@ -14,9 +18,37 @@ type TabsRootProps = {
     defaultTab?: string
     value?: string
     onValueChange?: (value: string) => void
+    variant?: TabsVariant
 }
 
-function TabsRoot({ children, defaultTab, value: controlledValue, onValueChange }: TabsRootProps) {
+const tabsListVariants = cv({
+    base: ['flex'],
+    variants: {
+        variant: {
+            default: ['gap-3 px-3 border-b border-tertiary'],
+            pill: ['gap-1 items-center'],
+        },
+    },
+    defaultVariants: { variant: 'default' },
+})
+
+const tabsTabVariants = cv({
+    base: ['cursor-pointer transition-colors'],
+    variants: {
+        variant: {
+            default: ['py-1.5 border-b-2 paragraph-sm'],
+            pill: ['px-3 py-1.5 rounded-md label-sm'],
+        },
+        state: {
+            'default-active': ['border-brand'],
+            'default-inactive': ['border-transparent'],
+            'pill-active': ['bg-primary text-primary border border-secondary shadow-xs'],
+            'pill-inactive': ['text-tertiary hover:text-primary hover:bg-secondary'],
+        },
+    },
+})
+
+function TabsRoot({ children, defaultTab, value: controlledValue, onValueChange, variant = 'default' }: TabsRootProps) {
     const [uncontrolledValue, setUncontrolledValue] = useState<string>(defaultTab ?? 'null');
 
     const isControlled = controlledValue !== undefined;
@@ -27,7 +59,7 @@ function TabsRoot({ children, defaultTab, value: controlledValue, onValueChange 
         onValueChange?.(nextValue);
     };
 
-    const context: TabsContextState = { value, setValue };
+    const context: TabsContextState = { value, setValue, variant };
 
     return (
         <TabContext.Provider value={context}>
@@ -37,24 +69,30 @@ function TabsRoot({ children, defaultTab, value: controlledValue, onValueChange 
 }
 
 function TabsList({children, className}: HTMLAttributes<HTMLDivElement>){
+    const { variant } = useTabContext();
     return (
-        <div className={cn('flex gap-3 px-3 border-b border-tertiary', className)}>
+        <div className={cn(tabsListVariants({ variant }), className)}>
             {children}
         </div>
     )
 }
 
 function TabsTab({children, className, value}: HTMLAttributes<HTMLDivElement> & {value: string}){
-    const { setValue, value: selectedValue} = useTabContext();
+    const { setValue, value: selectedValue, variant } = useTabContext();
 
     const current = value === selectedValue;
+    const state = `${variant}-${current ? 'active' : 'inactive'}` as
+        | 'default-active'
+        | 'default-inactive'
+        | 'pill-active'
+        | 'pill-inactive';
 
     function handleClick() {
         setValue(value);
     }
 
     return (
-        <div className={cn('py-1.5 border-b-2 cursor-pointer paragraph-sm', current ? 'border-brand' : 'border-transparent', className)} onClick={handleClick}>
+        <div className={cn(tabsTabVariants({ variant, state }), className)} onClick={handleClick}>
             {children}
         </div>
     )
@@ -88,10 +126,9 @@ export function useTabContext() {
     return context;
 }
 
-export const Tabs = {
-    Root: TabsRoot,
+export const Tabs = Object.assign(TabsRoot, {
     List: TabsList,
     Tab: TabsTab,
     Panels: TabsPanels,
     Panel: TabsPanel,
-}
+})

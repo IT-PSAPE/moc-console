@@ -205,7 +205,7 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
 
           {/* Category — dropdown */}
           <MetaRow icon={<Tag />} label="Category">
-            <Dropdown.Root placement="bottom">
+            <Dropdown placement="bottom">
               <Dropdown.Trigger>
                 <Badge
                   label={equipmentCategoryLabel[draft.category]}
@@ -223,12 +223,12 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
                   </Dropdown.Item>
                 ))}
               </Dropdown.Panel>
-            </Dropdown.Root>
+            </Dropdown>
           </MetaRow>
 
           {/* Status — dropdown */}
           <MetaRow icon={<Loader />} label="Status">
-            <Dropdown.Root placement="bottom">
+            <Dropdown placement="bottom">
               <Dropdown.Trigger>
                 <Badge
                   label={equipmentStatusLabel[draft.status]}
@@ -246,7 +246,7 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
                   </Dropdown.Item>
                 ))}
               </Dropdown.Panel>
-            </Dropdown.Root>
+            </Dropdown>
           </MetaRow>
 
           {/* Location — inline input */}
@@ -301,7 +301,7 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
           ) : bookings.length === 0 ? (
             <Paragraph.sm className="text-quaternary">No booking history</Paragraph.sm>
           ) : (
-            <Accordion.Root type="multiple">
+            <Accordion type="multiple">
               {bookings.map((b) => (
                 <Accordion.Item key={b.id} value={b.id} className="border-b border-secondary last:border-b-0">
                   <Accordion.Trigger className="flex items-center justify-between py-3">
@@ -350,7 +350,7 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
                   </Accordion.Content>
                 </Accordion.Item>
               ))}
-            </Accordion.Root>
+            </Accordion>
           )}
         </div>
       </Drawer.Content>

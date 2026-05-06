@@ -60,52 +60,58 @@ export function CueSheetEventScreen() {
 
     return (
         <section>
-            <Header.Root className="p-4 pt-8 mx-auto max-w-content">
+            <Header className="p-4 pt-8 mx-auto max-w-content">
                 <Header.Lead className="gap-2">
                     <Title.h6>Event Runs</Title.h6>
                     <Paragraph.sm className="text-tertiary max-w-2xl">
                         View scheduled cue sheet runs created from event templates.
                     </Paragraph.sm>
                 </Header.Lead>
-            </Header.Root>
+            </Header>
 
             <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
-                <Card.Root>
-                    <Card.Header className="gap-1.5 max-mobile:flex-col *:max-mobile:w-full">
+                <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+                    <Header.Lead className="gap-2">
+                        <Label.md>Events</Label.md>
+                    </Header.Lead>
+                    <Header.Trail className="gap-2 flex-1 justify-end">
+                        <Input icon={<Search />} placeholder="Search event runs..." className="w-full max-w-md" value={filters.search} onChange={(event) => setSearch(event.target.value)} />
+                        <Drawer>
+                            <Drawer.Trigger>
+                                <Button icon={<Settings2 />} variant="secondary">Filter</Button>
+                            </Drawer.Trigger>
+                            <EventRunFilterDrawer filters={eventFilters} />
+                        </Drawer>
+                        <Dropdown placement="bottom">
+                            <Dropdown.Trigger>
+                                <Button.Icon variant='secondary' icon={<Plus />} />
+                            </Dropdown.Trigger>
+                            <Dropdown.Panel>
+                                <Dropdown.Item onSelect={handlePickBlank}>
+                                    <FilePlus2 className="size-4" />
+                                    Blank event
+                                </Dropdown.Item>
+                                {eventTemplates.length > 0 && <Dropdown.Separator />}
+                                {eventTemplates.map((event) => (
+                                    <Dropdown.Item key={event.id} onSelect={() => handlePickTemplate(event)}>
+                                        {event.title}
+                                    </Dropdown.Item>
+                                ))}
+                                {eventTemplates.length === 0 && (
+                                    <Dropdown.Item onSelect={handleOpenTemplates}>
+                                        Manage event templates
+                                    </Dropdown.Item>
+                                )}
+                            </Dropdown.Panel>
+                        </Dropdown>
+                    </Header.Trail>
+                </Header>
+
+                <Card>
+                    <Card.Header tight className="gap-1.5">
                         <div className="flex flex-1 items-center gap-1.5">
                             <Calendar className="size-4" />
                             <Label.sm>All Event Runs</Label.sm>
-                        </div>
-                        <div className="flex items-center gap-1.5 max-mobile:w-full max-mobile:flex-col">
-                            <Input icon={<Search />} placeholder="Search event runs..." className="w-full max-w-md" value={filters.search} onChange={(event) => setSearch(event.target.value)} />
-                            <Drawer.Root>
-                                <Drawer.Trigger>
-                                    <Button icon={<Settings2 />} variant="secondary">Filter</Button>
-                                </Drawer.Trigger>
-                                <EventRunFilterDrawer filters={eventFilters} />
-                            </Drawer.Root>
-                            <Dropdown.Root placement="bottom">
-                                <Dropdown.Trigger>
-                                    <Button.Icon variant='secondary' icon={<Plus />} />
-                                </Dropdown.Trigger>
-                                <Dropdown.Panel>
-                                    <Dropdown.Item onSelect={handlePickBlank}>
-                                        <FilePlus2 className="size-4" />
-                                        Blank event
-                                    </Dropdown.Item>
-                                    {eventTemplates.length > 0 && <Dropdown.Separator />}
-                                    {eventTemplates.map((event) => (
-                                        <Dropdown.Item key={event.id} onSelect={() => handlePickTemplate(event)}>
-                                            {event.title}
-                                        </Dropdown.Item>
-                                    ))}
-                                    {eventTemplates.length === 0 && (
-                                        <Dropdown.Item onSelect={handleOpenTemplates}>
-                                            Manage event templates
-                                        </Dropdown.Item>
-                                    )}
-                                </Dropdown.Panel>
-                            </Dropdown.Root>
                         </div>
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
@@ -115,7 +121,7 @@ export function CueSheetEventScreen() {
                             <>
                                 {activeEventRuns.length > 0 && (
                                     <>
-                                        <Label.sm className="px-4 pt-2 text-tertiary">Upcoming & In Progress</Label.sm>
+                                        <Label.sm className="px-4 pt-2 text-tertiary">Current</Label.sm>
                                         {activeEventRuns.map((event) => (
                                             <EventItem key={event.id} event={event} />
                                         ))}
@@ -136,7 +142,7 @@ export function CueSheetEventScreen() {
                             </div>
                         )}
                     </Card.Content>
-                </Card.Root>
+                </Card>
             </div>
 
             <CreateEventRunModal open={modalOpen} onOpenChange={setModalOpen} template={modalTemplate} onSubmit={handleSubmit} />

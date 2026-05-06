@@ -10,13 +10,13 @@ function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCellElemen
 
 function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
   return (
-    <tr className={cn(className)} {...props} />
+    <tr className={cn(className, 'last:*:border-b-0')} {...props} />
   );
 }
 
 function TableHeader({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <th className={cn("font-semibold bg-gray-100 border-r last:border-r-0 border-b border-secondary text-left", className)} {...props} />
+    <th className={cn("font-semibold bg-gray-100 border-r last:border-r-0 !border-b border-secondary text-left", className)} {...props} />
   );
 }
 

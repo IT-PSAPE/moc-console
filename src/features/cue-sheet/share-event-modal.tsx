@@ -123,7 +123,7 @@ export function ShareEventModal({ open, onOpenChange, eventId, eventTitle }: Pro
     }, [share, toast])
 
     return (
-        <Modal.Root open={open} onOpenChange={onOpenChange}>
+        <Modal open={open} onOpenChange={onOpenChange}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
@@ -222,7 +222,7 @@ export function ShareEventModal({ open, onOpenChange, eventId, eventTitle }: Pro
                     </Modal.Panel>
                 </Modal.Positioner>
             </Modal.Portal>
-        </Modal.Root>
+        </Modal>
     )
 }
 

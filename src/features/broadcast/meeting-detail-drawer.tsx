@@ -69,7 +69,7 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
   const isPast = meeting.startTime ? new Date(meeting.startTime) < new Date() : false
 
   return (
-    <Drawer.Root open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
         <Drawer.Backdrop />
         <Drawer.Panel className="max-w-lg">
@@ -177,6 +177,6 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
           </Drawer.Content>
         </Drawer.Panel>
       </Drawer.Portal>
-    </Drawer.Root>
+    </Drawer>
   )
 }

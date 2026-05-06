@@ -155,7 +155,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
       </TopBarActions>
 
       {/* Header */}
-      <Header.Root className="px-4 pt-12">
+      <Header className="px-4 pt-12">
         <Header.Lead className="gap-3">
           {draft.thumbnail ? (
             <img src={draft.thumbnail} alt={draft.name} className="size-14 rounded-lg object-cover" />
@@ -169,7 +169,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
             <Paragraph.sm className="text-tertiary">{draft.serialNumber}</Paragraph.sm>
           </div>
         </Header.Lead>
-      </Header.Root>
+      </Header>
 
       {/* Properties */}
       <div className="p-4 space-y-3">
@@ -178,7 +178,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
         </MetaRow>
 
         <MetaRow icon={<Tag />} label="Category">
-          <Dropdown.Root placement="bottom">
+          <Dropdown placement="bottom">
             <Dropdown.Trigger>
               <Badge label={equipmentCategoryLabel[draft.category]} color={equipmentCategoryColor[draft.category]} className="cursor-pointer" />
             </Dropdown.Trigger>
@@ -192,11 +192,11 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
                 </Dropdown.Item>
               ))}
             </Dropdown.Panel>
-          </Dropdown.Root>
+          </Dropdown>
         </MetaRow>
 
         <MetaRow icon={<Loader />} label="Status">
-          <Dropdown.Root placement="bottom">
+          <Dropdown placement="bottom">
             <Dropdown.Trigger>
               <Badge label={equipmentStatusLabel[draft.status]} color={equipmentStatusColor[draft.status]} className="cursor-pointer" />
             </Dropdown.Trigger>
@@ -210,7 +210,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
                 </Dropdown.Item>
               ))}
             </Dropdown.Panel>
-          </Dropdown.Root>
+          </Dropdown>
         </MetaRow>
 
         <MetaRow icon={<MapPin />} label="Location">
@@ -263,7 +263,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
         ) : bookings.length === 0 ? (
           <Paragraph.sm className="text-quaternary">No booking history</Paragraph.sm>
         ) : (
-          <Accordion.Root type="multiple">
+          <Accordion type="multiple">
             {bookings.map((b) => (
               <Accordion.Item key={b.id} value={b.id} className="border-b border-secondary last:border-b-0">
                 <Accordion.Trigger className="flex items-center justify-between py-3">
@@ -312,7 +312,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
                 </Accordion.Content>
               </Accordion.Item>
             ))}
-          </Accordion.Root>
+          </Accordion>
         )}
       </div>
 

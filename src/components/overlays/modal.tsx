@@ -31,7 +31,7 @@ export function useModal() {
     const context = useContext(ModalContext)
 
     if (!context) {
-        throw new Error('useModal must be used within a Modal.Root')
+        throw new Error('useModal must be used within a Modal')
     }
 
     return context
@@ -229,8 +229,7 @@ function ModalFooter(props: HTMLAttributes<HTMLDivElement>) {
 
 // ─── Compound Export ─────────────────────────────────────────────────
 
-export const Modal = {
-    Root: ModalRoot,
+export const Modal = Object.assign(ModalRoot, {
     Trigger: ModalTrigger,
     Portal: ModalPortal,
     Backdrop: ModalBackdrop,
@@ -240,4 +239,4 @@ export const Modal = {
     Content: ModalContent,
     Footer: ModalFooter,
     Close: ModalClose,
-}
+})

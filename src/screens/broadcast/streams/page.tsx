@@ -6,6 +6,7 @@ import { Input } from "@/components/form/input"
 import { Label, Paragraph, Title } from "@/components/display/text"
 import { Spinner } from "@/components/feedback/spinner"
 import { Drawer } from "@/components/overlays/drawer"
+import { Dropdown } from "@/components/overlays/dropdown"
 import { useFeedback } from "@/components/feedback/feedback-provider"
 import { useAuth } from "@/lib/auth-context"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
@@ -26,7 +27,7 @@ import type { CreateMeetingParams } from "@/data/mutate-zoom"
 import type { Stream } from "@/types/broadcast/stream"
 import type { ZoomMeeting } from "@/types/broadcast/zoom"
 import { getErrorMessage } from "@/utils/get-error-message"
-import { Plus, RefreshCw, Search, Settings2 } from "lucide-react"
+import { MoreHorizontal, RefreshCw, Search, Settings2, Tv, Video } from "lucide-react"
 
 export function StreamsScreen() {
   const { role } = useAuth()
@@ -58,6 +59,17 @@ export function StreamsScreen() {
   const [drawerMeeting, setDrawerMeeting] = useState<ZoomMeeting | null>(null)
   const [meetingDrawerOpen, setMeetingDrawerOpen] = useState(false)
   const [isSyncingMeetings, setIsSyncingMeetings] = useState(false)
+
+  // ─── Filter drawer open state (controlled, opened from options dropdown) ─
+  const [streamFilterOpen, setStreamFilterOpen] = useState(false)
+  const [meetingFilterOpen, setMeetingFilterOpen] = useState(false)
+
+  // ─── Universal search ──────────────────────────────────
+  const universalSearch = streamFilters.filters.search
+  const setUniversalSearch = useCallback((value: string) => {
+    streamFilters.setSearch(value)
+    meetingFilters.setSearch(value)
+  }, [streamFilters, meetingFilters])
 
   const isYouTubeConnected = Boolean(youtubeConnection)
   const isZoomConnected = Boolean(zoomConnection)
@@ -224,57 +236,85 @@ export function StreamsScreen() {
 
   return (
     <section>
-      <Header.Root className="p-4 pt-8 mx-auto max-w-content">
+      <Header className="p-4 pt-8 mx-auto max-w-content">
         <Header.Lead className="gap-2">
           <Title.h6>Streams</Title.h6>
           <Paragraph.sm className="text-tertiary max-w-2xl">
             Manage your live streams and scheduled meetings.
           </Paragraph.sm>
         </Header.Lead>
-      </Header.Root>
+      </Header>
 
       <div className="flex flex-col gap-4 p-4 pt-0 mx-auto w-full max-w-content">
+        <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+          <Header.Lead className="gap-2">
+            <Label.md>Live</Label.md>
+          </Header.Lead>
+          <Header.Trail className="gap-2 flex-1 justify-end">
+            <Input
+              icon={<Search />}
+              placeholder="Search streams and meetings..."
+              className="w-full max-w-md"
+              value={universalSearch}
+              onChange={(e) => setUniversalSearch(e.target.value)}
+            />
+            <Dropdown placement="bottom">
+              <Dropdown.Trigger>
+                <Button icon={<MoreHorizontal />} variant="secondary">Options</Button>
+              </Dropdown.Trigger>
+              <Dropdown.Panel>
+                {isYouTubeConnected && canCreate && (
+                  <Dropdown.Item onSelect={() => { setEditingStream(null); setStreamModalOpen(true) }}>
+                    <Tv className="size-4" />
+                    New YouTube stream
+                  </Dropdown.Item>
+                )}
+                <Dropdown.Item onSelect={() => setStreamFilterOpen(true)}>
+                  <Settings2 className="size-4" />
+                  Filter streams
+                </Dropdown.Item>
+                {isYouTubeConnected && !isSyncingStreams && (
+                  <Dropdown.Item onSelect={handleSyncStreams}>
+                    <RefreshCw className="size-4" />
+                    Sync streams
+                  </Dropdown.Item>
+                )}
+                <Dropdown.Separator />
+                {isZoomConnected && canCreate && (
+                  <Dropdown.Item onSelect={() => { setEditingMeeting(null); setMeetingModalOpen(true) }}>
+                    <Video className="size-4" />
+                    New Zoom meeting
+                  </Dropdown.Item>
+                )}
+                <Dropdown.Item onSelect={() => setMeetingFilterOpen(true)}>
+                  <Settings2 className="size-4" />
+                  Filter meetings
+                </Dropdown.Item>
+                {isZoomConnected && !isSyncingMeetings && (
+                  <Dropdown.Item onSelect={handleSyncMeetings}>
+                    <RefreshCw className="size-4" />
+                    Sync meetings
+                  </Dropdown.Item>
+                )}
+              </Dropdown.Panel>
+            </Dropdown>
+          </Header.Trail>
+        </Header>
+
+        <Drawer open={streamFilterOpen} onOpenChange={setStreamFilterOpen}>
+          <StreamFilterDrawer filters={streamFilters} />
+        </Drawer>
+        <Drawer open={meetingFilterOpen} onOpenChange={setMeetingFilterOpen}>
+          <ZoomMeetingFilterDrawer filters={meetingFilters} />
+        </Drawer>
+
         {/* Content cards */}
         <div className="space-y-4">
           {/* YouTube Streams */}
-          <Card.Root>
-            <Card.Header className="gap-2 justify-between">
+          <Card>
+            <Card.Header tight className="gap-1.5">
+              <Tv className="size-4" />
               <Label.sm>YouTube Streams</Label.sm>
-              <div className="flex gap-1 items-center shrink-0 max-mobile:w-full">
-                <Input
-                  icon={<Search />}
-                  placeholder="Search..."
-                  value={streamFilters.filters.search}
-                  onChange={(e) => streamFilters.setSearch(e.target.value)}
-                  className="max-mobile:flex-1"
-                />
-                <Drawer.Root>
-                  <Drawer.Trigger>
-                    <Button.Icon
-                      variant={streamFilters.hasActiveFilters ? "primary" : "secondary"}
-                      icon={<Settings2 />}
-                    />
-                  </Drawer.Trigger>
-                  <StreamFilterDrawer filters={streamFilters} />
-                </Drawer.Root>
-                {isYouTubeConnected && (
-                  <>
-                    <Button.Icon
-                      variant="secondary"
-                      icon={<RefreshCw className={isSyncingStreams ? "animate-spin" : ""} />}
-                      onClick={handleSyncStreams}
-                      disabled={isSyncingStreams}
-                    />
-                    {canCreate && (
-                      <Button.Icon
-                        variant="secondary"
-                        icon={<Plus />}
-                        onClick={() => { setEditingStream(null); setStreamModalOpen(true) }}
-                      />
-                    )}
-                  </>
-                )}
-              </div>
             </Card.Header>
             <Card.Content ghost className="flex flex-col gap-1">
               {isLoadingStreams ? (
@@ -301,47 +341,13 @@ export function StreamsScreen() {
                 ))
               )}
             </Card.Content>
-          </Card.Root>
+          </Card>
 
           {/* Zoom Meetings */}
-          <Card.Root>
-            <Card.Header className="gap-2 justify-between">
+          <Card>
+            <Card.Header tight className="gap-1.5">
+              <Video className="size-4" />
               <Label.sm>Zoom Meetings</Label.sm>
-              <div className="flex gap-1 items-center shrink-0 max-mobile:w-full">
-                <Input
-                  icon={<Search />}
-                  placeholder="Search..."
-                  value={meetingFilters.filters.search}
-                  onChange={(e) => meetingFilters.setSearch(e.target.value)}
-                  className="max-mobile:flex-1"
-                />
-                <Drawer.Root>
-                  <Drawer.Trigger>
-                    <Button.Icon
-                      variant={meetingFilters.hasActiveFilters ? "primary" : "secondary"}
-                      icon={<Settings2 />}
-                    />
-                  </Drawer.Trigger>
-                  <ZoomMeetingFilterDrawer filters={meetingFilters} />
-                </Drawer.Root>
-                {isZoomConnected && (
-                  <>
-                    <Button.Icon
-                      variant="secondary"
-                      icon={<RefreshCw className={isSyncingMeetings ? "animate-spin" : ""} />}
-                      onClick={handleSyncMeetings}
-                      disabled={isSyncingMeetings}
-                    />
-                    {canCreate && (
-                      <Button.Icon
-                        variant="secondary"
-                        icon={<Plus />}
-                        onClick={() => { setEditingMeeting(null); setMeetingModalOpen(true) }}
-                      />
-                    )}
-                  </>
-                )}
-              </div>
             </Card.Header>
             <Card.Content ghost className="flex flex-col gap-1">
               {isLoadingZoomMeetings ? (
@@ -368,7 +374,7 @@ export function StreamsScreen() {
                 ))
               )}
             </Card.Content>
-          </Card.Root>
+          </Card>
         </div>
       </div>
 

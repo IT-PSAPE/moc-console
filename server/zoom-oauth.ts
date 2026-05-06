@@ -66,7 +66,7 @@ async function fetchZoomUserInfo(accessToken: string): Promise<ZoomUserInfo> {
 
 export function resolveZoomOAuthConfig(env: Record<string, string | undefined>): ZoomOAuthConfig {
   const clientId = env.ZOOM_CLIENT_ID ?? env.VITE_ZOOM_CLIENT_ID
-  const clientSecret = env.ZOOM_CLIENT_SECRET ?? env.VITE_ZOOM_CLIENT_SECRET
+  const clientSecret = env.ZOOM_CLIENT_SECRET
 
   if (!clientId || !clientSecret) {
     throw new Error("Missing Zoom OAuth environment variables")

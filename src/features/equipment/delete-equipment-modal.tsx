@@ -12,7 +12,7 @@ type DeleteEquipmentModalProps = {
 
 export function DeleteEquipmentModal({ open, onDelete, onCancel, isDeleting = false }: DeleteEquipmentModalProps) {
   return (
-    <Modal.Root open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
+    <Modal open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
@@ -37,6 +37,6 @@ export function DeleteEquipmentModal({ open, onDelete, onCancel, isDeleting = fa
           </Modal.Panel>
         </Modal.Positioner>
       </Modal.Portal>
-    </Modal.Root>
+    </Modal>
   );
 }

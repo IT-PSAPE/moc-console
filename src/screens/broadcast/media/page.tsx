@@ -72,38 +72,43 @@ export function BroadcastMediaScreen() {
 
   return (
     <section className="h-full flex flex-col">
-      <Header.Root className="p-4 pt-8 mx-auto max-w-content shrink-0">
+      <Header className="p-4 pt-8 mx-auto max-w-content shrink-0">
         <Header.Lead className="gap-2">
           <Title.h6>Media</Title.h6>
           <Paragraph.sm className="text-tertiary max-w-2xl">
             Browse and preview your media library. Select an item to preview it.
           </Paragraph.sm>
         </Header.Lead>
-      </Header.Root>
+      </Header>
 
-      <div className="flex-1 min-h-0 flex p-4 pt-0 mx-auto w-full max-w-content">
-        <Card.Root className="flex-1 flex flex-col overflow-hidden">
-          <Card.Header className="gap-2 justify-between">
-            <Label.sm>Library</Label.sm>
-            <div className="flex gap-1 items-center max-mobile:w-full">
-              <Input
-                icon={<Search />}
-                placeholder="Search media..."
-                value={state.search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="shrink-0 max-mobile:flex-1"
-              />
-              <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setUploadOpen(true)} />
-            </div>
-          </Card.Header>
-          <Card.Content className="flex flex-col flex-1 min-h-0 overflow-hidden py-2">
-            <SegmentedControl.Root defaultValue="all" onValueChange={(value) => handleTabChange(value)} className="mx-2">
+      <div className="flex-1 min-h-0 flex flex-col gap-4 p-4 pt-0 mx-auto w-full max-w-content">
+        <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+          <Header.Lead className="gap-2">
+            <Label.md>Library</Label.md>
+          </Header.Lead>
+          <Header.Trail className="gap-2 flex-1 justify-end">
+            <Input
+              icon={<Search />}
+              placeholder="Search media..."
+              className="w-full max-w-md"
+              value={state.search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setUploadOpen(true)} />
+          </Header.Trail>
+        </Header>
+
+        <Card className="flex-1 flex flex-col overflow-hidden">
+          <Card.Header>
+            <SegmentedControl defaultValue="all" onValueChange={(value) => handleTabChange(value)} fill>
               <SegmentedControl.Item value="all">All</SegmentedControl.Item>
               <SegmentedControl.Item value="image">Images</SegmentedControl.Item>
               <SegmentedControl.Item value="audio">Audio</SegmentedControl.Item>
               <SegmentedControl.Item value="video">Video</SegmentedControl.Item>
-            </SegmentedControl.Root>
-            <ScrollArea.Root className="flex-1 min-h-0">
+            </SegmentedControl>
+          </Card.Header>
+          <Card.Content className="flex flex-col flex-1">
+            <ScrollArea className="flex-1 min-h-0">
               <ScrollArea.Viewport className="py-2 pr-2">
                 <ScrollArea.Content>
                   {isLoadingMedia ? (
@@ -127,9 +132,9 @@ export function BroadcastMediaScreen() {
               <ScrollArea.Scrollbar orientation="vertical">
                 <ScrollArea.Thumb />
               </ScrollArea.Scrollbar>
-            </ScrollArea.Root>
+            </ScrollArea>
           </Card.Content>
-        </Card.Root>
+        </Card>
       </div>
 
       <MediaDetailDrawer
@@ -145,7 +150,7 @@ export function BroadcastMediaScreen() {
         onSubmit={handleUploadSubmit}
       />
 
-      <Modal.Root open={pendingDelete !== null} onOpenChange={(o) => { if (!o) setPendingDelete(null) }}>
+      <Modal open={pendingDelete !== null} onOpenChange={(o) => { if (!o) setPendingDelete(null) }}>
         <Modal.Portal>
           <Modal.Backdrop />
           <Modal.Positioner>
@@ -168,7 +173,7 @@ export function BroadcastMediaScreen() {
             </Modal.Panel>
           </Modal.Positioner>
         </Modal.Portal>
-      </Modal.Root>
+      </Modal>
     </section>
   )
 }

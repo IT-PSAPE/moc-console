@@ -16,7 +16,7 @@ type EditEventModalProps = {
 
 export function EditEventModal({ open, onOpenChange, initial, onSave }: EditEventModalProps) {
     return (
-        <Modal.Root open={open} onOpenChange={onOpenChange}>
+        <Modal open={open} onOpenChange={onOpenChange}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
@@ -28,7 +28,7 @@ export function EditEventModal({ open, onOpenChange, initial, onSave }: EditEven
                     </Modal.Panel>
                 </Modal.Positioner>
             </Modal.Portal>
-        </Modal.Root>
+        </Modal>
     )
 }
 

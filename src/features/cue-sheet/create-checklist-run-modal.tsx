@@ -50,7 +50,7 @@ export function CreateChecklistRunModal({ open, onOpenChange, template, onSubmit
     }, [canSubmit, description, name, onOpenChange, onSubmit, scheduledAt, template])
 
     return (
-        <Modal.Root open={open} onOpenChange={onOpenChange}>
+        <Modal open={open} onOpenChange={onOpenChange}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
@@ -85,6 +85,6 @@ export function CreateChecklistRunModal({ open, onOpenChange, template, onSubmit
                     </Modal.Panel>
                 </Modal.Positioner>
             </Modal.Portal>
-        </Modal.Root>
+        </Modal>
     )
 }

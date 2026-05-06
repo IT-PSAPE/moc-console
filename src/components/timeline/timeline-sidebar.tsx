@@ -83,7 +83,7 @@ export function TimelineSidebar() {
                             {readOnly ? (
                                 <div className="shrink-0 size-5" aria-hidden />
                             ) : (
-                            <Dropdown.Root>
+                            <Dropdown>
                                 <Dropdown.Trigger>
                                     <div
                                         className="shrink-0 p-0.5 text-quaternary hover:text-tertiary cursor-grab active:cursor-grabbing touch-none"
@@ -130,7 +130,7 @@ export function TimelineSidebar() {
                                         </>
                                     )}
                                 </Dropdown.Panel>
-                            </Dropdown.Root>
+                            </Dropdown>
                             )}
 
                             {/* Track info */}

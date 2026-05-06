@@ -63,7 +63,7 @@ export function ReportBugModal({ open, onOpenChange, errorContext }: Props) {
     const remaining = MAX_LENGTH - description.length
 
     return (
-        <Modal.Root open={open} onOpenChange={onOpenChange}>
+        <Modal open={open} onOpenChange={onOpenChange}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
@@ -119,6 +119,6 @@ export function ReportBugModal({ open, onOpenChange, errorContext }: Props) {
                     </Modal.Panel>
                 </Modal.Positioner>
             </Modal.Portal>
-        </Modal.Root>
+        </Modal>
     )
 }

@@ -57,7 +57,6 @@ export type CueFormData = {
     type: CueType
     startMin: number
     durationMin: number
-    assignee: string
     notes: string
 }
 

@@ -87,7 +87,7 @@ export function CueSheetEventDetailScreen() {
 
     return (
         <section className="h-full flex flex-col">
-            <Timeline.Root
+            <Timeline
                 tracks={tracks}
                 totalMin={event.duration}
                 onChange={handleTracksChange}
@@ -113,7 +113,7 @@ export function CueSheetEventDetailScreen() {
                         </Button>
                     ) : undefined}
                 />
-                <CueModal />
+                <CueModal eventId={event.id} assignmentEnabled={liveSyncEnabled} />
 
                 {canControl && (
                     <TopBarActions>
@@ -123,7 +123,7 @@ export function CueSheetEventDetailScreen() {
                         />
                     </TopBarActions>
                 )}
-            </Timeline.Root>
+            </Timeline>
 
             {liveSyncEnabled && (
                 <ShareEventModal
@@ -160,7 +160,7 @@ function DetailTopBarActions({ onEdit, onDelete }: { onEdit: () => void; onDelet
                     Add Cue
                 </Button>
             )}
-            <Dropdown.Root placement="bottom">
+            <Dropdown placement="bottom">
                 <Dropdown.Trigger>
                     <Button.Icon variant="ghost" icon={<MoreVertical />} />
                 </Dropdown.Trigger>
@@ -175,7 +175,7 @@ function DetailTopBarActions({ onEdit, onDelete }: { onEdit: () => void; onDelet
                         <span className="text-error">Delete</span>
                     </Dropdown.Item>
                 </Dropdown.Panel>
-            </Dropdown.Root>
+            </Dropdown>
         </>
     )
 }
@@ -190,7 +190,7 @@ function DeleteEventModal({
     onConfirm: () => void
 }) {
     return (
-        <Modal.Root open={open} onOpenChange={onOpenChange}>
+        <Modal open={open} onOpenChange={onOpenChange}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
@@ -211,6 +211,6 @@ function DeleteEventModal({
                     </Modal.Panel>
                 </Modal.Positioner>
             </Modal.Portal>
-        </Modal.Root>
+        </Modal>
     )
 }

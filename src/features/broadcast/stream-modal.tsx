@@ -263,7 +263,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
   }
 
   return (
-    <Modal.Root open={open} onOpenChange={handleModalOpenChange}>
+    <Modal open={open} onOpenChange={handleModalOpenChange}>
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
@@ -314,7 +314,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
                 {/* ─── Privacy ─── */}
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Privacy" />
-                  <SegmentedControl.Root
+                  <SegmentedControl
                     fill
                     value={privacyStatus}
                     onValueChange={(v: string) => setPrivacyStatus(v as StreamPrivacy)}
@@ -324,20 +324,20 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
                         {streamPrivacyLabel[key]}
                       </SegmentedControl.Item>
                     ))}
-                  </SegmentedControl.Root>
+                  </SegmentedControl>
                 </div>
 
                 {/* ─── Made for kids ─── */}
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Made for kids" />
-                  <SegmentedControl.Root
+                  <SegmentedControl
                     fill
                     value={isForKids ? "yes" : "no"}
                     onValueChange={(v: string) => setIsForKids(v === "yes")}
                   >
                     <SegmentedControl.Item value="no">No</SegmentedControl.Item>
                     <SegmentedControl.Item value="yes">Yes</SegmentedControl.Item>
-                  </SegmentedControl.Root>
+                  </SegmentedControl>
                 </div>
 
                 {/* ─── Thumbnail ─── */}
@@ -364,7 +364,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      <SegmentedControl.Root
+                      <SegmentedControl
                         fill
                         value={thumbnailMode}
                         onValueChange={(v: string) => setThumbnailMode(v as "file" | "url" | "media")}
@@ -372,7 +372,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
                         <SegmentedControl.Item value="file">Upload</SegmentedControl.Item>
                         <SegmentedControl.Item value="url">URL</SegmentedControl.Item>
                         <SegmentedControl.Item value="media" icon={<Image className="size-3.5" />}>Media</SegmentedControl.Item>
-                      </SegmentedControl.Root>
+                      </SegmentedControl>
 
                       {thumbnailMode === "file" && (
                         <FileDropzone
@@ -451,7 +451,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
                 )}
 
                 {/* ─── Advanced Settings (Accordion) ─── */}
-                <Accordion.Root type="multiple">
+                <Accordion type="multiple">
                   <Accordion.Item value="optionals">
                     <Accordion.Trigger className="flex items-center gap-2 py-2 text-left">
                       <Label.sm className="flex-1">Options</Label.sm>
@@ -539,7 +539,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
                         {/* Latency */}
                         <div className="flex flex-col gap-1.5">
                           <FormLabel label="Latency" />
-                          <SegmentedControl.Root
+                          <SegmentedControl
                             fill
                             value={latencyPreference}
                             onValueChange={(v: string) => setLatencyPreference(v as LatencyPreference)}
@@ -549,7 +549,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
                                 {latencyPreferenceLabel[key]}
                               </SegmentedControl.Item>
                             ))}
-                          </SegmentedControl.Root>
+                          </SegmentedControl>
                           <Paragraph.xs className="text-quaternary">
                             {latencyPreferenceHint[latencyPreference]}
                           </Paragraph.xs>
@@ -599,7 +599,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
                       </div>
                     </Accordion.Content>
                   </Accordion.Item>
-                </Accordion.Root>
+                </Accordion>
               </div>
             </Modal.Content>
 
@@ -616,6 +616,6 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
           </Modal.Panel>
         </Modal.Positioner>
       </Modal.Portal>
-    </Modal.Root>
+    </Modal>
   )
 }

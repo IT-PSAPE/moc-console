@@ -40,7 +40,7 @@ export function useScrollArea() {
     const context = useContext(ScrollAreaContext);
 
     if (!context) {
-        throw new Error("useScrollArea must be used within a ScrollArea.Root");
+        throw new Error("useScrollArea must be used within a ScrollArea");
     }
 
     return context;

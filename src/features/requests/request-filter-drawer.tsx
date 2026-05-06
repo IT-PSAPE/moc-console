@@ -37,7 +37,7 @@ export function RequestFilterDrawer({ filters }: RequestFilterDrawerProps) {
                 </Drawer.Header>
 
                 <Drawer.Content>
-                    <Tabs.Root defaultTab="filters">
+                    <Tabs defaultTab="filters">
                         <Tabs.List>
                             <Tabs.Tab value="filters">
                                 <Label.sm>Filters</Label.sm>
@@ -153,7 +153,7 @@ export function RequestFilterDrawer({ filters }: RequestFilterDrawerProps) {
                                 </div>
                             </Tabs.Panel>
                         </Tabs.Panels>
-                    </Tabs.Root>
+                    </Tabs>
                 </Drawer.Content>
 
                 <Drawer.Footer className="*:w-full">

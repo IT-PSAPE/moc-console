@@ -13,7 +13,7 @@ type UnsavedChangesModalProps = {
 
 export function UnsavedChangesModal({ open, onSave, onDiscard, onCancel, isSaving = false }: UnsavedChangesModalProps) {
     return (
-        <Modal.Root open={open} onOpenChange={(o) => { if (!o) onCancel() }}>
+        <Modal open={open} onOpenChange={(o) => { if (!o) onCancel() }}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
@@ -41,6 +41,6 @@ export function UnsavedChangesModal({ open, onSave, onDiscard, onCancel, isSavin
                     </Modal.Panel>
                 </Modal.Positioner>
             </Modal.Portal>
-        </Modal.Root>
+        </Modal>
     )
 }

@@ -33,7 +33,7 @@ export function useCommandMenu() {
     const context = useContext(CommandMenuContext)
 
     if (!context) {
-        throw new Error('useCommandMenu must be used within a CommandMenu.Root')
+        throw new Error('useCommandMenu must be used within a CommandMenu')
     }
 
     return context
@@ -239,7 +239,7 @@ function CommandMenuPanel({ children, className, ...props }: HTMLAttributes<HTML
                 ref={panelRef}
                 aria-modal="true"
                 className={cn(
-                    'pointer-events-auto flex max-w-lg flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg',
+                    'pointer-events-auto flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg',
                     className,
                 )}
                 onKeyDown={handleKeyDown}
@@ -382,8 +382,7 @@ function CommandMenuEmpty({ children, className, ...props }: HTMLAttributes<HTML
 
 // ─── Compound Export ─────────────────────────────────────────────────
 
-export const CommandMenu = {
-    Root: CommandMenuRoot,
+export const CommandMenu = Object.assign(CommandMenuRoot, {
     Portal: CommandMenuPortal,
     Backdrop: CommandMenuBackdrop,
     Panel: CommandMenuPanel,
@@ -393,4 +392,4 @@ export const CommandMenu = {
     Item: CommandMenuItem,
     Empty: CommandMenuEmpty,
     Close: CommandMenuClose,
-}
+})

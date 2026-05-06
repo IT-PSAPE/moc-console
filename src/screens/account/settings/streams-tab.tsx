@@ -1,4 +1,5 @@
 import { useEffect } from "react"
+import { Section } from "@/components/display/section"
 import { BroadcastProvider, useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { YouTubeConnectionCard } from "@/features/broadcast/youtube-connection-card"
 import { ZoomConnectionCard } from "@/features/broadcast/zoom-connection-card"
@@ -45,9 +46,17 @@ function StreamsTabContent() {
     }, [handleYouTubeCallback, handleZoomCallback, loadYouTubeConnection, loadZoomConnection, toast])
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <YouTubeConnectionCard />
-            <ZoomConnectionCard />
-        </div>
+        <Section>
+            <Section.Header
+                title="Streaming connections"
+                description="Connect YouTube and Zoom so this workspace can publish streams and meetings."
+            />
+            <Section.Body>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <YouTubeConnectionCard />
+                    <ZoomConnectionCard />
+                </div>
+            </Section.Body>
+        </Section>
     )
 }

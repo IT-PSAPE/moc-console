@@ -38,7 +38,6 @@ type TemplateCueRow = {
   start: number;
   duration: number;
   type: Cue["type"];
-  assignee: string | null;
   notes: string | null;
 };
 
@@ -100,7 +99,6 @@ function mapCueRow(row: TemplateCueRow | EventCueRow): Cue {
     startMin: row.start,
     durationMin: row.duration,
     type: row.type,
-    assignee: row.assignee ?? undefined,
     notes: row.notes ?? undefined,
   };
 }
@@ -386,7 +384,7 @@ export async function fetchCueSheetTracks(): Promise<Record<string, Track[]>> {
             name,
             sort_order,
             colors:color_id(key),
-            template_cues(id, label, start, duration, type, assignee, notes)
+            template_cues(id, label, start, duration, type, notes)
           `)
           .in("event_template_id", templateOwnerIds)
           .order("sort_order", { ascending: true })
@@ -400,7 +398,7 @@ export async function fetchCueSheetTracks(): Promise<Record<string, Track[]>> {
             name,
             sort_order,
             colors:color_id(key),
-            cues(id, label, start, duration, type, assignee, notes)
+            cues(id, label, start, duration, type, notes)
           `)
           .in("event_id", eventOwnerIds)
           .order("sort_order", { ascending: true })

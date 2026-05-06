@@ -1,4 +1,3 @@
-import { Divider } from '@/components/display/divider'
 import { Header } from '@/components/display/header'
 import { Paragraph, Title } from '@/components/display/text'
 import { Tabs } from '@/components/layout/tabs'
@@ -9,11 +8,13 @@ import { GeneralTab } from './general-tab'
 import { UsersTab } from './users-tab'
 import { TelegramTab } from './telegram-tab'
 import { StreamsTab } from './streams-tab'
+import { WorkspaceTab } from './workspace-tab'
 
-type TabKey = 'general' | 'users' | 'telegram' | 'streams'
+type TabKey = 'general' | 'workspace' | 'users' | 'telegram' | 'streams'
 
 const TAB_LABELS: Record<TabKey, string> = {
     general: 'General',
+    workspace: 'Workspace',
     users: 'Users',
     telegram: 'Telegram',
     streams: 'Streams',
@@ -21,6 +22,7 @@ const TAB_LABELS: Record<TabKey, string> = {
 
 const TAB_DESCRIPTIONS: Record<TabKey, string> = {
     general: 'Workspace preferences and platform information.',
+    workspace: 'Edit the name, slug, and description of the current workspace.',
     users: 'View and manage all users and their assigned roles.',
     telegram: 'Groups the bot has been added to. Toggle a group active to allow the app to send event notifications there.',
     streams: 'Connect YouTube and Zoom so the workspace can publish streams and meetings.',
@@ -35,7 +37,7 @@ export function SettingsScreen() {
     const availableTabs = useMemo<TabKey[]>(() => {
         const tabs: TabKey[] = ['general']
         if (canManage) {
-            tabs.push('users', 'telegram', 'streams')
+            tabs.push('workspace', 'users', 'telegram', 'streams')
         }
         return tabs
     }, [canManage])
@@ -63,17 +65,17 @@ export function SettingsScreen() {
 
     return (
         <section className="mx-auto max-w-content">
-            <Header.Root className="p-4 pt-8">
+            <Header className="p-4 pt-8">
                 <Header.Lead className="gap-2">
                     <Title.h6>Settings</Title.h6>
                     <Paragraph.sm className="text-tertiary">
                         {TAB_DESCRIPTIONS[activeTab]}
                     </Paragraph.sm>
                 </Header.Lead>
-            </Header.Root>
+            </Header>
 
             <div className="px-4 pt-2">
-                <Tabs.Root value={activeTab} onValueChange={handleTabChange}>
+                <Tabs variant="pill" value={activeTab} onValueChange={handleTabChange}>
                     <Tabs.List>
                         {availableTabs.map((tab) => (
                             <Tabs.Tab key={tab} value={tab}>
@@ -81,13 +83,12 @@ export function SettingsScreen() {
                             </Tabs.Tab>
                         ))}
                     </Tabs.List>
-                </Tabs.Root>
+                </Tabs>
             </div>
-
-            <Divider className="my-2" />
 
             <div className="p-4">
                 {activeTab === 'general' && <GeneralTab />}
+                {activeTab === 'workspace' && canManage && <WorkspaceTab />}
                 {activeTab === 'users' && canManage && <UsersTab />}
                 {activeTab === 'telegram' && canManage && <TelegramTab />}
                 {activeTab === 'streams' && canManage && <StreamsTab />}

@@ -9,6 +9,7 @@ import { useFeedback } from '@/components/feedback/feedback-provider'
 import type { Checklist } from '@/types/cue-sheet'
 import { useCueSheet } from './cue-sheet-provider'
 import { ChecklistContent, getChecklistCounts, type AddRequest } from './checklist-content'
+import { useChecklistAssignees } from './use-checklist-assignees'
 import { FolderPlus, Maximize2, Plus, SquarePlus, Trash2, TriangleAlert, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -31,6 +32,7 @@ function ChecklistDrawerContent({ checklist }: { checklist: Checklist }) {
     const navigate = useNavigate()
     const [addRequest, setAddRequest] = useState<AddRequest>(null)
     const [deleteOpen, setDeleteOpen] = useState(false)
+    const { renderItemSlot } = useChecklistAssignees(checklist.id)
 
     const { total, checked } = getChecklistCounts(checklist)
 
@@ -78,7 +80,7 @@ function ChecklistDrawerContent({ checklist }: { checklist: Checklist }) {
                             <InlineEditableText value={checklist.description} onSave={(description) => { void handleChecklistUpdate({ ...checklist, description }) }} className="text-sm text-tertiary" placeholder="Add description" />
                         </Paragraph.sm>
                     </div>
-                    <Dropdown.Root placement="bottom">
+                    <Dropdown placement="bottom">
                         <Dropdown.Trigger>
                             <Button.Icon variant="ghost" icon={<Plus />} />
                         </Dropdown.Trigger>
@@ -92,7 +94,7 @@ function ChecklistDrawerContent({ checklist }: { checklist: Checklist }) {
                                 Section
                             </Dropdown.Item>
                         </Dropdown.Panel>
-                    </Dropdown.Root>
+                    </Dropdown>
                 </div>
 
                 <Divider className="px-4 py-3" />
@@ -102,10 +104,11 @@ function ChecklistDrawerContent({ checklist }: { checklist: Checklist }) {
                     onUpdate={(nextChecklist) => { void handleChecklistUpdate(nextChecklist) }}
                     addRequest={addRequest}
                     onAddRequestDismiss={() => setAddRequest(null)}
+                    renderItemSlot={renderItemSlot}
                 />
             </Drawer.Content>
 
-            <Modal.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <Modal open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <Modal.Portal>
                     <Modal.Backdrop />
                     <Modal.Positioner>
@@ -126,7 +129,7 @@ function ChecklistDrawerContent({ checklist }: { checklist: Checklist }) {
                         </Modal.Panel>
                     </Modal.Positioner>
                 </Modal.Portal>
-            </Modal.Root>
+            </Modal>
         </>
     )
 }

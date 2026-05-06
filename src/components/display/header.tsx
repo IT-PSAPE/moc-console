@@ -25,8 +25,7 @@ function HeaderTrail({ children, className }: { children?: React.ReactNode; clas
     )
 }
 
-export const Header = {
-    Root: HeaderRoot,
+export const Header = Object.assign(HeaderRoot, {
     Lead: HeaderLead,
     Trail: HeaderTrail,
-}
+})

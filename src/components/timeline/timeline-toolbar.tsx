@@ -59,7 +59,7 @@ export function TimelineToolbar({ renderTitle, renderActions, showAddCue = true 
             {renderActions ? renderActions() : null}
 
             {/* Filter */}
-            <Dropdown.Root>
+            <Dropdown>
                 <Dropdown.Trigger>
                     <Button.Icon
                         variant={filter !== 'all' ? 'secondary' : 'ghost'}
@@ -80,7 +80,7 @@ export function TimelineToolbar({ renderTitle, renderActions, showAddCue = true 
                         </Dropdown.Item>
                     ))}
                 </Dropdown.Panel>
-            </Dropdown.Root>
+            </Dropdown>
 
             {/* Zoom controls */}
             <div className="flex items-center gap-0.5">

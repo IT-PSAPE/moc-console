@@ -144,8 +144,7 @@ function BreadcrumbRoot({ className }: { className?: string }) {
     )
 }
 
-export const Breadcrumb = {
-    Root: BreadcrumbRoot,
+export const Breadcrumb = Object.assign(BreadcrumbRoot, {
     Item: BreadcrumbItem,
     Separator: BreadcrumbSeparator,
-}
+})

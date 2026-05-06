@@ -35,7 +35,7 @@ export function RequestCalendar({ requests }: { requests: Request[] }) {
 
     return (
         <div className='p-4 pt-0 mx-auto w-full max-w-content'>
-            <Calendar.Root
+            <Calendar
                 events={events}
                 cellDrawer={{
                     renderItem: (event, index) => {
@@ -66,10 +66,10 @@ export function RequestCalendar({ requests }: { requests: Request[] }) {
                         );
 
                         return (
-                            <Drawer.Root key={request.id}>
+                            <Drawer key={request.id}>
                                 <Drawer.Trigger>{item}</Drawer.Trigger>
                                 <RequestDrawer request={request} />
-                            </Drawer.Root>
+                            </Drawer>
                         );
                     },
                 }}

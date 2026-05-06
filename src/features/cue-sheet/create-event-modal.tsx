@@ -31,7 +31,7 @@ export function CreateEventModal({ open, onOpenChange, onCreate }: CreateEventMo
     }, [canSubmit, form, onCreate, resetForm])
 
     return (
-        <Modal.Root open={open} onOpenChange={(next) => { onOpenChange(next); if (!next) resetForm() }}>
+        <Modal open={open} onOpenChange={(next) => { onOpenChange(next); if (!next) resetForm() }}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
@@ -77,6 +77,6 @@ export function CreateEventModal({ open, onOpenChange, onCreate }: CreateEventMo
                     </Modal.Panel>
                 </Modal.Positioner>
             </Modal.Portal>
-        </Modal.Root>
+        </Modal>
     )
 }

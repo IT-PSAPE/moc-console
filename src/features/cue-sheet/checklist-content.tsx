@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { randomId } from '@/utils/random-id'
 import {
     DndContext,
@@ -184,9 +184,10 @@ type DraggableCheckRowProps = {
     onToggle: (id: string) => void
     onRename: (id: string, label: string) => void
     onDelete: (id: string) => void
+    renderItemSlot?: (item: ChecklistItem) => ReactNode
 }
 
-function DraggableCheckRow({ item, onToggle, onRename, onDelete }: DraggableCheckRowProps) {
+function DraggableCheckRow({ item, onToggle, onRename, onDelete, renderItemSlot }: DraggableCheckRowProps) {
     const { attributes, listeners, setNodeRef: setDragRef, transform, isDragging } = useDraggable({ id: `item:${item.id}` })
     const { setNodeRef: setDropRef } = useDroppable({ id: `item:${item.id}` })
 
@@ -222,6 +223,11 @@ function DraggableCheckRow({ item, onToggle, onRename, onDelete }: DraggableChec
                         className={cn('label-sm min-w-0 flex-1', item.checked && 'line-through text-tertiary')}
                     />
                 </div>
+                {renderItemSlot && (
+                    <div className="shrink-0">
+                        {renderItemSlot(item)}
+                    </div>
+                )}
                 <button
                     type="button"
                     className="shrink-0 rounded p-1 text-quaternary opacity-0 transition-opacity hover:bg-background-primary-hover hover:text-secondary group-hover/item:opacity-100"
@@ -312,9 +318,10 @@ type SectionRowProps = {
     isAddingItem: boolean
     onRequestAddItem: (sectionId: string) => void
     onDismissAdd: () => void
+    renderItemSlot?: (item: ChecklistItem) => ReactNode
 }
 
-function SectionRow({ section, onToggle, onAddItem, onRenameItem, onDeleteItem, onRenameSection, onDeleteSection, activeItemId, overItemId, isAddingItem, onRequestAddItem, onDismissAdd }: SectionRowProps) {
+function SectionRow({ section, onToggle, onAddItem, onRenameItem, onDeleteItem, onRenameSection, onDeleteSection, activeItemId, overItemId, isAddingItem, onRequestAddItem, onDismissAdd, renderItemSlot }: SectionRowProps) {
     const { setNodeRef: setSectionDropRef } = useDroppable({ id: `section:${section.id}` })
     const checkedCount = section.items.filter((i) => i.checked).length
 
@@ -361,7 +368,7 @@ function SectionRow({ section, onToggle, onAddItem, onRenameItem, onDeleteItem, 
                             return (
                                 <div key={item.id} className="relative">
                                     {showAbove && <DropIndicatorLine />}
-                                    <DraggableCheckRow item={item} onToggle={onToggle} onRename={onRenameItem} onDelete={onDeleteItem} />
+                                    <DraggableCheckRow item={item} onToggle={onToggle} onRename={onRenameItem} onDelete={onDeleteItem} renderItemSlot={renderItemSlot} />
                                     {showBelow && <DropIndicatorLine />}
                                 </div>
                             )
@@ -391,9 +398,11 @@ type ChecklistContentProps = {
     /** Called when the inline input is dismissed */
     onAddRequestDismiss?: () => void
     className?: string
+    /** Render extra UI inside each item row (e.g. assignee avatars). */
+    renderItemSlot?: (item: ChecklistItem) => ReactNode
 }
 
-export function ChecklistContent({ checklist, onUpdate, addRequest = null, onAddRequestDismiss, className }: ChecklistContentProps) {
+export function ChecklistContent({ checklist, onUpdate, addRequest = null, onAddRequestDismiss, className, renderItemSlot }: ChecklistContentProps) {
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
     const [activeId, setActiveId] = useState<string | null>(null)
     const [overId, setOverId] = useState<string | null>(null)
@@ -618,7 +627,7 @@ export function ChecklistContent({ checklist, onUpdate, addRequest = null, onAdd
                         return (
                             <div key={item.id} className="relative">
                                 {showAbove && <DropIndicatorLine />}
-                                <DraggableCheckRow item={item} onToggle={handleToggle} onRename={handleRenameItem} onDelete={handleDeleteItem} />
+                                <DraggableCheckRow item={item} onToggle={handleToggle} onRename={handleRenameItem} onDelete={handleDeleteItem} renderItemSlot={renderItemSlot} />
                                 {showBelow && <DropIndicatorLine />}
                             </div>
                         )
@@ -633,7 +642,7 @@ export function ChecklistContent({ checklist, onUpdate, addRequest = null, onAdd
 
                 {/* Sections with accordion */}
                 {hasSections && (
-                    <Accordion.Root type="multiple" defaultValue={checklist.sections.map((s) => s.id)} data-main>
+                    <Accordion type="multiple" defaultValue={checklist.sections.map((s) => s.id)} data-main>
                         {checklist.sections.map((section) => (
                             <SectionRow
                                 key={section.id}
@@ -649,9 +658,10 @@ export function ChecklistContent({ checklist, onUpdate, addRequest = null, onAdd
                                 isAddingItem={currentAdd?.type === 'item' && currentAdd.target === section.id}
                                 onRequestAddItem={handleRequestAddInSection}
                                 onDismissAdd={dismissAdd}
+                                renderItemSlot={renderItemSlot}
                             />
                         ))}
-                    </Accordion.Root>
+                    </Accordion>
                 )}
 
                 {/* Add section input — only when triggered */}

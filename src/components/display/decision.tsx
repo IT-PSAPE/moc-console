@@ -54,9 +54,8 @@ function DecisionData<T>({ children }: DecisionDataProps<T>) {
     return <>{typeof children === 'function' ? null : children}</>
 }
 
-export const Decision = {
-    Root: DecisionRoot,
+export const Decision = Object.assign(DecisionRoot, {
     Loading: DecisionLoading,
     Empty: DecisionEmpty,
     Data: DecisionData,
-}
+})

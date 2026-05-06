@@ -12,7 +12,7 @@ export function RequestLists({ requests }: { requests: Request[] }) {
                 const items = requests.filter((r) => r.status === group.key);
                 if (items.length === 0) return null;
                 return (
-                    <Card.Root key={group.key}>
+                    <Card key={group.key}>
                         <Card.Header tight className='gap-1.5'>
                             <Indicator color={group.color} className='size-6' />
                             <Label.sm>{group.label}</Label.sm>
@@ -22,7 +22,7 @@ export function RequestLists({ requests }: { requests: Request[] }) {
                                 <RequestItem key={r.id} request={r} />
                             ))}
                         </Card.Content>
-                    </Card.Root>
+                    </Card>
                 );
             })}
         </div>

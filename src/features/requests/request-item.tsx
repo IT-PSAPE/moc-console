@@ -7,8 +7,8 @@ import { cv } from "@/utils/cv";
 import type { Request } from "@/types/requests";
 import { priorityColor, categoryLabel } from "@/types/requests";
 import { RequestDrawer } from "./request-drawer";
-import { useCallback, useRef, useState } from "react";
 import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
+import { useDrawerItem } from "@/hooks/use-drawer-item";
 
 const itemVariants = cv({
     base: [
@@ -26,30 +26,10 @@ const itemVariants = cv({
 })
 
 export function RequestItem({ request, vertical, onDrawerOpenChange }: { request: Request; vertical?: boolean; onDrawerOpenChange?: (open: boolean) => void }) {
-    const [open, setOpen] = useState(false);
-    const isDirtyRef = useRef(false);
-    const requestCloseRef = useRef<(() => void) | null>(null);
-
-    const handleOpenChange = useCallback((nextOpen: boolean) => {
-        if (nextOpen) {
-            setOpen(true);
-            onDrawerOpenChange?.(true);
-        } else if (isDirtyRef.current) {
-            // Dirty — let the drawer content handle close via its modal
-            requestCloseRef.current?.();
-        } else {
-            setOpen(false);
-            onDrawerOpenChange?.(false);
-        }
-    }, [onDrawerOpenChange]);
-
-    const handleRequestClose = useCallback(() => {
-        setOpen(false);
-        onDrawerOpenChange?.(false);
-    }, [onDrawerOpenChange]);
+    const { open, isDirtyRef, requestCloseRef, handleOpenChange, handleClose } = useDrawerItem(onDrawerOpenChange);
 
     return (
-        <Drawer.Root open={open} onOpenChange={handleOpenChange}>
+        <Drawer open={open} onOpenChange={handleOpenChange}>
             <Drawer.Trigger>
                 <div className={cn(itemVariants({ vertical: vertical ? 'true' : 'false' }), 'cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors')}>
                     <div>
@@ -76,10 +56,10 @@ export function RequestItem({ request, vertical, onDrawerOpenChange }: { request
             </Drawer.Trigger>
             <RequestDrawer
                 request={request}
-                onRequestClose={handleRequestClose}
+                onRequestClose={handleClose}
                 isDirtyRef={isDirtyRef}
                 requestCloseRef={requestCloseRef}
             />
-        </Drawer.Root>
+        </Drawer>
     )
 }

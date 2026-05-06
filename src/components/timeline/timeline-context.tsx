@@ -78,7 +78,7 @@ const TimelineContext = createContext<TimelineContextValue | null>(null)
 
 export function useTimeline(): TimelineContextValue {
     const ctx = useContext(TimelineContext)
-    if (!ctx) throw new Error('useTimeline must be used within Timeline.Root')
+    if (!ctx) throw new Error('useTimeline must be used within Timeline')
     return ctx
 }
 

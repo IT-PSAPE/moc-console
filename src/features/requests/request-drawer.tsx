@@ -193,7 +193,7 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
                 <Button.Icon variant="ghost" icon={<X />} onClick={handleClose} />
                 <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={handleOpenFullPage} />
                 <div className="flex-1" />
-                <Dropdown.Root placement="bottom">
+                <Dropdown placement="bottom">
                     <Dropdown.Trigger>
                         <Button.Icon variant="ghost" icon={<EllipsisVertical />} />
                     </Dropdown.Trigger>
@@ -211,7 +211,7 @@ function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestClos
                             <span className="text-utility-red-600">Delete</span>
                         </Dropdown.Item>
                     </Dropdown.Panel>
-                </Dropdown.Root>
+                </Dropdown>
             </Drawer.Header>
 
             <Drawer.Content className="py-4">

@@ -96,7 +96,7 @@ export function CueSheetShareScreen() {
                 </Paragraph.xs>
             </div>
 
-            <Timeline.Root
+            <Timeline
                 tracks={view.tracks}
                 totalMin={view.event.duration}
                 readOnly
@@ -115,7 +115,7 @@ export function CueSheetShareScreen() {
                         <Label.sm className="truncate">{view.event.title}</Label.sm>
                     )}
                 />
-            </Timeline.Root>
+            </Timeline>
         </ShellWrapper>
     )
 }

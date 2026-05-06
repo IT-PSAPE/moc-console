@@ -59,30 +59,33 @@ export function PlaylistScreen() {
 
   return (
     <section>
-      <Header.Root className="p-4 pt-8 mx-auto max-w-content">
+      <Header className="p-4 pt-8 mx-auto max-w-content">
         <Header.Lead className="gap-2">
           <Title.h6>Playlists</Title.h6>
           <Paragraph.sm className="text-tertiary max-w-2xl">
             Manage your broadcast playlists. Click a playlist to view and edit its details.
           </Paragraph.sm>
         </Header.Lead>
-      </Header.Root>
+      </Header>
 
       <div className="flex flex-col gap-4 p-4 pt-0 mx-auto w-full max-w-content">
-        <Card.Root>
-          <Card.Header className="gap-2 justify-between">
-            <Label.sm>Playlists</Label.sm>
-            <div className="flex gap-1 items-center shrink-0 max-mobile:w-full">
-              <Input
-                icon={<Search />}
-                placeholder="Search playlists..."
-                value={state.search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="max-mobile:flex-1"
-              />
-              <Button.Icon variant="secondary" icon={<Plus />} onClick={handleCreatePlaylist} />
-            </div>
-          </Card.Header>
+        <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
+          <Header.Lead className="gap-2">
+            <Label.md>Playlists</Label.md>
+          </Header.Lead>
+          <Header.Trail className="gap-2 flex-1 justify-end">
+            <Input
+              icon={<Search />}
+              placeholder="Search playlists..."
+              className="w-full max-w-md"
+              value={state.search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Button.Icon variant="secondary" icon={<Plus />} onClick={handleCreatePlaylist} />
+          </Header.Trail>
+        </Header>
+
+        <Card>
           <Card.Content ghost className="flex flex-col gap-1">
             {isLoadingPlaylists ? (
               <div className="flex justify-center py-12"><Spinner /></div>
@@ -96,7 +99,7 @@ export function PlaylistScreen() {
               ))
             )}
           </Card.Content>
-        </Card.Root>
+        </Card>
       </div>
     </section>
   )

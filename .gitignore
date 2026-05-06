@@ -7,12 +7,16 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+.env.production
+.local
+
 node_modules
 dist
 dist-ssr
 output
 build
 .notes
+.playwright-mcp
 *.local
 
 # Editor directories and files

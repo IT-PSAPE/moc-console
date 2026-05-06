@@ -424,7 +424,7 @@ export function PlaylistDetailScreen() {
     >
       <section className="mx-auto h-full flex flex-col max-w-content-md">
         <TopBarActions>
-          <Dropdown.Root placement="bottom">
+          <Dropdown placement="bottom">
             <Dropdown.Trigger>
               <Button.Icon variant="secondary" icon={<EllipsisVertical />} />
             </Dropdown.Trigger>
@@ -434,18 +434,18 @@ export function PlaylistDetailScreen() {
                 Back to Playlists
               </Dropdown.Item>
             </Dropdown.Panel>
-          </Dropdown.Root>
+          </Dropdown>
         </TopBarActions>
 
-        <Header.Root className="px-4 pt-12">
+        <Header className="px-4 pt-12">
           <Header.Lead className="gap-2">
             <Title.h5>
               <InlineEditableText value={playlist.name} onSave={handleNameSave} placeholder="Untitled" autoEdit={isNew} />
             </Title.h5>
           </Header.Lead>
-        </Header.Root>
+        </Header>
 
-        <Accordion.Root type="single" defaultValue="details" className="px-4">
+        <Accordion type="single" defaultValue="details" className="px-4">
           <Accordion.Item value="details">
             <Accordion.Trigger className="flex items-center gap-2 py-2">
               <Label.sm>Details</Label.sm>
@@ -454,7 +454,7 @@ export function PlaylistDetailScreen() {
             <Accordion.Content>
               <div className="space-y-3 pb-3">
                 <MetaRow icon={<Loader />} label="Status">
-                  <Dropdown.Root placement="bottom">
+                  <Dropdown placement="bottom">
                     <Dropdown.Trigger>
                       <Badge
                         label={playlistStatusLabel[playlist.status]}
@@ -472,7 +472,7 @@ export function PlaylistDetailScreen() {
                         </Dropdown.Item>
                       ))}
                     </Dropdown.Panel>
-                  </Dropdown.Root>
+                  </Dropdown>
                 </MetaRow>
 
                 <MetaRow icon={<FileText />} label="Description">
@@ -488,7 +488,7 @@ export function PlaylistDetailScreen() {
               </div>
             </Accordion.Content>
           </Accordion.Item>
-        </Accordion.Root>
+        </Accordion>
 
         <Divider className="px-4 my-2" />
 
@@ -496,7 +496,7 @@ export function PlaylistDetailScreen() {
         <div className="flex-1 min-h-0 flex gap-2 p-4 pt-2 mx-auto w-full max-w-content max-mobile:flex-col">
           {/* Left panel — media library (draggable items) */}
           <div ref={mediaPanelRef} className="w-80 shrink-0 flex flex-col overflow-hidden max-mobile:w-full max-mobile:shrink max-mobile:h-64">
-            <Card.Root className="flex-1 flex flex-col overflow-hidden">
+            <Card className="flex-1 flex flex-col overflow-hidden">
               <Card.Header className="gap-2 justify-between">
                 <Label.sm>Media</Label.sm>
 
@@ -512,12 +512,12 @@ export function PlaylistDetailScreen() {
                     <DraggableMediaItem key={item.id} item={item} onAdd={handleAddMediaToQueue} />
                   ))}
               </Card.Content>
-            </Card.Root>
+            </Card>
           </div>
 
           {/* Right panel — cue queue + playback settings */}
           <div className="flex-1 min-w-0 flex flex-col gap-2 overflow-hidden max-mobile:min-h-0">
-            <Card.Root className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <Card className="flex-1 min-h-0 flex flex-col overflow-hidden">
               <Card.Header className="gap-2 justify-between">
                 <div className="flex items-center gap-2">
                   <ListMusic className="size-4 text-tertiary" />
@@ -546,7 +546,7 @@ export function PlaylistDetailScreen() {
                   onBrowseMedia={handleBrowseMedia}
                 />
               </Card.Content>
-            </Card.Root>
+            </Card>
 
             {/* Playback defaults — unified strip */}
             <div className="rounded-lg border border-tertiary bg-secondary_alt p-1.5">
@@ -569,7 +569,7 @@ export function PlaylistDetailScreen() {
                       </button>
                     </div>
                   ) : (
-                    <Dropdown.Root placement="top">
+                    <Dropdown placement="top">
                       <Dropdown.Trigger>
                         <Paragraph.xs className="text-quaternary cursor-pointer hover:text-secondary transition-colors">Select audio...</Paragraph.xs>
                       </Dropdown.Trigger>
@@ -592,7 +592,7 @@ export function PlaylistDetailScreen() {
                           <div className="px-2 py-1.5 text-sm text-quaternary">No audio items in library</div>
                         )}
                       </Dropdown.Panel>
-                    </Dropdown.Root>
+                    </Dropdown>
                   )}
                 </div>
 
@@ -867,7 +867,7 @@ function CueRow({ cue, totalCues, onRemove, onUpdateCue, onDuplicate, onMoveToTo
       ) : (
         <Paragraph.xs className="text-tertiary w-16 text-right">{durationText}</Paragraph.xs>
       )}
-      <Dropdown.Root>
+      <Dropdown>
         <Dropdown.Trigger>
           <button className="p-0.5 rounded hover:bg-secondary cursor-pointer text-quaternary hover:text-secondary transition-colors">
             <MoreVertical className="size-4" />
@@ -900,7 +900,7 @@ function CueRow({ cue, totalCues, onRemove, onUpdateCue, onDuplicate, onMoveToTo
             <span className="text-error">Remove</span>
           </Dropdown.Item>
         </Dropdown.Panel>
-      </Dropdown.Root>
+      </Dropdown>
     </div>
   )
 }

@@ -60,7 +60,7 @@ export function ProfilePopover({ onSignOut, isSigningOut }: ProfilePopoverProps)
 
     return (
         <div className="w-full [&>span]:!flex [&>span]:!w-full">
-            <Popover.Root placement="top" open={open} onOpenChange={setOpen}>
+            <Popover placement="top" open={open} onOpenChange={setOpen}>
                 <Popover.Trigger
                     className={cn(
                         '!flex !w-full !items-center gap-2 rounded-lg p-1 -m-1 cursor-pointer hover:bg-secondary',
@@ -70,9 +70,9 @@ export function ProfilePopover({ onSignOut, isSigningOut }: ProfilePopoverProps)
                     <Avatar.initials name={userInitials} size="sm" />
                     {!sidebarState.isCollapsed && (
                         <>
-                            <span className="flex min-w-0 flex-1 flex-col text-left">
-                                <Label.sm className="truncate leading-none">{userDisplayName}</Label.sm>
-                                <Label.xs className="text-quaternary truncate leading-none capitalize">{roleName}</Label.xs>
+                            <span className="flex min-w-0 flex-1 flex-col text-left space-y-0.5">
+                                <Label.sm className="truncate">{userDisplayName}</Label.sm>
+                                <Label.xs className="text-quaternary truncate capitalize">{roleName}</Label.xs>
                             </span>
                             <ChevronsUpDown className="size-4 shrink-0 text-tertiary" aria-hidden />
                         </>
@@ -117,7 +117,7 @@ export function ProfilePopover({ onSignOut, isSigningOut }: ProfilePopoverProps)
                         />
                     </div>
                 </Popover.Panel>
-            </Popover.Root>
+            </Popover>
 
             <ReportBugModal open={bugOpen} onOpenChange={setBugOpen} />
         </div>

@@ -1,7 +1,7 @@
 import { Badge } from "@/components/display/badge";
-import { Card } from "@/components/display/card";
 import { DataTable } from "@/components/display/data-table";
 import { MetaRow } from "@/components/display/meta-row";
+import { Section } from "@/components/display/section";
 import { Paragraph, Title } from "@/components/display/text";
 import { Button } from "@/components/controls/button";
 import { Input } from "@/components/form/input";
@@ -126,21 +126,29 @@ function UsersTabContent() {
     }, [currentWorkspaceId, search, users]);
 
     return (
-        <Drawer.Root open={!!selectedUser} onOpenChange={handleDrawerOpenChange}>
-            <Card.Root>
-                <Card.Header className="gap-2 flex-1 justify-end">
+        <Drawer open={!!selectedUser} onOpenChange={handleDrawerOpenChange}>
+            <Section>
+                <Section.Header
+                    title="Members"
+                    description="Everyone with access to this workspace. Click a row to manage their role."
+                />
+                <Section.Body className="gap-4">
                     <div className="flex flex-1 justify-end">
                         <Input icon={<Search />} placeholder="Search users..." className="w-full max-w-md" value={search} onChange={handleSearchChange} />
                     </div>
-                </Card.Header>
-                <Card.Content className="!border-secondary overflow-hidden">
                     {isLoading ? (
                         <div className="flex justify-center py-16"><Spinner /></div>
                     ) : (
-                        <DataTable data={filtered} columns={columns} emptyMessage="No users match your search" onRowClick={handleUserSelect} />
+                        <DataTable
+                            data={filtered}
+                            columns={columns}
+                            emptyMessage="No users match your search"
+                            onRowClick={handleUserSelect}
+                            className="rounded-lg border border-secondary overflow-hidden"
+                        />
                     )}
-                </Card.Content>
-            </Card.Root>
+                </Section.Body>
+            </Section>
             {selectedUser && (
                 <UserDetailDrawer
                     user={selectedUser}
@@ -151,7 +159,7 @@ function UsersTabContent() {
                     onError={(msg) => toast({ title: "Error", description: msg, variant: "error" })}
                 />
             )}
-        </Drawer.Root>
+        </Drawer>
     );
 }
 
@@ -289,7 +297,7 @@ function UserDetailDrawerContent({ user, canManage, workspaces, onClose, onSaved
 
                     <MetaRow icon={<Shield className="size-4" />} label="Role">
                         {canManage ? (
-                            <Dropdown.Root placement="bottom">
+                            <Dropdown placement="bottom">
                                 <Dropdown.Trigger>
                                     <Badge
                                         label={selectedRoleName}
@@ -305,7 +313,7 @@ function UserDetailDrawerContent({ user, canManage, workspaces, onClose, onSaved
                                         </Dropdown.Item>
                                     ))}
                                 </Dropdown.Panel>
-                            </Dropdown.Root>
+                            </Dropdown>
                         ) : (
                             <Badge label={user.role?.name ?? "No role"} color={getRoleColor(user.role?.name)} icon={<Shield />} />
                         )}

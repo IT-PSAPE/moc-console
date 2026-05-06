@@ -24,3 +24,15 @@ export type Checklist = {
     createdAt: string
     updatedAt: string
 }
+
+export type ChecklistItemAssignee = {
+    checklistItemId: string
+    userId: string
+    duty: string
+}
+
+export const checklistItemDuties = [
+    'Owner',
+    'Reviewer',
+    'Backup',
+] as const

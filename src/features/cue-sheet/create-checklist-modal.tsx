@@ -30,7 +30,7 @@ export function CreateChecklistModal({ open, onOpenChange, onCreate }: CreateChe
     }, [canSubmit, form, onCreate, resetForm])
 
     return (
-        <Modal.Root open={open} onOpenChange={(next) => { onOpenChange(next); if (!next) resetForm() }}>
+        <Modal open={open} onOpenChange={(next) => { onOpenChange(next); if (!next) resetForm() }}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
@@ -67,6 +67,6 @@ export function CreateChecklistModal({ open, onOpenChange, onCreate }: CreateChe
                     </Modal.Panel>
                 </Modal.Positioner>
             </Modal.Portal>
-        </Modal.Root>
+        </Modal>
     )
 }
