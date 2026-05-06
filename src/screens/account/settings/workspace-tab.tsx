@@ -1,13 +1,13 @@
 import { Button } from '@/components/controls/button'
 import { Divider } from '@/components/display/divider'
-import { Label, Paragraph } from '@/components/display/text'
-import { MetaRow } from '@/components/display/meta-row'
+import { Section } from '@/components/display/section'
+import { SettingsRow } from '@/components/display/settings-row'
+import { Paragraph } from '@/components/display/text'
 import { useFeedback } from '@/components/feedback/feedback-provider'
 import { Input } from '@/components/form/input'
 import { updateWorkspace } from '@/data/mutate-workspace'
 import { useAuth } from '@/lib/auth-context'
 import { useWorkspace } from '@/lib/workspace-context'
-import { AtSign, FileText, Hash } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -89,16 +89,20 @@ export function WorkspaceTab() {
 
     return (
         <div className="flex flex-col">
-            <div className="py-2">
-                <Label.md className="block pb-1">Workspace details</Label.md>
-                <Paragraph.xs className="text-tertiary pb-3">
-                    {canManage
-                        ? 'Update the name, slug, and description of this workspace.'
-                        : 'Only administrators can edit workspace details.'}
-                </Paragraph.xs>
-
-                <div className="space-y-3">
-                    <MetaRow icon={<AtSign className="size-4" />} label="Name">
+            <Section>
+                <Section.Header
+                    title="Workspace details"
+                    description={
+                        canManage
+                            ? 'Update the name, slug, and description of this workspace.'
+                            : 'Only administrators can edit workspace details.'
+                    }
+                />
+                <Section.Body>
+                    <SettingsRow
+                        label="Name"
+                        description="Displayed across the app and in the workspace switcher."
+                    >
                         <Input
                             value={name}
                             onChange={(e) => setName(e.target.value)}
@@ -107,9 +111,12 @@ export function WorkspaceTab() {
                             style="ghost"
                             disabled={!canManage}
                         />
-                    </MetaRow>
+                    </SettingsRow>
 
-                    <MetaRow icon={<Hash className="size-4" />} label="Slug">
+                    <SettingsRow
+                        label="Slug"
+                        description="Used in URLs. Lowercase letters, numbers, and hyphens only."
+                    >
                         <div className="flex flex-col gap-1 max-w-80">
                             <Input
                                 value={slug}
@@ -124,9 +131,12 @@ export function WorkspaceTab() {
                                 </Paragraph.xs>
                             )}
                         </div>
-                    </MetaRow>
+                    </SettingsRow>
 
-                    <MetaRow icon={<FileText className="size-4" />} label="Description">
+                    <SettingsRow
+                        label="Description"
+                        description="A short summary of what this workspace is for."
+                    >
                         <textarea
                             rows={3}
                             value={description}
@@ -135,9 +145,9 @@ export function WorkspaceTab() {
                             disabled={!canManage}
                             className="w-full max-w-80 rounded-lg border border-secondary bg-primary px-3 py-2 paragraph-sm focus:border-brand focus:outline-none focus:ring-3 focus:ring-border-brand/10 resize-none disabled:cursor-not-allowed disabled:bg-disabled"
                         />
-                    </MetaRow>
-                </div>
-            </div>
+                    </SettingsRow>
+                </Section.Body>
+            </Section>
 
             {canManage && hasChanges && (
                 <>

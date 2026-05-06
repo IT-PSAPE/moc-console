@@ -70,9 +70,9 @@ export function ProfilePopover({ onSignOut, isSigningOut }: ProfilePopoverProps)
                     <Avatar.initials name={userInitials} size="sm" />
                     {!sidebarState.isCollapsed && (
                         <>
-                            <span className="flex min-w-0 flex-1 flex-col text-left">
-                                <Label.sm className="truncate leading-none">{userDisplayName}</Label.sm>
-                                <Label.xs className="text-quaternary truncate leading-none capitalize">{roleName}</Label.xs>
+                            <span className="flex min-w-0 flex-1 flex-col text-left space-y-0.5">
+                                <Label.sm className="truncate">{userDisplayName}</Label.sm>
+                                <Label.xs className="text-quaternary truncate capitalize">{roleName}</Label.xs>
                             </span>
                             <ChevronsUpDown className="size-4 shrink-0 text-tertiary" aria-hidden />
                         </>

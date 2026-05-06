@@ -1,5 +1,6 @@
 import { Badge } from "@/components/display/badge";
 import { Card } from "@/components/display/card";
+import { Section } from "@/components/display/section";
 import { Paragraph, Label } from "@/components/display/text";
 import { Checkbox } from "@/components/form/checkbox";
 import { Spinner } from "@/components/feedback/spinner";
@@ -71,23 +72,28 @@ export function TelegramTab() {
     );
 
     return (
-        <div className="flex flex-col gap-4">
-            {isLoading ? (
-                <div className="flex justify-center py-16">
-                    <Spinner size="lg" />
-                </div>
-            ) : groups.length === 0 ? (
-                <EmptyState
-                    icon={<MessagesSquare />}
-                    title="No groups yet"
-                    description={
-                        currentWorkspaceSlug
-                            ? `Add the bot to a Telegram group, then send "/register_group ${currentWorkspaceSlug}" in that group to register it to this workspace.`
-                            : "Add the bot to a Telegram group, then send /register_group <workspace-slug> in that group."
-                    }
-                />
-            ) : (
-                groups.map((group) => (
+        <Section>
+            <Section.Header
+                title="Telegram groups"
+                description="Groups the bot has been added to. Toggle a group active to allow event notifications."
+            />
+            <Section.Body className="gap-4">
+                {isLoading ? (
+                    <div className="flex justify-center py-16">
+                        <Spinner size="lg" />
+                    </div>
+                ) : groups.length === 0 ? (
+                    <EmptyState
+                        icon={<MessagesSquare />}
+                        title="No groups yet"
+                        description={
+                            currentWorkspaceSlug
+                                ? `Add the bot to a Telegram group, then send "/register_group ${currentWorkspaceSlug}" in that group to register it to this workspace.`
+                                : "Add the bot to a Telegram group, then send /register_group <workspace-slug> in that group."
+                        }
+                    />
+                ) : (
+                    groups.map((group) => (
                     <Card key={group.chatId}>
                         <Card.Header>
                             <div className="flex flex-1 flex-col gap-1">
@@ -124,9 +130,10 @@ export function TelegramTab() {
                                 ))}
                             </Card.Content>
                         )}
-                    </Card>
-                ))
-            )}
-        </div>
+                        </Card>
+                    ))
+                )}
+            </Section.Body>
+        </Section>
     );
 }

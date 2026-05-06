@@ -1,6 +1,7 @@
 import { Badge } from "@/components/display/badge";
 import { DataTable } from "@/components/display/data-table";
 import { MetaRow } from "@/components/display/meta-row";
+import { Section } from "@/components/display/section";
 import { Paragraph, Title } from "@/components/display/text";
 import { Button } from "@/components/controls/button";
 import { Input } from "@/components/form/input";
@@ -126,22 +127,28 @@ function UsersTabContent() {
 
     return (
         <Drawer open={!!selectedUser} onOpenChange={handleDrawerOpenChange}>
-            <div className="flex flex-col gap-4">
-                <div className="flex flex-1 justify-end">
-                    <Input icon={<Search />} placeholder="Search users..." className="w-full max-w-md" value={search} onChange={handleSearchChange} />
-                </div>
-                {isLoading ? (
-                    <div className="flex justify-center py-16"><Spinner /></div>
-                ) : (
-                    <DataTable
-                        data={filtered}
-                        columns={columns}
-                        emptyMessage="No users match your search"
-                        onRowClick={handleUserSelect}
-                        className="rounded-lg border border-secondary overflow-hidden"
-                    />
-                )}
-            </div>
+            <Section>
+                <Section.Header
+                    title="Members"
+                    description="Everyone with access to this workspace. Click a row to manage their role."
+                />
+                <Section.Body className="gap-4">
+                    <div className="flex flex-1 justify-end">
+                        <Input icon={<Search />} placeholder="Search users..." className="w-full max-w-md" value={search} onChange={handleSearchChange} />
+                    </div>
+                    {isLoading ? (
+                        <div className="flex justify-center py-16"><Spinner /></div>
+                    ) : (
+                        <DataTable
+                            data={filtered}
+                            columns={columns}
+                            emptyMessage="No users match your search"
+                            onRowClick={handleUserSelect}
+                            className="rounded-lg border border-secondary overflow-hidden"
+                        />
+                    )}
+                </Section.Body>
+            </Section>
             {selectedUser && (
                 <UserDetailDrawer
                     user={selectedUser}

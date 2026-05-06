@@ -1,4 +1,3 @@
-import { Divider } from '@/components/display/divider'
 import { Header } from '@/components/display/header'
 import { Paragraph, Title } from '@/components/display/text'
 import { Tabs } from '@/components/layout/tabs'
@@ -76,7 +75,7 @@ export function SettingsScreen() {
             </Header>
 
             <div className="px-4 pt-2">
-                <Tabs value={activeTab} onValueChange={handleTabChange}>
+                <Tabs variant="pill" value={activeTab} onValueChange={handleTabChange}>
                     <Tabs.List>
                         {availableTabs.map((tab) => (
                             <Tabs.Tab key={tab} value={tab}>
@@ -86,8 +85,6 @@ export function SettingsScreen() {
                     </Tabs.List>
                 </Tabs>
             </div>
-
-            <Divider className="my-2" />
 
             <div className="p-4">
                 {activeTab === 'general' && <GeneralTab />}
