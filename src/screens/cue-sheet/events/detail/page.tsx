@@ -113,7 +113,7 @@ export function CueSheetEventDetailScreen() {
                         </Button>
                     ) : undefined}
                 />
-                <CueModal />
+                <CueModal eventId={event.id} assignmentEnabled={liveSyncEnabled} />
 
                 {canControl && (
                     <TopBarActions>

@@ -5,11 +5,9 @@ import { Dropdown } from "@/components/overlays/dropdown";
 import type { ResolvedAssignee } from "@/data/fetch-assignees";
 import type { Request, Status, Priority, Category } from "@/types/requests";
 import { statusLabel, statusColor, priorityLabel, categoryLabel, priorityColor } from "@/types/requests";
-import { Archive, Calendar, Check, CircleAlert, CircleChevronDown, CircleDashed, Clock, History, Loader, Plus, Tag, User, X } from "lucide-react";
-import { AddMemberPopover } from "./add-member-popover";
+import { Archive, Calendar, Check, CircleAlert, CircleChevronDown, CircleDashed, Clock, History, Loader, Tag, User } from "lucide-react";
+import { MemberSearchPicker } from "@/features/assignees/member-search-picker";
 import { cn } from "@/utils/cn";
-import { Avatar } from "@/components/display/avatar";
-import { Button } from "@/components/controls/button";
 import { Input } from "@/components/form/input";
 import { formatUtcIsoForBrowserDateTimeInput, formatUtcIsoInBrowserTimeZone, parseBrowserDateTimeInputToUtcIso } from "@/utils/browser-date-time";
 
@@ -193,38 +191,20 @@ export function RequestFiveW({ request, className }: { request: Request, classNa
 
 type RequestAssigneeListProps = {
     assignees: ResolvedAssignee[];
-    onAddMember?: (userId: string, duty: string) => void;
-    onRemoveMember?: (userId: string) => void;
+    onAddMember: (userId: string, duty: string) => void;
+    onRemoveMember: (userId: string) => void;
     className?: string;
 };
 
 export function RequestAssigneeList({ assignees, onAddMember, onRemoveMember, className }: RequestAssigneeListProps) {
     return (
         <div className={cn(className)}>
-            <div className="flex items-center justify-between pb-3">
-                <Label.md>Assignees</Label.md>
-                {onAddMember && (
-                    <AddMemberPopover existingUserIds={assignees.map(a => a.id)} onAdd={onAddMember}>
-                        <Button.Icon icon={<Plus />} variant="ghost" className="cursor-pointer" />
-                    </AddMemberPopover>
-                )}
-            </div>
-            {assignees.length > 0 ? (
-                <div className="space-y-3">
-                    {assignees.map((a) => (
-                        <div key={a.id} className="w-full flex items-center rounded-lg py-1 space-x-2">
-                            <Avatar.initials size="md" name={`${a.name[0]}${a.surname[0]}`} />
-                            <div className="flex-1 min-w-0">
-                                <Label.sm>{a.name} {a.surname}</Label.sm>
-                                {a.duty && <Paragraph.xs className="text-quaternary truncate">{a.duty}</Paragraph.xs>}
-                            </div>
-                            {onRemoveMember && <Button.Icon icon={<X />} variant="ghost" onClick={() => onRemoveMember(a.id)} />}
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <Paragraph.sm className="text-quaternary">No assignees</Paragraph.sm>
-            )}
+            <Label.md className="block pb-3">Assignees</Label.md>
+            <MemberSearchPicker
+                assignees={assignees}
+                onAdd={(user) => onAddMember(user.id, '')}
+                onRemove={onRemoveMember}
+            />
         </div>
     );
 }

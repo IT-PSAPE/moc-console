@@ -2,14 +2,22 @@ import { Modal } from '@/components/overlays/modal'
 import { Button } from '@/components/controls/button'
 import { Input } from '@/components/form/input'
 import { FormLabel } from '@/components/form/form-label'
-import { Label } from '@/components/display/text'
+import { Label, Paragraph } from '@/components/display/text'
 import { useTimeline } from '@/components/timeline'
 import { CUE_TYPE_CONFIG } from '@/components/timeline'
 import { CUE_TYPES } from '@/types/cue-sheet'
-import type { CueType } from '@/types/cue-sheet'
+import type { Cue, CueType } from '@/types/cue-sheet'
 import type { Track } from '@/types/cue-sheet'
 import type { CueModalState } from '@/components/timeline/timeline-types'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { MemberSearchPicker } from '@/features/assignees/member-search-picker'
+import { fetchAssigneesByCueId, type ResolvedAssignee } from '@/data/fetch-assignees'
+import { addCueAssignee, removeCueAssignee } from '@/data/mutate-assignees'
+import { useFeedback } from '@/components/feedback/feedback-provider'
+import { getErrorMessage } from '@/utils/get-error-message'
+import { useCueSheet } from './cue-sheet-provider'
+import { randomId } from '@/utils/random-id'
+import type { User } from '@/types/requests'
 
 // ─── Form State ────────────────────────────────────────────────────
 
@@ -19,7 +27,6 @@ type CueFormState = {
     type: CueType
     startMin: number
     durationMin: number
-    assignee: string
     notes: string
 }
 
@@ -29,7 +36,6 @@ const defaultForm: CueFormState = {
     type: 'performance',
     startMin: 0,
     durationMin: 5,
-    assignee: '',
     notes: '',
 }
 
@@ -49,7 +55,6 @@ function getInitialForm(cueModal: CueModalState, tracks: Track[]): CueFormState 
             type: cueModal.cue.type,
             startMin: cueModal.cue.startMin,
             durationMin: cueModal.cue.durationMin,
-            assignee: cueModal.cue.assignee ?? '',
             notes: cueModal.cue.notes ?? '',
         }
     }
@@ -59,7 +64,17 @@ function getInitialForm(cueModal: CueModalState, tracks: Track[]): CueFormState 
 
 // ─── Modal ─────────────────────────────────────────────────────────
 
-export function CueModal() {
+type CueModalProps = {
+    /**
+     * The event id, when assignment is enabled. Required when `assignmentEnabled`
+     * is true so we can sync tracks to DB before writing cue assignees.
+     */
+    eventId?: string
+    /** Show the assignee picker. Should only be true for instance events. */
+    assignmentEnabled?: boolean
+}
+
+export function CueModal({ eventId, assignmentEnabled = false }: CueModalProps = {}) {
     const { tracks, cueModal, closeCueModal, addCue, updateCue, moveCue } = useTimeline()
 
     const isOpen = cueModal.mode !== 'closed'
@@ -96,6 +111,8 @@ export function CueModal() {
             moveCue={moveCue}
             tracks={tracks}
             updateCue={updateCue}
+            eventId={eventId}
+            assignmentEnabled={assignmentEnabled}
         />
     )
 }
@@ -108,25 +125,79 @@ type CueModalContentProps = {
     moveCue: ReturnType<typeof useTimeline>['moveCue']
     tracks: Track[]
     updateCue: ReturnType<typeof useTimeline>['updateCue']
+    eventId?: string
+    assignmentEnabled: boolean
 }
 
-function CueModalContent({ addCue, closeCueModal, cueModal, isEdit, moveCue, tracks, updateCue }: CueModalContentProps) {
+function CueModalContent({ addCue, closeCueModal, cueModal, isEdit, moveCue, tracks, updateCue, eventId, assignmentEnabled }: CueModalContentProps) {
+    const { toast } = useFeedback()
+    const { actions: { syncTracks } } = useCueSheet()
     const [form, setForm] = useState<CueFormState>(() => getInitialForm(cueModal, tracks))
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
-    const canSubmit = form.label.trim().length > 0 && form.trackId.length > 0 && form.durationMin > 0
+    // Edit-mode assignees: loaded from DB, mutated directly.
+    const [editAssignees, setEditAssignees] = useState<ResolvedAssignee[]>([])
+    const [isLoadingAssignees, setIsLoadingAssignees] = useState(assignmentEnabled && cueModal.mode === 'edit')
 
-    const handleSubmit = useCallback(() => {
+    // Create-mode assignees: buffered until the cue is saved.
+    const [pendingAssignees, setPendingAssignees] = useState<User[]>([])
+
+    const isCueAssignmentEnabled = assignmentEnabled && Boolean(eventId)
+    const editCueId = cueModal.mode === 'edit' ? cueModal.cue.id : null
+
+    useEffect(() => {
+        if (!isCueAssignmentEnabled || !editCueId) return
+        let active = true
+        fetchAssigneesByCueId(editCueId)
+            .then((next) => { if (active) setEditAssignees(next) })
+            .catch((error) => {
+                if (active) toast({ title: 'Failed to load assignees', description: getErrorMessage(error, 'Could not load cue assignees.'), variant: 'error' })
+            })
+            .finally(() => { if (active) setIsLoadingAssignees(false) })
+        return () => { active = false }
+    }, [editCueId, isCueAssignmentEnabled, toast])
+
+    const canSubmit = form.label.trim().length > 0 && form.trackId.length > 0 && form.durationMin > 0 && !isSubmitting
+
+    const handleSubmit = useCallback(async () => {
         if (!canSubmit) return
 
         if (cueModal.mode === 'create') {
-            addCue(form.trackId, {
-                label: form.label.trim(),
-                type: form.type,
-                startMin: form.startMin,
-                durationMin: form.durationMin,
-                assignee: form.assignee.trim() || undefined,
-                notes: form.notes.trim() || undefined,
-            })
+            // When assignment is enabled and we have buffered assignees, do a manual
+            // sync so we can write assignee rows after the cue exists in DB.
+            if (isCueAssignmentEnabled && eventId && pendingAssignees.length > 0) {
+                setIsSubmitting(true)
+                try {
+                    const newCueId = randomId()
+                    const newCue: Cue = {
+                        id: newCueId,
+                        label: form.label.trim(),
+                        type: form.type,
+                        startMin: form.startMin,
+                        durationMin: form.durationMin,
+                        notes: form.notes.trim() || undefined,
+                    }
+                    const nextTracks = tracks.map((t) =>
+                        t.id === form.trackId ? { ...t, cues: [...t.cues, newCue] } : t,
+                    )
+                    await syncTracks(eventId, nextTracks)
+                    await Promise.all(
+                        pendingAssignees.map((user) => addCueAssignee(newCueId, user.id, '')),
+                    )
+                } catch (error) {
+                    toast({ title: 'Failed to create cue', description: getErrorMessage(error, 'The cue could not be created.'), variant: 'error' })
+                    setIsSubmitting(false)
+                    return
+                }
+            } else {
+                addCue(form.trackId, {
+                    label: form.label.trim(),
+                    type: form.type,
+                    startMin: form.startMin,
+                    durationMin: form.durationMin,
+                    notes: form.notes.trim() || undefined,
+                })
+            }
         } else if (cueModal.mode === 'edit') {
             const origTrackId = cueModal.trackId
             const cueId = cueModal.cue.id
@@ -137,7 +208,6 @@ function CueModalContent({ addCue, closeCueModal, cueModal, isEdit, moveCue, tra
                     label: form.label.trim(),
                     type: form.type,
                     durationMin: form.durationMin,
-                    assignee: form.assignee.trim() || undefined,
                     notes: form.notes.trim() || undefined,
                 })
             } else {
@@ -146,14 +216,13 @@ function CueModalContent({ addCue, closeCueModal, cueModal, isEdit, moveCue, tra
                     type: form.type,
                     startMin: form.startMin,
                     durationMin: form.durationMin,
-                    assignee: form.assignee.trim() || undefined,
                     notes: form.notes.trim() || undefined,
                 })
             }
         }
 
         closeCueModal()
-    }, [canSubmit, form, cueModal, addCue, updateCue, moveCue, closeCueModal])
+    }, [canSubmit, form, cueModal, addCue, updateCue, moveCue, closeCueModal, isCueAssignmentEnabled, eventId, pendingAssignees, tracks, syncTracks, toast])
 
     return (
         <Modal open={true} onOpenChange={(next) => { if (!next) closeCueModal() }}>
@@ -237,27 +306,108 @@ function CueModalContent({ addCue, closeCueModal, cueModal, isEdit, moveCue, tra
                                     />
                                 </div>
 
-                                <div className="flex flex-col gap-1.5">
-                                    <FormLabel label="Assignee" optional />
-                                    <Input
-                                        placeholder="Person responsible for this cue"
-                                        value={form.assignee}
-                                        onChange={(e) => setForm((prev) => ({ ...prev, assignee: e.target.value }))}
-                                    />
-                                </div>
+                                {isCueAssignmentEnabled && (
+                                    <div className="flex flex-col gap-1.5">
+                                        <Label.sm>Assignees</Label.sm>
+                                        {cueModal.mode === 'edit' && editCueId ? (
+                                            <EditCueAssigneeSection
+                                                cueId={editCueId}
+                                                assignees={editAssignees}
+                                                isLoading={isLoadingAssignees}
+                                                onChange={setEditAssignees}
+                                            />
+                                        ) : cueModal.mode === 'create' ? (
+                                            <CreateCueAssigneeSection
+                                                pending={pendingAssignees}
+                                                onChange={setPendingAssignees}
+                                            />
+                                        ) : null}
+                                    </div>
+                                )}
                             </div>
                         </Modal.Content>
                         <Modal.Footer>
                             <Modal.Close>
-                                <Button variant="secondary">Cancel</Button>
+                                <Button variant="secondary" disabled={isSubmitting}>Cancel</Button>
                             </Modal.Close>
                             <Button onClick={handleSubmit} disabled={!canSubmit}>
-                                {isEdit ? 'Save' : 'Create'}
+                                {isSubmitting ? 'Saving...' : isEdit ? 'Save' : 'Create'}
                             </Button>
                         </Modal.Footer>
                     </Modal.Panel>
                 </Modal.Positioner>
             </Modal.Portal>
         </Modal>
+    )
+}
+
+// ─── Assignee sections ─────────────────────────────────────────────
+
+type EditSectionProps = {
+    cueId: string
+    assignees: ResolvedAssignee[]
+    isLoading: boolean
+    onChange: (next: ResolvedAssignee[]) => void
+}
+
+function EditCueAssigneeSection({ cueId, assignees, isLoading, onChange }: EditSectionProps) {
+    const { toast } = useFeedback()
+
+    const handleAdd = useCallback(async (user: User) => {
+        try {
+            await addCueAssignee(cueId, user.id, '')
+            onChange(await fetchAssigneesByCueId(cueId))
+        } catch (error) {
+            toast({ title: 'Failed to add assignee', description: getErrorMessage(error, 'Could not add cue assignee.'), variant: 'error' })
+        }
+    }, [cueId, onChange, toast])
+
+    const handleRemove = useCallback(async (userId: string) => {
+        try {
+            await removeCueAssignee(cueId, userId)
+            onChange(await fetchAssigneesByCueId(cueId))
+        } catch (error) {
+            toast({ title: 'Failed to remove assignee', description: getErrorMessage(error, 'Could not remove cue assignee.'), variant: 'error' })
+        }
+    }, [cueId, onChange, toast])
+
+    if (isLoading) {
+        return <Paragraph.xs className="text-quaternary">Loading…</Paragraph.xs>
+    }
+
+    return (
+        <MemberSearchPicker
+            assignees={assignees}
+            onAdd={handleAdd}
+            onRemove={handleRemove}
+        />
+    )
+}
+
+type CreateSectionProps = {
+    pending: User[]
+    onChange: (next: User[]) => void
+}
+
+function CreateCueAssigneeSection({ pending, onChange }: CreateSectionProps) {
+    const handleAdd = useCallback((user: User) => {
+        onChange([...pending, user])
+    }, [onChange, pending])
+
+    const handleRemove = useCallback((userId: string) => {
+        onChange(pending.filter((u) => u.id !== userId))
+    }, [onChange, pending])
+
+    const pendingAsAssignees: ResolvedAssignee[] = pending.map((user) => ({
+        ...user,
+        duty: '',
+    }))
+
+    return (
+        <MemberSearchPicker
+            assignees={pendingAsAssignees}
+            onAdd={handleAdd}
+            onRemove={handleRemove}
+        />
     )
 }

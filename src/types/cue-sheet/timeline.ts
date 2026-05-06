@@ -29,7 +29,6 @@ export type Cue = {
     startMin: number // offset in minutes from event start
     durationMin: number
     type: CueType
-    assignee?: string
     notes?: string
 }
 
@@ -39,3 +38,18 @@ export type Track = {
     colorKey: TrackColorKey
     cues: Cue[]
 }
+
+export type CueAssignee = {
+    cueId: string
+    userId: string
+    duty: string
+}
+
+export const cueDuties = [
+    'Operator',
+    'Director',
+    'Camera',
+    'Audio',
+    'Lighting',
+    'Graphics',
+] as const
