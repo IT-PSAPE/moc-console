@@ -33,22 +33,26 @@ export function RequestsArchivedScreen() {
                 </Header.Lead>
             </Header>
 
+            <Header className='p-4 pt-8 mx-auto max-w-content max-mobile:flex-col max-mobile:gap-2 *:max-mobile:w-full'>
+                <Header.Lead className='gap-2 w-full'>
+
+                </Header.Lead>
+                <Header.Trail className='gap-2 flex-1 justify-end '>
+                    <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-md' value={state.search} onChange={(e) => setSearch(e.target.value)} />
+                    <Drawer>
+                        <Drawer.Trigger>
+                            <Button icon={<Settings2 />} variant='secondary'>Filter</Button>
+                        </Drawer.Trigger>
+                        <RequestFilterDrawer filters={requestFilters} />
+                    </Drawer>
+                </Header.Trail>
+            </Header>
+
             <div className='flex flex-col gap-4 p-4 pt-0 mx-auto w-full max-w-content'>
                 <Card>
                     <Card.Header className='gap-1.5'>
-                        <div className='flex-1 flex items-center gap-1.5'>
-                            <Indicator color='gray' className='size-6' />
-                            <Label.sm>Archived Tasks</Label.sm>
-                        </div>
-                        <div className='flex items-center gap-1.5 max-mobile:w-full'>
-                            <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-md' value={state.search} onChange={(e) => setSearch(e.target.value)} />
-                            <Drawer>
-                                <Drawer.Trigger>
-                                    <Button icon={<Settings2 />} variant='secondary'>Filter</Button>
-                                </Drawer.Trigger>
-                                <RequestFilterDrawer filters={requestFilters} />
-                            </Drawer>
-                        </div>
+                        <Indicator color='gray' className='size-6' />
+                        <Label.sm>Archived</Label.sm>
                     </Card.Header>
                     <Card.Content ghost>
                         {isLoadingArchived ? (

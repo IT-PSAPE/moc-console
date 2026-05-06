@@ -35,6 +35,12 @@ export const bookingStatusLabel: Record<BookingStatus, string> = {
   returned: "Returned",
 };
 
+export const bookingStatusGroup = [
+    { key: "booked", label: "Booked", color: "blue" },
+    { key: "checked_out", label: "Checked Out", color: "yellow" },
+    { key: "returned", label: "Returned", color: "green" },
+] as const;
+
 // ─── Colors ────────────────────────────────────────────
 
 export const equipmentStatusColor: Record<EquipmentStatus, "green" | "yellow" | "blue" | "red"> = {

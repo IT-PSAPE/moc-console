@@ -147,7 +147,7 @@ export function CueSheetOverviewScreen() {
             <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
                 <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
                     <Header.Lead className="gap-2">
-                        <Label.md>Q Sheets</Label.md>
+                        <Label.md>Items</Label.md>
                     </Header.Lead>
                     <Header.Trail className="gap-2 flex-1 justify-end">
                         <Input

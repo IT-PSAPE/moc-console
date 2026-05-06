@@ -9,4 +9,5 @@ export {
   equipmentCategoryColor,
   bookingStatusLabel,
   bookingStatusColor,
+  bookingStatusGroup,
 } from "./constants";

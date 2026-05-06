@@ -2,19 +2,25 @@ import { Button } from "@/components/controls/button";
 import { Badge } from "@/components/display/badge";
 import { Header } from "@/components/display/header";
 import { Input } from "@/components/form/input";
-import { Paragraph, Title } from "@/components/display/text";
+import { Label, Paragraph, Title } from "@/components/display/text";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Spinner } from "@/components/feedback/spinner";
 import { DataTable } from "@/components/display/data-table";
 import { Drawer } from "@/components/overlays/drawer";
+import { SegmentedControl } from "@/components/controls/segmented-control";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 import { EquipmentDrawer } from "@/features/equipment/equipment-drawer";
 import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
+import { EquipmentItem } from "@/features/equipment/equipment-item";
 import { useEquipmentFilters } from "@/features/equipment/use-equipment-filters";
 import { equipmentCategoryLabel, equipmentCategoryColor } from "@/types/equipment";
 import type { Equipment } from "@/types/equipment";
-import { Search, Settings2 } from "lucide-react";
+import { Archive, List, Search, Settings2, Table as TableIcon } from "lucide-react";
+import { Card } from "@/components/display/card";
+import { Indicator } from "@/components/display/indicator";
+import { EmptyState } from "@/components/feedback/empty-state";
 
 const columns = [
   { key: "name", header: "Equipment" },
@@ -34,8 +40,11 @@ const columns = [
 ];
 
 export function EquipmentMaintenanceScreen() {
+  const [view, setView] = useState("list");
+  const isMobile = useIsMobile();
+
   const {
-    state: { equipment, isLoadingEquipment },
+    state: { equipment },
     actions: { loadEquipment },
   } = useEquipment();
 
@@ -50,6 +59,54 @@ export function EquipmentMaintenanceScreen() {
 
   const equipmentFilters = useEquipmentFilters(maintenanceItems);
   const { filtered, setSearch, filters: state } = equipmentFilters;
+
+  return (
+    <section>
+      <Header className="p-4 pt-8 mx-auto max-w-content">
+        <Header.Lead className="gap-2">
+          <Title.h6>Maintenance</Title.h6>
+          <Paragraph.sm className="text-tertiary max-w-2xl">
+            Equipment currently flagged as faulty or under repair.
+          </Paragraph.sm>
+        </Header.Lead>
+      </Header>
+
+      <Header className='p-4 pt-8 mx-auto max-w-content max-mobile:flex-col max-mobile:gap-2 *:max-mobile:w-full'>
+        <Header.Lead className="gap-2 w-full">
+          <SegmentedControl defaultValue="list" onValueChange={setView} fill={isMobile}>
+            <SegmentedControl.Item value="list" icon={<List />}>List</SegmentedControl.Item>
+            <SegmentedControl.Item value="table" icon={<TableIcon />}>Table</SegmentedControl.Item>
+          </SegmentedControl>
+        </Header.Lead>
+        <Header.Trail className="gap-2 flex-1 justify-end">
+          <Input
+            icon={<Search />}
+            placeholder="Search maintenance..."
+            className="w-full max-w-md"
+            value={state.search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Drawer>
+            <Drawer.Trigger>
+              <Button icon={<Settings2 />} variant="secondary">Filter</Button>
+            </Drawer.Trigger>
+            <EquipmentFilterDrawer filters={equipmentFilters} />
+          </Drawer>
+        </Header.Trail>
+      </Header>
+
+      <div className="flex flex-col gap-4 p-4 mx-auto w-full max-w-content">
+
+        {view === "list" && <EquipmentMaintenanceList filtered={filtered} />}
+        {view === "table" && <EquipmentMaintenanceTable filtered={filtered} />}
+      </div>
+    </section>
+  );
+}
+
+
+function EquipmentMaintenanceTable({ filtered }: { filtered: Equipment[] }) {
+  const {state: { isLoadingEquipment }} = useEquipment();
 
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const isDirtyRef = useRef(false);
@@ -67,59 +124,65 @@ export function EquipmentMaintenanceScreen() {
     setSelectedEquipment(null);
   }, []);
 
+  if(isLoadingEquipment) return <div className="flex justify-center py-16"><Spinner /></div>;
+
+  if(filtered.length === 0) return EmptyState({
+    icon: <Archive />,
+    title: "No equipment in maintenance",
+    description: "Equipment flagged for maintenance will appear here.",
+    className: "py-8",
+  });
+
   return (
-    <section>
-      <Header className="p-4 pt-8 mx-auto max-w-content">
-        <Header.Lead className="gap-2">
-          <Title.h6>Maintenance</Title.h6>
-          <Paragraph.sm className="text-tertiary max-w-2xl">
-            Equipment currently flagged as faulty or under repair.
-          </Paragraph.sm>
-        </Header.Lead>
-      </Header>
+    <Drawer open={!!selectedEquipment} onOpenChange={handleOpenChange}>
+      <DataTable
+        data={filtered}
+        columns={columns}
+        emptyMessage="All equipment is in working order."
+        onRowClick={(row) => setSelectedEquipment(row)}
+        className="rounded-lg border border-secondary overflow-hidden"
+      />
+      {selectedEquipment && (
+        <EquipmentDrawer
+          equipment={selectedEquipment}
+          onEquipmentClose={handleEquipmentClose}
+          isDirtyRef={isDirtyRef}
+          requestCloseRef={requestCloseRef}
+        />
+      )}
+    </Drawer>
+  )
+}
 
-      <div className="flex flex-col gap-4 p-4 mx-auto w-full max-w-content">
-        <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
-          <Header.Lead className="gap-2" />
-          <Header.Trail className="gap-2 flex-1 justify-end">
-            <Input
-              icon={<Search />}
-              placeholder="Search maintenance..."
-              className="w-full max-w-md"
-              value={state.search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <Drawer>
-              <Drawer.Trigger>
-                <Button icon={<Settings2 />} variant="secondary">Filter</Button>
-              </Drawer.Trigger>
-              <EquipmentFilterDrawer filters={equipmentFilters} />
-            </Drawer>
-          </Header.Trail>
-        </Header>
+function EquipmentMaintenanceList({ filtered }: { filtered: Equipment[] }) {
+  const {state: { isLoadingEquipment }} = useEquipment();
 
-        <Drawer open={!!selectedEquipment} onOpenChange={handleOpenChange}>
-          {isLoadingEquipment ? (
-            <div className="flex justify-center py-16"><Spinner /></div>
-          ) : (
-            <DataTable
-              data={filtered}
-              columns={columns}
-              emptyMessage="All equipment is in working order."
-              onRowClick={(row) => setSelectedEquipment(row)}
-              className="rounded-lg border border-secondary overflow-hidden"
-            />
-          )}
-          {selectedEquipment && (
-            <EquipmentDrawer
-              equipment={selectedEquipment}
-              onEquipmentClose={handleEquipmentClose}
-              isDirtyRef={isDirtyRef}
-              requestCloseRef={requestCloseRef}
-            />
-          )}
-        </Drawer>
-      </div>
-    </section>
-  );
+  return (
+    <Card>
+      <Card.Header className='gap-1.5'>
+        <Indicator color='gray' className='size-6' />
+        <Label.sm>Maintenance</Label.sm>
+      </Card.Header>
+      <Card.Content ghost>
+        {isLoadingEquipment ? (
+          <div className="flex justify-center py-8">
+            <Spinner />
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={<Archive />}
+            title="No equipment in maintenance"
+            description="Equipment flagged for maintenance will appear here."
+            className="py-8"
+          />
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            {filtered.map((item) => (
+              <EquipmentItem key={item.id} equipment={item} />
+            ))}
+          </div>
+        )}
+      </Card.Content>
+    </Card>
+  )
 }
