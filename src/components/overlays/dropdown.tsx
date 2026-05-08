@@ -235,7 +235,7 @@ function DropdownPanel({ children, className, style, matchTriggerWidth = false, 
     const { state, actions, elements, meta } = useDropdown()
     const { state: overlayState } = useOverlayStack()
     const position = useAnchorPosition(elements.triggerElement, elements.panelElement, state.isOpen, state.placement)
-    const [triggerWidth, setTriggerWidth] = useState<number | null>(null)
+    const [, setResizeTick] = useState(0)
     const handlePanelRef = useCallback((node: HTMLDivElement | null) => {
         actions.setPanelElement(node)
     }, [actions])
@@ -243,19 +243,12 @@ function DropdownPanel({ children, className, style, matchTriggerWidth = false, 
     useLayoutEffect(() => {
         const trigger = elements.triggerElement
 
-        if (!matchTriggerWidth || !state.isOpen || !trigger) {
-            setTriggerWidth(null)
-            return undefined
-        }
-
-        setTriggerWidth(trigger.getBoundingClientRect().width)
-
-        if (typeof ResizeObserver === 'undefined') {
+        if (!matchTriggerWidth || !state.isOpen || !trigger || typeof ResizeObserver === 'undefined') {
             return undefined
         }
 
         const observer = new ResizeObserver(() => {
-            setTriggerWidth(trigger.getBoundingClientRect().width)
+            setResizeTick((tick) => tick + 1)
         })
 
         observer.observe(trigger)
@@ -264,6 +257,10 @@ function DropdownPanel({ children, className, style, matchTriggerWidth = false, 
             observer.disconnect()
         }
     }, [elements.triggerElement, matchTriggerWidth, state.isOpen])
+
+    const triggerWidth = matchTriggerWidth && elements.triggerElement
+        ? elements.triggerElement.getBoundingClientRect().width
+        : null
 
     if (!state.isOpen) {
         return null

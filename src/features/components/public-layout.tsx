@@ -1,7 +1,7 @@
 import { cn } from '@/utils/cn'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { routes } from '@/screens/console-routes'
-import { Home, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Label } from '@/components/display/text';
 
