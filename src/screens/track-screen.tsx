@@ -5,7 +5,6 @@ import { Input } from '@/components/form/input'
 import { Spinner } from '@/components/feedback/spinner'
 import { Alert } from '@/components/feedback/alert'
 import { EmptyState } from '@/components/feedback/empty-state'
-import { Divider } from '@/components/display/divider'
 import { PublicLayout } from '@/features/components/public-layout'
 import { TrackingResult } from '@/features/components/tracking-result'
 import { useTrackingLookup } from '@/features/hooks/use-tracking-lookup'
@@ -14,7 +13,7 @@ import { Search, ArrowLeft, FileSearch } from 'lucide-react'
 
 export function TrackScreen() {
   const navigate = useNavigate()
-  const { code, setCode, result, loading, error, notFound, searched, lookup } = useTrackingLookup()
+  const { code, setCode, result, loading, error, notFound, lookup } = useTrackingLookup()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -26,16 +25,20 @@ export function TrackScreen() {
   }
 
   return (
-    <PublicLayout>
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-1">
-          <Title.h5>Track Submission</Title.h5>
-          <Paragraph.sm className="text-secondary">
-            Enter your tracking code to view the status of your request or booking.
-          </Paragraph.sm>
+    <PublicLayout className="py-16">
+      <div className="flex max-mobile:flex-col">
+        <div className="shrink-0 w-full max-w-40 mb-8">
+          <Button variant="ghost" icon={<ArrowLeft />} onClick={handleBack} className="self-start">Back</Button>
         </div>
+        <div className="flex flex-col gap-1 flex-1 text-center">
+          <Title.h3>Track Submission</Title.h3>
+          <Paragraph.sm className="text-secondary">Enter your tracking code to view the status of your request or booking.</Paragraph.sm>
+        </div>
+        <div className="shrink-0 w-full max-w-40" />
+      </div>
 
-        <form onSubmit={handleSubmit} className="flex gap-3">
+      <div className="w-full max-w-content-sm mx-auto">
+        <form onSubmit={handleSubmit} className="flex gap-2 my-20">
           <Input
             className="flex-1"
             icon={<Search />}
@@ -44,19 +47,13 @@ export function TrackScreen() {
             onChange={(e) => setCode(e.target.value)}
           />
           <Button type="submit" disabled={!code.trim() || loading}>
-            {loading ? <Spinner size="sm" /> : 'Look Up'}
+            {loading ? <Spinner size="sm" /> : 'Search'}
           </Button>
         </form>
 
-        {error && (
-          <Alert title="Lookup failed" description={error} variant="error" style="filled" />
-        )}
+        {error && <Alert title="Lookup failed" description={error} variant="error" style="filled" />}
 
-        {loading && (
-          <div className="flex justify-center py-12">
-            <Spinner size="md" />
-          </div>
-        )}
+        {loading && <div className="flex justify-center"><Spinner size="md" /></div>}
 
         {notFound && (
           <EmptyState
@@ -68,13 +65,6 @@ export function TrackScreen() {
 
         {result && <TrackingResult data={result} />}
 
-        {!searched && !loading && (
-          <Divider />
-        )}
-
-        <Button variant="ghost" icon={<ArrowLeft />} onClick={handleBack}>
-          Back to Home
-        </Button>
       </div>
     </PublicLayout>
   )

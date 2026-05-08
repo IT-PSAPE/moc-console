@@ -12,37 +12,34 @@ import { Tabs } from '@/components/layout/tabs'
 import { Search, PackageOpen, SlidersHorizontal, X } from 'lucide-react'
 import { EquipmentCard } from './equipment-card'
 import { EQUIPMENT_CATEGORY_LABELS, EQUIPMENT_CATEGORIES, EQUIPMENT_STATUS_LABELS, EQUIPMENT_STATUSES } from '../constants'
-import type { PublicEquipmentItem, EquipmentCategory, EquipmentStatus } from '@/types/equipment'
+import type { EquipmentCategory, EquipmentStatus } from '@/types/equipment'
 import { useState } from 'react'
+import type { BookingFormState } from '../hooks/use-booking-form';
+import { useEquipmentBrowser } from '../hooks/use-equipment-browser';
+import { Alert } from '@/components/feedback/alert';
 
 type EquipmentListProps = {
-  items: PublicEquipmentItem[]
-  selectedIds: string[]
+  state: BookingFormState
   onToggle: (id: string) => void
-  searchQuery: string
-  onSearchChange: (query: string) => void
-  categoryFilters: EquipmentCategory[]
-  onCategoryChange: (categories: EquipmentCategory[]) => void
-  loading: boolean
 }
 
-export function EquipmentList({ items, selectedIds, onToggle, searchQuery, onSearchChange, categoryFilters, onCategoryChange, loading }: EquipmentListProps) {
-  const selectedCount = selectedIds.length
+export function EquipmentList({ state, onToggle }: EquipmentListProps) {
   const [statusFilters, setStatusFilters] = useState<EquipmentStatus[]>([])
+  const equipment = useEquipmentBrowser(state.data.checkedOutAt, state.data.expectedReturnAt)
 
-  const hasActiveFilters = categoryFilters.length > 0 || statusFilters.length > 0
-  const activeFilterCount = categoryFilters.length + statusFilters.length
+  const hasActiveFilters = equipment.categoryFilters.length > 0 || statusFilters.length > 0
+  const activeFilterCount = equipment.categoryFilters.length + statusFilters.length
 
-  const filteredItems = items.filter((item) => {
+  const filteredItems = equipment.items.filter((item) => {
     if (statusFilters.length > 0 && !statusFilters.includes(item.status)) return false
     return true
   })
 
   function toggleCategory(cat: EquipmentCategory) {
-    onCategoryChange(
-      categoryFilters.includes(cat)
-        ? categoryFilters.filter((c) => c !== cat)
-        : [...categoryFilters, cat]
+    equipment.setCategoryFilters(
+      equipment.categoryFilters.includes(cat)
+        ? equipment.categoryFilters.filter((c) => c !== cat)
+        : [...equipment.categoryFilters, cat]
     )
   }
 
@@ -61,8 +58,8 @@ export function EquipmentList({ items, selectedIds, onToggle, searchQuery, onSea
           className="flex-1"
           icon={<Search />}
           placeholder="Search equipment..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
+          value={equipment.searchQuery}
+          onChange={(e) => equipment.setSearchQuery(e.target.value)}
         />
         <Drawer.Root>
           <Drawer.Trigger>
@@ -101,7 +98,7 @@ export function EquipmentList({ items, selectedIds, onToggle, searchQuery, onSea
                           {EQUIPMENT_CATEGORIES.map((cat) => (
                             <Checkbox
                               key={cat}
-                              checked={categoryFilters.includes(cat)}
+                              checked={equipment.categoryFilters.includes(cat)}
                               onChange={() => toggleCategory(cat)}
                             >
                               <Label.xs>{EQUIPMENT_CATEGORY_LABELS[cat]}</Label.xs>
@@ -143,12 +140,13 @@ export function EquipmentList({ items, selectedIds, onToggle, searchQuery, onSea
             </Drawer.Panel>
           </Drawer.Portal>
         </Drawer.Root>
-        {selectedCount > 0 && (
-          <Badge label={`${selectedCount} selected`} color="blue" />
-        )}
       </div>
 
-      <Decision.Root value={filteredItems} loading={loading}>
+      {equipment.error && (
+        <Alert title="Failed to load equipment" description={equipment.error} variant="error" style="outline" />
+      )}
+
+      <Decision.Root value={filteredItems} loading={equipment.loading}>
         <Decision.Loading>
           <div className="flex justify-center py-12">
             <Spinner size="md" />
@@ -167,7 +165,7 @@ export function EquipmentList({ items, selectedIds, onToggle, searchQuery, onSea
               <EquipmentCard
                 key={item.id}
                 item={item}
-                selected={selectedIds.includes(item.id)}
+                selected={state.data.equipmentIds.includes(item.id)}
                 onSelect={onToggle}
               />
             ))}

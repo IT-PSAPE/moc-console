@@ -2,7 +2,7 @@ import { useReducer, useCallback } from 'react'
 import { submitPublicBookingBatch } from '@/data/submit-booking'
 import type { BookingFormData, SubmitBookingResult } from '@/types/booking'
 
-type BookingFormState = {
+export type BookingFormState = {
   step: number
   data: BookingFormData
   submitting: boolean

@@ -1,7 +1,7 @@
 import { Input } from '@/components/form/input'
 import { FormLabel } from '@/components/form/form-label'
 import { Dropdown } from '@/components/overlays/dropdown'
-import { Label } from '@/components/display/text'
+import { Label, Paragraph } from '@/components/display/text'
 import { cn } from '@/utils/cn'
 import { ChevronDown } from 'lucide-react'
 import { PRIORITIES, PRIORITY_LABELS, CATEGORIES, CATEGORY_LABELS } from '../constants'
@@ -60,18 +60,18 @@ function SelectField<T extends string>({ value, options, labels, onSelect }: { v
     <Dropdown.Root>
       <Dropdown.Trigger className='w-full'>
         <div className={cn(
-          'flex w-full items-center justify-between gap-2',
+          'h-10 flex w-full items-center justify-between gap-2',
           'rounded-lg border border-secondary bg-primary px-3 py-2',
           'cursor-pointer hover:border-brand transition-colors'
         )}>
-          <Label.sm>{labels[value]}</Label.sm>
+          <Paragraph.sm>{labels[value]}</Paragraph.sm>
           <ChevronDown className="size-4 text-tertiary" />
         </div>
       </Dropdown.Trigger>
-      <Dropdown.Panel>
+      <Dropdown.Panel matchTriggerWidth>
         {options.map((option) => (
           <Dropdown.Item key={option} onSelect={() => onSelect(option)}>
-            <Label.xs className={cn(option === value && 'text-brand')}>{labels[option]}</Label.xs>
+            <Label.sm className={cn(option === value && 'text-brand')}>{labels[option]}</Label.sm>
           </Dropdown.Item>
         ))}
       </Dropdown.Panel>

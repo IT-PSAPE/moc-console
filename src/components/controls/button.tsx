@@ -26,7 +26,7 @@ const buttonVariants = cv({
     variants: {
         variant: {
             primary: [
-                "border-transparent bg-brand_solid text-primary_on-brand",
+                "border-transparent bg-brand_solid text-white",
                 "hover:bg-brand_solid-hover",
                 "disabled:border-disabled disabled:bg-disabled disabled:text-disable",
             ],

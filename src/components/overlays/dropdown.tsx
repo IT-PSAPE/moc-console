@@ -1,6 +1,6 @@
 import { cn } from '@/utils/cn'
 import { createPortal } from 'react-dom'
-import { createContext, useCallback, useContext, useEffect, useId, useMemo, useState, type CSSProperties, type HTMLAttributes, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useState, type CSSProperties, type HTMLAttributes, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import { useAnchorPosition, useClickOutside, type Placement } from './overlay-primitives'
 import { useOverlayStack } from './overlay-provider'
 
@@ -227,13 +227,43 @@ function DropdownTrigger({ children, onClick, ...props }: HTMLAttributes<HTMLSpa
 
 // ─── Panel ───────────────────────────────────────────────────────────
 
-function DropdownPanel({ children, className, style, ...props }: HTMLAttributes<HTMLDivElement>) {
+type DropdownPanelProps = HTMLAttributes<HTMLDivElement> & {
+    matchTriggerWidth?: boolean
+}
+
+function DropdownPanel({ children, className, style, matchTriggerWidth = false, ...props }: DropdownPanelProps) {
     const { state, actions, elements, meta } = useDropdown()
     const { state: overlayState } = useOverlayStack()
     const position = useAnchorPosition(elements.triggerElement, elements.panelElement, state.isOpen, state.placement)
+    const [triggerWidth, setTriggerWidth] = useState<number | null>(null)
     const handlePanelRef = useCallback((node: HTMLDivElement | null) => {
         actions.setPanelElement(node)
     }, [actions])
+
+    useLayoutEffect(() => {
+        const trigger = elements.triggerElement
+
+        if (!matchTriggerWidth || !state.isOpen || !trigger) {
+            setTriggerWidth(null)
+            return undefined
+        }
+
+        setTriggerWidth(trigger.getBoundingClientRect().width)
+
+        if (typeof ResizeObserver === 'undefined') {
+            return undefined
+        }
+
+        const observer = new ResizeObserver(() => {
+            setTriggerWidth(trigger.getBoundingClientRect().width)
+        })
+
+        observer.observe(trigger)
+
+        return () => {
+            observer.disconnect()
+        }
+    }, [elements.triggerElement, matchTriggerWidth, state.isOpen])
 
     if (!state.isOpen) {
         return null
@@ -262,6 +292,9 @@ function DropdownPanel({ children, className, style, ...props }: HTMLAttributes<
         maxWidth: position.maxWidth,
         maxHeight: position.maxHeight,
         visibility: position.isPositioned ? 'visible' : 'hidden',
+        ...(matchTriggerWidth && triggerWidth !== null
+            ? { width: triggerWidth, minWidth: triggerWidth }
+            : null),
         ...style,
     }
 
@@ -269,7 +302,8 @@ function DropdownPanel({ children, className, style, ...props }: HTMLAttributes<
         <div
             ref={handlePanelRef}
             className={cn(
-                'pointer-events-auto fixed z-50 flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg',
+                'pointer-events-auto fixed z-50 flex flex-col overflow-x-hidden overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg',
+                matchTriggerWidth ? 'max-w-[calc(100vw-1rem)]' : 'min-w-48 max-w-[calc(100vw-1rem)]',
                 className,
             )}
             onKeyDown={handleKeyDown}
@@ -332,7 +366,7 @@ function DropdownItem({ children, className, onClick, onSelect, ...props }: Drop
         <div
             aria-selected={isActive}
             className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 text-sm text-secondary',
+                'h-8 flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 text-secondary',
                 isActive && 'bg-secondary text-primary',
                 className,
             )}

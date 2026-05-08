@@ -16,7 +16,7 @@ export function OptionCard({ icon, title, description, onClick, className }: { i
     <div
       className={cn(
         'group flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all',
-        'bg-secondary/50 hover:bg-secondary active:scale-[0.98]',
+        'bg-secondary_alt hover:bg-secondary_hover active:scale-[0.98]',
         className,
       )}
       onClick={onClick}
@@ -24,11 +24,11 @@ export function OptionCard({ icon, title, description, onClick, className }: { i
       role="button"
       tabIndex={0}
     >
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand *:size-5">
+      <span className="flex shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
         {icon}
       </span>
       <div className="flex-1 min-w-0">
-        <Label.sm>{title}</Label.sm>
+        <Label.md>{title}</Label.md>
         <Paragraph.xs className="text-secondary mt-0.5">{description}</Paragraph.xs>
       </div>
       <ChevronRight className="size-4 text-quaternary shrink-0 transition-transform group-hover:translate-x-0.5" />

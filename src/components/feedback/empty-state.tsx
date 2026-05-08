@@ -15,7 +15,7 @@ export function EmptyState({ icon, title, description, action, className, ...pro
             {icon && <span className="text-quaternary *:size-10">{icon}</span>}
             <div className="flex flex-col gap-1">
                 <Label.sm className="text-secondary">{title}</Label.sm>
-                {description && <Paragraph.sm className="text-tertiary">{description}</Paragraph.sm>}
+                {description && <Paragraph.sm className="text-tertiary max-w-sm">{description}</Paragraph.sm>}
             </div>
             {action && <div className="pt-2">{action}</div>}
         </div>

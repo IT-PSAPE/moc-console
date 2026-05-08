@@ -3,7 +3,7 @@ import { cv } from '@/utils/cv'
 import type { HTMLAttributes } from 'react'
 
 const spinnerVariants = cv({
-    base: ['animate-spin text-quaternary'],
+    base: ['animate-spin text-quaternary block'],
     variants: {
         size: {
             sm: ['size-4'],

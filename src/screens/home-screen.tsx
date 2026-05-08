@@ -1,49 +1,43 @@
 import { useNavigate } from 'react-router-dom'
-import { Title, Paragraph, Label } from '@/components/display/text'
-import { Button } from '@/components/controls/button'
-import { Divider } from '@/components/display/divider'
+import { Title } from '@/components/display/text'
 import { PublicLayout } from '@/features/components/public-layout'
 import { OptionCard } from '@/features/components/option-card'
 import { routes } from '@/screens/console-routes'
-import { FileText, Package, Search } from 'lucide-react'
+
 
 export function HomeScreen() {
   const navigate = useNavigate()
 
   const handleRequest = () => navigate(routes.publicRequest)
-
   const handleBooking = () => navigate(routes.publicBooking)
-
   const handleTrack = () => navigate(routes.publicTrack)
 
   return (
-    <PublicLayout>
-      <Title.h5 className="text-center">MOC Request Portal</Title.h5>
-      <Paragraph.md className="text-secondary text-center mt-2">
-        Submit a production request or book equipment for your next project.
-      </Paragraph.md>
+    <PublicLayout className="px-4">
+      <div className="py-12">
+        <Title.h3 className="text-center">MOC Request Portal</Title.h3>
+      </div>
 
-      <div className="w-full space-y-4 mt-8">
+      <div className="w-full space-y-4">
         <OptionCard
-          icon={<FileText />}
+          icon={<img src="./assets/icon_inbox.png" className='size-20' />}
           title="Make a Request"
           description="Submit a new production or media request with full details."
           onClick={handleRequest}
         />
         <OptionCard
-          icon={<Package />}
+          icon={<img src="./assets/icon_toolbox.png" className='size-20' />}
           title="Book Equipment"
           description="Browse available equipment and reserve what you need."
           onClick={handleBooking}
         />
+        <OptionCard
+          icon={<img src="./assets/icon_folder.png" className='size-20' />}
+          title="Track a Submission"
+          description="Look up the status of an existing request or booking."
+          onClick={handleTrack}
+        />
       </div>
-
-      <Divider className='mt-8' />
-
-      <Label.sm className="block text-secondary text-center mt-8 mb-2 mx-auto">Already submitted?</Label.sm>
-      <Button variant="secondary" icon={<Search />} onClick={handleTrack} className='flex mx-auto'>
-        Track a Submission
-      </Button>
     </PublicLayout>
   )
 }
