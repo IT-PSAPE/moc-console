@@ -205,7 +205,7 @@ export function CueSheetOverviewScreen() {
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
                         {isLoadingEvents ? (
-                            <div className="flex justify-center py-6"><Spinner /></div>
+                            <LoadingSpinner className="py-6" />
                         ) : overviewEventRuns.length > 0 ? (
                             overviewEventRuns.map((event) => (
                                 <EventItem key={event.id} event={event} />
@@ -229,7 +229,7 @@ export function CueSheetOverviewScreen() {
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
                         {isLoadingChecklists ? (
-                            <div className="flex justify-center py-6"><Spinner /></div>
+                            <LoadingSpinner className="py-6" />
                         ) : overviewChecklistRuns.length > 0 ? (
                             overviewChecklistRuns.map((checklist) => (
                                 <ChecklistItemCard key={checklist.id} checklist={checklist} />

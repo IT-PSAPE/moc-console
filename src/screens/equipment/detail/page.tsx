@@ -6,7 +6,7 @@ import { Button } from "@/components/controls/button";
 import { Divider } from "@/components/display/divider";
 import { Header } from "@/components/display/header";
 import { Label, Paragraph, Title } from "@/components/display/text";
-import { Spinner } from "@/components/feedback/spinner";
+import { LoadingSpinner, Spinner } from "@/components/feedback/spinner";
 import { TopBarActions } from "@/features/topbar";
 import { MetaRow } from "@/features/requests/request-properties";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
@@ -24,16 +24,50 @@ import {
   bookingStatusLabel,
   bookingStatusColor,
 } from "@/types/equipment";
-import type { Equipment, EquipmentStatus, EquipmentCategory, Booking } from "@/types/equipment";
-import { Check, ChevronDown, Hash, History, Loader, MapPin, Package, Pencil, Save, StickyNote, Tag, Trash2, Undo2, User } from "lucide-react";
+import type {
+  Equipment,
+  EquipmentStatus,
+  EquipmentCategory,
+  Booking,
+} from "@/types/equipment";
+import {
+  Check,
+  ChevronDown,
+  Hash,
+  History,
+  Loader,
+  MapPin,
+  Package,
+  Pencil,
+  Save,
+  StickyNote,
+  Tag,
+  Trash2,
+  Undo2,
+  User,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
 import { Input } from "@/components/form/input";
 import { getErrorMessage } from "@/utils/get-error-message";
 import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
 
-const allStatuses: EquipmentStatus[] = ["available", "booked", "booked_out", "maintenance"];
-const allCategories: EquipmentCategory[] = ["camera", "lens", "lighting", "audio", "support", "monitor", "cable", "accessory"];
+const allStatuses: EquipmentStatus[] = [
+  "available",
+  "booked",
+  "booked_out",
+  "maintenance",
+];
+const allCategories: EquipmentCategory[] = [
+  "camera",
+  "lens",
+  "lighting",
+  "audio",
+  "support",
+  "monitor",
+  "cable",
+  "accessory",
+];
 
 export function EquipmentDetailScreen() {
   const { id } = useParams<{ id: string }>();
@@ -64,7 +98,9 @@ export function EquipmentDetailScreen() {
 function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
   const navigate = useNavigate();
   const { toast } = useFeedback();
-  const { actions: { syncEquipment, removeEquipment, removeBookingsByEquipmentId } } = useEquipment();
+  const {
+    actions: { syncEquipment, removeEquipment, removeBookingsByEquipmentId },
+  } = useEquipment();
 
   const store = useEquipmentStore(equipment, { syncEquipment });
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -97,7 +133,14 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
       await store.actions.save();
       toast({ title: "Equipment saved", variant: "success" });
     } catch (error) {
-      toast({ title: "Failed to save equipment", description: getErrorMessage(error, "The equipment item could not be saved."), variant: "error" });
+      toast({
+        title: "Failed to save equipment",
+        description: getErrorMessage(
+          error,
+          "The equipment item could not be saved.",
+        ),
+        variant: "error",
+      });
     }
   }, [store.actions, toast]);
 
@@ -107,7 +150,14 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
       toast({ title: "Equipment saved", variant: "success" });
       if (blocker.state === "blocked") blocker.proceed();
     } catch (error) {
-      toast({ title: "Failed to save equipment", description: getErrorMessage(error, "The equipment item could not be saved."), variant: "error" });
+      toast({
+        title: "Failed to save equipment",
+        description: getErrorMessage(
+          error,
+          "The equipment item could not be saved.",
+        ),
+        variant: "error",
+      });
     }
   }
 
@@ -130,7 +180,14 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
       setShowDeleteModal(false);
       navigate("/equipment");
     } catch (error) {
-      toast({ title: "Failed to delete equipment", description: getErrorMessage(error, "The equipment item could not be deleted."), variant: "error" });
+      toast({
+        title: "Failed to delete equipment",
+        description: getErrorMessage(
+          error,
+          "The equipment item could not be deleted.",
+        ),
+        variant: "error",
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -143,22 +200,42 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
       <TopBarActions>
         {store.state.isDirty ? (
           <>
-            <Button variant="ghost" icon={<Undo2 />} onClick={store.actions.discard}>Discard</Button>
-            <Button icon={<Save />} onClick={handleSave} disabled={store.state.isSaving}>
+            <Button
+              variant="ghost"
+              icon={<Undo2 />}
+              onClick={store.actions.discard}
+            >
+              Discard
+            </Button>
+            <Button
+              icon={<Save />}
+              onClick={handleSave}
+              disabled={store.state.isSaving}
+            >
               {store.state.isSaving ? "Saving..." : "Save"}
             </Button>
           </>
         ) : (
-          <Button variant="secondary" icon={<Pencil />}>Edit</Button>
+          <Button variant="secondary" icon={<Pencil />}>
+            Edit
+          </Button>
         )}
-        <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setShowDeleteModal(true)} />
+        <Button.Icon
+          variant="danger-secondary"
+          icon={<Trash2 />}
+          onClick={() => setShowDeleteModal(true)}
+        />
       </TopBarActions>
 
       {/* Header */}
       <Header className="px-4 pt-12">
         <Header.Lead className="gap-3">
           {draft.thumbnail ? (
-            <img src={draft.thumbnail} alt={draft.name} className="size-14 rounded-lg object-cover" />
+            <img
+              src={draft.thumbnail}
+              alt={draft.name}
+              className="size-14 rounded-lg object-cover"
+            />
           ) : (
             <span className="flex size-14 items-center justify-center rounded-lg bg-secondary text-quaternary">
               <Package className="size-7" />
@@ -166,7 +243,9 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
           )}
           <div>
             <Title.h5>{draft.name}</Title.h5>
-            <Paragraph.sm className="text-tertiary">{draft.serialNumber}</Paragraph.sm>
+            <Paragraph.sm className="text-tertiary">
+              {draft.serialNumber}
+            </Paragraph.sm>
           </div>
         </Header.Lead>
       </Header>
@@ -180,13 +259,22 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
         <MetaRow icon={<Tag />} label="Category">
           <Dropdown placement="bottom">
             <Dropdown.Trigger>
-              <Badge label={equipmentCategoryLabel[draft.category]} color={equipmentCategoryColor[draft.category]} className="cursor-pointer" />
+              <Badge
+                label={equipmentCategoryLabel[draft.category]}
+                color={equipmentCategoryColor[draft.category]}
+                className="cursor-pointer"
+              />
             </Dropdown.Trigger>
             <Dropdown.Panel>
               {allCategories.map((c) => (
-                <Dropdown.Item key={c} onSelect={() => store.actions.updateField("category", c)}>
+                <Dropdown.Item
+                  key={c}
+                  onSelect={() => store.actions.updateField("category", c)}
+                >
                   <span className="size-4 shrink-0 flex items-center justify-center">
-                    {c === draft.category && <Check className="size-3.5 text-brand_secondary" />}
+                    {c === draft.category && (
+                      <Check className="size-3.5 text-brand_secondary" />
+                    )}
                   </span>
                   {equipmentCategoryLabel[c]}
                 </Dropdown.Item>
@@ -198,13 +286,22 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
         <MetaRow icon={<Loader />} label="Status">
           <Dropdown placement="bottom">
             <Dropdown.Trigger>
-              <Badge label={equipmentStatusLabel[draft.status]} color={equipmentStatusColor[draft.status]} className="cursor-pointer" />
+              <Badge
+                label={equipmentStatusLabel[draft.status]}
+                color={equipmentStatusColor[draft.status]}
+                className="cursor-pointer"
+              />
             </Dropdown.Trigger>
             <Dropdown.Panel>
               {allStatuses.map((s) => (
-                <Dropdown.Item key={s} onSelect={() => store.actions.updateField("status", s)}>
+                <Dropdown.Item
+                  key={s}
+                  onSelect={() => store.actions.updateField("status", s)}
+                >
                   <span className="size-4 shrink-0 flex items-center justify-center">
-                    {s === draft.status && <Check className="size-3.5 text-brand_secondary" />}
+                    {s === draft.status && (
+                      <Check className="size-3.5 text-brand_secondary" />
+                    )}
                   </span>
                   {equipmentStatusLabel[s]}
                 </Dropdown.Item>
@@ -217,9 +314,11 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
           <Input
             type="text"
             value={draft.location}
-            onChange={(e) => store.actions.updateField("location", e.target.value)}
+            onChange={(e) =>
+              store.actions.updateField("location", e.target.value)
+            }
             placeholder="Enter location"
-            style={'ghost'}
+            style={"ghost"}
           />
         </MetaRow>
 
@@ -253,24 +352,34 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
       <div className="p-4">
         <div className="flex items-center gap-2 pb-3">
           <History className="size-4 text-tertiary" />
-          <Label.md>Booking History{bookings.length > 0 && ` (${bookings.length})`}</Label.md>
+          <Label.md>
+            Booking History{bookings.length > 0 && ` (${bookings.length})`}
+          </Label.md>
         </div>
 
         {isLoadingBookings ? (
-          <div className="flex justify-center py-6">
-            <Spinner />
-          </div>
+          <LoadingSpinner className="py-6" />
         ) : bookings.length === 0 ? (
-          <Paragraph.sm className="text-quaternary">No booking history</Paragraph.sm>
+          <Paragraph.sm className="text-quaternary">
+            No booking history
+          </Paragraph.sm>
         ) : (
           <Accordion type="multiple">
             {bookings.map((b) => (
-              <Accordion.Item key={b.id} value={b.id} className="border-b border-secondary last:border-b-0">
+              <Accordion.Item
+                key={b.id}
+                value={b.id}
+                className="border-b border-secondary last:border-b-0"
+              >
                 <Accordion.Trigger className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-3">
                     <Label.sm>{b.bookedBy}</Label.sm>
                     <Paragraph.xs className="text-tertiary">
-                      {formatUtcIsoInBrowserTimeZone(b.checkedOutDate, { day: "numeric", month: "short", year: "numeric" })}
+                      {formatUtcIsoInBrowserTimeZone(b.checkedOutDate, {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </Paragraph.xs>
                   </div>
                   <div className="flex items-center gap-2">
@@ -280,7 +389,9 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
                 <Accordion.Content>
                   <div className="pb-3 space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <Paragraph.xs className="text-quaternary">Status:</Paragraph.xs>
+                      <Paragraph.xs className="text-quaternary">
+                        Status:
+                      </Paragraph.xs>
                       <Badge
                         label={bookingStatusLabel[b.status]}
                         color={bookingStatusColor[b.status]}
@@ -288,23 +399,39 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
                     </div>
                     {b.returnedDate && (
                       <div className="flex items-center gap-2">
-                        <Paragraph.xs className="text-quaternary">Returned:</Paragraph.xs>
-                        <Paragraph.xs>{formatUtcIsoInBrowserTimeZone(b.returnedDate, { day: "numeric", month: "short", year: "numeric" })}</Paragraph.xs>
+                        <Paragraph.xs className="text-quaternary">
+                          Returned:
+                        </Paragraph.xs>
+                        <Paragraph.xs>
+                          {formatUtcIsoInBrowserTimeZone(b.returnedDate, {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </Paragraph.xs>
                       </div>
                     )}
                     {!b.returnedDate && (
                       <div className="flex items-center gap-2">
-                        <Paragraph.xs className="text-quaternary">Expected:</Paragraph.xs>
-                        <Paragraph.xs>{formatUtcIsoInBrowserTimeZone(b.expectedReturnAt)}</Paragraph.xs>
+                        <Paragraph.xs className="text-quaternary">
+                          Expected:
+                        </Paragraph.xs>
+                        <Paragraph.xs>
+                          {formatUtcIsoInBrowserTimeZone(b.expectedReturnAt)}
+                        </Paragraph.xs>
                       </div>
                     )}
                     <div className="flex items-center gap-2">
-                      <Paragraph.xs className="text-quaternary">Duration:</Paragraph.xs>
+                      <Paragraph.xs className="text-quaternary">
+                        Duration:
+                      </Paragraph.xs>
                       <Paragraph.xs>{b.duration}</Paragraph.xs>
                     </div>
                     {b.notes && (
                       <div className="flex items-center gap-2">
-                        <Paragraph.xs className="text-quaternary">Notes:</Paragraph.xs>
+                        <Paragraph.xs className="text-quaternary">
+                          Notes:
+                        </Paragraph.xs>
                         <Paragraph.xs>{b.notes}</Paragraph.xs>
                       </div>
                     )}

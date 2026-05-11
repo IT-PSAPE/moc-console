@@ -8,7 +8,7 @@ import { Label, Paragraph, TextBlock, Title } from '@/components/display/text'
 import { Activity, CalendarClock, CircleAlert, CircleCheck, Search, Settings2 } from 'lucide-react'
 import { Indicator } from '@/components/display/indicator'
 import { useEffect } from 'react'
-import { Spinner } from '@/components/feedback/spinner'
+import { LoadingSpinner, Spinner } from '@/components/feedback/spinner'
 import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
 import { useRequestFilters } from '@/features/requests/use-request-filters'
 import { useRequests } from '@/features/requests/request-provider'
@@ -49,7 +49,7 @@ export function RequestsOverviewScreen() {
                     <Card.Header tight>
                         <span className='flex gap-1.5 items-center'>
                             <Activity className='size-4' />
-                            <Label.sm>Active Requests</Label.sm>
+                            <Label.sm>Active</Label.sm>
                         </span>
                     </Card.Header>
                     <Card.Content className='p-4'>
@@ -60,7 +60,7 @@ export function RequestsOverviewScreen() {
                     <Card.Header tight>
                         <span className='flex gap-1.5 items-center'>
                             <CalendarClock className='size-4' />
-                            <Label.sm>Upcoming Requests</Label.sm>
+                            <Label.sm>Upcoming</Label.sm>
                         </span>
                     </Card.Header>
                     <Card.Content className='p-4'>
@@ -71,7 +71,7 @@ export function RequestsOverviewScreen() {
                     <Card.Header tight>
                         <span className='flex gap-1.5 items-center'>
                             <CircleAlert className='size-4' />
-                            <Label.sm>Overdue Requests</Label.sm>
+                            <Label.sm>Overdue</Label.sm>
                         </span>
                     </Card.Header>
                     <Card.Content className='p-4'>
@@ -82,7 +82,7 @@ export function RequestsOverviewScreen() {
                     <Card.Header tight>
                         <span className='flex gap-1.5 items-center'>
                             <CircleCheck className='size-4' />
-                            <Label.sm>Completed Requests</Label.sm>
+                            <Label.sm>Completed</Label.sm>
                         </span>
                     </Card.Header>
                     <Card.Content className='p-4'>
@@ -116,7 +116,7 @@ export function RequestsOverviewScreen() {
                     </Card.Header>
                     <Card.Content ghost className='flex flex-col gap-1.5'>
                         {isLoadingActive ? (
-                            <div className="flex justify-center py-6"><Spinner /></div>
+                            <LoadingSpinner className="py-6" />
                         ) : overdue.length > 0 ? (
                             overdue.map((r) => (<RequestItem key={r.id} request={r} />))
                         ) : (
@@ -136,7 +136,7 @@ export function RequestsOverviewScreen() {
                     </Card.Header>
                     <Card.Content ghost className='flex flex-col gap-1.5'>
                         {isLoadingActive ? (
-                            <div className="flex justify-center py-6"><Spinner /></div>
+                            <LoadingSpinner className="py-6" />
                         ) : upcoming.length > 0 ? (
                             upcoming.map((r) => (<RequestItem key={r.id} request={r} />))
                         ) : (

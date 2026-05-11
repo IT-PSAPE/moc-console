@@ -127,7 +127,7 @@ export function EquipmentBookingsScreen() {
         </Header>
 
         {isLoading ? (
-          <div className="flex justify-center py-16"><Spinner /></div>
+          <LoadingSpinner className="py-16" />
         ) : view === "list" ? (
           <BookingList bookings={filtered} />
         ) : view === "table" ? (

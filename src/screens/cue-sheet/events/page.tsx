@@ -116,7 +116,7 @@ export function CueSheetEventScreen() {
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
                         {isLoadingEvents ? (
-                            <div className="flex justify-center py-6"><Spinner /></div>
+                            <LoadingSpinner className="py-6" />
                         ) : filtered.length > 0 ? (
                             <>
                                 {activeEventRuns.length > 0 && (

@@ -112,7 +112,7 @@ export function BroadcastMediaScreen() {
               <ScrollArea.Viewport className="py-2 pr-2">
                 <ScrollArea.Content>
                   {isLoadingMedia ? (
-                    <div className="flex justify-center py-8"><Spinner /></div>
+                    <LoadingSpinner className="py-8" />
                   ) : filtered.length === 0 ? (
                     <div className="flex flex-col items-center gap-2 py-8">
                       <Film className="size-6 text-quaternary" />

@@ -7,7 +7,7 @@ import { Label, Paragraph, Title } from '@/components/display/text'
 import { Input } from '@/components/form/input'
 import { Archive, Search, Settings2 } from 'lucide-react'
 import { useEffect } from 'react'
-import { Spinner } from '@/components/feedback/spinner'
+import { LoadingSpinner, Spinner } from '@/components/feedback/spinner'
 import { EmptyState } from '@/components/feedback/empty-state'
 import { Drawer } from '@/components/overlays/drawer'
 import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
@@ -56,9 +56,7 @@ export function RequestsArchivedScreen() {
                     </Card.Header>
                     <Card.Content ghost>
                         {isLoadingArchived ? (
-                            <div className="flex justify-center py-8">
-                                <Spinner />
-                            </div>
+                            <LoadingSpinner className="py-8" />
                         ) : filtered.length === 0 ? (
                             <EmptyState
                                 icon={<Archive />}

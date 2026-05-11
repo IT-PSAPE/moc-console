@@ -133,7 +133,7 @@ export function BroadcastOverviewScreen() {
           </Card.Header>
           <Card.Content ghost className="flex flex-col gap-1.5">
             {isLoading ? (
-              <div className="flex justify-center py-6"><Spinner /></div>
+              <LoadingSpinner className="py-6" />
             ) : filteredPlaylists.length > 0 ? (
               filteredPlaylists.map((playlist) => (
                 <PlaylistListItem key={playlist.id} playlist={playlist} />

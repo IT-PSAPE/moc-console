@@ -127,7 +127,7 @@ export function CueSheetTemplatesScreen() {
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
                         {isLoading ? (
-                            <div className="flex justify-center py-6"><Spinner /></div>
+                            <LoadingSpinner className="py-6" />
                         ) : filteredEventTemplates.length > 0 ? (
                             filteredEventTemplates.map((event) => (
                                 <EventItem key={event.id} event={event} />
@@ -149,7 +149,7 @@ export function CueSheetTemplatesScreen() {
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
                         {isLoading ? (
-                            <div className="flex justify-center py-6"><Spinner /></div>
+                            <LoadingSpinner className="py-6" />
                         ) : filteredChecklistTemplates.length > 0 ? (
                             filteredChecklistTemplates.map((checklist) => (
                                 <ChecklistItemCard key={checklist.id} checklist={checklist} />

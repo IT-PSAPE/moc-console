@@ -117,7 +117,7 @@ export function CueSheetChecklistScreen() {
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
                         {isLoadingChecklists ? (
-                            <div className="flex justify-center py-6"><Spinner /></div>
+                            <LoadingSpinner className="py-6" />
                         ) : filtered.length > 0 ? (
                             <>
                                 {activeChecklistRuns.length > 0 && (

@@ -88,7 +88,7 @@ export function PlaylistScreen() {
         <Card>
           <Card.Content ghost className="flex flex-col gap-1">
             {isLoadingPlaylists ? (
-              <div className="flex justify-center py-12"><Spinner /></div>
+              <LoadingSpinner className="py-12" />
             ) : filtered.length === 0 ? (
               <div className="flex items-center justify-center py-12">
                 <Paragraph.sm className="text-tertiary">No playlists found.</Paragraph.sm>

@@ -147,7 +147,7 @@ export function EquipmentOverviewScreen() {
           </Card.Header>
           <Card.Content ghost className="flex flex-col gap-1.5">
             {(isLoadingEquipment || isLoadingBookings) ? (
-              <div className="flex justify-center py-8"><Spinner /></div>
+              <LoadingSpinner className="py-8" />
             ) : overdueEquipment.length > 0 ? (
               overdueEquipment.map((item) => (
                 <EquipmentItem key={item.id} equipment={item} />
@@ -169,7 +169,7 @@ export function EquipmentOverviewScreen() {
           </Card.Header>
           <Card.Content ghost className="flex flex-col gap-1.5">
             {(isLoadingEquipment || isLoadingBookings) ? (
-              <div className="flex justify-center py-8"><Spinner /></div>
+              <LoadingSpinner className="py-8" />
             ) : faultyEquipment.length > 0 ? (
               faultyEquipment.map((item) => (
                 <EquipmentItem key={item.id} equipment={item} />

@@ -318,7 +318,7 @@ export function StreamsScreen() {
             </Card.Header>
             <Card.Content ghost className="flex flex-col gap-1">
               {isLoadingStreams ? (
-                <div className="flex justify-center py-12"><Spinner /></div>
+                <LoadingSpinner className="py-12" />
               ) : !isYouTubeConnected ? (
                 <div className="flex items-center justify-center py-12">
                   <Paragraph.sm className="text-tertiary">Connect YouTube in Settings &rsaquo; Streams to view streams.</Paragraph.sm>
@@ -351,7 +351,7 @@ export function StreamsScreen() {
             </Card.Header>
             <Card.Content ghost className="flex flex-col gap-1">
               {isLoadingZoomMeetings ? (
-                <div className="flex justify-center py-12"><Spinner /></div>
+                <LoadingSpinner className="py-12" />
               ) : !isZoomConnected ? (
                 <div className="flex items-center justify-center py-12">
                   <Paragraph.sm className="text-tertiary">Connect Zoom in Settings &rsaquo; Streams to view meetings.</Paragraph.sm>

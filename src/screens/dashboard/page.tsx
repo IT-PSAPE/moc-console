@@ -191,7 +191,7 @@ export function DashboardScreen() {
                             </Card.Header>
                             <Card.Content ghost={overdueRequests.length > 0} className={overdueRequests.length > 0 ? 'flex flex-col gap-1.5' : ''}>
                                 {isLoadingActive ? (
-                                    <div className="flex justify-center py-6"><Spinner /></div>
+                                    <LoadingSpinner className="py-6" />
                                 ) : overdueRequests.length > 0 ? (
                                     overdueRequests.slice(0, 4).map((r) => (
                                         <RequestItem key={r.id} request={r} />
@@ -224,7 +224,7 @@ export function DashboardScreen() {
                             </Card.Header>
                             <Card.Content ghost={upcomingRequests.length > 0} className={upcomingRequests.length > 0 ? 'flex flex-col gap-1.5' : ''}>
                                 {isLoadingActive ? (
-                                    <div className="flex justify-center py-6"><Spinner /></div>
+                                    <LoadingSpinner className="py-6" />
                                 ) : upcomingRequests.length > 0 ? (
                                     upcomingRequests.slice(0, 4).map((r) => (
                                         <RequestItem key={r.id} request={r} />
@@ -257,7 +257,7 @@ export function DashboardScreen() {
                             </Card.Header>
                             <Card.Content className={upcomingEvents.length > 0 ? 'divide-y divide-border-tertiary' : ''}>
                                 {isLoadingEvents ? (
-                                    <div className="flex justify-center py-6"><Spinner /></div>
+                                    <LoadingSpinner className="py-6" />
                                 ) : upcomingEvents.length > 0 ? (
                                     upcomingEvents.slice(0, 4).map((event) => (
                                         <button
@@ -308,7 +308,7 @@ export function DashboardScreen() {
                             </Card.Header>
                             <Card.Content className={pendingChecklists.length > 0 ? 'divide-y divide-border-tertiary' : ''}>
                                 {isLoadingChecklists ? (
-                                    <div className="flex justify-center py-6"><Spinner /></div>
+                                    <LoadingSpinner className="py-6" />
                                 ) : pendingChecklists.length > 0 ? (
                                     pendingChecklists.slice(0, 4).map((checklist) => (
                                         <button
@@ -359,7 +359,7 @@ export function DashboardScreen() {
                             </Card.Header>
                             <Card.Content className={playlists.length > 0 ? 'divide-y divide-border-tertiary' : ''}>
                                 {isLoadingPlaylists ? (
-                                    <div className="flex justify-center py-6"><Spinner /></div>
+                                    <LoadingSpinner className="py-6" />
                                 ) : playlists.length > 0 ? (
                                     playlists.slice(0, 4).map((playlist) => (
                                         <button
