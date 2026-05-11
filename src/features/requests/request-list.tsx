@@ -5,7 +5,7 @@ import { Label } from "@/components/display/text";
 import type { Request } from "@/types/requests";
 import { statusGroups } from "@/types/requests";
 
-export function RequestLists({ requests }: { requests: Request[] }) {
+export function RequestListView({ requests }: { requests: Request[] }) {
     return (
         <div className='flex flex-col gap-4 p-4 pt-0 mx-auto w-full max-w-content'>
             {statusGroups.map((group) => {

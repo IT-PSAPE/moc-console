@@ -5,8 +5,10 @@ import { Button } from '@/components/controls/button'
 import { Card } from '@/components/display/card'
 import { Header } from '@/components/display/header'
 import { Label, Paragraph, Title } from '@/components/display/text'
-import { Spinner } from '@/components/feedback/spinner'
+import { LoadingSpinner } from '@/components/feedback/spinner'
 import { Input } from '@/components/form/input'
+import { Decision } from '@/components/display/decision'
+import { EmptyState } from '@/components/feedback/empty-state'
 import { Drawer } from '@/components/overlays/drawer'
 import { Dropdown } from '@/components/overlays/dropdown'
 import { CreateEventRunModal, type EventRunSubmit } from '@/features/cue-sheet/create-event-run-modal'
@@ -111,36 +113,55 @@ export function CueSheetEventScreen() {
                     <Card.Header tight className="gap-1.5">
                         <div className="flex flex-1 items-center gap-1.5">
                             <Calendar className="size-4" />
-                            <Label.sm>All Event Runs</Label.sm>
+                            <Label.sm>Current</Label.sm>
                         </div>
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
-                        {isLoadingEvents ? (
-                            <LoadingSpinner className="py-6" />
-                        ) : filtered.length > 0 ? (
-                            <>
-                                {activeEventRuns.length > 0 && (
-                                    <>
-                                        <Label.sm className="px-4 pt-2 text-tertiary">Current</Label.sm>
-                                        {activeEventRuns.map((event) => (
-                                            <EventItem key={event.id} event={event} />
-                                        ))}
-                                    </>
-                                )}
-                                {pastEventRuns.length > 0 && (
-                                    <>
-                                        <Label.sm className="px-4 pt-4 text-tertiary">Past</Label.sm>
-                                        {pastEventRuns.map((event) => (
-                                            <EventItem key={event.id} event={event} />
-                                        ))}
-                                    </>
-                                )}
-                            </>
-                        ) : (
-                            <div className="py-8 text-center">
-                                <Paragraph.sm className="text-tertiary">No event runs match your filters.</Paragraph.sm>
-                            </div>
-                        )}
+                        <Decision value={activeEventRuns} loading={isLoadingEvents}>
+                            <Decision.Loading>
+                                <LoadingSpinner className="py-6" />
+                            </Decision.Loading>
+                            <Decision.Empty>
+                                <EmptyState
+                                    icon={<Calendar />}
+                                    title={filters.search.trim() ? "No current event runs match your search" : "No current event runs"}
+                                    description={filters.search.trim() ? "Try a different search term." : "Schedule an event run to see it here."}
+                                />
+                            </Decision.Empty>
+                            <Decision.Data>
+                                {activeEventRuns.map((event) => (
+                                    <EventItem key={event.id} event={event} />
+                                ))}
+                            </Decision.Data>
+                        </Decision>
+                    </Card.Content>
+                </Card>
+
+                <Card>
+                    <Card.Header tight className="gap-1.5">
+                        <div className="flex flex-1 items-center gap-1.5">
+                            <Calendar className="size-4" />
+                            <Label.sm>Past</Label.sm>
+                        </div>
+                    </Card.Header>
+                    <Card.Content ghost className="flex flex-col gap-1.5">
+                        <Decision value={pastEventRuns} loading={isLoadingEvents}>
+                            <Decision.Loading>
+                                <LoadingSpinner className="py-6" />
+                            </Decision.Loading>
+                            <Decision.Empty>
+                                <EmptyState
+                                    icon={<Calendar />}
+                                    title={filters.search.trim() ? "No past event runs match your search" : "No past event runs"}
+                                    description={filters.search.trim() ? "Try a different search term." : "Completed event runs will appear here."}
+                                />
+                            </Decision.Empty>
+                            <Decision.Data>
+                                {pastEventRuns.map((event) => (
+                                    <EventItem key={event.id} event={event} />
+                                ))}
+                            </Decision.Data>
+                        </Decision>
                     </Card.Content>
                 </Card>
             </div>

@@ -3,7 +3,6 @@ import { Header } from '@/components/display/header'
 import { Button } from '@/components/controls/button'
 import { Input } from '@/components/form/input'
 import { Label, Paragraph, TextBlock, Title } from '@/components/display/text'
-import { Spinner } from '@/components/feedback/spinner'
 import { EmptyState } from '@/components/feedback/empty-state'
 import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
 import { CreateChecklistRunModal, type ChecklistRunSubmit } from '@/features/cue-sheet/create-checklist-run-modal'
@@ -17,6 +16,9 @@ import { isChecklistRunPastOrComplete, isEventRunPast, sortOverviewChecklistRuns
 import { Calendar, ListChecks, Plus, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { LoadingSpinner } from '@/components/feedback/spinner';
+import { ScrollArea } from '@/components/display/scroll-area';
+import { Decision } from '@/components/display/decision';
 
 export function CueSheetOverviewScreen() {
     const {
@@ -113,36 +115,39 @@ export function CueSheetOverviewScreen() {
                 </Header.Lead>
             </Header>
 
-            {/* Stat cards */}
-            <div className="grid grid-cols-3 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2">
-                <Card>
-                    <Card.Header tight className="gap-1.5">
-                        <Calendar className="size-4" />
-                        <Label.sm>Templates</Label.sm>
-                    </Card.Header>
-                    <Card.Content className="p-4">
-                        <TextBlock className="title-h4">{eventTemplates.length + checklistTemplates.length}</TextBlock>
-                    </Card.Content>
-                </Card>
-                <Card>
-                    <Card.Header tight className="gap-1.5">
-                        <Calendar className="size-4" />
-                        <Label.sm>Event Runs</Label.sm>
-                    </Card.Header>
-                    <Card.Content className="p-4">
-                        <TextBlock className="title-h4">{upcomingEventRuns.length}</TextBlock>
-                    </Card.Content>
-                </Card>
-                <Card>
-                    <Card.Header tight className="gap-1.5">
-                        <ListChecks className="size-4" />
-                        <Label.sm>Checklist Runs</Label.sm>
-                    </Card.Header>
-                    <Card.Content className="p-4">
-                        <TextBlock className="title-h4">{upcomingChecklistRuns.length}</TextBlock>
-                    </Card.Content>
-                </Card>
-            </div>
+            <ScrollArea className='mx-auto w-full max-w-content'>
+                <ScrollArea.Viewport className='p-4 pt-8'>
+                    <ScrollArea.Content className='flex gap-4 max-mobile:gap-2'>
+                        <Card className="flex-1 min-w-56">
+                            <Card.Header tight className="gap-1.5">
+                                <Calendar className="size-4" />
+                                <Label.sm>Templates</Label.sm>
+                            </Card.Header>
+                            <Card.Content className="p-4">
+                                <TextBlock className="title-h4">{eventTemplates.length + checklistTemplates.length}</TextBlock>
+                            </Card.Content>
+                        </Card>
+                        <Card className="flex-1 min-w-56">
+                            <Card.Header tight className="gap-1.5">
+                                <Calendar className="size-4" />
+                                <Label.sm>Event Runs</Label.sm>
+                            </Card.Header>
+                            <Card.Content className="p-4">
+                                <TextBlock className="title-h4">{upcomingEventRuns.length}</TextBlock>
+                            </Card.Content>
+                        </Card>
+                        <Card className="flex-1 min-w-56">
+                            <Card.Header tight className="gap-1.5">
+                                <ListChecks className="size-4" />
+                                <Label.sm>Checklist Runs</Label.sm>
+                            </Card.Header>
+                            <Card.Content className="p-4">
+                                <TextBlock className="title-h4">{upcomingChecklistRuns.length}</TextBlock>
+                            </Card.Content>
+                        </Card>
+                    </ScrollArea.Content>
+                </ScrollArea.Viewport>
+            </ScrollArea>
 
             <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
                 <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
@@ -204,19 +209,23 @@ export function CueSheetOverviewScreen() {
                         </div>
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
-                        {isLoadingEvents ? (
-                            <LoadingSpinner className="py-6" />
-                        ) : overviewEventRuns.length > 0 ? (
-                            overviewEventRuns.map((event) => (
-                                <EventItem key={event.id} event={event} />
-                            ))
-                        ) : (
-                            <EmptyState
-                                icon={<Calendar />}
-                                title={search.trim() ? 'No event runs match your search' : 'No event runs yet'}
-                                description={search.trim() ? 'Try a different search term.' : 'Create a run from a template when you need an editable event copy.'}
-                            />
-                        )}
+                        <Decision value={overviewEventRuns} loading={isLoadingEvents}>
+                            <Decision.Loading>
+                                <LoadingSpinner className="py-6" />
+                            </Decision.Loading>
+                            <Decision.Empty>
+                                <EmptyState
+                                    icon={<Calendar />}
+                                    title={search.trim() ? 'No event runs match your search' : 'No event runs yet'}
+                                    description={search.trim() ? 'Try a different search term.' : 'Create a run from a template when you need an editable event copy.'}
+                                />
+                            </Decision.Empty>
+                            <Decision.Data>
+                                {overviewEventRuns.map((event) => (
+                                    <EventItem key={event.id} event={event} />
+                                ))}
+                            </Decision.Data>
+                        </Decision>
                     </Card.Content>
                 </Card>
 
@@ -228,19 +237,23 @@ export function CueSheetOverviewScreen() {
                         </div>
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
-                        {isLoadingChecklists ? (
-                            <LoadingSpinner className="py-6" />
-                        ) : overviewChecklistRuns.length > 0 ? (
-                            overviewChecklistRuns.map((checklist) => (
-                                <ChecklistItemCard key={checklist.id} checklist={checklist} />
-                            ))
-                        ) : (
-                            <EmptyState
-                                icon={<ListChecks />}
-                                title={search.trim() ? 'No checklist runs match your search' : 'No checklist runs yet'}
-                                description={search.trim() ? 'Try a different search term.' : 'Create a run from a checklist template when you need an editable preparation copy.'}
-                            />
-                        )}
+                        <Decision value={overviewChecklistRuns} loading={isLoadingChecklists}>
+                            <Decision.Loading>
+                                <LoadingSpinner className="py-6" />
+                            </Decision.Loading>
+                            <Decision.Empty>
+                                <EmptyState
+                                    icon={<ListChecks />}
+                                    title={search.trim() ? 'No checklist runs match your search' : 'No checklist runs yet'}
+                                    description={search.trim() ? 'Try a different search term.' : 'Create a run from a checklist template when you need an editable preparation copy.'}
+                                />
+                            </Decision.Empty>
+                            <Decision.Data>
+                                {overviewChecklistRuns.map((checklist) => (
+                                    <ChecklistItemCard key={checklist.id} checklist={checklist} />
+                                ))}
+                            </Decision.Data>
+                        </Decision>
                     </Card.Content>
                 </Card>
             </div>

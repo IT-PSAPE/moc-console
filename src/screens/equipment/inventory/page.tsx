@@ -8,13 +8,16 @@ import { Paragraph, Title } from "@/components/display/text";
 import {
   Columns3,
   List,
+  Package,
   Plus,
   Search,
   Settings2,
   Table as TableIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { LoadingSpinner, Spinner } from "@/components/feedback/spinner";
+import { LoadingSpinner } from "@/components/feedback/spinner";
+import { Decision } from "@/components/display/decision";
+import { EmptyState } from "@/components/feedback/empty-state";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 import { useEquipmentFilters } from "@/features/equipment/use-equipment-filters";
 import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
@@ -25,9 +28,9 @@ import type { Equipment, EquipmentCategory } from "@/types/equipment";
 import { getErrorMessage } from "@/utils/get-error-message";
 import { SegmentedControl } from "@/components/controls/segmented-control";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { InventoryLists } from "../../../features/equipment/inventory-list";
-import { InventoryKanban } from "../../../features/equipment/inventory-kanban";
-import { InventoryTable } from "../../../features/equipment/inventory-table";
+import { InventoryListView } from "@/features/equipment/inventory-list";
+import { InventoryKanbanView } from "@/features/equipment/inventory-kanban";
+import { InventoryTableView } from "@/features/equipment/inventory-table";
 
 export function EquipmentInventoryScreen() {
   const [view, setView] = useState("list");
@@ -105,11 +108,7 @@ export function EquipmentInventoryScreen() {
 
       <Header className="p-4 pt-8 mx-auto max-w-content max-mobile:flex-col max-mobile:gap-2 *:max-mobile:w-full">
         <Header.Lead className="gap-2 w-full">
-          <SegmentedControl
-            defaultValue="list"
-            onValueChange={(value) => setView(value)}
-            fill={isMobile}
-          >
+          <SegmentedControl defaultValue="list" onValueChange={(value) => setView(value)} fill={isMobile} >
             <SegmentedControl.Item value="list" icon={<List />}>
               List
             </SegmentedControl.Item>
@@ -145,15 +144,23 @@ export function EquipmentInventoryScreen() {
         </Header.Trail>
       </Header>
 
-      {isLoadingEquipment ? (
-        <LoadingSpinner className="py-16" />
-      ) : (
-        <>
-          {view === "list" && <InventoryLists equipment={filtered} />}
-          {view === "table" && <InventoryTable equipment={filtered} />}
-          {view === "kanban" && <InventoryKanban equipment={filtered} />}
-        </>
-      )}
+      <Decision value={filtered} loading={isLoadingEquipment}>
+        <Decision.Loading>
+          <LoadingSpinner className="py-6" />
+        </Decision.Loading>
+        <Decision.Empty>
+          <EmptyState
+            icon={<Package />}
+            title={state.search.trim() ? "No equipment matches your search" : "No equipment yet"}
+            description={state.search.trim() ? "Try a different search term or clear filters." : "Add equipment to start tracking inventory."}
+          />
+        </Decision.Empty>
+        <Decision.Data>
+          {view === "list" && <InventoryListView equipment={filtered} />}
+          {view === "table" && <InventoryTableView equipment={filtered} />}
+          {view === "kanban" && <InventoryKanbanView equipment={filtered} />}
+        </Decision.Data>
+      </Decision>
 
       <CreateEquipmentModal
         open={showCreateModal}

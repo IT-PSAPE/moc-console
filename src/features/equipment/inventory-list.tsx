@@ -8,7 +8,7 @@ import { EquipmentItem } from "./equipment-item";
 
 const activeStatusGroups = equipmentStatusGroup.filter((g) => g.key !== "maintenance");
 
-export function InventoryLists({ equipment }: { equipment: Equipment[] }) {
+export function InventoryListView({ equipment }: { equipment: Equipment[] }) {
     const visible = useMemo(() => equipment.filter((e) => e.status !== "maintenance"), [equipment]);
 
     return (

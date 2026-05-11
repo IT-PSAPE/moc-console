@@ -49,7 +49,7 @@ const columns = [
     },
 ];
 
-export function InventoryTable({ equipment }: { equipment: Equipment[] }) {
+export function InventoryTableView({ equipment }: { equipment: Equipment[] }) {
     const { selected, setSelected, isDirtyRef, requestCloseRef, handleOpenChange, handleClose } =
         useTableRowDrawer<Equipment>();
 

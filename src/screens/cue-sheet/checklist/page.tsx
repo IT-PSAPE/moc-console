@@ -4,8 +4,10 @@ import { Button } from '@/components/controls/button'
 import { Card } from '@/components/display/card'
 import { Header } from '@/components/display/header'
 import { Label, Paragraph, Title } from '@/components/display/text'
-import { Spinner } from '@/components/feedback/spinner'
+import { LoadingSpinner } from '@/components/feedback/spinner'
 import { Input } from '@/components/form/input'
+import { Decision } from '@/components/display/decision'
+import { EmptyState } from '@/components/feedback/empty-state'
 import { Drawer } from '@/components/overlays/drawer'
 import { Dropdown } from '@/components/overlays/dropdown'
 import { ChecklistItemCard } from '@/features/cue-sheet/checklist-item'
@@ -112,36 +114,55 @@ export function CueSheetChecklistScreen() {
                     <Card.Header tight className="gap-1.5">
                         <div className="flex flex-1 items-center gap-1.5">
                             <ListChecks className="size-4" />
-                            <Label.sm>All Checklist Runs</Label.sm>
+                            <Label.sm>Active</Label.sm>
                         </div>
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
-                        {isLoadingChecklists ? (
-                            <LoadingSpinner className="py-6" />
-                        ) : filtered.length > 0 ? (
-                            <>
-                                {activeChecklistRuns.length > 0 && (
-                                    <>
-                                        <Label.sm className="px-4 pt-2 text-tertiary">Active</Label.sm>
-                                        {activeChecklistRuns.map((checklist) => (
-                                            <ChecklistItemCard key={checklist.id} checklist={checklist} />
-                                        ))}
-                                    </>
-                                )}
-                                {completedChecklistRuns.length > 0 && (
-                                    <>
-                                        <Label.sm className="px-4 pt-4 text-tertiary">Completed</Label.sm>
-                                        {completedChecklistRuns.map((checklist) => (
-                                            <ChecklistItemCard key={checklist.id} checklist={checklist} />
-                                        ))}
-                                    </>
-                                )}
-                            </>
-                        ) : (
-                            <div className="py-8 text-center">
-                                <Paragraph.sm className="text-tertiary">No checklist runs match your filters.</Paragraph.sm>
-                            </div>
-                        )}
+                        <Decision value={activeChecklistRuns} loading={isLoadingChecklists}>
+                            <Decision.Loading>
+                                <LoadingSpinner className="py-6" />
+                            </Decision.Loading>
+                            <Decision.Empty>
+                                <EmptyState
+                                    icon={<ListChecks />}
+                                    title={filters.search.trim() ? "No active checklist runs match your search" : "No active checklist runs"}
+                                    description={filters.search.trim() ? "Try a different search term." : "Start a checklist run to see it here."}
+                                />
+                            </Decision.Empty>
+                            <Decision.Data>
+                                {activeChecklistRuns.map((checklist) => (
+                                    <ChecklistItemCard key={checklist.id} checklist={checklist} />
+                                ))}
+                            </Decision.Data>
+                        </Decision>
+                    </Card.Content>
+                </Card>
+
+                <Card>
+                    <Card.Header tight className="gap-1.5">
+                        <div className="flex flex-1 items-center gap-1.5">
+                            <ListChecks className="size-4" />
+                            <Label.sm>Completed</Label.sm>
+                        </div>
+                    </Card.Header>
+                    <Card.Content ghost className="flex flex-col gap-1.5">
+                        <Decision value={completedChecklistRuns} loading={isLoadingChecklists}>
+                            <Decision.Loading>
+                                <LoadingSpinner className="py-6" />
+                            </Decision.Loading>
+                            <Decision.Empty>
+                                <EmptyState
+                                    icon={<ListChecks />}
+                                    title={filters.search.trim() ? "No completed checklist runs match your search" : "No completed checklist runs"}
+                                    description={filters.search.trim() ? "Try a different search term." : "Completed checklist runs will appear here."}
+                                />
+                            </Decision.Empty>
+                            <Decision.Data>
+                                {completedChecklistRuns.map((checklist) => (
+                                    <ChecklistItemCard key={checklist.id} checklist={checklist} />
+                                ))}
+                            </Decision.Data>
+                        </Decision>
                     </Card.Content>
                 </Card>
             </div>

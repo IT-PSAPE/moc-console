@@ -3,7 +3,7 @@ import { Header } from "@/components/display/header"
 import { Button } from "@/components/controls/button"
 import { Input } from "@/components/form/input"
 import { Label, Paragraph, TextBlock, Title } from "@/components/display/text"
-import { Spinner } from "@/components/feedback/spinner"
+import { LoadingSpinner } from "@/components/feedback/spinner"
 import { EmptyState } from "@/components/feedback/empty-state"
 import { Dropdown } from "@/components/overlays/dropdown"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
@@ -12,6 +12,8 @@ import { PlaylistListItem } from "@/features/broadcast/broadcast-list-item"
 import type { PlaylistStatus } from "@/types/broadcast"
 import { Check, CircleCheck, FileEdit, Film, ListMusic, Search, Settings2 } from "lucide-react"
 import { useEffect } from "react"
+import { ScrollArea } from "@/components/display/scroll-area";
+import { Decision } from "@/components/display/decision";
 
 export function BroadcastOverviewScreen() {
   const {
@@ -52,45 +54,49 @@ export function BroadcastOverviewScreen() {
         </Header.Lead>
       </Header>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2">
-        <Card>
-          <Card.Header tight className="gap-1.5">
-            <ListMusic className="size-4" />
-            <Label.sm>Total Playlists</Label.sm>
-          </Card.Header>
-          <Card.Content className="p-4">
-            <TextBlock className="title-h4">{totalPlaylists}</TextBlock>
-          </Card.Content>
-        </Card>
-        <Card>
-          <Card.Header tight className="gap-1.5">
-            <CircleCheck className="size-4" />
-            <Label.sm>Published</Label.sm>
-          </Card.Header>
-          <Card.Content className="p-4">
-            <TextBlock className="title-h4">{publishedCount}</TextBlock>
-          </Card.Content>
-        </Card>
-        <Card>
-          <Card.Header tight className="gap-1.5">
-            <FileEdit className="size-4" />
-            <Label.sm>Draft</Label.sm>
-          </Card.Header>
-          <Card.Content className="p-4">
-            <TextBlock className="title-h4">{draftCount}</TextBlock>
-          </Card.Content>
-        </Card>
-        <Card>
-          <Card.Header tight className="gap-1.5">
-            <Film className="size-4" />
-            <Label.sm>Media Items</Label.sm>
-          </Card.Header>
-          <Card.Content className="p-4">
-            <TextBlock className="title-h4">{media.length}</TextBlock>
-          </Card.Content>
-        </Card>
-      </div>
+      <ScrollArea className='mx-auto w-full max-w-content'>
+        <ScrollArea.Viewport className='p-4 pt-8'>
+          <ScrollArea.Content className='flex gap-4 max-mobile:gap-2'>
+            <Card className="flex-1 min-w-56">
+              <Card.Header tight className="gap-1.5">
+                <ListMusic className="size-4" />
+                <Label.sm>Total Playlists</Label.sm>
+              </Card.Header>
+              <Card.Content className="p-4">
+                <TextBlock className="title-h4">{totalPlaylists}</TextBlock>
+              </Card.Content>
+            </Card>
+            <Card className="flex-1 min-w-56">
+              <Card.Header tight className="gap-1.5">
+                <CircleCheck className="size-4" />
+                <Label.sm>Published</Label.sm>
+              </Card.Header>
+              <Card.Content className="p-4">
+                <TextBlock className="title-h4">{publishedCount}</TextBlock>
+              </Card.Content>
+            </Card>
+            <Card className="flex-1 min-w-56">
+              <Card.Header tight className="gap-1.5">
+                <FileEdit className="size-4" />
+                <Label.sm>Draft</Label.sm>
+              </Card.Header>
+              <Card.Content className="p-4">
+                <TextBlock className="title-h4">{draftCount}</TextBlock>
+              </Card.Content>
+            </Card>
+            <Card className="flex-1 min-w-56">
+              <Card.Header tight className="gap-1.5">
+                <Film className="size-4" />
+                <Label.sm>Media Items</Label.sm>
+              </Card.Header>
+              <Card.Content className="p-4">
+                <TextBlock className="title-h4">{media.length}</TextBlock>
+              </Card.Content>
+            </Card>
+          </ScrollArea.Content>
+        </ScrollArea.Viewport>
+      </ScrollArea>
+
 
       {/* Readiness */}
       <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
@@ -126,25 +132,30 @@ export function BroadcastOverviewScreen() {
             </Dropdown>
           </Header.Trail>
         </Header>
+
         <Card>
           <Card.Header tight className="gap-1.5">
             <ListMusic className="size-4" />
             <Label.sm>Playlists</Label.sm>
           </Card.Header>
           <Card.Content ghost className="flex flex-col gap-1.5">
-            {isLoading ? (
-              <LoadingSpinner className="py-6" />
-            ) : filteredPlaylists.length > 0 ? (
-              filteredPlaylists.map((playlist) => (
-                <PlaylistListItem key={playlist.id} playlist={playlist} />
-              ))
-            ) : (
-              <EmptyState
-                icon={<ListMusic />}
-                title={hasSearch || hasActiveFilters ? "No playlists match your filters" : "No playlists yet"}
-                description={hasSearch || hasActiveFilters ? "Try a different search term or clear filters." : "Create a playlist to schedule broadcast cues."}
-              />
-            )}
+            <Decision value={filteredPlaylists} loading={isLoading}>
+              <Decision.Loading>
+                <LoadingSpinner className="py-6" />
+              </Decision.Loading>
+              <Decision.Empty>
+                <EmptyState
+                  icon={<ListMusic />}
+                  title={hasSearch || hasActiveFilters ? "No playlists match your filters" : "No playlists yet"}
+                  description={hasSearch || hasActiveFilters ? "Try a different search term or clear filters." : "Create a playlist to schedule broadcast cues."}
+                />
+              </Decision.Empty>
+              <Decision.Data>
+                {filteredPlaylists.map((playlist) => (
+                  <PlaylistListItem key={playlist.id} playlist={playlist} />
+                ))}
+              </Decision.Data>
+            </Decision>
           </Card.Content>
         </Card>
       </div>

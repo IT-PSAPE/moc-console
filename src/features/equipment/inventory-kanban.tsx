@@ -20,7 +20,7 @@ function DraggableEquipmentItem({ equipment }: { equipment: Equipment }) {
     );
 }
 
-export function InventoryKanban({ equipment }: { equipment: Equipment[] }) {
+export function InventoryKanbanView({ equipment }: { equipment: Equipment[] }) {
     const { actions: { syncEquipment } } = useEquipment();
     const { toast } = useFeedback();
     const [activeEquipment, setActiveEquipment] = useState<Equipment | null>(null);

@@ -30,7 +30,7 @@ function toCalendarEvents(requests: Request[]): CalendarEvent<Request>[] {
         }));
 }
 
-export function RequestCalendar({ requests }: { requests: Request[] }) {
+export function RequestCalendarView({ requests }: { requests: Request[] }) {
     const events = useMemo(() => toCalendarEvents(requests), [requests]);
 
     return (

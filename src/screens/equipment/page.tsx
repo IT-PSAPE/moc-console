@@ -4,15 +4,18 @@ import { Input } from "@/components/form/input";
 import { Header } from "@/components/display/header";
 import { Drawer } from "@/components/overlays/drawer";
 import { Label, Paragraph, TextBlock, Title } from "@/components/display/text";
-import { ArrowUpRight, CalendarX2Icon, CircleCheck, Package, Search, Settings2 } from "lucide-react";
+import { ArrowUpRight, CalendarX2Icon, CircleCheck, FileWarning, Package, Search, Settings2 } from "lucide-react";
 import { useEffect, useMemo } from "react";
-import { Spinner } from "@/components/feedback/spinner";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 import { useEquipmentFilters } from "@/features/equipment/use-equipment-filters";
 import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
 import { EquipmentItem } from "@/features/equipment/equipment-item";
 import type { Equipment } from "@/types/equipment";
 import { Indicator } from "@/components/display/indicator";
+import { LoadingSpinner } from "@/components/feedback/spinner";
+import { ScrollArea } from "@/components/display/scroll-area";
+import { Decision } from "@/components/display/decision";
+import { EmptyState } from "@/components/feedback/empty-state";
 
 export function EquipmentOverviewScreen() {
   const {
@@ -83,44 +86,48 @@ export function EquipmentOverviewScreen() {
         </Header.Lead>
       </Header>
 
-      <div className="grid grid-cols-2 gap-4 p-4 pt-8 mx-auto w-full max-w-content md:grid-cols-4 max-mobile:gap-2">
-        <Card>
-          <Card.Header tight className="gap-1.5">
-            <Package className="size-4" />
-            <Label.sm>Total Equipment</Label.sm>
-          </Card.Header>
-          <Card.Content className="p-4">
-            <TextBlock className="title-h4">{totalCount}</TextBlock>
-          </Card.Content>
-        </Card>
-        <Card>
-          <Card.Header tight className="gap-1.5">
-            <CircleCheck className="size-4" />
-            <Label.sm>Available</Label.sm>
-          </Card.Header>
-          <Card.Content className="p-4">
-            <TextBlock className="title-h4">{availableCount}</TextBlock>
-          </Card.Content>
-        </Card>
-        <Card>
-          <Card.Header tight className="gap-1.5">
-            <ArrowUpRight className="size-4" />
-            <Label.sm>Booked Out</Label.sm>
-          </Card.Header>
-          <Card.Content className="p-4">
-            <TextBlock className="title-h4">{bookedOutCount}</TextBlock>
-          </Card.Content>
-        </Card>
-        <Card>
-          <Card.Header tight className="gap-1.5">
-            <CalendarX2Icon className="size-4" />
-            <Label.sm>Overdue</Label.sm>
-          </Card.Header>
-          <Card.Content className="p-4">
-            <TextBlock className="title-h4">{overdueCount}</TextBlock>
-          </Card.Content>
-        </Card>
-      </div>
+      <ScrollArea className='mx-auto w-full max-w-content'>
+        <ScrollArea.Viewport className='p-4 pt-8'>
+          <ScrollArea.Content className='flex gap-4 max-mobile:gap-2'>
+            <Card className="flex-1 min-w-56">
+              <Card.Header tight className="gap-1.5">
+                <Package className="size-4" />
+                <Label.sm>Total Equipment</Label.sm>
+              </Card.Header>
+              <Card.Content className="p-4">
+                <TextBlock className="title-h4">{totalCount}</TextBlock>
+              </Card.Content>
+            </Card>
+            <Card className="flex-1 min-w-56">
+              <Card.Header tight className="gap-1.5">
+                <CircleCheck className="size-4" />
+                <Label.sm>Available</Label.sm>
+              </Card.Header>
+              <Card.Content className="p-4">
+                <TextBlock className="title-h4">{availableCount}</TextBlock>
+              </Card.Content>
+            </Card>
+            <Card className="flex-1 min-w-56">
+              <Card.Header tight className="gap-1.5">
+                <ArrowUpRight className="size-4" />
+                <Label.sm>Booked Out</Label.sm>
+              </Card.Header>
+              <Card.Content className="p-4">
+                <TextBlock className="title-h4">{bookedOutCount}</TextBlock>
+              </Card.Content>
+            </Card>
+            <Card className="flex-1 min-w-56">
+              <Card.Header tight className="gap-1.5">
+                <CalendarX2Icon className="size-4" />
+                <Label.sm>Overdue</Label.sm>
+              </Card.Header>
+              <Card.Content className="p-4">
+                <TextBlock className="title-h4">{overdueCount}</TextBlock>
+              </Card.Content>
+            </Card>
+          </ScrollArea.Content>
+        </ScrollArea.Viewport>
+      </ScrollArea>
 
       <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
         <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
@@ -140,45 +147,51 @@ export function EquipmentOverviewScreen() {
 
         <Card>
           <Card.Header tight>
-            <span className="flex gap-1.5 items-center">
-              <Indicator color="red" className="size-6" />
-              <Label.sm>Overdue Equipment</Label.sm>
-            </span>
+            <Indicator color="red" className="size-6" />
+            <Label.sm>Overdue Equipment</Label.sm>
           </Card.Header>
           <Card.Content ghost className="flex flex-col gap-1.5">
-            {(isLoadingEquipment || isLoadingBookings) ? (
-              <LoadingSpinner className="py-8" />
-            ) : overdueEquipment.length > 0 ? (
-              overdueEquipment.map((item) => (
-                <EquipmentItem key={item.id} equipment={item} />
-              ))
-            ) : (
-              <div className="px-4 py-6 text-center">
-                <Paragraph.sm className="text-quaternary">No overdue equipment</Paragraph.sm>
-              </div>
-            )}
+            <Decision value={overdueEquipment} loading={(isLoadingEquipment || isLoadingBookings)}>
+              <Decision.Loading>
+                <LoadingSpinner className="py-6" />
+              </Decision.Loading>
+              <Decision.Empty>
+                <EmptyState
+                  icon={<FileWarning />}
+                  title={'No overdue equipment'}
+                />
+              </Decision.Empty>
+              <Decision.Data>
+                {overdueEquipment.map((item) => (
+                  <EquipmentItem key={item.id} equipment={item} />
+                ))}
+              </Decision.Data>
+            </Decision>
           </Card.Content>
         </Card>
 
         <Card>
           <Card.Header tight>
-            <span className="flex gap-1.5 items-center">
-              <Indicator className="size-6" />
-              <Label.sm>Faulty Equipment</Label.sm>
-            </span>
+            <Indicator className="size-6" />
+            <Label.sm>Faulty Equipment</Label.sm>
           </Card.Header>
           <Card.Content ghost className="flex flex-col gap-1.5">
-            {(isLoadingEquipment || isLoadingBookings) ? (
-              <LoadingSpinner className="py-8" />
-            ) : faultyEquipment.length > 0 ? (
-              faultyEquipment.map((item) => (
-                <EquipmentItem key={item.id} equipment={item} />
-              ))
-            ) : (
-              <div className="px-4 py-6 text-center">
-                <Paragraph.sm className="text-quaternary">No faulty equipment</Paragraph.sm>
-              </div>
-            )}
+            <Decision value={faultyEquipment} loading={(isLoadingEquipment || isLoadingBookings)}>
+              <Decision.Loading>
+                <LoadingSpinner className="py-6" />
+              </Decision.Loading>
+              <Decision.Empty>
+                <EmptyState
+                  icon={<FileWarning />}
+                  title={'No faulty equipment'}
+                />
+              </Decision.Empty>
+              <Decision.Data>
+                {faultyEquipment.map((item) => (
+                  <EquipmentItem key={item.id} equipment={item} />
+                ))}
+              </Decision.Data>
+            </Decision>
           </Card.Content>
         </Card>
       </div>
