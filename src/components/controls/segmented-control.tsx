@@ -70,11 +70,14 @@ function SegmentedControlRoot({ children, className, defaultValue = '', fill = f
 type SegmentedControlItemProps = HTMLAttributes<HTMLButtonElement> & {
     icon?: ReactNode
     value: string
+    hide?: boolean
 }
 
-function SegmentedControlItem({ children, className, icon, value, ...props }: SegmentedControlItemProps) {
+function SegmentedControlItem({ children, className, icon, value, hide, ...props }: SegmentedControlItemProps) {
     const { value: selectedValue, setValue } = useSegmentedControl()
     const isActive = value === selectedValue
+
+    if (hide) return null
 
     return (
         <button

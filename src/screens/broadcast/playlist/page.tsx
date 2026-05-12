@@ -7,15 +7,17 @@ import { Header } from "@/components/display/header"
 import { Button } from "@/components/controls/button"
 import { Input } from "@/components/form/input"
 import { Label, Paragraph, Title } from "@/components/display/text"
-import { Spinner } from "@/components/feedback/spinner"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { usePlaylistFilters } from "@/features/broadcast/use-broadcast-filters"
 import { PlaylistListItem } from "@/features/broadcast/broadcast-list-item"
 import type { Playlist } from "@/types/broadcast"
 import { updatePlaylist } from "@/data/mutate-broadcast"
 import { getErrorMessage } from "@/utils/get-error-message"
-import { Plus, Search } from "lucide-react"
+import { ListMusic, Plus, Search } from "lucide-react"
 import { routes } from "@/screens/console-routes"
+import { LoadingSpinner } from "@/components/feedback/spinner";
+import { Decision } from "@/components/display/decision";
+import { EmptyState } from "@/components/feedback/empty-state";
 
 export function PlaylistScreen() {
   const navigate = useNavigate()
@@ -86,18 +88,24 @@ export function PlaylistScreen() {
         </Header>
 
         <Card>
-          <Card.Content ghost className="flex flex-col gap-1">
-            {isLoadingPlaylists ? (
-              <div className="flex justify-center py-12"><Spinner /></div>
-            ) : filtered.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <Paragraph.sm className="text-tertiary">No playlists found.</Paragraph.sm>
-              </div>
-            ) : (
-              filtered.map((playlist) => (
-                <PlaylistListItem key={playlist.id} playlist={playlist} />
-              ))
-            )}
+          <Card.Content ghost className="flex flex-col gap-1.5">
+            <Decision value={filtered} loading={isLoadingPlaylists}>
+              <Decision.Loading>
+                <LoadingSpinner className="py-6" />
+              </Decision.Loading>
+              <Decision.Empty>
+                <EmptyState
+                  icon={<ListMusic />}
+                  title={state.search.trim() ? "No playlists match your search" : "No playlists yet"}
+                  description={state.search.trim() ? "Try a different search term." : "Create a playlist to schedule broadcast cues."}
+                />
+              </Decision.Empty>
+              <Decision.Data>
+                {filtered.map((playlist) => (
+                  <PlaylistListItem key={playlist.id} playlist={playlist} />
+                ))}
+              </Decision.Data>
+            </Decision>
           </Card.Content>
         </Card>
       </div>

@@ -119,7 +119,7 @@ export function StreamDetailScreen() {
 
   if (!stream) {
     return (
-      <section className="mx-auto max-w-content-sm">
+      <section className="mx-auto max-w-content-md">
         <EmptyState icon={<Radio />} title="Stream not found" description="The stream you're looking for doesn't exist." />
       </section>
     )
@@ -130,7 +130,7 @@ export function StreamDetailScreen() {
   const canViewStreamKey = role?.can_create === true
 
   return (
-    <section className="mx-auto max-w-content-sm">
+    <section className="mx-auto max-w-content-md">
       <TopBarActions>
         {canEdit && (
           <Button variant="secondary" icon={<Pencil />} onClick={() => setEditOpen(true)}>Edit</Button>

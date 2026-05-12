@@ -75,7 +75,7 @@ function RequestDetailContent({ request, assignees, setAssignees, syncRequest }:
     } = detail.actions;
 
     return (
-        <section className="mx-auto max-w-content-sm">
+        <section className="mx-auto max-w-content-md">
             <TopBarActions>
                 {store.state.isDirty ? (
                     <>
@@ -127,17 +127,13 @@ function RequestDetailContent({ request, assignees, setAssignees, syncRequest }:
             <Divider className="px-4 my-2" />
 
             {/* 5W1H */}
-            <div className="p-4">
-                <RequestFiveW request={store.state.draft} />
-            </div>
+            <RequestFiveW request={store.state.draft} className="p-4" />
 
             {/* Notes & Flow side by side when both present */}
             {(store.state.draft.notes) && (
                 <>
                     <Divider className="px-4 my-2" />
-                    <div className="p-4">
-                        <RequestNotes request={store.state.draft} />
-                    </div>
+                    <RequestNotes request={store.state.draft} className="p-4" />
                 </>
             )}
 
@@ -145,9 +141,7 @@ function RequestDetailContent({ request, assignees, setAssignees, syncRequest }:
             {(store.state.draft.flow) && (
                 <>
                     <Divider className="px-4 my-2" />
-                    <div className="p-4">
-                        <RequestFlow request={store.state.draft} />
-                    </div>
+                    <RequestFlow request={store.state.draft} className="p-4" />
                 </>
             )}
 
@@ -165,30 +159,19 @@ function RequestDetailContent({ request, assignees, setAssignees, syncRequest }:
             <Divider className="px-4 my-2" />
             <div className="p-4">
                 <Label.md className="block pb-3">Content</Label.md>
-                    <DocEditor
-                        value={store.state.draft.content ?? ''}
-                        onChange={handleContentChange}
-                        placeholder="Add notes, details, or any additional context here..."
-                        className="w-full"
-                    />
+                <DocEditor
+                    value={store.state.draft.content ?? ''}
+                    onChange={handleContentChange}
+                    placeholder="Add notes, details, or any additional context here..."
+                    className="w-full"
+                />
             </div>
 
             {/* Navigation guard modal */}
-            <UnsavedChangesModal
-                open={blockerState === 'blocked'}
-                onSave={handleBlockerSave}
-                onDiscard={handleBlockerDiscard}
-                onCancel={handleBlockerCancel}
-                isSaving={store.state.isSaving}
-            />
+            <UnsavedChangesModal open={blockerState === 'blocked'} onSave={handleBlockerSave} onDiscard={handleBlockerDiscard} onCancel={handleBlockerCancel} isSaving={store.state.isSaving} />
 
             {/* Delete confirmation modal */}
-            <DeleteRequestModal
-                open={showDeleteModal}
-                onDelete={handleDelete}
-                onCancel={closeDeleteModal}
-                isDeleting={isDeleting}
-            />
+            <DeleteRequestModal open={showDeleteModal} onDelete={handleDelete} onCancel={closeDeleteModal} isDeleting={isDeleting} />
 
         </section>
     )

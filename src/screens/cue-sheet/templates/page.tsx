@@ -6,7 +6,7 @@ import { Button } from '@/components/controls/button'
 import { Card } from '@/components/display/card'
 import { Header } from '@/components/display/header'
 import { Label, Paragraph, Title } from '@/components/display/text'
-import { Spinner } from '@/components/feedback/spinner'
+import { LoadingSpinner } from '@/components/feedback/spinner'
 import { Input } from '@/components/form/input'
 import { Dropdown } from '@/components/overlays/dropdown'
 import { ChecklistItemCard } from '@/features/cue-sheet/checklist-item'
@@ -15,6 +15,8 @@ import { CreateEventModal } from '@/features/cue-sheet/create-event-modal'
 import { EventItem } from '@/features/cue-sheet/event-item'
 import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
 import type { Checklist, CueSheetEvent } from '@/types/cue-sheet'
+import { Decision } from '@/components/display/decision'
+import { EmptyState } from '@/components/feedback/empty-state'
 
 export function CueSheetTemplatesScreen() {
     const navigate = useNavigate()
@@ -47,8 +49,6 @@ export function CueSheetTemplatesScreen() {
         if (!query) return checklistTemplates
         return checklistTemplates.filter((checklist) => checklist.name.toLowerCase().includes(query) || checklist.description.toLowerCase().includes(query))
     }, [checklistTemplates, search])
-
-    const isLoading = isLoadingEvents || isLoadingChecklists
 
     const handleCreateEvent = useCallback(async ({ title, description, duration }: { title: string; description: string; duration: number }) => {
         const now = new Date().toISOString()
@@ -126,17 +126,23 @@ export function CueSheetTemplatesScreen() {
                         </div>
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
-                        {isLoading ? (
-                            <div className="flex justify-center py-6"><Spinner /></div>
-                        ) : filteredEventTemplates.length > 0 ? (
-                            filteredEventTemplates.map((event) => (
-                                <EventItem key={event.id} event={event} />
-                            ))
-                        ) : (
-                            <div className="py-8 text-center">
-                                <Paragraph.sm className="text-tertiary">No event templates found.</Paragraph.sm>
-                            </div>
-                        )}
+                        <Decision value={filteredEventTemplates} loading={isLoadingEvents}>
+                            <Decision.Loading>
+                                <LoadingSpinner className="py-6" />
+                            </Decision.Loading>
+                            <Decision.Empty>
+                                <EmptyState
+                                    icon={<Calendar />}
+                                    title={search.trim() ? "No event templates match your search" : "No event templates yet"}
+                                    description={search.trim() ? "Try a different search term." : "Create an event template to reuse common timelines."}
+                                />
+                            </Decision.Empty>
+                            <Decision.Data>
+                                {filteredEventTemplates.map((event) => (
+                                    <EventItem key={event.id} event={event} />
+                                ))}
+                            </Decision.Data>
+                        </Decision>
                     </Card.Content>
                 </Card>
 
@@ -148,17 +154,23 @@ export function CueSheetTemplatesScreen() {
                         </div>
                     </Card.Header>
                     <Card.Content ghost className="flex flex-col gap-1.5">
-                        {isLoading ? (
-                            <div className="flex justify-center py-6"><Spinner /></div>
-                        ) : filteredChecklistTemplates.length > 0 ? (
-                            filteredChecklistTemplates.map((checklist) => (
-                                <ChecklistItemCard key={checklist.id} checklist={checklist} />
-                            ))
-                        ) : (
-                            <div className="py-8 text-center">
-                                <Paragraph.sm className="text-tertiary">No checklist templates found.</Paragraph.sm>
-                            </div>
-                        )}
+                        <Decision value={filteredChecklistTemplates} loading={isLoadingChecklists}>
+                            <Decision.Loading>
+                                <LoadingSpinner className="py-6" />
+                            </Decision.Loading>
+                            <Decision.Empty>
+                                <EmptyState
+                                    icon={<ListChecks />}
+                                    title={search.trim() ? "No checklist templates match your search" : "No checklist templates yet"}
+                                    description={search.trim() ? "Try a different search term." : "Create a checklist template to standardize preparation steps."}
+                                />
+                            </Decision.Empty>
+                            <Decision.Data>
+                                {filteredChecklistTemplates.map((checklist) => (
+                                    <ChecklistItemCard key={checklist.id} checklist={checklist} />
+                                ))}
+                            </Decision.Data>
+                        </Decision>
                     </Card.Content>
                 </Card>
             </div>

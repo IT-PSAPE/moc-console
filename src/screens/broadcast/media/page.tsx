@@ -1,30 +1,20 @@
 import { useCallback, useEffect, useState } from "react"
 import { useFeedback } from "@/components/feedback/feedback-provider"
-import { Card } from "@/components/display/card"
 import { Header } from "@/components/display/header"
 import { Input } from "@/components/form/input"
 import { Button } from "@/components/controls/button"
-import { Spinner } from "@/components/feedback/spinner"
 import { Label, Paragraph, Title } from "@/components/display/text"
-import { Modal } from "@/components/overlays/modal"
-import { ScrollArea } from "@/components/display/scroll-area"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
-import { useMediaFilters } from "@/features/broadcast/use-media-filters"
-import { MediaListItem } from "@/features/broadcast/media-list-item"
-import { MediaDetailDrawer } from "@/features/broadcast/media-detail-drawer"
+import { MediaLibraryView } from "@/features/broadcast/media-library"
 import { UploadMediaModal } from "@/features/broadcast/upload-media-modal"
 import type { MediaItem } from "@/types/broadcast"
-import type { MediaType } from "@/types/broadcast"
-import { createMediaItem, deleteMediaItem } from "@/data/mutate-broadcast"
+import { createMediaItem } from "@/data/mutate-broadcast"
 import { getErrorMessage } from "@/utils/get-error-message"
-import { Film, Plus, Search, TriangleAlert } from "lucide-react"
-import { SegmentedControl } from "@/components/controls/segmented-control"
-
+import { Plus, Search } from "lucide-react"
 
 export function BroadcastMediaScreen() {
   const {
-    state: { media, isLoadingMedia },
-    actions: { loadMedia, syncMediaItem, removeMediaItem },
+    actions: { loadMedia, syncMediaItem },
   } = useBroadcast()
   const { toast } = useFeedback()
 
@@ -32,19 +22,10 @@ export function BroadcastMediaScreen() {
     loadMedia()
   }, [loadMedia])
 
-  const mediaFilters = useMediaFilters(media)
-  const { filtered, setSearch, setType, filters: state } = mediaFilters
-
-  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
   const [uploadOpen, setUploadOpen] = useState(false)
-  const [pendingDelete, setPendingDelete] = useState<MediaItem | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
 
-  function handleTabChange(tab: string) {
-    setType(tab === "all" ? null : (tab as MediaType))
-  }
-
-  async function handleUploadSubmit(item: MediaItem) {
+  const handleUploadSubmit = useCallback(async (item: MediaItem) => {
     try {
       const savedItem = await createMediaItem(item)
       syncMediaItem(savedItem)
@@ -52,23 +33,7 @@ export function BroadcastMediaScreen() {
       toast({ title: "Failed to add media", description: getErrorMessage(error, "The media item could not be added."), variant: "error" })
       throw error
     }
-  }
-
-  const handleDelete = useCallback(async () => {
-    if (!pendingDelete) return
-    setIsDeleting(true)
-    try {
-      await deleteMediaItem(pendingDelete)
-      removeMediaItem(pendingDelete.id)
-      toast({ title: "Media deleted", variant: "success" })
-      setSelectedItem(null)
-      setPendingDelete(null)
-    } catch (error) {
-      toast({ title: "Failed to delete media", description: getErrorMessage(error, "The media item could not be deleted."), variant: "error" })
-    } finally {
-      setIsDeleting(false)
-    }
-  }, [pendingDelete, removeMediaItem, toast])
+  }, [syncMediaItem, toast])
 
   return (
     <section className="h-full flex flex-col">
@@ -91,89 +56,21 @@ export function BroadcastMediaScreen() {
               icon={<Search />}
               placeholder="Search media..."
               className="w-full max-w-md"
-              value={state.search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
             <Button.Icon variant="secondary" icon={<Plus />} onClick={() => setUploadOpen(true)} />
           </Header.Trail>
         </Header>
 
-        <Card className="flex-1 flex flex-col overflow-hidden">
-          <Card.Header>
-            <SegmentedControl defaultValue="all" onValueChange={(value) => handleTabChange(value)} fill>
-              <SegmentedControl.Item value="all">All</SegmentedControl.Item>
-              <SegmentedControl.Item value="image">Images</SegmentedControl.Item>
-              <SegmentedControl.Item value="audio">Audio</SegmentedControl.Item>
-              <SegmentedControl.Item value="video">Video</SegmentedControl.Item>
-            </SegmentedControl>
-          </Card.Header>
-          <Card.Content className="flex flex-col flex-1">
-            <ScrollArea className="flex-1 min-h-0">
-              <ScrollArea.Viewport className="py-2 pr-2">
-                <ScrollArea.Content>
-                  {isLoadingMedia ? (
-                    <div className="flex justify-center py-8"><Spinner /></div>
-                  ) : filtered.length === 0 ? (
-                    <div className="flex flex-col items-center gap-2 py-8">
-                      <Film className="size-6 text-quaternary" />
-                      <Paragraph.sm className="text-quaternary">No media items found.</Paragraph.sm>
-                    </div>
-                  ) : (
-                    filtered.map((item) => (
-                      <MediaListItem
-                        key={item.id}
-                        item={item}
-                        onClick={() => setSelectedItem(item)}
-                      />
-                    ))
-                  )}
-                </ScrollArea.Content>
-              </ScrollArea.Viewport>
-              <ScrollArea.Scrollbar orientation="vertical">
-                <ScrollArea.Thumb />
-              </ScrollArea.Scrollbar>
-            </ScrollArea>
-          </Card.Content>
-        </Card>
+        <MediaLibraryView searchQuery={searchQuery} />
       </div>
-
-      <MediaDetailDrawer
-        item={selectedItem}
-        open={selectedItem !== null}
-        onOpenChange={(open) => { if (!open) setSelectedItem(null) }}
-        onDelete={(item) => setPendingDelete(item)}
-      />
 
       <UploadMediaModal
         open={uploadOpen}
         onOpenChange={setUploadOpen}
         onSubmit={handleUploadSubmit}
       />
-
-      <Modal open={pendingDelete !== null} onOpenChange={(o) => { if (!o) setPendingDelete(null) }}>
-        <Modal.Portal>
-          <Modal.Backdrop />
-          <Modal.Positioner>
-            <Modal.Panel>
-              <Modal.Header>
-                <Label.md>Delete Media</Label.md>
-              </Modal.Header>
-              <Modal.Content className="p-4 flex-row gap-4">
-                <TriangleAlert className="size-8 shrink-0 text-utility-red-600" />
-                <Paragraph.sm className="text-secondary">
-                  Are you sure you want to delete this media item? Playlist cues that reference it may be affected. This action cannot be undone.
-                </Paragraph.sm>
-              </Modal.Content>
-              <Modal.Footer className="justify-end">
-                <Button variant="secondary" onClick={() => setPendingDelete(null)}>Cancel</Button>
-                <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
-                  {isDeleting ? "Deleting..." : "Delete Media"}
-                </Button>
-              </Modal.Footer>
-            </Modal.Panel>
-          </Modal.Positioner>
-        </Modal.Portal>
-      </Modal>
     </section>
   )
 }

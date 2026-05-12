@@ -1,6 +1,6 @@
 import { Button } from '@/components/controls/button'
 import { Label, Paragraph } from '@/components/display/text'
-import { Spinner } from '@/components/feedback/spinner'
+import { LoadingSpinner, Spinner } from '@/components/feedback/spinner'
 import { useFeedback } from '@/components/feedback/feedback-provider'
 import { Modal } from '@/components/overlays/modal'
 import {
@@ -139,9 +139,7 @@ export function ShareEventModal({ open, onOpenChange, eventId, eventTitle }: Pro
 
                         <Modal.Content>
                             {loading ? (
-                                <div className="flex items-center justify-center py-12">
-                                    <Spinner />
-                                </div>
+                                <LoadingSpinner className="py-12" />
                             ) : share ? (
                                 <div className="flex flex-col gap-5 p-4">
                                     <div className="flex flex-col gap-2">

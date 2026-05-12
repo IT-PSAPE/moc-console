@@ -407,7 +407,7 @@ export function PlaylistDetailScreen() {
 
   if (!playlist) {
     return (
-      <section className="mx-auto max-w-content-sm">
+      <section className="mx-auto max-w-content-md">
         <EmptyState icon={<Radio />} title="Playlist not found" description="The playlist you're looking for doesn't exist." />
       </section>
     )

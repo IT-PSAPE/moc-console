@@ -5,13 +5,16 @@ import { Header } from '@/components/display/header'
 import { Drawer } from '@/components/overlays/drawer'
 import { RequestItem } from '@/features/requests/request-item'
 import { Label, Paragraph, TextBlock, Title } from '@/components/display/text'
-import { Activity, CalendarClock, CircleAlert, CircleCheck, Search, Settings2 } from 'lucide-react'
+import { Activity, CalendarClock, CircleAlert, CircleCheck, FileWarning, Search, Settings2 } from 'lucide-react'
 import { Indicator } from '@/components/display/indicator'
 import { useEffect } from 'react'
-import { Spinner } from '@/components/feedback/spinner'
+import { LoadingSpinner } from '@/components/feedback/spinner'
 import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
 import { useRequestFilters } from '@/features/requests/use-request-filters'
 import { useRequests } from '@/features/requests/request-provider'
+import { ScrollArea } from '@/components/display/scroll-area';
+import { Decision } from '@/components/display/decision';
+import { EmptyState } from '@/components/feedback/empty-state';
 
 
 export function RequestsOverviewScreen() {
@@ -35,6 +38,10 @@ export function RequestsOverviewScreen() {
     const overdue = filtered.filter((r) => r.status !== 'archived' && r.status !== 'completed' && new Date(r.dueDate) < now);
     const upcoming = filtered.filter((r) => r.status !== 'archived' && r.status !== 'completed' && new Date(r.dueDate) > now);
 
+    function onSearch(e: React.ChangeEvent<HTMLInputElement, HTMLInputElement>) {
+        setSearch(e.target.value)
+    }
+
     return (
         <section>
             <Header className='p-4 pt-8 mx-auto max-w-content'>
@@ -44,52 +51,48 @@ export function RequestsOverviewScreen() {
                 </Header.Lead>
             </Header>
 
-            <div className='grid grid-cols-4 gap-4 p-4 pt-8 mx-auto w-full max-w-content max-mobile:grid-cols-2 max-mobile:gap-2'>
-                <Card>
-                    <Card.Header tight>
-                        <span className='flex gap-1.5 items-center'>
-                            <Activity className='size-4' />
-                            <Label.sm>Active Requests</Label.sm>
-                        </span>
-                    </Card.Header>
-                    <Card.Content className='p-4'>
-                        <TextBlock className='title-h4'>{activeCount}</TextBlock>
-                    </Card.Content>
-                </Card>
-                <Card>
-                    <Card.Header tight>
-                        <span className='flex gap-1.5 items-center'>
-                            <CalendarClock className='size-4' />
-                            <Label.sm>Upcoming Requests</Label.sm>
-                        </span>
-                    </Card.Header>
-                    <Card.Content className='p-4'>
-                        <TextBlock className='title-h4'>{upcomingCount}</TextBlock>
-                    </Card.Content>
-                </Card>
-                <Card>
-                    <Card.Header tight>
-                        <span className='flex gap-1.5 items-center'>
-                            <CircleAlert className='size-4' />
-                            <Label.sm>Overdue Requests</Label.sm>
-                        </span>
-                    </Card.Header>
-                    <Card.Content className='p-4'>
-                        <TextBlock className='title-h4'>{overdueCount}</TextBlock>
-                    </Card.Content>
-                </Card>
-                <Card>
-                    <Card.Header tight>
-                        <span className='flex gap-1.5 items-center'>
-                            <CircleCheck className='size-4' />
-                            <Label.sm>Completed Requests</Label.sm>
-                        </span>
-                    </Card.Header>
-                    <Card.Content className='p-4'>
-                        <TextBlock className='title-h4'>{completedCount}</TextBlock>
-                    </Card.Content>
-                </Card>
-            </div>
+            <ScrollArea className='mx-auto w-full max-w-content'>
+                <ScrollArea.Viewport className='p-4 pt-8'>
+                    <ScrollArea.Content className='flex gap-4 max-mobile:gap-2'>
+                        <Card className="flex-1 min-w-56">
+                            <Card.Header tight className='gap-1.5'>
+                                <Activity className='size-4' />
+                                <Label.sm>Active</Label.sm>
+                            </Card.Header>
+                            <Card.Content className='p-4'>
+                                <TextBlock className='title-h4'>{activeCount}</TextBlock>
+                            </Card.Content>
+                        </Card>
+                        <Card className="flex-1 min-w-56">
+                            <Card.Header tight className='gap-1.5'>
+                                <CalendarClock className='size-4' />
+                                <Label.sm>Upcoming</Label.sm>
+                            </Card.Header>
+                            <Card.Content className='p-4'>
+                                <TextBlock className='title-h4'>{upcomingCount}</TextBlock>
+                            </Card.Content>
+                        </Card>
+                        <Card className="flex-1 min-w-56">
+                            <Card.Header tight className='gap-1.5'>
+                                <CircleAlert className='size-4' />
+                                <Label.sm>Overdue</Label.sm>
+                            </Card.Header>
+                            <Card.Content className='p-4'>
+                                <TextBlock className='title-h4'>{overdueCount}</TextBlock>
+                            </Card.Content>
+                        </Card>
+                        <Card className="flex-1 min-w-56">
+                            <Card.Header tight className='gap-1.5'>
+                                <CircleCheck className='size-4' />
+                                <Label.sm>Completed</Label.sm>
+                            </Card.Header>
+                            <Card.Content className='p-4'>
+                                <TextBlock className='title-h4'>{completedCount}</TextBlock>
+                            </Card.Content>
+                        </Card>
+                    </ScrollArea.Content>
+                </ScrollArea.Viewport>
+            </ScrollArea>
 
             <div className='flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content'>
                 <Header className='gap-2 max-mobile:flex-col *:max-mobile:w-full'>
@@ -97,7 +100,7 @@ export function RequestsOverviewScreen() {
                         <Label.md>Schedule</Label.md>
                     </Header.Lead>
                     <Header.Trail className='gap-2 flex-1 justify-end '>
-                        <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-md' value={state.search} onChange={(e) => setSearch(e.target.value)} />
+                        <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-md' value={state.search} onChange={onSearch} />
                         <Drawer>
                             <Drawer.Trigger>
                                 <Button icon={<Settings2 />} variant='secondary'>Filter</Button>
@@ -109,41 +112,47 @@ export function RequestsOverviewScreen() {
 
                 <Card>
                     <Card.Header tight>
-                        <span className='flex gap-1.5 items-center'>
-                            <Indicator color='red' className='size-6' />
-                            <Label.sm>Overdue Requests</Label.sm>
-                        </span>
+                        <Indicator color='red' className='size-6' />
+                        <Label.sm>Overdue Requests</Label.sm>
                     </Card.Header>
                     <Card.Content ghost className='flex flex-col gap-1.5'>
-                        {isLoadingActive ? (
-                            <div className="flex justify-center py-6"><Spinner /></div>
-                        ) : overdue.length > 0 ? (
-                            overdue.map((r) => (<RequestItem key={r.id} request={r} />))
-                        ) : (
-                            <div className="px-4 py-6 text-center">
-                                <Paragraph.sm className="text-quaternary">No overdue requests</Paragraph.sm>
-                            </div>
-                        )}
+                        <Decision value={overdue} loading={isLoadingActive}>
+                            <Decision.Loading>
+                                <LoadingSpinner className="py-6" />
+                            </Decision.Loading>
+                            <Decision.Empty>
+                                <EmptyState
+                                    icon={<FileWarning />}
+                                    title={'No overdue requests'}
+                                />
+                            </Decision.Empty>
+                            <Decision.Data>
+                                {overdue.map((r) => (<RequestItem key={r.id} request={r} />))}
+                            </Decision.Data>
+                        </Decision>
                     </Card.Content>
                 </Card>
 
                 <Card>
                     <Card.Header tight>
-                        <span className='flex gap-1.5 items-center'>
-                            <Indicator className='size-6' />
-                            <Label.sm>Upcoming Requests</Label.sm>
-                        </span>
+                        <Indicator className='size-6' />
+                        <Label.sm>Upcoming Requests</Label.sm>
                     </Card.Header>
                     <Card.Content ghost className='flex flex-col gap-1.5'>
-                        {isLoadingActive ? (
-                            <div className="flex justify-center py-6"><Spinner /></div>
-                        ) : upcoming.length > 0 ? (
-                            upcoming.map((r) => (<RequestItem key={r.id} request={r} />))
-                        ) : (
-                            <div className="px-4 py-6 text-center">
-                                <Paragraph.sm className="text-quaternary">No upcoming requests</Paragraph.sm>
-                            </div>
-                        )}
+                        <Decision value={upcoming} loading={isLoadingActive}>
+                            <Decision.Loading>
+                                <LoadingSpinner className="py-6" />
+                            </Decision.Loading>
+                            <Decision.Empty>
+                                <EmptyState
+                                    icon={<FileWarning />}
+                                    title={'No upcoming requests'}
+                                />
+                            </Decision.Empty>
+                            <Decision.Data>
+                                {upcoming.map((r) => (<RequestItem key={r.id} request={r} />))}
+                            </Decision.Data>
+                        </Decision>
                     </Card.Content>
                 </Card>
             </div>

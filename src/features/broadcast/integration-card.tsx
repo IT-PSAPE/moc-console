@@ -1,7 +1,7 @@
 import { Button } from "@/components/controls/button"
 import { Label, Paragraph } from "@/components/display/text"
 import { Badge } from "@/components/display/badge"
-import { Spinner } from "@/components/feedback/spinner"
+import { LoadingSpinner, Spinner } from "@/components/feedback/spinner"
 import { Link2, Unlink } from "lucide-react"
 import type { ReactNode } from "react"
 
@@ -21,9 +21,7 @@ type IntegrationCardProps = {
 export function IntegrationCard({ icon, name, description, isLoading, isConnected, accountLabel, canManage, onConnect, onDisconnect, isDisconnecting }: IntegrationCardProps) {
   if (isLoading) {
     return (
-      <div className="flex justify-center py-6border border-tertiary rounded-lg">
-        <Spinner />
-      </div>
+      <LoadingSpinner className="py-6 border border-tertiary rounded-lg" />
     )
   }
 

@@ -51,7 +51,7 @@ const columns = [
     },
 ];
 
-export function RequestTable({ requests }: { requests: Request[] }) {
+export function RequestTableView({ requests }: { requests: Request[] }) {
     const { selected, setSelected, isDirtyRef, requestCloseRef, handleOpenChange, handleClose } =
         useTableRowDrawer<Request>();
 

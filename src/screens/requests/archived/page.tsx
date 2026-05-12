@@ -7,12 +7,13 @@ import { Label, Paragraph, Title } from '@/components/display/text'
 import { Input } from '@/components/form/input'
 import { Archive, Search, Settings2 } from 'lucide-react'
 import { useEffect } from 'react'
-import { Spinner } from '@/components/feedback/spinner'
+import { LoadingSpinner } from '@/components/feedback/spinner'
 import { EmptyState } from '@/components/feedback/empty-state'
 import { Drawer } from '@/components/overlays/drawer'
 import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
 import { useRequestFilters } from '@/features/requests/use-request-filters'
 import { useRequests } from '@/features/requests/request-provider'
+import { Decision } from '@/components/display/decision';
 
 export function RequestsArchivedScreen() {
     const { state: { archivedRequests: requests, isLoadingArchived }, actions: { loadArchivedRequests } } = useRequests()
@@ -55,24 +56,21 @@ export function RequestsArchivedScreen() {
                         <Label.sm>Archived</Label.sm>
                     </Card.Header>
                     <Card.Content ghost>
-                        {isLoadingArchived ? (
-                            <div className="flex justify-center py-8">
-                                <Spinner />
-                            </div>
-                        ) : filtered.length === 0 ? (
-                            <EmptyState
-                                icon={<Archive />}
-                                title="No archived requests"
-                                description="Archived requests will appear here."
-                                className="py-8"
-                            />
-                        ) : (
-                            <div className="flex flex-col gap-1.5">
-                                {filtered.map((r) => (
-                                    <RequestItem key={r.id} request={r} />
-                                ))}
-                            </div>
-                        )}
+                        <Decision value={filtered} loading={isLoadingArchived}>
+                            <Decision.Loading>
+                                <LoadingSpinner className="py-6" />
+                            </Decision.Loading>
+                            <Decision.Empty>
+                                <EmptyState
+                                    icon={<Archive />}
+                                    title="No archived requests"
+                                    description="Archived requests will appear here."
+                                />
+                            </Decision.Empty>
+                            <Decision.Data>
+                                {filtered.map((r) => <RequestItem key={r.id} request={r} />)}
+                            </Decision.Data>
+                        </Decision>
                     </Card.Content>
                 </Card>
             </div>

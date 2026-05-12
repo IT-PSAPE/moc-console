@@ -5,7 +5,7 @@ import { Accordion } from "@/components/display/accordion";
 import { Badge } from "@/components/display/badge";
 import { Button } from "@/components/controls/button";
 import { Label, Paragraph, Title } from "@/components/display/text";
-import { Spinner } from "@/components/feedback/spinner";
+import { LoadingSpinner, Spinner } from "@/components/feedback/spinner";
 import { MetaRow } from "@/features/requests/request-properties";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { DeleteEquipmentModal } from "./delete-equipment-modal";
@@ -22,17 +22,49 @@ import {
   bookingStatusLabel,
   bookingStatusColor,
 } from "@/types/equipment";
-import type { Equipment, EquipmentStatus, EquipmentCategory } from "@/types/equipment";
+import type {
+  Equipment,
+  EquipmentStatus,
+  EquipmentCategory,
+} from "@/types/equipment";
 import type { Booking } from "@/types/equipment";
-import { Check, ChevronDown, Hash, History, Loader, MapPin, Maximize2, Package, StickyNote, Tag, Trash2, User, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Hash,
+  History,
+  Loader,
+  MapPin,
+  Maximize2,
+  Package,
+  StickyNote,
+  Tag,
+  Trash2,
+  User,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useState, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/form/input";
 import { getErrorMessage } from "@/utils/get-error-message";
 import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
 
-const allStatuses: EquipmentStatus[] = ["available", "booked", "booked_out", "maintenance"];
-const allCategories: EquipmentCategory[] = ["camera", "lens", "lighting", "audio", "support", "monitor", "cable", "accessory"];
+const allStatuses: EquipmentStatus[] = [
+  "available",
+  "booked",
+  "booked_out",
+  "maintenance",
+];
+const allCategories: EquipmentCategory[] = [
+  "camera",
+  "lens",
+  "lighting",
+  "audio",
+  "support",
+  "monitor",
+  "cable",
+  "accessory",
+];
 
 export type EquipmentDrawerProps = {
   equipment: Equipment;
@@ -41,7 +73,12 @@ export type EquipmentDrawerProps = {
   requestCloseRef?: RefObject<(() => void) | null>;
 };
 
-export function EquipmentDrawer({ equipment, onEquipmentClose, isDirtyRef, requestCloseRef }: EquipmentDrawerProps) {
+export function EquipmentDrawer({
+  equipment,
+  onEquipmentClose,
+  isDirtyRef,
+  requestCloseRef,
+}: EquipmentDrawerProps) {
   return (
     <Drawer.Portal>
       <Drawer.Backdrop />
@@ -57,11 +94,18 @@ export function EquipmentDrawer({ equipment, onEquipmentClose, isDirtyRef, reque
   );
 }
 
-function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, requestCloseRef }: EquipmentDrawerProps) {
+function EquipmentDrawerContent({
+  equipment,
+  onEquipmentClose,
+  isDirtyRef,
+  requestCloseRef,
+}: EquipmentDrawerProps) {
   const { state: drawerState, actions: drawerActions } = useDrawer();
   const navigate = useNavigate();
   const { toast } = useFeedback();
-  const { actions: { syncEquipment, removeEquipment, removeBookingsByEquipmentId } } = useEquipment();
+  const {
+    actions: { syncEquipment, removeEquipment, removeBookingsByEquipmentId },
+  } = useEquipment();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(false);
@@ -125,7 +169,14 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
       await store.actions.save();
       toast({ title: "Equipment saved", variant: "success" });
     } catch (error) {
-      toast({ title: "Failed to save equipment", description: getErrorMessage(error, "The equipment item could not be saved."), variant: "error" });
+      toast({
+        title: "Failed to save equipment",
+        description: getErrorMessage(
+          error,
+          "The equipment item could not be saved.",
+        ),
+        variant: "error",
+      });
     }
   }, [store.actions, toast]);
 
@@ -137,7 +188,14 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
       setShowUnsavedModal(false);
       closeDrawer();
     } catch (error) {
-      toast({ title: "Failed to save equipment", description: getErrorMessage(error, "The equipment item could not be saved."), variant: "error" });
+      toast({
+        title: "Failed to save equipment",
+        description: getErrorMessage(
+          error,
+          "The equipment item could not be saved.",
+        ),
+        variant: "error",
+      });
     }
   }
 
@@ -162,7 +220,14 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
       setShowDeleteModal(false);
       closeDrawer();
     } catch (error) {
-      toast({ title: "Failed to delete equipment", description: getErrorMessage(error, "The equipment item could not be deleted."), variant: "error" });
+      toast({
+        title: "Failed to delete equipment",
+        description: getErrorMessage(
+          error,
+          "The equipment item could not be deleted.",
+        ),
+        variant: "error",
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -175,16 +240,28 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
       {/* Header */}
       <Drawer.Header className="flex items-center gap-1">
         <Button.Icon variant="ghost" icon={<X />} onClick={handleClose} />
-        <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={handleOpenFullPage} />
+        <Button.Icon
+          variant="ghost"
+          icon={<Maximize2 />}
+          onClick={handleOpenFullPage}
+        />
         <div className="flex-1" />
-        <Button.Icon variant="ghost" icon={<Trash2 />} onClick={() => setShowDeleteModal(true)} />
+        <Button.Icon
+          variant="ghost"
+          icon={<Trash2 />}
+          onClick={() => setShowDeleteModal(true)}
+        />
       </Drawer.Header>
 
       <Drawer.Content className="py-4">
         {/* Thumbnail + Name */}
         <div className="flex items-center gap-3 px-4 pb-4">
           {draft.thumbnail ? (
-            <img src={draft.thumbnail} alt={draft.name} className="size-12 rounded-lg object-cover" />
+            <img
+              src={draft.thumbnail}
+              alt={draft.name}
+              className="size-12 rounded-lg object-cover"
+            />
           ) : (
             <span className="flex size-12 items-center justify-center rounded-lg bg-secondary text-quaternary">
               <Package className="size-6" />
@@ -192,7 +269,9 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
           )}
           <div>
             <Title.h6>{draft.name}</Title.h6>
-            <Paragraph.xs className="text-tertiary">{draft.serialNumber}</Paragraph.xs>
+            <Paragraph.xs className="text-tertiary">
+              {draft.serialNumber}
+            </Paragraph.xs>
           </div>
         </div>
 
@@ -215,9 +294,14 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
               </Dropdown.Trigger>
               <Dropdown.Panel>
                 {allCategories.map((c) => (
-                  <Dropdown.Item key={c} onSelect={() => store.actions.updateField("category", c)}>
+                  <Dropdown.Item
+                    key={c}
+                    onSelect={() => store.actions.updateField("category", c)}
+                  >
                     <span className="size-4 shrink-0 flex items-center justify-center">
-                      {c === draft.category && <Check className="size-3.5 text-brand_secondary" />}
+                      {c === draft.category && (
+                        <Check className="size-3.5 text-brand_secondary" />
+                      )}
                     </span>
                     {equipmentCategoryLabel[c]}
                   </Dropdown.Item>
@@ -238,9 +322,14 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
               </Dropdown.Trigger>
               <Dropdown.Panel>
                 {allStatuses.map((s) => (
-                  <Dropdown.Item key={s} onSelect={() => store.actions.updateField("status", s)}>
+                  <Dropdown.Item
+                    key={s}
+                    onSelect={() => store.actions.updateField("status", s)}
+                  >
                     <span className="size-4 shrink-0 flex items-center justify-center">
-                      {s === draft.status && <Check className="size-3.5 text-brand_secondary" />}
+                      {s === draft.status && (
+                        <Check className="size-3.5 text-brand_secondary" />
+                      )}
                     </span>
                     {equipmentStatusLabel[s]}
                   </Dropdown.Item>
@@ -254,9 +343,11 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
             <Input
               type="text"
               value={draft.location}
-              onChange={(e) => store.actions.updateField("location", e.target.value)}
+              onChange={(e) =>
+                store.actions.updateField("location", e.target.value)
+              }
               placeholder="Enter location"
-              style={'ghost'}
+              style={"ghost"}
             />
           </MetaRow>
 
@@ -291,58 +382,86 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
         <div className="px-4">
           <div className="flex items-center gap-2 pb-3">
             <History className="size-4 text-tertiary" />
-            <Label.md>Booking History{bookings.length > 0 && ` (${bookings.length})`}</Label.md>
+            <Label.md>
+              Booking History{bookings.length > 0 && ` (${bookings.length})`}
+            </Label.md>
           </div>
 
           {isLoadingBookings ? (
-            <div className="flex justify-center py-6">
-              <Spinner />
-            </div>
+            <LoadingSpinner className="py-6" />
           ) : bookings.length === 0 ? (
-            <Paragraph.sm className="text-quaternary">No booking history</Paragraph.sm>
+            <Paragraph.sm className="text-quaternary">
+              No booking history
+            </Paragraph.sm>
           ) : (
             <Accordion type="multiple">
               {bookings.map((b) => (
-                <Accordion.Item key={b.id} value={b.id} className="border-b border-secondary last:border-b-0">
+                <Accordion.Item
+                  key={b.id}
+                  value={b.id}
+                  className="border-b border-secondary last:border-b-0"
+                >
                   <Accordion.Trigger className="flex items-center justify-between py-3">
                     <div className="flex items-center gap-3">
                       <Label.sm>{b.bookedBy}</Label.sm>
                       <Paragraph.xs className="text-tertiary">
-                        {formatUtcIsoInBrowserTimeZone(b.checkedOutDate, { day: "numeric", month: "short", year: "numeric" })}
+                        {formatUtcIsoInBrowserTimeZone(b.checkedOutDate, {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
                       </Paragraph.xs>
                     </div>
                     <div className="flex items-center gap-2">
                       <ChevronDown className="size-4 text-tertiary transition-transform data-[state=open]:rotate-180" />
                     </div>
                   </Accordion.Trigger>
-                  <Accordion.Content >
+                  <Accordion.Content>
                     <div className="pb-3 space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <Paragraph.xs className="text-quaternary">Status:</Paragraph.xs>
+                        <Paragraph.xs className="text-quaternary">
+                          Status:
+                        </Paragraph.xs>
                         <Badge
                           label={bookingStatusLabel[b.status]}
                           color={bookingStatusColor[b.status]}
                         />
                       </div>
-                    {b.returnedDate && (
+                      {b.returnedDate && (
+                        <div className="flex items-center gap-2">
+                          <Paragraph.xs className="text-quaternary">
+                            Returned:
+                          </Paragraph.xs>
+                          <Paragraph.xs>
+                            {formatUtcIsoInBrowserTimeZone(b.returnedDate, {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </Paragraph.xs>
+                        </div>
+                      )}
+                      {!b.returnedDate && (
+                        <div className="flex items-center gap-2">
+                          <Paragraph.xs className="text-quaternary">
+                            Expected:
+                          </Paragraph.xs>
+                          <Paragraph.xs>
+                            {formatUtcIsoInBrowserTimeZone(b.expectedReturnAt)}
+                          </Paragraph.xs>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2">
-                        <Paragraph.xs className="text-quaternary">Returned:</Paragraph.xs>
-                        <Paragraph.xs>{formatUtcIsoInBrowserTimeZone(b.returnedDate, { day: "numeric", month: "short", year: "numeric" })}</Paragraph.xs>
-                      </div>
-                    )}
-                    {!b.returnedDate && (
-                      <div className="flex items-center gap-2">
-                        <Paragraph.xs className="text-quaternary">Expected:</Paragraph.xs>
-                        <Paragraph.xs>{formatUtcIsoInBrowserTimeZone(b.expectedReturnAt)}</Paragraph.xs>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <Paragraph.xs className="text-quaternary">Duration:</Paragraph.xs>
-                      <Paragraph.xs>{b.duration}</Paragraph.xs>
+                        <Paragraph.xs className="text-quaternary">
+                          Duration:
+                        </Paragraph.xs>
+                        <Paragraph.xs>{b.duration}</Paragraph.xs>
                       </div>
                       {b.notes && (
                         <div className="flex items-center gap-2">
-                          <Paragraph.xs className="text-quaternary">Notes:</Paragraph.xs>
+                          <Paragraph.xs className="text-quaternary">
+                            Notes:
+                          </Paragraph.xs>
                           <Paragraph.xs>{b.notes}</Paragraph.xs>
                         </div>
                       )}
@@ -358,7 +477,9 @@ function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, reque
       {/* Save footer — visible only when dirty */}
       {store.state.isDirty && (
         <Drawer.Footer className="justify-end">
-          <Button variant="ghost" onClick={store.actions.discard}>Discard</Button>
+          <Button variant="ghost" onClick={store.actions.discard}>
+            Discard
+          </Button>
           <Button onClick={handleSave} disabled={store.state.isSaving}>
             {store.state.isSaving ? "Saving..." : "Save"}
           </Button>

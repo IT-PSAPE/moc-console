@@ -2,62 +2,24 @@ import { Button } from "@/components/controls/button";
 import { Input } from "@/components/form/input";
 import { Header } from "@/components/display/header";
 import { Drawer } from "@/components/overlays/drawer";
-import { Badge } from "@/components/display/badge";
-import { Card } from "@/components/display/card";
-import { Indicator } from "@/components/display/indicator";
 import { SegmentedControl } from "@/components/controls/segmented-control";
-import { Label, Paragraph, Title } from "@/components/display/text";
-import { CalendarDays, List, Search, Settings2, Table as TableIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Spinner } from "@/components/feedback/spinner";
-import { DataTable } from "@/components/display/data-table";
+import { Paragraph, Title } from "@/components/display/text";
+import { CalendarDays, ClipboardList, List, Search, Settings2, Table as TableIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useEquipment } from "@/features/equipment/equipment-provider";
-import { BookingDrawer } from "@/features/equipment/booking-drawer";
-import { BookingItem } from "@/features/equipment/booking-item";
 import { useBookingFilters } from "@/features/equipment/use-booking-filters";
 import { BookingFilterDrawer } from "@/features/equipment/booking-filter-drawer";
-import { BookingCalendar } from "@/features/equipment/booking-calendar";
-import { bookingStatusLabel, bookingStatusColor, bookingStatusGroup } from "@/types/equipment";
-import type { Booking, Equipment } from "@/types/equipment";
-import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
+import { BookingListView } from "@/features/equipment/booking-list";
+import { BookingTableView } from "@/features/equipment/booking-table";
+import { BookingCalendarView } from "@/features/equipment/booking-calendar";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-
-const columns = [
-  { key: "equipmentName", header: "Equipment" },
-  { key: "bookedBy", header: "Booked By" },
-  {
-    key: "status",
-    header: "Status",
-    render: (_: unknown, row: Booking) => (
-      <Badge label={bookingStatusLabel[row.status]} color={bookingStatusColor[row.status]} />
-    ),
-  },
-  {
-    key: "checkedOutDate",
-    header: "Checked Out",
-    render: (value: unknown) => formatUtcIsoInBrowserTimeZone(value as string),
-  },
-  {
-    key: "expectedReturnAt",
-    header: "Expected Return",
-    render: (value: unknown) => formatUtcIsoInBrowserTimeZone(value as string),
-  },
-  {
-    key: "returnedDate",
-    header: "Returned",
-    render: (value: unknown) =>
-      value ? formatUtcIsoInBrowserTimeZone(value as string) : <span className="text-quaternary">—</span>,
-  },
-  {
-    key: "notes",
-    header: "Notes",
-    render: (value: unknown) => (value as string) || <span className="text-quaternary">—</span>,
-  },
-];
+import { LoadingSpinner } from "@/components/feedback/spinner";
+import { Decision } from "@/components/display/decision";
+import { EmptyState } from "@/components/feedback/empty-state";
 
 export function EquipmentBookingsScreen() {
   const {
-    state: { bookings, isLoadingBookings, equipment, isLoadingEquipment },
+    state: { bookings, isLoadingBookings },
     actions: { loadBookings, loadEquipment },
   } = useEquipment();
 
@@ -67,33 +29,10 @@ export function EquipmentBookingsScreen() {
   }, [loadBookings, loadEquipment]);
 
   const [view, setView] = useState("list");
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const isDirtyRef = useRef(false);
-  const requestCloseRef = useRef<(() => void) | null>(null);
   const isMobile = useIsMobile()
-
-  const handleOpenChange = useCallback((open: boolean) => {
-    if (!open && isDirtyRef.current) {
-      requestCloseRef.current?.();
-    } else if (!open) {
-      setSelectedBooking(null);
-    }
-  }, []);
-
-  const handleBookingClose = useCallback(() => {
-    setSelectedBooking(null);
-  }, []);
 
   const bookingFilters = useBookingFilters(bookings);
   const { filtered, setSearch, filters: state } = bookingFilters;
-
-  const equipmentMap = useMemo(() => {
-    const map = new Map<string, Equipment>();
-    for (const e of equipment) map.set(e.id, e);
-    return map;
-  }, [equipment]);
-
-  const isLoading = isLoadingBookings || isLoadingEquipment;
 
   return (
     <section>
@@ -126,59 +65,24 @@ export function EquipmentBookingsScreen() {
           </Header.Trail>
         </Header>
 
-        {isLoading ? (
-          <div className="flex justify-center py-16"><Spinner /></div>
-        ) : view === "list" ? (
-          <BookingList bookings={filtered} />
-        ) : view === "table" ? (
-          <>
-            <DataTable
-              data={filtered}
-              columns={columns}
-              emptyMessage="No bookings found"
-              onRowClick={(row) => setSelectedBooking(row)}
-              className="rounded-lg border border-secondary overflow-hidden"
+        <Decision value={filtered} loading={isLoadingBookings}>
+          <Decision.Loading>
+            <LoadingSpinner className="py-6" />
+          </Decision.Loading>
+          <Decision.Empty>
+            <EmptyState
+              icon={<ClipboardList />}
+              title={state.search.trim() ? "No bookings match your search" : "No bookings yet"}
+              description={state.search.trim() ? "Try a different search term or clear filters." : "Bookings appear here when equipment is checked out."}
             />
-            <Drawer open={!!selectedBooking} onOpenChange={handleOpenChange}>
-              {selectedBooking && (
-                <BookingDrawer
-                  booking={selectedBooking}
-                  onBookingClose={handleBookingClose}
-                  isDirtyRef={isDirtyRef}
-                  requestCloseRef={requestCloseRef}
-                />
-              )}
-            </Drawer>
-          </>
-        ) : (
-          <BookingCalendar bookings={filtered} equipmentMap={equipmentMap} />
-        )}
+          </Decision.Empty>
+          <Decision.Data>
+            {view === "list" && <BookingListView bookings={filtered} />}
+            {view === "table" && <BookingTableView bookings={filtered} />}
+            {view === "calendar" && <BookingCalendarView bookings={filtered} />}
+          </Decision.Data>
+        </Decision>
       </div>
     </section>
-  );
-}
-
-function BookingList({ bookings }: { bookings: Booking[] }) {
-  return (
-    <div className="flex flex-col gap-4">
-      {bookingStatusGroup.map((group) => {
-        const items = bookings.filter((b) => b.status === group.key);
-        if (items.length === 0) return null;
-        return (
-          <Card key={group.key}>
-            <Card.Header tight className="gap-1.5">
-              <Indicator color={group.color} className="size-6" />
-              <Label.sm>{group.label}</Label.sm>
-              <Label.sm className="text-quaternary ml-auto">{items.length}</Label.sm>
-            </Card.Header>
-            <Card.Content ghost className="flex flex-col gap-1.5">
-              {items.map((booking) => (
-                <BookingItem key={booking.id} booking={booking} />
-              ))}
-            </Card.Content>
-          </Card>
-        );
-      })}
-    </div>
   );
 }

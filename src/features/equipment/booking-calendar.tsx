@@ -7,6 +7,7 @@ import type { Booking } from "@/types/equipment";
 import type { Equipment } from "@/types/equipment";
 import { bookingStatusLabel, bookingStatusColor } from "@/types/equipment";
 import { BookingDrawer } from "./booking-drawer";
+import { useEquipment } from "./equipment-provider";
 import { useMemo } from "react";
 import { Circle } from "lucide-react";
 import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
@@ -38,12 +39,13 @@ function formatDate(dateStr: string) {
   return formatUtcIsoInBrowserTimeZone(dateStr);
 }
 
-type BookingCalendarProps = {
-  bookings: Booking[];
-  equipmentMap: Map<string, Equipment>;
-};
-
-export function BookingCalendar({ bookings, equipmentMap }: BookingCalendarProps) {
+export function BookingCalendarView({ bookings }: { bookings: Booking[] }) {
+  const { state: { equipment } } = useEquipment();
+  const equipmentMap = useMemo(() => {
+    const map = new Map<string, Equipment>();
+    for (const item of equipment) map.set(item.id, item);
+    return map;
+  }, [equipment]);
   const events = useMemo(() => toCalendarEvents(bookings, equipmentMap), [bookings, equipmentMap]);
 
   return (

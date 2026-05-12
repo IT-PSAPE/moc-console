@@ -62,7 +62,7 @@ export function ProfileScreen() {
     }
 
     return (
-        <section className="mx-auto max-w-content-sm">
+        <section className="mx-auto max-w-content-md">
             <Header className="p-4 pt-8">
                 <Header.Lead className="gap-2">
                     <Title.h6>Profile</Title.h6>

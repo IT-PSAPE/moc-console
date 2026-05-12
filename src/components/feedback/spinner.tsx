@@ -30,3 +30,12 @@ export function Spinner({ size, className, ...props }: SpinnerProps) {
         </span>
     )
 }
+
+
+export function LoadingSpinner({ size, className, ...props }: SpinnerProps) {
+    return (
+        <div className={cn('flex items-center justify-center', className)} {...props}>
+            <Spinner size={size} />
+        </div>
+    )
+}

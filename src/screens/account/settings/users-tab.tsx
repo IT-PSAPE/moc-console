@@ -7,7 +7,7 @@ import { Button } from "@/components/controls/button";
 import { Input } from "@/components/form/input";
 import { Drawer, useDrawer } from "@/components/overlays/drawer";
 import { Dropdown } from "@/components/overlays/dropdown";
-import { Spinner } from "@/components/feedback/spinner";
+import { LoadingSpinner, Spinner } from "@/components/feedback/spinner";
 import { useFeedback } from "@/components/feedback/feedback-provider";
 import { useAuth } from "@/lib/auth-context";
 import { useWorkspace } from "@/lib/workspace-context";
@@ -137,7 +137,7 @@ function UsersTabContent() {
                         <Input icon={<Search />} placeholder="Search users..." className="w-full max-w-md" value={search} onChange={handleSearchChange} />
                     </div>
                     {isLoading ? (
-                        <div className="flex justify-center py-16"><Spinner /></div>
+                        <LoadingSpinner className="py-16" />
                     ) : (
                         <DataTable
                             data={filtered}

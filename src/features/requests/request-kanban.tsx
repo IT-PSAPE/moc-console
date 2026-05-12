@@ -20,7 +20,7 @@ function DraggableRequestItem({ request }: { request: Request }) {
     );
 }
 
-export function RequestKanban({ requests }: { requests: Request[] }) {
+export function RequestKanbanView({ requests }: { requests: Request[] }) {
     const { actions: { syncRequest } } = useRequests();
     const { toast } = useFeedback();
     const [activeRequest, setActiveRequest] = useState<Request | null>(null);
