@@ -184,7 +184,7 @@ export default defineConfig(({ mode }) => {
           start_url: '/',
           scope: '/',
           display: 'standalone',
-          orientation: 'any',
+          orientation: 'portrait',
           theme_color: '#ffffff',
           background_color: '#ffffff',
           icons: [
