@@ -196,7 +196,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
   const draft = store.state.draft;
 
   return (
-    <section className="mx-auto max-w-content-sm">
+    <section className="mx-auto max-w-content-md">
       <TopBarActions>
         {store.state.isDirty ? (
           <>

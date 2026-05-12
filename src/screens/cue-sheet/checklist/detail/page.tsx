@@ -69,7 +69,7 @@ export function CueSheetChecklistDetailScreen() {
     }
 
     return (
-        <section className="mx-auto max-w-content-sm">
+        <section className="mx-auto max-w-content-md">
             <TopBarActions>
                 <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setDeleteOpen(true)} />
                 <Dropdown placement="bottom">

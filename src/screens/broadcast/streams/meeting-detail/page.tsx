@@ -120,7 +120,7 @@ export function MeetingDetailScreen() {
 
   if (!meeting) {
     return (
-      <section className="mx-auto max-w-content-sm">
+      <section className="mx-auto max-w-content-md">
         <EmptyState icon={<Video />} title="Meeting not found" description="The meeting you're looking for doesn't exist." />
       </section>
     )
@@ -131,7 +131,7 @@ export function MeetingDetailScreen() {
   const canDelete = role?.can_delete === true
 
   return (
-    <section className="mx-auto max-w-content-sm">
+    <section className="mx-auto max-w-content-md">
       <TopBarActions>
         {canEdit && (
           <Button variant="secondary" icon={<Pencil />} onClick={() => setEditOpen(true)}>Edit</Button>

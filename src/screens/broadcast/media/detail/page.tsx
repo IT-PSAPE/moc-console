@@ -109,7 +109,7 @@ export function MediaDetailScreen() {
 
   if (!item) {
     return (
-      <section className="mx-auto max-w-content-sm">
+      <section className="mx-auto max-w-content-md">
         <EmptyState icon={<Film />} title="Media not found" description="The media item you're looking for doesn't exist." />
       </section>
     )
@@ -118,7 +118,7 @@ export function MediaDetailScreen() {
   const canDelete = role?.can_delete === true
 
   return (
-    <section className="mx-auto max-w-content-sm">
+    <section className="mx-auto max-w-content-md">
       <TopBarActions>
         {canDelete && (
           <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setDeleteOpen(true)} />
