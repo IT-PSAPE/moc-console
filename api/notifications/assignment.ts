@@ -42,8 +42,35 @@ function resolveBaseUrl(): string | null {
   return null
 }
 
-function dutyClause(duty: string): string {
-  return duty ? ` as ${duty}` : ""
+// Telegram's HTML parser only special-cases &, <, > — quotes don't need escaping.
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+}
+
+function buildMessage(args: {
+  heading: string
+  title: string
+  context?: { label: string; value: string }
+  duty: string
+  linkUrl: string
+  linkLabel: string
+}): string {
+  const lines: string[] = []
+  lines.push(`<b>${args.heading}</b>`)
+  lines.push("")
+  lines.push(escapeHtml(args.title))
+  if (args.context) {
+    lines.push(`${args.context.label}: ${escapeHtml(args.context.value)}`)
+  }
+  if (args.duty) {
+    lines.push(`Duty: <i>${escapeHtml(args.duty)}</i>`)
+  }
+  lines.push("")
+  lines.push(`<a href="${args.linkUrl}">${args.linkLabel}</a>`)
+  return lines.join("\n")
 }
 
 async function buildRequestMessage(
@@ -58,8 +85,13 @@ async function buildRequestMessage(
     .eq("id", parentId)
     .maybeSingle()
   if (!data) return null
-  const link = `${baseUrl}/requests/${parentId}`
-  return `You've been assigned to request "${data.title}"${dutyClause(duty)}.\n${link}`
+  return buildMessage({
+    heading: "You've been assigned to a request",
+    title: data.title,
+    duty,
+    linkUrl: `${baseUrl}/requests/${parentId}`,
+    linkLabel: "Open request",
+  })
 }
 
 async function buildCueMessage(
@@ -89,8 +121,14 @@ async function buildCueMessage(
     .maybeSingle()
   if (!event) return null
 
-  const link = `${baseUrl}/cue-sheet/events/${event.id}`
-  return `You've been assigned to cue "${cue.label}" in event "${event.name}"${dutyClause(duty)}.\n${link}`
+  return buildMessage({
+    heading: "You've been assigned to a cue",
+    title: cue.label,
+    context: { label: "Event", value: event.name },
+    duty,
+    linkUrl: `${baseUrl}/cue-sheet/events/${event.id}`,
+    linkLabel: "Open event",
+  })
 }
 
 async function buildChecklistItemMessage(
@@ -113,8 +151,14 @@ async function buildChecklistItemMessage(
     .maybeSingle()
   if (!checklist) return null
 
-  const link = `${baseUrl}/cue-sheet/checklist/${checklist.id}`
-  return `You've been assigned to checklist item "${item.label}" in "${checklist.name}"${dutyClause(duty)}.\n${link}`
+  return buildMessage({
+    heading: "You've been assigned to a checklist item",
+    title: item.label,
+    context: { label: "Checklist", value: checklist.name },
+    duty,
+    linkUrl: `${baseUrl}/cue-sheet/checklist/${checklist.id}`,
+    linkLabel: "Open checklist",
+  })
 }
 
 export default async function handler(request: ApiRequest, response: ApiResponse) {
@@ -195,6 +239,9 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
-  await sendTelegramMessage(user.telegram_chat_id, text)
+  await sendTelegramMessage(user.telegram_chat_id, text, {
+    parseMode: "HTML",
+    disableLinkPreview: true,
+  })
   response.status(200).json({ ok: true })
 }

@@ -5,6 +5,7 @@ import { zoomApiFetch, revokeZoomToken } from "@/lib/zoom-client"
 import { fetchZoomMeetingById } from "./fetch-zoom"
 import { formatUtcIsoForZoomApi, parseDateTimeInputToUtcIso } from "@/utils/zoned-date-time"
 import { randomId } from "@/utils/random-id"
+import { notifyMeetingCreated } from "./notify-event"
 
 export type CreateMeetingParams = {
   topic: string
@@ -186,6 +187,8 @@ export async function createZoomMeeting(params: CreateMeetingParams): Promise<Zo
     throw new Error("Created meeting could not be reloaded")
   }
 
+  notifyMeetingCreated(saved.id)
+
   return saved
 }
 
@@ -354,6 +357,12 @@ export async function syncZoomMeetings(): Promise<ZoomMeeting[]> {
 
   if (error) {
     throw new Error(error.message)
+  }
+
+  // Fire-and-forget notify for any rows that have never been notified.
+  // The server atomically claims notified_at, so concurrent syncs are safe.
+  for (const row of rows ?? []) {
+    if (!row.notified_at) notifyMeetingCreated(row.id)
   }
 
   return (rows ?? []).map((row) => ({
