@@ -2,8 +2,7 @@ import { Badge } from "@/components/display/badge";
 import { Card } from "@/components/display/card";
 import { Section } from "@/components/display/section";
 import { Paragraph, Label } from "@/components/display/text";
-import { Checkbox } from "@/components/form/checkbox";
-import { Spinner } from "@/components/feedback/spinner";
+import { LoadingSpinner } from "@/components/feedback/spinner";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { useFeedback } from "@/components/feedback/feedback-provider";
 import { useWorkspace } from "@/lib/workspace-context";
@@ -13,7 +12,10 @@ import {
     type TelegramGroup,
 } from "@/data/fetch-telegram-groups";
 import { MessagesSquare } from "lucide-react";
-import { useCallback, useEffect, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Divider } from "@/components/display/divider";
+import { Decision } from "@/components/display/decision";
+import { Toggle } from "@/components/form/toggle";
 
 export function TelegramTab() {
     const { toast } = useFeedback();
@@ -51,8 +53,7 @@ export function TelegramTab() {
     const currentWorkspaceSlug = workspaces.find((w) => w.id === currentWorkspaceId)?.slug;
 
     const handleToggleActive = useCallback(
-        async (chatId: string, event: ChangeEvent<HTMLInputElement>) => {
-            const next = event.target.checked;
+        (chatId: string) => async (next: boolean) => {
             setPendingChatId(chatId);
             setGroups((prev) => prev.map((g) => (g.chatId === chatId ? { ...g, active: next } : g)));
             try {
@@ -73,66 +74,63 @@ export function TelegramTab() {
 
     return (
         <Section>
-            <Section.Header
-                title="Telegram groups"
-                description="Groups the bot has been added to. Toggle a group active to allow event notifications."
-            />
+            <Section.Header title="Telegram groups" />
+
+            <Divider className="py-6" />
+
             <Section.Body className="gap-4">
-                {isLoading ? (
-                    <div className="flex justify-center py-16">
-                        <Spinner size="lg" />
-                    </div>
-                ) : groups.length === 0 ? (
-                    <EmptyState
-                        icon={<MessagesSquare />}
-                        title="No groups yet"
-                        description={
-                            currentWorkspaceSlug
-                                ? `Add the bot to a Telegram group, then send "/register_group ${currentWorkspaceSlug}" in that group to register it to this workspace.`
-                                : "Add the bot to a Telegram group, then send /register_group <workspace-slug> in that group."
-                        }
-                    />
-                ) : (
-                    groups.map((group) => (
-                    <Card key={group.chatId}>
-                        <Card.Header>
-                            <div className="flex flex-1 flex-col gap-1">
-                                <div className="flex items-center gap-2">
-                                    <Label.md>{group.title || "(untitled)"}</Label.md>
-                                    <Badge label={group.type} color="gray" variant="outline" />
-                                    {group.isForum && <Badge label="forum" color="purple" />}
-                                </div>
-                                <Paragraph.xs className="text-quaternary">
-                                    chat id {group.chatId}
-                                </Paragraph.xs>
-                            </div>
-                            <Checkbox
-                                checked={group.active}
-                                disabled={pendingChatId === group.chatId}
-                                onChange={(event) => void handleToggleActive(group.chatId, event)}
-                            >
-                                <Label.sm>Active</Label.sm>
-                            </Checkbox>
-                        </Card.Header>
-                        {group.topics.length > 0 && (
-                            <Card.Content className="flex flex-col">
-                                {group.topics.map((topic) => (
-                                    <div
-                                        key={topic.threadId}
-                                        className="flex items-center justify-between px-3 py-2 border-b border-tertiary last:border-b-0"
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <Label.sm>{topic.name || "(unnamed)"}</Label.sm>
-                                            <Paragraph.xs className="text-quaternary">#{topic.threadId}</Paragraph.xs>
-                                        </div>
-                                        {topic.closed && <Badge label="closed" color="gray" variant="outline" />}
+                <Decision value={groups} loading={isLoading}>
+                    <Decision.Loading>
+                        <LoadingSpinner size="lg" />
+                    </Decision.Loading>
+                    <Decision.Empty>
+                        <EmptyState
+                            icon={<MessagesSquare />}
+                            title="No groups yet"
+                            description={
+                                currentWorkspaceSlug
+                                    ? `Add the bot to a Telegram group, then send "/register_group ${currentWorkspaceSlug}" in that group to register it to this workspace.`
+                                    : "Add the bot to a Telegram group, then send /register_group <workspace-slug> in that group."
+                            }
+                        />
+                    </Decision.Empty>
+                    <Decision.Data>
+                        {groups.map((group) => (
+                            <Card key={group.chatId}>
+                                <Card.Header tight>
+                                    <div className="flex flex-1 flex-col gap-1">
+                                        <Label.md>{group.title || "(untitled)"}</Label.md>
+                                        <Paragraph.xs className="text-quaternary">
+                                            chat id {group.chatId}
+                                        </Paragraph.xs>
                                     </div>
-                                ))}
-                            </Card.Content>
-                        )}
-                        </Card>
-                    ))
-                )}
+                                    <Toggle
+                                        checked={group.active}
+                                        disabled={pendingChatId === group.chatId}
+                                        onChange={handleToggleActive(group.chatId)}
+                                    />
+
+                                </Card.Header>
+                                {group.topics.length > 0 && (
+                                    <Card.Content className="flex flex-col">
+                                        {group.topics.map((topic) => (
+                                            <div
+                                                key={topic.threadId}
+                                                className="flex items-center justify-between px-3 py-2 border-b border-tertiary last:border-b-0"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <Label.sm>{topic.name || "(unnamed)"}</Label.sm>
+                                                    <Paragraph.xs className="text-quaternary">#{topic.threadId}</Paragraph.xs>
+                                                </div>
+                                                {topic.closed && <Badge label="closed" color="gray" variant="outline" />}
+                                            </div>
+                                        ))}
+                                    </Card.Content>
+                                )}
+                            </Card>
+                        ))}
+                    </Decision.Data>
+                </Decision>
             </Section.Body>
         </Section>
     );

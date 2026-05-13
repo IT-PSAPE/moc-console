@@ -7,6 +7,7 @@ export type UserWithRole = {
   surname: string;
   email: string;
   telegramChatId: string | null;
+  avatarUrl: string | null;
   workspaceIds: string[];
   role: Role | null;
 };
@@ -17,13 +18,14 @@ type UserRow = {
   surname: string;
   email: string;
   telegram_chat_id: string | null;
+  avatar_url: string | null;
 };
 
 /** Fetch all users with their assigned role */
 export async function fetchUsersWithRoles(): Promise<UserWithRole[]> {
   const { data: users, error: usersError } = await supabase
     .from("users")
-    .select("id, name, surname, email, telegram_chat_id");
+    .select("id, name, surname, email, telegram_chat_id, avatar_url");
 
   if (usersError) throw new Error(usersError.message);
 
@@ -47,6 +49,7 @@ export async function fetchUsersWithRoles(): Promise<UserWithRole[]> {
     surname: u.surname,
     email: u.email,
     telegramChatId: u.telegram_chat_id,
+    avatarUrl: u.avatar_url,
     workspaceIds: [],
     role: roleByUserId.get(u.id) ?? null,
   }));
@@ -63,13 +66,46 @@ export async function fetchAvailableRoles(): Promise<Role[]> {
 }
 
 /** Update a user's profile fields */
-export async function updateUserProfile(userId: string, fields: { name?: string; surname?: string }) {
+export async function updateUserProfile(
+  userId: string,
+  fields: { name?: string; surname?: string; avatar_url?: string | null },
+) {
   const { error } = await supabase
     .from("users")
     .update(fields)
     .eq("id", userId);
 
   if (error) throw new Error(error.message);
+}
+
+/**
+ * Upload an avatar image for a user and persist the public URL on
+ * public.users.avatar_url. Storage RLS restricts writes to paths
+ * prefixed with the caller's auth.uid() (see phase-26-user-avatars.sql).
+ */
+export async function uploadUserAvatar(userId: string, file: Blob): Promise<string> {
+  const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type || "image/jpeg",
+    });
+  if (uploadError) throw new Error(uploadError.message);
+
+  const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+  const publicUrl = data.publicUrl;
+
+  await updateUserProfile(userId, { avatar_url: publicUrl });
+  return publicUrl;
+}
+
+/** Clear a user's avatar_url. Does not delete the storage object. */
+export async function removeUserAvatar(userId: string) {
+  await updateUserProfile(userId, { avatar_url: null });
 }
 
 /** Assign a role to a user (upserts into user_roles) */

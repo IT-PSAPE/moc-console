@@ -5,6 +5,7 @@ import { SettingsRow } from '@/components/display/settings-row'
 import { Paragraph } from '@/components/display/text'
 import { useFeedback } from '@/components/feedback/feedback-provider'
 import { Input } from '@/components/form/input'
+import { TextArea } from '@/components/form/text-area'
 import { updateWorkspace } from '@/data/mutate-workspace'
 import { useAuth } from '@/lib/auth-context'
 import { useWorkspace } from '@/lib/workspace-context'
@@ -90,14 +91,10 @@ export function WorkspaceTab() {
     return (
         <div className="flex flex-col">
             <Section>
-                <Section.Header
-                    title="Workspace details"
-                    description={
-                        canManage
-                            ? 'Update the name, slug, and description of this workspace.'
-                            : 'Only administrators can edit workspace details.'
-                    }
-                />
+                <Section.Header title="Workspace details" />
+                
+                <Divider className="py-6" />
+
                 <Section.Body>
                     <SettingsRow
                         label="Name"
@@ -107,22 +104,18 @@ export function WorkspaceTab() {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Workspace name"
-                            className="max-w-80"
-                            style="ghost"
                             disabled={!canManage}
                         />
                     </SettingsRow>
 
-                    <SettingsRow
-                        label="Slug"
-                        description="Used in URLs. Lowercase letters, numbers, and hyphens only."
-                    >
-                        <div className="flex flex-col gap-1 max-w-80">
+                    <Divider className="py-6" />
+
+                    <SettingsRow label="Slug" description="Used in URLs. Lowercase letters, numbers, and hyphens only." >
+                        <div className="flex flex-col gap-1">
                             <Input
                                 value={slug}
                                 onChange={(e) => setSlug(e.target.value)}
                                 placeholder="workspace-slug"
-                                style="ghost"
                                 disabled={!canManage}
                             />
                             {trimmedSlug.length > 0 && !slugValid && (
@@ -133,17 +126,15 @@ export function WorkspaceTab() {
                         </div>
                     </SettingsRow>
 
-                    <SettingsRow
-                        label="Description"
-                        description="A short summary of what this workspace is for."
-                    >
-                        <textarea
+                    <Divider className="py-6" />
+
+                    <SettingsRow label="Description" description="A short summary of what this workspace is for." >
+                        <TextArea
                             rows={3}
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="What is this workspace for?"
                             disabled={!canManage}
-                            className="w-full max-w-80 rounded-lg border border-secondary bg-primary px-3 py-2 paragraph-sm focus:border-brand focus:outline-none focus:ring-3 focus:ring-border-brand/10 resize-none disabled:cursor-not-allowed disabled:bg-disabled"
                         />
                     </SettingsRow>
                 </Section.Body>
