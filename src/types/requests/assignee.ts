@@ -14,6 +14,7 @@ export type User = {
   surname: string;
   email: string;
   telegramChatId: string | null;
+  avatarUrl: string | null;
 };
 
 export type RequestAssignee = {

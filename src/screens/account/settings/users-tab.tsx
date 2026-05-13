@@ -1,21 +1,18 @@
 import { Badge } from "@/components/display/badge";
 import { DataTable } from "@/components/display/data-table";
-import { MetaRow } from "@/components/display/meta-row";
 import { Section } from "@/components/display/section";
-import { Paragraph, Title } from "@/components/display/text";
-import { Button } from "@/components/controls/button";
 import { Input } from "@/components/form/input";
-import { Drawer, useDrawer } from "@/components/overlays/drawer";
 import { Dropdown } from "@/components/overlays/dropdown";
-import { LoadingSpinner, Spinner } from "@/components/feedback/spinner";
+import { LoadingSpinner } from "@/components/feedback/spinner";
 import { useFeedback } from "@/components/feedback/feedback-provider";
 import { useAuth } from "@/lib/auth-context";
 import { useWorkspace } from "@/lib/workspace-context";
 import { UsersProvider, useUsers } from "@/features/users/users-provider";
 import type { UserWithRole } from "@/data/fetch-users";
-import type { Workspace } from "@/types/workspace";
-import { Mail, Search, Shield, User, Users, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { Check, ChevronDown, MessagesSquare, Search, Shield } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type MouseEvent } from "react";
+import { Divider } from "@/components/display/divider";
+import { UserAvatar } from "@/components/display/user-avatar";
 
 const roleColor: Record<string, "blue" | "purple" | "green" | "gray"> = {
     admin: "purple",
@@ -26,21 +23,6 @@ const roleColor: Record<string, "blue" | "purple" | "green" | "gray"> = {
 function getRoleColor(name: string | undefined) {
     if (!name) return "gray" as const;
     return roleColor[name.toLowerCase()] ?? ("gray" as const);
-}
-
-function getWorkspaceNames(workspaceIds: string[], workspaceNameById: Map<string, string>) {
-    return workspaceIds.flatMap((workspaceId) => {
-        const workspaceName = workspaceNameById.get(workspaceId);
-        return workspaceName ? [workspaceName] : [];
-    });
-}
-
-function getWorkspaceSummary(workspaceIds: string[], workspaceNameById: Map<string, string>) {
-    const workspaceNames = getWorkspaceNames(workspaceIds, workspaceNameById);
-
-    if (workspaceNames.length === 0) return null;
-    if (workspaceNames.length === 1) return workspaceNames[0];
-    return `${workspaceNames[0]} +${workspaceNames.length - 1}`;
 }
 
 export function UsersTab() {
@@ -54,42 +36,117 @@ export function UsersTab() {
 function UsersTabContent() {
     const { role, profile } = useAuth();
     const {
-        state: { users, workspaces, isLoading },
-        actions: { loadUsers },
+        state: { users, roles, isLoading },
+        actions: { loadUsers, changeRole },
     } = useUsers();
     const { currentWorkspaceId } = useWorkspace();
     const { toast } = useFeedback();
 
     const [search, setSearch] = useState("");
-    const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
 
     const canManage = role?.can_manage_roles === true;
     const currentUserId = profile?.id;
+
+    const handleRoleChange = useCallback(
+        async (userId: string, roleId: string) => {
+            try {
+                await changeRole(userId, roleId);
+                toast({ title: "Role updated", variant: "success" });
+            } catch (err) {
+                toast({
+                    title: "Couldn't update role",
+                    description: err instanceof Error ? err.message : "Unknown error",
+                    variant: "error",
+                });
+            }
+        },
+        [changeRole, toast],
+    );
 
     const columns = useMemo(() => [
         {
             key: "name",
             header: "Name",
             render: (_: unknown, row: UserWithRole) => (
-                <span className="flex items-center gap-2">
-                    {row.name} {row.surname}
-                    {row.id === currentUserId && <Badge label="You" color="blue" />}
+                <span className="flex items-center gap-3">
+                    <UserAvatar user={row} size="sm" />
+                    <span className="flex items-center gap-2 text-primary">
+                        {row.name} {row.surname}
+                        {row.id === currentUserId && <Badge label="You" color="blue" />}
+                    </span>
                 </span>
             ),
         },
-        { key: "email", header: "Email" },
+        {
+            key: "email",
+            header: "Email",
+            render: (_: unknown, row: UserWithRole) => (
+                <span className="text-tertiary">{row.email}</span>
+            ),
+        },
         {
             key: "role",
             header: "Role",
-            render: (_: unknown, row: UserWithRole) => (
-                <Badge
-                    label={row.role?.name ?? "No role"}
-                    color={getRoleColor(row.role?.name)}
-                    icon={<Shield />}
-                />
-            ),
+            render: (_: unknown, row: UserWithRole) => {
+                const roleName = row.role?.name ?? "No role";
+
+                if (!canManage) {
+                    return (
+                        <Badge
+                            label={roleName}
+                            color={getRoleColor(row.role?.name)}
+                            icon={<Shield />}
+                        />
+                    );
+                }
+
+                return (
+                    <Dropdown placement="bottom">
+                        <Dropdown.Trigger
+                            onClick={(event: MouseEvent<HTMLSpanElement>) => event.stopPropagation()}
+                            className="inline-flex w-fit min-w-36 items-center justify-between gap-2 rounded-lg border border-secondary bg-primary py-1.5 px-2.5 cursor-pointer paragraph-sm"
+                        >
+                            <span className="flex items-center gap-1.5">
+                                <Shield className="size-4 text-tertiary" />
+                                <span className="capitalize text-primary">{roleName}</span>
+                            </span>
+                            <ChevronDown className="size-4 text-tertiary" />
+                        </Dropdown.Trigger>
+                        <Dropdown.Panel>
+                            {roles.map((r) => {
+                                const isSelected = r.id === row.role?.id;
+                                return (
+                                    <Dropdown.Item
+                                        key={r.id}
+                                        onSelect={() => {
+                                            if (!isSelected) {
+                                                void handleRoleChange(row.id, r.id);
+                                            }
+                                        }}
+                                    >
+                                        <span className="size-4 shrink-0 flex items-center justify-center">
+                                            {isSelected && <Check className="size-3.5 text-brand_secondary" />}
+                                        </span>
+                                        <span className="capitalize">{r.name}</span>
+                                    </Dropdown.Item>
+                                );
+                            })}
+                        </Dropdown.Panel>
+                    </Dropdown>
+                );
+            },
         },
-    ], [currentUserId]);
+        {
+            key: "telegram",
+            header: "Telegram",
+            render: (_: unknown, row: UserWithRole) =>
+                row.telegramChatId ? (
+                    <Badge label="Connected" color="green" icon={<MessagesSquare />} />
+                ) : (
+                    <Badge label="Not connected" color="gray" variant="outline" />
+                ),
+        },
+    ], [canManage, currentUserId, handleRoleChange, roles]);
 
     useEffect(() => {
         loadUsers();
@@ -97,16 +154,6 @@ function UsersTabContent() {
 
     const handleSearchChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         setSearch(event.target.value);
-    }, []);
-
-    const handleUserSelect = useCallback((row: UserWithRole) => {
-        setSelectedUser(row);
-    }, []);
-
-    const handleDrawerOpenChange = useCallback((open: boolean) => {
-        if (!open) {
-            setSelectedUser(null);
-        }
     }, []);
 
     const filtered = useMemo(() => {
@@ -126,209 +173,26 @@ function UsersTabContent() {
     }, [currentWorkspaceId, search, users]);
 
     return (
-        <Drawer open={!!selectedUser} onOpenChange={handleDrawerOpenChange}>
-            <Section>
-                <Section.Header
-                    title="Members"
-                    description="Everyone with access to this workspace. Click a row to manage their role."
-                />
-                <Section.Body className="gap-4">
-                    <div className="flex flex-1 justify-end">
-                        <Input icon={<Search />} placeholder="Search users..." className="w-full max-w-md" value={search} onChange={handleSearchChange} />
-                    </div>
-                    {isLoading ? (
-                        <LoadingSpinner className="py-16" />
-                    ) : (
-                        <DataTable
-                            data={filtered}
-                            columns={columns}
-                            emptyMessage="No users match your search"
-                            onRowClick={handleUserSelect}
-                            className="rounded-lg border border-secondary overflow-hidden"
-                        />
-                    )}
-                </Section.Body>
-            </Section>
-            {selectedUser && (
-                <UserDetailDrawer
-                    user={selectedUser}
-                    canManage={canManage}
-                    workspaces={workspaces}
-                    onClose={() => setSelectedUser(null)}
-                    onSaved={(msg) => toast({ title: msg, variant: "success" })}
-                    onError={(msg) => toast({ title: "Error", description: msg, variant: "error" })}
-                />
-            )}
-        </Drawer>
-    );
-}
+        <Section>
+            <Section.Header title="Members" />
 
-// ─── Detail Drawer ──────────────────────────────────────────────────
+            <Divider className="py-6" />
 
-type UserDetailDrawerProps = {
-    user: UserWithRole;
-    canManage: boolean;
-    workspaces: Workspace[];
-    onClose: () => void;
-    onSaved: (msg: string) => void;
-    onError: (msg: string) => void;
-};
-
-function UserDetailDrawer({ user, canManage, workspaces, onClose, onSaved, onError }: UserDetailDrawerProps) {
-    return (
-        <Drawer.Portal>
-            <Drawer.Backdrop />
-            <Drawer.Panel className="max-w-lg">
-                <UserDetailDrawerContent
-                    user={user}
-                    canManage={canManage}
-                    workspaces={workspaces}
-                    onClose={onClose}
-                    onSaved={onSaved}
-                    onError={onError}
-                />
-            </Drawer.Panel>
-        </Drawer.Portal>
-    );
-}
-
-function UserDetailDrawerContent({ user, canManage, workspaces, onClose, onSaved, onError }: UserDetailDrawerProps) {
-    const { actions: drawerActions } = useDrawer();
-    const {
-        state: { roles },
-        actions: { updateProfile, changeRole },
-    } = useUsers();
-
-    const [name, setName] = useState(user.name);
-    const [surname, setSurname] = useState(user.surname);
-    const [selectedRoleId, setSelectedRoleId] = useState(user.role?.id ?? "");
-    const [isSaving, setIsSaving] = useState(false);
-
-    const selectedRoleName = roles.find((r) => r.id === selectedRoleId)?.name ?? user.role?.name ?? "No role";
-    const hasChanges = name !== user.name || surname !== user.surname || selectedRoleId !== (user.role?.id ?? "");
-    const workspaceNameById = useMemo(() => {
-        const nextMap = new Map<string, string>();
-
-        for (const workspace of workspaces) {
-            nextMap.set(workspace.id, workspace.name);
-        }
-
-        return nextMap;
-    }, [workspaces]);
-    const workspaceSummary = getWorkspaceSummary(user.workspaceIds, workspaceNameById);
-
-    const handleClose = useCallback(() => {
-        onClose();
-        drawerActions.close();
-    }, [onClose, drawerActions]);
-
-    async function handleSave() {
-        setIsSaving(true);
-        try {
-            if (name !== user.name || surname !== user.surname) {
-                await updateProfile(user.id, { name, surname });
-            }
-            if (selectedRoleId && selectedRoleId !== (user.role?.id ?? "")) {
-                await changeRole(user.id, selectedRoleId);
-            }
-            onSaved("User updated successfully");
-            handleClose();
-        } catch (err) {
-            onError(err instanceof Error ? err.message : "Failed to update user");
-        } finally {
-            setIsSaving(false);
-        }
-    }
-
-    function handleDiscard() {
-        setName(user.name);
-        setSurname(user.surname);
-        setSelectedRoleId(user.role?.id ?? "");
-    }
-
-    return (
-        <>
-            <Drawer.Header className="flex items-center gap-1">
-                <Button.Icon variant="ghost" icon={<X />} onClick={handleClose} />
-                <div className="flex-1" />
-            </Drawer.Header>
-
-            <Drawer.Content className="py-4">
-                <div className="px-4 pb-4">
-                    <Title.h6>{user.name} {user.surname}</Title.h6>
+            <Section.Body className="gap-4">
+                <div className="flex flex-1 justify-end">
+                    <Input icon={<Search />} placeholder="Search users..." className="w-full max-w-md" value={search} onChange={handleSearchChange} />
                 </div>
-
-                <div className="px-4 space-y-3">
-                    <MetaRow icon={<User className="size-4" />} label="First Name">
-                        {canManage ? (
-                            <Input
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="First name"
-                                className="max-w-48"
-                                style="ghost"
-                            />
-                        ) : (
-                            <Paragraph.sm>{user.name}</Paragraph.sm>
-                        )}
-                    </MetaRow>
-
-                    <MetaRow icon={<User className="size-4" />} label="Last Name">
-                        {canManage ? (
-                            <Input
-                                value={surname}
-                                onChange={(e) => setSurname(e.target.value)}
-                                placeholder="Last name"
-                                className="max-w-48"
-                                style="ghost"
-                            />
-                        ) : (
-                            <Paragraph.sm>{user.surname}</Paragraph.sm>
-                        )}
-                    </MetaRow>
-
-                    <MetaRow icon={<Mail className="size-4" />} label="Email">
-                        <Paragraph.sm>{user.email}</Paragraph.sm>
-                    </MetaRow>
-
-                    <MetaRow icon={<Users className="size-4" />} label="Workspaces">
-                        {workspaceSummary ? <Badge label={workspaceSummary} color="gray" /> : <Paragraph.sm className="text-tertiary">No workspace</Paragraph.sm>}
-                    </MetaRow>
-
-                    <MetaRow icon={<Shield className="size-4" />} label="Role">
-                        {canManage ? (
-                            <Dropdown placement="bottom">
-                                <Dropdown.Trigger>
-                                    <Badge
-                                        label={selectedRoleName}
-                                        icon={<Shield />}
-                                        color={getRoleColor(selectedRoleName)}
-                                        className="cursor-pointer"
-                                    />
-                                </Dropdown.Trigger>
-                                <Dropdown.Panel>
-                                    {roles.map((r) => (
-                                        <Dropdown.Item key={r.id} onSelect={() => setSelectedRoleId(r.id)} className="px-1">
-                                            <Badge label={r.name} color={getRoleColor(r.name)} icon={<Shield />} />
-                                        </Dropdown.Item>
-                                    ))}
-                                </Dropdown.Panel>
-                            </Dropdown>
-                        ) : (
-                            <Badge label={user.role?.name ?? "No role"} color={getRoleColor(user.role?.name)} icon={<Shield />} />
-                        )}
-                    </MetaRow>
-                </div>
-            </Drawer.Content>
-
-            {canManage && hasChanges && (
-                <Drawer.Footer className="justify-end">
-                    <Button variant="ghost" onClick={handleDiscard}>Discard</Button>
-                    <Button onClick={handleSave} disabled={isSaving}>
-                        {isSaving ? "Saving..." : "Save"}
-                    </Button>
-                </Drawer.Footer>
-            )}
-        </>
+                {isLoading ? (
+                    <LoadingSpinner className="py-16" />
+                ) : (
+                    <DataTable
+                        data={filtered}
+                        columns={columns}
+                        emptyMessage="No users match your search"
+                        className="rounded-lg border border-secondary overflow-hidden"
+                    />
+                )}
+            </Section.Body>
+        </Section>
     );
 }

@@ -6,6 +6,7 @@ type AvatarGroupSize = '2xs' | 'xs' | 'sm'
 export type AvatarGroupItem = {
     key: string
     initials: string
+    avatarUrl?: string | null
     title?: string
 }
 
@@ -43,7 +44,11 @@ export function AvatarGroup({ items, max = 3, size = '2xs', className }: AvatarG
         <div className={cn('flex items-center', overlapClassBySize[size], className)}>
             {visible.map((item) => (
                 <div key={item.key} title={item.title} className="relative">
-                    <Avatar.initials size={size} name={item.initials} className={ringClass} />
+                    {item.avatarUrl ? (
+                        <Avatar src={item.avatarUrl} name={item.initials} size={size} className={ringClass} />
+                    ) : (
+                        <Avatar.initials size={size} name={item.initials} className={ringClass} />
+                    )}
                 </div>
             ))}
             {overflow > 0 && (

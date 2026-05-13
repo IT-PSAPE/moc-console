@@ -46,7 +46,6 @@ const PrivacyPolicyScreen = lazy(() => import('./screens/public/privacy').then((
 const TermsOfUseScreen = lazy(() => import('./screens/public/terms').then((m) => ({ default: m.TermsOfUseScreen })))
 const SupportScreen = lazy(() => import('./screens/public/support').then((m) => ({ default: m.SupportScreen })))
 const ZoomDocsScreen = lazy(() => import('./screens/public/zoom-docs').then((m) => ({ default: m.ZoomDocsScreen })))
-const ProfileScreen = lazy(() => import('./screens/account/profile').then((m) => ({ default: m.ProfileScreen })))
 const SettingsScreen = lazy(() => import('./screens/account/settings/page').then((m) => ({ default: m.SettingsScreen })))
 const CueSheetShareScreen = lazy(() => import('./screens/public/cue-sheet-share/page').then((m) => ({ default: m.CueSheetShareScreen })))
 
@@ -131,7 +130,6 @@ const router = createBrowserRouter([
         children: [
             { index: true, element: <Navigate to={`/${routes.dashboard}`} replace /> },
             { path: routes.dashboard, element: <RequestsProvider><EquipmentProvider><BroadcastProvider><CueSheetProvider><DashboardScreen /></CueSheetProvider></BroadcastProvider></EquipmentProvider></RequestsProvider> },
-            { path: routes.profile, element: <ProfileScreen /> },
             { path: routes.settings, element: <SettingsScreen /> },
             {
                 element: <RequestsProvider><Outlet /></RequestsProvider>,

@@ -1,4 +1,5 @@
 import { Avatar } from '@/components/display/avatar'
+import { UserAvatar } from '@/components/display/user-avatar'
 import { Label } from '@/components/display/text'
 import { Popover } from '@/components/overlays/popover'
 import { useSidebar } from '@/components/navigation/sidebar'
@@ -13,7 +14,6 @@ import {
     Folder,
     LogOut,
     Settings,
-    User,
 } from 'lucide-react'
 import { useCallback, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -67,7 +67,11 @@ export function ProfilePopover({ onSignOut, isSigningOut }: ProfilePopoverProps)
                         sidebarState.isCollapsed && 'justify-center',
                     )}
                 >
-                    <Avatar.initials name={userInitials} size="sm" />
+                    {profile ? (
+                        <UserAvatar size="sm" user={profile} />
+                    ) : (
+                        <Avatar.initials name={userInitials} size="sm" />
+                    )}
                     {!sidebarState.isCollapsed && (
                         <>
                             <span className="flex min-w-0 flex-1 flex-col text-left space-y-0.5">
@@ -102,7 +106,6 @@ export function ProfilePopover({ onSignOut, isSigningOut }: ProfilePopoverProps)
                             </>
                         )}
 
-                        <MenuRow icon={<User className="size-4" />} label="Profile" onSelect={() => handleNavigate(routes.profile)} />
                         <MenuRow icon={<Settings className="size-4" />} label="Settings" onSelect={() => handleNavigate(routes.settings)} />
                         <MenuRow icon={<Bug className="size-4" />} label="Report a bug" onSelect={handleOpenBug} />
 

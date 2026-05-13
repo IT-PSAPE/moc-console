@@ -1,5 +1,6 @@
 import { cv } from "@/utils/cv";
 import { cn } from "@/utils/cn";
+import { useState } from "react";
 
 
 type AvatarProps = {
@@ -8,7 +9,6 @@ type AvatarProps = {
 }
 
 const variants = cv({
-    // <div className="size-9 shrink-0 rounded-lg bg-brand_solid" />
     base: [ 'overflow-clip shrink-0 bg-brand_primary flex items-center justify-center text-brand_secondary' ],
     variants: {
         size: {
@@ -25,11 +25,37 @@ const variants = cv({
     },
 })
 
-export function Avatar({ size, className, src }: AvatarProps & { src: string }) {
+type AvatarImageProps = AvatarProps & {
+    src: string
+    /** Initials shown if the image fails to load. */
+    name?: string
+}
+
+export function Avatar({ size, className, src, name }: AvatarImageProps) {
+    const [failed, setFailed] = useState(false)
+    const [prevSrc, setPrevSrc] = useState(src)
+
+    if (src !== prevSrc) {
+        setPrevSrc(src)
+        setFailed(false)
+    }
+
+    if (failed && name) {
+        return (
+            <div className={cn(variants({ size }), className)}>
+                <span className="block text-center align-middle text-inherit">{name}</span>
+            </div>
+        )
+    }
 
     return (
         <div className={cn(variants({ size }), className)}>
-            <img src={src} alt="Avatar" className="w-full h-full object-cover" />
+            <img
+                src={src}
+                alt={name ? `${name} avatar` : "Avatar"}
+                className="w-full h-full object-cover"
+                onError={() => setFailed(true)}
+            />
         </div>
     )
 }
