@@ -1,7 +1,9 @@
 import { Input } from '@/components/form/input'
 import { Textarea } from '@/components/form/textarea'
 import { FormLabel } from '@/components/form/form-label'
+import { Paragraph } from '@/components/display/text'
 import type { BookingFormData } from '@/types/booking'
+import { isReturnBeforeCheckout } from '../hooks/use-booking-form'
 
 type BookingDetailsProps = {
   data: BookingFormData
@@ -9,6 +11,8 @@ type BookingDetailsProps = {
 }
 
 export function BookingDetails({ data, onChange }: BookingDetailsProps) {
+  const invalidRange = isReturnBeforeCheckout(data)
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
@@ -25,6 +29,9 @@ export function BookingDetails({ data, onChange }: BookingDetailsProps) {
         <div className="flex flex-col gap-1.5">
           <FormLabel label="Expected return" required />
           <Input type="datetime-local" value={data.expectedReturnAt} onChange={(e) => onChange('expectedReturnAt', e.target.value)} />
+          {invalidRange && (
+            <Paragraph.xs className="text-error">Expected return must be after checkout.</Paragraph.xs>
+          )}
         </div>
       </div>
 

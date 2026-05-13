@@ -15,17 +15,17 @@ import { EQUIPMENT_CATEGORY_LABELS, EQUIPMENT_CATEGORIES, EQUIPMENT_STATUS_LABEL
 import type { EquipmentCategory, EquipmentStatus } from '@/types/equipment'
 import { useState } from 'react'
 import type { BookingFormState } from '../hooks/use-booking-form';
-import { useEquipmentBrowser } from '../hooks/use-equipment-browser';
+import type { useEquipmentBrowser } from '../hooks/use-equipment-browser';
 import { Alert } from '@/components/feedback/alert';
 
 type EquipmentListProps = {
   state: BookingFormState
+  equipment: ReturnType<typeof useEquipmentBrowser>
   onToggle: (id: string) => void
 }
 
-export function EquipmentList({ state, onToggle }: EquipmentListProps) {
+export function EquipmentList({ state, equipment, onToggle }: EquipmentListProps) {
   const [statusFilters, setStatusFilters] = useState<EquipmentStatus[]>([])
-  const equipment = useEquipmentBrowser(state.data.checkedOutAt, state.data.expectedReturnAt)
 
   const hasActiveFilters = equipment.categoryFilters.length > 0 || statusFilters.length > 0
   const activeFilterCount = equipment.categoryFilters.length + statusFilters.length

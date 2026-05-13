@@ -20,7 +20,7 @@ export function PublicLayout({ children, className}: { children: ReactNode; clas
         <div className="mx-auto flex h-14 w-full max-w-content-md items-center px-4 sm:px-6">
           <div className="flex items-center gap-2 cursor-pointer" onClick={handleHome} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') handleHome() }}>
             <div className="size-10 shrink-0 rounded-xl bg-linear-to-t from-utility-brand-600 to-utility-brand-400" >
-              <img src="./logo.svg" alt="" className="size-10" />
+              <img src="/logo.svg" alt="" className="size-10" />
             </div>
             <Label.bg>MOC Request</Label.bg>
           </div>

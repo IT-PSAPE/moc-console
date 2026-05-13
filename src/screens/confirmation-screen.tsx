@@ -36,7 +36,7 @@ export function ConfirmationScreen() {
 
   return (
     <PublicLayout className="py-16">
-      <img src="./assets/icon_check.png" className='size-60 mb-8 mx-auto' />
+      <img src="/assets/icon_check.png" className='size-60 mb-8 mx-auto' />
 
       <div className="flex flex-col items-center gap-3 w-full mb-8">
         <Paragraph.md className="text-secondary">Your tracking code is:</Paragraph.md>
@@ -56,7 +56,7 @@ export function ConfirmationScreen() {
 
       <div className="flex flex-col w-full max-w-sm gap-2 mx-auto mt-20">
         <Button onClick={handleBackToHome} className="rounded-full px-6 py-3">
-          New Sumbission
+          New Submission
         </Button>
         <Button variant="secondary" onClick={handleBackToHome} className="rounded-full px-6 py-3">
           Back to Home

@@ -60,7 +60,7 @@ export function BookingScreen() {
         </div>
 
         {state.step === 1 && <BookingDetails data={state.data} onChange={actions.setField} />}
-        {state.step === 2 && <EquipmentList state={state} onToggle={actions.toggleEquipment} />}
+        {state.step === 2 && <EquipmentList state={state} equipment={equipment} onToggle={actions.toggleEquipment} />}
         {state.step === 3 && <BookingReview data={state.data} selectedEquipment={selectedEquipment} />}
         {state.error && <Alert title="Submission failed" description={state.error} variant="error" style="filled" />}
 

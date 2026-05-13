@@ -21,7 +21,7 @@ export function RequestDetails({ data, onChange }: RequestDetailsProps) {
       <FormField label="When" required info >
         <Textarea placeholder="When does this need to happen?" value={data.whenText} onChange={(e) => onChange('whenText', e.target.value)} rows={2} />
       </FormField>
-required info
+
       <FormField label="Where" required info >
         <Textarea placeholder="Where will this take place?" value={data.whereText} onChange={(e) => onChange('whereText', e.target.value)} rows={2} />
       </FormField>

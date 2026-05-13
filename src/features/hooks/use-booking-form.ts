@@ -54,7 +54,12 @@ function reducer(state: BookingFormState, action: BookingFormAction): BookingFor
 function canProceedFromStep(step: number, data: BookingFormData): boolean {
   switch (step) {
     case 1:
-      return Boolean(data.bookedBy.trim() && data.checkedOutAt && data.expectedReturnAt)
+      return Boolean(
+        data.bookedBy.trim() &&
+        data.checkedOutAt &&
+        data.expectedReturnAt &&
+        new Date(data.expectedReturnAt) > new Date(data.checkedOutAt)
+      )
     case 2:
       return data.equipmentIds.length > 0
     case 3:
@@ -62,6 +67,11 @@ function canProceedFromStep(step: number, data: BookingFormData): boolean {
     default:
       return false
   }
+}
+
+export function isReturnBeforeCheckout(data: BookingFormData): boolean {
+  if (!data.checkedOutAt || !data.expectedReturnAt) return false
+  return new Date(data.expectedReturnAt) <= new Date(data.checkedOutAt)
 }
 
 export function useBookingForm() {

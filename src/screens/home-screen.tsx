@@ -20,19 +20,19 @@ export function HomeScreen() {
 
       <div className="w-full space-y-4">
         <OptionCard
-          icon={<img src="./assets/icon_inbox.png" className='size-20' />}
+          icon={<img src="/assets/icon_inbox.png" className='size-20' />}
           title="Make a Request"
           description="Submit a new production or media request with full details."
           onClick={handleRequest}
         />
         <OptionCard
-          icon={<img src="./assets/icon_toolbox.png" className='size-20' />}
+          icon={<img src="/assets/icon_toolbox.png" className='size-20' />}
           title="Book Equipment"
           description="Browse available equipment and reserve what you need."
           onClick={handleBooking}
         />
         <OptionCard
-          icon={<img src="./assets/icon_folder.png" className='size-20' />}
+          icon={<img src="/assets/icon_folder.png" className='size-20' />}
           title="Track a Submission"
           description="Look up the status of an existing request or booking."
           onClick={handleTrack}
