@@ -1,5 +1,11 @@
 import { timingSafeEqual } from "node:crypto"
 import { getSupabaseAdmin } from "../../server/supabase-admin.js"
+import {
+  sendTelegramMessage,
+  editTelegramMessageText,
+  type SendMessageOptions,
+  type TelegramSendResult,
+} from "../../server/telegram.js"
 
 type ApiRequest = {
   method?: string
@@ -47,7 +53,6 @@ type TelegramUpdate = {
   my_chat_member?: TelegramChatMemberUpdated
 }
 
-const TELEGRAM_API = "https://api.telegram.org"
 const START_COMMAND = /^\/start(?:@\w+)?(?:\s+(\S+))?\s*$/
 const REGISTER_GROUP_COMMAND = /^\/register_group(?:@\w+)?(?:\s+(\S+))?\s*$/
 const REGISTER_TOPIC_COMMAND = /^\/register_topic(?:@\w+)?(?:\s+(\S+))?\s*$/
@@ -60,38 +65,12 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(ab, bb)
 }
 
-type SendMessageOptions = {
-  threadId?: number
-  replyToMessageId?: number
-}
-
 async function sendMessage(
   chatId: number | string,
   text: string,
   options: SendMessageOptions = {},
-): Promise<TelegramMessage | null> {
-  const token = process.env.TELEGRAM_BOT_TOKEN
-  if (!token) return null
-  try {
-    const body: Record<string, unknown> = { chat_id: chatId, text }
-    if (typeof options.threadId === "number") body.message_thread_id = options.threadId
-    if (typeof options.replyToMessageId === "number") {
-      body.reply_parameters = {
-        message_id: options.replyToMessageId,
-        allow_sending_without_reply: true,
-      }
-    }
-    const res = await fetch(`${TELEGRAM_API}/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    })
-    const json = (await res.json()) as { ok?: boolean; result?: TelegramMessage }
-    return json.ok ? json.result ?? null : null
-  } catch {
-    // Telegram already received its 200; failure to reply is non-fatal.
-    return null
-  }
+): Promise<TelegramSendResult | null> {
+  return sendTelegramMessage(chatId, text, options)
 }
 
 async function editMessageText(
@@ -99,17 +78,7 @@ async function editMessageText(
   messageId: number,
   text: string,
 ): Promise<void> {
-  const token = process.env.TELEGRAM_BOT_TOKEN
-  if (!token) return
-  try {
-    await fetch(`${TELEGRAM_API}/bot${token}/editMessageText`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, message_id: messageId, text }),
-    })
-  } catch {
-    // non-fatal
-  }
+  await editTelegramMessageText(chatId, messageId, text)
 }
 
 // Adding the bot to a group no longer auto-creates a row — registration is
