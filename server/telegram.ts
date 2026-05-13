@@ -10,6 +10,8 @@ export type TelegramSendResult = {
 export type SendMessageOptions = {
   threadId?: number
   replyToMessageId?: number
+  parseMode?: "HTML" | "MarkdownV2" | "Markdown"
+  disableLinkPreview?: boolean
 }
 
 export async function sendTelegramMessage(
@@ -22,6 +24,10 @@ export async function sendTelegramMessage(
   try {
     const body: Record<string, unknown> = { chat_id: chatId, text }
     if (typeof options.threadId === "number") body.message_thread_id = options.threadId
+    if (options.parseMode) body.parse_mode = options.parseMode
+    if (options.disableLinkPreview) {
+      body.link_preview_options = { is_disabled: true }
+    }
     if (typeof options.replyToMessageId === "number") {
       body.reply_parameters = {
         message_id: options.replyToMessageId,
