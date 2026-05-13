@@ -10,6 +10,7 @@ type UserRow = {
   surname: string;
   email: string;
   telegram_chat_id: string | null;
+  avatar_url: string | null;
 };
 
 type RequestAssigneeRow = {
@@ -24,6 +25,7 @@ function mapUserRow(row: UserRow): User {
     surname: row.surname,
     email: row.email,
     telegramChatId: row.telegram_chat_id,
+    avatarUrl: row.avatar_url,
   };
 }
 
@@ -36,7 +38,7 @@ export async function fetchAssigneesByRequestId(requestId: string): Promise<Reso
   const workspaceId = await getCurrentWorkspaceId();
   const { data, error } = await supabase
     .from("request_assignees")
-    .select("duty, users(id, name, surname, email, telegram_chat_id), requests!inner(workspace_id)")
+    .select("duty, users(id, name, surname, email, telegram_chat_id, avatar_url), requests!inner(workspace_id)")
     .eq("request_id", requestId)
     .eq("requests.workspace_id", workspaceId);
 
@@ -52,7 +54,7 @@ export async function fetchAssigneesByRequestId(requestId: string): Promise<Reso
 export async function fetchAssigneesByCueId(cueId: string): Promise<ResolvedAssignee[]> {
   const { data, error } = await supabase
     .from("cue_assignees")
-    .select("duty, users(id, name, surname, email, telegram_chat_id)")
+    .select("duty, users(id, name, surname, email, telegram_chat_id, avatar_url)")
     .eq("cue_id", cueId);
 
   if (error) {
@@ -67,7 +69,7 @@ export async function fetchAssigneesByCueId(cueId: string): Promise<ResolvedAssi
 export async function fetchAssigneesByChecklistItemId(checklistItemId: string): Promise<ResolvedAssignee[]> {
   const { data, error } = await supabase
     .from("checklist_item_assignees")
-    .select("duty, users(id, name, surname, email, telegram_chat_id)")
+    .select("duty, users(id, name, surname, email, telegram_chat_id, avatar_url)")
     .eq("checklist_item_id", checklistItemId);
 
   if (error) {
@@ -82,7 +84,7 @@ export async function fetchAssigneesByChecklistItemId(checklistItemId: string): 
 export async function fetchAssigneesByChecklistId(checklistId: string): Promise<Map<string, ResolvedAssignee[]>> {
   const { data, error } = await supabase
     .from("checklist_item_assignees")
-    .select("checklist_item_id, duty, users(id, name, surname, email, telegram_chat_id), checklist_items!inner(checklist_id)")
+    .select("checklist_item_id, duty, users(id, name, surname, email, telegram_chat_id, avatar_url), checklist_items!inner(checklist_id)")
     .eq("checklist_items.checklist_id", checklistId);
 
   if (error) {
@@ -107,7 +109,7 @@ export async function fetchAllUsers(): Promise<User[]> {
   const workspaceId = await getCurrentWorkspaceId();
   const { data, error } = await supabase
     .from("workspace_users")
-    .select("users(id, name, surname, email, telegram_chat_id)")
+    .select("users(id, name, surname, email, telegram_chat_id, avatar_url)")
     .eq("workspace_id", workspaceId);
 
   if (error) {

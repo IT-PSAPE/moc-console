@@ -1,4 +1,4 @@
-import { Avatar } from "@/components/display/avatar";
+import { UserAvatar } from "@/components/display/user-avatar";
 import { Label, Paragraph } from "@/components/display/text";
 import { Input } from "@/components/form/input";
 import { Spinner } from "@/components/feedback/spinner";
@@ -93,7 +93,7 @@ export function MemberSearchPicker({
                         className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-secondary transition-colors cursor-pointer"
                         onMouseDown={(e) => { e.preventDefault(); handleSelect(user); }}
                     >
-                        <Avatar.initials size="sm" name={`${user.name[0]}${user.surname[0]}`} />
+                        <UserAvatar size="sm" user={user} />
                         <div className="flex-1 min-w-0">
                             <Label.sm>{user.name} {user.surname}</Label.sm>
                             <Paragraph.xs className="text-quaternary truncate">{user.email}</Paragraph.xs>
@@ -106,7 +106,7 @@ export function MemberSearchPicker({
                 <div className="flex flex-col gap-2">
                     {assignees.map((a) => (
                         <div key={`${a.id}-${a.duty}`} className="flex items-center gap-2 rounded-lg py-1">
-                            <Avatar.initials size="sm" name={`${a.name[0]}${a.surname[0]}`} />
+                            <UserAvatar size="sm" user={a} />
                             <div className="flex-1 min-w-0">
                                 <Label.sm>{a.name} {a.surname}</Label.sm>
                                 {a.duty && <Paragraph.xs className="text-quaternary truncate">{a.duty}</Paragraph.xs>}

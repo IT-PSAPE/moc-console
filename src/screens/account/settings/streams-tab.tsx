@@ -6,6 +6,7 @@ import { ZoomConnectionCard } from "@/features/broadcast/zoom-connection-card"
 import { useYouTubeOAuth } from "@/features/broadcast/use-youtube-oauth"
 import { useZoomOAuth } from "@/features/broadcast/use-zoom-oauth"
 import { useFeedback } from "@/components/feedback/feedback-provider"
+import { Divider } from "@/components/display/divider";
 
 export function StreamsTab() {
     return (
@@ -47,10 +48,10 @@ function StreamsTabContent() {
 
     return (
         <Section>
-            <Section.Header
-                title="Streaming connections"
-                description="Connect YouTube and Zoom so this workspace can publish streams and meetings."
-            />
+            <Section.Header title="Streaming connections" />
+
+            <Divider className="py-6" />
+
             <Section.Body>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <YouTubeConnectionCard />

@@ -12,6 +12,7 @@ function toAvatarGroupItems(assignees: ResolvedAssignee[]): AvatarGroupItem[] {
     return assignees.map((a) => ({
         key: `${a.id}-${a.duty}`,
         initials: `${a.name[0]}${a.surname[0]}`,
+        avatarUrl: a.avatarUrl,
         title: `${a.name} ${a.surname}${a.duty ? ` — ${a.duty}` : ""}`,
     }));
 }
