@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { getCurrentWorkspaceId } from "./current-workspace";
 import { mapRow, toRow } from "./map-request";
+import { notifyAssignment } from "./notify-assignment";
 import type { Request, Status } from "@/types/requests";
 
 export async function updateRequest(request: Request): Promise<Request> {
@@ -57,32 +58,38 @@ export async function deleteRequest(id: string): Promise<void> {
 }
 
 export async function addRequestAssignee(requestId: string, userId: string, duty: string): Promise<void> {
-  const updateResult = await supabase
+  const existingResult = await supabase
     .from("request_assignees")
-    .update({ duty })
+    .select("id, duty")
     .eq("request_id", requestId)
     .eq("user_id", userId)
-    .select("id");
+    .maybeSingle();
 
-  if (updateResult.error) {
-    throw new Error(updateResult.error.message);
+  if (existingResult.error) {
+    throw new Error(existingResult.error.message);
   }
 
-  if ((updateResult.data ?? []).length > 0) {
-    return;
+  const existing = existingResult.data;
+
+  if (existing) {
+    if (existing.duty === duty) return;
+    const { error } = await supabase
+      .from("request_assignees")
+      .update({ duty })
+      .eq("id", existing.id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase
+      .from("request_assignees")
+      .insert({
+        request_id: requestId,
+        user_id: userId,
+        duty,
+      });
+    if (error) throw new Error(error.message);
   }
 
-  const { error } = await supabase
-    .from("request_assignees")
-    .insert({
-      request_id: requestId,
-      user_id: userId,
-      duty,
-    });
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  notifyAssignment("request", requestId, userId, duty);
 }
 
 export async function removeRequestAssignee(requestId: string, userId: string): Promise<void> {
