@@ -42,6 +42,10 @@ function resolveBaseUrl(): string | null {
   return null
 }
 
+function dutyClause(duty: string): string {
+  return duty ? ` as ${duty}` : ""
+}
+
 async function buildRequestMessage(
   parentId: string,
   duty: string,
@@ -55,7 +59,7 @@ async function buildRequestMessage(
     .maybeSingle()
   if (!data) return null
   const link = `${baseUrl}/requests/${parentId}`
-  return `You've been assigned to request "${data.title}" as ${duty}.\n${link}`
+  return `You've been assigned to request "${data.title}"${dutyClause(duty)}.\n${link}`
 }
 
 async function buildCueMessage(
@@ -86,7 +90,7 @@ async function buildCueMessage(
   if (!event) return null
 
   const link = `${baseUrl}/cue-sheet/events/${event.id}`
-  return `You've been assigned to cue "${cue.label}" in event "${event.name}" as ${duty}.\n${link}`
+  return `You've been assigned to cue "${cue.label}" in event "${event.name}"${dutyClause(duty)}.\n${link}`
 }
 
 async function buildChecklistItemMessage(
@@ -110,7 +114,7 @@ async function buildChecklistItemMessage(
   if (!checklist) return null
 
   const link = `${baseUrl}/cue-sheet/checklist/${checklist.id}`
-  return `You've been assigned to checklist item "${item.label}" in "${checklist.name}" as ${duty}.\n${link}`
+  return `You've been assigned to checklist item "${item.label}" in "${checklist.name}"${dutyClause(duty)}.\n${link}`
 }
 
 export default async function handler(request: ApiRequest, response: ApiResponse) {
@@ -137,7 +141,14 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   const body = (request.body ?? {}) as Body
   const { kind, parentId, userId, duty } = body
 
-  if (!kind || !parentId || !userId || !duty) {
+  // duty can legitimately be "" (e.g. cue assignments start without a duty),
+  // so check shape rather than truthiness.
+  if (
+    !kind ||
+    typeof parentId !== "string" || !parentId ||
+    typeof userId !== "string" || !userId ||
+    typeof duty !== "string"
+  ) {
     response.status(400).json({ error: "Missing fields" })
     return
   }
