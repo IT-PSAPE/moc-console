@@ -11,6 +11,7 @@ import {
 } from "@/lib/youtube-client"
 import { fetchStreamById } from "./fetch-streams"
 import { randomId } from "@/utils/random-id"
+import { notifyStreamCreated } from "./notify-event"
 
 export type ThumbnailSource =
   | { type: "file"; file: File }
@@ -297,6 +298,8 @@ export async function createStream(params: CreateStreamParams): Promise<Stream> 
     throw new Error("Created stream could not be reloaded")
   }
 
+  notifyStreamCreated(saved.id)
+
   return saved
 }
 
@@ -539,6 +542,12 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
 
   if (error) {
     throw new Error(error.message)
+  }
+
+  // Fire-and-forget notify for any rows that have never been notified.
+  // The server atomically claims notified_at, so concurrent syncs are safe.
+  for (const row of rows ?? []) {
+    if (!row.notified_at) notifyStreamCreated(row.id)
   }
 
   return (rows ?? []).map((row) => ({
