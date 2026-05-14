@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import type { ChangeEvent, FormEvent } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { Lock } from "lucide-react"
 import { Button } from "@/components/controls/button"
 import { Spinner } from "@/components/feedback/spinner"
@@ -24,12 +24,20 @@ function getLinkErrorFromUrl(): string | null {
 
 export function PasswordRecoveryScreen() {
     const { loading: authLoading, isPasswordRecovery, session, updatePassword } = useAuth()
+    const navigate = useNavigate()
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [error, setError] = useState("")
     const [success, setSuccess] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const linkError = useMemo(() => (authLoading ? null : getLinkErrorFromUrl()), [authLoading])
+    const linkError = useMemo(() => (authLoading || success ? null : getLinkErrorFromUrl()), [authLoading, success])
+
+    useEffect(() => {
+        if (!success) return
+        const destination = session ? `/${routes.dashboard}` : `/${routes.login}`
+        const timeout = window.setTimeout(() => navigate(destination, { replace: true }), 1200)
+        return () => window.clearTimeout(timeout)
+    }, [success, session, navigate])
 
     function handlePasswordChange(event: ChangeEvent<HTMLInputElement>) {
         setPassword(event.target.value)
@@ -76,6 +84,24 @@ export function PasswordRecoveryScreen() {
         )
     }
 
+    if (success) {
+        return (
+            <AuthLayout>
+                <div className="space-y-4 text-center">
+                    <h2 className="title-h6">Password updated</h2>
+                    <p className="paragraph-sm text-tertiary">
+                        Your password has been reset successfully. Redirecting you now…
+                    </p>
+                    <Link to={session ? `/${routes.dashboard}` : `/${routes.login}`}>
+                        <Button className="w-full mt-2">
+                            {session ? "Continue to dashboard" : "Back to sign in"}
+                        </Button>
+                    </Link>
+                </div>
+            </AuthLayout>
+        )
+    }
+
     if (!isPasswordRecovery) {
         const title = linkError ? "This link is no longer valid" : "Recovery link required"
         const description = linkError
@@ -89,24 +115,6 @@ export function PasswordRecoveryScreen() {
                     <p className="paragraph-sm text-tertiary">{description}</p>
                     <Link to={`/${routes.resetPassword}`}>
                         <Button variant="secondary" className="w-full mt-2">Request a new link</Button>
-                    </Link>
-                </div>
-            </AuthLayout>
-        )
-    }
-
-    if (success) {
-        return (
-            <AuthLayout>
-                <div className="space-y-4 text-center">
-                    <h2 className="title-h6">Password updated</h2>
-                    <p className="paragraph-sm text-tertiary">
-                        Your password has been reset successfully.
-                    </p>
-                    <Link to={session ? `/${routes.dashboard}` : `/${routes.login}`}>
-                        <Button className="w-full mt-2">
-                            {session ? "Continue to dashboard" : "Back to sign in"}
-                        </Button>
                     </Link>
                 </div>
             </AuthLayout>
