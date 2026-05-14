@@ -51,6 +51,52 @@ function hasPasswordRecoveryParams() {
     return hashParams.get("type") === "recovery" || searchParams.get("type") === "recovery"
 }
 
+const VERIFIABLE_OTP_TYPES = ["signup", "recovery", "invite", "magiclink", "email_change", "email"] as const
+type VerifiableOtpType = typeof VERIFIABLE_OTP_TYPES[number]
+
+function isVerifiableOtpType(value: string): value is VerifiableOtpType {
+    return (VERIFIABLE_OTP_TYPES as readonly string[]).includes(value)
+}
+
+async function verifyEmailOtpFromUrl(): Promise<{ wasRecovery: boolean }> {
+    if (typeof window === "undefined") {
+        return { wasRecovery: false }
+    }
+
+    const searchParams = new URLSearchParams(window.location.search)
+    const tokenHash = searchParams.get("token_hash")
+    const rawType = searchParams.get("type")
+
+    if (!tokenHash || !rawType || !isVerifiableOtpType(rawType)) {
+        return { wasRecovery: false }
+    }
+
+    const wasRecovery = rawType === "recovery"
+
+    const { error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: rawType,
+    })
+
+    searchParams.delete("token_hash")
+    searchParams.delete("type")
+    const nextSearch = searchParams.toString()
+    const basePath = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`
+
+    if (error) {
+        const errorHash = new URLSearchParams({
+            error: "access_denied",
+            error_code: "otp_expired",
+            error_description: error.message,
+        }).toString()
+        window.history.replaceState({}, "", `${basePath}#${errorHash}`)
+        return { wasRecovery }
+    }
+
+    window.history.replaceState({}, "", `${basePath}${window.location.hash}`)
+    return { wasRecovery }
+}
+
 function getResetPasswordRedirectUrl() {
     if (typeof window === "undefined") {
         return undefined
@@ -133,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         async function initializeAuth() {
             await exchangeAuthCodeFromUrl()
+            const { wasRecovery } = await verifyEmailOtpFromUrl()
 
             const { data: { session } } = await supabase.auth.getSession()
 
@@ -142,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             setSession(session)
             setUser(session?.user ?? null)
-            setIsPasswordRecovery(hasPasswordRecoveryParams())
+            setIsPasswordRecovery(wasRecovery || hasPasswordRecoveryParams())
             clearCurrentWorkspaceCache()
 
             if (!session?.user) {
