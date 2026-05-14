@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import type { ChangeEvent, FormEvent } from "react"
 import { Link } from "react-router-dom"
 import { Lock } from "lucide-react"
@@ -10,6 +10,18 @@ import { useAuth } from "@/lib/auth-context"
 import { routes } from "@/screens/console-routes"
 import { AuthLayout } from "./auth-layout"
 
+function getLinkErrorFromUrl(): string | null {
+    if (typeof window === "undefined") return null
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""))
+    const searchParams = new URLSearchParams(window.location.search)
+    const description = hashParams.get("error_description") ?? searchParams.get("error_description")
+    if (description) return description
+    const code = hashParams.get("error_code") ?? searchParams.get("error_code")
+    if (code) return code
+    const error = hashParams.get("error") ?? searchParams.get("error")
+    return error
+}
+
 export function PasswordRecoveryScreen() {
     const { loading: authLoading, isPasswordRecovery, session, updatePassword } = useAuth()
     const [password, setPassword] = useState("")
@@ -17,6 +29,7 @@ export function PasswordRecoveryScreen() {
     const [error, setError] = useState("")
     const [success, setSuccess] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const linkError = useMemo(() => (authLoading ? null : getLinkErrorFromUrl()), [authLoading])
 
     function handlePasswordChange(event: ChangeEvent<HTMLInputElement>) {
         setPassword(event.target.value)
@@ -64,13 +77,16 @@ export function PasswordRecoveryScreen() {
     }
 
     if (!isPasswordRecovery) {
+        const title = linkError ? "This link is no longer valid" : "Recovery link required"
+        const description = linkError
+            ? linkError
+            : "Open the password recovery link from your email to set a new password."
+
         return (
             <AuthLayout>
                 <div className="space-y-4 text-center">
-                    <h2 className="title-h6">Recovery link required</h2>
-                    <p className="paragraph-sm text-tertiary">
-                        Open the password recovery link from your email to set a new password.
-                    </p>
+                    <h2 className="title-h6">{title}</h2>
+                    <p className="paragraph-sm text-tertiary">{description}</p>
                     <Link to={`/${routes.resetPassword}`}>
                         <Button variant="secondary" className="w-full mt-2">Request a new link</Button>
                     </Link>
