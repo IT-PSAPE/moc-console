@@ -1,7 +1,7 @@
 import { useState } from "react"
-import type { ChangeEvent, FormEvent } from "react"
+import type { FormEvent } from "react"
 import { Link } from "react-router-dom"
-import { Mail } from "lucide-react"
+import { ArrowLeft, Mail, MailCheck } from "lucide-react"
 import { Button } from "@/components/controls/button"
 import { Input } from "@/components/form/input"
 import { FormLabel } from "@/components/form/form-label"
@@ -9,58 +9,112 @@ import { useAuth } from "@/lib/auth-context"
 import { routes } from "@/screens/console-routes"
 import { AuthLayout } from "./auth-layout"
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export function ResetPasswordScreen() {
     const { resetPassword } = useAuth()
     const [email, setEmail] = useState("")
+    const [emailTouched, setEmailTouched] = useState(false)
+    const [submittedEmail, setSubmittedEmail] = useState<string | null>(null)
     const [error, setError] = useState("")
-    const [success, setSuccess] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    function handleEmailChange(event: ChangeEvent<HTMLInputElement>) {
-        setEmail(event.target.value)
-    }
+    const trimmedEmail = email.trim()
+    const emailIsValid = EMAIL_PATTERN.test(trimmedEmail)
+    const showInlineEmailError =
+        emailTouched && trimmedEmail.length > 0 && !emailIsValid
+    const success = submittedEmail !== null
 
     async function handleSubmit(event: FormEvent) {
         event.preventDefault()
+        if (!emailIsValid) {
+            setEmailTouched(true)
+            return
+        }
         setError("")
         setIsSubmitting(true)
-
-        const { error: resetError } = await resetPassword(email)
-
+        const { error: resetError } = await resetPassword(trimmedEmail)
         if (resetError) {
             setError(resetError.message)
             setIsSubmitting(false)
             return
         }
+        setSubmittedEmail(trimmedEmail)
+        setIsSubmitting(false)
+    }
 
-        setSuccess(true)
+    async function handleResend() {
+        if (!submittedEmail) return
+        setError("")
+        setIsSubmitting(true)
+        const { error: resetError } = await resetPassword(submittedEmail)
+        if (resetError) setError(resetError.message)
         setIsSubmitting(false)
     }
 
     if (success) {
         return (
-            <AuthLayout>
-                <div className="space-y-4 text-center">
-                    <h2 className="title-h6">Check your email</h2>
-                    <p className="paragraph-sm text-tertiary">
-                        If an account exists for <span className="text-primary font-medium">{email}</span>,
-                        you&apos;ll receive a password reset link shortly.
-                    </p>
-                    <Link to={`/${routes.login}`}>
-                        <Button variant="secondary" className="w-full mt-2">Back to sign in</Button>
-                    </Link>
+            <AuthLayout step={2} totalSteps={3}>
+                <div className="space-y-5">
+                    <div className="flex justify-center pt-1">
+                        <MailCheck
+                            className="size-10 text-brand_secondary"
+                            strokeWidth={1.5}
+                            aria-hidden
+                        />
+                    </div>
+                    <div className="space-y-1.5 text-center">
+                        <h2 className="title-h6">Check your inbox</h2>
+                        <p className="paragraph-sm text-tertiary">
+                            If an account exists for{" "}
+                            <span className="text-primary font-medium">
+                                {submittedEmail}
+                            </span>
+                            , a single-use reset link is on its way. Open it on
+                            the same device — the link expires shortly.
+                        </p>
+                    </div>
+
+                    {error && (
+                        <div className="rounded-lg border border-error bg-error_subtle p-3">
+                            <p className="paragraph-sm text-error">{error}</p>
+                        </div>
+                    )}
+
+                    <div className="space-y-2 pt-1">
+                        <Button
+                            variant="secondary"
+                            className="w-full"
+                            onClick={handleResend}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting
+                                ? "Sending another link…"
+                                : "Didn't get it? Send again"}
+                        </Button>
+                        <Link to={`/${routes.login}`} className="block">
+                            <Button
+                                variant="ghost"
+                                className="w-full"
+                                icon={<ArrowLeft />}
+                            >
+                                Back to sign in
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
             </AuthLayout>
         )
     }
 
     return (
-        <AuthLayout>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-1">
-                    <h2 className="title-h6">Reset password</h2>
+        <AuthLayout step={1} totalSteps={3}>
+            <form onSubmit={handleSubmit} noValidate className="space-y-5">
+                <div className="space-y-1.5">
+                    <h2 className="title-h6">Forgot your password?</h2>
                     <p className="paragraph-sm text-tertiary">
-                        Enter your email and we&apos;ll send you a link to reset your password.
+                        Drop the email tied to your account and we'll send a
+                        single-use link to set a new one.
                     </p>
                 </div>
 
@@ -70,25 +124,41 @@ export function ResetPasswordScreen() {
                     </div>
                 )}
 
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                     <FormLabel label="Email" required />
                     <Input
                         type="email"
-                        placeholder="you@example.com"
+                        placeholder="you@yourchurch.org"
                         icon={<Mail />}
                         value={email}
-                        onChange={handleEmailChange}
+                        onChange={(e) => setEmail(e.target.value)}
+                        onBlur={() => setEmailTouched(true)}
+                        autoComplete="email"
+                        autoFocus
                         required
                     />
+                    {showInlineEmailError && (
+                        <p className="paragraph-xs text-error">
+                            That doesn't look like a valid email — check for
+                            typos.
+                        </p>
+                    )}
                 </div>
 
-                <Button type="submit" disabled={isSubmitting} className="w-full">
-                    {isSubmitting ? "Sending link..." : "Send reset link"}
+                <Button
+                    type="submit"
+                    disabled={isSubmitting || !emailIsValid}
+                    className="w-full"
+                >
+                    {isSubmitting ? "Sending your link…" : "Send reset link"}
                 </Button>
 
                 <p className="paragraph-sm text-center text-tertiary">
-                    Remember your password?{" "}
-                    <Link to={`/${routes.login}`} className="text-brand_secondary hover:underline">
+                    Suddenly remembered it?{" "}
+                    <Link
+                        to={`/${routes.login}`}
+                        className="text-brand_secondary hover:underline"
+                    >
                         Sign in
                     </Link>
                 </p>
