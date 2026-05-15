@@ -11,10 +11,16 @@ lerna-debug.log*
 .local
 
 node_modules
+**/node_modules
 dist
+**/dist
 dist-ssr
 output
+**/output
 build
+**/build
+**/.env.local
+**/.env.production
 .notes
 .playwright-mcp
 *.local
