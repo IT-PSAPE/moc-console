@@ -10,7 +10,7 @@ import {
     fetchTelegramGroups,
     setTelegramGroupActive,
     type TelegramGroup,
-} from "@moc/data/fetch-telegram-groups";
+} from "@/data/fetch-telegram-groups";
 import { Link2, MessagesSquare } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Divider } from "@moc/ui/components/display/divider";

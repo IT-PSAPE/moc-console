@@ -9,7 +9,7 @@ import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/broadcast/zoom"
 import { zoomRecurrenceLabel } from "@moc/types/broadcast/zoom-constants"
-import type { CreateMeetingParams } from "@moc/data/mutate-zoom"
+import type { CreateMeetingParams } from "@/data/mutate-zoom"
 import { formatUtcIsoForDateTimeInput, parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time"
 
 type MeetingModalProps = {

@@ -1,4 +1,4 @@
-import { cn } from '@/utils/cn'
+import { cn } from '@moc/utils/cn'
 import { Avatar } from './avatar'
 
 type AvatarGroupSize = '2xs' | 'xs' | 'sm'

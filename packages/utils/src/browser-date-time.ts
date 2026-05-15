@@ -2,7 +2,7 @@ import {
   formatUtcIsoForDateTimeInput,
   formatUtcIsoInTimezone,
   parseDateTimeInputToUtcIso,
-} from "@/utils/zoned-date-time"
+} from "./zoned-date-time"
 
 export function getBrowserTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone

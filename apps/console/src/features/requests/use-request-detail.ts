@@ -1,6 +1,6 @@
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
-import { fetchAssigneesByRequestId, type ResolvedAssignee } from '@moc/data/fetch-assignees'
-import { addRequestAssignee, archiveRequest, deleteRequest, removeRequestAssignee, unarchiveRequest } from '@moc/data/mutate-requests'
+import { fetchAssigneesByRequestId, type ResolvedAssignee } from '@/data/fetch-assignees'
+import { addRequestAssignee, archiveRequest, deleteRequest, removeRequestAssignee, unarchiveRequest } from '@/data/mutate-requests'
 import type { Request } from '@moc/types/requests'
 import { useCallback, useEffect, useState } from 'react'
 import { useBlocker, useNavigate } from 'react-router-dom'

@@ -4,7 +4,7 @@ import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { Input } from "@moc/ui/components/form/input";
 import { Radio } from "@moc/ui/components/form/radio";
 import { Popover } from "@moc/ui/components/overlays/popover";
-import { fetchAllUsers, type ResolvedAssignee } from "@moc/data/fetch-assignees";
+import { fetchAllUsers, type ResolvedAssignee } from "@/data/fetch-assignees";
 import type { User } from "@moc/types/requests";
 import { Spinner } from "@moc/ui/components/feedback/spinner";
 import { ArrowLeft, Search, X } from "lucide-react";

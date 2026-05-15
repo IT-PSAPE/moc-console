@@ -1,4 +1,4 @@
-import { supabase } from "./supabase"
+import { supabase } from "@moc/data/supabase"
 
 export async function buildSessionHeaders(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession()

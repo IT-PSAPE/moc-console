@@ -5,15 +5,15 @@ import { Accordion } from "@moc/ui/components/display/accordion";
 import { Badge } from "@moc/ui/components/display/badge";
 import { Button } from "@moc/ui/components/controls/button";
 import { Label, Paragraph, Title } from "@moc/ui/components/display/text";
-import { LoadingSpinner, Spinner } from "@moc/ui/components/feedback/spinner";
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import { MetaRow } from "@/features/requests/request-properties";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { DeleteEquipmentModal } from "./delete-equipment-modal";
 import { useEquipmentStore } from "./use-equipment-store";
 import { useEquipment } from "./equipment-provider";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
-import { fetchBookingsByEquipmentId } from "@moc/data/fetch-equipment";
-import { deleteEquipment } from "@moc/data/mutate-equipment";
+import { fetchBookingsByEquipmentId } from "@/data/fetch-equipment";
+import { deleteEquipment } from "@/data/mutate-equipment";
 import {
   equipmentStatusLabel,
   equipmentStatusColor,

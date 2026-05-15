@@ -1,5 +1,5 @@
 import { Input } from '@moc/ui/components/form/input'
-import { Textarea } from '@moc/ui/components/form/textarea'
+import { TextArea } from '@moc/ui/components/form/text-area'
 import { FormLabel } from '@moc/ui/components/form/form-label'
 import { Paragraph } from '@moc/ui/components/display/text'
 import type { BookingFormData } from '@/types/booking'
@@ -37,7 +37,7 @@ export function BookingDetails({ data, onChange }: BookingDetailsProps) {
 
       <div className="flex flex-col gap-1.5">
         <FormLabel label="Notes" optional />
-        <Textarea placeholder="Any notes about this booking..." value={data.notes} onChange={(e) => onChange('notes', e.target.value)} rows={3} />
+        <TextArea placeholder="Any notes about this booking..." value={data.notes} onChange={(e) => onChange('notes', e.target.value)} rows={3} />
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 import { ChevronRight } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { cn } from '@/utils/cn'
-import { useIsMobile } from '@/hooks/use-is-mobile'
+import { cn } from '@moc/utils/cn'
+import { useIsMobile } from '../../hooks/use-is-mobile'
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
 
 // ─── Label overrides context ────────────────────────────

@@ -21,8 +21,8 @@ import { useMediaFilters } from "@/features/broadcast/use-media-filters"
 import { Dropdown } from "@moc/ui/components/overlays/dropdown"
 import { playlistStatusColor, playlistStatusLabel, mediaTypeColor, mediaTypeLabel } from "@moc/types/broadcast"
 import type { Playlist, Cue, MediaItem, MediaType, PlaylistStatus } from "@moc/types/broadcast"
-import { fetchPlaylistById } from "@moc/data/fetch-broadcast"
-import { updatePlaylist, updatePlaylistCues } from "@moc/data/mutate-broadcast"
+import { fetchPlaylistById } from "@/data/fetch-broadcast"
+import { updatePlaylist, updatePlaylistCues } from "@/data/mutate-broadcast"
 import {
   DndContext,
   DragOverlay,

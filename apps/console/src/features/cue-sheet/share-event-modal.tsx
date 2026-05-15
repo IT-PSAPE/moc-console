@@ -1,6 +1,6 @@
 import { Button } from '@moc/ui/components/controls/button'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
-import { LoadingSpinner, Spinner } from '@moc/ui/components/feedback/spinner'
+import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { Modal } from '@moc/ui/components/overlays/modal'
 import {
@@ -9,7 +9,7 @@ import {
     revokeEventShare,
     updateEventShare,
     type EventShare,
-} from '@moc/data/event-shares'
+} from '@/data/event-shares'
 import { routes } from '@/screens/console-routes'
 import { Check, Copy, Link2, Power, Radio } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'

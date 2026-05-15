@@ -8,6 +8,7 @@
     "./*": "./src/*.ts"
   },
   "dependencies": {
+    "@moc/types": "*",
     "tailwind-merge": "^3.5.0"
   }
 }

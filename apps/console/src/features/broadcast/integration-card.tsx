@@ -1,7 +1,7 @@
 import { Button } from "@moc/ui/components/controls/button"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Badge } from "@moc/ui/components/display/badge"
-import { LoadingSpinner, Spinner } from "@moc/ui/components/feedback/spinner"
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { Link2, Unlink } from "lucide-react"
 import type { ReactNode } from "react"
 

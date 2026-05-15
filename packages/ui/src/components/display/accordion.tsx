@@ -1,4 +1,4 @@
-import { cn } from "@/utils/cn";
+import { cn } from "@moc/utils/cn";
 import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes } from "react";
 
 // ─── Accordion Context ──────────────────────────────────

@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context"
 import { Button } from "@moc/ui/components/controls/button"
 import { Input } from "@moc/ui/components/form/input"
 import { FormLabel } from "@moc/ui/components/form/form-label"
-import { fetchSignupWorkspaces } from "@moc/data/fetch-workspaces"
+import { fetchSignupWorkspaces } from "@/data/fetch-workspaces"
 import type { Workspace } from "@moc/types/workspace"
 import { AuthLayout } from "./auth-layout"
 

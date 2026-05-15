@@ -9,12 +9,12 @@ import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import {
     NOTIFICATION_EVENTS,
     type NotificationEventKey,
-} from "@moc/data/notification-events";
+} from "@/data/notification-events";
 import {
     createNotificationRoute,
     deleteNotificationRoute,
     type NotificationRoute,
-} from "@moc/data/notification-routes";
+} from "@/data/notification-routes";
 
 export type ConnectEventsTarget = {
     workspaceId: string;

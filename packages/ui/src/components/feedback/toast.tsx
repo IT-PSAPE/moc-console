@@ -1,4 +1,4 @@
-import { cn } from '@/utils/cn'
+import { cn } from '@moc/utils/cn'
 import { Label, Paragraph } from '../display/text'
 import { AlertCircle, CheckCircle2, Info, Lightbulb, TriangleAlert, X } from 'lucide-react'
 import type { FeedbackVariant, FeedbackStyle } from './alert'

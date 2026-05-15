@@ -1,4 +1,4 @@
-import { fetchEquipment, fetchBookings } from "@moc/data/fetch-equipment";
+import { fetchEquipment, fetchBookings } from "@/data/fetch-equipment";
 import type { Equipment } from "@moc/types/equipment/equipment";
 import type { Booking } from "@moc/types/equipment/booking";
 import { useWorkspace } from "@/lib/workspace-context";

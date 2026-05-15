@@ -1,6 +1,6 @@
-import { fetchUsersWithRoles, fetchAvailableRoles, updateUserProfile, assignUserRole } from "@moc/data/fetch-users";
-import { fetchWorkspaceDirectory } from "@moc/data/fetch-workspaces";
-import type { UserWithRole } from "@moc/data/fetch-users";
+import { fetchUsersWithRoles, fetchAvailableRoles, updateUserProfile, assignUserRole } from "@/data/fetch-users";
+import { fetchWorkspaceDirectory } from "@/data/fetch-workspaces";
+import type { UserWithRole } from "@/data/fetch-users";
 import type { Role } from "@moc/types/requests/assignee";
 import type { Workspace } from "@moc/types/workspace";
 import { useWorkspace } from "@/lib/workspace-context";

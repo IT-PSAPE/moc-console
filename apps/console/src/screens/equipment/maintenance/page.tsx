@@ -6,7 +6,7 @@ import { Paragraph, Title } from "@moc/ui/components/display/text";
 import { useEffect, useMemo, useState } from "react";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
-import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useIsMobile } from "@moc/ui/hooks/use-is-mobile";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
 import { useEquipmentFilters } from "@/features/equipment/use-equipment-filters";

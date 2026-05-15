@@ -3,8 +3,8 @@ import type { ReactNode } from "react"
 import type { Session, User } from "@supabase/supabase-js"
 import type { User as Profile, Role } from "@moc/types/requests/assignee"
 import { routes } from "@/screens/console-routes"
-import { clearCurrentWorkspaceCache } from "@moc/data/current-workspace"
-import { supabase } from "./supabase"
+import { clearCurrentWorkspaceCache } from "@/data/current-workspace"
+import { supabase } from "@moc/data/supabase"
 
 type AuthState = {
     session: Session | null

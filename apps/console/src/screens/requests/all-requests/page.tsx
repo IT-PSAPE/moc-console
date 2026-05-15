@@ -23,7 +23,7 @@ import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { RequestFilterDrawer } from "@/features/requests/request-filter-drawer";
 import { useRequestFilters } from "@/features/requests/use-request-filters";
 import { useRequests } from "@/features/requests/request-provider";
-import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useIsMobile } from "@moc/ui/hooks/use-is-mobile";
 import { Decision } from "@moc/ui/components/display/decision";
 
 export function RequestsAllRequestsScreen() {

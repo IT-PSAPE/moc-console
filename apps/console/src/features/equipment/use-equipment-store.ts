@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 import type { Equipment } from "@moc/types/equipment";
-import { updateEquipment } from "@moc/data/mutate-equipment";
+import { updateEquipment } from "@/data/mutate-equipment";
 import { getErrorMessage } from "@moc/utils/get-error-message";
 
 // ─── State ──────────────────────────────────────────────

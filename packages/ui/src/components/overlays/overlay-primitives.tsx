@@ -1,4 +1,4 @@
-import { cn } from '@/utils/cn'
+import { cn } from '@moc/utils/cn'
 import { createPortal } from 'react-dom'
 import { useEffect, useCallback, useLayoutEffect, useRef, useState, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react'
 import { useOverlayStack } from './overlay-provider'

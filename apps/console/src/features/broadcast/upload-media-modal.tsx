@@ -11,7 +11,7 @@ import { FileDropzone } from "@moc/ui/components/form/file-dropzone"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import { mediaTypeLabel } from "@moc/types/broadcast/constants"
 import { getDefaultMediaDetails, inferMediaTypeFromSource } from "@moc/utils/media-source"
-import { uploadMediaFile } from "@moc/data/mutate-broadcast"
+import { uploadMediaFile } from "@/data/mutate-broadcast"
 import { Link } from "lucide-react"
 
 type UploadMediaModalProps = {

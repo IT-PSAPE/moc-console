@@ -1,5 +1,6 @@
-import { cn } from "@/utils/cn";
-import { Paragraph, Label as TextLabel } from "../display/text";
+import type { ReactNode } from "react";
+import { cn } from "@moc/utils/cn";
+import { Paragraph, Label as TextLabel } from "@moc/ui/components/display/text";
 
 type LabelProps = {
     label: string
@@ -8,6 +9,20 @@ type LabelProps = {
     disabled?: boolean
     info?: boolean
     className?: string
+}
+
+type FormFieldProps = LabelProps & {
+    children: ReactNode
+    fieldClassName?: string
+}
+
+export function FormField({ label, required, optional, disabled, info, className, fieldClassName, children }: FormFieldProps) {
+    return (
+        <div className={cn("flex flex-col gap-1.5", fieldClassName)}>
+            <FormLabel label={label} required={required} optional={optional} disabled={disabled} info={info} className={className} />
+            {children}
+        </div>
+    )
 }
 
 export function FormLabel({ label, required, optional, info, className }: LabelProps) {

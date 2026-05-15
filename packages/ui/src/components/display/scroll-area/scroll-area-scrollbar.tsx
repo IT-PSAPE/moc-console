@@ -1,4 +1,4 @@
-import { cn } from "@/utils/cn";
+import { cn } from "@moc/utils/cn";
 import { useCallback, type HTMLAttributes, type PointerEvent } from "react";
 import { ScrollAreaScrollbarContext } from "./scroll-area-scrollbar-context";
 import { useScrollArea, type ScrollAreaOrientation } from "./scroll-area-context";

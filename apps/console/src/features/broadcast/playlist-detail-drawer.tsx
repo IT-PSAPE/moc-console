@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom'
 import { playlistStatusColor, playlistStatusLabel } from '@moc/types/broadcast/constants'
 import type { Playlist } from '@moc/types/broadcast/broadcast'
 import { useBroadcast } from '@/features/broadcast/broadcast-provider'
-import { deletePlaylist } from '@moc/data/mutate-broadcast'
+import { deletePlaylist } from '@/data/mutate-broadcast'
 import { getErrorMessage } from '@moc/utils/get-error-message'
 import { routes } from '@/screens/console-routes'
 

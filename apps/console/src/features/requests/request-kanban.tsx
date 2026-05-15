@@ -5,7 +5,7 @@ import { Label } from "@moc/ui/components/display/text";
 import type { Request, Status } from "@moc/types/requests";
 import { statusGroups } from "@moc/types/requests";
 import { useRequests } from "./request-provider";
-import { updateRequestStatus } from "@moc/data/mutate-requests";
+import { updateRequestStatus } from "@/data/mutate-requests";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import { type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { useState } from "react";

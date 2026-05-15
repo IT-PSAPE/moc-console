@@ -10,8 +10,8 @@ import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { useBookingStore } from "./use-booking-store";
 import { useEquipment } from "./equipment-provider";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
-import { fetchEquipmentById } from "@moc/data/fetch-equipment";
-import { deleteBooking } from "@moc/data/mutate-booking";
+import { fetchEquipmentById } from "@/data/fetch-equipment";
+import { deleteBooking } from "@/data/mutate-booking";
 import {
   bookingStatusLabel,
   bookingStatusColor,

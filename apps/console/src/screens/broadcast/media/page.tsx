@@ -8,7 +8,7 @@ import { useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { MediaLibraryView } from "@/features/broadcast/media-library"
 import { UploadMediaModal } from "@/features/broadcast/upload-media-modal"
 import type { MediaItem } from "@moc/types/broadcast"
-import { createMediaItem } from "@moc/data/mutate-broadcast"
+import { createMediaItem } from "@/data/mutate-broadcast"
 import { getErrorMessage } from "@moc/utils/get-error-message"
 import { Plus, Search } from "lucide-react"
 

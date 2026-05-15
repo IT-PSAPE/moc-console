@@ -1,7 +1,7 @@
 import { CalendarFold, CircleAlert, Tag } from "lucide-react";
-import { Label, Paragraph } from "../../components/display/text";
-import { Badge } from "../../components/display/badge";
-import { Drawer } from "../../components/overlays/drawer";
+import { Label, Paragraph } from "@moc/ui/components/display/text";
+import { Badge } from "@moc/ui/components/display/badge";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
 import type { Request } from "@moc/types/requests";

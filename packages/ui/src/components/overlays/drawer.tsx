@@ -1,4 +1,4 @@
-import { cn } from '@/utils/cn'
+import { cn } from '@moc/utils/cn'
 import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type HTMLAttributes, type ReactNode } from 'react'
 import { useOverlayStack } from './overlay-provider'
 import { OverlayBackdrop, OverlayClose, OverlayContent, OverlayFooter, OverlayHeader, OverlayPortal, OverlayTrigger } from './overlay-primitives'

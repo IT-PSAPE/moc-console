@@ -23,11 +23,11 @@ import { useEquipmentFilters } from "@/features/equipment/use-equipment-filters"
 import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
 import { CreateEquipmentModal } from "@/features/equipment/create-equipment-modal";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
-import { createEquipment } from "@moc/data/mutate-equipment";
+import { createEquipment } from "@/data/mutate-equipment";
 import type { Equipment, EquipmentCategory } from "@moc/types/equipment";
 import { getErrorMessage } from "@moc/utils/get-error-message";
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
-import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useIsMobile } from "@moc/ui/hooks/use-is-mobile";
 import { InventoryListView } from "@/features/equipment/inventory-list";
 import { InventoryKanbanView } from "@/features/equipment/inventory-kanban";
 import { InventoryTableView } from "@/features/equipment/inventory-table";

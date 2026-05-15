@@ -12,7 +12,7 @@ import { BookingFilterDrawer } from "@/features/equipment/booking-filter-drawer"
 import { BookingListView } from "@/features/equipment/booking-list";
 import { BookingTableView } from "@/features/equipment/booking-table";
 import { BookingCalendarView } from "@/features/equipment/booking-calendar";
-import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useIsMobile } from "@moc/ui/hooks/use-is-mobile";
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import { Decision } from "@moc/ui/components/display/decision";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";

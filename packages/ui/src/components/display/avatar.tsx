@@ -1,5 +1,5 @@
-import { cv } from "@/utils/cv";
-import { cn } from "@/utils/cn";
+import { cv } from "@moc/utils/cv";
+import { cn } from "@moc/utils/cn";
 import { useState } from "react";
 
 

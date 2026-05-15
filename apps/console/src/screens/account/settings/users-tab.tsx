@@ -8,7 +8,7 @@ import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import { useAuth } from "@/lib/auth-context";
 import { useWorkspace } from "@/lib/workspace-context";
 import { UsersProvider, useUsers } from "@/features/users/users-provider";
-import type { UserWithRole } from "@moc/data/fetch-users";
+import type { UserWithRole } from "@/data/fetch-users";
 import { Check, ChevronDown, MessagesSquare, Search, Shield } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type MouseEvent } from "react";
 import { Divider } from "@moc/ui/components/display/divider";

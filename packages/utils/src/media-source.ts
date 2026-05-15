@@ -1,5 +1,4 @@
-import type { MediaItem } from "@/types/broadcast/media-item"
-import type { MediaType } from "@/types/broadcast/media-type"
+import type { MediaItem, MediaType } from "@moc/types/broadcast"
 
 const mediaExtensions: Record<MediaType, readonly string[]> = {
   image: ["avif", "bmp", "gif", "heic", "jpeg", "jpg", "png", "svg", "webp"],

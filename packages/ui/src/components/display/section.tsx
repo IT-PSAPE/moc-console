@@ -1,4 +1,4 @@
-import { cn } from "@/utils/cn"
+import { cn } from "@moc/utils/cn"
 import type { HTMLAttributes, ReactNode } from "react"
 import { Label, Paragraph } from "./text"
 

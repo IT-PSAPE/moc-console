@@ -8,9 +8,16 @@
   "exports": {
     ".": "./src/index.ts",
     "./styles.css": "./src/index.css",
-    "./*": "./src/*"
+    "./hooks/*": "./src/hooks/*.ts",
+    "./components/*": [
+      "./src/components/*.tsx",
+      "./src/components/*.ts"
+    ]
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@moc/types": "*",
     "@moc/utils": "*",
     "lucide-react": "^1.14.0",
@@ -18,6 +25,12 @@
   },
   "peerDependencies": {
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.13.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.2.2"
   }
 }

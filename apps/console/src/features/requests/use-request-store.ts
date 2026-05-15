@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import type { Request } from '@moc/types/requests'
-import { updateRequest } from '@moc/data/mutate-requests'
+import { updateRequest } from '@/data/mutate-requests'
 import { getErrorMessage } from '@moc/utils/get-error-message'
 
 // ─── State ──────────────────────────────────────────────────────────

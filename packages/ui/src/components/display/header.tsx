@@ -1,4 +1,4 @@
-import { cn } from '@/utils/cn';
+import { cn } from '@moc/utils/cn';
 
 function HeaderRoot({ children, className }: { children?: React.ReactNode; className?: string}) {
     return (

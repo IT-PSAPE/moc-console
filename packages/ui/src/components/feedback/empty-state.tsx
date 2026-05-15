@@ -1,5 +1,5 @@
-import { cn } from '@/utils/cn'
-import { Label, Paragraph } from '@/components/display/text'
+import { cn } from '@moc/utils/cn'
+import { Label, Paragraph } from '@moc/ui/components/display/text'
 import type { HTMLAttributes, ReactNode } from 'react'
 
 type EmptyStateProps = HTMLAttributes<HTMLDivElement> & {

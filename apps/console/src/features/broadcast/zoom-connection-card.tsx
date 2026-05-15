@@ -1,7 +1,7 @@
 import { useAuth } from "@/lib/auth-context"
 import { useBroadcast } from "./broadcast-provider"
 import { useZoomOAuth } from "./use-zoom-oauth"
-import { disconnectZoom } from "@moc/data/mutate-zoom"
+import { disconnectZoom } from "@/data/mutate-zoom"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { getErrorMessage } from "@moc/utils/get-error-message"
 import { IntegrationCard } from "./integration-card"

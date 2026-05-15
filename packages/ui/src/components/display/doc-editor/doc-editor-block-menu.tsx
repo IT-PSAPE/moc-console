@@ -1,9 +1,9 @@
 import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
 import { ArrowDownToLine, ArrowUpToLine, Copy, Trash2 } from 'lucide-react'
-import { cn } from '@/utils/cn'
-import { useOverlayStack } from '@/components/overlays/overlay-provider'
-import { useAnchorPosition } from '@/components/overlays/overlay-primitives'
+import { cn } from '@moc/utils/cn'
+import { useOverlayStack } from '@moc/ui/components/overlays/overlay-provider'
+import { useAnchorPosition } from '@moc/ui/components/overlays/overlay-primitives'
 
 type DocEditorBlockMenuProps = {
     anchorElement: HTMLElement | null

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 import type { Booking } from "@moc/types/equipment";
-import { updateBooking } from "@moc/data/mutate-booking";
+import { updateBooking } from "@/data/mutate-booking";
 import { getErrorMessage } from "@moc/utils/get-error-message";
 
 // ─── State ──────────────────────────────────────────────

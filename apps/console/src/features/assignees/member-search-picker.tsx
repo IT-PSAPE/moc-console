@@ -4,7 +4,7 @@ import { Input } from "@moc/ui/components/form/input";
 import { Spinner } from "@moc/ui/components/feedback/spinner";
 import { Button } from "@moc/ui/components/controls/button";
 import { AnchoredPanel } from "@moc/ui/components/overlays/anchored-panel";
-import { fetchAllUsers, type ResolvedAssignee } from "@moc/data/fetch-assignees";
+import { fetchAllUsers, type ResolvedAssignee } from "@/data/fetch-assignees";
 import type { User } from "@moc/types/requests";
 import { cn } from "@moc/utils/cn";
 import { Search, X } from "lucide-react";

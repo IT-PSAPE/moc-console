@@ -1,4 +1,4 @@
-import { cn } from "@/utils/cn";
+import { cn } from "@moc/utils/cn";
 import type { HTMLAttributes } from "react";
 import { useScrollArea } from "./scroll-area-context";
 

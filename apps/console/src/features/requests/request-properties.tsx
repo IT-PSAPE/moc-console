@@ -2,7 +2,7 @@ import { Badge } from "@moc/ui/components/display/badge";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { Dropdown } from "@moc/ui/components/overlays/dropdown";
 
-import type { ResolvedAssignee } from "@moc/data/fetch-assignees";
+import type { ResolvedAssignee } from "@/data/fetch-assignees";
 import type { Request, Status, Priority, Category } from "@moc/types/requests";
 import { statusLabel, statusColor, priorityLabel, categoryLabel, priorityColor } from "@moc/types/requests";
 import { Archive, Calendar, Check, CircleAlert, CircleChevronDown, CircleDashed, Clock, History, Loader, Tag, User } from "lucide-react";

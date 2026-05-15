@@ -1,6 +1,6 @@
 import { useCallback } from "react"
 import { supabase } from "@moc/data/supabase"
-import { getCurrentWorkspaceId } from "@moc/data/current-workspace"
+import { getCurrentWorkspaceId } from "@/data/current-workspace"
 import { exchangeCodeForTokens } from "@/lib/youtube-client"
 import { generateOAuthState } from "@/lib/oauth-state"
 

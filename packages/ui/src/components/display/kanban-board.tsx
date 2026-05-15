@@ -1,5 +1,5 @@
-import { Card } from "@/components/display/card";
-import { cn } from "@/utils/cn";
+import { Card } from "@moc/ui/components/display/card";
+import { cn } from "@moc/utils/cn";
 import {
     DndContext,
     DragOverlay,

@@ -1,5 +1,5 @@
 import { type HTMLAttributes, type TdHTMLAttributes, type ThHTMLAttributes, type ColHTMLAttributes } from "react";
-import { cn } from "@/utils/cn";
+import { cn } from "@moc/utils/cn";
 
 
 function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {

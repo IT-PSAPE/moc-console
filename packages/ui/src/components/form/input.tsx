@@ -1,5 +1,5 @@
-import { cn } from "@/utils/cn";
-import { cv } from "@/utils/cv";
+import { cn } from "@moc/utils/cn";
+import { cv } from "@moc/utils/cv";
 import type { InputHTMLAttributes, ReactNode } from "react";
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {

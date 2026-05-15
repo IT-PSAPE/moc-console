@@ -1,5 +1,5 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react"
-import { cn } from "@/utils/cn"
+import { cn } from "@moc/utils/cn"
 
 type TitleH1Props = ComponentPropsWithoutRef<"h1">
 type TitleH2Props = ComponentPropsWithoutRef<"h2">

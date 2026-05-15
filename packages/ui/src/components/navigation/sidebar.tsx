@@ -1,6 +1,6 @@
 import { ChevronRight } from 'lucide-react'
-import { cn } from '@/utils/cn'
-import { cv } from '@/utils/cv'
+import { cn } from '@moc/utils/cn'
+import { cv } from '@moc/utils/cv'
 import { Children, createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type MouseEventHandler, type ReactNode } from 'react'
 import { Label } from '../display/text'
 

@@ -10,6 +10,6 @@
     "./equipment": "./src/equipment/index.ts",
     "./requests": "./src/requests/index.ts",
     "./workspace": "./src/workspace.ts",
-    "./*": "./src/*"
+    "./*": "./src/*.ts"
   }
 }

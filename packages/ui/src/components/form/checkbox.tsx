@@ -1,5 +1,5 @@
-import { cn } from "@/utils/cn";
-import { cv } from "@/utils/cv";
+import { cn } from "@moc/utils/cn";
+import { cv } from "@moc/utils/cv";
 import { Check, Minus } from "lucide-react";
 import { useEffect, useRef, type InputHTMLAttributes, type ReactNode } from "react";
 

@@ -57,7 +57,7 @@ export function RequestBasicInfo({ data, onChange }: RequestBasicInfoProps) {
 
 function SelectField<T extends string>({ value, options, labels, onSelect }: { value: T; options: T[]; labels: Record<T, string>; onSelect: (value: T) => void }) {
   return (
-    <Dropdown.Root>
+    <Dropdown>
       <Dropdown.Trigger className='w-full'>
         <div className={cn(
           'h-10 flex w-full items-center justify-between gap-2',
@@ -68,13 +68,13 @@ function SelectField<T extends string>({ value, options, labels, onSelect }: { v
           <ChevronDown className="size-4 text-tertiary" />
         </div>
       </Dropdown.Trigger>
-      <Dropdown.Panel matchTriggerWidth>
+      <Dropdown.Panel>
         {options.map((option) => (
           <Dropdown.Item key={option} onSelect={() => onSelect(option)}>
             <Label.sm className={cn(option === value && 'text-brand')}>{labels[option]}</Label.sm>
           </Dropdown.Item>
         ))}
       </Dropdown.Panel>
-    </Dropdown.Root>
+    </Dropdown>
   )
 }

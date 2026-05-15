@@ -1,4 +1,4 @@
-import { cn } from "@/utils/cn";
+import { cn } from "@moc/utils/cn";
 import type { InputHTMLAttributes, ReactNode } from "react";
 
 type RadioProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {

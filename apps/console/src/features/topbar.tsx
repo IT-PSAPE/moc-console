@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useState, type HTMLAttributes, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { useSidebar } from '../components/navigation/sidebar'
-import { useIsMobile } from '@/hooks/use-is-mobile'
+import { useSidebar } from '@moc/ui/components/navigation/sidebar'
+import { useIsMobile } from '@moc/ui/hooks/use-is-mobile'
 import { PanelLeft, PanelLeftClose } from 'lucide-react'
 
 // ─── TopBar action slot (portal-based) ─────────────────

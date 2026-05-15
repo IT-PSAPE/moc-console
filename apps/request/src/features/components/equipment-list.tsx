@@ -61,7 +61,7 @@ export function EquipmentList({ state, equipment, onToggle }: EquipmentListProps
           value={equipment.searchQuery}
           onChange={(e) => equipment.setSearchQuery(e.target.value)}
         />
-        <Drawer.Root>
+        <Drawer>
           <Drawer.Trigger>
             <Button variant="secondary" icon={<SlidersHorizontal />}>
               Filters
@@ -83,7 +83,7 @@ export function EquipmentList({ state, equipment, onToggle }: EquipmentListProps
                 <Paragraph.xs className="text-secondary">Narrow down and order your equipment</Paragraph.xs>
               </Drawer.Header>
 
-              <Tabs.Root defaultTab="filters">
+              <Tabs defaultTab="filters">
                 <Tabs.List>
                   <Tabs.Tab value="filters">Filters</Tabs.Tab>
                   <Tabs.Tab value="sort">Sort</Tabs.Tab>
@@ -130,7 +130,7 @@ export function EquipmentList({ state, equipment, onToggle }: EquipmentListProps
                     <Paragraph.sm className="text-tertiary">Sort options coming soon.</Paragraph.sm>
                   </Tabs.Panel>
                 </Tabs.Panels>
-              </Tabs.Root>
+              </Tabs>
 
               <Drawer.Footer className="mt-auto">
                 <Drawer.Close className="w-full">
@@ -139,14 +139,14 @@ export function EquipmentList({ state, equipment, onToggle }: EquipmentListProps
               </Drawer.Footer>
             </Drawer.Panel>
           </Drawer.Portal>
-        </Drawer.Root>
+        </Drawer>
       </div>
 
       {equipment.error && (
         <Alert title="Failed to load equipment" description={equipment.error} variant="error" style="outline" />
       )}
 
-      <Decision.Root value={filteredItems} loading={equipment.loading}>
+      <Decision value={filteredItems} loading={equipment.loading}>
         <Decision.Loading>
           <div className="flex justify-center py-12">
             <Spinner size="md" />
@@ -171,7 +171,7 @@ export function EquipmentList({ state, equipment, onToggle }: EquipmentListProps
             ))}
           </div>
         </Decision.Data>
-      </Decision.Root>
+      </Decision>
     </div>
   )
 }

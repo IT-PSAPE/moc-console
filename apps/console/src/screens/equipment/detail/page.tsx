@@ -14,8 +14,8 @@ import { DeleteEquipmentModal } from "@/features/equipment/delete-equipment-moda
 import { useEquipmentStore } from "@/features/equipment/use-equipment-store";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
-import { fetchBookingsByEquipmentId } from "@moc/data/fetch-equipment";
-import { deleteEquipment } from "@moc/data/mutate-equipment";
+import { fetchBookingsByEquipmentId } from "@/data/fetch-equipment";
+import { deleteEquipment } from "@/data/mutate-equipment";
 import {
   equipmentStatusLabel,
   equipmentStatusColor,

@@ -1,5 +1,5 @@
-import { fetchAssigneesByChecklistId, type ResolvedAssignee } from '@moc/data/fetch-assignees'
-import { addChecklistItemAssignee, removeChecklistItemAssignee } from '@moc/data/mutate-assignees'
+import { fetchAssigneesByChecklistId, type ResolvedAssignee } from '@/data/fetch-assignees'
+import { addChecklistItemAssignee, removeChecklistItemAssignee } from '@/data/mutate-assignees'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { getErrorMessage } from '@moc/utils/get-error-message'
 import { AssigneeAvatars } from '@/features/assignees/assignee-avatars'

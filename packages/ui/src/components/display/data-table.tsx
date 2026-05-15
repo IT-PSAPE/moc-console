@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { Table } from "./table";
-import { cn } from "@/utils/cn";
+import { cn } from "@moc/utils/cn";
 
 
 type Column<T> = {

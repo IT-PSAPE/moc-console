@@ -5,7 +5,7 @@ import { Input } from "@moc/ui/components/form/input";
 import { FormLabel } from "@moc/ui/components/form/form-label";
 import { Label } from "@moc/ui/components/display/text";
 import type { Equipment } from "@moc/types/equipment";
-import type { CreateBookingParams } from "@moc/data/mutate-booking";
+import type { CreateBookingParams } from "@/data/mutate-booking";
 import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time";
 
 type CreateBookingModalProps = {

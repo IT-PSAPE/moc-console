@@ -3,7 +3,7 @@ import { KanbanBoard } from "@moc/ui/components/display/kanban-board";
 import { Label } from "@moc/ui/components/display/text";
 import type { Equipment, EquipmentStatus } from "@moc/types/equipment";
 import { equipmentStatusGroup } from "@moc/types/equipment/constants";
-import { updateEquipmentStatus } from "@moc/data/mutate-equipment";
+import { updateEquipmentStatus } from "@/data/mutate-equipment";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import { type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { useState } from "react";

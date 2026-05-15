@@ -6,7 +6,7 @@ import {
     captureBugReportContext,
     submitBugReport,
     type BugReportErrorContext,
-} from '@moc/data/bug-reports'
+} from '@/data/bug-reports'
 import { useAuth } from '@/lib/auth-context'
 import { AlertTriangle } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'

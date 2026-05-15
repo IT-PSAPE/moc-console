@@ -5,7 +5,7 @@ import {
     fetchCueSheetEvents,
     fetchCueSheetTracks,
     fetchCueSheetTracksByEventId,
-} from '@moc/data/fetch-cue-sheet'
+} from '@/data/fetch-cue-sheet'
 import {
     createCueSheetBlankChecklist,
     createCueSheetBlankEvent,
@@ -20,7 +20,7 @@ import {
     type CreateBlankEventInput,
     type CreateChecklistInstanceOverrides,
     type CreateEventInstanceOverrides,
-} from '@moc/data/mutate-cue-sheet'
+} from '@/data/mutate-cue-sheet'
 import { useWorkspace } from '@/lib/workspace-context'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 

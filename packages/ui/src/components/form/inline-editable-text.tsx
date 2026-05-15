@@ -1,4 +1,4 @@
-import { cn } from '@/utils/cn'
+import { cn } from '@moc/utils/cn'
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 
 type InlineEditableTextProps = {

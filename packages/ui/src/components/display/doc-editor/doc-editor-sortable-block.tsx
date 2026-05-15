@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type Keyboard
 import { Plus, GripVertical } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { cn } from '@/utils/cn'
+import { cn } from '@moc/utils/cn'
 import { DocEditorBlockMenu } from './doc-editor-block-menu'
 import type { DocEditorBlock } from './doc-editor-types'
 

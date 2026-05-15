@@ -1,6 +1,6 @@
-import { cv } from "@/utils/cv";
+import { cv } from "@moc/utils/cv";
 import { Label } from "./text";
-import { cn } from "@/utils/cn";
+import { cn } from "@moc/utils/cn";
 
 
 type BadgeProps = {

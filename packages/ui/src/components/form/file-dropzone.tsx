@@ -1,8 +1,8 @@
 import { useRef, useState } from "react"
 import type { ChangeEvent, DragEvent } from "react"
 import { Check, Upload } from "lucide-react"
-import { Paragraph } from "@/components/display/text"
-import { cn } from "@/utils/cn"
+import { Paragraph } from "@moc/ui/components/display/text"
+import { cn } from "@moc/utils/cn"
 
 type FileDropzoneProps = {
   accept?: string
