@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Modal } from "@/components/overlays/modal";
-import { Button } from "@/components/controls/button";
-import { Toggle } from "@/components/form/toggle";
-import { Paragraph, Label } from "@/components/display/text";
-import { LoadingSpinner } from "@/components/feedback/spinner";
-import { supabase } from "@/lib/supabase";
-import { useFeedback } from "@/components/feedback/feedback-provider";
+import { Modal } from "@moc/ui/components/overlays/modal";
+import { Button } from "@moc/ui/components/controls/button";
+import { Toggle } from "@moc/ui/components/form/toggle";
+import { Paragraph, Label } from "@moc/ui/components/display/text";
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
+import { supabase } from "@moc/data/supabase";
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import {
     NOTIFICATION_EVENTS,
     type NotificationEventKey,
-} from "@/data/notification-events";
+} from "@moc/data/notification-events";
 import {
     createNotificationRoute,
     deleteNotificationRoute,
     type NotificationRoute,
-} from "@/data/notification-routes";
+} from "@moc/data/notification-routes";
 
 export type ConnectEventsTarget = {
     workspaceId: string;

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import type { Stream, StreamStatus, StreamPrivacy } from "@/types/broadcast/stream"
+import type { Stream, StreamStatus, StreamPrivacy } from "@moc/types/broadcast/stream"
 
 export type StreamSortField = "title" | "scheduledStartTime" | "createdAt" | "status"
 export type SortDirection = "asc" | "desc"

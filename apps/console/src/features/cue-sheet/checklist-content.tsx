@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { randomId } from '@/utils/random-id'
+import { randomId } from '@moc/utils/random-id'
 import {
     DndContext,
     DragOverlay,
@@ -13,13 +13,13 @@ import {
 } from '@dnd-kit/core'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
-import { Accordion } from '@/components/display/accordion'
-import { Label, Paragraph } from '@/components/display/text'
-import type { Checklist, ChecklistItem, ChecklistSection } from '@/types/cue-sheet'
+import { Accordion } from '@moc/ui/components/display/accordion'
+import { Label, Paragraph } from '@moc/ui/components/display/text'
+import type { Checklist, ChecklistItem, ChecklistSection } from '@moc/types/cue-sheet'
 import { Check, ChevronDown, GripVertical, Plus, Trash2 } from 'lucide-react'
-import { cn } from '@/utils/cn'
-import { Input } from '@/components/form/input'
-import { InlineEditableText } from '@/components/form/inline-editable-text'
+import { cn } from '@moc/utils/cn'
+import { Input } from '@moc/ui/components/form/input'
+import { InlineEditableText } from '@moc/ui/components/form/inline-editable-text'
 
 // ─── Helpers ────────────────────────────────────────────────────────
 

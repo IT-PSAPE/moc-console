@@ -1,11 +1,11 @@
-import { Badge } from "@/components/display/badge";
-import { Label, Paragraph } from "@/components/display/text";
-import { Drawer } from "@/components/overlays/drawer";
+import { Badge } from "@moc/ui/components/display/badge";
+import { Label, Paragraph } from "@moc/ui/components/display/text";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { useDrawerItem } from "@/hooks/use-drawer-item";
-import { bookingStatusColor, bookingStatusLabel } from "@/types/equipment";
-import type { Booking } from "@/types/equipment";
-import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
-import { cn } from "@/utils/cn";
+import { bookingStatusColor, bookingStatusLabel } from "@moc/types/equipment";
+import type { Booking } from "@moc/types/equipment";
+import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
+import { cn } from "@moc/utils/cn";
 import { BookingDrawer } from "./booking-drawer";
 
 const baseCard = "w-full bg-background-primary rounded-lg shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] outline outline-1 outline-offset-[-1px] outline-border-secondary cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors";

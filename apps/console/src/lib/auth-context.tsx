@@ -1,9 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import type { ReactNode } from "react"
 import type { Session, User } from "@supabase/supabase-js"
-import type { User as Profile, Role } from "@/types/requests/assignee"
+import type { User as Profile, Role } from "@moc/types/requests/assignee"
 import { routes } from "@/screens/console-routes"
-import { clearCurrentWorkspaceCache } from "@/data/current-workspace"
+import { clearCurrentWorkspaceCache } from "@moc/data/current-workspace"
 import { supabase } from "./supabase"
 
 type AuthState = {

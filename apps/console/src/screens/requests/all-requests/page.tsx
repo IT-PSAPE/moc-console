@@ -2,11 +2,11 @@ import { RequestCalendarView } from "@/features/requests/request-calendar";
 import { RequestKanbanView } from "@/features/requests/request-kanban";
 import { RequestListView } from "@/features/requests/request-list";
 import { RequestTableView } from "@/features/requests/request-table";
-import { Button } from "@/components/controls/button";
-import { SegmentedControl } from "@/components/controls/segmented-control";
-import { Header } from "@/components/display/header";
-import { Paragraph, Title } from "@/components/display/text";
-import { Input } from "@/components/form/input";
+import { Button } from "@moc/ui/components/controls/button";
+import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
+import { Header } from "@moc/ui/components/display/header";
+import { Paragraph, Title } from "@moc/ui/components/display/text";
+import { Input } from "@moc/ui/components/form/input";
 import {
   CalendarDays,
   Columns3,
@@ -17,14 +17,14 @@ import {
   Table as TableIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { LoadingSpinner } from "@/components/feedback/spinner";
-import { EmptyState } from "@/components/feedback/empty-state";
-import { Drawer } from "@/components/overlays/drawer";
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
+import { EmptyState } from "@moc/ui/components/feedback/empty-state";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { RequestFilterDrawer } from "@/features/requests/request-filter-drawer";
 import { useRequestFilters } from "@/features/requests/use-request-filters";
 import { useRequests } from "@/features/requests/request-provider";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { Decision } from "@/components/display/decision";
+import { Decision } from "@moc/ui/components/display/decision";
 
 export function RequestsAllRequestsScreen() {
   const [view, setView] = useState("list");

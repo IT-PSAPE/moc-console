@@ -1,9 +1,9 @@
 import { useAuth } from "@/lib/auth-context"
 import { useBroadcast } from "./broadcast-provider"
 import { useYouTubeOAuth } from "./use-youtube-oauth"
-import { disconnectYouTube } from "@/data/mutate-streams"
-import { useFeedback } from "@/components/feedback/feedback-provider"
-import { getErrorMessage } from "@/utils/get-error-message"
+import { disconnectYouTube } from "@moc/data/mutate-streams"
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
+import { getErrorMessage } from "@moc/utils/get-error-message"
 import { IntegrationCard } from "./integration-card"
 import { useCallback, useState } from "react"
 

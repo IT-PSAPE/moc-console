@@ -1,14 +1,14 @@
-import { Button } from "@/components/controls/button";
-import { Divider } from "@/components/display/divider";
-import { Label, Paragraph } from "@/components/display/text";
-import { Checkbox } from "@/components/form/checkbox";
-import { FormLabel } from "@/components/form/form-label";
-import { Radio } from "@/components/form/radio";
-import { Tabs } from "@/components/layout/tabs";
-import { Drawer } from "@/components/overlays/drawer";
-import { equipmentCategoryLabel, equipmentStatusLabel } from "@/types/equipment";
-import type { EquipmentCategory } from "@/types/equipment/category";
-import type { EquipmentStatus } from "@/types/equipment/status";
+import { Button } from "@moc/ui/components/controls/button";
+import { Divider } from "@moc/ui/components/display/divider";
+import { Label, Paragraph } from "@moc/ui/components/display/text";
+import { Checkbox } from "@moc/ui/components/form/checkbox";
+import { FormLabel } from "@moc/ui/components/form/form-label";
+import { Radio } from "@moc/ui/components/form/radio";
+import { Tabs } from "@moc/ui/components/layout/tabs";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { equipmentCategoryLabel, equipmentStatusLabel } from "@moc/types/equipment";
+import type { EquipmentCategory } from "@moc/types/equipment/category";
+import type { EquipmentStatus } from "@moc/types/equipment/status";
 import { RotateCcw, X } from "lucide-react";
 import type { useEquipmentFilters } from "./use-equipment-filters";
 

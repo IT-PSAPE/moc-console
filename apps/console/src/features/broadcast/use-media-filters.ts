@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
-import type { MediaItem } from "@/types/broadcast/media-item"
-import type { MediaType } from "@/types/broadcast/media-type"
+import type { MediaItem } from "@moc/types/broadcast/media-item"
+import type { MediaType } from "@moc/types/broadcast/media-type"
 
 // ─── Filter / Sort state ───────────────────────────────
 

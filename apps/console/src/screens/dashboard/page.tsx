@@ -1,10 +1,10 @@
-import { Card } from '@/components/display/card'
-import { Button } from '@/components/controls/button'
-import { Header } from '@/components/display/header'
-import { Label, Paragraph, TextBlock, Title } from '@/components/display/text'
-import { Indicator } from '@/components/display/indicator'
-import { ScrollArea } from '@/components/display/scroll-area'
-import { LoadingSpinner } from '@/components/feedback/spinner'
+import { Card } from '@moc/ui/components/display/card'
+import { Button } from '@moc/ui/components/controls/button'
+import { Header } from '@moc/ui/components/display/header'
+import { Label, Paragraph, TextBlock, Title } from '@moc/ui/components/display/text'
+import { Indicator } from '@moc/ui/components/display/indicator'
+import { ScrollArea } from '@moc/ui/components/display/scroll-area'
+import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import { RequestItem } from '@/features/requests/request-item'
 import { EventItem } from '@/features/cue-sheet/event-item'
 import { ChecklistItemCard } from '@/features/cue-sheet/checklist-item'
@@ -26,8 +26,8 @@ import {
     ListMusic,
     Package,
 } from 'lucide-react'
-import { Decision } from '@/components/display/decision';
-import { EmptyState } from '@/components/feedback/empty-state';
+import { Decision } from '@moc/ui/components/display/decision';
+import { EmptyState } from '@moc/ui/components/feedback/empty-state';
 
 export function DashboardScreen() {
     const navigate = useNavigate()

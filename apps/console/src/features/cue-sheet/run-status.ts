@@ -1,4 +1,4 @@
-import type { Checklist, CueSheetEvent } from '@/types/cue-sheet'
+import type { Checklist, CueSheetEvent } from '@moc/types/cue-sheet'
 
 function getScheduledTime(value?: string) {
     return value ? new Date(value).getTime() : Number.MAX_SAFE_INTEGER

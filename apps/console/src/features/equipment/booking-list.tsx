@@ -1,9 +1,9 @@
-import { Card } from "@/components/display/card";
-import { Indicator } from "@/components/display/indicator";
-import { Label } from "@/components/display/text";
+import { Card } from "@moc/ui/components/display/card";
+import { Indicator } from "@moc/ui/components/display/indicator";
+import { Label } from "@moc/ui/components/display/text";
 import { BookingItem } from "./booking-item";
-import type { Booking } from "@/types/equipment";
-import { bookingStatusGroup } from "@/types/equipment";
+import type { Booking } from "@moc/types/equipment";
+import { bookingStatusGroup } from "@moc/types/equipment";
 
 export function BookingListView({ bookings }: { bookings: Booking[] }) {
   return (

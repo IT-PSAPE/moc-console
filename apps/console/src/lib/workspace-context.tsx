@@ -1,10 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
 import { useNavigate } from "react-router-dom"
-import { fetchWorkspaceDirectory } from "@/data/fetch-workspaces"
-import { setCurrentWorkspaceIdMirror } from "@/data/current-workspace"
+import { fetchWorkspaceDirectory } from "@moc/data/fetch-workspaces"
+import { setCurrentWorkspaceIdMirror } from "@moc/data/current-workspace"
 import { useAuth } from "@/lib/auth-context"
 import { routes } from "@/screens/console-routes"
-import type { Workspace } from "@/types/workspace"
+import type { Workspace } from "@moc/types/workspace"
 
 const STORAGE_KEY = "currentWorkspaceId"
 

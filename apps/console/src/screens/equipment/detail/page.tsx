@@ -1,21 +1,21 @@
-import { useBreadcrumbOverride } from "@/components/navigation/breadcrumb";
-import { Dropdown } from "@/components/overlays/dropdown";
-import { Accordion } from "@/components/display/accordion";
-import { Badge } from "@/components/display/badge";
-import { Button } from "@/components/controls/button";
-import { Divider } from "@/components/display/divider";
-import { Header } from "@/components/display/header";
-import { Label, Paragraph, Title } from "@/components/display/text";
-import { LoadingSpinner, Spinner } from "@/components/feedback/spinner";
+import { useBreadcrumbOverride } from "@moc/ui/components/navigation/breadcrumb";
+import { Dropdown } from "@moc/ui/components/overlays/dropdown";
+import { Accordion } from "@moc/ui/components/display/accordion";
+import { Badge } from "@moc/ui/components/display/badge";
+import { Button } from "@moc/ui/components/controls/button";
+import { Divider } from "@moc/ui/components/display/divider";
+import { Header } from "@moc/ui/components/display/header";
+import { Label, Paragraph, Title } from "@moc/ui/components/display/text";
+import { LoadingSpinner, Spinner } from "@moc/ui/components/feedback/spinner";
 import { TopBarActions } from "@/features/topbar";
 import { MetaRow } from "@/features/requests/request-properties";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { DeleteEquipmentModal } from "@/features/equipment/delete-equipment-modal";
 import { useEquipmentStore } from "@/features/equipment/use-equipment-store";
 import { useEquipment } from "@/features/equipment/equipment-provider";
-import { useFeedback } from "@/components/feedback/feedback-provider";
-import { fetchBookingsByEquipmentId } from "@/data/fetch-equipment";
-import { deleteEquipment } from "@/data/mutate-equipment";
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
+import { fetchBookingsByEquipmentId } from "@moc/data/fetch-equipment";
+import { deleteEquipment } from "@moc/data/mutate-equipment";
 import {
   equipmentStatusLabel,
   equipmentStatusColor,
@@ -23,13 +23,13 @@ import {
   equipmentCategoryColor,
   bookingStatusLabel,
   bookingStatusColor,
-} from "@/types/equipment";
+} from "@moc/types/equipment";
 import type {
   Equipment,
   EquipmentStatus,
   EquipmentCategory,
   Booking,
-} from "@/types/equipment";
+} from "@moc/types/equipment";
 import {
   Check,
   ChevronDown,
@@ -48,9 +48,9 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
-import { Input } from "@/components/form/input";
-import { getErrorMessage } from "@/utils/get-error-message";
-import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
+import { Input } from "@moc/ui/components/form/input";
+import { getErrorMessage } from "@moc/utils/get-error-message";
+import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
 
 const allStatuses: EquipmentStatus[] = [
   "available",

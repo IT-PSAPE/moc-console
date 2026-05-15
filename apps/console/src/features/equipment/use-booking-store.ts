@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
-import type { Booking } from "@/types/equipment";
-import { updateBooking } from "@/data/mutate-booking";
-import { getErrorMessage } from "@/utils/get-error-message";
+import type { Booking } from "@moc/types/equipment";
+import { updateBooking } from "@moc/data/mutate-booking";
+import { getErrorMessage } from "@moc/utils/get-error-message";
 
 // ─── State ──────────────────────────────────────────────
 

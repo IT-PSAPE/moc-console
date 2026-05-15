@@ -1,6 +1,6 @@
 import { useCallback } from "react"
-import { supabase } from "@/lib/supabase"
-import { getCurrentWorkspaceId } from "@/data/current-workspace"
+import { supabase } from "@moc/data/supabase"
+import { getCurrentWorkspaceId } from "@moc/data/current-workspace"
 import { exchangeZoomCodeForTokens } from "@/lib/zoom-client"
 import { generateOAuthState } from "@/lib/oauth-state"
 

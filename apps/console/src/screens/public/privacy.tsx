@@ -1,5 +1,5 @@
-import { Title, Paragraph, Label } from "@/components/display/text"
-import { Divider } from "@/components/display/divider"
+import { Title, Paragraph, Label } from "@moc/ui/components/display/text"
+import { Divider } from "@moc/ui/components/display/divider"
 import { PublicLayout } from "./layout"
 
 export function PrivacyPolicyScreen() {

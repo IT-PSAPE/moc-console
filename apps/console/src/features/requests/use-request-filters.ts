@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import type { Request } from "@/types/requests";
-import type { Category } from "@/types/requests/category";
-import type { Priority } from "@/types/requests/priority";
+import type { Request } from "@moc/types/requests";
+import type { Category } from "@moc/types/requests/category";
+import type { Priority } from "@moc/types/requests/priority";
 
 // ─── Filter / Sort state ───────────────────────────────
 

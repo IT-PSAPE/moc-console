@@ -1,14 +1,14 @@
-import { Label, Paragraph } from '@/components/display/text'
-import { Badge } from '@/components/display/badge'
-import { Drawer } from '@/components/overlays/drawer'
-import { cn } from '@/utils/cn'
-import { cv } from '@/utils/cv'
-import type { CueSheetEvent } from '@/types/cue-sheet'
+import { Label, Paragraph } from '@moc/ui/components/display/text'
+import { Badge } from '@moc/ui/components/display/badge'
+import { Drawer } from '@moc/ui/components/overlays/drawer'
+import { cn } from '@moc/utils/cn'
+import { cv } from '@moc/utils/cv'
+import type { CueSheetEvent } from '@moc/types/cue-sheet'
 import { CalendarClock, Clock, Layers } from 'lucide-react'
 import { useState } from 'react'
 import { useCueSheet } from './cue-sheet-provider'
 import { EventDrawer } from './event-drawer'
-import { formatUtcIsoInBrowserTimeZone } from '@/utils/browser-date-time'
+import { formatUtcIsoInBrowserTimeZone } from '@moc/utils/browser-date-time'
 
 const itemVariants = cv({
     base: [

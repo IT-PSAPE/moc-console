@@ -3,12 +3,12 @@ import { DndContext, PointerSensor, useSensor, useSensors, closestCenter, type D
 import { useDraggable } from "@dnd-kit/core"
 import { useDroppable } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
-import { Badge } from "@/components/display/badge"
-import { Dropdown } from "@/components/overlays/dropdown"
-import { Label, Paragraph } from "@/components/display/text"
-import { Input } from "@/components/form/input"
-import { mediaTypeColor, mediaTypeLabel } from "@/types/broadcast/constants"
-import type { Cue } from "@/types/broadcast/cue"
+import { Badge } from "@moc/ui/components/display/badge"
+import { Dropdown } from "@moc/ui/components/overlays/dropdown"
+import { Label, Paragraph } from "@moc/ui/components/display/text"
+import { Input } from "@moc/ui/components/form/input"
+import { mediaTypeColor, mediaTypeLabel } from "@moc/types/broadcast/constants"
+import type { Cue } from "@moc/types/broadcast/cue"
 import { GripVertical, Trash2, MoreVertical, Clock } from "lucide-react"
 
 type PlaylistCueListProps = {

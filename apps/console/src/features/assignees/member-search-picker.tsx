@@ -1,12 +1,12 @@
-import { UserAvatar } from "@/components/display/user-avatar";
-import { Label, Paragraph } from "@/components/display/text";
-import { Input } from "@/components/form/input";
-import { Spinner } from "@/components/feedback/spinner";
-import { Button } from "@/components/controls/button";
-import { AnchoredPanel } from "@/components/overlays/anchored-panel";
-import { fetchAllUsers, type ResolvedAssignee } from "@/data/fetch-assignees";
-import type { User } from "@/types/requests";
-import { cn } from "@/utils/cn";
+import { UserAvatar } from "@moc/ui/components/display/user-avatar";
+import { Label, Paragraph } from "@moc/ui/components/display/text";
+import { Input } from "@moc/ui/components/form/input";
+import { Spinner } from "@moc/ui/components/feedback/spinner";
+import { Button } from "@moc/ui/components/controls/button";
+import { AnchoredPanel } from "@moc/ui/components/overlays/anchored-panel";
+import { fetchAllUsers, type ResolvedAssignee } from "@moc/data/fetch-assignees";
+import type { User } from "@moc/types/requests";
+import { cn } from "@moc/utils/cn";
 import { Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 

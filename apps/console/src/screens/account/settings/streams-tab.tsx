@@ -1,12 +1,12 @@
 import { useEffect } from "react"
-import { Section } from "@/components/display/section"
+import { Section } from "@moc/ui/components/display/section"
 import { BroadcastProvider, useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { YouTubeConnectionCard } from "@/features/broadcast/youtube-connection-card"
 import { ZoomConnectionCard } from "@/features/broadcast/zoom-connection-card"
 import { useYouTubeOAuth } from "@/features/broadcast/use-youtube-oauth"
 import { useZoomOAuth } from "@/features/broadcast/use-zoom-oauth"
-import { useFeedback } from "@/components/feedback/feedback-provider"
-import { Divider } from "@/components/display/divider";
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
+import { Divider } from "@moc/ui/components/display/divider";
 
 export function StreamsTab() {
     return (

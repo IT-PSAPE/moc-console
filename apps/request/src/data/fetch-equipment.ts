@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@moc/data/supabase'
 import { workspaceId } from '@/lib/workspace'
 import type { EquipmentCategory, PublicEquipmentItem } from '@/types/equipment'
 

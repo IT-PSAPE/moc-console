@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@moc/data/supabase'
 import type { TrackingResult } from '@/types/booking'
 
 export async function lookupTrackingCode(code: string): Promise<TrackingResult | null> {

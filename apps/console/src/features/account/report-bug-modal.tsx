@@ -1,12 +1,12 @@
-import { Button } from '@/components/controls/button'
-import { Label, Paragraph } from '@/components/display/text'
-import { useFeedback } from '@/components/feedback/feedback-provider'
-import { Modal } from '@/components/overlays/modal'
+import { Button } from '@moc/ui/components/controls/button'
+import { Label, Paragraph } from '@moc/ui/components/display/text'
+import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
+import { Modal } from '@moc/ui/components/overlays/modal'
 import {
     captureBugReportContext,
     submitBugReport,
     type BugReportErrorContext,
-} from '@/data/bug-reports'
+} from '@moc/data/bug-reports'
 import { useAuth } from '@/lib/auth-context'
 import { AlertTriangle } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'

@@ -1,9 +1,9 @@
-import { cn } from '@/utils/cn'
+import { cn } from '@moc/utils/cn'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { routes } from '@/screens/console-routes'
 import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { Label } from '@/components/display/text';
+import { Label } from '@moc/ui/components/display/text';
 
 export function PublicLayout({ children, className}: { children: ReactNode; className?: string}) {
   const navigate = useNavigate()

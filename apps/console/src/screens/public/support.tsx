@@ -1,5 +1,5 @@
-import { Title, Paragraph, Label } from "@/components/display/text"
-import { Divider } from "@/components/display/divider"
+import { Title, Paragraph, Label } from "@moc/ui/components/display/text"
+import { Divider } from "@moc/ui/components/display/divider"
 import { Link } from "react-router-dom"
 import { routes } from "@/screens/console-routes"
 import { PublicLayout } from "./layout"

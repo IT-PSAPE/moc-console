@@ -1,10 +1,10 @@
-// import { Card } from "@/components/display/card";
-import { randomId } from "@/utils/random-id";
-import { Button } from "@/components/controls/button";
-import { Input } from "@/components/form/input";
-import { Header } from "@/components/display/header";
-import { Drawer } from "@/components/overlays/drawer";
-import { Paragraph, Title } from "@/components/display/text";
+// import { Card } from "@moc/ui/components/display/card";
+import { randomId } from "@moc/utils/random-id";
+import { Button } from "@moc/ui/components/controls/button";
+import { Input } from "@moc/ui/components/form/input";
+import { Header } from "@moc/ui/components/display/header";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { Paragraph, Title } from "@moc/ui/components/display/text";
 import {
   Columns3,
   List,
@@ -15,18 +15,18 @@ import {
   Table as TableIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { LoadingSpinner } from "@/components/feedback/spinner";
-import { Decision } from "@/components/display/decision";
-import { EmptyState } from "@/components/feedback/empty-state";
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
+import { Decision } from "@moc/ui/components/display/decision";
+import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 import { useEquipmentFilters } from "@/features/equipment/use-equipment-filters";
 import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
 import { CreateEquipmentModal } from "@/features/equipment/create-equipment-modal";
-import { useFeedback } from "@/components/feedback/feedback-provider";
-import { createEquipment } from "@/data/mutate-equipment";
-import type { Equipment, EquipmentCategory } from "@/types/equipment";
-import { getErrorMessage } from "@/utils/get-error-message";
-import { SegmentedControl } from "@/components/controls/segmented-control";
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
+import { createEquipment } from "@moc/data/mutate-equipment";
+import type { Equipment, EquipmentCategory } from "@moc/types/equipment";
+import { getErrorMessage } from "@moc/utils/get-error-message";
+import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { InventoryListView } from "@/features/equipment/inventory-list";
 import { InventoryKanbanView } from "@/features/equipment/inventory-kanban";

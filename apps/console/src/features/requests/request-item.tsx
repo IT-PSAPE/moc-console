@@ -2,12 +2,12 @@ import { CalendarFold, CircleAlert, Tag } from "lucide-react";
 import { Label, Paragraph } from "../../components/display/text";
 import { Badge } from "../../components/display/badge";
 import { Drawer } from "../../components/overlays/drawer";
-import { cn } from "@/utils/cn";
-import { cv } from "@/utils/cv";
-import type { Request } from "@/types/requests";
-import { priorityColor, categoryLabel } from "@/types/requests";
+import { cn } from "@moc/utils/cn";
+import { cv } from "@moc/utils/cv";
+import type { Request } from "@moc/types/requests";
+import { priorityColor, categoryLabel } from "@moc/types/requests";
 import { RequestDrawer } from "./request-drawer";
-import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
+import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
 import { useDrawerItem } from "@/hooks/use-drawer-item";
 
 const itemVariants = cv({

@@ -1,7 +1,7 @@
-import { Label, Paragraph } from "@/components/display/text";
-import { Drawer } from "@/components/overlays/drawer";
-import { cn } from "@/utils/cn";
-import type { Equipment } from "@/types/equipment";
+import { Label, Paragraph } from "@moc/ui/components/display/text";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { cn } from "@moc/utils/cn";
+import type { Equipment } from "@moc/types/equipment";
 import { EquipmentDrawer } from "./equipment-drawer";
 import { EquipmentThumbnail } from "./equipment-thumbnail";
 import { useDrawerItem } from "@/hooks/use-drawer-item";

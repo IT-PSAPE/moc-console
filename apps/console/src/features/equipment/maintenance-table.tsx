@@ -1,13 +1,13 @@
-import { Badge } from "@/components/display/badge";
-import { DataTable } from "@/components/display/data-table";
-import { Drawer } from "@/components/overlays/drawer";
-import { Decision } from "@/components/display/decision";
-import { LoadingSpinner } from "@/components/feedback/spinner";
-import { EmptyState } from "@/components/feedback/empty-state";
+import { Badge } from "@moc/ui/components/display/badge";
+import { DataTable } from "@moc/ui/components/display/data-table";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { Decision } from "@moc/ui/components/display/decision";
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
+import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { useTableRowDrawer } from "@/hooks/use-drawer-item";
 import { Archive } from "lucide-react";
-import type { Equipment } from "@/types/equipment";
-import { equipmentCategoryLabel, equipmentCategoryColor } from "@/types/equipment";
+import type { Equipment } from "@moc/types/equipment";
+import { equipmentCategoryLabel, equipmentCategoryColor } from "@moc/types/equipment";
 import { useEquipment } from "./equipment-provider";
 import { EquipmentDrawer } from "./equipment-drawer";
 

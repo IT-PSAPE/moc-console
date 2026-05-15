@@ -10,7 +10,7 @@ import { useAuth } from '../lib/auth-context'
 import { Divider } from '../components/display/divider'
 import { CommandMenu } from '../components/overlays/command-menu'
 import { SearchCommandMenuContent, SearchMenuItem } from './search/search-command-menu'
-import { useFeedback } from '@/components/feedback/feedback-provider'
+import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { useCallback, useState } from 'react'
 import { ProfilePopover } from './account/profile-popover'
 

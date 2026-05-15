@@ -1,4 +1,4 @@
-import type { Equipment } from "@/types/equipment";
+import type { Equipment } from "@moc/types/equipment";
 import { Package } from "lucide-react";
 
 export function EquipmentThumbnail({ equipment, size }: { equipment: Equipment; size?: 'sm' | 'md' | 'lg' }) {

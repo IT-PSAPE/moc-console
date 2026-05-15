@@ -1,5 +1,5 @@
-import { Label } from '@/components/display/text'
-import { cn } from '@/utils/cn'
+import { Label } from '@moc/ui/components/display/text'
+import { cn } from '@moc/utils/cn'
 
 type StepIndicatorBarProps = {
   currentStep: number

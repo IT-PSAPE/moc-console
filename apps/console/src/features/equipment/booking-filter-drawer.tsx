@@ -1,13 +1,13 @@
-import { Button } from "@/components/controls/button";
-import { Divider } from "@/components/display/divider";
-import { Label, Paragraph } from "@/components/display/text";
-import { Checkbox } from "@/components/form/checkbox";
-import { FormLabel } from "@/components/form/form-label";
-import { Radio } from "@/components/form/radio";
-import { Tabs } from "@/components/layout/tabs";
-import { Drawer } from "@/components/overlays/drawer";
-import { bookingStatusLabel } from "@/types/equipment";
-import type { BookingStatus } from "@/types/equipment";
+import { Button } from "@moc/ui/components/controls/button";
+import { Divider } from "@moc/ui/components/display/divider";
+import { Label, Paragraph } from "@moc/ui/components/display/text";
+import { Checkbox } from "@moc/ui/components/form/checkbox";
+import { FormLabel } from "@moc/ui/components/form/form-label";
+import { Radio } from "@moc/ui/components/form/radio";
+import { Tabs } from "@moc/ui/components/layout/tabs";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { bookingStatusLabel } from "@moc/types/equipment";
+import type { BookingStatus } from "@moc/types/equipment";
 import { RotateCcw, X } from "lucide-react";
 import type { useBookingFilters } from "./use-booking-filters";
 

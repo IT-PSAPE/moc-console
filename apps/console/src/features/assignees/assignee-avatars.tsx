@@ -1,5 +1,5 @@
-import type { ResolvedAssignee } from "@/data/fetch-assignees";
-import { AvatarGroup, type AvatarGroupItem } from "@/components/display/avatar-group";
+import type { ResolvedAssignee } from "@moc/data/fetch-assignees";
+import { AvatarGroup, type AvatarGroupItem } from "@moc/ui/components/display/avatar-group";
 
 type AssigneeAvatarsProps = {
     assignees: ResolvedAssignee[];

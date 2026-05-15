@@ -1,11 +1,11 @@
-import { Card } from "@/components/display/card";
-import { Indicator } from "@/components/display/indicator";
-import { Label } from "@/components/display/text";
-import { Decision } from "@/components/display/decision";
-import { LoadingSpinner } from "@/components/feedback/spinner";
-import { EmptyState } from "@/components/feedback/empty-state";
+import { Card } from "@moc/ui/components/display/card";
+import { Indicator } from "@moc/ui/components/display/indicator";
+import { Label } from "@moc/ui/components/display/text";
+import { Decision } from "@moc/ui/components/display/decision";
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
+import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { Archive } from "lucide-react";
-import type { Equipment } from "@/types/equipment";
+import type { Equipment } from "@moc/types/equipment";
 import { useEquipment } from "./equipment-provider";
 import { EquipmentItem } from "./equipment-item";
 

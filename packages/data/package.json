@@ -1,0 +1,16 @@
+{
+  "name": "@moc/data",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./supabase": "./src/supabase.ts",
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@moc/types": "*",
+    "@moc/utils": "*",
+    "@supabase/supabase-js": "^2.101.1"
+  }
+}

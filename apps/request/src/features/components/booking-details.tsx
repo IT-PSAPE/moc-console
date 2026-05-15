@@ -1,7 +1,7 @@
-import { Input } from '@/components/form/input'
-import { Textarea } from '@/components/form/textarea'
-import { FormLabel } from '@/components/form/form-label'
-import { Paragraph } from '@/components/display/text'
+import { Input } from '@moc/ui/components/form/input'
+import { Textarea } from '@moc/ui/components/form/textarea'
+import { FormLabel } from '@moc/ui/components/form/form-label'
+import { Paragraph } from '@moc/ui/components/display/text'
 import type { BookingFormData } from '@/types/booking'
 import { isReturnBeforeCheckout } from '../hooks/use-booking-form'
 

@@ -1,10 +1,10 @@
-import { Modal } from '@/components/overlays/modal'
-import { Button } from '@/components/controls/button'
-import { Input } from '@/components/form/input'
-import { FormLabel } from '@/components/form/form-label'
-import { Label } from '@/components/display/text'
-import type { CueSheetEvent } from '@/types/cue-sheet'
-import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from '@/utils/browser-date-time'
+import { Modal } from '@moc/ui/components/overlays/modal'
+import { Button } from '@moc/ui/components/controls/button'
+import { Input } from '@moc/ui/components/form/input'
+import { FormLabel } from '@moc/ui/components/form/form-label'
+import { Label } from '@moc/ui/components/display/text'
+import type { CueSheetEvent } from '@moc/types/cue-sheet'
+import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from '@moc/utils/browser-date-time'
 import { useCallback, useEffect, useState } from 'react'
 
 export type EventRunSubmit =

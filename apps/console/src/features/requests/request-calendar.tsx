@@ -1,10 +1,10 @@
-import { Calendar, type CalendarEvent } from "@/components/display/calendar"
-import { Drawer } from "@/components/overlays/drawer"
-import { Badge } from "@/components/display/badge"
-import { Label, Paragraph } from "@/components/display/text"
-import { cn } from "@/utils/cn"
-import type { Request } from "@/types/requests";
-import { categoryColor, categoryLabel, statusColor, statusLabel } from "@/types/requests";
+import { Calendar, type CalendarEvent } from "@moc/ui/components/display/calendar"
+import { Drawer } from "@moc/ui/components/overlays/drawer"
+import { Badge } from "@moc/ui/components/display/badge"
+import { Label, Paragraph } from "@moc/ui/components/display/text"
+import { cn } from "@moc/utils/cn"
+import type { Request } from "@moc/types/requests";
+import { categoryColor, categoryLabel, statusColor, statusLabel } from "@moc/types/requests";
 import { RequestDrawer } from "./request-drawer";
 import { useMemo } from "react";
 import { Circle } from "lucide-react";

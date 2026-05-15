@@ -1,12 +1,12 @@
-import { Avatar } from '@/components/display/avatar'
-import { UserAvatar } from '@/components/display/user-avatar'
-import { Label } from '@/components/display/text'
-import { Popover } from '@/components/overlays/popover'
-import { useSidebar } from '@/components/navigation/sidebar'
+import { Avatar } from '@moc/ui/components/display/avatar'
+import { UserAvatar } from '@moc/ui/components/display/user-avatar'
+import { Label } from '@moc/ui/components/display/text'
+import { Popover } from '@moc/ui/components/overlays/popover'
+import { useSidebar } from '@moc/ui/components/navigation/sidebar'
 import { useAuth } from '@/lib/auth-context'
 import { useWorkspace } from '@/lib/workspace-context'
 import { routes } from '@/screens/console-routes'
-import { cn } from '@/utils/cn'
+import { cn } from '@moc/utils/cn'
 import {
     Bug,
     Check,

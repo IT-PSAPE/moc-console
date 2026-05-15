@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Modal } from "@/components/overlays/modal";
-import { Button } from "@/components/controls/button";
-import { Input } from "@/components/form/input";
-import { FormLabel } from "@/components/form/form-label";
-import { Label } from "@/components/display/text";
-import type { Equipment } from "@/types/equipment";
-import type { CreateBookingParams } from "@/data/mutate-booking";
-import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@/utils/browser-date-time";
+import { Modal } from "@moc/ui/components/overlays/modal";
+import { Button } from "@moc/ui/components/controls/button";
+import { Input } from "@moc/ui/components/form/input";
+import { FormLabel } from "@moc/ui/components/form/form-label";
+import { Label } from "@moc/ui/components/display/text";
+import type { Equipment } from "@moc/types/equipment";
+import type { CreateBookingParams } from "@moc/data/mutate-booking";
+import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time";
 
 type CreateBookingModalProps = {
   open: boolean;

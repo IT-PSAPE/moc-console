@@ -1,26 +1,26 @@
-import { Drawer, useDrawer } from "@/components/overlays/drawer";
-import { Dropdown } from "@/components/overlays/dropdown";
-import { Badge } from "@/components/display/badge";
-import { Button } from "@/components/controls/button";
-import { Paragraph, Title } from "@/components/display/text";
-import { MetaRow } from "@/components/display/meta-row";
-import { Input } from "@/components/form/input";
-import { Modal } from "@/components/overlays/modal";
+import { Drawer, useDrawer } from "@moc/ui/components/overlays/drawer";
+import { Dropdown } from "@moc/ui/components/overlays/dropdown";
+import { Badge } from "@moc/ui/components/display/badge";
+import { Button } from "@moc/ui/components/controls/button";
+import { Paragraph, Title } from "@moc/ui/components/display/text";
+import { MetaRow } from "@moc/ui/components/display/meta-row";
+import { Input } from "@moc/ui/components/form/input";
+import { Modal } from "@moc/ui/components/overlays/modal";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { useBookingStore } from "./use-booking-store";
 import { useEquipment } from "./equipment-provider";
-import { useFeedback } from "@/components/feedback/feedback-provider";
-import { fetchEquipmentById } from "@/data/fetch-equipment";
-import { deleteBooking } from "@/data/mutate-booking";
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
+import { fetchEquipmentById } from "@moc/data/fetch-equipment";
+import { deleteBooking } from "@moc/data/mutate-booking";
 import {
   bookingStatusLabel,
   bookingStatusColor,
-} from "@/types/equipment";
-import type { Booking, BookingStatus } from "@/types/equipment";
+} from "@moc/types/equipment";
+import type { Booking, BookingStatus } from "@moc/types/equipment";
 import { Calendar, Check, Clock, Loader, Package, StickyNote, Trash2, User, X } from "lucide-react";
 import { useCallback, useEffect, useState, type RefObject } from "react";
-import { getErrorMessage } from "@/utils/get-error-message";
-import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@/utils/browser-date-time";
+import { getErrorMessage } from "@moc/utils/get-error-message";
+import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time";
 
 const allStatuses: BookingStatus[] = ["booked", "checked_out", "returned"];
 

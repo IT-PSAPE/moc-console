@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react"
 import { MessageCircle } from "lucide-react"
-import { Badge } from "@/components/display/badge"
-import { Button } from "@/components/controls/button"
-import { Paragraph } from "@/components/display/text"
-import { useFeedback } from "@/components/feedback/feedback-provider"
+import { Badge } from "@moc/ui/components/display/badge"
+import { Button } from "@moc/ui/components/controls/button"
+import { Paragraph } from "@moc/ui/components/display/text"
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { useAuth } from "@/lib/auth-context"
-import { createTelegramLinkToken, unlinkTelegram } from "@/data/fetch-users"
+import { createTelegramLinkToken, unlinkTelegram } from "@moc/data/fetch-users"
 
 const BOT_USERNAME = import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string | undefined
 

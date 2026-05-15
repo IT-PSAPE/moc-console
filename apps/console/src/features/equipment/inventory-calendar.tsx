@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
-import { LoadingSpinner } from "@/components/feedback/spinner";
-import type { Equipment } from "@/types/equipment";
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
+import type { Equipment } from "@moc/types/equipment";
 import { useEquipment } from "./equipment-provider";
 import { BookingCalendarView } from "./booking-calendar";
 

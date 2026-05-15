@@ -1,11 +1,11 @@
-import type { CueSheetEvent, Checklist, Track } from '@/types/cue-sheet'
+import type { CueSheetEvent, Checklist, Track } from '@moc/types/cue-sheet'
 import {
     fetchCueSheetChecklists,
     fetchCueSheetEventById,
     fetchCueSheetEvents,
     fetchCueSheetTracks,
     fetchCueSheetTracksByEventId,
-} from '@/data/fetch-cue-sheet'
+} from '@moc/data/fetch-cue-sheet'
 import {
     createCueSheetBlankChecklist,
     createCueSheetBlankEvent,
@@ -20,7 +20,7 @@ import {
     type CreateBlankEventInput,
     type CreateChecklistInstanceOverrides,
     type CreateEventInstanceOverrides,
-} from '@/data/mutate-cue-sheet'
+} from '@moc/data/mutate-cue-sheet'
 import { useWorkspace } from '@/lib/workspace-context'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 

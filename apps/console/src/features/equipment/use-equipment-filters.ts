@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import type { Equipment } from "@/types/equipment/equipment";
-import type { EquipmentCategory } from "@/types/equipment/category";
-import type { EquipmentStatus } from "@/types/equipment/status";
+import type { Equipment } from "@moc/types/equipment/equipment";
+import type { EquipmentCategory } from "@moc/types/equipment/category";
+import type { EquipmentStatus } from "@moc/types/equipment/status";
 
 // ─── Filter / Sort state ───────────────────────────────
 

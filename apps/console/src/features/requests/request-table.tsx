@@ -1,12 +1,12 @@
-import { Badge } from "@/components/display/badge";
-import { DataTable } from "@/components/display/data-table";
-import { Drawer } from "@/components/overlays/drawer";
+import { Badge } from "@moc/ui/components/display/badge";
+import { DataTable } from "@moc/ui/components/display/data-table";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { RequestDrawer } from "./request-drawer";
 import { CircleAlert, Tag } from "lucide-react";
 import { useMemo } from "react";
-import type { Request } from "@/types/requests";
-import { statusColor, statusLabel, priorityColor, priorityLabel, categoryLabel, categoryColor } from "@/types/requests";
-import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
+import type { Request } from "@moc/types/requests";
+import { statusColor, statusLabel, priorityColor, priorityLabel, categoryLabel, categoryColor } from "@moc/types/requests";
+import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
 import { useTableRowDrawer } from "@/hooks/use-drawer-item";
 
 const empty = <span className="text-quaternary">—</span>;

@@ -1,23 +1,23 @@
 import { useCallback, useEffect } from "react"
-import { randomId } from "@/utils/random-id"
-import { useFeedback } from "@/components/feedback/feedback-provider"
+import { randomId } from "@moc/utils/random-id"
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { useNavigate } from "react-router-dom"
-import { Card } from "@/components/display/card"
-import { Header } from "@/components/display/header"
-import { Button } from "@/components/controls/button"
-import { Input } from "@/components/form/input"
-import { Label, Paragraph, Title } from "@/components/display/text"
+import { Card } from "@moc/ui/components/display/card"
+import { Header } from "@moc/ui/components/display/header"
+import { Button } from "@moc/ui/components/controls/button"
+import { Input } from "@moc/ui/components/form/input"
+import { Label, Paragraph, Title } from "@moc/ui/components/display/text"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { usePlaylistFilters } from "@/features/broadcast/use-broadcast-filters"
 import { PlaylistListItem } from "@/features/broadcast/broadcast-list-item"
-import type { Playlist } from "@/types/broadcast"
-import { updatePlaylist } from "@/data/mutate-broadcast"
-import { getErrorMessage } from "@/utils/get-error-message"
+import type { Playlist } from "@moc/types/broadcast"
+import { updatePlaylist } from "@moc/data/mutate-broadcast"
+import { getErrorMessage } from "@moc/utils/get-error-message"
 import { ListMusic, Plus, Search } from "lucide-react"
 import { routes } from "@/screens/console-routes"
-import { LoadingSpinner } from "@/components/feedback/spinner";
-import { Decision } from "@/components/display/decision";
-import { EmptyState } from "@/components/feedback/empty-state";
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
+import { Decision } from "@moc/ui/components/display/decision";
+import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 
 export function PlaylistScreen() {
   const navigate = useNavigate()

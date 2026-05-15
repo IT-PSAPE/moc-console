@@ -1,15 +1,15 @@
-import { Button } from "@/components/controls/button";
-import { Divider } from "@/components/display/divider";
-import { Label, Paragraph } from "@/components/display/text";
-import { Checkbox } from "@/components/form/checkbox";
-import { FormLabel } from "@/components/form/form-label";
-import { Input } from "@/components/form/input";
-import { Radio } from "@/components/form/radio";
-import { Tabs } from "@/components/layout/tabs";
-import { Drawer } from "@/components/overlays/drawer";
-import { categoryLabel, priorityLabel } from "@/types/requests";
-import type { Category } from "@/types/requests/category";
-import type { Priority } from "@/types/requests/priority";
+import { Button } from "@moc/ui/components/controls/button";
+import { Divider } from "@moc/ui/components/display/divider";
+import { Label, Paragraph } from "@moc/ui/components/display/text";
+import { Checkbox } from "@moc/ui/components/form/checkbox";
+import { FormLabel } from "@moc/ui/components/form/form-label";
+import { Input } from "@moc/ui/components/form/input";
+import { Radio } from "@moc/ui/components/form/radio";
+import { Tabs } from "@moc/ui/components/layout/tabs";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { categoryLabel, priorityLabel } from "@moc/types/requests";
+import type { Category } from "@moc/types/requests/category";
+import type { Priority } from "@moc/types/requests/priority";
 import { RotateCcw, X } from "lucide-react";
 import type { useRequestFilters } from "./use-request-filters";
 

@@ -1,12 +1,12 @@
-import { useFeedback } from '@/components/feedback/feedback-provider'
-import { fetchAssigneesByRequestId, type ResolvedAssignee } from '@/data/fetch-assignees'
-import { addRequestAssignee, archiveRequest, deleteRequest, removeRequestAssignee, unarchiveRequest } from '@/data/mutate-requests'
-import type { Request } from '@/types/requests'
+import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
+import { fetchAssigneesByRequestId, type ResolvedAssignee } from '@moc/data/fetch-assignees'
+import { addRequestAssignee, archiveRequest, deleteRequest, removeRequestAssignee, unarchiveRequest } from '@moc/data/mutate-requests'
+import type { Request } from '@moc/types/requests'
 import { useCallback, useEffect, useState } from 'react'
 import { useBlocker, useNavigate } from 'react-router-dom'
 import { useRequestStore } from './use-request-store'
 import { useRequests } from './request-provider'
-import { getErrorMessage } from '@/utils/get-error-message'
+import { getErrorMessage } from '@moc/utils/get-error-message'
 
 type UseRequestDetailOptions = {
     request: Request

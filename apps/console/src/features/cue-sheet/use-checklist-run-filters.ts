@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { Checklist } from '@/types/cue-sheet'
+import type { Checklist } from '@moc/types/cue-sheet'
 import { getChecklistCounts } from './checklist-content'
 
 export type ChecklistRunCompletionFilter = 'all' | 'open' | 'complete'

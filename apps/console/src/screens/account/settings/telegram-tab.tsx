@@ -1,22 +1,22 @@
-import { Badge } from "@/components/display/badge";
-import { Card } from "@/components/display/card";
-import { Section } from "@/components/display/section";
-import { Paragraph, Label } from "@/components/display/text";
-import { LoadingSpinner } from "@/components/feedback/spinner";
-import { EmptyState } from "@/components/feedback/empty-state";
-import { useFeedback } from "@/components/feedback/feedback-provider";
+import { Badge } from "@moc/ui/components/display/badge";
+import { Card } from "@moc/ui/components/display/card";
+import { Section } from "@moc/ui/components/display/section";
+import { Paragraph, Label } from "@moc/ui/components/display/text";
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
+import { EmptyState } from "@moc/ui/components/feedback/empty-state";
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import { useWorkspace } from "@/lib/workspace-context";
 import {
     fetchTelegramGroups,
     setTelegramGroupActive,
     type TelegramGroup,
-} from "@/data/fetch-telegram-groups";
+} from "@moc/data/fetch-telegram-groups";
 import { Link2, MessagesSquare } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Divider } from "@/components/display/divider";
-import { Decision } from "@/components/display/decision";
-import { Toggle } from "@/components/form/toggle";
-import { Button } from "@/components/controls/button";
+import { Divider } from "@moc/ui/components/display/divider";
+import { Decision } from "@moc/ui/components/display/decision";
+import { Toggle } from "@moc/ui/components/form/toggle";
+import { Button } from "@moc/ui/components/controls/button";
 import { ConnectEventsModal, type ConnectEventsTarget } from "./connect-events-modal";
 
 export function TelegramTab() {

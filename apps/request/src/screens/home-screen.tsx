@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Title } from '@/components/display/text'
+import { Title } from '@moc/ui/components/display/text'
 import { PublicLayout } from '@/features/components/public-layout'
 import { OptionCard } from '@/features/components/option-card'
 import { routes } from '@/screens/console-routes'

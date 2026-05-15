@@ -1,21 +1,21 @@
-import { Card } from "@/components/display/card";
-import { Button } from "@/components/controls/button";
-import { Input } from "@/components/form/input";
-import { Header } from "@/components/display/header";
-import { Drawer } from "@/components/overlays/drawer";
-import { Label, Paragraph, TextBlock, Title } from "@/components/display/text";
+import { Card } from "@moc/ui/components/display/card";
+import { Button } from "@moc/ui/components/controls/button";
+import { Input } from "@moc/ui/components/form/input";
+import { Header } from "@moc/ui/components/display/header";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { Label, Paragraph, TextBlock, Title } from "@moc/ui/components/display/text";
 import { ArrowUpRight, CalendarX2Icon, CircleCheck, FileWarning, Package, Search, Settings2 } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 import { useEquipmentFilters } from "@/features/equipment/use-equipment-filters";
 import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
 import { EquipmentItem } from "@/features/equipment/equipment-item";
-import type { Equipment } from "@/types/equipment";
-import { Indicator } from "@/components/display/indicator";
-import { LoadingSpinner } from "@/components/feedback/spinner";
-import { ScrollArea } from "@/components/display/scroll-area";
-import { Decision } from "@/components/display/decision";
-import { EmptyState } from "@/components/feedback/empty-state";
+import type { Equipment } from "@moc/types/equipment";
+import { Indicator } from "@moc/ui/components/display/indicator";
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
+import { ScrollArea } from "@moc/ui/components/display/scroll-area";
+import { Decision } from "@moc/ui/components/display/decision";
+import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 
 export function EquipmentOverviewScreen() {
   const {

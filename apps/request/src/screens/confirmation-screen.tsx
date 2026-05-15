@@ -1,8 +1,8 @@
 import { useLocation, useNavigate, Navigate } from 'react-router-dom'
 import { PublicLayout } from '@/features/components/public-layout'
 import { routes } from '@/screens/console-routes'
-import { Label, Paragraph, Title } from '@/components/display/text'
-import { Button } from '@/components/controls/button'
+import { Label, Paragraph, Title } from '@moc/ui/components/display/text'
+import { Button } from '@moc/ui/components/controls/button'
 import { Check, Copy } from 'lucide-react'
 import { useState } from 'react'
 

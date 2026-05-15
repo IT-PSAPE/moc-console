@@ -1,12 +1,12 @@
-import { Label, Paragraph, Title } from '@/components/display/text'
-import { Spinner } from '@/components/feedback/spinner'
-import { Timeline } from '@/components/timeline'
-import { fetchSharedEventView, type SharedEventView } from '@/data/event-shares'
+import { Label, Paragraph, Title } from '@moc/ui/components/display/text'
+import { Spinner } from '@moc/ui/components/feedback/spinner'
+import { Timeline } from '@moc/ui/components/timeline'
+import { fetchSharedEventView, type SharedEventView } from '@moc/data/event-shares'
 import { routes } from '@/screens/console-routes'
 import { CalendarClock } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { formatUtcIsoInBrowserTimeZone } from '@/utils/browser-date-time'
+import { formatUtcIsoInBrowserTimeZone } from '@moc/utils/browser-date-time'
 
 export function CueSheetShareScreen() {
     const { token } = useParams<{ token: string }>()

@@ -1,15 +1,15 @@
-import { Badge } from "@/components/display/badge";
-import { Label, Paragraph } from "@/components/display/text";
-import { Dropdown } from "@/components/overlays/dropdown";
+import { Badge } from "@moc/ui/components/display/badge";
+import { Label, Paragraph } from "@moc/ui/components/display/text";
+import { Dropdown } from "@moc/ui/components/overlays/dropdown";
 
-import type { ResolvedAssignee } from "@/data/fetch-assignees";
-import type { Request, Status, Priority, Category } from "@/types/requests";
-import { statusLabel, statusColor, priorityLabel, categoryLabel, priorityColor } from "@/types/requests";
+import type { ResolvedAssignee } from "@moc/data/fetch-assignees";
+import type { Request, Status, Priority, Category } from "@moc/types/requests";
+import { statusLabel, statusColor, priorityLabel, categoryLabel, priorityColor } from "@moc/types/requests";
 import { Archive, Calendar, Check, CircleAlert, CircleChevronDown, CircleDashed, Clock, History, Loader, Tag, User } from "lucide-react";
 import { MemberSearchPicker } from "@/features/assignees/member-search-picker";
-import { cn } from "@/utils/cn";
-import { Input } from "@/components/form/input";
-import { formatUtcIsoForBrowserDateTimeInput, formatUtcIsoInBrowserTimeZone, parseBrowserDateTimeInputToUtcIso } from "@/utils/browser-date-time";
+import { cn } from "@moc/utils/cn";
+import { Input } from "@moc/ui/components/form/input";
+import { formatUtcIsoForBrowserDateTimeInput, formatUtcIsoInBrowserTimeZone, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time";
 
 export function formatDate(iso: string) {
     return formatUtcIsoInBrowserTimeZone(iso);
@@ -17,7 +17,7 @@ export function formatDate(iso: string) {
 
 // ─── Primitives ─────────────────────────────────────────
 
-import { MetaRow } from "@/components/display/meta-row";
+import { MetaRow } from "@moc/ui/components/display/meta-row";
 export { MetaRow };
 
 export function FiveWRow({ label, value }: { label: string; value: string }) {

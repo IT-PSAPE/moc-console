@@ -1,9 +1,9 @@
-import { Label, Paragraph } from '@/components/display/text'
-import type { Track, Cue } from '@/types/cue-sheet'
-import { resolveTrackColor } from '@/types/cue-sheet'
-import { cn } from '@/utils/cn'
+import { Label, Paragraph } from '@moc/ui/components/display/text'
+import type { Track, Cue } from '@moc/types/cue-sheet'
+import { resolveTrackColor } from '@moc/types/cue-sheet'
+import { cn } from '@moc/utils/cn'
 import { Plus, Trash2 } from 'lucide-react'
-import { Button } from '@/components/controls/button'
+import { Button } from '@moc/ui/components/controls/button'
 
 // ─── Time helpers ───────────────────────────────────────────────────
 

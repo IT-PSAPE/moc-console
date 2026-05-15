@@ -1,9 +1,9 @@
-import { cn } from "@/utils/cn"
-import { Badge } from "@/components/display/badge"
-import { Label, Paragraph } from "@/components/display/text"
-import { streamStatusColor, streamStatusLabel } from "@/types/broadcast/stream-constants"
-import type { Stream } from "@/types/broadcast/stream"
-import { formatUtcIsoInTimezone } from "@/utils/zoned-date-time"
+import { cn } from "@moc/utils/cn"
+import { Badge } from "@moc/ui/components/display/badge"
+import { Label, Paragraph } from "@moc/ui/components/display/text"
+import { streamStatusColor, streamStatusLabel } from "@moc/types/broadcast/stream-constants"
+import type { Stream } from "@moc/types/broadcast/stream"
+import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
 import { Calendar, CheckCircle, Radio } from "lucide-react"
 
 type StreamListItemProps = {

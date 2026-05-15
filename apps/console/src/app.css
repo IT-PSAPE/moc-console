@@ -1,0 +1,29 @@
+/* Console-specific overrides on top of @moc/ui's shared styles.
+   These are PWA / mobile-only adjustments that don't belong in the
+   shared design system. */
+
+html {
+  font-size: 16px;
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 20px;
+  }
+}
+
+/* Native-feel adjustments for installed PWA / mobile.
+   Removes the default tap-highlight overlay and the rubber-band overscroll
+   that breaks the illusion of a native app. */
+html,
+body {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+body {
+  /* iOS doesn't apply text-size-adjust by default in standalone PWAs;
+     pin it so rotation doesn't change typography. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}

@@ -1,11 +1,11 @@
-import { Button } from "@/components/controls/button";
-import { Header } from "@/components/display/header";
-import { Input } from "@/components/form/input";
-import { Paragraph, Title } from "@/components/display/text";
+import { Button } from "@moc/ui/components/controls/button";
+import { Header } from "@moc/ui/components/display/header";
+import { Input } from "@moc/ui/components/form/input";
+import { Paragraph, Title } from "@moc/ui/components/display/text";
 
 import { useEffect, useMemo, useState } from "react";
-import { Drawer } from "@/components/overlays/drawer";
-import { SegmentedControl } from "@/components/controls/segmented-control";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";

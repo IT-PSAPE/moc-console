@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@moc/data/supabase'
 import { workspaceId } from '@/lib/workspace'
 import type { RequestFormData, SubmitRequestResult } from '@/types/request'
 import { notifyRequestCreated } from './notify-event'

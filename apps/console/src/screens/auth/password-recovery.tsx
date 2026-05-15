@@ -9,13 +9,13 @@ import {
     EyeOff,
     Lock,
 } from "lucide-react"
-import { Button } from "@/components/controls/button"
-import { Spinner } from "@/components/feedback/spinner"
-import { Input } from "@/components/form/input"
-import { FormLabel } from "@/components/form/form-label"
+import { Button } from "@moc/ui/components/controls/button"
+import { Spinner } from "@moc/ui/components/feedback/spinner"
+import { Input } from "@moc/ui/components/form/input"
+import { FormLabel } from "@moc/ui/components/form/form-label"
 import { useAuth } from "@/lib/auth-context"
 import { routes } from "@/screens/console-routes"
-import { cn } from "@/utils/cn"
+import { cn } from "@moc/utils/cn"
 import { AuthLayout } from "./auth-layout"
 
 type Strength = "weak" | "medium" | "strong"

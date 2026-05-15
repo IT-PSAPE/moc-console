@@ -1,18 +1,18 @@
-import { Badge } from "@/components/display/badge";
-import { DataTable } from "@/components/display/data-table";
-import { Section } from "@/components/display/section";
-import { Input } from "@/components/form/input";
-import { Dropdown } from "@/components/overlays/dropdown";
-import { LoadingSpinner } from "@/components/feedback/spinner";
-import { useFeedback } from "@/components/feedback/feedback-provider";
+import { Badge } from "@moc/ui/components/display/badge";
+import { DataTable } from "@moc/ui/components/display/data-table";
+import { Section } from "@moc/ui/components/display/section";
+import { Input } from "@moc/ui/components/form/input";
+import { Dropdown } from "@moc/ui/components/overlays/dropdown";
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import { useAuth } from "@/lib/auth-context";
 import { useWorkspace } from "@/lib/workspace-context";
 import { UsersProvider, useUsers } from "@/features/users/users-provider";
-import type { UserWithRole } from "@/data/fetch-users";
+import type { UserWithRole } from "@moc/data/fetch-users";
 import { Check, ChevronDown, MessagesSquare, Search, Shield } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type MouseEvent } from "react";
-import { Divider } from "@/components/display/divider";
-import { UserAvatar } from "@/components/display/user-avatar";
+import { Divider } from "@moc/ui/components/display/divider";
+import { UserAvatar } from "@moc/ui/components/display/user-avatar";
 
 const roleColor: Record<string, "blue" | "purple" | "green" | "gray"> = {
     admin: "purple",

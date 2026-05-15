@@ -1,12 +1,12 @@
-import { Badge } from "@/components/display/badge";
-import { DataTable } from "@/components/display/data-table";
-import { Drawer } from "@/components/overlays/drawer";
+import { Badge } from "@moc/ui/components/display/badge";
+import { DataTable } from "@moc/ui/components/display/data-table";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { useMemo } from "react";
-import { equipmentStatusColor, equipmentStatusLabel, equipmentCategoryLabel, equipmentCategoryColor } from "@/types/equipment/constants";
-import type { Equipment } from "@/types/equipment";
+import { equipmentStatusColor, equipmentStatusLabel, equipmentCategoryLabel, equipmentCategoryColor } from "@moc/types/equipment/constants";
+import type { Equipment } from "@moc/types/equipment";
 import { EquipmentThumbnail } from "./equipment-thumbnail";
 import { EquipmentDrawer } from "./equipment-drawer";
-import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
+import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
 import { useTableRowDrawer } from "@/hooks/use-drawer-item";
 
 const empty = <span className="text-quaternary">—</span>;

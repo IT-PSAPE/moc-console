@@ -1,6 +1,6 @@
-import { Modal } from '@/components/overlays/modal'
-import { Button } from '@/components/controls/button'
-import { Label, Paragraph } from '@/components/display/text'
+import { Modal } from '@moc/ui/components/overlays/modal'
+import { Button } from '@moc/ui/components/controls/button'
+import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { TriangleAlert } from 'lucide-react'
 
 type DeleteRequestModalProps = {

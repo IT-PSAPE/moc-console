@@ -1,9 +1,9 @@
-import { Card } from "@/components/display/card";
-import { Indicator } from "@/components/display/indicator";
-import { Label } from "@/components/display/text";
+import { Card } from "@moc/ui/components/display/card";
+import { Indicator } from "@moc/ui/components/display/indicator";
+import { Label } from "@moc/ui/components/display/text";
 import { useMemo } from "react";
-import { equipmentStatusGroup } from "@/types/equipment/constants";
-import type { Equipment } from "@/types/equipment";
+import { equipmentStatusGroup } from "@moc/types/equipment/constants";
+import type { Equipment } from "@moc/types/equipment";
 import { EquipmentItem } from "./equipment-item";
 
 const activeStatusGroups = equipmentStatusGroup.filter((g) => g.key !== "maintenance");

@@ -1,9 +1,9 @@
-import { cn } from "@/utils/cn"
-import { Badge } from "@/components/display/badge"
-import { Label, Paragraph } from "@/components/display/text"
-import { zoomRecurrenceLabel } from "@/types/broadcast/zoom-constants"
-import type { ZoomMeeting } from "@/types/broadcast/zoom"
-import { formatUtcIsoInTimezone } from "@/utils/zoned-date-time"
+import { cn } from "@moc/utils/cn"
+import { Badge } from "@moc/ui/components/display/badge"
+import { Label, Paragraph } from "@moc/ui/components/display/text"
+import { zoomRecurrenceLabel } from "@moc/types/broadcast/zoom-constants"
+import type { ZoomMeeting } from "@moc/types/broadcast/zoom"
+import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
 import { Calendar, Repeat } from "lucide-react"
 
 type MeetingListItemProps = {

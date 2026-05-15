@@ -1,24 +1,24 @@
-import { Card } from '@/components/display/card'
-import { Header } from '@/components/display/header'
-import { Button } from '@/components/controls/button'
-import { Input } from '@/components/form/input'
-import { Label, Paragraph, TextBlock, Title } from '@/components/display/text'
-import { EmptyState } from '@/components/feedback/empty-state'
+import { Card } from '@moc/ui/components/display/card'
+import { Header } from '@moc/ui/components/display/header'
+import { Button } from '@moc/ui/components/controls/button'
+import { Input } from '@moc/ui/components/form/input'
+import { Label, Paragraph, TextBlock, Title } from '@moc/ui/components/display/text'
+import { EmptyState } from '@moc/ui/components/feedback/empty-state'
 import { useCueSheet } from '@/features/cue-sheet/cue-sheet-provider'
 import { CreateChecklistRunModal, type ChecklistRunSubmit } from '@/features/cue-sheet/create-checklist-run-modal'
 import { CreateEventRunModal, type EventRunSubmit } from '@/features/cue-sheet/create-event-run-modal'
 import { EventItem } from '@/features/cue-sheet/event-item'
 import { ChecklistItemCard } from '@/features/cue-sheet/checklist-item'
-import { Dropdown } from '@/components/overlays/dropdown'
-import type { CueSheetEvent, Checklist } from '@/types/cue-sheet'
+import { Dropdown } from '@moc/ui/components/overlays/dropdown'
+import type { CueSheetEvent, Checklist } from '@moc/types/cue-sheet'
 import { routes } from '@/screens/console-routes'
 import { isChecklistRunPastOrComplete, isEventRunPast, sortOverviewChecklistRuns, sortOverviewEventRuns } from '@/features/cue-sheet/run-status'
 import { Calendar, ListChecks, Plus, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LoadingSpinner } from '@/components/feedback/spinner';
-import { ScrollArea } from '@/components/display/scroll-area';
-import { Decision } from '@/components/display/decision';
+import { LoadingSpinner } from '@moc/ui/components/feedback/spinner';
+import { ScrollArea } from '@moc/ui/components/display/scroll-area';
+import { Decision } from '@moc/ui/components/display/decision';
 
 export function CueSheetOverviewScreen() {
     const {

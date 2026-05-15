@@ -1,10 +1,10 @@
-import { Badge } from "@/components/display/badge";
-import { DataTable } from "@/components/display/data-table";
-import { Drawer } from "@/components/overlays/drawer";
+import { Badge } from "@moc/ui/components/display/badge";
+import { DataTable } from "@moc/ui/components/display/data-table";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { useTableRowDrawer } from "@/hooks/use-drawer-item";
-import type { Booking } from "@/types/equipment";
-import { bookingStatusLabel, bookingStatusColor } from "@/types/equipment";
-import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
+import type { Booking } from "@moc/types/equipment";
+import { bookingStatusLabel, bookingStatusColor } from "@moc/types/equipment";
+import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
 import { BookingDrawer } from "./booking-drawer";
 
 const columns = [

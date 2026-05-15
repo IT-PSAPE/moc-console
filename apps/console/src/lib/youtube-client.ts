@@ -1,6 +1,6 @@
 import { supabase } from "./supabase"
 import { buildSessionHeaders } from "./api-auth"
-import { getCurrentWorkspaceId } from "@/data/current-workspace"
+import { getCurrentWorkspaceId } from "@moc/data/current-workspace"
 
 const YOUTUBE_API = "https://www.googleapis.com/youtube/v3"
 

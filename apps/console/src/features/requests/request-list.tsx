@@ -1,9 +1,9 @@
-import { Card } from "@/components/display/card";
-import { Indicator } from "@/components/display/indicator";
+import { Card } from "@moc/ui/components/display/card";
+import { Indicator } from "@moc/ui/components/display/indicator";
 import { RequestItem } from "./request-item";
-import { Label } from "@/components/display/text";
-import type { Request } from "@/types/requests";
-import { statusGroups } from "@/types/requests";
+import { Label } from "@moc/ui/components/display/text";
+import type { Request } from "@moc/types/requests";
+import { statusGroups } from "@moc/types/requests";
 
 export function RequestListView({ requests }: { requests: Request[] }) {
     return (

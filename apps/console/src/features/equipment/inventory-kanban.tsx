@@ -1,13 +1,13 @@
-import { Indicator } from "@/components/display/indicator";
-import { KanbanBoard } from "@/components/display/kanban-board";
-import { Label } from "@/components/display/text";
-import type { Equipment, EquipmentStatus } from "@/types/equipment";
-import { equipmentStatusGroup } from "@/types/equipment/constants";
-import { updateEquipmentStatus } from "@/data/mutate-equipment";
-import { useFeedback } from "@/components/feedback/feedback-provider";
+import { Indicator } from "@moc/ui/components/display/indicator";
+import { KanbanBoard } from "@moc/ui/components/display/kanban-board";
+import { Label } from "@moc/ui/components/display/text";
+import type { Equipment, EquipmentStatus } from "@moc/types/equipment";
+import { equipmentStatusGroup } from "@moc/types/equipment/constants";
+import { updateEquipmentStatus } from "@moc/data/mutate-equipment";
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import { type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { useState } from "react";
-import { getErrorMessage } from "@/utils/get-error-message";
+import { getErrorMessage } from "@moc/utils/get-error-message";
 import { EquipmentItem } from "@/features/equipment/equipment-item";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 

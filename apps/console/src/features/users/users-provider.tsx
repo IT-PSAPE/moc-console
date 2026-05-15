@@ -1,8 +1,8 @@
-import { fetchUsersWithRoles, fetchAvailableRoles, updateUserProfile, assignUserRole } from "@/data/fetch-users";
-import { fetchWorkspaceDirectory } from "@/data/fetch-workspaces";
-import type { UserWithRole } from "@/data/fetch-users";
-import type { Role } from "@/types/requests/assignee";
-import type { Workspace } from "@/types/workspace";
+import { fetchUsersWithRoles, fetchAvailableRoles, updateUserProfile, assignUserRole } from "@moc/data/fetch-users";
+import { fetchWorkspaceDirectory } from "@moc/data/fetch-workspaces";
+import type { UserWithRole } from "@moc/data/fetch-users";
+import type { Role } from "@moc/types/requests/assignee";
+import type { Workspace } from "@moc/types/workspace";
 import { useWorkspace } from "@/lib/workspace-context";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 

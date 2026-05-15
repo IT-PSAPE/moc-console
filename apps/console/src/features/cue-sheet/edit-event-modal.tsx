@@ -1,8 +1,8 @@
-import { Modal } from '@/components/overlays/modal'
-import { Button } from '@/components/controls/button'
-import { Input } from '@/components/form/input'
-import { FormLabel } from '@/components/form/form-label'
-import { Label } from '@/components/display/text'
+import { Modal } from '@moc/ui/components/overlays/modal'
+import { Button } from '@moc/ui/components/controls/button'
+import { Input } from '@moc/ui/components/form/input'
+import { FormLabel } from '@moc/ui/components/form/form-label'
+import { Label } from '@moc/ui/components/display/text'
 import { useState } from 'react'
 
 type EventFormValues = { title: string; description: string; duration: number }

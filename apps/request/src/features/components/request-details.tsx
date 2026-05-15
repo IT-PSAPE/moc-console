@@ -1,5 +1,5 @@
-import { Textarea } from '@/components/form/textarea'
-import { FormField } from '@/components/form/form-label'
+import { Textarea } from '@moc/ui/components/form/textarea'
+import { FormField } from '@moc/ui/components/form/form-label'
 import type { RequestFormData } from '@/types/request'
 
 type RequestDetailsProps = {

@@ -1,9 +1,9 @@
-import { Button } from "@/components/controls/button";
-import { Input } from "@/components/form/input";
-import { Header } from "@/components/display/header";
-import { Drawer } from "@/components/overlays/drawer";
-import { SegmentedControl } from "@/components/controls/segmented-control";
-import { Paragraph, Title } from "@/components/display/text";
+import { Button } from "@moc/ui/components/controls/button";
+import { Input } from "@moc/ui/components/form/input";
+import { Header } from "@moc/ui/components/display/header";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
+import { Paragraph, Title } from "@moc/ui/components/display/text";
 import { CalendarDays, ClipboardList, List, Search, Settings2, Table as TableIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useEquipment } from "@/features/equipment/equipment-provider";
@@ -13,9 +13,9 @@ import { BookingListView } from "@/features/equipment/booking-list";
 import { BookingTableView } from "@/features/equipment/booking-table";
 import { BookingCalendarView } from "@/features/equipment/booking-calendar";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { LoadingSpinner } from "@/components/feedback/spinner";
-import { Decision } from "@/components/display/decision";
-import { EmptyState } from "@/components/feedback/empty-state";
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
+import { Decision } from "@moc/ui/components/display/decision";
+import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 
 export function EquipmentBookingsScreen() {
   const {

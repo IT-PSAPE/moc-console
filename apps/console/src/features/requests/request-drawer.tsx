@@ -1,26 +1,26 @@
-import { Drawer, useDrawer } from "@/components/overlays/drawer";
-import { Dropdown } from "@/components/overlays/dropdown";
-import { Divider } from "@/components/display/divider";
-import { Button } from "@/components/controls/button";
-import { Title } from "@/components/display/text";
+import { Drawer, useDrawer } from "@moc/ui/components/overlays/drawer";
+import { Dropdown } from "@moc/ui/components/overlays/dropdown";
+import { Divider } from "@moc/ui/components/display/divider";
+import { Button } from "@moc/ui/components/controls/button";
+import { Title } from "@moc/ui/components/display/text";
 import {
   fetchAssigneesByRequestId,
   type ResolvedAssignee,
-} from "@/data/fetch-assignees";
+} from "@moc/data/fetch-assignees";
 import {
   addRequestAssignee,
   removeRequestAssignee,
   archiveRequest,
   unarchiveRequest,
   deleteRequest,
-} from "@/data/mutate-requests";
-import { useFeedback } from "@/components/feedback/feedback-provider";
-import type { Request } from "@/types/requests";
+} from "@moc/data/mutate-requests";
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
+import type { Request } from "@moc/types/requests";
 import { useRequestStore } from "./use-request-store";
 import { UnsavedChangesModal } from "./unsaved-changes-modal";
 import { DeleteRequestModal } from "./delete-request-modal";
 import { useRequests } from "./request-provider";
-import { LoadingSpinner, Spinner } from "@/components/feedback/spinner";
+import { LoadingSpinner, Spinner } from "@moc/ui/components/feedback/spinner";
 import {
   Archive,
   ArchiveRestore,
@@ -38,7 +38,7 @@ import {
   RequestFlow,
   RequestAssigneeList,
 } from "./request-properties";
-import { getErrorMessage } from "@/utils/get-error-message";
+import { getErrorMessage } from "@moc/utils/get-error-message";
 
 export type RequestDrawerProps = {
   request: Request;

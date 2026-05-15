@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { CueSheetEvent, Track } from '@/types/cue-sheet'
+import type { CueSheetEvent, Track } from '@moc/types/cue-sheet'
 
 export type EventRunSortField = 'scheduledAt' | 'title' | 'duration' | 'tracks' | 'cues'
 export type EventRunSortDirection = 'asc' | 'desc'

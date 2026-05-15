@@ -1,8 +1,8 @@
 import { useRouteError, isRouteErrorResponse, useNavigate } from 'react-router-dom'
 import { PublicLayout } from '@/features/components/public-layout'
-import { EmptyState } from '@/components/feedback/empty-state'
-import { Alert } from '@/components/feedback/alert'
-import { Button } from '@/components/controls/button'
+import { EmptyState } from '@moc/ui/components/feedback/empty-state'
+import { Alert } from '@moc/ui/components/feedback/alert'
+import { Button } from '@moc/ui/components/controls/button'
 import { routes } from '@/screens/console-routes'
 import { TriangleAlert } from 'lucide-react'
 

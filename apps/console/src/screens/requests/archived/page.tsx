@@ -1,19 +1,19 @@
 import { RequestItem } from '@/features/requests/request-item'
-import { Button } from '@/components/controls/button'
-import { Card } from '@/components/display/card'
-import { Header } from '@/components/display/header'
-import { Indicator } from '@/components/display/indicator'
-import { Label, Paragraph, Title } from '@/components/display/text'
-import { Input } from '@/components/form/input'
+import { Button } from '@moc/ui/components/controls/button'
+import { Card } from '@moc/ui/components/display/card'
+import { Header } from '@moc/ui/components/display/header'
+import { Indicator } from '@moc/ui/components/display/indicator'
+import { Label, Paragraph, Title } from '@moc/ui/components/display/text'
+import { Input } from '@moc/ui/components/form/input'
 import { Archive, Search, Settings2 } from 'lucide-react'
 import { useEffect } from 'react'
-import { LoadingSpinner } from '@/components/feedback/spinner'
-import { EmptyState } from '@/components/feedback/empty-state'
-import { Drawer } from '@/components/overlays/drawer'
+import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
+import { EmptyState } from '@moc/ui/components/feedback/empty-state'
+import { Drawer } from '@moc/ui/components/overlays/drawer'
 import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
 import { useRequestFilters } from '@/features/requests/use-request-filters'
 import { useRequests } from '@/features/requests/request-provider'
-import { Decision } from '@/components/display/decision';
+import { Decision } from '@moc/ui/components/display/decision';
 
 export function RequestsArchivedScreen() {
     const { state: { archivedRequests: requests, isLoadingArchived }, actions: { loadArchivedRequests } } = useRequests()

@@ -1,10 +1,10 @@
-import { cn } from "@/utils/cn"
-import { Badge } from "@/components/display/badge"
-import { Label, Paragraph } from "@/components/display/text"
-import { mediaTypeColor, mediaTypeLabel } from "@/types/broadcast/constants"
-import type { MediaItem } from "@/types/broadcast/media-item"
+import { cn } from "@moc/utils/cn"
+import { Badge } from "@moc/ui/components/display/badge"
+import { Label, Paragraph } from "@moc/ui/components/display/text"
+import { mediaTypeColor, mediaTypeLabel } from "@moc/types/broadcast/constants"
+import type { MediaItem } from "@moc/types/broadcast/media-item"
 import { Image, Music, Video } from "lucide-react"
-import type { MediaType } from "@/types/broadcast/media-type"
+import type { MediaType } from "@moc/types/broadcast/media-type"
 
 const mediaTypeIcon: Record<MediaType, React.ReactNode> = {
   image: <Image />,

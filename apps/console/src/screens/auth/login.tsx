@@ -3,9 +3,9 @@ import type { FormEvent } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Mail, Lock } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
-import { Button } from "@/components/controls/button"
-import { Input } from "@/components/form/input"
-import { FormLabel } from "@/components/form/form-label"
+import { Button } from "@moc/ui/components/controls/button"
+import { Input } from "@moc/ui/components/form/input"
+import { FormLabel } from "@moc/ui/components/form/form-label"
 import { AuthLayout } from "./auth-layout"
 
 export function LoginScreen() {

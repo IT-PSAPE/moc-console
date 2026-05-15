@@ -1,19 +1,19 @@
-import { Card } from "@/components/display/card"
-import { Header } from "@/components/display/header"
-import { Button } from "@/components/controls/button"
-import { Input } from "@/components/form/input"
-import { Label, Paragraph, TextBlock, Title } from "@/components/display/text"
-import { LoadingSpinner } from "@/components/feedback/spinner"
-import { EmptyState } from "@/components/feedback/empty-state"
-import { Dropdown } from "@/components/overlays/dropdown"
+import { Card } from "@moc/ui/components/display/card"
+import { Header } from "@moc/ui/components/display/header"
+import { Button } from "@moc/ui/components/controls/button"
+import { Input } from "@moc/ui/components/form/input"
+import { Label, Paragraph, TextBlock, Title } from "@moc/ui/components/display/text"
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
+import { EmptyState } from "@moc/ui/components/feedback/empty-state"
+import { Dropdown } from "@moc/ui/components/overlays/dropdown"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { usePlaylistFilters } from "@/features/broadcast/use-broadcast-filters"
 import { PlaylistListItem } from "@/features/broadcast/broadcast-list-item"
-import type { PlaylistStatus } from "@/types/broadcast"
+import type { PlaylistStatus } from "@moc/types/broadcast"
 import { Check, CircleCheck, FileEdit, Film, ListMusic, Search, Settings2 } from "lucide-react"
 import { useEffect } from "react"
-import { ScrollArea } from "@/components/display/scroll-area";
-import { Decision } from "@/components/display/decision";
+import { ScrollArea } from "@moc/ui/components/display/scroll-area";
+import { Decision } from "@moc/ui/components/display/decision";
 
 export function BroadcastOverviewScreen() {
   const {

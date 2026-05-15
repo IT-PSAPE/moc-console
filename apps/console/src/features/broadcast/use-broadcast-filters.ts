@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
-import type { Playlist } from "@/types/broadcast/broadcast"
-import type { PlaylistStatus } from "@/types/broadcast/broadcast-status"
+import type { Playlist } from "@moc/types/broadcast/broadcast"
+import type { PlaylistStatus } from "@moc/types/broadcast/broadcast-status"
 
 // ─── Filter / Sort state ───────────────────────────────
 

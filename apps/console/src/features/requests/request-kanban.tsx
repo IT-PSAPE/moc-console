@@ -1,15 +1,15 @@
-import { Indicator } from "@/components/display/indicator";
-import { KanbanBoard } from "@/components/display/kanban-board";
+import { Indicator } from "@moc/ui/components/display/indicator";
+import { KanbanBoard } from "@moc/ui/components/display/kanban-board";
 import { RequestItem } from "./request-item";
-import { Label } from "@/components/display/text";
-import type { Request, Status } from "@/types/requests";
-import { statusGroups } from "@/types/requests";
+import { Label } from "@moc/ui/components/display/text";
+import type { Request, Status } from "@moc/types/requests";
+import { statusGroups } from "@moc/types/requests";
 import { useRequests } from "./request-provider";
-import { updateRequestStatus } from "@/data/mutate-requests";
-import { useFeedback } from "@/components/feedback/feedback-provider";
+import { updateRequestStatus } from "@moc/data/mutate-requests";
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import { type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { useState } from "react";
-import { getErrorMessage } from "@/utils/get-error-message";
+import { getErrorMessage } from "@moc/utils/get-error-message";
 
 function DraggableRequestItem({ request }: { request: Request }) {
     const [drawerOpen, setDrawerOpen] = useState(false);

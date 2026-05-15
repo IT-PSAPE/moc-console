@@ -1,5 +1,5 @@
-import { fetchArchivedRequests, fetchRequestById, fetchRequests } from '@/data/fetch-requests'
-import type { Request } from '@/types/requests'
+import { fetchArchivedRequests, fetchRequestById, fetchRequests } from '@moc/data/fetch-requests'
+import type { Request } from '@moc/types/requests'
 import { useWorkspace } from '@/lib/workspace-context'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 

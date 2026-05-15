@@ -1,6 +1,6 @@
-import { fetchEquipment, fetchBookings } from "@/data/fetch-equipment";
-import type { Equipment } from "@/types/equipment/equipment";
-import type { Booking } from "@/types/equipment/booking";
+import { fetchEquipment, fetchBookings } from "@moc/data/fetch-equipment";
+import type { Equipment } from "@moc/types/equipment/equipment";
+import type { Booking } from "@moc/types/equipment/booking";
 import { useWorkspace } from "@/lib/workspace-context";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 

@@ -1,14 +1,14 @@
-import { Label, Paragraph } from '@/components/display/text'
-import { Badge } from '@/components/display/badge'
-import { Drawer } from '@/components/overlays/drawer'
-import { cn } from '@/utils/cn'
-import { cv } from '@/utils/cv'
-import type { Checklist } from '@/types/cue-sheet'
+import { Label, Paragraph } from '@moc/ui/components/display/text'
+import { Badge } from '@moc/ui/components/display/badge'
+import { Drawer } from '@moc/ui/components/overlays/drawer'
+import { cn } from '@moc/utils/cn'
+import { cv } from '@moc/utils/cv'
+import type { Checklist } from '@moc/types/cue-sheet'
 import { CalendarClock, CheckCircle2, ListChecks } from 'lucide-react'
 import { useState } from 'react'
 import { ChecklistDrawer } from './checklist-drawer'
 import { getChecklistCounts } from './checklist-content'
-import { formatUtcIsoInBrowserTimeZone } from '@/utils/browser-date-time'
+import { formatUtcIsoInBrowserTimeZone } from '@moc/utils/browser-date-time'
 
 const itemVariants = cv({
     base: [

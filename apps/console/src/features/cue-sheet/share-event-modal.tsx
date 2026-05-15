@@ -1,15 +1,15 @@
-import { Button } from '@/components/controls/button'
-import { Label, Paragraph } from '@/components/display/text'
-import { LoadingSpinner, Spinner } from '@/components/feedback/spinner'
-import { useFeedback } from '@/components/feedback/feedback-provider'
-import { Modal } from '@/components/overlays/modal'
+import { Button } from '@moc/ui/components/controls/button'
+import { Label, Paragraph } from '@moc/ui/components/display/text'
+import { LoadingSpinner, Spinner } from '@moc/ui/components/feedback/spinner'
+import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
+import { Modal } from '@moc/ui/components/overlays/modal'
 import {
     createEventShare,
     fetchEventShare,
     revokeEventShare,
     updateEventShare,
     type EventShare,
-} from '@/data/event-shares'
+} from '@moc/data/event-shares'
 import { routes } from '@/screens/console-routes'
 import { Check, Copy, Link2, Power, Radio } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'

@@ -1,20 +1,20 @@
-import { Card } from '@/components/display/card'
-import { Button } from '@/components/controls/button'
-import { Input } from '@/components/form/input'
-import { Header } from '@/components/display/header'
-import { Drawer } from '@/components/overlays/drawer'
+import { Card } from '@moc/ui/components/display/card'
+import { Button } from '@moc/ui/components/controls/button'
+import { Input } from '@moc/ui/components/form/input'
+import { Header } from '@moc/ui/components/display/header'
+import { Drawer } from '@moc/ui/components/overlays/drawer'
 import { RequestItem } from '@/features/requests/request-item'
-import { Label, Paragraph, TextBlock, Title } from '@/components/display/text'
+import { Label, Paragraph, TextBlock, Title } from '@moc/ui/components/display/text'
 import { Activity, CalendarClock, CircleAlert, CircleCheck, FileWarning, Search, Settings2 } from 'lucide-react'
-import { Indicator } from '@/components/display/indicator'
+import { Indicator } from '@moc/ui/components/display/indicator'
 import { useEffect } from 'react'
-import { LoadingSpinner } from '@/components/feedback/spinner'
+import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
 import { useRequestFilters } from '@/features/requests/use-request-filters'
 import { useRequests } from '@/features/requests/request-provider'
-import { ScrollArea } from '@/components/display/scroll-area';
-import { Decision } from '@/components/display/decision';
-import { EmptyState } from '@/components/feedback/empty-state';
+import { ScrollArea } from '@moc/ui/components/display/scroll-area';
+import { Decision } from '@moc/ui/components/display/decision';
+import { EmptyState } from '@moc/ui/components/feedback/empty-state';
 
 
 export function RequestsOverviewScreen() {

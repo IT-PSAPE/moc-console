@@ -1,6 +1,6 @@
-import { Label } from '@/components/display/text'
-import { Paragraph } from '@/components/display/text'
-import { cn } from '@/utils/cn'
+import { Label } from '@moc/ui/components/display/text'
+import { Paragraph } from '@moc/ui/components/display/text'
+import { cn } from '@moc/utils/cn'
 import { ChevronRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 

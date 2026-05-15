@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { Booking, BookingStatus } from "@/types/equipment";
+import type { Booking, BookingStatus } from "@moc/types/equipment";
 
 // ─── Filter / Sort state ───────────────────────────────
 

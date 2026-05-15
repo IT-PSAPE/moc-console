@@ -1,16 +1,16 @@
-import { Calendar, type CalendarEvent } from "@/components/display/calendar";
-import { Drawer } from "@/components/overlays/drawer";
-import { Badge } from "@/components/display/badge";
-import { Label, Paragraph } from "@/components/display/text";
-import { cn } from "@/utils/cn";
-import type { Booking } from "@/types/equipment";
-import type { Equipment } from "@/types/equipment";
-import { bookingStatusLabel, bookingStatusColor } from "@/types/equipment";
+import { Calendar, type CalendarEvent } from "@moc/ui/components/display/calendar";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { Badge } from "@moc/ui/components/display/badge";
+import { Label, Paragraph } from "@moc/ui/components/display/text";
+import { cn } from "@moc/utils/cn";
+import type { Booking } from "@moc/types/equipment";
+import type { Equipment } from "@moc/types/equipment";
+import { bookingStatusLabel, bookingStatusColor } from "@moc/types/equipment";
 import { BookingDrawer } from "./booking-drawer";
 import { useEquipment } from "./equipment-provider";
 import { useMemo } from "react";
 import { Circle } from "lucide-react";
-import { formatUtcIsoInBrowserTimeZone } from "@/utils/browser-date-time";
+import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
 
 type BookingEventData = {
   booking: Booking;

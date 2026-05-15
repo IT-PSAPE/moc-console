@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { PublicLayout } from '@/features/components/public-layout'
-import { EmptyState } from '@/components/feedback/empty-state'
-import { Button } from '@/components/controls/button'
+import { EmptyState } from '@moc/ui/components/feedback/empty-state'
+import { Button } from '@moc/ui/components/controls/button'
 import { routes } from '@/screens/console-routes'
 import { FileQuestion } from 'lucide-react'
 

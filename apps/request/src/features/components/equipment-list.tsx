@@ -1,14 +1,14 @@
-import { Input } from '@/components/form/input'
-import { Spinner } from '@/components/feedback/spinner'
-import { EmptyState } from '@/components/feedback/empty-state'
-import { Badge } from '@/components/display/badge'
-import { Decision } from '@/components/display/decision'
-import { Divider } from '@/components/display/divider'
-import { Label, Paragraph } from '@/components/display/text'
-import { Button } from '@/components/controls/button'
-import { Drawer } from '@/components/overlays/drawer'
-import { Checkbox } from '@/components/form/checkbox'
-import { Tabs } from '@/components/layout/tabs'
+import { Input } from '@moc/ui/components/form/input'
+import { Spinner } from '@moc/ui/components/feedback/spinner'
+import { EmptyState } from '@moc/ui/components/feedback/empty-state'
+import { Badge } from '@moc/ui/components/display/badge'
+import { Decision } from '@moc/ui/components/display/decision'
+import { Divider } from '@moc/ui/components/display/divider'
+import { Label, Paragraph } from '@moc/ui/components/display/text'
+import { Button } from '@moc/ui/components/controls/button'
+import { Drawer } from '@moc/ui/components/overlays/drawer'
+import { Checkbox } from '@moc/ui/components/form/checkbox'
+import { Tabs } from '@moc/ui/components/layout/tabs'
 import { Search, PackageOpen, SlidersHorizontal, X } from 'lucide-react'
 import { EquipmentCard } from './equipment-card'
 import { EQUIPMENT_CATEGORY_LABELS, EQUIPMENT_CATEGORIES, EQUIPMENT_STATUS_LABELS, EQUIPMENT_STATUSES } from '../constants'
@@ -16,7 +16,7 @@ import type { EquipmentCategory, EquipmentStatus } from '@/types/equipment'
 import { useState } from 'react'
 import type { BookingFormState } from '../hooks/use-booking-form';
 import type { useEquipmentBrowser } from '../hooks/use-equipment-browser';
-import { Alert } from '@/components/feedback/alert';
+import { Alert } from '@moc/ui/components/feedback/alert';
 
 type EquipmentListProps = {
   state: BookingFormState
