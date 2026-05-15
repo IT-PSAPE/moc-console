@@ -1,0 +1,15 @@
+{
+  "name": "@moc/types",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./broadcast": "./src/broadcast/index.ts",
+    "./cue-sheet": "./src/cue-sheet/index.ts",
+    "./equipment": "./src/equipment/index.ts",
+    "./requests": "./src/requests/index.ts",
+    "./workspace": "./src/workspace.ts",
+    "./*": "./src/*.ts"
+  }
+}

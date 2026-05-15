@@ -1,0 +1,59 @@
+import { Label, Paragraph } from '@moc/ui/components/display/text'
+import { Badge } from '@moc/ui/components/display/badge'
+import { Drawer } from '@moc/ui/components/overlays/drawer'
+import { cn } from '@moc/utils/cn'
+import { cv } from '@moc/utils/cv'
+import type { CueSheetEvent } from '@moc/types/cue-sheet'
+import { CalendarClock, Clock, Layers } from 'lucide-react'
+import { useState } from 'react'
+import { useCueSheet } from './cue-sheet-provider'
+import { EventDrawer } from './event-drawer'
+import { formatUtcIsoInBrowserTimeZone } from '@moc/utils/browser-date-time'
+
+const itemVariants = cv({
+    base: [
+        'w-full flex justify-between px-4 py-3 gap-4 bg-background-primary rounded-lg shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] outline outline-1 outline-offset-[-1px] outline-border-secondary *:flex-1',
+        'items-center *:odd:flex-1 *:odd:max-w-xl *:even:justify-end max-mobile:flex-col *:max-mobile:odd:max-none *:max-mobile:even:justify-start *:max-mobile:w-full',
+    ],
+})
+
+function formatDuration(minutes: number) {
+    const h = Math.floor(minutes / 60)
+    const m = minutes % 60
+    if (h === 0) return `${m}min`
+    if (m === 0) return `${h}h`
+    return `${h}h ${m}min`
+}
+
+function formatScheduledAt(scheduledAt?: string) {
+    if (!scheduledAt) return null
+    return formatUtcIsoInBrowserTimeZone(scheduledAt, { dateStyle: 'medium', timeStyle: 'short' })
+}
+
+export function EventItem({ event }: { event: CueSheetEvent }) {
+    const [open, setOpen] = useState(false)
+    const { state: { tracksByEventId } } = useCueSheet()
+    const trackCount = tracksByEventId[event.id]?.length ?? 0
+    const scheduledAt = formatScheduledAt(event.scheduledAt)
+
+    return (
+        <Drawer open={open} onOpenChange={setOpen}>
+            <Drawer.Trigger>
+                <div className={cn(itemVariants(), 'cursor-pointer hover:bg-background-primary-hover transition-colors')}>
+                    <div>
+                        <Label.sm>{event.title}</Label.sm>
+                        <Paragraph.sm className="text-tertiary">{event.description}</Paragraph.sm>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {scheduledAt && <Badge label={scheduledAt} icon={<CalendarClock />} color="purple" />}
+                        <Badge label={formatDuration(event.duration)} icon={<Clock />} variant="outline" />
+                        {trackCount > 0 && (
+                            <Badge label={`${trackCount} track${trackCount !== 1 ? 's' : ''}`} icon={<Layers />} color="blue" />
+                        )}
+                    </div>
+                </div>
+            </Drawer.Trigger>
+            <EventDrawer event={event} />
+        </Drawer>
+    )
+}
