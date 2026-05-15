@@ -1,6 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
 @import "tailwindcss";
 
+/* Tailwind v4 auto-detects sources from the Vite project root (the consuming
+   app), which excludes this workspace package. Without these @source globs,
+   classes used in @moc/ui components (e.g. the sidebar's area-sidebar,
+   w-sidebar, app-grid-desktop) never reach the built CSS and break layout. */
+@source "./**/*.{ts,tsx}";
+
 @theme {
   --breakpoint-mobile: 480px;
 }
