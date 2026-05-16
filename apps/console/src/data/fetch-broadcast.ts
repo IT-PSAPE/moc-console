@@ -28,6 +28,11 @@ type PlaylistRow = {
   status: Playlist["status"];
   created_at: string;
   default_image_duration: number;
+  thumbnail_url: string | null;
+  playback_mode: Playlist["playbackMode"];
+  next_playlist_id: string | null;
+  transition: Playlist["transition"];
+  transition_duration_ms: number;
   music: MediaRow | MediaRow[] | null;
   queue: QueueRow[] | null;
 };
@@ -80,6 +85,11 @@ function mapPlaylistRow(row: PlaylistRow): Playlist {
       loop: false,
       muted: false,
     },
+    thumbnailUrl: row.thumbnail_url,
+    playbackMode: row.playback_mode,
+    nextPlaylistId: row.next_playlist_id,
+    transition: row.transition,
+    transitionDurationMs: row.transition_duration_ms,
   };
 }
 
@@ -93,6 +103,11 @@ function selectPlaylists(workspaceId: string) {
       status,
       created_at,
       default_image_duration,
+      thumbnail_url,
+      playback_mode,
+      next_playlist_id,
+      transition,
+      transition_duration_ms,
       music:music_id(id, name, type, url, thumbnail_url, created_at),
       queue(
         id,

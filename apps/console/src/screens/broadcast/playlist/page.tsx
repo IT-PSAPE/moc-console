@@ -47,6 +47,11 @@ export function PlaylistScreen() {
       backgroundMusicName: null,
       defaultImageDuration: 10,
       videoSettings: { autoplay: true, loop: false, muted: false },
+      thumbnailUrl: null,
+      playbackMode: "loop",
+      nextPlaylistId: null,
+      transition: "cut",
+      transitionDurationMs: 500,
     }
     try {
       const savedPlaylist = await updatePlaylist(newPlaylist)
