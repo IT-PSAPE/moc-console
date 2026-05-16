@@ -19,10 +19,10 @@ import { TopBarActions } from "@/features/topbar"
 import { useBroadcast } from "@/features/broadcast/broadcast-provider"
 import { useMediaFilters } from "@/features/broadcast/use-media-filters"
 import { Dropdown } from "@moc/ui/components/overlays/dropdown"
-import { playlistStatusColor, playlistStatusLabel, mediaTypeColor, mediaTypeLabel } from "@moc/types/broadcast"
-import type { Playlist, Cue, MediaItem, MediaType, PlaylistStatus } from "@moc/types/broadcast"
+import { playlistStatusColor, playlistStatusLabel, mediaTypeColor, mediaTypeLabel, playbackModeLabel, playlistTransitionLabel } from "@moc/types/broadcast"
+import type { Playlist, Cue, MediaItem, MediaType, PlaylistStatus, PlaybackMode, PlaylistTransition } from "@moc/types/broadcast"
 import { fetchPlaylistById } from "@/data/fetch-broadcast"
-import { updatePlaylist, updatePlaylistCues } from "@/data/mutate-broadcast"
+import { updatePlaylist, updatePlaylistCues, uploadPlaylistThumbnail } from "@/data/mutate-broadcast"
 import {
   DndContext,
   DragOverlay,
@@ -43,6 +43,7 @@ import {
   Radio, Search, Trash2, MoreVertical, Clock, Image, Music, Video,
   EllipsisVertical, Loader, FileText, ListMusic, Check, X, Plus, GripVertical,
   Copy, ArrowUpToLine, ArrowDownToLine, EyeOff, Eye, ChevronDown,
+  ImagePlus, Repeat, Clapperboard, Upload,
 } from "lucide-react"
 import { routes } from "@/screens/console-routes"
 import { getErrorMessage } from "@moc/utils/get-error-message"
@@ -54,6 +55,8 @@ const mediaTypeIcon: Record<MediaType, React.ReactNode> = {
 }
 
 const allStatuses: PlaylistStatus[] = ["draft", "published"]
+const allPlaybackModes: PlaybackMode[] = ["loop", "stop", "sequence"]
+const allTransitions: PlaylistTransition[] = ["cut", "fade", "crossfade"]
 
 function formatRuntime(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -225,6 +228,68 @@ export function PlaylistDetailScreen() {
       return
     }
 
+    persistPlaylistMetadata(playlist, playlist)
+  }, [persistPlaylistMetadata, playlist])
+
+  const thumbnailInputRef = useRef<HTMLInputElement>(null)
+
+  const handleThumbnailUrlChange = useCallback((value: string) => {
+    updateField("thumbnailUrl", value.trim() === "" ? null : value)
+  }, [updateField])
+
+  const handleThumbnailBlur = useCallback(() => {
+    const persistedPlaylist = persistedPlaylistRef.current
+    if (!playlist || !persistedPlaylist || playlist.thumbnailUrl === persistedPlaylist.thumbnailUrl) {
+      return
+    }
+    persistPlaylistMetadata(playlist, playlist)
+  }, [persistPlaylistMetadata, playlist])
+
+  const handleThumbnailUpload = useCallback(async (file: File | undefined) => {
+    if (!playlist || !file) return
+    try {
+      const url = await uploadPlaylistThumbnail(file)
+      persistPlaylistMetadata({ ...playlist, thumbnailUrl: url }, playlist)
+    } catch (error) {
+      toast({ title: "Upload failed", description: getErrorMessage(error, "The thumbnail could not be uploaded."), variant: "error" })
+    }
+  }, [persistPlaylistMetadata, playlist, toast])
+
+  const handleThumbnailRemove = useCallback(() => {
+    if (!playlist) return
+    persistPlaylistMetadata({ ...playlist, thumbnailUrl: null }, playlist)
+  }, [persistPlaylistMetadata, playlist])
+
+  const handlePlaybackModeChange = useCallback((mode: PlaybackMode) => {
+    if (!playlist) return
+    persistPlaylistMetadata(
+      { ...playlist, playbackMode: mode, nextPlaylistId: mode === "sequence" ? playlist.nextPlaylistId : null },
+      playlist,
+    )
+  }, [persistPlaylistMetadata, playlist])
+
+  const handleNextPlaylistChange = useCallback((nextId: string) => {
+    if (!playlist) return
+    persistPlaylistMetadata({ ...playlist, nextPlaylistId: nextId }, playlist)
+  }, [persistPlaylistMetadata, playlist])
+
+  const handleTransitionChange = useCallback((transition: PlaylistTransition) => {
+    if (!playlist) return
+    persistPlaylistMetadata({ ...playlist, transition }, playlist)
+  }, [persistPlaylistMetadata, playlist])
+
+  const handleTransitionDurationChange = useCallback((value: string) => {
+    const nextValue = parseInt(value, 10)
+    if (!Number.isNaN(nextValue) && nextValue >= 0) {
+      updateField("transitionDurationMs", nextValue)
+    }
+  }, [updateField])
+
+  const handleTransitionDurationBlur = useCallback(() => {
+    const persistedPlaylist = persistedPlaylistRef.current
+    if (!playlist || !persistedPlaylist || playlist.transitionDurationMs === persistedPlaylist.transitionDurationMs) {
+      return
+    }
     persistPlaylistMetadata(playlist, playlist)
   }, [persistPlaylistMetadata, playlist])
 
@@ -485,6 +550,48 @@ export function PlaylistDetailScreen() {
                     placeholder="Describe this playlist..."
                   />
                 </MetaRow>
+
+                <MetaRow icon={<ImagePlus />} label="Thumbnail">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {playlist.thumbnailUrl && (
+                      <img
+                        src={playlist.thumbnailUrl}
+                        alt=""
+                        className="size-9 rounded object-cover border border-tertiary shrink-0"
+                      />
+                    )}
+                    <Input
+                      value={playlist.thumbnailUrl ?? ""}
+                      onChange={(e) => handleThumbnailUrlChange(e.target.value)}
+                      onBlur={handleThumbnailBlur}
+                      placeholder="Paste image URL or upload..."
+                      className="flex-1 min-w-0"
+                    />
+                    <input
+                      ref={thumbnailInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => { handleThumbnailUpload(e.target.files?.[0]); e.target.value = "" }}
+                    />
+                    <Button.Icon
+                      variant="secondary"
+                      icon={<Upload />}
+                      onClick={() => thumbnailInputRef.current?.click()}
+                      title="Upload image"
+                      className="shrink-0"
+                    />
+                    {playlist.thumbnailUrl && (
+                      <button
+                        onClick={handleThumbnailRemove}
+                        className="p-0.5 rounded hover:bg-secondary cursor-pointer text-quaternary hover:text-secondary transition-colors shrink-0"
+                        title="Remove thumbnail"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </MetaRow>
               </div>
             </Accordion.Content>
           </Accordion.Item>
@@ -609,6 +716,91 @@ export function PlaylistDetailScreen() {
                       className="!w-14 !py-0.5 !px-1.5"
                     />
                     <Paragraph.xs className="text-tertiary">s</Paragraph.xs>
+                  </div>
+                </div>
+
+                {/* End behaviour + transition */}
+                <div className="flex items-center gap-4 px-3 py-2 flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <Repeat className="size-3.5 text-tertiary shrink-0" />
+                    <Label.xs className="text-tertiary">At end</Label.xs>
+                    <Dropdown placement="top">
+                      <Dropdown.Trigger>
+                        <Paragraph.xs className="cursor-pointer hover:text-secondary transition-colors">
+                          {playbackModeLabel[playlist.playbackMode]}
+                        </Paragraph.xs>
+                      </Dropdown.Trigger>
+                      <Dropdown.Panel>
+                        {allPlaybackModes.map((m) => (
+                          <Dropdown.Item key={m} onSelect={() => handlePlaybackModeChange(m)}>
+                            <span className="size-4 shrink-0 flex items-center justify-center">
+                              {m === playlist.playbackMode && <Check className="size-3.5 text-brand_secondary" />}
+                            </span>
+                            {playbackModeLabel[m]}
+                          </Dropdown.Item>
+                        ))}
+                      </Dropdown.Panel>
+                    </Dropdown>
+                  </div>
+
+                  {playlist.playbackMode === "sequence" && (
+                    <div className="flex items-center gap-1.5">
+                      <Label.xs className="text-tertiary">Then play</Label.xs>
+                      <Dropdown placement="top">
+                        <Dropdown.Trigger>
+                          <Paragraph.xs className="cursor-pointer hover:text-secondary transition-colors">
+                            {contextPlaylists.find((p) => p.id === playlist.nextPlaylistId)?.name ?? "Select playlist..."}
+                          </Paragraph.xs>
+                        </Dropdown.Trigger>
+                        <Dropdown.Panel>
+                          {contextPlaylists.filter((p) => p.id !== playlist.id).map((p) => (
+                            <Dropdown.Item key={p.id} onSelect={() => handleNextPlaylistChange(p.id)}>
+                              <span className="size-4 shrink-0 flex items-center justify-center">
+                                {p.id === playlist.nextPlaylistId && <Check className="size-3.5 text-brand_secondary" />}
+                              </span>
+                              {p.name}
+                            </Dropdown.Item>
+                          ))}
+                          {contextPlaylists.filter((p) => p.id !== playlist.id).length === 0 && (
+                            <div className="px-2 py-1.5 text-sm text-quaternary">No other playlists</div>
+                          )}
+                        </Dropdown.Panel>
+                      </Dropdown>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-1.5">
+                    <Clapperboard className="size-3.5 text-tertiary shrink-0" />
+                    <Label.xs className="text-tertiary">Transition</Label.xs>
+                    <Dropdown placement="top">
+                      <Dropdown.Trigger>
+                        <Paragraph.xs className="cursor-pointer hover:text-secondary transition-colors">
+                          {playlistTransitionLabel[playlist.transition]}
+                        </Paragraph.xs>
+                      </Dropdown.Trigger>
+                      <Dropdown.Panel>
+                        {allTransitions.map((t) => (
+                          <Dropdown.Item key={t} onSelect={() => handleTransitionChange(t)}>
+                            <span className="size-4 shrink-0 flex items-center justify-center">
+                              {t === playlist.transition && <Check className="size-3.5 text-brand_secondary" />}
+                            </span>
+                            {playlistTransitionLabel[t]}
+                          </Dropdown.Item>
+                        ))}
+                      </Dropdown.Panel>
+                    </Dropdown>
+                    {playlist.transition !== "cut" && (
+                      <>
+                        <Input
+                          value={String(playlist.transitionDurationMs)}
+                          onChange={(e) => handleTransitionDurationChange(e.target.value)}
+                          onBlur={handleTransitionDurationBlur}
+                          placeholder="ms"
+                          className="!w-16 !py-0.5 !px-1.5"
+                        />
+                        <Paragraph.xs className="text-tertiary">ms</Paragraph.xs>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

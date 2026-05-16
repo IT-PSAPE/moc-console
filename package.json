@@ -10,8 +10,10 @@
   "scripts": {
     "dev:console": "bun --filter moc-console dev",
     "dev:request": "bun --filter moc-request dev",
+    "dev:broadcast": "bun --filter moc-broadcast dev",
     "build:console": "bun --filter moc-console build",
     "build:request": "bun --filter moc-request build",
+    "build:broadcast": "bun --filter moc-broadcast build",
     "build": "bun --filter '*' build",
     "lint": "bun --filter '*' lint"
   }

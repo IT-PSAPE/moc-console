@@ -53,6 +53,11 @@ export async function updatePlaylist(playlist: Playlist): Promise<Playlist> {
     status: playlist.status,
     music_id: playlist.backgroundMusicId ?? null,
     default_image_duration: playlist.defaultImageDuration,
+    thumbnail_url: playlist.thumbnailUrl,
+    playback_mode: playlist.playbackMode,
+    next_playlist_id: playlist.nextPlaylistId,
+    transition: playlist.transition,
+    transition_duration_ms: playlist.transitionDurationMs,
   };
 
   const { error } = await supabase
@@ -114,6 +119,30 @@ export async function uploadMediaFile(file: File): Promise<string> {
   const workspaceId = await getCurrentWorkspaceId();
   const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
   const path = `${workspaceId}/${randomId()}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("media")
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type || undefined,
+    });
+
+  if (uploadError) {
+    throw new Error(uploadError.message);
+  }
+
+  const { data } = supabase.storage.from("media").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// Uploads a playlist cover image to the same public `media` bucket as
+// media files, namespaced under <workspace_id>/playlist-thumbnails/.
+// Returns the public URL to store in playlists.thumbnail_url.
+export async function uploadPlaylistThumbnail(file: File): Promise<string> {
+  const workspaceId = await getCurrentWorkspaceId();
+  const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
+  const path = `${workspaceId}/playlist-thumbnails/${randomId()}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from("media")
