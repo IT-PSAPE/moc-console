@@ -4,6 +4,8 @@ export type { PlaylistStatus } from "./broadcast-status"
 export type { PlaybackMode } from "./playback-mode"
 export type { PlaylistTransition } from "./transition"
 export type { Cue } from "./cue"
+export type { PlaylistLane, LaneType, ResolvedCue, LaneMeta } from "./lane"
+export { resolveLaneTimeline, laneDurationSec, groupCuesIntoLanes, flattenLanes } from "./lane"
 export type { Playlist, VideoSettings } from "./broadcast"
 export type { Stream, StreamStatus, StreamPrivacy, YouTubeConnection } from "./stream"
 export {

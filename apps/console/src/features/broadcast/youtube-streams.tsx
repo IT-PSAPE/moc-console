@@ -120,6 +120,22 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
     }
   }, [setStreams, toast])
 
+  function handleOpenCreate() {
+    setEditingStream(null)
+    setModalOpen(true)
+  }
+
+  function handleOpenDrawer(stream: Stream) {
+    setDrawerStream(stream)
+    setDrawerOpen(true)
+  }
+
+  function handleEditFromDrawer(stream: Stream) {
+    setDrawerOpen(false)
+    setEditingStream(stream)
+    setModalOpen(true)
+  }
+
   return (
     <>
       <Card>
@@ -133,7 +149,7 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
               <Button.Icon variant="ghost" icon={<Settings2 />} onClick={() => setFilterOpen(true)} />
               <Button.Icon variant="ghost" icon={<RefreshCw />} onClick={handleSync} disabled={isSyncing} />
               {canCreate && (
-                <Button.Icon variant="secondary" icon={<Plus />} onClick={() => { setEditingStream(null); setModalOpen(true) }} />
+                <Button.Icon variant="secondary" icon={<Plus />} onClick={handleOpenCreate} />
               )}
             </div>
           )}
@@ -164,7 +180,7 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
                 <StreamListItem
                   key={stream.id}
                   stream={stream}
-                  onClick={() => { setDrawerStream(stream); setDrawerOpen(true) }}
+                  onClick={() => handleOpenDrawer(stream)}
                 />
               ))}
             </Decision.Data>
@@ -187,7 +203,7 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
         stream={drawerStream}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
-        onEdit={(s) => { setDrawerOpen(false); setEditingStream(s); setModalOpen(true) }}
+        onEdit={handleEditFromDrawer}
         onDelete={handleDelete}
       />
     </>

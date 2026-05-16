@@ -4,6 +4,7 @@ import { useDraggable } from "@dnd-kit/core"
 import { useDroppable } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 import { Badge } from "@moc/ui/components/display/badge"
+import { Button } from "@moc/ui/components/controls/button"
 import { Dropdown } from "@moc/ui/components/overlays/dropdown"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Input } from "@moc/ui/components/form/input"
@@ -150,6 +151,15 @@ function DraggableCueRow({ cue, onRemove, onUpdateCue, defaultImageDuration }: {
     setEditingDuration(false)
   }
 
+  function handleStartEditingDuration() {
+    setEditingDuration(true)
+    setDurationValue(String(cue.durationOverride ?? ""))
+  }
+
+  function handleRemove() {
+    onRemove(cue.id)
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -162,9 +172,7 @@ function DraggableCueRow({ cue, onRemove, onUpdateCue, defaultImageDuration }: {
       </span>
 
       {/* Order number */}
-      <span className="size-6 shrink-0 rounded-full bg-secondary flex items-center justify-center">
-        <Label.xs>{cue.order}</Label.xs>
-      </span>
+      <Badge label={String(cue.order)} color="gray" />
 
       {/* Name */}
       <Label.sm className="flex-1 truncate">{cue.mediaItemName}</Label.sm>
@@ -191,16 +199,14 @@ function DraggableCueRow({ cue, onRemove, onUpdateCue, defaultImageDuration }: {
       {/* Options dropdown */}
       <Dropdown>
         <Dropdown.Trigger>
-          <button className="p-0.5 rounded hover:bg-secondary cursor-pointer text-quaternary hover:text-secondary transition-colors">
-            <MoreVertical className="size-4" />
-          </button>
+          <Button.Icon variant="ghost" icon={<MoreVertical className="size-4" />} />
         </Dropdown.Trigger>
         <Dropdown.Panel>
-          <Dropdown.Item onClick={() => { setEditingDuration(true); setDurationValue(String(cue.durationOverride ?? "")) }}>
+          <Dropdown.Item onClick={handleStartEditingDuration}>
             <Clock className="size-4" />
             Set Duration
           </Dropdown.Item>
-          <Dropdown.Item onClick={() => onRemove(cue.id)}>
+          <Dropdown.Item onClick={handleRemove}>
             <Trash2 className="size-4 text-error" />
             <span className="text-error">Remove</span>
           </Dropdown.Item>

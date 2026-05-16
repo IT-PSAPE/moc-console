@@ -41,6 +41,31 @@ A workspace-scoped operation from MOC Console requiring a signed-in user: managi
 **Tracking code**:
 The opaque identifier given to an end user after submitting a request, used in MOC Request's lookup flow to retrieve status.
 
+### Timeline
+
+**Timeline**:
+The shared, domain-agnostic time-axis surface used to author and play back time-positioned content. Used by both the Cue sheet (events) and the Broadcasts section (playlists).
+
+**Lane**:
+A horizontal row within a **Timeline**. The neutral, primitive-level term. A Cue-sheet **Track** is a Lane; a playlist's media row is a Lane. A Lane carries a domain-defined *type* that the Timeline stores but never interprets; the composer decides how Blocks look per type.
+_Avoid_: "track" or "row" when referring to the primitive concept.
+
+**Transport**:
+The domain-supplied time source that drives a **Timeline**'s **Playhead**. A Cue sheet supplies a clock transport (ticker + controller/follower sync); a playlist supplies a media transport (the playing media is the clock).
+
+**Block**:
+A single time-positioned item (a start + a duration) inside a **Lane**. The neutral, primitive-level term. A Cue-sheet **Cue** is a Block; a playlist media item is a Block.
+_Avoid_: "cue" when referring to the primitive concept.
+
+**Playhead**:
+The current-time indicator on a **Timeline**; can be scrubbed. Its motion is driven by a domain-supplied transport, not by the Timeline itself.
+
+**Track** (Cue sheet):
+A named lane in a Cue sheet (e.g. Stage, AV) that groups **Cues** for one event. A domain mapping of **Lane**.
+
+**Cue** (overloaded — see Flagged ambiguities):
+In the Cue sheet: a time-boxed event segment (`startMin`, `durationMin`, type). In the Broadcasts section: a media item in a playlist. Both are domain mappings of **Block**.
+
 ## Relationships
 
 - A **Workspace** owns many **Requests**, **Bookings**, **Broadcasts**, **Cue sheets**, and **Equipment**.
@@ -53,4 +78,5 @@ The opaque identifier given to an end user after submitting a request, used in M
 - "MOC Request" used to refer to both the standalone public app *and* the Requests feature inside Console. Resolved: **MOC Request** = the public PWA; **Requests portal** = the feature in MOC Console.
 - Design primitives (button, input, base CSS tokens) drifted between the two apps after the original split. Resolved (2026-05-15): **MOC Console**'s primitives are canonical; MOC Request adopts them via shared `@moc/ui`. See [ADR-0001](./docs/adr/0001-reunify-moc-request-as-monorepo.md).
 - "Broadcast" was overloaded: the Console authoring section, the act of publishing, and the new public app. Resolved (2026-05-16): **MOC Broadcast** = the public player app; **Broadcasts section** = the Console authoring area; **Broadcasting** = the verb; no `Broadcast` entity. See [ADR-0002](./docs/adr/0002-moc-broadcast-public-player.md).
-- Audio is still a queueable cue type, but the long-term intent is audio-as-background-music only. Deferred, not yet resolved — the MOC Broadcast player tolerates audio cues with a minimal visual. See [ADR-0002](./docs/adr/0002-moc-broadcast-public-player.md).
+- Audio is still a queueable cue type, but the long-term intent is audio-as-background-music only. Deferred, not yet resolved — the MOC Broadcast player tolerates audio cues with a minimal visual. See [ADR-0002](./docs/adr/0002-moc-broadcast-public-player.md). Multi-track playlists (audio as a parallel background **Lane**) are the intended resolution path.
+- "Cue" and "Track" are used in two unrelated domains (Cue sheet vs Broadcasts/playlist) with different data shapes. Resolved (2026-05-16) at the primitive level: the shared **Timeline** speaks only **Lane** and **Block**; each domain maps its own `Track`/`Cue` onto them. The domain `Cue` types are *not* unified.

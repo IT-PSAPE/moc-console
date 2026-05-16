@@ -30,8 +30,25 @@ export function CreateEventModal({ open, onOpenChange, onCreate }: CreateEventMo
         resetForm()
     }, [canSubmit, form, onCreate, resetForm])
 
+    const handleOpenChange = useCallback((next: boolean) => {
+        onOpenChange(next)
+        if (!next) resetForm()
+    }, [onOpenChange, resetForm])
+
+    function handleTitleChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setForm((prev) => ({ ...prev, title: e.target.value }))
+    }
+
+    function handleDescriptionChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setForm((prev) => ({ ...prev, description: e.target.value }))
+    }
+
+    function handleDurationChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setForm((prev) => ({ ...prev, duration: Number(e.target.value) || 0 }))
+    }
+
     return (
-        <Modal open={open} onOpenChange={(next) => { onOpenChange(next); if (!next) resetForm() }}>
+        <Modal open={open} onOpenChange={handleOpenChange}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
@@ -46,7 +63,7 @@ export function CreateEventModal({ open, onOpenChange, onCreate }: CreateEventMo
                                     <Input
                                         placeholder="Event name"
                                         value={form.title}
-                                        onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                                        onChange={handleTitleChange}
                                     />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
@@ -54,7 +71,7 @@ export function CreateEventModal({ open, onOpenChange, onCreate }: CreateEventMo
                                     <Input
                                         placeholder="Brief description"
                                         value={form.description}
-                                        onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                                        onChange={handleDescriptionChange}
                                     />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
@@ -63,7 +80,7 @@ export function CreateEventModal({ open, onOpenChange, onCreate }: CreateEventMo
                                         type="number"
                                         placeholder="Duration in minutes"
                                         value={String(form.duration)}
-                                        onChange={(e) => setForm((prev) => ({ ...prev, duration: Number(e.target.value) || 0 }))}
+                                        onChange={handleDurationChange}
                                     />
                                 </div>
                             </div>

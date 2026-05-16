@@ -96,14 +96,14 @@ export function TelegramLinkRow({ userId, telegramChatId }: Props) {
 
     return (
         <div className="flex items-center gap-2">
-            <button
-                type="button"
+            <Button
+                variant="ghost"
                 onClick={handleLink}
                 disabled={busy}
-                className="rounded transition-opacity hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="!p-0 rounded transition-opacity hover:opacity-80 hover:!bg-transparent disabled:opacity-50"
             >
                 <Badge color="blue" icon={<MessageCircle />} label={busy ? "Opening Telegram…" : "Link Telegram"} />
-            </button>
+            </Button>
             {awaitingLink && (
                 <Paragraph.sm className="text-tertiary">Waiting for Telegram…</Paragraph.sm>
             )}

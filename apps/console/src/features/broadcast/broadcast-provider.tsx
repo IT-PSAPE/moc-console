@@ -7,7 +7,7 @@ import type { Stream } from "@moc/types/broadcast/stream"
 import type { YouTubeConnection } from "@moc/types/broadcast/stream"
 import type { ZoomConnection, ZoomMeeting } from "@moc/types/broadcast/zoom"
 import { useWorkspace } from "@/lib/workspace-context"
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react"
 
 type BroadcastContextValue = {
   state: {
@@ -62,34 +62,30 @@ export function BroadcastProvider({ children }: { children: ReactNode }) {
   const [isLoadingZoomConnection, setIsLoadingZoomConnection] = useState(false)
   const [isLoadingZoomMeetings, setIsLoadingZoomMeetings] = useState(false)
 
-  const mediaLoadedRef = useRef(false)
+  const mediaLoadedRef = useRef<string | null>(null)
   const mediaPromiseRef = useRef<Promise<void> | null>(null)
-  const playlistsLoadedRef = useRef(false)
+  const playlistsLoadedRef = useRef<string | null>(null)
   const playlistsPromiseRef = useRef<Promise<void> | null>(null)
-  const streamsLoadedRef = useRef(false)
+  const streamsLoadedRef = useRef<string | null>(null)
   const streamsPromiseRef = useRef<Promise<void> | null>(null)
-  const connectionLoadedRef = useRef(false)
+  const connectionLoadedRef = useRef<string | null>(null)
   const connectionPromiseRef = useRef<Promise<void> | null>(null)
-  const zoomConnectionLoadedRef = useRef(false)
+  const zoomConnectionLoadedRef = useRef<string | null>(null)
   const zoomConnectionPromiseRef = useRef<Promise<void> | null>(null)
-  const zoomMeetingsLoadedRef = useRef(false)
+  const zoomMeetingsLoadedRef = useRef<string | null>(null)
   const zoomMeetingsPromiseRef = useRef<Promise<void> | null>(null)
 
   const { currentWorkspaceId } = useWorkspace()
-  useEffect(() => {
-    mediaLoadedRef.current = false
-    playlistsLoadedRef.current = false
-    streamsLoadedRef.current = false
-    connectionLoadedRef.current = false
-    zoomConnectionLoadedRef.current = false
-    zoomMeetingsLoadedRef.current = false
+  const [trackedWorkspaceId, setTrackedWorkspaceId] = useState(currentWorkspaceId)
+  if (trackedWorkspaceId !== currentWorkspaceId) {
+    setTrackedWorkspaceId(currentWorkspaceId)
     setMedia([])
     setPlaylists([])
     setStreams([])
     setYouTubeConnection(null)
     setZoomConnectionState(null)
     setZoomMeetings([])
-  }, [currentWorkspaceId])
+  }
 
   // ─── Playlist actions ──────────────────────────────────
 
@@ -124,7 +120,7 @@ export function BroadcastProvider({ children }: { children: ReactNode }) {
   const handleSetYouTubeConnection = useCallback((conn: YouTubeConnection | null) => {
     setYouTubeConnection(conn)
     if (!conn) {
-      connectionLoadedRef.current = false
+      connectionLoadedRef.current = null
     }
   }, [])
 
@@ -145,7 +141,7 @@ export function BroadcastProvider({ children }: { children: ReactNode }) {
   const handleSetZoomConnection = useCallback((conn: ZoomConnection | null) => {
     setZoomConnectionState(conn)
     if (!conn) {
-      zoomConnectionLoadedRef.current = false
+      zoomConnectionLoadedRef.current = null
     }
   }, [])
 
@@ -164,76 +160,76 @@ export function BroadcastProvider({ children }: { children: ReactNode }) {
   // ─── Loaders ───────────────────────────────────────────
 
   const loadMedia = useCallback(async () => {
-    if (mediaLoadedRef.current) return
+    if (mediaLoadedRef.current === currentWorkspaceId) return
     if (mediaPromiseRef.current) return mediaPromiseRef.current
 
     setIsLoadingMedia(true)
     mediaPromiseRef.current = fetchMedia()
-      .then((data) => { setMedia(data); mediaLoadedRef.current = true })
+      .then((data) => { setMedia(data); mediaLoadedRef.current = currentWorkspaceId })
       .finally(() => { mediaPromiseRef.current = null; setIsLoadingMedia(false) })
 
     return mediaPromiseRef.current
-  }, [])
+  }, [currentWorkspaceId])
 
   const loadPlaylists = useCallback(async () => {
-    if (playlistsLoadedRef.current) return
+    if (playlistsLoadedRef.current === currentWorkspaceId) return
     if (playlistsPromiseRef.current) return playlistsPromiseRef.current
 
     setIsLoadingPlaylists(true)
     playlistsPromiseRef.current = fetchPlaylists()
-      .then((data) => { setPlaylists(data); playlistsLoadedRef.current = true })
+      .then((data) => { setPlaylists(data); playlistsLoadedRef.current = currentWorkspaceId })
       .finally(() => { playlistsPromiseRef.current = null; setIsLoadingPlaylists(false) })
 
     return playlistsPromiseRef.current
-  }, [])
+  }, [currentWorkspaceId])
 
   const loadStreams = useCallback(async () => {
-    if (streamsLoadedRef.current) return
+    if (streamsLoadedRef.current === currentWorkspaceId) return
     if (streamsPromiseRef.current) return streamsPromiseRef.current
 
     setIsLoadingStreams(true)
     streamsPromiseRef.current = fetchStreams()
-      .then((data) => { setStreams(data); streamsLoadedRef.current = true })
+      .then((data) => { setStreams(data); streamsLoadedRef.current = currentWorkspaceId })
       .finally(() => { streamsPromiseRef.current = null; setIsLoadingStreams(false) })
 
     return streamsPromiseRef.current
-  }, [])
+  }, [currentWorkspaceId])
 
   const loadYouTubeConnection = useCallback(async () => {
-    if (connectionLoadedRef.current) return
+    if (connectionLoadedRef.current === currentWorkspaceId) return
     if (connectionPromiseRef.current) return connectionPromiseRef.current
 
     setIsLoadingConnection(true)
     connectionPromiseRef.current = fetchYouTubeConnection()
-      .then((data) => { setYouTubeConnection(data); connectionLoadedRef.current = true })
+      .then((data) => { setYouTubeConnection(data); connectionLoadedRef.current = currentWorkspaceId })
       .finally(() => { connectionPromiseRef.current = null; setIsLoadingConnection(false) })
 
     return connectionPromiseRef.current
-  }, [])
+  }, [currentWorkspaceId])
 
   const loadZoomConnection = useCallback(async () => {
-    if (zoomConnectionLoadedRef.current) return
+    if (zoomConnectionLoadedRef.current === currentWorkspaceId) return
     if (zoomConnectionPromiseRef.current) return zoomConnectionPromiseRef.current
 
     setIsLoadingZoomConnection(true)
     zoomConnectionPromiseRef.current = fetchZoomConnection()
-      .then((data) => { setZoomConnectionState(data); zoomConnectionLoadedRef.current = true })
+      .then((data) => { setZoomConnectionState(data); zoomConnectionLoadedRef.current = currentWorkspaceId })
       .finally(() => { zoomConnectionPromiseRef.current = null; setIsLoadingZoomConnection(false) })
 
     return zoomConnectionPromiseRef.current
-  }, [])
+  }, [currentWorkspaceId])
 
   const loadZoomMeetings = useCallback(async () => {
-    if (zoomMeetingsLoadedRef.current) return
+    if (zoomMeetingsLoadedRef.current === currentWorkspaceId) return
     if (zoomMeetingsPromiseRef.current) return zoomMeetingsPromiseRef.current
 
     setIsLoadingZoomMeetings(true)
     zoomMeetingsPromiseRef.current = fetchZoomMeetings()
-      .then((data) => { setZoomMeetings(data); zoomMeetingsLoadedRef.current = true })
+      .then((data) => { setZoomMeetings(data); zoomMeetingsLoadedRef.current = currentWorkspaceId })
       .finally(() => { zoomMeetingsPromiseRef.current = null; setIsLoadingZoomMeetings(false) })
 
     return zoomMeetingsPromiseRef.current
-  }, [])
+  }, [currentWorkspaceId])
 
   // ─── Context value ─────────────────────────────────────
 

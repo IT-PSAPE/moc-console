@@ -101,6 +101,22 @@ export function ZoomMeetingsView({ searchQuery }: { searchQuery: string }) {
     }
   }, [setZoomMeetings, toast])
 
+  function handleOpenCreate() {
+    setEditingMeeting(null)
+    setModalOpen(true)
+  }
+
+  function handleOpenDrawer(meeting: ZoomMeeting) {
+    setDrawerMeeting(meeting)
+    setDrawerOpen(true)
+  }
+
+  function handleEditFromDrawer(meeting: ZoomMeeting) {
+    setDrawerOpen(false)
+    setEditingMeeting(meeting)
+    setModalOpen(true)
+  }
+
   return (
     <>
       <Card>
@@ -114,7 +130,7 @@ export function ZoomMeetingsView({ searchQuery }: { searchQuery: string }) {
               <Button.Icon variant="ghost" icon={<Settings2 />} onClick={() => setFilterOpen(true)} />
               <Button.Icon variant="ghost" icon={<RefreshCw />} onClick={handleSync} disabled={isSyncing} />
               {canCreate && (
-                <Button.Icon variant="secondary" icon={<Plus />} onClick={() => { setEditingMeeting(null); setModalOpen(true) }} />
+                <Button.Icon variant="secondary" icon={<Plus />} onClick={handleOpenCreate} />
               )}
             </div>
           )}
@@ -145,7 +161,7 @@ export function ZoomMeetingsView({ searchQuery }: { searchQuery: string }) {
                 <MeetingListItem
                   key={meeting.id}
                   meeting={meeting}
-                  onClick={() => { setDrawerMeeting(meeting); setDrawerOpen(true) }}
+                  onClick={() => handleOpenDrawer(meeting)}
                 />
               ))}
             </Decision.Data>
@@ -167,7 +183,7 @@ export function ZoomMeetingsView({ searchQuery }: { searchQuery: string }) {
         meeting={drawerMeeting}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
-        onEdit={(m) => { setDrawerOpen(false); setEditingMeeting(m); setModalOpen(true) }}
+        onEdit={handleEditFromDrawer}
         onDelete={handleDelete}
       />
     </>

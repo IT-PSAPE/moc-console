@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./styles.css": "./src/index.css",
     "./hooks/*": "./src/hooks/*.ts",
+    "./components/timeline": "./src/components/display/timeline/index.ts",
     "./components/*": [
       "./src/components/*.tsx",
       "./src/components/*.ts"

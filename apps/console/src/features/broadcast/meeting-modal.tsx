@@ -3,6 +3,8 @@ import type { ChangeEvent } from "react"
 import { Modal } from "@moc/ui/components/overlays/modal"
 import { Button } from "@moc/ui/components/controls/button"
 import { Input } from "@moc/ui/components/form/input"
+import { TextArea } from "@moc/ui/components/form/text-area"
+import { Select } from "@moc/ui/components/form/select"
 import { FormLabel } from "@moc/ui/components/form/form-label"
 import { Checkbox } from "@moc/ui/components/form/checkbox"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
@@ -121,12 +123,11 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
                 {/* Description */}
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Description" />
-                  <textarea
+                  <TextArea
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
                     placeholder="Meeting agenda..."
                     rows={3}
-                    className="w-full rounded-md border border-secondary bg-primary px-3 py-2 text-sm text-primary placeholder:text-quaternary focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand resize-none"
                   />
                 </div>
 
@@ -154,15 +155,14 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
                 {/* Timezone */}
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Timezone" />
-                  <select
+                  <Select
                     value={timezone}
-                    onChange={(e) => setTimezone(e.target.value)}
-                    className="w-full rounded-md border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                    onChange={(e: ChangeEvent<HTMLSelectElement>) => setTimezone(e.target.value)}
                   >
                     {COMMON_TIMEZONES.map((tz) => (
                       <option key={tz} value={tz}>{tz}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
 
                 {/* Recurrence */}

@@ -1,0 +1,18 @@
+# Multi-track playlists: lane-order compositing on a computed-sequence schema
+
+A playlist has always been a single ordered `Cue` sequence. We are making it genuinely multi-track on the shared **Timeline** (ADR-0003): a playlist gains **Lanes**, lanes render and play in parallel, and `Timeline.Preview` composites them. Lane order *is* the visual z-stack — the top lane is the topmost layer — so a base video/image lane, overlay lanes (logo/lower-third), and an audio lane compose by their tree order. Each lane stays an ordered sequence: per-cue we store `laneId` + `order` + `duration`, and a block's `start` is the **computed** cumulative sum within its lane (no stored absolute positions, no gaps/overlaps within a lane; all lanes start at t=0; playlist duration = the longest lane). This is the resolution path for ADR-0002's deferred "audio as background music" — audio becomes a parallel background Lane rather than an inline queue item.
+
+## Considered options
+
+- **One designated visual lane + audio-only lanes.** Rejected: precludes overlays (logos, lower-thirds) that the z-stack model enables for little extra cost. The primitive stays role-blind regardless (ADR-0003); compositing is the playlist's `Timeline.Preview` filler reading lane order + each lane's opaque domain `type`.
+- **Single active block; lanes as authoring variants flattened at play time.** Rejected: barely uses multi-track and discards the parallel-playback intent.
+- **Freeform absolute positioning** (store `startSec` + `durationSec` + `laneId`, gaps/overlaps allowed, unifying timing with the cue-sheet). Rejected for now: a far larger behavioural and schema change, and it lets authors create dead air/overlaps a continuous display board does not want. The computed-sequence model keeps the playlist's auto-packed heritage while still feeding the primitive a resolved `{start, duration}` per Block.
+- **Freeform-capable schema, sequence behaviour now** (store absolute columns, enforce packing in the UI). Rejected: stores a position the playlist never authors; recomputing from `order`+`duration` is cheap and keeps the schema honest about what a playlist *is*. Revisitable if freeform authoring is ever wanted.
+- **The Timeline primitive composites video/audio itself.** Rejected: couples the primitive to media semantics the cue-sheet does not share (ADR-0003). The lane's domain `type` is opaque to the primitive; the playlist decides per-type Block visuals and the Preview compositor.
+
+## Consequences
+
+- **Schema change (additive).** `queue` gains `lane_id`; lanes are an ordered collection on the playlist; `order` becomes per-lane. `start` is never persisted — derived in the playlist→primitive mapping and recomputed on every reorder/resize/duration edit. A migration backfills existing playlists into a single default lane (preserving current behaviour).
+- **ADR-0002's deferred audio note now points here.** Audio-as-background-music is expressed as a parallel audio Lane that mixes (does not stack visually) under the program lane; narrowing audio out of the main queue can follow without reworking this model.
+- **Preview is order-sensitive.** Re-ordering lanes in the tree re-orders the visual stack — intentional and authorable, but it means lane order carries playback meaning, not just layout. The cue-sheet, which has no Preview, is unaffected.
+- **MOC Broadcast must learn multi-track.** The public player's cue iterator (`apps/broadcast/src/features/player`) currently advances one linear `Cue[]`; it will need per-lane iterators driven by the same computed-position logic and a compositing render that mirrors `Timeline.Preview`. Single-lane playlists remain a degenerate case, so existing published playlists keep playing after the backfill.

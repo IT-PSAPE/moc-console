@@ -41,6 +41,7 @@ export function PlaylistScreen() {
       description: "",
       status: "draft",
       createdAt: new Date().toISOString(),
+      lanes: [],
       cues: [],
       backgroundMusicId: null,
       backgroundMusicUrl: null,

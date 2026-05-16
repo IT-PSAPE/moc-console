@@ -1,5 +1,6 @@
 import type { Playlist } from "@moc/types/broadcast/broadcast";
 import type { Cue } from "@moc/types/broadcast/cue";
+import type { PlaylistLane } from "@moc/types/broadcast/lane";
 import type { MediaItem } from "@moc/types/broadcast/media-item";
 import { supabase } from "@moc/data/supabase";
 import { getCurrentWorkspaceId } from "./current-workspace";
@@ -92,23 +93,56 @@ export async function deletePlaylist(id: string): Promise<void> {
   }
 }
 
-export async function updatePlaylistCues(playlistId: string, cues: Cue[]): Promise<Cue[]> {
-  const { error } = await supabase.rpc("save_playlist_queue", {
-    p_playlist_id: playlistId,
-    p_cues: cues.map((cue, index) => ({
+function laneToPayload(lane: PlaylistLane, index: number) {
+  return {
+    id: lane.id,
+    sort_order: index,
+    type: lane.type,
+    name: lane.name,
+    cues: lane.cues.map((cue, cueIndex) => ({
       id: cue.id,
       media_id: cue.mediaItemId,
-      sort_order: index + 1,
+      sort_order: cueIndex + 1,
       duration: cue.durationOverride,
       disabled: cue.disabled ?? false,
     })),
+  };
+}
+
+// Full multi-lane save (ADR-0004). Replaces the playlist's lanes + queue.
+export async function updatePlaylistLanes(playlistId: string, lanes: PlaylistLane[]): Promise<PlaylistLane[]> {
+  const { error } = await supabase.rpc("save_playlist_lanes", {
+    p_playlist_id: playlistId,
+    p_lanes: lanes.map(laneToPayload),
   });
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return cues.map((cue, index) => ({ ...cue, order: index + 1 }));
+  return lanes.map((lane, index) => ({
+    ...lane,
+    order: index,
+    cues: lane.cues.map((cue, cueIndex) => ({ ...cue, laneId: lane.id, order: cueIndex + 1 })),
+  }));
+}
+
+// Back-compat single-lane save for the flat-cue editor. Wraps the cues
+// into one default visual lane (post-phase-30 queue.lane_id is NOT NULL,
+// so the old save_playlist_queue path no longer applies).
+export async function updatePlaylistCues(playlistId: string, cues: Cue[]): Promise<Cue[]> {
+  const laneId = randomId();
+  const lane: PlaylistLane = { id: laneId, order: 0, type: "visual", name: null, cues };
+  const { error } = await supabase.rpc("save_playlist_lanes", {
+    p_playlist_id: playlistId,
+    p_lanes: [laneToPayload(lane, 0)],
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return cues.map((cue, index) => ({ ...cue, laneId, order: index + 1 }));
 }
 
 // Uploads a file to the public `media` Supabase Storage bucket and returns

@@ -2,6 +2,7 @@ import { Button } from '@moc/ui/components/controls/button'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { Modal } from '@moc/ui/components/overlays/modal'
+import { TextArea } from '@moc/ui/components/form/text-area'
 import {
     captureBugReportContext,
     submitBugReport,
@@ -87,14 +88,13 @@ export function ReportBugModal({ open, onOpenChange, errorContext }: Props) {
                                         </Paragraph.xs>
                                     </div>
                                 )}
-                                <textarea
+                                <TextArea
                                     autoFocus
                                     rows={6}
                                     maxLength={MAX_LENGTH}
                                     placeholder="What were you trying to do? What did you see vs. what you expected?"
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 paragraph-sm focus:border-brand focus:outline-none focus:ring-3 focus:ring-border-brand/10 resize-none"
                                 />
                                 <div className="flex items-center justify-between">
                                     <Paragraph.xs className="text-quaternary">

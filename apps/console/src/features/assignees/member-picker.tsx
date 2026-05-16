@@ -92,10 +92,7 @@ function MemberPickerPanel({ assignees, duties, onAdd, onRemove }: PanelProps) {
                     <Paragraph.xs className="px-3 pb-1.5 text-quaternary">Select a duty</Paragraph.xs>
                     <div className="max-h-40 px-1 overflow-y-auto space-y-0.5">
                         {duties.map((role) => (
-                            <button key={role} type="button" className="w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-secondary transition-colors cursor-pointer" onClick={() => setDuty(role)}>
-                                <Radio value={role} checked={duty === role} />
-                                <Label.sm className={duty === role ? "text-primary" : "text-secondary"}>{role}</Label.sm>
-                            </button>
+                            <DutyRow key={role} role={role} selected={duty === role} onSelect={setDuty} />
                         ))}
                     </div>
                 </div>
@@ -157,12 +154,7 @@ function MemberPickerPanel({ assignees, duties, onAdd, onRemove }: PanelProps) {
                         </Paragraph.xs>
                         <div className="px-1 pb-1 flex flex-col gap-0.5">
                             {available.map((a) => (
-                                <button key={a.id} type="button" onClick={() => handleSelectMember(a)} className="w-full flex items-center rounded-lg py-1 px-2 space-x-2 hover:bg-secondary transition-colors cursor-pointer">
-                                    <UserAvatar size="sm" user={a} />
-                                    <div className="flex-1 min-w-0 text-left">
-                                        <Label.sm>{a.name} {a.surname}</Label.sm>
-                                    </div>
-                                </button>
+                                <AvailableMemberRow key={a.id} user={a} onSelect={handleSelectMember} />
                             ))}
                         </div>
                     </div>
@@ -175,5 +167,52 @@ function MemberPickerPanel({ assignees, duties, onAdd, onRemove }: PanelProps) {
                 )}
             </div>
         </>
+    );
+}
+
+type DutyRowProps = {
+    role: string;
+    selected: boolean;
+    onSelect: (role: string) => void;
+};
+
+function DutyRow({ role, selected, onSelect }: DutyRowProps) {
+    function handleClick() {
+        onSelect(role);
+    }
+
+    return (
+        <Button
+            variant="ghost"
+            className="w-full flex items-center justify-start gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-secondary transition-colors cursor-pointer"
+            onClick={handleClick}
+        >
+            <Radio value={role} checked={selected} />
+            <Label.sm className={selected ? "text-primary" : "text-secondary"}>{role}</Label.sm>
+        </Button>
+    );
+}
+
+type AvailableMemberRowProps = {
+    user: User;
+    onSelect: (user: User) => void;
+};
+
+function AvailableMemberRow({ user, onSelect }: AvailableMemberRowProps) {
+    function handleClick() {
+        onSelect(user);
+    }
+
+    return (
+        <Button
+            variant="ghost"
+            onClick={handleClick}
+            className="w-full flex items-center justify-start rounded-lg py-1 px-2 space-x-2 hover:bg-secondary transition-colors cursor-pointer"
+        >
+            <UserAvatar size="sm" user={user} />
+            <div className="flex-1 min-w-0 text-left">
+                <Label.sm>{user.name} {user.surname}</Label.sm>
+            </div>
+        </Button>
     );
 }

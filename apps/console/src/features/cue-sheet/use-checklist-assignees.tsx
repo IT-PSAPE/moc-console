@@ -12,17 +12,19 @@ export function useChecklistAssignees(checklistId: string) {
     const { toast } = useFeedback()
     const [assigneesMap, setAssigneesMap] = useState<Map<string, ResolvedAssignee[]>>(new Map())
 
+    const [trackedChecklistId, setTrackedChecklistId] = useState(checklistId)
+    if (trackedChecklistId !== checklistId) {
+        setTrackedChecklistId(checklistId)
+        setAssigneesMap(new Map())
+    }
+
     const refresh = useCallback(async () => {
-        if (!checklistId) {
-            setAssigneesMap(new Map())
-            return
-        }
-        try {
-            const next = await fetchAssigneesByChecklistId(checklistId)
-            setAssigneesMap(next)
-        } catch (error) {
-            toast({ title: 'Failed to load assignees', description: getErrorMessage(error, 'Could not load checklist assignees.'), variant: 'error' })
-        }
+        if (!checklistId) return
+        return fetchAssigneesByChecklistId(checklistId)
+            .then(setAssigneesMap)
+            .catch((error) => {
+                toast({ title: 'Failed to load assignees', description: getErrorMessage(error, 'Could not load checklist assignees.'), variant: 'error' })
+            })
     }, [checklistId, toast])
 
     useEffect(() => {
