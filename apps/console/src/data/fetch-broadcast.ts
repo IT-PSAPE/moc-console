@@ -6,12 +6,18 @@ import { groupCuesIntoLanes, flattenLanes } from "@moc/types/broadcast/lane";
 import { supabase } from "@moc/data/supabase";
 import { getCurrentWorkspaceId } from "./current-workspace";
 
+const MEDIA_COLUMNS =
+  "id, name, type, url, thumbnail_url, duration_seconds, width, height, created_at";
+
 type MediaRow = {
   id: string;
   name: string;
   type: MediaItem["type"];
   url: string;
   thumbnail_url: string | null;
+  duration_seconds: number | null;
+  width: number | null;
+  height: number | null;
   created_at: string;
 };
 
@@ -20,6 +26,10 @@ type QueueRow = {
   lane_id: string | null;
   sort_order: number;
   duration: number | null;
+  start_sec: number | null;
+  in_point: number | null;
+  out_point: number | null;
+  muted: boolean | null;
   disabled: boolean;
   media: MediaRow | MediaRow[] | null;
 };
@@ -55,7 +65,9 @@ function mapMediaRow(row: MediaRow): MediaItem {
     type: row.type,
     url: row.url,
     thumbnail: row.thumbnail_url,
-    duration: null,
+    duration: row.duration_seconds,
+    width: row.width,
+    height: row.height,
     createdAt: row.created_at,
   };
 }
@@ -71,6 +83,10 @@ function mapCueRow(row: QueueRow): Cue {
     laneId: row.lane_id ?? undefined,
     order: row.sort_order,
     durationOverride: row.duration,
+    startSec: row.start_sec,
+    inPoint: row.in_point ?? 0,
+    outPoint: row.out_point,
+    muted: row.muted ?? false,
     disabled: row.disabled,
   };
 }
@@ -128,14 +144,18 @@ function selectPlaylists(workspaceId: string) {
       next_playlist_id,
       transition,
       transition_duration_ms,
-      music:music_id(id, name, type, url, thumbnail_url, created_at),
+      music:music_id(${MEDIA_COLUMNS}),
       queue(
         id,
         lane_id,
         sort_order,
         duration,
+        start_sec,
+        in_point,
+        out_point,
+        muted,
         disabled,
-        media:media_id(id, name, type, url, thumbnail_url, created_at)
+        media:media_id(${MEDIA_COLUMNS})
       ),
       playlist_lanes(id, sort_order, type, name)
     `)
@@ -146,7 +166,7 @@ export async function fetchMedia(): Promise<MediaItem[]> {
   const workspaceId = await getCurrentWorkspaceId();
   const { data, error } = await supabase
     .from("media")
-    .select("id, name, type, url, thumbnail_url, created_at")
+    .select(MEDIA_COLUMNS)
     .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false });
 
@@ -161,7 +181,7 @@ export async function fetchMediaById(id: string): Promise<MediaItem | undefined>
   const workspaceId = await getCurrentWorkspaceId();
   const { data, error } = await supabase
     .from("media")
-    .select("id, name, type, url, thumbnail_url, created_at")
+    .select(MEDIA_COLUMNS)
     .eq("id", id)
     .eq("workspace_id", workspaceId)
     .maybeSingle();

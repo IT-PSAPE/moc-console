@@ -51,7 +51,11 @@ A horizontal row within a **Timeline**. The neutral, primitive-level term. A Cue
 _Avoid_: "track" or "row" when referring to the primitive concept.
 
 **Transport**:
-The domain-supplied time source that drives a **Timeline**'s **Playhead**. A Cue sheet supplies a clock transport (ticker + controller/follower sync); a playlist supplies a media transport (the playing media is the clock).
+The domain-supplied time source that drives a **Timeline**'s **Playhead**. A Cue sheet supplies a clock transport (ticker + controller/follower sync); a playlist supplies an *authoritative master clock* that all media subscribe to and follow — the clock never follows the media.
+
+**Program**:
+The single composited visual output of a playlist at the **Playhead** — every **Lane**'s active **Block** alpha-composited front-to-back by Lane order, **Lane 01 frontmost**. What a MOC Broadcast viewer sees, and what the Console preview mirrors.
+_Avoid_: "scene", "the stage", "the screen"
 
 **Block**:
 A single time-positioned item (a start + a duration) inside a **Lane**. The neutral, primitive-level term. A Cue-sheet **Cue** is a Block; a playlist media item is a Block.
@@ -72,6 +76,8 @@ In the Cue sheet: a time-boxed event segment (`startMin`, `durationMin`, type). 
 - A **Request** is created via a **Public flow** (MOC Request) and managed via the **Requests portal** (MOC Console).
 - A **Workspace**'s **Published playlists** are playable by anyone via **MOC Broadcast**; `draft` playlists are not.
 - **MOC Console**, **MOC Request**, and **MOC Broadcast** share the same Supabase project; RLS distinguishes **Public flow** access from **Authenticated flow** access.
+- A playlist's **Lanes** composite into the **Program** front-to-back by Lane order: **Lane 01** is frontmost (highest priority); opaque pixels occlude lanes behind, transparent pixels and gaps let them show through. Audio lanes only mix sound — they never contribute to the **Program**.
+- The **MOC Broadcast** player and the Console **Broadcasts section** preview render the same **Program** from one shared playback engine, so authoring and playback look identical.
 
 ## Flagged ambiguities
 
@@ -80,3 +86,5 @@ In the Cue sheet: a time-boxed event segment (`startMin`, `durationMin`, type). 
 - "Broadcast" was overloaded: the Console authoring section, the act of publishing, and the new public app. Resolved (2026-05-16): **MOC Broadcast** = the public player app; **Broadcasts section** = the Console authoring area; **Broadcasting** = the verb; no `Broadcast` entity. See [ADR-0002](./docs/adr/0002-moc-broadcast-public-player.md).
 - Audio is still a queueable cue type, but the long-term intent is audio-as-background-music only. Deferred, not yet resolved — the MOC Broadcast player tolerates audio cues with a minimal visual. See [ADR-0002](./docs/adr/0002-moc-broadcast-public-player.md). Multi-track playlists (audio as a parallel background **Lane**) are the intended resolution path.
 - "Cue" and "Track" are used in two unrelated domains (Cue sheet vs Broadcasts/playlist) with different data shapes. Resolved (2026-05-16) at the primitive level: the shared **Timeline** speaks only **Lane** and **Block**; each domain maps its own `Track`/`Cue` onto them. The domain `Cue` types are *not* unified.
+- **Transport** for a playlist was defined as "the playing media is the clock" (per ADR-0003). Resolved (2026-05-16): a playlist uses an **authoritative master clock**; media are reconciling *subscribers* that follow it (soft catch-up), the clock never follows media. Supersedes that part of ADR-0003 for the playlist domain — see [ADR-0005](./docs/adr/0005-unified-playlist-playback-engine.md).
+- **Lane** z-order was modelled base-lane-at-the-back (ADR-0004: lane order = bottom-up z-stack). Resolved (2026-05-16): **Lane 01 is frontmost**; the **Program** is an alpha composite front-to-back by lane number. Amends ADR-0004 — see [ADR-0005](./docs/adr/0005-unified-playlist-playback-engine.md).

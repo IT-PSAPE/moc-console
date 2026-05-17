@@ -10,7 +10,7 @@ import type { MediaItem } from "@moc/types/broadcast/media-item"
 import { FileDropzone } from "@moc/ui/components/form/file-dropzone"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import { mediaTypeLabel } from "@moc/types/broadcast/constants"
-import { getDefaultMediaDetails, inferMediaTypeFromSource } from "@moc/utils/media-source"
+import { getDefaultMediaDetails, inferMediaTypeFromSource, probeMediaMetadata } from "@moc/utils/media-source"
 import { uploadMediaFile } from "@/data/mutate-broadcast"
 import { Link } from "lucide-react"
 
@@ -79,18 +79,26 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
     setUploadError(null)
     try {
       const trimmedName = name.trim()
+      // Probe intrinsic metadata up front. For uploads we read the local
+      // File (instant, no network round-trip) before pushing it to storage.
+      const probed = await probeMediaMetadata(
+        sourceMode === "url" ? { url: url.trim() } : { file },
+        inferredMediaType,
+      )
       const sourceUrl =
         sourceMode === "url"
           ? url.trim()
           : await uploadMediaFile(file as File)
-      const mediaDetails = getDefaultMediaDetails(inferredMediaType)
+      const mediaDetails = getDefaultMediaDetails()
       const newItem: MediaItem = {
         id: randomId(),
         name: trimmedName || "Untitled",
         type: inferredMediaType,
         url: sourceUrl,
         thumbnail: mediaDetails.thumbnail,
-        duration: mediaDetails.duration,
+        duration: probed.duration ?? mediaDetails.duration,
+        width: probed.width ?? mediaDetails.width,
+        height: probed.height ?? mediaDetails.height,
         createdAt: new Date().toISOString().split("T")[0],
       }
       await onSubmit(newItem)

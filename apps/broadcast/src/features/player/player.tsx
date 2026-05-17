@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Play, Pause, SkipBack, SkipForward, Maximize, Minimize, X } from 'lucide-react'
 import { Label } from '@moc/ui/components/display/text'
 import { Button } from '@moc/ui/components/controls/button'
-import type { ResolvedCue } from '@moc/types/broadcast'
+import { useTransportSnapshot } from '@moc/ui/components/timeline'
+import { ProgramCompositor } from '@moc/player'
 import type { PlayablePlaylist } from '@/data/fetch-broadcast'
-import { useMultitrackPlayer, type LaneTrack } from '@/features/player/use-multitrack-player'
+import { useMultitrackPlayer } from '@/features/player/use-multitrack-player'
 
 const IDLE_MS = 3000
 
@@ -15,11 +16,18 @@ function fmt(seconds: number): string {
 }
 
 export function Player({ playable, onExit }: { playable: PlayablePlaylist; onExit: () => void }) {
-    const { playlist, mediaById } = playable
-    const { lanes, activeByLane, t, total, paused, goPrev, goNext, togglePaused } = useMultitrackPlayer(playable)
+    const { playlist } = playable
+    const { lanes, total, transport, goPrev, goNext, resolveUrl } = useMultitrackPlayer(playable)
+    const { currentTime, isPlaying } = useTransportSnapshot(transport)
+    const paused = !isPlaying
 
     const containerRef = useRef<HTMLDivElement>(null)
     const musicRef = useRef<HTMLAudioElement>(null)
+
+    // Browsers block autoplay WITH sound until a user gesture. Videos play
+    // their own audio by default here, so we gate the master clock behind a
+    // single tap; until then nothing plays and everything stays muted.
+    const [started, setStarted] = useState(false)
 
     const [isFullscreen, setIsFullscreen] = useState(false)
     const [controlsVisible, setControlsVisible] = useState(true)
@@ -38,6 +46,14 @@ export function Player({ playable, onExit }: { playable: PlayablePlaylist; onExi
 
     const showControls = controlsVisible || paused
 
+    const start = useCallback(() => {
+        setStarted(true)
+        transport.play()
+        pokeControls()
+    }, [transport, pokeControls])
+
+    const togglePaused = useCallback(() => transport.toggle(), [transport])
+
     const toggleFullscreen = useCallback(() => {
         const el = containerRef.current
         if (!el) return
@@ -54,9 +70,9 @@ export function Player({ playable, onExit }: { playable: PlayablePlaylist; onExi
     useEffect(() => {
         const music = musicRef.current
         if (!music) return
-        if (paused) music.pause()
+        if (paused || !started) music.pause()
         else music.play().catch(() => { /* ambient is best-effort */ })
-    }, [paused])
+    }, [paused, started])
 
     const hasAnything = lanes.length > 0 && total > 0
     if (!hasAnything) {
@@ -67,8 +83,13 @@ export function Player({ playable, onExit }: { playable: PlayablePlaylist; onExi
         )
     }
 
-    // Topmost visual lane's cue → the title line.
-    const topVisual = [...activeByLane].reverse().find(({ lane, cue }) => lane.type !== 'audio' && cue)
+    // Frontmost active clip (Lane 01 wins — lanes are order-ascending) → title.
+    const frontmost = lanes
+        .map((lane) => {
+            const local = lane.lengthSec > 0 ? currentTime % lane.lengthSec : currentTime
+            return lane.resolved.find((c) => local >= c.startSec && local < c.startSec + c.durationSec) ?? null
+        })
+        .find((c) => c)
 
     return (
         <div
@@ -78,24 +99,30 @@ export function Player({ playable, onExit }: { playable: PlayablePlaylist; onExi
             onTouchStart={pokeControls}
             className={`relative min-h-dvh w-full bg-black overflow-hidden ${showControls ? '' : 'cursor-none'}`}
         >
-            {/* Stage — lanes composited bottom→top (DOM order = z-order, ADR-0004) */}
-            <div className="absolute inset-0">
-                {activeByLane.map(({ lane, cue }) =>
-                    cue ? (
-                        <LaneLayer
-                            key={lane.id}
-                            lane={lane}
-                            cue={cue}
-                            paused={paused}
-                            muted={playlist.videoSettings.muted}
-                            url={mediaById[cue.mediaItemId]?.url}
-                        />
-                    ) : null,
-                )}
-            </div>
+            {/* Stage — the shared Program (Lane 01 frontmost, alpha-composited) */}
+            <ProgramCompositor
+                lanes={lanes}
+                transport={transport}
+                resolveUrl={resolveUrl}
+                mutedFor={(cue) => !started || (cue.muted ?? false)}
+                className="absolute inset-0"
+            />
 
             {playlist.backgroundMusicUrl && (
-                <audio ref={musicRef} src={playlist.backgroundMusicUrl} loop autoPlay />
+                <audio ref={musicRef} src={playlist.backgroundMusicUrl} loop />
+            )}
+
+            {!started && (
+                <button
+                    type="button"
+                    onClick={start}
+                    className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-black text-white/90"
+                >
+                    <span className="flex size-20 items-center justify-center rounded-full bg-white text-black">
+                        <Play className="size-9 translate-x-0.5" />
+                    </span>
+                    <Label.md className="text-white/70">Tap to start</Label.md>
+                </button>
             )}
 
             {/* Controls overlay */}
@@ -104,8 +131,8 @@ export function Player({ playable, onExit }: { playable: PlayablePlaylist; onExi
                     <div className="min-w-0">
                         <Label.lg className="text-white truncate block">{playlist.name}</Label.lg>
                         <Label.sm className="text-white/50">
-                            {fmt(t)} / {fmt(total)}
-                            {topVisual?.cue ? ` · ${topVisual.cue.mediaItemName}` : ''}
+                            {fmt(currentTime)} / {fmt(total)}
+                            {frontmost ? ` · ${frontmost.mediaItemName}` : ''}
                             {lanes.length > 1 ? ` · ${lanes.length} lanes` : ''}
                         </Label.sm>
                     </div>
@@ -129,43 +156,6 @@ export function Player({ playable, onExit }: { playable: PlayablePlaylist; onExi
                     </ControlButton>
                 </div>
             </div>
-        </div>
-    )
-}
-
-// One composited lane layer. Audio lanes mix (no visual stack); visual
-// lanes fill; overlay lanes sit contained on top. See ADR-0004.
-function LaneLayer({ lane, cue, paused, muted, url }: { lane: LaneTrack; cue: ResolvedCue; paused: boolean; muted: boolean; url: string | undefined }) {
-    const mediaRef = useRef<HTMLVideoElement & HTMLAudioElement>(null)
-
-    useEffect(() => {
-        const el = mediaRef.current
-        if (!el) return
-        if (paused) el.pause()
-        else el.play().catch(() => {})
-    }, [paused, cue.id])
-
-    if (!url) return null
-
-    if (lane.type === 'audio' || cue.mediaItemType === 'audio') {
-        return <audio key={cue.id} ref={mediaRef} src={url} autoPlay loop />
-    }
-
-    const isOverlay = lane.type === 'overlay'
-    const wrap = isOverlay
-        ? 'absolute inset-0 flex items-center justify-center p-10 pointer-events-none'
-        : 'absolute inset-0 flex items-center justify-center'
-
-    if (cue.mediaItemType === 'video') {
-        return (
-            <div className={wrap}>
-                <video key={cue.id} ref={mediaRef} src={url} className="size-full object-contain" autoPlay playsInline loop muted={muted} />
-            </div>
-        )
-    }
-    return (
-        <div className={wrap}>
-            <img src={url} alt="" className="size-full object-contain" />
         </div>
     )
 }

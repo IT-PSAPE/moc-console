@@ -8,12 +8,18 @@ export type BroadcastWorkspace = {
   slug: string
 }
 
+const MEDIA_COLUMNS =
+  'id, name, type, url, thumbnail_url, duration_seconds, width, height, created_at'
+
 type MediaRow = {
   id: string
   name: string
   type: MediaItem['type']
   url: string
   thumbnail_url: string | null
+  duration_seconds: number | null
+  width: number | null
+  height: number | null
   created_at: string
 }
 
@@ -22,6 +28,10 @@ type QueueRow = {
   lane_id: string | null
   sort_order: number
   duration: number | null
+  start_sec: number | null
+  in_point: number | null
+  out_point: number | null
+  muted: boolean | null
   disabled: boolean
   media: MediaRow | MediaRow[] | null
 }
@@ -64,6 +74,10 @@ function mapCueRow(row: QueueRow): Cue {
     laneId: row.lane_id ?? undefined,
     order: row.sort_order,
     durationOverride: row.duration,
+    startSec: row.start_sec,
+    inPoint: row.in_point ?? 0,
+    outPoint: row.out_point,
+    muted: row.muted ?? false,
     disabled: row.disabled,
   }
 }
@@ -73,6 +87,7 @@ function mapCueRow(row: QueueRow): Cue {
 export type CueMedia = {
   url: string
   thumbnail: string | null
+  duration: number | null
 }
 
 export type PlayablePlaylist = {
@@ -88,7 +103,7 @@ function mapPlaylistRow(row: PlaylistRow): PlayablePlaylist {
     .map((q) => {
       const media = one(q.media)
       if (media) {
-        mediaById[media.id] = { url: media.url, thumbnail: media.thumbnail_url }
+        mediaById[media.id] = { url: media.url, thumbnail: media.thumbnail_url, duration: media.duration_seconds }
       }
       return mapCueRow(q)
     })
@@ -140,14 +155,18 @@ const PLAYLIST_SELECT = `
   next_playlist_id,
   transition,
   transition_duration_ms,
-  music:music_id(id, name, type, url, thumbnail_url, created_at),
+  music:music_id(${MEDIA_COLUMNS}),
   queue(
     id,
     lane_id,
     sort_order,
     duration,
+    start_sec,
+    in_point,
+    out_point,
+    muted,
     disabled,
-    media:media_id(id, name, type, url, thumbnail_url, created_at)
+    media:media_id(${MEDIA_COLUMNS})
   ),
   playlist_lanes(id, sort_order, type, name)
 `

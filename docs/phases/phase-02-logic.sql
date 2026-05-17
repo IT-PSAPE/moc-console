@@ -1397,6 +1397,12 @@ BEGIN
       USING ERRCODE = 'insufficient_privilege';
   END IF;
 
+  -- Serialize concurrent saves for the same playlist. The editor can fire
+  -- overlapping saves; without this, two delete-then-insert runs collide on
+  -- playlist_lanes_pkey (SQLSTATE 23505 -> HTTP 409). The lock is released
+  -- automatically at transaction end.
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_playlist_id::text, 0));
+
   -- queue rows cascade-delete with their lanes.
   DELETE FROM public.playlist_lanes WHERE playlist_id = p_playlist_id;
 
@@ -1412,7 +1418,7 @@ BEGIN
       v_lane->>'name'
     );
 
-    INSERT INTO public.queue (id, playlist_id, lane_id, media_id, sort_order, duration, disabled)
+    INSERT INTO public.queue (id, playlist_id, lane_id, media_id, sort_order, duration, start_sec, in_point, out_point, muted, disabled)
     SELECT
       cue.id,
       p_playlist_id,
@@ -1420,12 +1426,20 @@ BEGIN
       cue.media_id,
       cue.sort_order,
       cue.duration,
+      cue.start_sec,
+      coalesce(cue.in_point, 0),
+      cue.out_point,
+      coalesce(cue.muted, false),
       cue.disabled
     FROM jsonb_to_recordset(coalesce(v_lane->'cues', '[]'::jsonb)) AS cue(
       id uuid,
       media_id uuid,
       sort_order integer,
       duration integer,
+      start_sec numeric,
+      in_point numeric,
+      out_point numeric,
+      muted boolean,
       disabled boolean
     );
   END LOOP;

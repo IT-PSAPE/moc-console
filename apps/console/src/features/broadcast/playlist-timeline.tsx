@@ -1,9 +1,10 @@
 import { useCallback } from "react"
-import { Timeline, useActiveBlocks, useTimeline, type TimelineLaneData } from "@moc/ui/components/timeline"
+import { Timeline, useActiveBlocks, useTimeline, type TimelineLaneData, type TimelineTransport } from "@moc/ui/components/timeline"
+import { ProgramCompositor, type ResolvedLane } from "@moc/player"
 import { Badge } from "@moc/ui/components/display/badge"
 import { Button } from "@moc/ui/components/controls/button"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
-import type { Cue, PlaylistLane } from "@moc/types/broadcast"
+import type { Cue, PlaylistLane, ResolvedCue } from "@moc/types/broadcast"
 import { cn } from "@moc/utils/cn"
 import { Image as ImageIcon, Music, Pause, Play, Plus, Video, X, ZoomIn, ZoomOut } from "lucide-react"
 
@@ -28,18 +29,21 @@ type PlaylistTimelineProps = {
     lanes: PlaylistLane[]
     primitiveLanes: TimelineLaneData[]
     thumbById: Map<string, string | null>
+    urlById: Map<string, string>
+    programLanes: ResolvedLane[]
+    transport: TimelineTransport
 }
 
 // Presentational timeline body. Assumes a <Timeline> provider ancestor —
 // the provider is lifted to the screen so the command bar shares the same
 // transport/zoom state (see ADR-0003 and use-playlist-timeline).
-export function PlaylistTimeline({ lanes, primitiveLanes, thumbById }: PlaylistTimelineProps) {
+export function PlaylistTimeline({ lanes, primitiveLanes, thumbById, urlById, programLanes, transport }: PlaylistTimelineProps) {
     const { isPlaying, toggle, currentTime, total } = useTimeline()
 
     return (
         <>
             <div className="flex min-h-0 flex-1 items-center justify-center bg-secondary_alt px-6 py-5">
-                <ProgramMonitor thumbById={thumbById} />
+                <ProgramMonitor programLanes={programLanes} transport={transport} urlById={urlById} />
             </div>
 
             <div className="flex shrink-0 items-center justify-end gap-1.5 border-y border-secondary bg-secondary_alt px-3 py-1.5">
@@ -65,13 +69,16 @@ export function PlaylistTimeline({ lanes, primitiveLanes, thumbById }: PlaylistT
                     </Timeline.SidebarHeader>
                     <Timeline.LaneList>
                         {lanes.map((lane, i) => (
-                            <Timeline.LaneHeader key={lane.id} id={lane.id}>
+                            <Timeline.LaneHeader key={lane.id} id={lane.id} className="group">
                                 <Timeline.LaneHeader.DragHandle className="font-mono text-xs font-medium text-brand_secondary">
                                     {String(i + 1).padStart(2, "0")}
                                 </Timeline.LaneHeader.DragHandle>
                                 <Label.xs className="min-w-0 flex-1 truncate text-primary">
                                     {lane.name ?? defaultLaneName(lane.type)}
                                 </Label.xs>
+                                <Timeline.LaneHeader.Remove className="flex size-5 items-center justify-center rounded text-quaternary opacity-0 transition-colors hover:text-error group-hover:opacity-100">
+                                    <X className="size-3.5" />
+                                </Timeline.LaneHeader.Remove>
                             </Timeline.LaneHeader>
                         ))}
                         <Timeline.AddLane
@@ -88,8 +95,9 @@ export function PlaylistTimeline({ lanes, primitiveLanes, thumbById }: PlaylistT
                     {primitiveLanes.map((lane) => (
                         <Timeline.Lane key={lane.id} id={lane.id}>
                             {lane.blocks.map((b) => {
-                                const cue = b.data as Cue
+                                const cue = b.data as ResolvedCue
                                 const thumb = cue.mediaItemId ? thumbById.get(cue.mediaItemId) : null
+                                const estimated = cue.durationSource === "fallback"
                                 return (
                                     <Timeline.Block
                                         key={b.id}
@@ -99,6 +107,7 @@ export function PlaylistTimeline({ lanes, primitiveLanes, thumbById }: PlaylistT
                                         className="rounded-md border border-secondary bg-secondary"
                                     >
                                         <Timeline.Block.Move />
+                                        <Timeline.Block.ResizeStart />
                                         <Timeline.Block.ResizeEnd />
                                         <div className="pointer-events-none relative flex h-full items-stretch gap-1.5 p-1">
                                             <span className="relative size-7 shrink-0 overflow-hidden rounded bg-tertiary">
@@ -108,7 +117,11 @@ export function PlaylistTimeline({ lanes, primitiveLanes, thumbById }: PlaylistT
                                             </span>
                                             <span className="flex min-w-0 flex-1 flex-col justify-center">
                                                 <Label.xs className="truncate text-primary">{cue.mediaItemName}</Label.xs>
-                                                <Paragraph.xs className="font-mono text-tertiary">{tc(b.duration)}</Paragraph.xs>
+                                                <span title={estimated ? "Estimated — original length not measured yet" : undefined}>
+                                                    <Paragraph.xs className={cn("font-mono", estimated ? "text-warning" : "text-tertiary")}>
+                                                        {estimated ? "~" : ""}{tc(b.duration)}
+                                                    </Paragraph.xs>
+                                                </span>
                                             </span>
                                             <Timeline.Block.Remove className="pointer-events-auto absolute right-1 top-1 flex size-4 items-center justify-center rounded text-quaternary opacity-0 transition-colors hover:text-error group-hover:opacity-100">
                                                 <X className="size-3" />
@@ -144,49 +157,54 @@ function TimelineZoomControls() {
 }
 
 
-// Program monitor — lane-order compositor (ADR-0004). The screen is
-// black hardware in any theme (same convention as the MOC Broadcast
-// player), so on-screen text is light; the chrome around it is on-brand.
-function ProgramMonitor({ thumbById }: { thumbById: Map<string, string | null> }) {
+// Program monitor — the **Program** (CONTEXT.md): the shared @moc/player
+// compositor renders the picture (Lane 01 frontmost, alpha-composited);
+// this only owns the editor chrome — the framed black "hardware" box, the
+// No-signal state, and the audio-lane badges. Preview is muted (ADR-0005:
+// audio policy is per-app chrome). The screen is black in any theme so
+// on-screen text is light.
+function ProgramMonitor({
+    programLanes, transport, urlById,
+}: {
+    programLanes: ResolvedLane[]
+    transport: TimelineTransport
+    urlById: Map<string, string>
+}) {
     const active = useActiveBlocks()
     const audioCues = active.filter(({ lane, block }) => lane.type === "audio" && block)
-    const visual = active.filter(({ lane, block }) => lane.type !== "audio" && block)
-    const hasSignal = visual.length > 0 || audioCues.length > 0
+    const hasSignal = active.some(({ block }) => block)
 
     return (
         <div className="relative h-full w-full">
             <div className="absolute inset-0 m-auto aspect-video max-h-full max-w-full overflow-hidden rounded-md bg-black">
-            {!hasSignal && (
-                <div className="absolute inset-0 grid place-items-center">
-                    <span className="text-xs text-white/35">No signal</span>
-                </div>
-            )}
+                <ProgramCompositor
+                    lanes={programLanes}
+                    transport={transport}
+                    resolveUrl={(id) => urlById.get(id)}
+                    muted
+                    className="absolute inset-0"
+                />
 
-            {visual.map(({ lane, block }) => {
-                const cue = block!.data as Cue
-                const thumb = cue.mediaItemId ? thumbById.get(cue.mediaItemId) : null
-                const overlay = lane.type === "overlay"
-                return (
-                    <div key={lane.id} className={cn("absolute inset-0 flex items-center justify-center", overlay && "p-10")}>
-                        {thumb
-                            ? <img src={thumb} alt="" className={cn("max-h-full max-w-full", overlay ? "object-contain" : "size-full object-contain")} />
-                            : <span className="text-sm text-white/40">{cue.mediaItemName}</span>}
-                    </div>
-                )
-            })}
+                <div className="pointer-events-none absolute inset-0 z-[100]">
+                    {!hasSignal && (
+                        <div className="absolute inset-0 grid place-items-center">
+                            <span className="text-xs text-white/35">No signal</span>
+                        </div>
+                    )}
 
-            {audioCues.length > 0 && (
-                <div className="absolute bottom-2.5 left-2.5 flex flex-wrap gap-1.5">
-                    {audioCues.map(({ lane, block }) => (
-                        <Badge
-                            key={lane.id}
-                            icon={<Music className="size-3 text-white/70" />}
-                            label={(block!.data as Cue).mediaItemName}
-                            className="rounded-full bg-black/60 px-2.5 py-1 ring-1 ring-white/15 *:!text-white/75"
-                        />
-                    ))}
+                    {audioCues.length > 0 && (
+                        <div className="absolute bottom-2.5 left-2.5 flex flex-wrap gap-1.5">
+                            {audioCues.map(({ lane, block }) => (
+                                <Badge
+                                    key={lane.id}
+                                    icon={<Music className="size-3 text-white/70" />}
+                                    label={(block!.data as Cue).mediaItemName}
+                                    className="rounded-full bg-black/60 px-2.5 py-1 ring-1 ring-white/15 *:!text-white/75"
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
-            )}
             </div>
         </div>
     )

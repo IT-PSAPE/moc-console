@@ -17,12 +17,57 @@ export type PlaylistLane = {
   cues: Cue[]
 }
 
-// A cue with its computed time window on its lane's axis (seconds).
-export type ResolvedCue = Cue & { startSec: number; durationSec: number }
+// Where a resolved cue's duration came from. Lets the editor distinguish a
+// real measured video length from a guess (probe failed / not yet
+// backfilled) so it can badge the latter instead of silently lying.
+//   "override"      — explicit per-cue durationOverride
+//   "image-default" — still image using the playlist default
+//   "media"         — measured intrinsic video/audio duration
+//   "fallback"      — video/audio with unknown length; default used as a guess
+export type DurationSource = "override" | "image-default" | "media" | "fallback"
 
-// Compute each cue's start/duration (seconds) from cumulative durations
-// within the lane. Disabled cues keep their slot collapsed (0 duration)
-// so authoring order is stable but they don't occupy the timeline.
+// Hard floor for a clip's on-screen length. Trimming/resizing can't take a
+// clip below this; keeps a clip from collapsing to an unusable sliver.
+export const MIN_CLIP_SEC = 1
+
+// The trim window resolved against a video/audio source (seconds). For
+// images inPoint=0 and outPoint=displayDuration (no real source axis).
+export type ResolvedTrim = { inPoint: number; outPoint: number }
+
+// Resolve a cue's effective trim window into its source. Pure + shared by
+// the editor adapter and the player so both agree on what plays.
+export function resolveTrim(
+  cue: Cue,
+  sourceDuration: number | null,
+): ResolvedTrim {
+  if (sourceDuration == null || cue.mediaItemType === "image") {
+    const len = Math.max(MIN_CLIP_SEC, cue.outPoint ?? 0)
+    return { inPoint: 0, outPoint: len }
+  }
+  const inPoint = Math.min(Math.max(0, cue.inPoint ?? 0), Math.max(0, sourceDuration - MIN_CLIP_SEC))
+  const outPoint = Math.min(Math.max(inPoint + MIN_CLIP_SEC, cue.outPoint ?? sourceDuration), sourceDuration)
+  return { inPoint, outPoint }
+}
+
+// A cue with its computed time window on its lane's axis (seconds), plus
+// the trim window resolved into its source (inPointSec/outPointSec).
+export type ResolvedCue = Cue & {
+  startSec: number
+  durationSec: number
+  durationSource: DurationSource
+  inPointSec: number
+  outPointSec: number
+}
+
+// Resolve every cue's on-timeline window. A cue's start is its explicit
+// `startSec` when set (deliberate gaps allowed — gap = black on the public
+// screen), otherwise it appends right after the previous clip (legacy
+// gapless behaviour, and the natural position for freshly added clips).
+// Within a lane clips may NOT overlap: a clip can never start before the
+// previous clip (by order) ends, so an explicit start is floored at the
+// running cursor. Gaps survive (start beyond the cursor); overlaps don't.
+// Disabled cues collapse to 0 so authoring order stays stable but they
+// don't occupy the timeline.
 export function resolveLaneTimeline(
   lane: PlaylistLane,
   defaultImageDuration: number,
@@ -32,14 +77,27 @@ export function resolveLaneTimeline(
   return [...lane.cues]
     .sort((a, b) => a.order - b.order)
     .map((cue) => {
-      const resolved =
-        cue.durationOverride ??
-        (cue.mediaItemType === "image" ? defaultImageDuration : durationOf(cue)) ??
-        defaultImageDuration
+      const mediaDuration = cue.mediaItemType === "image" ? null : durationOf(cue)
+      const trim = resolveTrim(cue, mediaDuration)
+      let resolved: number
+      let durationSource: DurationSource
+      if (cue.mediaItemType === "image") {
+        resolved = cue.durationOverride ?? defaultImageDuration
+        durationSource = cue.durationOverride != null ? "override" : "image-default"
+      } else if (mediaDuration != null) {
+        // Video/audio length is its trim window into the real source.
+        resolved = trim.outPoint - trim.inPoint
+        durationSource = "media"
+      } else {
+        // Length not measured yet — best-guess so the clip is still usable.
+        resolved = cue.durationOverride ?? defaultImageDuration
+        durationSource = "fallback"
+      }
       const durationSec = cue.disabled ? 0 : Math.max(0, resolved)
-      const startSec = cursor
-      cursor += durationSec
-      return { ...cue, startSec, durationSec }
+      // Floor the explicit start at the cursor: keeps gaps, kills overlap.
+      const startSec = Math.max(cue.startSec ?? cursor, cursor)
+      cursor = startSec + durationSec
+      return { ...cue, startSec, durationSec, durationSource, inPointSec: trim.inPoint, outPointSec: trim.outPoint }
     })
 }
 

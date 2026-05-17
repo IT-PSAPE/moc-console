@@ -214,14 +214,20 @@ CREATE TABLE IF NOT EXISTS public.bookings (
 );
 
 -- media
+-- duration_seconds/width/height: intrinsic media metadata probed client-side
+-- on upload (no server ffprobe). NULL = not yet measured; the playlist's
+-- default_image_duration is the fallback. Folded in from patches/.
 CREATE TABLE IF NOT EXISTS public.media (
-  id            uuid              PRIMARY KEY DEFAULT gen_random_uuid(),
-  workspace_id  uuid              NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
-  name          text              NOT NULL,
-  type          public.media_type NOT NULL,
-  url           text              NOT NULL,
-  thumbnail_url text              NULL,
-  created_at    timestamptz       NOT NULL DEFAULT now()
+  id               uuid              PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id     uuid              NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
+  name             text              NOT NULL,
+  type             public.media_type NOT NULL,
+  url              text              NOT NULL,
+  thumbnail_url    text              NULL,
+  duration_seconds numeric           NULL,
+  width            integer           NULL,
+  height           integer           NULL,
+  created_at       timestamptz       NOT NULL DEFAULT now()
 );
 
 -- playlists
@@ -266,6 +272,14 @@ CREATE TABLE IF NOT EXISTS public.queue (
   media_id    uuid    NOT NULL REFERENCES public.media(id) ON DELETE CASCADE,
   sort_order  integer NOT NULL,
   duration    integer NULL,
+  -- start_sec: explicit timeline position (NULL = legacy gapless append).
+  -- in_point/out_point: non-destructive video/audio trim into the source.
+  -- muted: per-clip video audio (default off — videos play their sound).
+  -- Folded in from patches/.
+  start_sec   numeric NULL,
+  in_point    numeric NOT NULL DEFAULT 0,
+  out_point   numeric NULL,
+  muted       boolean NOT NULL DEFAULT false,
   disabled    boolean NOT NULL DEFAULT false,
   CONSTRAINT queue_lane_id_sort_order_key UNIQUE (lane_id, sort_order)
 );

@@ -1,4 +1,5 @@
 import { fetchMedia, fetchPlaylists } from "@/data/fetch-broadcast"
+import { backfillMediaDurations } from "@/data/mutate-broadcast"
 import { fetchStreams, fetchYouTubeConnection } from "@/data/fetch-streams"
 import { fetchZoomConnection, fetchZoomMeetings } from "@/data/fetch-zoom"
 import type { MediaItem } from "@moc/types/broadcast/media-item"
@@ -165,7 +166,14 @@ export function BroadcastProvider({ children }: { children: ReactNode }) {
 
     setIsLoadingMedia(true)
     mediaPromiseRef.current = fetchMedia()
-      .then((data) => { setMedia(data); mediaLoadedRef.current = currentWorkspaceId })
+      .then(async (data) => {
+        setMedia(data)
+        mediaLoadedRef.current = currentWorkspaceId
+        // Self-healing: probe + persist durations for assets uploaded
+        // before capture existed, then merge the patched values in.
+        const healed = await backfillMediaDurations(data)
+        if (healed !== data) setMedia(healed)
+      })
       .finally(() => { mediaPromiseRef.current = null; setIsLoadingMedia(false) })
 
     return mediaPromiseRef.current

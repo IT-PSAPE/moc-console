@@ -20,6 +20,13 @@ export function usePlaylistEditor({ id, contextPlaylists, syncPlaylist }: UsePla
   const [inspectorOpen, setInspectorOpen] = useState(false)
   const [sourceOpen, setSourceOpen] = useState(true)
   const persistedPlaylistRef = useRef<Playlist | null>(null)
+  // Lane-save scheduler: the timeline fires onChange on every drag tick.
+  // We update local state immediately but debounce the network save and
+  // keep only one request in flight (coalescing newer edits) so overlapping
+  // save_playlist_lanes calls can't race on the server.
+  const pendingLanesRef = useRef<PlaylistLane[] | null>(null)
+  const saveTimerRef = useRef<number | null>(null)
+  const savingRef = useRef(false)
 
   // The editor owns `playlist` once loaded. We read the latest context list
   // through a ref so the initial-load effect can seed from it WITHOUT
@@ -76,25 +83,59 @@ export function usePlaylistEditor({ id, contextPlaylists, syncPlaylist }: UsePla
       })
   }, [syncPlaylist, toast])
 
+  const flushLanes = useCallback(() => {
+    if (savingRef.current) return // a save is in flight; it will re-flush on completion
+    const lanes = pendingLanesRef.current
+    const base = persistedPlaylistRef.current
+    if (!lanes || !base) return
+    pendingLanesRef.current = null
+    savingRef.current = true
+    updatePlaylistLanes(base.id, lanes)
+      .then((savedLanes) => {
+        // Only commit the confirmed state if no newer edit arrived meanwhile.
+        if (!pendingLanesRef.current) {
+          const next: Playlist = { ...base, lanes: savedLanes, cues: flattenLanes(savedLanes) }
+          persistedPlaylistRef.current = next
+          setPlaylist(next)
+          syncPlaylist(next)
+        }
+      })
+      .catch((error) => {
+        const restore = persistedPlaylistRef.current
+        if (restore) {
+          pendingLanesRef.current = null
+          setPlaylist(restore)
+          syncPlaylist(restore)
+        }
+        toast({ title: "Failed to save", description: getErrorMessage(error, "The playlist could not be updated."), variant: "error" })
+      })
+      .finally(() => {
+        savingRef.current = false
+        if (pendingLanesRef.current) flushLanes() // edits arrived during the save
+      })
+  }, [syncPlaylist, toast])
+
   const persistPlaylistLanes = useCallback((lanes: PlaylistLane[]) => {
     if (!playlist) return
-    const previous = playlist
     const updated: Playlist = { ...playlist, lanes, cues: flattenLanes(lanes) }
     setPlaylist(updated)
     syncPlaylist(updated)
-    updatePlaylistLanes(updated.id, lanes)
-      .then((savedLanes) => {
-        const next: Playlist = { ...updated, lanes: savedLanes, cues: flattenLanes(savedLanes) }
-        persistedPlaylistRef.current = next
-        setPlaylist(next)
-        syncPlaylist(next)
-      })
-      .catch((error) => {
-        setPlaylist(previous)
-        syncPlaylist(previous)
-        toast({ title: "Failed to save", description: getErrorMessage(error, "The playlist could not be updated."), variant: "error" })
-      })
-  }, [playlist, syncPlaylist, toast])
+    pendingLanesRef.current = lanes
+    if (saveTimerRef.current !== null) window.clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = window.setTimeout(() => {
+      saveTimerRef.current = null
+      flushLanes()
+    }, 500)
+  }, [playlist, syncPlaylist, flushLanes])
+
+  // Flush any pending lane edit on unmount so navigating away doesn't drop it.
+  useEffect(() => () => {
+    if (saveTimerRef.current !== null) {
+      window.clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = null
+      flushLanes()
+    }
+  }, [flushLanes])
 
   const handleNameSave = useCallback((name: string) => {
     if (!playlist) return

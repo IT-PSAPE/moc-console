@@ -51,4 +51,23 @@ function LaneHeaderDragHandle({ children, className }: { children: ReactNode; cl
     )
 }
 
+/** Delete trigger for this lane (and its blocks). Wrap your own icon. */
+function LaneHeaderRemove({ children, className }: { children: ReactNode; className?: string }) {
+    const { removeLane } = useTimeline()
+    const { laneId } = useLane()
+    return (
+        <button
+            type="button"
+            className={cn('relative z-20 shrink-0', className)}
+            onClick={(e) => {
+                e.stopPropagation()
+                removeLane(laneId)
+            }}
+        >
+            {children}
+        </button>
+    )
+}
+
 TimelineLaneHeader.DragHandle = LaneHeaderDragHandle
+TimelineLaneHeader.Remove = LaneHeaderRemove

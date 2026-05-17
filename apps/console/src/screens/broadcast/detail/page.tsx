@@ -104,6 +104,9 @@ export function PlaylistDetailScreen() {
               lanes={playlist.lanes}
               primitiveLanes={pt.primitiveLanes}
               thumbById={pt.thumbById}
+              urlById={pt.urlById}
+              programLanes={pt.programLanes}
+              transport={pt.transport}
             />
           </main>
 
