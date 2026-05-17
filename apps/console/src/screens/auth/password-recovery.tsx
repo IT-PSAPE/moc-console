@@ -1,39 +1,21 @@
 import { useEffect, useMemo, useState } from "react"
 import type { FormEvent } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import {
-    AlertCircle,
-    ArrowRight,
-    CheckCircle2,
-    Eye,
-    EyeOff,
-    Lock,
-} from "lucide-react"
+import { AlertCircle, ArrowRight, CheckCircle2 } from "lucide-react"
 import { Button } from "@moc/ui/components/controls/button"
 import { Spinner } from "@moc/ui/components/feedback/spinner"
-import { Input } from "@moc/ui/components/form/input"
 import { FormLabel } from "@moc/ui/components/form/form-label"
 import { useAuth } from "@/lib/auth-context"
 import { routes } from "@/screens/console-routes"
-import { cn } from "@moc/utils/cn"
 import { AuthLayout } from "./auth-layout"
+import { PasswordField } from "./password-field"
+import {
+    MIN_PASSWORD_LENGTH,
+    PasswordStrengthMeter,
+    evaluatePasswordStrength,
+} from "./password-strength-meter"
 
-type Strength = "weak" | "medium" | "strong"
-
-const MIN_PASSWORD_LENGTH = 8
 const REDIRECT_COUNTDOWN_SECONDS = 4
-
-function evaluateStrength(password: string): Strength {
-    if (password.length < MIN_PASSWORD_LENGTH) return "weak"
-    let signals = 0
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) signals++
-    if (/\d/.test(password)) signals++
-    if (/[^a-zA-Z0-9]/.test(password)) signals++
-    if (password.length >= 14) signals++
-    if (signals >= 3) return "strong"
-    if (signals >= 1) return "medium"
-    return "weak"
-}
 
 function getLinkErrorFromUrl(): string | null {
     if (typeof window === "undefined") return null
@@ -72,7 +54,7 @@ export function PasswordRecoveryScreen() {
         [authLoading, success],
     )
 
-    const strength = useMemo(() => evaluateStrength(password), [password])
+    const strength = useMemo(() => evaluatePasswordStrength(password), [password])
     const passwordMeetsMinimum = password.length >= MIN_PASSWORD_LENGTH
     const confirmMatches =
         confirmPassword.length > 0 && confirmPassword === password
@@ -113,6 +95,22 @@ export function PasswordRecoveryScreen() {
         setIsSubmitting(false)
     }
 
+    function handleTogglePassword() {
+        setShowPassword((v) => !v)
+    }
+
+    function handleToggleConfirm() {
+        setShowConfirm((v) => !v)
+    }
+
+    function handleConfirmBlur() {
+        setConfirmTouched(true)
+    }
+
+    function handleNavigateToDestination() {
+        navigate(destination, { replace: true })
+    }
+
     if (authLoading) {
         return (
             <AuthLayout>
@@ -147,9 +145,7 @@ export function PasswordRecoveryScreen() {
                     </div>
                     <Button
                         className="w-full"
-                        onClick={() =>
-                            navigate(destination, { replace: true })
-                        }
+                        onClick={handleNavigateToDestination}
                         icon={<ArrowRight />}
                         iconPosition="trailing"
                     >
@@ -262,15 +258,13 @@ export function PasswordRecoveryScreen() {
                         value={password}
                         onChange={setPassword}
                         visible={showPassword}
-                        onToggleVisible={() =>
-                            setShowPassword((v) => !v)
-                        }
+                        onToggleVisible={handleTogglePassword}
                         placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
                         autoFocus
                         autoComplete="new-password"
                     />
                     {password.length > 0 && (
-                        <StrengthMeter
+                        <PasswordStrengthMeter
                             strength={strength}
                             tooShort={!passwordMeetsMinimum}
                         />
@@ -283,8 +277,8 @@ export function PasswordRecoveryScreen() {
                         value={confirmPassword}
                         onChange={setConfirmPassword}
                         visible={showConfirm}
-                        onToggleVisible={() => setShowConfirm((v) => !v)}
-                        onBlur={() => setConfirmTouched(true)}
+                        onToggleVisible={handleToggleConfirm}
+                        onBlur={handleConfirmBlur}
                         placeholder="Re-enter your new password"
                         autoComplete="new-password"
                     />
@@ -304,100 +298,5 @@ export function PasswordRecoveryScreen() {
                 </Button>
             </form>
         </AuthLayout>
-    )
-}
-
-type PasswordFieldProps = {
-    value: string
-    onChange: (next: string) => void
-    onBlur?: () => void
-    visible: boolean
-    onToggleVisible: () => void
-    placeholder?: string
-    autoFocus?: boolean
-    autoComplete?: string
-}
-
-function PasswordField({
-    value,
-    onChange,
-    onBlur,
-    visible,
-    onToggleVisible,
-    placeholder,
-    autoFocus,
-    autoComplete,
-}: PasswordFieldProps) {
-    return (
-        <div className="relative">
-            <Input
-                type={visible ? "text" : "password"}
-                icon={<Lock />}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                onBlur={onBlur}
-                placeholder={placeholder}
-                autoComplete={autoComplete}
-                autoFocus={autoFocus}
-                className="pr-10"
-                required
-            />
-            <button
-                type="button"
-                onClick={onToggleVisible}
-                aria-label={visible ? "Hide password" : "Show password"}
-                aria-pressed={visible}
-                className="absolute inset-y-0 right-3 flex items-center text-tertiary hover:text-secondary transition-colors"
-            >
-                {visible ? (
-                    <EyeOff className="size-4" />
-                ) : (
-                    <Eye className="size-4" />
-                )}
-            </button>
-        </div>
-    )
-}
-
-function StrengthMeter({
-    strength,
-    tooShort,
-}: {
-    strength: Strength
-    tooShort: boolean
-}) {
-    const filled =
-        strength === "weak" ? 1 : strength === "medium" ? 2 : 3
-    const label =
-        strength === "weak" ? "Weak" : strength === "medium" ? "OK" : "Strong"
-    const hint = tooShort
-        ? `Keep going — minimum is ${MIN_PASSWORD_LENGTH} characters.`
-        : strength === "medium"
-          ? "Looking good. Mix in numbers or symbols to make it stronger."
-          : null
-    return (
-        <div className="space-y-1 pt-1">
-            <div className="flex items-center gap-2">
-                <div className="flex flex-1 gap-1">
-                    {[1, 2, 3].map((i) => (
-                        <span
-                            key={i}
-                            className={cn(
-                                "h-1 flex-1 rounded-full transition-colors duration-300",
-                                i <= filled
-                                    ? "bg-brand_solid"
-                                    : "bg-quaternary",
-                            )}
-                        />
-                    ))}
-                </div>
-                <span className="label-xs text-tertiary whitespace-nowrap">
-                    {label}
-                </span>
-            </div>
-            {hint && (
-                <p className="paragraph-xs text-tertiary">{hint}</p>
-            )}
-        </div>
     )
 }

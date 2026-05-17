@@ -156,11 +156,12 @@ export function ProfileTab() {
                                     </Button>
                                 )}
                             </div>
-                            <input
+                            <Input
                                 ref={fileInputRef}
                                 type="file"
                                 accept="image/*"
                                 onChange={handleFileChange}
+                                style="ghost"
                                 className="hidden"
                             />
                         </div>

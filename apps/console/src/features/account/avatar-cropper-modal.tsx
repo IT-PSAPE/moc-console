@@ -1,6 +1,7 @@
 import { Button } from '@moc/ui/components/controls/button'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { Modal } from '@moc/ui/components/overlays/modal'
+import { Input } from '@moc/ui/components/form/input'
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react'
 
 const VIEWPORT = 288
@@ -175,7 +176,7 @@ export function AvatarCropperModal({ open, file, onCancel, onConfirm }: AvatarCr
                                         />
                                     )}
                                 </div>
-                                <input
+                                <Input
                                     type="range"
                                     min={minScale}
                                     max={maxScale}
@@ -183,6 +184,7 @@ export function AvatarCropperModal({ open, file, onCancel, onConfirm }: AvatarCr
                                     value={scale}
                                     disabled={!natural}
                                     onChange={(e) => handleZoom(Number(e.target.value))}
+                                    style="ghost"
                                     className="w-full max-w-xs accent-brand"
                                     aria-label="Zoom"
                                 />

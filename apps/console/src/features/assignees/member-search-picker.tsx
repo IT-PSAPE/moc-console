@@ -87,18 +87,7 @@ export function MemberSearchPicker({
                     </div>
                 )}
                 {!isLoading && available.map((user) => (
-                    <button
-                        key={user.id}
-                        type="button"
-                        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-secondary transition-colors cursor-pointer"
-                        onMouseDown={(e) => { e.preventDefault(); handleSelect(user); }}
-                    >
-                        <UserAvatar size="sm" user={user} />
-                        <div className="flex-1 min-w-0">
-                            <Label.sm>{user.name} {user.surname}</Label.sm>
-                            <Paragraph.xs className="text-quaternary truncate">{user.email}</Paragraph.xs>
-                        </div>
-                    </button>
+                    <MemberResultRow key={user.id} user={user} onSelect={handleSelect} />
                 ))}
             </AnchoredPanel>
 
@@ -119,5 +108,31 @@ export function MemberSearchPicker({
                 <Paragraph.sm className="text-quaternary">{emptyLabel}</Paragraph.sm>
             )}
         </div>
+    );
+}
+
+type MemberResultRowProps = {
+    user: User;
+    onSelect: (user: User) => void;
+};
+
+function MemberResultRow({ user, onSelect }: MemberResultRowProps) {
+    function handleMouseDown(e: React.MouseEvent) {
+        e.preventDefault();
+        onSelect(user);
+    }
+
+    return (
+        <Button
+            variant="ghost"
+            className="w-full flex items-center justify-start gap-2 px-3 py-2 text-left hover:bg-secondary transition-colors cursor-pointer"
+            onMouseDown={handleMouseDown}
+        >
+            <UserAvatar size="sm" user={user} />
+            <div className="flex-1 min-w-0">
+                <Label.sm>{user.name} {user.surname}</Label.sm>
+                <Paragraph.xs className="text-quaternary truncate">{user.email}</Paragraph.xs>
+            </div>
+        </Button>
     );
 }

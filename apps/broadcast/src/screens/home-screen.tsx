@@ -15,6 +15,7 @@ import {
 } from '@/data/fetch-broadcast'
 import { routes, playerPath } from '@/screens/broadcast-routes'
 import { CoverArt } from '@/features/components/cover-art'
+import { PlaylistCard } from '@/features/components/playlist-card'
 import { estimatePlaylistRuntime, formatRuntime, cueCountLabel } from '@/lib/utils'
 
 function metaLine(playable: PlayablePlaylist): string {
@@ -63,17 +64,36 @@ export function HomeScreen() {
 
   const selected = playlists.find((p) => p.playlist.id === selectedId) ?? playlists[0]
 
+  function goToChooser() {
+    navigate(routes.chooser)
+  }
+
+  function playSelected() {
+    navigate(playerPath(workspaceId!, selected.playlist.id))
+  }
+
+  function selectPlaylist(id: string) {
+    setSelectedId(id)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function openPlaylist(id: string) {
+    navigate(playerPath(workspaceId!, id))
+  }
+
   return (
     <div data-theme="dark" className="min-h-dvh bg-primary text-primary flex flex-col">
       {/* Top bar */}
       <header className="absolute top-0 inset-x-0 z-20 flex items-center gap-3 px-6 py-4">
-        <button
-          onClick={() => navigate(routes.chooser)}
-          className="flex items-center gap-1 text-tertiary hover:text-primary transition-colors cursor-pointer"
+        <Button
+          variant="ghost"
+          onClick={goToChooser}
+          aria-label="Back to spaces"
+          className="!gap-1 !px-2 !py-1 text-tertiary hover:!bg-white/10 hover:text-primary"
         >
           <ChevronLeft className="size-5" />
           <TvMinimalPlay className="size-5 text-brand_secondary" />
-        </button>
+        </Button>
         <Label.md className="text-tertiary">{workspace?.name ?? 'MOC Broadcast'}</Label.md>
       </header>
 
@@ -101,7 +121,7 @@ export function HomeScreen() {
               )}
               <Label.md className="text-white/60">{metaLine(selected)}</Label.md>
               <div className="pt-2">
-                <Button icon={<Play />} onClick={() => navigate(playerPath(workspaceId!, selected.playlist.id))} >
+                <Button icon={<Play />} onClick={playSelected}>
                   Play
                 </Button>
               </div>
@@ -112,42 +132,16 @@ export function HomeScreen() {
           <ScrollArea className="max-w-content mx-auto w-full">
             <ScrollArea.Viewport className="px-6 py-8">
               <ScrollArea.Content className="flex gap-4 p-1">
-                {playlists.map((p) => {
-                  const isSelected = p.playlist.id === selected.playlist.id
-                  return (
-                    <button
-                      key={p.playlist.id}
-                      onClick={() => {
-                        setSelectedId(p.playlist.id)
-                        window.scrollTo({ top: 0, behavior: 'smooth' })
-                      }}
-                      onDoubleClick={() => navigate(playerPath(workspaceId!, p.playlist.id))}
-                      aria-pressed={isSelected}
-                      className="group shrink-0 w-64 max-mobile:w-48 cursor-pointer focus:outline-none text-left"
-                    >
-                      <div
-                        className={`relative aspect-video w-full overflow-hidden rounded-xl border transition-all ${isSelected
-                            ? 'border-transparent ring-3 ring-white'
-                            : 'border-tertiary hover:border-secondary'
-                          }`}
-                      >
-                        <CoverArt
-                          playable={p}
-                          className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-105 group-focus-visible:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                          <span className="size-12 rounded-full bg-white/0 group-hover:bg-white/90 flex items-center justify-center transition-all scale-75 group-hover:scale-100">
-                            <Play className="size-5 text-black opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </span>
-                        </div>
-                      </div>
-                      <Label.md className={`mt-2.5 block truncate ${isSelected ? 'text-primary' : 'text-secondary'}`}>
-                        {p.playlist.name}
-                      </Label.md>
-                      <Paragraph.sm className="text-tertiary truncate">{metaLine(p)}</Paragraph.sm>
-                    </button>
-                  )
-                })}
+                {playlists.map((p) => (
+                  <PlaylistCard
+                    key={p.playlist.id}
+                    playable={p}
+                    meta={metaLine(p)}
+                    isSelected={p.playlist.id === selected.playlist.id}
+                    onSelect={selectPlaylist}
+                    onOpen={openPlaylist}
+                  />
+                ))}
               </ScrollArea.Content>
             </ScrollArea.Viewport>
             <ScrollArea.Scrollbar orientation="horizontal" className="mx-6">

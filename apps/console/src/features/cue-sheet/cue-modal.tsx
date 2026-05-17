@@ -1,8 +1,10 @@
 import { Modal } from '@moc/ui/components/overlays/modal'
 import { Button } from '@moc/ui/components/controls/button'
 import { Input } from '@moc/ui/components/form/input'
+import { Select } from '@moc/ui/components/form/select'
+import { TextArea } from '@moc/ui/components/form/text-area'
 import { FormLabel } from '@moc/ui/components/form/form-label'
-import { Label, Paragraph } from '@moc/ui/components/display/text'
+import { Label } from '@moc/ui/components/display/text'
 import { useTimeline } from '@/components/timeline'
 import { CUE_TYPE_CONFIG } from '@/components/timeline'
 import { CUE_TYPES } from '@moc/types/cue-sheet'
@@ -10,57 +12,15 @@ import type { Cue, CueType } from '@moc/types/cue-sheet'
 import type { Track } from '@moc/types/cue-sheet'
 import type { CueModalState } from '@/components/timeline/timeline-types'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { MemberSearchPicker } from '@/features/assignees/member-search-picker'
 import { fetchAssigneesByCueId, type ResolvedAssignee } from '@/data/fetch-assignees'
-import { addCueAssignee, removeCueAssignee } from '@/data/mutate-assignees'
+import { addCueAssignee } from '@/data/mutate-assignees'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { getErrorMessage } from '@moc/utils/get-error-message'
 import { useCueSheet } from './cue-sheet-provider'
 import { randomId } from '@moc/utils/random-id'
 import type { User } from '@moc/types/requests'
-
-// ─── Form State ────────────────────────────────────────────────────
-
-type CueFormState = {
-    label: string
-    trackId: string
-    type: CueType
-    startMin: number
-    durationMin: number
-    notes: string
-}
-
-const defaultForm: CueFormState = {
-    label: '',
-    trackId: '',
-    type: 'performance',
-    startMin: 0,
-    durationMin: 5,
-    notes: '',
-}
-
-function getInitialForm(cueModal: CueModalState, tracks: Track[]): CueFormState {
-    if (cueModal.mode === 'create') {
-        return {
-            ...defaultForm,
-            trackId: cueModal.defaultTrackId ?? tracks[0]?.id ?? '',
-            startMin: cueModal.defaultStartMin ?? 0,
-        }
-    }
-
-    if (cueModal.mode === 'edit') {
-        return {
-            label: cueModal.cue.label,
-            trackId: cueModal.trackId,
-            type: cueModal.cue.type,
-            startMin: cueModal.cue.startMin,
-            durationMin: cueModal.cue.durationMin,
-            notes: cueModal.cue.notes ?? '',
-        }
-    }
-
-    return defaultForm
-}
+import { getInitialForm, type CueFormState } from './cue-modal-form'
+import { CreateCueAssigneeSection, EditCueAssigneeSection } from './cue-modal-assignees'
 
 // ─── Modal ─────────────────────────────────────────────────────────
 
@@ -224,8 +184,36 @@ function CueModalContent({ addCue, closeCueModal, cueModal, isEdit, moveCue, tra
         closeCueModal()
     }, [canSubmit, form, cueModal, addCue, updateCue, moveCue, closeCueModal, isCueAssignmentEnabled, eventId, pendingAssignees, tracks, syncTracks, toast])
 
+    function handleOpenChange(next: boolean) {
+        if (!next) closeCueModal()
+    }
+
+    function handleLabelChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setForm((prev) => ({ ...prev, label: e.target.value }))
+    }
+
+    function handleTrackChange(e: React.ChangeEvent<HTMLSelectElement>) {
+        setForm((prev) => ({ ...prev, trackId: e.target.value }))
+    }
+
+    function handleTypeChange(e: React.ChangeEvent<HTMLSelectElement>) {
+        setForm((prev) => ({ ...prev, type: e.target.value as CueType }))
+    }
+
+    function handleStartChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setForm((prev) => ({ ...prev, startMin: Number(e.target.value) || 0 }))
+    }
+
+    function handleDurationChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setForm((prev) => ({ ...prev, durationMin: Number(e.target.value) || 1 }))
+    }
+
+    function handleNotesChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+        setForm((prev) => ({ ...prev, notes: e.target.value }))
+    }
+
     return (
-        <Modal open={true} onOpenChange={(next) => { if (!next) closeCueModal() }}>
+        <Modal open={true} onOpenChange={handleOpenChange}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
@@ -240,36 +228,28 @@ function CueModalContent({ addCue, closeCueModal, cueModal, isEdit, moveCue, tra
                                     <Input
                                         placeholder="Cue name"
                                         value={form.label}
-                                        onChange={(e) => setForm((prev) => ({ ...prev, label: e.target.value }))}
+                                        onChange={handleLabelChange}
                                     />
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
                                     <FormLabel label="Track" required />
-                                    <select
-                                        className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-3 focus:ring-border-brand/10"
-                                        value={form.trackId}
-                                        onChange={(e) => setForm((prev) => ({ ...prev, trackId: e.target.value }))}
-                                    >
+                                    <Select value={form.trackId} onChange={handleTrackChange}>
                                         {tracks.map((t) => (
                                             <option key={t.id} value={t.id}>{t.name}</option>
                                         ))}
-                                    </select>
+                                    </Select>
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
                                     <FormLabel label="Type" required />
-                                    <select
-                                        className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-3 focus:ring-border-brand/10"
-                                        value={form.type}
-                                        onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value as CueType }))}
-                                    >
+                                    <Select value={form.type} onChange={handleTypeChange}>
                                         {CUE_TYPES.map((type) => (
                                             <option key={type} value={type}>
                                                 {CUE_TYPE_CONFIG[type].label}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Select>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
@@ -280,7 +260,7 @@ function CueModalContent({ addCue, closeCueModal, cueModal, isEdit, moveCue, tra
                                             min={0}
                                             placeholder="0"
                                             value={String(form.startMin)}
-                                            onChange={(e) => setForm((prev) => ({ ...prev, startMin: Number(e.target.value) || 0 }))}
+                                            onChange={handleStartChange}
                                         />
                                     </div>
                                     <div className="flex flex-col gap-1.5">
@@ -290,19 +270,18 @@ function CueModalContent({ addCue, closeCueModal, cueModal, isEdit, moveCue, tra
                                             min={1}
                                             placeholder="5"
                                             value={String(form.durationMin)}
-                                            onChange={(e) => setForm((prev) => ({ ...prev, durationMin: Number(e.target.value) || 1 }))}
+                                            onChange={handleDurationChange}
                                         />
                                     </div>
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
                                     <FormLabel label="Notes" optional />
-                                    <textarea
-                                        className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-3 focus:ring-border-brand/10 resize-none"
+                                    <TextArea
                                         rows={3}
                                         placeholder="Optional notes..."
                                         value={form.notes}
-                                        onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
+                                        onChange={handleNotesChange}
                                     />
                                 </div>
 
@@ -338,76 +317,5 @@ function CueModalContent({ addCue, closeCueModal, cueModal, isEdit, moveCue, tra
                 </Modal.Positioner>
             </Modal.Portal>
         </Modal>
-    )
-}
-
-// ─── Assignee sections ─────────────────────────────────────────────
-
-type EditSectionProps = {
-    cueId: string
-    assignees: ResolvedAssignee[]
-    isLoading: boolean
-    onChange: (next: ResolvedAssignee[]) => void
-}
-
-function EditCueAssigneeSection({ cueId, assignees, isLoading, onChange }: EditSectionProps) {
-    const { toast } = useFeedback()
-
-    const handleAdd = useCallback(async (user: User) => {
-        try {
-            await addCueAssignee(cueId, user.id, '')
-            onChange(await fetchAssigneesByCueId(cueId))
-        } catch (error) {
-            toast({ title: 'Failed to add assignee', description: getErrorMessage(error, 'Could not add cue assignee.'), variant: 'error' })
-        }
-    }, [cueId, onChange, toast])
-
-    const handleRemove = useCallback(async (userId: string) => {
-        try {
-            await removeCueAssignee(cueId, userId)
-            onChange(await fetchAssigneesByCueId(cueId))
-        } catch (error) {
-            toast({ title: 'Failed to remove assignee', description: getErrorMessage(error, 'Could not remove cue assignee.'), variant: 'error' })
-        }
-    }, [cueId, onChange, toast])
-
-    if (isLoading) {
-        return <Paragraph.xs className="text-quaternary">Loading…</Paragraph.xs>
-    }
-
-    return (
-        <MemberSearchPicker
-            assignees={assignees}
-            onAdd={handleAdd}
-            onRemove={handleRemove}
-        />
-    )
-}
-
-type CreateSectionProps = {
-    pending: User[]
-    onChange: (next: User[]) => void
-}
-
-function CreateCueAssigneeSection({ pending, onChange }: CreateSectionProps) {
-    const handleAdd = useCallback((user: User) => {
-        onChange([...pending, user])
-    }, [onChange, pending])
-
-    const handleRemove = useCallback((userId: string) => {
-        onChange(pending.filter((u) => u.id !== userId))
-    }, [onChange, pending])
-
-    const pendingAsAssignees: ResolvedAssignee[] = pending.map((user) => ({
-        ...user,
-        duty: '',
-    }))
-
-    return (
-        <MemberSearchPicker
-            assignees={pendingAsAssignees}
-            onAdd={handleAdd}
-            onRemove={handleRemove}
-        />
     )
 }

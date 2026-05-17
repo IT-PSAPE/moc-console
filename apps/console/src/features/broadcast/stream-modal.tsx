@@ -2,22 +2,20 @@ import { useCallback, useEffect, useState } from "react"
 import type { ChangeEvent } from "react"
 import { Modal } from "@moc/ui/components/overlays/modal"
 import { Button } from "@moc/ui/components/controls/button"
-import { Input } from "@moc/ui/components/form/input"
-import { FormLabel } from "@moc/ui/components/form/form-label"
 import { Checkbox } from "@moc/ui/components/form/checkbox"
-import { FileDropzone } from "@moc/ui/components/form/file-dropzone"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Accordion } from "@moc/ui/components/display/accordion"
-import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import type { Stream, StreamPreset, StreamPrivacy, LatencyPreference, YouTubeCategory, YouTubePlaylist } from "@moc/types/broadcast/stream"
 import type { MediaItem } from "@moc/types/broadcast/media-item"
-import { streamPrivacyLabel, latencyPreferenceLabel, latencyPreferenceHint } from "@moc/types/broadcast/stream-constants"
 import type { ThumbnailSource } from "@/data/mutate-streams"
 import { fetchCategories, fetchPlaylists } from "@/data/fetch-streams"
 import { fetchMedia } from "@/data/fetch-broadcast"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { formatUtcIsoForDateTimeInput, parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time"
-import { ChevronDown, Image, Link, X } from "lucide-react"
+import { StreamBasicFields } from "./stream-basic-fields"
+import { StreamThumbnailField } from "./stream-thumbnail-field"
+import { StreamOptionsSection } from "./stream-options-section"
+import { StreamAdvancedSection } from "./stream-advanced-section"
 
 type StreamModalProps = {
   open: boolean
@@ -224,6 +222,10 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
     setTags((prev) => prev.filter((t) => t !== tag))
   }
 
+  function handleTagInputBlur() {
+    handleAddTag(tagInput)
+  }
+
   function handleTagKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault()
@@ -274,166 +276,33 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
 
             <Modal.Content>
               <div className="flex flex-col gap-4 p-4 max-h-[70vh] overflow-y-auto">
-                {/* ─── Title ─── */}
-                <div className="flex flex-col gap-1.5">
-                  <FormLabel label="Title" required />
-                  <Input
-                    value={title}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
-                    placeholder="Stream title"
-                  />
-                </div>
-
-                {/* ─── Description ─── */}
-                <div className="flex flex-col gap-1.5">
-                  <FormLabel label="Description" />
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Stream description..."
-                    rows={3}
-                    className="w-full rounded-md border border-secondary bg-primary px-3 py-2 text-sm text-primary placeholder:text-quaternary focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand resize-none"
-                  />
-                </div>
-
-                {/* ─── Scheduled Start ─── */}
-                <div className="flex flex-col gap-1.5">
-                  <FormLabel label="Scheduled Start" />
-                  <Input
-                    type="datetime-local"
-                    value={scheduledStartTime}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setScheduledStartTime(e.target.value)}
-                  />
-                  {!scheduledStartTime && (
-                    <Paragraph.xs className="text-quaternary">
-                      Leave empty to start immediately when going live.
-                    </Paragraph.xs>
-                  )}
-                </div>
-
-                {/* ─── Privacy ─── */}
-                <div className="flex flex-col gap-1.5">
-                  <FormLabel label="Privacy" />
-                  <SegmentedControl
-                    fill
-                    value={privacyStatus}
-                    onValueChange={(v: string) => setPrivacyStatus(v as StreamPrivacy)}
-                  >
-                    {(Object.keys(streamPrivacyLabel) as StreamPrivacy[]).map((key) => (
-                      <SegmentedControl.Item key={key} value={key}>
-                        {streamPrivacyLabel[key]}
-                      </SegmentedControl.Item>
-                    ))}
-                  </SegmentedControl>
-                </div>
-
-                {/* ─── Made for kids ─── */}
-                <div className="flex flex-col gap-1.5">
-                  <FormLabel label="Made for kids" />
-                  <SegmentedControl
-                    fill
-                    value={isForKids ? "yes" : "no"}
-                    onValueChange={(v: string) => setIsForKids(v === "yes")}
-                  >
-                    <SegmentedControl.Item value="no">No</SegmentedControl.Item>
-                    <SegmentedControl.Item value="yes">Yes</SegmentedControl.Item>
-                  </SegmentedControl>
-                </div>
+                <StreamBasicFields
+                  title={title}
+                  description={description}
+                  scheduledStartTime={scheduledStartTime}
+                  privacyStatus={privacyStatus}
+                  isForKids={isForKids}
+                  onTitleChange={setTitle}
+                  onDescriptionChange={setDescription}
+                  onScheduledStartChange={setScheduledStartTime}
+                  onPrivacyChange={setPrivacyStatus}
+                  onIsForKidsChange={setIsForKids}
+                />
 
                 {/* ─── Thumbnail ─── */}
-                <div className="flex flex-col gap-1.5">
-                  <FormLabel label="Thumbnail" optional />
-
-                  {thumbnail ? (
-                    <div className="flex items-center gap-2 rounded-lg border border-secondary bg-primary px-3 py-2">
-                      {thumbnail.type === "url" && (
-                        <img
-                          src={thumbnail.url}
-                          alt=""
-                          className="size-8 rounded object-cover shrink-0"
-                        />
-                      )}
-                      <Paragraph.sm className="text-secondary truncate flex-1">
-                        {thumbnailFileName}
-                      </Paragraph.sm>
-                      <Button.Icon
-                        variant="ghost"
-                        icon={<X className="size-3.5" />}
-                        onClick={clearThumbnail}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      <SegmentedControl
-                        fill
-                        value={thumbnailMode}
-                        onValueChange={(v: string) => setThumbnailMode(v as "file" | "url" | "media")}
-                      >
-                        <SegmentedControl.Item value="file">Upload</SegmentedControl.Item>
-                        <SegmentedControl.Item value="url">URL</SegmentedControl.Item>
-                        <SegmentedControl.Item value="media" icon={<Image className="size-3.5" />}>Media</SegmentedControl.Item>
-                      </SegmentedControl>
-
-                      {thumbnailMode === "file" && (
-                        <FileDropzone
-                          accept="image/jpeg,image/png"
-                          onFileSelect={handleFileSelect}
-                          fileName={thumbnailFileName}
-                          placeholder="Drop a thumbnail image or click to browse."
-                          selectedHint="Drop a new image or click to replace."
-                        />
-                      )}
-
-                      {thumbnailMode === "url" && (
-                        <div className="flex gap-2">
-                          <Input
-                            icon={<Link className="size-3.5" />}
-                            value={thumbnailUrlInput}
-                            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                              setThumbnailUrlInput(e.target.value)
-                            }
-                            placeholder="https://example.com/thumbnail.jpg"
-                            className="flex-1"
-                          />
-                          <Button
-                            variant="secondary"
-                            onClick={handleThumbnailUrlConfirm}
-                            disabled={!thumbnailUrlInput.trim()}
-                          >
-                            Set
-                          </Button>
-                        </div>
-                      )}
-
-                      {thumbnailMode === "media" && (
-                        imageMedia.length > 0 ? (
-                          <select
-                            value=""
-                            onChange={(e) => handleMediaSelect(e.target.value)}
-                            className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-                          >
-                            <option value="" disabled>
-                              Select an image from media library...
-                            </option>
-                            {imageMedia.map((item) => (
-                              <option key={item.id} value={item.id}>
-                                {item.name}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <Paragraph.xs className="text-quaternary py-2">
-                            No images found in your media library.
-                          </Paragraph.xs>
-                        )
-                      )}
-
-                      <Paragraph.xs className="text-quaternary">
-                        JPEG or PNG, 1280x720 recommended, max 2 MB.
-                      </Paragraph.xs>
-                    </div>
-                  )}
-                </div>
+                <StreamThumbnailField
+                  thumbnail={thumbnail}
+                  thumbnailFileName={thumbnailFileName}
+                  thumbnailUrlInput={thumbnailUrlInput}
+                  thumbnailMode={thumbnailMode}
+                  imageMedia={imageMedia}
+                  onModeChange={setThumbnailMode}
+                  onFileSelect={handleFileSelect}
+                  onUrlInputChange={setThumbnailUrlInput}
+                  onUrlConfirm={handleThumbnailUrlConfirm}
+                  onMediaSelect={handleMediaSelect}
+                  onClear={clearThumbnail}
+                />
 
                 {/* ─── Remember settings (save workspace preset) ─── */}
                 {!isEditing && (
@@ -452,153 +321,33 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
 
                 {/* ─── Advanced Settings (Accordion) ─── */}
                 <Accordion type="multiple">
-                  <Accordion.Item value="optionals">
-                    <Accordion.Trigger className="flex items-center gap-2 py-2 text-left">
-                      <Label.sm className="flex-1">Options</Label.sm>
-                      <ChevronDown className="size-4 text-tertiary transition-transform data-[state=open]:rotate-180" />
-                    </Accordion.Trigger>
-                    <Accordion.Content>
-                      <div className="flex flex-col gap-4 pb-2 pt-1">
-                        {/* ─── Category ─── */}
-                        <div className="flex flex-col gap-1.5">
-                          <FormLabel label="Category" optional />
-                          <select
-                            value={categoryId ?? ""}
-                            onChange={(e) => setCategoryId(e.target.value || null)}
-                            className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-                          >
-                            <option value="">None</option>
-                            {categories.map((cat) => (
-                              <option key={cat.id} value={cat.id}>
-                                {cat.title}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                  <StreamOptionsSection
+                    categoryId={categoryId}
+                    categories={categories}
+                    tags={tags}
+                    tagInput={tagInput}
+                    playlistId={playlistId}
+                    playlists={playlists}
+                    onCategoryChange={setCategoryId}
+                    onTagInputChange={setTagInput}
+                    onTagKeyDown={handleTagKeyDown}
+                    onTagBlur={handleTagInputBlur}
+                    onRemoveTag={handleRemoveTag}
+                    onPlaylistChange={setPlaylistId}
+                  />
 
-                        {/* ─── Tags ─── */}
-                        <div className="flex flex-col gap-1.5">
-                          <FormLabel label="Tags" optional />
-                          <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
-                            {tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary"
-                              >
-                                {tag}
-                                <button
-                                  type="button"
-                                  className="text-quaternary hover:text-primary"
-                                  onClick={() => handleRemoveTag(tag)}
-                                >
-                                  <X className="size-3" />
-                                </button>
-                              </span>
-                            ))}
-                            <input
-                              value={tagInput}
-                              onChange={(e) => setTagInput(e.target.value)}
-                              onKeyDown={handleTagKeyDown}
-                              onBlur={() => handleAddTag(tagInput)}
-                              placeholder={tags.length === 0 ? "Add tags..." : ""}
-                              className="min-w-[80px] flex-1 bg-transparent text-sm text-primary placeholder:text-quaternary outline-none"
-                            />
-                          </div>
-                          <Paragraph.xs className="text-quaternary">
-                            Press Enter or comma to add. Max 500 characters total.
-                          </Paragraph.xs>
-                        </div>
-
-                        {/* Playlist */}
-                        <div className="flex flex-col gap-1.5">
-                          <FormLabel label="Add to Playlist" optional />
-                          <select
-                            value={playlistId ?? ""}
-                            onChange={(e) => setPlaylistId(e.target.value || null)}
-                            className="w-full rounded-lg border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-                          >
-                            <option value="">None</option>
-                            {playlists.map((pl) => (
-                              <option key={pl.id} value={pl.id}>
-                                {pl.title} ({pl.itemCount} items)
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    </Accordion.Content>
-                  </Accordion.Item>
-
-                  <Accordion.Item value="advanced">
-                    <Accordion.Trigger className="flex items-center gap-2 py-2 text-left">
-                      <Label.sm className="flex-1">Advanced Settings</Label.sm>
-                      <ChevronDown className="size-4 text-tertiary transition-transform data-[state=open]:rotate-180" />
-                    </Accordion.Trigger>
-                    <Accordion.Content>
-                      <div className="flex flex-col gap-4 pb-2 pt-1">
-                        {/* Latency */}
-                        <div className="flex flex-col gap-1.5">
-                          <FormLabel label="Latency" />
-                          <SegmentedControl
-                            fill
-                            value={latencyPreference}
-                            onValueChange={(v: string) => setLatencyPreference(v as LatencyPreference)}
-                          >
-                            {(Object.keys(latencyPreferenceLabel) as LatencyPreference[]).map((key) => (
-                              <SegmentedControl.Item key={key} value={key}>
-                                {latencyPreferenceLabel[key]}
-                              </SegmentedControl.Item>
-                            ))}
-                          </SegmentedControl>
-                          <Paragraph.xs className="text-quaternary">
-                            {latencyPreferenceHint[latencyPreference]}
-                          </Paragraph.xs>
-                        </div>
-
-                        {/* DVR */}
-                        <Checkbox checked={enableDvr} disabled={latencyPreference === "ultraLow"} onChange={(e: ChangeEvent<HTMLInputElement>) => setEnableDvr(e.target.checked)} >
-                          <div className="flex flex-col">
-                            <Paragraph.sm>Enable DVR</Paragraph.sm>
-                            <Paragraph.xs className="text-quaternary">
-                              {latencyPreference === "ultraLow"
-                                ? "DVR is not available with Ultra Low latency."
-                                : "Allows viewers to pause and rewind during the live stream."}
-                            </Paragraph.xs>
-                          </div>
-                        </Checkbox>
-
-                        {/* Embedding */}
-                        <Checkbox checked={enableEmbed} onChange={(e: ChangeEvent<HTMLInputElement>) => setEnableEmbed(e.target.checked)} >
-                          <div className="flex flex-col">
-                            <Paragraph.sm>Allow embedding</Paragraph.sm>
-                            <Paragraph.xs className="text-quaternary">
-                              Let others embed this stream on their websites.
-                            </Paragraph.xs>
-                          </div>
-                        </Checkbox>
-
-                        {/* Auto-start */}
-                        <Checkbox checked={enableAutoStart} onChange={(e: ChangeEvent<HTMLInputElement>) => setEnableAutoStart(e.target.checked)} >
-                          <div className="flex flex-col">
-                            <Paragraph.sm>Auto-start</Paragraph.sm>
-                            <Paragraph.xs className="text-quaternary">
-                              Automatically start the broadcast when the encoder begins streaming.
-                            </Paragraph.xs>
-                          </div>
-                        </Checkbox>
-
-                        {/* Auto-stop */}
-                        <Checkbox checked={enableAutoStop} onChange={(e: ChangeEvent<HTMLInputElement>) => setEnableAutoStop(e.target.checked)} >
-                          <div className="flex flex-col">
-                            <Paragraph.sm>Auto-stop</Paragraph.sm>
-                            <Paragraph.xs className="text-quaternary">
-                              Automatically end the broadcast when the encoder stops streaming.
-                            </Paragraph.xs>
-                          </div>
-                        </Checkbox>
-                      </div>
-                    </Accordion.Content>
-                  </Accordion.Item>
+                  <StreamAdvancedSection
+                    latencyPreference={latencyPreference}
+                    enableDvr={enableDvr}
+                    enableEmbed={enableEmbed}
+                    enableAutoStart={enableAutoStart}
+                    enableAutoStop={enableAutoStop}
+                    onLatencyChange={setLatencyPreference}
+                    onDvrChange={setEnableDvr}
+                    onEmbedChange={setEnableEmbed}
+                    onAutoStartChange={setEnableAutoStart}
+                    onAutoStopChange={setEnableAutoStop}
+                  />
                 </Accordion>
               </div>
             </Modal.Content>

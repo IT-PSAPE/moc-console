@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { Modal } from "@moc/ui/components/overlays/modal";
 import { Button } from "@moc/ui/components/controls/button";
 import { Input } from "@moc/ui/components/form/input";
+import { Select } from "@moc/ui/components/form/select";
 import { FormLabel } from "@moc/ui/components/form/form-label";
 import { Label } from "@moc/ui/components/display/text";
 import type { Equipment } from "@moc/types/equipment";
@@ -64,6 +65,26 @@ export function CreateBookingModal({ open, onOpenChange, equipment, onCreate }: 
     }
   }, [onOpenChange, resetForm]);
 
+  function handleEquipmentChange(event: ChangeEvent<HTMLSelectElement>) {
+    setEquipmentId(event.target.value);
+  }
+
+  function handleBookedByChange(event: ChangeEvent<HTMLInputElement>) {
+    setBookedBy(event.target.value);
+  }
+
+  function handleCheckedOutDateChange(event: ChangeEvent<HTMLInputElement>) {
+    setCheckedOutDate(event.target.value);
+  }
+
+  function handleExpectedReturnChange(event: ChangeEvent<HTMLInputElement>) {
+    setExpectedReturnAt(event.target.value);
+  }
+
+  function handleNotesChange(event: ChangeEvent<HTMLInputElement>) {
+    setNotes(event.target.value);
+  }
+
   const handleSubmit = useCallback(async () => {
     if (!canSubmit) {
       return;
@@ -105,31 +126,27 @@ export function CreateBookingModal({ open, onOpenChange, equipment, onCreate }: 
               <div className="flex flex-col gap-4 p-4">
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Equipment" required />
-                  <select
-                    value={equipmentId}
-                    onChange={(event) => setEquipmentId(event.target.value)}
-                    className="w-full rounded-md border border-secondary bg-primary px-3 py-2 text-sm text-primary focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-                  >
+                  <Select value={equipmentId} onChange={handleEquipmentChange}>
                     {availableEquipment.map((item) => (
                       <option key={item.id} value={item.id}>{item.name}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Booked By" required />
-                  <Input value={bookedBy} onChange={(event) => setBookedBy(event.target.value)} placeholder="Name" />
+                  <Input value={bookedBy} onChange={handleBookedByChange} placeholder="Name" />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Checked Out" required />
-                  <Input type="datetime-local" value={checkedOutDate} onChange={(event) => setCheckedOutDate(event.target.value)} />
+                  <Input type="datetime-local" value={checkedOutDate} onChange={handleCheckedOutDateChange} />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Expected Return" required />
-                  <Input type="datetime-local" value={expectedReturnAt} onChange={(event) => setExpectedReturnAt(event.target.value)} />
+                  <Input type="datetime-local" value={expectedReturnAt} onChange={handleExpectedReturnChange} />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Notes" optional />
-                  <Input value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Notes" />
+                  <Input value={notes} onChange={handleNotesChange} placeholder="Notes" />
                 </div>
               </div>
             </Modal.Content>

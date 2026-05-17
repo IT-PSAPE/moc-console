@@ -1,8 +1,13 @@
 import type { MediaItem } from "@moc/types/broadcast/media-item";
 import type { Playlist } from "@moc/types/broadcast/broadcast";
 import type { Cue } from "@moc/types/broadcast/cue";
+import type { LaneType } from "@moc/types/broadcast/lane";
+import { groupCuesIntoLanes, flattenLanes } from "@moc/types/broadcast/lane";
 import { supabase } from "@moc/data/supabase";
 import { getCurrentWorkspaceId } from "./current-workspace";
+
+const MEDIA_COLUMNS =
+  "id, name, type, url, thumbnail_url, duration_seconds, width, height, created_at";
 
 type MediaRow = {
   id: string;
@@ -10,15 +15,30 @@ type MediaRow = {
   type: MediaItem["type"];
   url: string;
   thumbnail_url: string | null;
+  duration_seconds: number | null;
+  width: number | null;
+  height: number | null;
   created_at: string;
 };
 
 type QueueRow = {
   id: string;
+  lane_id: string | null;
   sort_order: number;
   duration: number | null;
+  start_sec: number | null;
+  in_point: number | null;
+  out_point: number | null;
+  muted: boolean | null;
   disabled: boolean;
   media: MediaRow | MediaRow[] | null;
+};
+
+type LaneRow = {
+  id: string;
+  sort_order: number;
+  type: string;
+  name: string | null;
 };
 
 type PlaylistRow = {
@@ -35,6 +55,7 @@ type PlaylistRow = {
   transition_duration_ms: number;
   music: MediaRow | MediaRow[] | null;
   queue: QueueRow[] | null;
+  playlist_lanes: LaneRow[] | null;
 };
 
 function mapMediaRow(row: MediaRow): MediaItem {
@@ -44,7 +65,9 @@ function mapMediaRow(row: MediaRow): MediaItem {
     type: row.type,
     url: row.url,
     thumbnail: row.thumbnail_url,
-    duration: null,
+    duration: row.duration_seconds,
+    width: row.width,
+    height: row.height,
     createdAt: row.created_at,
   };
 }
@@ -57,17 +80,29 @@ function mapCueRow(row: QueueRow): Cue {
     mediaItemId: media?.id ?? "",
     mediaItemName: media?.name ?? "Unknown media",
     mediaItemType: media?.type ?? "image",
+    laneId: row.lane_id ?? undefined,
     order: row.sort_order,
     durationOverride: row.duration,
+    startSec: row.start_sec,
+    inPoint: row.in_point ?? 0,
+    outPoint: row.out_point,
+    muted: row.muted ?? false,
     disabled: row.disabled,
   };
 }
 
 function mapPlaylistRow(row: PlaylistRow): Playlist {
   const music = Array.isArray(row.music) ? row.music[0] : row.music;
-  const cues = (row.queue ?? [])
-    .map(mapCueRow)
-    .sort((left, right) => left.order - right.order);
+  const lanes = groupCuesIntoLanes(
+    (row.queue ?? []).map(mapCueRow),
+    (row.playlist_lanes ?? []).map((l) => ({
+      id: l.id,
+      order: l.sort_order,
+      type: (l.type as LaneType) ?? "visual",
+      name: l.name,
+    })),
+  );
+  const cues = flattenLanes(lanes);
 
   return {
     id: row.id,
@@ -75,6 +110,7 @@ function mapPlaylistRow(row: PlaylistRow): Playlist {
     description: row.description,
     status: row.status,
     createdAt: row.created_at,
+    lanes,
     cues,
     backgroundMusicId: music?.id ?? null,
     backgroundMusicUrl: music?.url ?? null,
@@ -108,14 +144,20 @@ function selectPlaylists(workspaceId: string) {
       next_playlist_id,
       transition,
       transition_duration_ms,
-      music:music_id(id, name, type, url, thumbnail_url, created_at),
+      music:music_id(${MEDIA_COLUMNS}),
       queue(
         id,
+        lane_id,
         sort_order,
         duration,
+        start_sec,
+        in_point,
+        out_point,
+        muted,
         disabled,
-        media:media_id(id, name, type, url, thumbnail_url, created_at)
-      )
+        media:media_id(${MEDIA_COLUMNS})
+      ),
+      playlist_lanes(id, sort_order, type, name)
     `)
     .eq("workspace_id", workspaceId);
 }
@@ -124,7 +166,7 @@ export async function fetchMedia(): Promise<MediaItem[]> {
   const workspaceId = await getCurrentWorkspaceId();
   const { data, error } = await supabase
     .from("media")
-    .select("id, name, type, url, thumbnail_url, created_at")
+    .select(MEDIA_COLUMNS)
     .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false });
 
@@ -139,7 +181,7 @@ export async function fetchMediaById(id: string): Promise<MediaItem | undefined>
   const workspaceId = await getCurrentWorkspaceId();
   const { data, error } = await supabase
     .from("media")
-    .select("id, name, type, url, thumbnail_url, created_at")
+    .select(MEDIA_COLUMNS)
     .eq("id", id)
     .eq("workspace_id", workspaceId)
     .maybeSingle();

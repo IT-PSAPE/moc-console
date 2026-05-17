@@ -37,8 +37,8 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
     const [isLoadingActive, setIsLoadingActive] = useState(false)
     const [isLoadingArchived, setIsLoadingArchived] = useState(false)
     const requestsByIdRef = useRef<Record<string, Request>>({})
-    const activeLoadedRef = useRef(false)
-    const archivedLoadedRef = useRef(false)
+    const activeLoadedRef = useRef<string | null>(null)
+    const archivedLoadedRef = useRef<string | null>(null)
     const activePromiseRef = useRef<Promise<void> | null>(null)
     const archivedPromiseRef = useRef<Promise<void> | null>(null)
 
@@ -47,11 +47,11 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
     }, [requestsById])
 
     const { currentWorkspaceId } = useWorkspace()
-    useEffect(() => {
-        activeLoadedRef.current = false
-        archivedLoadedRef.current = false
+    const [trackedWorkspaceId, setTrackedWorkspaceId] = useState(currentWorkspaceId)
+    if (trackedWorkspaceId !== currentWorkspaceId) {
+        setTrackedWorkspaceId(currentWorkspaceId)
         setRequestsById({})
-    }, [currentWorkspaceId])
+    }
 
     const syncRequest = useCallback((request: Request) => {
         setRequestsById((previous) => ({ ...previous, [request.id]: request }))
@@ -66,14 +66,14 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
     }, [])
 
     const loadActiveRequests = useCallback(async () => {
-        if (activeLoadedRef.current) return
+        if (activeLoadedRef.current === currentWorkspaceId) return
         if (activePromiseRef.current) return activePromiseRef.current
 
         setIsLoadingActive(true)
         activePromiseRef.current = fetchRequests()
             .then((requests) => {
                 setRequestsById((previous) => mergeRequests(previous, requests))
-                activeLoadedRef.current = true
+                activeLoadedRef.current = currentWorkspaceId
             })
             .finally(() => {
                 activePromiseRef.current = null
@@ -81,17 +81,17 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
             })
 
         return activePromiseRef.current
-    }, [])
+    }, [currentWorkspaceId])
 
     const loadArchivedRequests = useCallback(async () => {
-        if (archivedLoadedRef.current) return
+        if (archivedLoadedRef.current === currentWorkspaceId) return
         if (archivedPromiseRef.current) return archivedPromiseRef.current
 
         setIsLoadingArchived(true)
         archivedPromiseRef.current = fetchArchivedRequests()
             .then((requests) => {
                 setRequestsById((previous) => mergeRequests(previous, requests))
-                archivedLoadedRef.current = true
+                archivedLoadedRef.current = currentWorkspaceId
             })
             .finally(() => {
                 archivedPromiseRef.current = null
@@ -99,7 +99,7 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
             })
 
         return archivedPromiseRef.current
-    }, [])
+    }, [currentWorkspaceId])
 
     const loadRequest = useCallback(async (id: string) => {
         if (requestsByIdRef.current[id]) return

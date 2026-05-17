@@ -4,7 +4,7 @@ import type { UserWithRole } from "@/data/fetch-users";
 import type { Role } from "@moc/types/requests/assignee";
 import type { Workspace } from "@moc/types/workspace";
 import { useWorkspace } from "@/lib/workspace-context";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 
 type UsersContextValue = {
   state: {
@@ -28,17 +28,18 @@ export function UsersProvider({ children }: { children: ReactNode }) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadedRef = useRef(false);
+  const loadedWorkspaceRef = useRef<string | null>(null);
   const promiseRef = useRef<Promise<void> | null>(null);
 
   const { currentWorkspaceId } = useWorkspace();
-  useEffect(() => {
-    loadedRef.current = false;
+  const [trackedWorkspaceId, setTrackedWorkspaceId] = useState(currentWorkspaceId);
+  if (trackedWorkspaceId !== currentWorkspaceId) {
+    setTrackedWorkspaceId(currentWorkspaceId);
     setUsers([]);
-  }, [currentWorkspaceId]);
+  }
 
   const loadUsers = useCallback(async () => {
-    if (loadedRef.current) return;
+    if (loadedWorkspaceRef.current === currentWorkspaceId) return;
     if (promiseRef.current) return promiseRef.current;
 
     setIsLoading(true);
@@ -59,7 +60,7 @@ export function UsersProvider({ children }: { children: ReactNode }) {
         })));
         setRoles(rolesData);
         setWorkspaces(workspaceDirectory.workspaces);
-        loadedRef.current = true;
+        loadedWorkspaceRef.current = currentWorkspaceId;
       })
       .finally(() => {
         promiseRef.current = null;
@@ -67,7 +68,7 @@ export function UsersProvider({ children }: { children: ReactNode }) {
       });
 
     return promiseRef.current;
-  }, []);
+  }, [currentWorkspaceId]);
 
   const updateProfile = useCallback(async (userId: string, fields: { name?: string; surname?: string }) => {
     await updateUserProfile(userId, fields);

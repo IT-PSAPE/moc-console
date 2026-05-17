@@ -2,6 +2,7 @@ import type { PlaylistStatus } from "./broadcast-status"
 import type { PlaybackMode } from "./playback-mode"
 import type { PlaylistTransition } from "./transition"
 import type { Cue } from "./cue"
+import type { PlaylistLane } from "./lane"
 
 export type VideoSettings = {
   autoplay: boolean
@@ -15,6 +16,15 @@ export type Playlist = {
   description: string
   status: PlaylistStatus
   createdAt: string
+  /**
+   * Parallel lanes (ADR-0004). Lane order = visual z-stack.
+   * Single-lane playlists are the degenerate (pre-multi-track) case.
+   */
+  lanes: PlaylistLane[]
+  /**
+   * All lanes' cues flattened in lane→order sequence. Derived, kept for
+   * back-compat with single-lane consumers; lanes is the source of truth.
+   */
   cues: Cue[]
   backgroundMusicId?: string | null
   backgroundMusicUrl: string | null

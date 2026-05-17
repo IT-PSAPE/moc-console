@@ -1,8 +1,10 @@
 import { Button } from '@moc/ui/components/controls/button'
+import { Input } from '@moc/ui/components/form/input'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { Modal } from '@moc/ui/components/overlays/modal'
+import { cn } from '@moc/utils/cn'
 import {
     createEventShare,
     fetchEventShare,
@@ -111,6 +113,10 @@ export function ShareEventModal({ open, onOpenChange, eventId, eventTitle }: Pro
         }
     }, [share, toast])
 
+    function handleUrlFocus(e: React.FocusEvent<HTMLInputElement>) {
+        e.currentTarget.select()
+    }
+
     const handleCopy = useCallback(async () => {
         if (!share) return
         try {
@@ -147,12 +153,13 @@ export function ShareEventModal({ open, onOpenChange, eventId, eventTitle }: Pro
                                             Public link
                                         </Label.xs>
                                         <div className="flex items-center gap-2 rounded-lg border border-secondary bg-secondary_alt px-3 py-2">
-                                            <Link2 className="size-4 text-tertiary shrink-0" />
-                                            <input
+                                            <Input
+                                                style="ghost"
+                                                icon={<Link2 />}
                                                 readOnly
                                                 value={buildShareUrl(share.shareToken)}
-                                                onFocus={(e) => e.currentTarget.select()}
-                                                className="flex-1 min-w-0 bg-transparent text-sm focus:outline-none truncate"
+                                                onFocus={handleUrlFocus}
+                                                className="flex-1 min-w-0 bg-transparent"
                                             />
                                             <Button.Icon
                                                 aria-label="Copy link"
@@ -225,22 +232,28 @@ export function ShareEventModal({ open, onOpenChange, eventId, eventTitle }: Pro
 }
 
 function Toggle({ on, disabled, onChange }: { on: boolean; disabled?: boolean; onChange: (next: boolean) => void }) {
+    function handleClick() {
+        onChange(!on)
+    }
+
     return (
-        <button
-            type="button"
+        <Button
+            variant="ghost"
             role="switch"
             aria-checked={on}
             disabled={disabled}
-            onClick={() => onChange(!on)}
-            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
-                on ? 'bg-utility-green-500' : 'bg-secondary'
-            }`}
+            onClick={handleClick}
+            className={cn(
+                'relative h-5 w-9 shrink-0 rounded-full !border-0 !p-0 transition-colors disabled:opacity-50',
+                on ? 'bg-utility-green-500' : 'bg-secondary',
+            )}
         >
             <span
-                className={`inline-block size-4 transform rounded-full bg-white shadow transition-transform ${
-                    on ? 'translate-x-4' : 'translate-x-0.5'
-                }`}
+                className={cn(
+                    'inline-block size-4 transform rounded-full bg-white shadow transition-transform',
+                    on ? 'translate-x-4' : 'translate-x-0.5',
+                )}
             />
-        </button>
+        </Button>
     )
 }

@@ -22,7 +22,7 @@ import {
     type CreateEventInstanceOverrides,
 } from '@/data/mutate-cue-sheet'
 import { useWorkspace } from '@/lib/workspace-context'
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 
 // ─── Context ────────────────────────────────────────────────────────
 
@@ -60,22 +60,22 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
     const [isLoadingEvents, setIsLoadingEvents] = useState(false)
     const [isLoadingChecklists, setIsLoadingChecklists] = useState(false)
 
-    const eventsLoadedRef = useRef(false)
-    const checklistsLoadedRef = useRef(false)
+    const eventsLoadedRef = useRef<string | null>(null)
+    const checklistsLoadedRef = useRef<string | null>(null)
     const eventsPromiseRef = useRef<Promise<void> | null>(null)
     const checklistsPromiseRef = useRef<Promise<void> | null>(null)
 
     const { currentWorkspaceId } = useWorkspace()
-    useEffect(() => {
-        eventsLoadedRef.current = false
-        checklistsLoadedRef.current = false
+    const [trackedWorkspaceId, setTrackedWorkspaceId] = useState(currentWorkspaceId)
+    if (trackedWorkspaceId !== currentWorkspaceId) {
+        setTrackedWorkspaceId(currentWorkspaceId)
         setEventsById({})
         setChecklists([])
         setTracksByEventId({})
-    }, [currentWorkspaceId])
+    }
 
     const loadEvents = useCallback(async () => {
-        if (eventsLoadedRef.current) return
+        if (eventsLoadedRef.current === currentWorkspaceId) return
         if (eventsPromiseRef.current) return eventsPromiseRef.current
 
         setIsLoadingEvents(true)
@@ -85,7 +85,7 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
                 for (const event of events) byId[event.id] = event
                 setEventsById(byId)
                 setTracksByEventId(tracks)
-                eventsLoadedRef.current = true
+                eventsLoadedRef.current = currentWorkspaceId
             })
             .finally(() => {
                 eventsPromiseRef.current = null
@@ -93,17 +93,17 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
             })
 
         return eventsPromiseRef.current
-    }, [])
+    }, [currentWorkspaceId])
 
     const loadChecklists = useCallback(async () => {
-        if (checklistsLoadedRef.current) return
+        if (checklistsLoadedRef.current === currentWorkspaceId) return
         if (checklistsPromiseRef.current) return checklistsPromiseRef.current
 
         setIsLoadingChecklists(true)
         checklistsPromiseRef.current = fetchCueSheetChecklists()
             .then((data) => {
                 setChecklists(data)
-                checklistsLoadedRef.current = true
+                checklistsLoadedRef.current = currentWorkspaceId
             })
             .finally(() => {
                 checklistsPromiseRef.current = null
@@ -111,7 +111,7 @@ export function CueSheetProvider({ children }: { children: ReactNode }) {
             })
 
         return checklistsPromiseRef.current
-    }, [])
+    }, [currentWorkspaceId])
 
     const loadEvent = useCallback(async (id: string) => {
         if (eventsById[id] && tracksByEventId[id]) return

@@ -1,4 +1,5 @@
 import { Avatar } from '@moc/ui/components/display/avatar'
+import { Button } from '@moc/ui/components/controls/button'
 import { UserAvatar } from '@moc/ui/components/display/user-avatar'
 import { Label } from '@moc/ui/components/display/text'
 import { Popover } from '@moc/ui/components/overlays/popover'
@@ -139,11 +140,11 @@ type WorkspaceRowProps = {
 
 function WorkspaceRow({ name, isActive, onSelect }: WorkspaceRowProps) {
     return (
-        <button
-            type="button"
+        <Button
+            variant="ghost"
             onClick={onSelect}
             className={cn(
-                'flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left',
+                'flex w-full items-center justify-start gap-2.5 rounded-md px-2 py-2 text-left',
                 'hover:bg-secondary',
             )}
         >
@@ -152,7 +153,7 @@ function WorkspaceRow({ name, isActive, onSelect }: WorkspaceRowProps) {
             </span>
             <Label.sm className="flex-1 truncate">{name}</Label.sm>
             {isActive && <Check className="size-4 shrink-0 text-brand" aria-hidden />}
-        </button>
+        </Button>
     )
 }
 
@@ -166,17 +167,17 @@ type MenuRowProps = {
 
 function MenuRow({ icon, label, labelClassName, disabled, onSelect }: MenuRowProps) {
     return (
-        <button
-            type="button"
+        <Button
+            variant="ghost"
             disabled={disabled}
             onClick={onSelect}
             className={cn(
-                'flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left',
-                'hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed',
+                'flex w-full items-center justify-start gap-2.5 rounded-md px-2 py-2 text-left',
+                'hover:bg-secondary disabled:opacity-50',
             )}
         >
             <span className="flex size-5 shrink-0 items-center justify-center text-secondary">{icon}</span>
             <Label.sm className={cn('flex-1 truncate', labelClassName)}>{label}</Label.sm>
-        </button>
+        </Button>
     )
 }

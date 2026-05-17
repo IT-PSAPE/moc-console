@@ -2,7 +2,7 @@ import { fetchEquipment, fetchBookings } from "@/data/fetch-equipment";
 import type { Equipment } from "@moc/types/equipment/equipment";
 import type { Booking } from "@moc/types/equipment/booking";
 import { useWorkspace } from "@/lib/workspace-context";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 
 type EquipmentContextValue = {
   state: {
@@ -31,18 +31,18 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
   const [isLoadingEquipment, setIsLoadingEquipment] = useState(false);
   const [isLoadingBookings, setIsLoadingBookings] = useState(false);
 
-  const equipmentLoadedRef = useRef(false);
+  const equipmentLoadedRef = useRef<string | null>(null);
   const equipmentPromiseRef = useRef<Promise<void> | null>(null);
-  const bookingsLoadedRef = useRef(false);
+  const bookingsLoadedRef = useRef<string | null>(null);
   const bookingsPromiseRef = useRef<Promise<void> | null>(null);
 
   const { currentWorkspaceId } = useWorkspace();
-  useEffect(() => {
-    equipmentLoadedRef.current = false;
-    bookingsLoadedRef.current = false;
+  const [trackedWorkspaceId, setTrackedWorkspaceId] = useState(currentWorkspaceId);
+  if (trackedWorkspaceId !== currentWorkspaceId) {
+    setTrackedWorkspaceId(currentWorkspaceId);
     setEquipment([]);
     setBookings([]);
-  }, [currentWorkspaceId]);
+  }
 
   const addEquipment = useCallback((newItem: Equipment) => {
     setEquipment((prev) => [newItem, ...prev]);
@@ -76,14 +76,14 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loadEquipment = useCallback(async () => {
-    if (equipmentLoadedRef.current) return;
+    if (equipmentLoadedRef.current === currentWorkspaceId) return;
     if (equipmentPromiseRef.current) return equipmentPromiseRef.current;
 
     setIsLoadingEquipment(true);
     equipmentPromiseRef.current = fetchEquipment()
       .then((data) => {
         setEquipment(data);
-        equipmentLoadedRef.current = true;
+        equipmentLoadedRef.current = currentWorkspaceId;
       })
       .finally(() => {
         equipmentPromiseRef.current = null;
@@ -91,17 +91,17 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
       });
 
     return equipmentPromiseRef.current;
-  }, []);
+  }, [currentWorkspaceId]);
 
   const loadBookings = useCallback(async () => {
-    if (bookingsLoadedRef.current) return;
+    if (bookingsLoadedRef.current === currentWorkspaceId) return;
     if (bookingsPromiseRef.current) return bookingsPromiseRef.current;
 
     setIsLoadingBookings(true);
     bookingsPromiseRef.current = fetchBookings()
       .then((data) => {
         setBookings(data);
-        bookingsLoadedRef.current = true;
+        bookingsLoadedRef.current = currentWorkspaceId;
       })
       .finally(() => {
         bookingsPromiseRef.current = null;
@@ -109,7 +109,7 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
       });
 
     return bookingsPromiseRef.current;
-  }, []);
+  }, [currentWorkspaceId]);
 
   const value = useMemo(
     () => ({

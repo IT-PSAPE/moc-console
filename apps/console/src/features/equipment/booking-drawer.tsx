@@ -18,7 +18,7 @@ import {
 } from "@moc/types/equipment";
 import type { Booking, BookingStatus } from "@moc/types/equipment";
 import { Calendar, Check, Clock, Loader, Package, StickyNote, Trash2, User, X } from "lucide-react";
-import { useCallback, useEffect, useState, type RefObject } from "react";
+import { useCallback, useEffect, useState, type ChangeEvent, type RefObject } from "react";
 import { getErrorMessage } from "@moc/utils/get-error-message";
 import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time";
 
@@ -144,6 +144,56 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
     }
   }, [booking.equipmentId, booking.id, closeDrawer, removeBooking, syncEquipment, toast]);
 
+  function handleSelectStatus(status: BookingStatus) {
+    store.actions.updateField("status", status);
+    if (status === "returned" && !store.state.draft.returnedDate) {
+      store.actions.updateField("returnedDate", new Date().toISOString());
+    }
+  }
+
+  function handleBookedByChange(event: ChangeEvent<HTMLInputElement>) {
+    store.actions.updateField("bookedBy", event.target.value);
+  }
+
+  function handleCheckedOutDateChange(event: ChangeEvent<HTMLInputElement>) {
+    store.actions.updateField(
+      "checkedOutDate",
+      parseBrowserDateTimeInputToUtcIso(event.target.value),
+    );
+  }
+
+  function handleExpectedReturnChange(event: ChangeEvent<HTMLInputElement>) {
+    store.actions.updateField(
+      "expectedReturnAt",
+      parseBrowserDateTimeInputToUtcIso(event.target.value),
+    );
+  }
+
+  function handleReturnedDateChange(event: ChangeEvent<HTMLInputElement>) {
+    store.actions.updateField(
+      "returnedDate",
+      event.target.value
+        ? parseBrowserDateTimeInputToUtcIso(event.target.value)
+        : null,
+    );
+  }
+
+  function handleNotesChange(event: ChangeEvent<HTMLInputElement>) {
+    store.actions.updateField("notes", event.target.value);
+  }
+
+  function handleDeleteRequest() {
+    setDeleteOpen(true);
+  }
+
+  function handleDeleteCancel() {
+    setDeleteOpen(false);
+  }
+
+  function handleDeleteOpenChange(open: boolean) {
+    setDeleteOpen(open);
+  }
+
   const draft = store.state.draft;
 
   return (
@@ -151,7 +201,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
       <Drawer.Header className="flex items-center gap-1">
         <Button.Icon variant="ghost" icon={<X />} onClick={handleClose} />
         <div className="flex-1" />
-        <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setDeleteOpen(true)} />
+        <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={handleDeleteRequest} />
       </Drawer.Header>
 
       <Drawer.Content className="py-4">
@@ -180,17 +230,12 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
               </Dropdown.Trigger>
               <Dropdown.Panel>
                 {allStatuses.map((s) => (
-                  <Dropdown.Item key={s} onSelect={() => {
-                    store.actions.updateField("status", s);
-                    if (s === "returned" && !draft.returnedDate) {
-                      store.actions.updateField("returnedDate", new Date().toISOString());
-                    }
-                  }}>
-                    <span className="size-4 shrink-0 flex items-center justify-center">
-                      {s === draft.status && <Check className="size-3.5 text-brand_secondary" />}
-                    </span>
-                    {bookingStatusLabel[s]}
-                  </Dropdown.Item>
+                  <BookingStatusOption
+                    key={s}
+                    status={s}
+                    selected={s === draft.status}
+                    onSelectStatus={handleSelectStatus}
+                  />
                 ))}
               </Dropdown.Panel>
             </Dropdown>
@@ -201,7 +246,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
             <Input
               type="text"
               value={draft.bookedBy}
-              onChange={(e) => store.actions.updateField("bookedBy", e.target.value)}
+              onChange={handleBookedByChange}
               placeholder="Enter name"
               style="ghost"
             />
@@ -212,7 +257,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
             <Input
               type="datetime-local"
               value={formatUtcIsoForBrowserDateTimeInput(draft.checkedOutDate)}
-              onChange={(e) => store.actions.updateField("checkedOutDate", parseBrowserDateTimeInputToUtcIso(e.target.value))}
+              onChange={handleCheckedOutDateChange}
               style="ghost"
             />
           </MetaRow>
@@ -222,7 +267,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
             <Input
               type="datetime-local"
               value={formatUtcIsoForBrowserDateTimeInput(draft.expectedReturnAt)}
-              onChange={(e) => store.actions.updateField("expectedReturnAt", parseBrowserDateTimeInputToUtcIso(e.target.value))}
+              onChange={handleExpectedReturnChange}
               style="ghost"
             />
           </MetaRow>
@@ -232,7 +277,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
             <Input
               type="datetime-local"
               value={draft.returnedDate ? formatUtcIsoForBrowserDateTimeInput(draft.returnedDate) : ""}
-              onChange={(e) => store.actions.updateField("returnedDate", e.target.value ? parseBrowserDateTimeInputToUtcIso(e.target.value) : null)}
+              onChange={handleReturnedDateChange}
               style="ghost"
             />
           </MetaRow>
@@ -247,7 +292,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
             <Input
               type="text"
               value={draft.notes}
-              onChange={(e) => store.actions.updateField("notes", e.target.value)}
+              onChange={handleNotesChange}
               placeholder="Add notes..."
               style="ghost"
             />
@@ -272,7 +317,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         isSaving={store.state.isSaving}
       />
 
-      <Modal open={deleteOpen} onOpenChange={setDeleteOpen}>
+      <Modal open={deleteOpen} onOpenChange={handleDeleteOpenChange}>
         <Modal.Portal>
           <Modal.Backdrop />
           <Modal.Positioner>
@@ -286,7 +331,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
                 </Paragraph.sm>
               </Modal.Content>
               <Modal.Footer className="justify-end">
-                <Button variant="secondary" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+                <Button variant="secondary" onClick={handleDeleteCancel}>Cancel</Button>
                 <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
                   {isDeleting ? "Deleting..." : "Delete Booking"}
                 </Button>
@@ -296,5 +341,30 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         </Modal.Portal>
       </Modal>
     </>
+  );
+}
+
+type BookingStatusOptionProps = {
+  status: BookingStatus;
+  selected: boolean;
+  onSelectStatus: (status: BookingStatus) => void;
+};
+
+function BookingStatusOption({
+  status,
+  selected,
+  onSelectStatus,
+}: BookingStatusOptionProps) {
+  function handleSelect() {
+    onSelectStatus(status);
+  }
+
+  return (
+    <Dropdown.Item onSelect={handleSelect}>
+      <span className="size-4 shrink-0 flex items-center justify-center">
+        {selected && <Check className="size-3.5 text-brand_secondary" />}
+      </span>
+      {bookingStatusLabel[status]}
+    </Dropdown.Item>
   );
 }

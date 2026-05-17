@@ -1,5 +1,6 @@
 import { supabase } from '@moc/data/supabase'
-import type { Playlist, Cue, MediaItem } from '@moc/types/broadcast'
+import type { Playlist, Cue, MediaItem, LaneType } from '@moc/types/broadcast'
+import { groupCuesIntoLanes, flattenLanes } from '@moc/types/broadcast'
 
 export type BroadcastWorkspace = {
   id: string
@@ -7,21 +8,39 @@ export type BroadcastWorkspace = {
   slug: string
 }
 
+const MEDIA_COLUMNS =
+  'id, name, type, url, thumbnail_url, duration_seconds, width, height, created_at'
+
 type MediaRow = {
   id: string
   name: string
   type: MediaItem['type']
   url: string
   thumbnail_url: string | null
+  duration_seconds: number | null
+  width: number | null
+  height: number | null
   created_at: string
 }
 
 type QueueRow = {
   id: string
+  lane_id: string | null
   sort_order: number
   duration: number | null
+  start_sec: number | null
+  in_point: number | null
+  out_point: number | null
+  muted: boolean | null
   disabled: boolean
   media: MediaRow | MediaRow[] | null
+}
+
+type LaneRow = {
+  id: string
+  sort_order: number
+  type: string
+  name: string | null
 }
 
 type PlaylistRow = {
@@ -38,6 +57,7 @@ type PlaylistRow = {
   transition_duration_ms: number
   music: MediaRow | MediaRow[] | null
   queue: QueueRow[] | null
+  playlist_lanes: LaneRow[] | null
 }
 
 function one<T>(value: T | T[] | null): T | null {
@@ -51,8 +71,13 @@ function mapCueRow(row: QueueRow): Cue {
     mediaItemId: media?.id ?? '',
     mediaItemName: media?.name ?? 'Unknown media',
     mediaItemType: media?.type ?? 'image',
+    laneId: row.lane_id ?? undefined,
     order: row.sort_order,
     durationOverride: row.duration,
+    startSec: row.start_sec,
+    inPoint: row.in_point ?? 0,
+    outPoint: row.out_point,
+    muted: row.muted ?? false,
     disabled: row.disabled,
   }
 }
@@ -62,6 +87,7 @@ function mapCueRow(row: QueueRow): Cue {
 export type CueMedia = {
   url: string
   thumbnail: string | null
+  duration: number | null
 }
 
 export type PlayablePlaylist = {
@@ -73,16 +99,26 @@ function mapPlaylistRow(row: PlaylistRow): PlayablePlaylist {
   const music = one(row.music)
   const mediaById: Record<string, CueMedia> = {}
 
-  const cues = (row.queue ?? [])
-    .filter((q) => !q.disabled)
+  const allCues = (row.queue ?? [])
     .map((q) => {
       const media = one(q.media)
       if (media) {
-        mediaById[media.id] = { url: media.url, thumbnail: media.thumbnail_url }
+        mediaById[media.id] = { url: media.url, thumbnail: media.thumbnail_url, duration: media.duration_seconds }
       }
       return mapCueRow(q)
     })
-    .sort((left, right) => left.order - right.order)
+    .filter((c) => !c.disabled)
+
+  const lanes = groupCuesIntoLanes(
+    allCues,
+    (row.playlist_lanes ?? []).map((l) => ({
+      id: l.id,
+      order: l.sort_order,
+      type: (l.type as LaneType) ?? 'visual',
+      name: l.name,
+    })),
+  )
+  const cues = flattenLanes(lanes)
 
   const playlist: Playlist = {
     id: row.id,
@@ -90,6 +126,7 @@ function mapPlaylistRow(row: PlaylistRow): PlayablePlaylist {
     description: row.description,
     status: row.status,
     createdAt: row.created_at,
+    lanes,
     cues,
     backgroundMusicId: music?.id ?? null,
     backgroundMusicUrl: music?.url ?? null,
@@ -118,14 +155,20 @@ const PLAYLIST_SELECT = `
   next_playlist_id,
   transition,
   transition_duration_ms,
-  music:music_id(id, name, type, url, thumbnail_url, created_at),
+  music:music_id(${MEDIA_COLUMNS}),
   queue(
     id,
+    lane_id,
     sort_order,
     duration,
+    start_sec,
+    in_point,
+    out_point,
+    muted,
     disabled,
-    media:media_id(id, name, type, url, thumbnail_url, created_at)
-  )
+    media:media_id(${MEDIA_COLUMNS})
+  ),
+  playlist_lanes(id, sort_order, type, name)
 `
 
 // Lists every workspace via the anon-callable RPC (phase-22). This is

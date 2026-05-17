@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react"
 import type { ChangeEvent, FormEvent } from "react"
 import { Link } from "react-router-dom"
-import { Building2, Lock, Mail, User } from "lucide-react"
+import { Lock, Mail, User } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@moc/ui/components/controls/button"
 import { Input } from "@moc/ui/components/form/input"
+import { Select } from "@moc/ui/components/form/select"
 import { FormLabel } from "@moc/ui/components/form/form-label"
 import { fetchSignupWorkspaces } from "@/data/fetch-workspaces"
 import type { Workspace } from "@moc/types/workspace"
@@ -167,22 +168,18 @@ export function SignupScreen() {
 
                 <div className="space-y-1">
                     <FormLabel label="Workspace" required />
-                    <div className="flex items-center gap-1.5 py-2 px-3 rounded-lg border border-secondary bg-primary focus-within:border-brand focus-within:ring-3 focus-within:ring-border-brand/10">
-                        <span className="*:size-4 text-tertiary"><Building2 /></span>
-                        <select
-                            value={workspaceSlug}
-                            onChange={handleWorkspaceChange}
-                            disabled={workspacesLoading || workspaces.length === 0}
-                            required
-                            className="w-full bg-transparent !p-0 focus:!outline-none focus-visible:!outline-0 paragraph-sm !leading-none disabled:cursor-not-allowed"
-                        >
-                            {workspacesLoading && <option value="">Loading workspaces…</option>}
-                            {!workspacesLoading && workspaces.length === 0 && <option value="">No workspaces available</option>}
-                            {workspaces.map((workspace) => (
-                                <option key={workspace.slug} value={workspace.slug}>{workspace.name}</option>
-                            ))}
-                        </select>
-                    </div>
+                    <Select
+                        value={workspaceSlug}
+                        onChange={handleWorkspaceChange}
+                        disabled={workspacesLoading || workspaces.length === 0}
+                        required
+                    >
+                        {workspacesLoading && <option value="">Loading workspaces…</option>}
+                        {!workspacesLoading && workspaces.length === 0 && <option value="">No workspaces available</option>}
+                        {workspaces.map((workspace) => (
+                            <option key={workspace.slug} value={workspace.slug}>{workspace.name}</option>
+                        ))}
+                    </Select>
                 </div>
 
                 <div className="space-y-1">
