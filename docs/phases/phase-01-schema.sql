@@ -227,6 +227,7 @@ CREATE TABLE IF NOT EXISTS public.media (
   duration_seconds numeric           NULL,
   width            integer           NULL,
   height           integer           NULL,
+  blob_fetchable   boolean           NULL,
   created_at       timestamptz       NOT NULL DEFAULT now()
 );
 

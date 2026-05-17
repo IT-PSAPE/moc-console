@@ -15,6 +15,7 @@ import { StreamListItem } from "./stream-list-item"
 import { StreamModal, type StreamFormData } from "./stream-modal"
 import { StreamDetailDrawer } from "./stream-detail-drawer"
 import { createStream, updateStream, deleteStream, syncStreamsFromYouTube, saveStreamPreset } from "@/data/mutate-streams"
+import { uploadStreamThumbnail } from "@/data/mutate-broadcast"
 import { getErrorMessage } from "@moc/utils/get-error-message"
 import type { Stream } from "@moc/types/broadcast/stream"
 import { useNavigate } from "react-router-dom"
@@ -53,14 +54,24 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
 
   const handleCreate = useCallback(async (params: StreamFormData) => {
     try {
-      const newStream = await createStream(params)
+      const { stream: newStream, thumbnailError } = await createStream(params)
       syncStream(newStream)
       if (params.savePreset) {
+        // Persist a CORS-safe thumbnail reference: Upload-mode bytes are
+        // mirrored into our own Supabase bucket; URL/Media keep their
+        // already-validated source URL. Never the YouTube CDN URL.
+        let presetThumbnailUrl: string | null = null
+        if (params.thumbnail) {
+          presetThumbnailUrl =
+            params.thumbnail.origin === "file"
+              ? await uploadStreamThumbnail(params.thumbnail.blob).catch(() => null)
+              : params.thumbnail.sourceUrl
+        }
         saveStreamPreset({
           title: params.title,
           description: params.description,
           scheduledStartTime: params.scheduledStartTime,
-          thumbnailUrl: newStream.thumbnailUrl,
+          thumbnailUrl: presetThumbnailUrl,
           privacyStatus: params.privacyStatus,
           isForKids: params.isForKids,
           categoryId: params.categoryId,
@@ -73,7 +84,11 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
           playlistId: params.playlistId,
         }).catch(() => { /* non-fatal */ })
       }
-      toast({ title: "Stream created", variant: "success" })
+      if (thumbnailError) {
+        toast({ title: "Stream created, but the thumbnail wasn't applied", description: thumbnailError, variant: "warning" })
+      } else {
+        toast({ title: "Stream created", variant: "success" })
+      }
     } catch (error) {
       const message = getErrorMessage(error, "The stream could not be created.")
       toast({ title: "Failed to create stream", description: message, variant: "error" })
@@ -85,10 +100,14 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
     if (!editingStream) return
     try {
       const { thumbnail, ...fields } = params
-      const updated = await updateStream({ ...editingStream, ...fields }, thumbnail)
+      const { stream: updated, thumbnailError } = await updateStream({ ...editingStream, ...fields }, thumbnail)
       syncStream(updated)
       setEditingStream(null)
-      toast({ title: "Stream updated", variant: "success" })
+      if (thumbnailError) {
+        toast({ title: "Stream updated, but the thumbnail wasn't applied", description: thumbnailError, variant: "warning" })
+      } else {
+        toast({ title: "Stream updated", variant: "success" })
+      }
     } catch (error) {
       const message = getErrorMessage(error, "The stream could not be updated.")
       toast({ title: "Failed to update stream", description: message, variant: "error" })

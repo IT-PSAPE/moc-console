@@ -5,7 +5,6 @@ export { exchangeCodeForTokens, revokeToken } from "./youtube-auth"
 export {
   youtubeApiFetch,
   uploadThumbnail,
-  uploadThumbnailFromUrl,
   fetchVideoCategories,
   fetchChannelPlaylists,
   addVideoToPlaylist,

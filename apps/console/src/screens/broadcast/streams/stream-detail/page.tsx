@@ -80,10 +80,14 @@ export function StreamDetailScreen() {
       if (!stream) return
       try {
         const { thumbnail, ...fields } = params
-        const updated = await updateStream({ ...stream, ...fields }, thumbnail)
+        const { stream: updated, thumbnailError } = await updateStream({ ...stream, ...fields }, thumbnail)
         syncStream(updated)
         setStream(updated)
-        toast({ title: "Stream updated", variant: "success" })
+        if (thumbnailError) {
+          toast({ title: "Stream updated, but the thumbnail wasn't applied", description: thumbnailError, variant: "warning" })
+        } else {
+          toast({ title: "Stream updated", variant: "success" })
+        }
       } catch (error) {
         const message = getErrorMessage(error, "The stream could not be updated.")
         toast({ title: "Failed to update stream", description: message, variant: "error" })

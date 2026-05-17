@@ -9,7 +9,7 @@ import { randomId } from "@moc/utils/random-id";
 import { probeMediaMetadata } from "@moc/utils/media-source";
 
 const MEDIA_COLUMNS =
-  "id, name, type, url, thumbnail_url, duration_seconds, width, height, created_at";
+  "id, name, type, url, thumbnail_url, duration_seconds, width, height, blob_fetchable, created_at";
 
 type MediaRow = {
   id: string;
@@ -20,6 +20,7 @@ type MediaRow = {
   duration_seconds: number | null;
   width: number | null;
   height: number | null;
+  blob_fetchable: boolean | null;
   created_at: string;
 };
 
@@ -33,6 +34,7 @@ function mapMediaRow(row: MediaRow): MediaItem {
     duration: row.duration_seconds,
     width: row.width,
     height: row.height,
+    blobFetchable: row.blob_fetchable,
     createdAt: row.created_at,
   };
 }
@@ -207,6 +209,31 @@ export async function uploadPlaylistThumbnail(file: File): Promise<string> {
   return data.publicUrl;
 }
 
+// Mirrors a resolved stream-thumbnail blob into the same public `media`
+// bucket, namespaced under <workspace_id>/stream-thumbnails/. Used so the
+// workspace stream preset references a durable, CORS-safe Supabase URL for
+// Upload-mode thumbnails instead of a YouTube CDN URL we can't re-fetch.
+export async function uploadStreamThumbnail(blob: Blob): Promise<string> {
+  const workspaceId = await getCurrentWorkspaceId();
+  const ext = blob.type === "image/png" ? "png" : "jpg";
+  const path = `${workspaceId}/stream-thumbnails/${randomId()}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("media")
+    .upload(path, blob, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: blob.type || "image/jpeg",
+    });
+
+  if (uploadError) {
+    throw new Error(uploadError.message);
+  }
+
+  const { data } = supabase.storage.from("media").getPublicUrl(path);
+  return data.publicUrl;
+}
+
 export async function createMediaItem(item: MediaItem): Promise<MediaItem> {
   const workspaceId = await getCurrentWorkspaceId();
   const payload = {
@@ -219,6 +246,7 @@ export async function createMediaItem(item: MediaItem): Promise<MediaItem> {
     duration_seconds: item.duration,
     width: item.width,
     height: item.height,
+    blob_fetchable: item.blobFetchable,
   };
 
   const { data, error } = await supabase

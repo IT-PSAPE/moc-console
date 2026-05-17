@@ -38,15 +38,6 @@ export async function uploadThumbnail(videoId: string, file: Blob): Promise<void
   }
 }
 
-export async function uploadThumbnailFromUrl(videoId: string, imageUrl: string): Promise<void> {
-  const imageResponse = await fetch(imageUrl)
-  if (!imageResponse.ok) {
-    throw new Error(`Failed to fetch thumbnail image from URL`)
-  }
-  const blob = await imageResponse.blob()
-  await uploadThumbnail(videoId, blob)
-}
-
 export async function fetchVideoCategories(regionCode = "US") {
   const response = await youtubeApiFetch(
     `/videoCategories?part=snippet&regionCode=${regionCode}`,
