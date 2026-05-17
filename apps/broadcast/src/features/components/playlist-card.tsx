@@ -1,6 +1,5 @@
 import { Play } from 'lucide-react'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
-import { Button } from '@moc/ui/components/controls/button'
 import type { PlayablePlaylist } from '@/data/fetch-broadcast'
 import { CoverArt } from '@/features/components/cover-art'
 
@@ -22,15 +21,14 @@ export function PlaylistCard({ playable, meta, isSelected, onSelect, onOpen }: P
   }
 
   return (
-    <Button
-      variant="ghost"
+    <div
       onClick={handleSelect}
       onDoubleClick={handleOpen}
       aria-pressed={isSelected}
       className="group !block shrink-0 w-64 max-mobile:w-48 !rounded-xl !border-transparent !bg-transparent !p-0 text-left hover:!bg-transparent"
     >
       <div
-        className={`relative aspect-video w-full overflow-hidden rounded-xl border transition-all ${isSelected
+        className={`w-full relative aspect-video w-full overflow-hidden rounded-xl border transition-all ${isSelected
           ? 'border-transparent ring-3 ring-white'
           : 'border-tertiary hover:border-secondary'
           }`}
@@ -49,6 +47,6 @@ export function PlaylistCard({ playable, meta, isSelected, onSelect, onOpen }: P
         {playable.playlist.name}
       </Label.md>
       <Paragraph.sm className="text-tertiary truncate">{meta}</Paragraph.sm>
-    </Button>
+    </div>
   )
 }
