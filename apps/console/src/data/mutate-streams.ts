@@ -123,36 +123,6 @@ async function insertLocalStream(payload: LocalStreamInsertPayload): Promise<voi
   }
 }
 
-async function restoreLocalStream(stream: Stream): Promise<void> {
-  await insertLocalStream({
-    id: stream.id,
-    workspace_id: stream.workspaceId,
-    youtube_broadcast_id: stream.youtubeBroadcastId,
-    youtube_stream_id: stream.youtubeStreamId,
-    title: stream.title,
-    description: stream.description,
-    thumbnail_url: stream.thumbnailUrl,
-    privacy_status: stream.privacyStatus,
-    is_for_kids: stream.isForKids,
-    scheduled_start_time: stream.scheduledStartTime,
-    actual_start_time: stream.actualStartTime,
-    actual_end_time: stream.actualEndTime,
-    stream_status: stream.streamStatus,
-    stream_url: stream.streamUrl,
-    stream_key: stream.streamKey,
-    ingestion_url: stream.ingestionUrl,
-    category_id: stream.categoryId,
-    tags: stream.tags,
-    latency_preference: stream.latencyPreference,
-    enable_dvr: stream.enableDvr,
-    enable_embed: stream.enableEmbed,
-    enable_auto_start: stream.enableAutoStart,
-    enable_auto_stop: stream.enableAutoStop,
-    playlist_id: stream.playlistId,
-    created_by: stream.createdBy,
-  })
-}
-
 export async function createStream(params: CreateStreamParams): Promise<StreamMutationResult> {
   const workspaceId = await getCurrentWorkspaceId()
   const { data: { user } } = await supabase.auth.getUser()
@@ -430,6 +400,20 @@ export async function updateStream(
 }
 
 export async function deleteStream(stream: Stream): Promise<void> {
+  // Delete the YouTube broadcast first. Only if it's gone on YouTube's
+  // side do we delete our row — so a failed external delete never leaves
+  // an orphaned broadcast we can no longer reach from the app. A 404
+  // means it was already removed on YouTube, which is success here.
+  const response = await youtubeApiFetch(
+    `/liveBroadcasts?id=${stream.youtubeBroadcastId}`,
+    { method: "DELETE" },
+  )
+
+  if (!response.ok && response.status !== 404) {
+    const err = await response.text()
+    throw new Error(`Failed to delete broadcast on YouTube; the stream was kept: ${err}`)
+  }
+
   const { error } = await supabase
     .from("streams")
     .delete()
@@ -437,23 +421,6 @@ export async function deleteStream(stream: Stream): Promise<void> {
 
   if (error) {
     throw new Error(error.message)
-  }
-
-  const response = await youtubeApiFetch(
-    `/liveBroadcasts?id=${stream.youtubeBroadcastId}`,
-    { method: "DELETE" },
-  )
-
-  if (!response.ok) {
-    try {
-      await restoreLocalStream(stream)
-    } catch (restoreError) {
-      const err = await response.text()
-      throw new Error(`Failed to delete broadcast and could not restore the local stream: ${err}; ${(restoreError as Error).message}`)
-    }
-
-    const err = await response.text()
-    throw new Error(`Failed to delete broadcast: ${err}`)
   }
 }
 
