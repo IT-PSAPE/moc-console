@@ -48,65 +48,71 @@ export function escapeHtml(text: string): string {
 // builders, which never escaped URLs). Everything else is escaped.
 const RAW_TOKEN_NAMES = new Set(["linkUrl", "streamUrl", "joinUrl"]);
 
+function specs(...names: string[]): readonly TokenSpec[] {
+  return names.map((name) =>
+    RAW_TOKEN_NAMES.has(name) ? { name, raw: true } : { name },
+  );
+}
+
+// Tokens are grouped by *category*: every message type in a category
+// shares the same composable field set (e.g. all request events expose
+// the full request record). They need not all be used by the default
+// template — they exist so admins can compose whatever they want. The
+// matching values are resolved server-side in server/notifications/
+// enrich.ts (full DB row) with the event payload as fallback.
+
+const REQUEST_TOKENS = specs(
+  "title", "status", "priority", "category", "requesterName", "requestedBy",
+  "dueDate", "createdAt", "updatedAt", "trackingCode",
+  "who", "what", "whenText", "whereText", "why", "how", "notes", "flow",
+  "linkUrl",
+);
+
+const BOOKING_TOKENS = specs(
+  "title", "status", "requesterName", "bookedBy",
+  "checkedOutAt", "expectedReturnAt", "returnedAt", "notes", "trackingCode",
+  "itemCount", "equipmentName", "equipmentNames",
+  "equipmentCategory", "equipmentLocation", "equipmentSerial",
+  "linkUrl",
+);
+
+const STREAM_TOKENS = specs(
+  "title", "description", "scheduledStartTime", "actualStartTime",
+  "status", "privacyStatus", "isForKids", "latencyPreference", "tags",
+  "createdAt", "streamUrl",
+);
+
+const MEETING_TOKENS = specs(
+  "topic", "description", "startTime", "duration", "timezone",
+  "meetingType", "waitingRoom", "recurrenceType", "createdAt", "joinUrl",
+);
+
+const CUE_TOKENS = specs(
+  "title", "eventName", "eventDescription", "eventScheduledAt", "eventDuration",
+  "trackName", "cueStart", "cueDuration", "cueType", "cueNotes",
+  "duty", "assigneeName", "linkUrl",
+);
+
+const CHECKLIST_TOKENS = specs(
+  "title", "checklistName", "checklistDescription", "checklistScheduledAt",
+  "sectionName", "itemChecked", "duty", "assigneeName", "linkUrl",
+);
+
 export const TEMPLATE_TOKENS: Record<MessageType, readonly TokenSpec[]> = {
-  "stream.created": [
-    { name: "title" },
-    { name: "scheduledStartTime" },
-    { name: "streamUrl", raw: true },
-  ],
-  "meeting.created": [
-    { name: "topic" },
-    { name: "startTime" },
-    { name: "joinUrl", raw: true },
-  ],
-  "request.created": [
-    { name: "title" },
-    { name: "status" },
-    { name: "requesterName" },
-    { name: "linkUrl", raw: true },
-  ],
-  "request.status_changed": [
-    { name: "title" },
-    { name: "status" },
-    { name: "requesterName" },
-    { name: "linkUrl", raw: true },
-  ],
-  "request.archived": [
-    { name: "title" },
-    { name: "requesterName" },
-    { name: "linkUrl", raw: true },
-  ],
-  "booking.created": [
-    { name: "title" },
-    { name: "status" },
-    { name: "requesterName" },
-    { name: "linkUrl", raw: true },
-  ],
-  "booking.status_changed": [
-    { name: "title" },
-    { name: "status" },
-    { name: "linkUrl", raw: true },
-  ],
-  "assignment.request": [
-    { name: "title" },
-    { name: "duty" },
-    { name: "assigneeName" },
-    { name: "linkUrl", raw: true },
-  ],
-  "assignment.cue": [
-    { name: "title" },
-    { name: "eventName" },
-    { name: "duty" },
-    { name: "assigneeName" },
-    { name: "linkUrl", raw: true },
-  ],
-  "assignment.checklist_item": [
-    { name: "title" },
-    { name: "checklistName" },
-    { name: "duty" },
-    { name: "assigneeName" },
-    { name: "linkUrl", raw: true },
-  ],
+  "stream.created": STREAM_TOKENS,
+  "meeting.created": MEETING_TOKENS,
+  "request.created": REQUEST_TOKENS,
+  "request.status_changed": REQUEST_TOKENS,
+  "request.archived": REQUEST_TOKENS,
+  "booking.created": BOOKING_TOKENS,
+  "booking.status_changed": BOOKING_TOKENS,
+  // Request assignment shares the request category, plus the DM-only
+  // duty / assignee fields.
+  "assignment.request": specs(
+    ...REQUEST_TOKENS.map((t) => t.name), "duty", "assigneeName",
+  ),
+  "assignment.cue": CUE_TOKENS,
+  "assignment.checklist_item": CHECKLIST_TOKENS,
 };
 
 // Friendly built-in wording with a modest amount of emoji. These are
@@ -116,25 +122,25 @@ export const TEMPLATE_TOKENS: Record<MessageType, readonly TokenSpec[]> = {
 // fields collapse cleanly — see renderTemplate + the core tests.
 export const DEFAULT_TEMPLATES: Record<MessageType, string> = {
   "stream.created":
-    "🔴 <b>We're going live on YouTube</b>\n\n{{title}}\n🗓 Starts {{scheduledStartTime}}\n\n🔗 <a href=\"{{streamUrl}}\">Watch the stream</a>",
+    "✨ <b>New YouTube Stream scheduled</b>\n\n📌 <b>Title:</b> {{title}}\n🗓 <b>Scheduled:</b> Starts {{scheduledStartTime}}\n\n🔗 <a href=\"{{streamUrl}}\">Watch the stream</a>",
   "meeting.created":
-    "📅 <b>New Zoom meeting scheduled</b>\n\n{{topic}}\n🗓 Starts {{startTime}}\n\n🔗 <a href=\"{{joinUrl}}\">Join the meeting</a>",
+    "✨ <b>New Zoom meeting scheduled</b>\n\n📌 <b>Title:</b> {{topic}}\n🗓 <b>Scheduled:</b> Starts {{startTime}}\n\n🔗 <a href=\"{{joinUrl}}\">Join the meeting</a>",
   "request.created":
-    "✨ <b>New request just came in</b>\n\n{{title}}\n🙋 From {{requesterName}}\n📌 Status: <i>{{status}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">Open the request</a>",
+    "✨ <b>New request just came in</b>\n\n📌 <b>Title:</b> {{title}}\n🙋 <b>From:</b> {{requesterName}}\n🗂️ <b>Category:</b> {{category}}\n🎯 <b>Priority:</b> {{priority}}\n📅 <b>Due:</b> {{dueDate}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the request</a>",
   "request.status_changed":
-    "🔄 <b>Request status updated</b>\n\n{{title}}\n📌 Now: <i>{{status}}</i>\n🙋 From {{requesterName}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the request</a>",
+    "📣 <b>Request status updated</b>\n\n📌 <b>Title:</b> {{title}}\n🔄 Now: <i>{{status}}</i>\n🙋 <b>From:</b> {{requesterName}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the request</a>",
   "request.archived":
-    "🗄️ <b>Request archived</b>\n\n{{title}}\n🙋 From {{requesterName}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the request</a>",
+    "📣 <b>Request archived</b>\n\n📌 <b>Title:</b> {{title}}\n🙋 <b>From:</b> {{requesterName}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the request</a>",
   "booking.created":
-    "🎒 <b>New equipment booking</b>\n\n{{title}}\n🙋 From {{requesterName}}\n📌 Status: <i>{{status}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
+    "✨ <b>New equipment booking</b>\n\n📌 <b>Title:</b> {{title}}\n🙋 <b>From:</b> {{requesterName}}\n🔄 <b>Status:</b> <i>{{status}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "booking.status_changed":
-    "🔄 <b>Equipment booking updated</b>\n\n{{title}}\n📌 Now: <i>{{status}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
+    "📣 <b>Equipment booking updated</b>\n\n📌 <b>Title:</b> {{title}}\n🔄 Now: <i>{{status}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "assignment.request":
-    "👋 Hey {{assigneeName}}!\n🎯 <b>You've been assigned to a request</b>\n\n{{title}}\n🛠 Duty: <i>{{duty}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">View Full Request Details</a>",
+    "👋 Hey {{assigneeName}}!\nYou've been assigned to a request\n\n📌 <b>Title:</b> {{title}}\n🛠 <b>Duty:</b> <i>{{duty}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">View Full Request Details</a>",
   "assignment.cue":
-    "👋 Hey {{assigneeName}}!\n🎬 <b>You've been assigned to a cue</b>\n\n{{title}}\n📋 Event: {{eventName}}\n🛠 Duty: <i>{{duty}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">View Full Event Details</a>",
+    "👋 Hey {{assigneeName}}!\nYou've been assigned to a cue\n\n📌 <b>Title:</b> {{title}}\n📋 <b>Event:</b> {{eventName}}\n🛠 Duty: <i>{{duty}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">View Full Event Details</a>",
   "assignment.checklist_item":
-    "👋 Hey {{assigneeName}}!\n✅ <b>You've been assigned to a checklist item</b>\n\n{{title}}\n📋 Checklist: {{checklistName}}\n🛠 Duty: <i>{{duty}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">View Full Checklist Details</a>",
+    "👋 Hey {{assigneeName}}!\nYou've been assigned to a checklist item\n\n📌 <b>Title:</b> {{title}}\n📋 <b>Checklist:</b> {{checklistName}}\n🛠 Duty: <i>{{duty}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">View Full Checklist Details</a>",
 };
 
 export type TokenValues = Record<string, string | null | undefined>;
@@ -193,54 +199,96 @@ export function validateTemplate(type: MessageType, body: string): string[] {
 
 // Sample data for the settings live-preview. Values are intentionally
 // realistic so admins see escaping behaviour (e.g. the & in a title).
+const REQUEST_SAMPLE: TokenValues = {
+  title: "Lower-third graphic for guest speaker",
+  status: "in progress",
+  priority: "High",
+  category: "Graphics",
+  requesterName: "Tendai M.",
+  requestedBy: "Tendai M.",
+  dueDate: "Wed, 21 May 2026 17:00:00 GMT",
+  createdAt: "Mon, 18 May 2026 08:12:00 GMT",
+  updatedAt: "Mon, 18 May 2026 09:30:00 GMT",
+  trackingCode: "REQ-4F2A9C",
+  who: "Guest speaker — Dr. A. Banda",
+  what: "Name + title lower-third for the 2nd session",
+  whenText: "Sunday 2nd service",
+  whereText: "Main auditorium",
+  why: "Introduce the guest on screen",
+  how: "Match the current sermon series template",
+  notes: "Spelling confirmed with the office",
+  flow: "Session 2 → after worship",
+  linkUrl: "https://app.example.com/requests/123",
+};
+
+const BOOKING_SAMPLE: TokenValues = {
+  title: "Booking BKG-77C1 (3 items)",
+  status: "booked",
+  requesterName: "Rumbi K.",
+  bookedBy: "Rumbi K.",
+  checkedOutAt: "Fri, 22 May 2026 07:00:00 GMT",
+  expectedReturnAt: "Sun, 24 May 2026 20:00:00 GMT",
+  returnedAt: "",
+  notes: "Outside shoot — handle with care",
+  trackingCode: "BKG-77C1",
+  itemCount: "3",
+  equipmentName: "Sony FX6",
+  equipmentNames: "Sony FX6, Sennheiser MKH-416, Manfrotto tripod",
+  equipmentCategory: "Camera",
+  equipmentLocation: "Store room B, shelf 2",
+  equipmentSerial: "FX6-99213",
+  linkUrl: "https://app.example.com/equipment/bookings",
+};
+
+// Sample data for the settings live-preview. Values are intentionally
+// realistic so admins see escaping behaviour (e.g. the & in a title).
 export const SAMPLE_TOKENS: Record<MessageType, TokenValues> = {
   "stream.created": {
     title: "Sunday Service — Worship & Word",
+    description: "Live broadcast of the 2nd service",
     scheduledStartTime: "Sun, 18 May 2026 09:00:00 GMT",
+    actualStartTime: "",
+    status: "created",
+    privacyStatus: "unlisted",
+    isForKids: "No",
+    latencyPreference: "normal",
+    tags: "service, worship, live",
+    createdAt: "Sat, 17 May 2026 18:40:00 GMT",
     streamUrl: "https://youtube.com/watch?v=abc123",
   },
   "meeting.created": {
     topic: "Production Team Sync",
+    description: "Weekly run-through and assignments",
     startTime: "Mon, 19 May 2026 14:00:00 GMT",
+    duration: "60 min",
+    timezone: "Africa/Harare",
+    meetingType: "scheduled",
+    waitingRoom: "On",
+    recurrenceType: "weekly",
+    createdAt: "Mon, 12 May 2026 11:00:00 GMT",
     joinUrl: "https://zoom.us/j/123456789",
   },
-  "request.created": {
-    title: "Lower-third graphic for guest speaker",
-    status: "not started",
-    requesterName: "Tendai M.",
-    linkUrl: "https://app.example.com/requests/123",
-  },
-  "request.status_changed": {
-    title: "Lower-third graphic for guest speaker",
-    status: "in progress",
-    requesterName: "Tendai M.",
-    linkUrl: "https://app.example.com/requests/123",
-  },
-  "request.archived": {
-    title: "Lower-third graphic for guest speaker",
-    requesterName: "Tendai M.",
-    linkUrl: "https://app.example.com/requests/123",
-  },
-  "booking.created": {
-    title: "Sony FX6 + tripod",
-    status: "pending",
-    requesterName: "Rumbi K.",
-    linkUrl: "https://app.example.com/bookings/45",
-  },
+  "request.created": { ...REQUEST_SAMPLE, status: "not started" },
+  "request.status_changed": REQUEST_SAMPLE,
+  "request.archived": { ...REQUEST_SAMPLE, status: "archived" },
+  "booking.created": BOOKING_SAMPLE,
   "booking.status_changed": {
-    title: "Sony FX6 + tripod",
-    status: "approved",
-    linkUrl: "https://app.example.com/bookings/45",
+    ...BOOKING_SAMPLE,
+    status: "returned",
+    returnedAt: "Sun, 24 May 2026 19:30:00 GMT",
   },
-  "assignment.request": {
-    title: "Lower-third graphic for guest speaker",
-    duty: "Design",
-    assigneeName: "Craig C.",
-    linkUrl: "https://app.example.com/requests/123",
-  },
+  "assignment.request": { ...REQUEST_SAMPLE, duty: "Design", assigneeName: "Craig C." },
   "assignment.cue": {
     title: "Roll opening VT",
     eventName: "Sunday Service",
+    eventDescription: "2nd service — full programme",
+    eventScheduledAt: "Sun, 18 May 2026 09:00:00 GMT",
+    eventDuration: "120 min",
+    trackName: "Vision Mixing",
+    cueStart: "00:05:30",
+    cueDuration: "00:01:15",
+    cueType: "Video",
+    cueNotes: "Fade audio under at the end",
     duty: "Playback",
     assigneeName: "Craig C.",
     linkUrl: "https://app.example.com/cue-sheet/events/77",
@@ -248,6 +296,10 @@ export const SAMPLE_TOKENS: Record<MessageType, TokenValues> = {
   "assignment.checklist_item": {
     title: "Check radio mic batteries",
     checklistName: "Pre-service audio",
+    checklistDescription: "Audio readiness for the 2nd service",
+    checklistScheduledAt: "Sun, 18 May 2026 08:00:00 GMT",
+    sectionName: "Microphones",
+    itemChecked: "No",
     duty: "Audio",
     assigneeName: "Craig C.",
     linkUrl: "https://app.example.com/cue-sheet/checklist/9",

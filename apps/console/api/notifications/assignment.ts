@@ -3,6 +3,11 @@ import { sendTelegramMessage } from "../../server/telegram.js"
 import { requireAuthenticatedUser, AuthError } from "../../server/auth-guard.js"
 import { resolveTemplate } from "../../server/notifications/templates.js"
 import {
+  enrichRequest,
+  enrichCue,
+  enrichChecklistItem,
+} from "../../server/notifications/enrich.js"
+import {
   renderTemplate,
   type DmMessageType,
   type TokenValues,
@@ -68,15 +73,16 @@ async function buildRequest(
   const admin = getSupabaseAdmin()
   const { data } = await admin
     .from("requests")
-    .select("title, workspace_id")
+    .select("workspace_id")
     .eq("id", parentId)
     .maybeSingle()
   if (!data) return null
+  const enriched = await enrichRequest(parentId)
   return {
     workspaceId: data.workspace_id,
     messageType: "assignment.request",
     tokens: {
-      title: data.title,
+      ...enriched,
       duty,
       assigneeName,
       linkUrl: `${baseUrl}/requests/${parentId}`,
@@ -90,25 +96,15 @@ async function buildCue(
   assigneeName: string,
   baseUrl: string,
 ): Promise<Resolved | null> {
+  const enriched = await enrichCue(parentId)
+  if (!enriched || !enriched.eventId) return null
+  const { eventId, ...tokens } = enriched
+
   const admin = getSupabaseAdmin()
-  const { data: cue } = await admin
-    .from("cues")
-    .select("label, track_id")
-    .eq("id", parentId)
-    .maybeSingle()
-  if (!cue) return null
-
-  const { data: track } = await admin
-    .from("tracks")
-    .select("event_id")
-    .eq("id", cue.track_id)
-    .maybeSingle()
-  if (!track) return null
-
   const { data: event } = await admin
     .from("events")
-    .select("id, title, workspace_id")
-    .eq("id", track.event_id)
+    .select("workspace_id")
+    .eq("id", eventId)
     .maybeSingle()
   if (!event) return null
 
@@ -116,11 +112,10 @@ async function buildCue(
     workspaceId: event.workspace_id,
     messageType: "assignment.cue",
     tokens: {
-      title: cue.label,
-      eventName: event.title,
+      ...tokens,
       duty,
       assigneeName,
-      linkUrl: `${baseUrl}/cue-sheet/events/${event.id}`,
+      linkUrl: `${baseUrl}/cue-sheet/events/${eventId}`,
     },
   }
 }
@@ -131,18 +126,15 @@ async function buildChecklistItem(
   assigneeName: string,
   baseUrl: string,
 ): Promise<Resolved | null> {
-  const admin = getSupabaseAdmin()
-  const { data: item } = await admin
-    .from("checklist_items")
-    .select("label, checklist_id")
-    .eq("id", parentId)
-    .maybeSingle()
-  if (!item) return null
+  const enriched = await enrichChecklistItem(parentId)
+  if (!enriched || !enriched.checklistId) return null
+  const { checklistId, ...tokens } = enriched
 
+  const admin = getSupabaseAdmin()
   const { data: checklist } = await admin
     .from("checklists")
-    .select("id, name, workspace_id")
-    .eq("id", item.checklist_id)
+    .select("workspace_id")
+    .eq("id", checklistId)
     .maybeSingle()
   if (!checklist) return null
 
@@ -150,11 +142,10 @@ async function buildChecklistItem(
     workspaceId: checklist.workspace_id,
     messageType: "assignment.checklist_item",
     tokens: {
-      title: item.label,
-      checklistName: checklist.name,
+      ...tokens,
       duty,
       assigneeName,
-      linkUrl: `${baseUrl}/cue-sheet/checklist/${checklist.id}`,
+      linkUrl: `${baseUrl}/cue-sheet/checklist/${checklistId}`,
     },
   }
 }

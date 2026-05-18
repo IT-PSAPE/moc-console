@@ -79,6 +79,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     topic: row.topic,
     startTime: row.start_time,
     joinUrl: row.join_url,
+    meetingId: row.id,
   })
 
   response.status(200).json({ ok: true, ...result })

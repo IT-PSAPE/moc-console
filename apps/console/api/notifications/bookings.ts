@@ -19,6 +19,7 @@ type BookingEventType = "booking.created" | "booking.status_changed"
 type Body = {
   event_type?: string
   workspace_id?: string
+  tracking_code?: string | null
   title?: string
   status?: string | null
   requester_name?: string | null
@@ -87,6 +88,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   }
 
   const requesterName = typeof body.requester_name === "string" ? body.requester_name : null
+  const trackingCode = typeof body.tracking_code === "string" ? body.tracking_code : null
 
   let result: { attempted: number; succeeded: number }
   if (event_type === "booking.status_changed") {
@@ -98,6 +100,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       title,
       status: body.status,
       linkUrl: link_url,
+      trackingCode,
     })
   } else {
     result = await dispatchEvent(workspace_id, "booking.created", {
@@ -105,6 +108,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       status: typeof body.status === "string" ? body.status : null,
       requesterName,
       linkUrl: link_url,
+      trackingCode,
     })
   }
 

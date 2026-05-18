@@ -9,17 +9,29 @@ import {
   type TokenValues,
 } from "../../src/data/notification-templates-core.js"
 import { resolveTemplate } from "./templates.js"
+import {
+  enrichBooking,
+  enrichRequest,
+  enrichStream,
+  enrichMeeting,
+} from "./enrich.js"
+
+// The optional *Id / trackingCode fields drive DB enrichment (rich
+// composable tokens). They're optional so older/external senders that
+// omit them still work — the scalar payload fields are the fallback.
 
 export type StreamCreatedPayload = {
   title: string
   scheduledStartTime: string | null
   streamUrl: string | null
+  streamId?: string
 }
 
 export type MeetingCreatedPayload = {
   topic: string
   startTime: string | null
   joinUrl: string | null
+  meetingId?: string
 }
 
 export type RequestCreatedPayload = {
@@ -27,6 +39,7 @@ export type RequestCreatedPayload = {
   status: string | null
   requesterName: string | null
   linkUrl: string
+  requestId?: string | null
 }
 
 export type RequestStatusChangedPayload = {
@@ -34,12 +47,14 @@ export type RequestStatusChangedPayload = {
   status: string
   requesterName?: string | null
   linkUrl: string
+  requestId?: string | null
 }
 
 export type RequestArchivedPayload = {
   title: string
   requesterName?: string | null
   linkUrl: string
+  requestId?: string | null
 }
 
 export type BookingCreatedPayload = {
@@ -47,12 +62,14 @@ export type BookingCreatedPayload = {
   status?: string | null
   requesterName?: string | null
   linkUrl: string
+  trackingCode?: string | null
 }
 
 export type BookingStatusChangedPayload = {
   title: string
   status: string
   linkUrl: string
+  trackingCode?: string | null
 }
 
 export type EventPayloadMap = {
@@ -79,49 +96,74 @@ function formatScheduled(scheduled: string | null): string | null {
   return date.toUTCString()
 }
 
-// Flatten a payload into the {{token}} values the renderer substitutes.
-// Date/URL derivation lives here; escaping + line-collapse is the
-// renderer's job. Token names must match TEMPLATE_TOKENS in the core.
-function buildTokens<K extends NotificationEventKey>(
+function nonEmpty(values: TokenValues): TokenValues {
+  const out: TokenValues = {}
+  for (const [k, v] of Object.entries(values)) {
+    if (v != null && v !== "") out[k] = v
+  }
+  return out
+}
+
+// Flatten a payload into the {{token}} values the renderer substitutes,
+// enriched with the full DB record when an entity id is present. The
+// scalar payload fields always win for the keys they carry (so the
+// freshly-built link and event-authoritative status never regress);
+// enrichment supplies the extra composable tokens.
+async function buildTokens<K extends NotificationEventKey>(
+  workspaceId: string,
   eventType: K,
   payload: EventPayloadMap[K],
-): TokenValues {
+): Promise<TokenValues> {
   switch (eventType) {
     case "stream.created": {
       const p = payload as StreamCreatedPayload
-      return {
+      const base: TokenValues = {
         title: p.title,
         scheduledStartTime: formatScheduled(p.scheduledStartTime),
         streamUrl: p.streamUrl,
       }
+      const enriched = p.streamId ? await enrichStream(p.streamId) : {}
+      return { ...enriched, ...nonEmpty(base) }
     }
     case "meeting.created": {
       const p = payload as MeetingCreatedPayload
-      return {
+      const base: TokenValues = {
         topic: p.topic,
         startTime: formatScheduled(p.startTime),
         joinUrl: p.joinUrl,
       }
+      const enriched = p.meetingId ? await enrichMeeting(p.meetingId) : {}
+      return { ...enriched, ...nonEmpty(base) }
     }
-    case "request.created": {
-      const p = payload as RequestCreatedPayload
-      return { title: p.title, status: p.status, requesterName: p.requesterName, linkUrl: p.linkUrl }
-    }
-    case "request.status_changed": {
-      const p = payload as RequestStatusChangedPayload
-      return { title: p.title, status: p.status, requesterName: p.requesterName, linkUrl: p.linkUrl }
-    }
+    case "request.created":
+    case "request.status_changed":
     case "request.archived": {
-      const p = payload as RequestArchivedPayload
-      return { title: p.title, requesterName: p.requesterName, linkUrl: p.linkUrl }
+      const p = payload as RequestCreatedPayload &
+        RequestStatusChangedPayload &
+        RequestArchivedPayload
+      const base: TokenValues = {
+        title: p.title,
+        status: p.status,
+        requesterName: p.requesterName,
+        linkUrl: p.linkUrl,
+      }
+      const enriched = p.requestId ? await enrichRequest(p.requestId) : {}
+      // linkUrl always from payload (built with the console base URL).
+      return { ...enriched, ...nonEmpty(base), linkUrl: p.linkUrl }
     }
-    case "booking.created": {
-      const p = payload as BookingCreatedPayload
-      return { title: p.title, status: p.status, requesterName: p.requesterName, linkUrl: p.linkUrl }
-    }
+    case "booking.created":
     case "booking.status_changed": {
-      const p = payload as BookingStatusChangedPayload
-      return { title: p.title, status: p.status, linkUrl: p.linkUrl }
+      const p = payload as BookingCreatedPayload & BookingStatusChangedPayload
+      const base: TokenValues = {
+        title: p.title,
+        status: p.status,
+        requesterName: p.requesterName,
+        linkUrl: p.linkUrl,
+      }
+      const enriched = p.trackingCode
+        ? await enrichBooking(p.trackingCode, workspaceId)
+        : {}
+      return { ...enriched, ...nonEmpty(base), linkUrl: p.linkUrl }
     }
     default:
       return {}
@@ -202,7 +244,7 @@ export async function dispatchEvent<K extends NotificationEventKey>(
   // One template lookup per dispatch (shared across all routes), then
   // fall back to the hardcoded default when no custom row is set.
   const template = await resolveTemplate(workspaceId, "group", eventType)
-  const text = renderTemplate(template, buildTokens(eventType, payload))
+  const text = renderTemplate(template, await buildTokens(workspaceId, eventType, payload))
   let succeeded = 0
 
   for (const route of routes) {

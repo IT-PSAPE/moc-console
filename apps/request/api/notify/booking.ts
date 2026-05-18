@@ -70,6 +70,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   const payload: Record<string, unknown> = {
     event_type,
     workspace_id,
+    tracking_code,
     title,
     link_url: linkUrl,
     requester_name: typeof body.requester_name === "string" ? body.requester_name : null,
