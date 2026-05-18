@@ -5,7 +5,6 @@ import {
   youtubeApiFetch,
   revokeToken,
   uploadThumbnail,
-  uploadThumbnailFromUrl,
   updateVideoMetadata,
   addVideoToPlaylist,
 } from "@/lib/youtube-client"
@@ -13,10 +12,34 @@ import { fetchStreamById } from "./fetch-streams"
 import { randomId } from "@moc/utils/random-id"
 import { notifyStreamCreated } from "./notify-event"
 
+// A thumbnail that has ALREADY been resolved to bytes in the modal. The data
+// layer never fetches a thumbnail URL itself (that fetch is CORS-gated and was
+// the source of the silent-failure bug) — it only POSTs these bytes to
+// YouTube. `origin`/`sourceUrl` carry what the workspace preset should persist:
+// Upload mode mirrors `blob` to Supabase (sourceUrl null); URL/Media modes
+// persist the already-validated `sourceUrl`.
 export type ThumbnailSource =
-  | { type: "file"; file: File }
-  | { type: "url"; url: string }
+  | { blob: Blob; origin: "file" | "url" | "media"; sourceUrl: string | null }
   | null
+
+// createStream/updateStream are non-fatal w.r.t. the thumbnail: the stream is
+// always created/updated. If YouTube itself rejects the thumbnail POST after
+// the broadcast exists (almost always: channel not verified for custom
+// thumbnails), `thumbnailError` carries a plain-language reason for the caller
+// to surface — we do NOT roll back the broadcast (decision B2).
+export type StreamMutationResult = {
+  stream: Stream
+  thumbnailError: string | null
+}
+
+// Maps a YouTube thumbnail-POST failure to non-technical, actionable copy.
+function describeThumbnailFailure(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error)
+  if (/unauthoriz|forbidden|403|not.*verif|ineligible/i.test(raw)) {
+    return "YouTube rejected the thumbnail — your channel may not be verified for custom thumbnails. The stream was created without it."
+  }
+  return "YouTube rejected the thumbnail, so the stream was created without it."
+}
 
 type CreateStreamParams = {
   title: string
@@ -100,37 +123,7 @@ async function insertLocalStream(payload: LocalStreamInsertPayload): Promise<voi
   }
 }
 
-async function restoreLocalStream(stream: Stream): Promise<void> {
-  await insertLocalStream({
-    id: stream.id,
-    workspace_id: stream.workspaceId,
-    youtube_broadcast_id: stream.youtubeBroadcastId,
-    youtube_stream_id: stream.youtubeStreamId,
-    title: stream.title,
-    description: stream.description,
-    thumbnail_url: stream.thumbnailUrl,
-    privacy_status: stream.privacyStatus,
-    is_for_kids: stream.isForKids,
-    scheduled_start_time: stream.scheduledStartTime,
-    actual_start_time: stream.actualStartTime,
-    actual_end_time: stream.actualEndTime,
-    stream_status: stream.streamStatus,
-    stream_url: stream.streamUrl,
-    stream_key: stream.streamKey,
-    ingestion_url: stream.ingestionUrl,
-    category_id: stream.categoryId,
-    tags: stream.tags,
-    latency_preference: stream.latencyPreference,
-    enable_dvr: stream.enableDvr,
-    enable_embed: stream.enableEmbed,
-    enable_auto_start: stream.enableAutoStart,
-    enable_auto_stop: stream.enableAutoStop,
-    playlist_id: stream.playlistId,
-    created_by: stream.createdBy,
-  })
-}
-
-export async function createStream(params: CreateStreamParams): Promise<Stream> {
+export async function createStream(params: CreateStreamParams): Promise<StreamMutationResult> {
   const workspaceId = await getCurrentWorkspaceId()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -207,24 +200,25 @@ export async function createStream(params: CreateStreamParams): Promise<Stream> 
     throw new Error(`Failed to bind stream: ${err}`)
   }
 
-  // 4. Set thumbnail (if provided)
+  // 4. Set thumbnail (if provided). The bytes were already resolved and
+  //    validated in the modal — we never fetch a thumbnail URL here, so the
+  //    only failure left is YouTube itself rejecting the POST (Failure B).
   let thumbnailUrl: string | null = broadcast.snippet?.thumbnails?.default?.url ?? null
+  let thumbnailError: string | null = null
   if (params.thumbnail) {
     try {
-      if (params.thumbnail.type === "file") {
-        await uploadThumbnail(broadcast.id, params.thumbnail.file)
-      } else {
-        await uploadThumbnailFromUrl(broadcast.id, params.thumbnail.url)
-      }
+      await uploadThumbnail(broadcast.id, params.thumbnail.blob)
       // Re-fetch to get the new thumbnail URL from YouTube
       const refreshed = await youtubeApiFetch(`/liveBroadcasts?part=snippet&id=${broadcast.id}`)
       if (refreshed.ok) {
         const refreshedData = await refreshed.json()
         thumbnailUrl = refreshedData.items?.[0]?.snippet?.thumbnails?.medium?.url ?? thumbnailUrl
       }
-    } catch {
-      // Thumbnail upload is non-critical — continue with stream creation
-      console.warn("Thumbnail upload failed, continuing without custom thumbnail")
+    } catch (error) {
+      // Decision B2: the broadcast already exists and is usable — keep the
+      // stream, surface a precise reason instead of rolling back or silently
+      // swallowing (the original bug).
+      thumbnailError = describeThumbnailFailure(error)
     }
   }
 
@@ -300,13 +294,13 @@ export async function createStream(params: CreateStreamParams): Promise<Stream> 
 
   notifyStreamCreated(saved.id)
 
-  return saved
+  return { stream: saved, thumbnailError }
 }
 
 export async function updateStream(
   stream: Stream,
   thumbnail?: ThumbnailSource,
-): Promise<Stream> {
+): Promise<StreamMutationResult> {
   // Update broadcast on YouTube (snippet, status, and contentDetails)
   const response = await youtubeApiFetch(
     "/liveBroadcasts?part=snippet,status,contentDetails",
@@ -339,15 +333,13 @@ export async function updateStream(
     throw new Error(`Failed to update broadcast: ${err}`)
   }
 
-  // Update thumbnail if a new one was provided
+  // Update thumbnail if a new one was provided. Bytes were already resolved
+  // and validated in the modal — no fetch here.
   let thumbnailUrl = stream.thumbnailUrl
+  let thumbnailError: string | null = null
   if (thumbnail) {
     try {
-      if (thumbnail.type === "file") {
-        await uploadThumbnail(stream.youtubeBroadcastId, thumbnail.file)
-      } else {
-        await uploadThumbnailFromUrl(stream.youtubeBroadcastId, thumbnail.url)
-      }
+      await uploadThumbnail(stream.youtubeBroadcastId, thumbnail.blob)
       const refreshed = await youtubeApiFetch(
         `/liveBroadcasts?part=snippet&id=${stream.youtubeBroadcastId}`,
       )
@@ -356,8 +348,8 @@ export async function updateStream(
         thumbnailUrl =
           refreshedData.items?.[0]?.snippet?.thumbnails?.medium?.url ?? thumbnailUrl
       }
-    } catch {
-      console.warn("Thumbnail update failed")
+    } catch (error) {
+      thumbnailError = describeThumbnailFailure(error)
     }
   }
 
@@ -404,10 +396,24 @@ export async function updateStream(
     throw new Error("Updated stream could not be reloaded")
   }
 
-  return saved
+  return { stream: saved, thumbnailError }
 }
 
 export async function deleteStream(stream: Stream): Promise<void> {
+  // Delete the YouTube broadcast first. Only if it's gone on YouTube's
+  // side do we delete our row — so a failed external delete never leaves
+  // an orphaned broadcast we can no longer reach from the app. A 404
+  // means it was already removed on YouTube, which is success here.
+  const response = await youtubeApiFetch(
+    `/liveBroadcasts?id=${stream.youtubeBroadcastId}`,
+    { method: "DELETE" },
+  )
+
+  if (!response.ok && response.status !== 404) {
+    const err = await response.text()
+    throw new Error(`Failed to delete broadcast on YouTube; the stream was kept: ${err}`)
+  }
+
   const { error } = await supabase
     .from("streams")
     .delete()
@@ -415,23 +421,6 @@ export async function deleteStream(stream: Stream): Promise<void> {
 
   if (error) {
     throw new Error(error.message)
-  }
-
-  const response = await youtubeApiFetch(
-    `/liveBroadcasts?id=${stream.youtubeBroadcastId}`,
-    { method: "DELETE" },
-  )
-
-  if (!response.ok) {
-    try {
-      await restoreLocalStream(stream)
-    } catch (restoreError) {
-      const err = await response.text()
-      throw new Error(`Failed to delete broadcast and could not restore the local stream: ${err}; ${(restoreError as Error).message}`)
-    }
-
-    const err = await response.text()
-    throw new Error(`Failed to delete broadcast: ${err}`)
   }
 }
 

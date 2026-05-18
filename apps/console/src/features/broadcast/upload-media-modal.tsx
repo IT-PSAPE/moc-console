@@ -11,6 +11,7 @@ import { FileDropzone } from "@moc/ui/components/form/file-dropzone"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import { mediaTypeLabel } from "@moc/types/broadcast/constants"
 import { getDefaultMediaDetails, inferMediaTypeFromSource, probeMediaMetadata } from "@moc/utils/media-source"
+import { probeUrlFetchable } from "@moc/utils/blob-fetch"
 import { uploadMediaFile } from "@/data/mutate-broadcast"
 import { Link } from "lucide-react"
 
@@ -89,6 +90,16 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
         sourceMode === "url"
           ? url.trim()
           : await uploadMediaFile(file as File)
+      // Record whether this item's bytes are reachable, so the stream
+      // thumbnail picker can hide ones that would CORS-fail. Only meaningful
+      // for images (thumbnails must be images). Uploaded files live in our
+      // own CORS-safe Supabase bucket, so they're fetchable by construction;
+      // external image URLs are probed with a bounded first-chunk fetch.
+      let blobFetchable: boolean | null = null
+      if (inferredMediaType === "image") {
+        blobFetchable =
+          sourceMode === "upload" ? true : await probeUrlFetchable(sourceUrl)
+      }
       const mediaDetails = getDefaultMediaDetails()
       const newItem: MediaItem = {
         id: randomId(),
@@ -99,6 +110,7 @@ export function UploadMediaModal({ open, onOpenChange, onSubmit }: UploadMediaMo
         duration: probed.duration ?? mediaDetails.duration,
         width: probed.width ?? mediaDetails.width,
         height: probed.height ?? mediaDetails.height,
+        blobFetchable,
         createdAt: new Date().toISOString().split("T")[0],
       }
       await onSubmit(newItem)

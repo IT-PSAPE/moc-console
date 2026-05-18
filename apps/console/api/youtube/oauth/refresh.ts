@@ -1,4 +1,4 @@
-import { refreshYouTubeToken, resolveYouTubeOAuthConfig } from "../../../server/youtube-oauth.js"
+import { refreshYouTubeToken, resolveYouTubeOAuthConfig, YouTubeReauthRequiredError } from "../../../server/youtube-oauth.js"
 import { AuthError, requireAuthenticatedUser } from "../../../server/auth-guard.js"
 
 type ApiRequest = {
@@ -49,7 +49,14 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     const result = await refreshYouTubeToken(config, refreshTokenValue)
     response.status(200).json(result)
   } catch (error) {
+    if (error instanceof YouTubeReauthRequiredError) {
+      // Refresh token is permanently dead — the client must persist
+      // reauth_required and prompt a reconnect. Not retryable.
+      response.status(401).json({ error: error.message, code: "reauth_required" })
+      return
+    }
+    // Transient failure (network, Google 5xx). Safe to retry later.
     console.error("YouTube token refresh failed:", error)
-    response.status(500).json({ error: "YouTube token refresh failed" })
+    response.status(502).json({ error: "YouTube token refresh failed" })
   }
 }

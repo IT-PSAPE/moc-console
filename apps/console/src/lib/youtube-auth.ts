@@ -9,6 +9,19 @@ type ConnectionTokens = {
   token_expires_at: string
 }
 
+/**
+ * The stored refresh token is permanently dead (Google returned
+ * invalid_grant). The connection row has been flagged reauth_required;
+ * the user must reconnect YouTube. Distinct from transient refresh
+ * failures so the UI can prompt a reconnect rather than a generic retry.
+ */
+export class YouTubeReauthRequiredError extends Error {
+  constructor(message = "YouTube disconnected — reconnect to resume YouTube operations") {
+    super(message)
+    this.name = "YouTubeReauthRequiredError"
+  }
+}
+
 async function getJsonError(response: Response, fallback: string): Promise<string> {
   const contentType = response.headers.get("content-type") ?? ""
   if (contentType.includes("application/json")) {
@@ -50,6 +63,20 @@ export async function getValidAccessToken(): Promise<string> {
   })
 
   if (!response.ok) {
+    if (response.status === 401) {
+      const body = await response.json().catch(() => ({})) as { error?: string; code?: string }
+      if (body.code === "reauth_required") {
+        // Refresh token is dead. Persist the health flag (best-effort:
+        // blocked silently for can_read-only members, which is fine —
+        // the throw below still prevents the operation) so the UI can
+        // surface the reconnect banner and disable YouTube actions.
+        await supabase
+          .from("youtube_connections")
+          .update({ status: "reauth_required" })
+          .eq("id", connection.id)
+        throw new YouTubeReauthRequiredError(body.error)
+      }
+    }
     throw new Error(await getJsonError(response, "YouTube token refresh failed"))
   }
 

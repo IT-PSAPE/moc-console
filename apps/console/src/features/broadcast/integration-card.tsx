@@ -2,7 +2,7 @@ import { Button } from "@moc/ui/components/controls/button"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Badge } from "@moc/ui/components/display/badge"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
-import { Link2, Unlink } from "lucide-react"
+import { Link2, RefreshCw, Unlink } from "lucide-react"
 import type { ReactNode } from "react"
 
 type IntegrationCardProps = {
@@ -16,9 +16,12 @@ type IntegrationCardProps = {
   onConnect: () => void
   onDisconnect: () => void
   isDisconnecting: boolean
+  // Connected but the stored authorization is dead — surface a
+  // Reconnect affordance instead of a healthy "Connected" state.
+  needsReauth?: boolean
 }
 
-export function IntegrationCard({ icon, name, description, isLoading, isConnected, accountLabel, canManage, onConnect, onDisconnect, isDisconnecting }: IntegrationCardProps) {
+export function IntegrationCard({ icon, name, description, isLoading, isConnected, accountLabel, canManage, onConnect, onDisconnect, isDisconnecting, needsReauth = false }: IntegrationCardProps) {
   if (isLoading) {
     return (
       <LoadingSpinner className="py-6 border border-tertiary rounded-lg" />
@@ -35,7 +38,14 @@ export function IntegrationCard({ icon, name, description, isLoading, isConnecte
           <Label.sm>{isConnected ? accountLabel ?? name : name}</Label.sm>
           <div className="flex items-center gap-1.5">
             {isConnected ? (
-              <Badge label="Connected" color="green" />
+              needsReauth ? (
+                <>
+                  <Badge label="Reconnect required" color="red" />
+                  <Paragraph.xs className="text-quaternary">Authorization expired</Paragraph.xs>
+                </>
+              ) : (
+                <Badge label="Connected" color="green" />
+              )
             ) : (
               <>
                 <Badge label="Not connected" color="gray" />
@@ -48,14 +58,25 @@ export function IntegrationCard({ icon, name, description, isLoading, isConnecte
 
       {canManage && (
         isConnected ? (
-          <Button
-            variant="danger-secondary"
-            onClick={onDisconnect}
-            disabled={isDisconnecting}
-            icon={<Unlink className="size-4" />}
-          >
-            {isDisconnecting ? "Disconnecting..." : "Disconnect"}
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            {needsReauth && (
+              <Button
+                variant="primary"
+                onClick={onConnect}
+                icon={<RefreshCw className="size-4" />}
+              >
+                Reconnect
+              </Button>
+            )}
+            <Button
+              variant="danger-secondary"
+              onClick={onDisconnect}
+              disabled={isDisconnecting}
+              icon={<Unlink className="size-4" />}
+            >
+              {isDisconnecting ? "Disconnecting..." : "Disconnect"}
+            </Button>
+          </div>
         ) : (
           <Button
             variant="primary"

@@ -7,7 +7,7 @@ import { supabase } from "@moc/data/supabase";
 import { getCurrentWorkspaceId } from "./current-workspace";
 
 const MEDIA_COLUMNS =
-  "id, name, type, url, thumbnail_url, duration_seconds, width, height, created_at";
+  "id, name, type, url, thumbnail_url, duration_seconds, width, height, blob_fetchable, created_at";
 
 type MediaRow = {
   id: string;
@@ -18,6 +18,7 @@ type MediaRow = {
   duration_seconds: number | null;
   width: number | null;
   height: number | null;
+  blob_fetchable: boolean | null;
   created_at: string;
 };
 
@@ -68,6 +69,7 @@ function mapMediaRow(row: MediaRow): MediaItem {
     duration: row.duration_seconds,
     width: row.width,
     height: row.height,
+    blobFetchable: row.blob_fetchable,
     createdAt: row.created_at,
   };
 }

@@ -28,6 +28,7 @@ export const routes = {
     cueSheetChecklistDetail: 'cue-sheet/checklist/:id',
     cueSheetTemplates: 'cue-sheet/templates',
     settings: 'account/settings',
+    messageTemplateDetail: 'account/settings/message-templates/:messageType',
     privacy: 'legal/privacy',
     terms: 'legal/terms',
     support: 'support',

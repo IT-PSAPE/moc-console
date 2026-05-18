@@ -1,6 +1,17 @@
 import { getSupabaseAdmin } from "../../server/supabase-admin.js"
 import { sendTelegramMessage } from "../../server/telegram.js"
 import { requireAuthenticatedUser, AuthError } from "../../server/auth-guard.js"
+import { resolveTemplate } from "../../server/notifications/templates.js"
+import {
+  enrichRequest,
+  enrichCue,
+  enrichChecklistItem,
+} from "../../server/notifications/enrich.js"
+import {
+  renderTemplate,
+  type DmMessageType,
+  type TokenValues,
+} from "../../src/data/notification-templates-core.js"
 
 type ApiRequest = {
   method?: string
@@ -42,123 +53,101 @@ function resolveBaseUrl(): string | null {
   return null
 }
 
-// Telegram's HTML parser only special-cases &, <, > — quotes don't need escaping.
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
+// Each builder resolves the parent resource (which also yields the
+// workspace the template lookup is keyed by) and returns the flat
+// {{token}} values. Returns null when the parent is gone, preserving
+// the old "skipped: parent_not_found" path. Token names must match
+// TEMPLATE_TOKENS in the core.
+type Resolved = {
+  workspaceId: string
+  messageType: DmMessageType
+  tokens: TokenValues
 }
 
-function buildMessage(args: {
-  heading: string
-  title: string
-  context?: { label: string; value: string }
-  duty: string
-  linkUrl: string
-  linkLabel: string
-}): string {
-  const lines: string[] = []
-  lines.push(`<b>${args.heading}</b>`)
-  lines.push("")
-  lines.push(escapeHtml(args.title))
-  if (args.context) {
-    lines.push(`${args.context.label}: ${escapeHtml(args.context.value)}`)
-  }
-  if (args.duty) {
-    lines.push(`Duty: <i>${escapeHtml(args.duty)}</i>`)
-  }
-  lines.push("")
-  lines.push(`<a href="${args.linkUrl}">${args.linkLabel}</a>`)
-  return lines.join("\n")
-}
-
-async function buildRequestMessage(
+async function buildRequest(
   parentId: string,
   duty: string,
+  assigneeName: string,
   baseUrl: string,
-): Promise<string | null> {
+): Promise<Resolved | null> {
   const admin = getSupabaseAdmin()
   const { data } = await admin
     .from("requests")
-    .select("title")
+    .select("workspace_id")
     .eq("id", parentId)
     .maybeSingle()
   if (!data) return null
-  return buildMessage({
-    heading: "You've been assigned to a request",
-    title: data.title,
-    duty,
-    linkUrl: `${baseUrl}/requests/${parentId}`,
-    linkLabel: "Open request",
-  })
+  const enriched = await enrichRequest(parentId)
+  return {
+    workspaceId: data.workspace_id,
+    messageType: "assignment.request",
+    tokens: {
+      ...enriched,
+      duty,
+      assigneeName,
+      linkUrl: `${baseUrl}/requests/${parentId}`,
+    },
+  }
 }
 
-async function buildCueMessage(
+async function buildCue(
   parentId: string,
   duty: string,
+  assigneeName: string,
   baseUrl: string,
-): Promise<string | null> {
+): Promise<Resolved | null> {
+  const enriched = await enrichCue(parentId)
+  if (!enriched || !enriched.eventId) return null
+  const { eventId, ...tokens } = enriched
+
   const admin = getSupabaseAdmin()
-  const { data: cue } = await admin
-    .from("cues")
-    .select("label, track_id")
-    .eq("id", parentId)
-    .maybeSingle()
-  if (!cue) return null
-
-  const { data: track } = await admin
-    .from("tracks")
-    .select("event_id")
-    .eq("id", cue.track_id)
-    .maybeSingle()
-  if (!track) return null
-
   const { data: event } = await admin
     .from("events")
-    .select("id, name")
-    .eq("id", track.event_id)
+    .select("workspace_id")
+    .eq("id", eventId)
     .maybeSingle()
   if (!event) return null
 
-  return buildMessage({
-    heading: "You've been assigned to a cue",
-    title: cue.label,
-    context: { label: "Event", value: event.name },
-    duty,
-    linkUrl: `${baseUrl}/cue-sheet/events/${event.id}`,
-    linkLabel: "Open event",
-  })
+  return {
+    workspaceId: event.workspace_id,
+    messageType: "assignment.cue",
+    tokens: {
+      ...tokens,
+      duty,
+      assigneeName,
+      linkUrl: `${baseUrl}/cue-sheet/events/${eventId}`,
+    },
+  }
 }
 
-async function buildChecklistItemMessage(
+async function buildChecklistItem(
   parentId: string,
   duty: string,
+  assigneeName: string,
   baseUrl: string,
-): Promise<string | null> {
-  const admin = getSupabaseAdmin()
-  const { data: item } = await admin
-    .from("checklist_items")
-    .select("label, checklist_id")
-    .eq("id", parentId)
-    .maybeSingle()
-  if (!item) return null
+): Promise<Resolved | null> {
+  const enriched = await enrichChecklistItem(parentId)
+  if (!enriched || !enriched.checklistId) return null
+  const { checklistId, ...tokens } = enriched
 
+  const admin = getSupabaseAdmin()
   const { data: checklist } = await admin
     .from("checklists")
-    .select("id, name")
-    .eq("id", item.checklist_id)
+    .select("workspace_id")
+    .eq("id", checklistId)
     .maybeSingle()
   if (!checklist) return null
 
-  return buildMessage({
-    heading: "You've been assigned to a checklist item",
-    title: item.label,
-    context: { label: "Checklist", value: checklist.name },
-    duty,
-    linkUrl: `${baseUrl}/cue-sheet/checklist/${checklist.id}`,
-    linkLabel: "Open checklist",
-  })
+  return {
+    workspaceId: checklist.workspace_id,
+    messageType: "assignment.checklist_item",
+    tokens: {
+      ...tokens,
+      duty,
+      assigneeName,
+      linkUrl: `${baseUrl}/cue-sheet/checklist/${checklistId}`,
+    },
+  }
 }
 
 export default async function handler(request: ApiRequest, response: ApiResponse) {
@@ -210,7 +199,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   const admin = getSupabaseAdmin()
   const { data: user } = await admin
     .from("users")
-    .select("telegram_chat_id")
+    .select("telegram_chat_id, name, surname")
     .eq("id", userId)
     .maybeSingle()
 
@@ -219,29 +208,35 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
+  const assigneeName = [user.name, user.surname].filter(Boolean).join(" ").trim()
+
   const baseUrl = resolveBaseUrl()
   if (!baseUrl) {
     response.status(200).json({ ok: true, skipped: "no_base_url" })
     return
   }
 
-  let text: string | null = null
+  let resolved: Resolved | null = null
   if (kind === "request") {
-    text = await buildRequestMessage(parentId, duty, baseUrl)
+    resolved = await buildRequest(parentId, duty, assigneeName, baseUrl)
   } else if (kind === "cue") {
-    text = await buildCueMessage(parentId, duty, baseUrl)
+    resolved = await buildCue(parentId, duty, assigneeName, baseUrl)
   } else {
-    text = await buildChecklistItemMessage(parentId, duty, baseUrl)
+    resolved = await buildChecklistItem(parentId, duty, assigneeName, baseUrl)
   }
 
-  if (!text) {
+  if (!resolved) {
     response.status(200).json({ ok: true, skipped: "parent_not_found" })
     return
   }
 
+  const template = await resolveTemplate(resolved.workspaceId, "dm", resolved.messageType)
+  const text = renderTemplate(template, resolved.tokens)
+
   await sendTelegramMessage(user.telegram_chat_id, text, {
     parseMode: "HTML",
-    disableLinkPreview: true,
+    // Link preview left enabled so the assignee gets a rich preview of
+    // the link, even though its URL is hidden inside the <a> tag.
   })
   response.status(200).json({ ok: true })
 }

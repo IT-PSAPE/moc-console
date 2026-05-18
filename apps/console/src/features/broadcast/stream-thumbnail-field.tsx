@@ -7,14 +7,21 @@ import { FileDropzone } from "@moc/ui/components/form/file-dropzone"
 import { Paragraph } from "@moc/ui/components/display/text"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import type { MediaItem } from "@moc/types/broadcast/media-item"
-import type { ThumbnailSource } from "@/data/mutate-streams"
-import { Image, Link, X } from "lucide-react"
+import { Image, Link, Loader2, X } from "lucide-react"
 
 type ThumbnailMode = "file" | "url" | "media"
+export type ThumbnailStatus = "idle" | "resolving" | "ready" | "error"
 
 type StreamThumbnailFieldProps = {
-  thumbnail: ThumbnailSource
-  thumbnailFileName: string | undefined
+  // Whether the user has actively selected a new thumbnail (vs. just the
+  // stream's existing one shown for reference in edit mode).
+  hasSelection: boolean
+  selectionName: string | undefined
+  // Object URL of the resolved blob, or — in edit mode with no new
+  // selection — the stream's current thumbnail URL, for a static preview.
+  previewUrl: string | null
+  status: ThumbnailStatus
+  errorMessage: string | null
   thumbnailUrlInput: string
   thumbnailMode: ThumbnailMode
   imageMedia: MediaItem[]
@@ -27,8 +34,11 @@ type StreamThumbnailFieldProps = {
 }
 
 export function StreamThumbnailField({
-  thumbnail,
-  thumbnailFileName,
+  hasSelection,
+  selectionName,
+  previewUrl,
+  status,
+  errorMessage,
   thumbnailUrlInput,
   thumbnailMode,
   imageMedia,
@@ -43,16 +53,36 @@ export function StreamThumbnailField({
     <div className="flex flex-col gap-1.5">
       <FormLabel label="Thumbnail" optional />
 
-      {thumbnail ? (
-        <div className="flex items-center gap-2 rounded-lg border border-secondary bg-primary px-3 py-2">
-          {thumbnail.type === "url" && (
-            <img src={thumbnail.url} alt="" className="size-8 rounded object-cover shrink-0" />
+      {hasSelection ? (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 rounded-lg border border-secondary bg-primary px-3 py-2">
+            {previewUrl && (
+              <img src={previewUrl} alt="" className="size-8 rounded object-cover shrink-0" />
+            )}
+            <Paragraph.sm className="text-secondary truncate flex-1">{selectionName}</Paragraph.sm>
+            {status === "resolving" && (
+              <Loader2 className="size-3.5 animate-spin text-quaternary shrink-0" />
+            )}
+            <Button.Icon variant="ghost" icon={<X className="size-3.5" />} onClick={onClear} />
+          </div>
+          {status === "resolving" && (
+            <Paragraph.xs className="text-quaternary">Checking image…</Paragraph.xs>
           )}
-          <Paragraph.sm className="text-secondary truncate flex-1">{thumbnailFileName}</Paragraph.sm>
-          <Button.Icon variant="ghost" icon={<X className="size-3.5" />} onClick={onClear} />
+          {status === "error" && errorMessage && (
+            <Paragraph.xs className="text-utility-red-700">{errorMessage}</Paragraph.xs>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-2">
+          {previewUrl && (
+            <div className="flex items-center gap-2 rounded-lg border border-secondary bg-primary px-3 py-2">
+              <img src={previewUrl} alt="" className="size-8 rounded object-cover shrink-0" />
+              <Paragraph.sm className="text-quaternary truncate flex-1">
+                Current thumbnail — choose a source below to replace it.
+              </Paragraph.sm>
+            </div>
+          )}
+
           <SegmentedControl
             fill
             value={thumbnailMode}
@@ -67,7 +97,6 @@ export function StreamThumbnailField({
             <FileDropzone
               accept="image/jpeg,image/png"
               onFileSelect={onFileSelect}
-              fileName={thumbnailFileName}
               placeholder="Drop a thumbnail image or click to browse."
               selectedHint="Drop a new image or click to replace."
             />
@@ -105,9 +134,13 @@ export function StreamThumbnailField({
               </Select>
             ) : (
               <Paragraph.xs className="text-quaternary py-2">
-                No images found in your media library.
+                No usable images found in your media library.
               </Paragraph.xs>
             )
+          )}
+
+          {status === "error" && errorMessage && (
+            <Paragraph.xs className="text-utility-red-700">{errorMessage}</Paragraph.xs>
           )}
 
           <Paragraph.xs className="text-quaternary">

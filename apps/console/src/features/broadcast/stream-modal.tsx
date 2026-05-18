@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import type { ChangeEvent } from "react"
 import { Modal } from "@moc/ui/components/overlays/modal"
 import { Button } from "@moc/ui/components/controls/button"
@@ -8,12 +8,13 @@ import { Accordion } from "@moc/ui/components/display/accordion"
 import type { Stream, StreamPreset, StreamPrivacy, LatencyPreference, YouTubeCategory, YouTubePlaylist } from "@moc/types/broadcast/stream"
 import type { MediaItem } from "@moc/types/broadcast/media-item"
 import type { ThumbnailSource } from "@/data/mutate-streams"
+import { fetchImageBlob, UNFETCHABLE_THUMBNAIL_MESSAGE } from "@moc/utils/blob-fetch"
 import { fetchCategories, fetchPlaylists } from "@/data/fetch-streams"
 import { fetchMedia } from "@/data/fetch-broadcast"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { formatUtcIsoForDateTimeInput, parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time"
 import { StreamBasicFields } from "./stream-basic-fields"
-import { StreamThumbnailField } from "./stream-thumbnail-field"
+import { StreamThumbnailField, type ThumbnailStatus } from "./stream-thumbnail-field"
 import { StreamOptionsSection } from "./stream-options-section"
 import { StreamAdvancedSection } from "./stream-advanced-section"
 
@@ -54,7 +55,12 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
   // In create mode, seed state from the workspace preset (if any).
   const seed = stream ?? preset ?? null
   const seedScheduledStart = stream ? stream.scheduledStartTime : preset?.scheduledStartTime ?? null
-  const seedThumbnailUrl = stream ? stream.thumbnailUrl ?? null : preset?.thumbnailUrl ?? null
+  // A preset thumbnail is a pending source to re-apply to the new stream. A
+  // stream's existing thumbnail (edit mode) is display-only — we never re-fetch
+  // and re-upload it, so editing other fields can't be blocked by a YouTube CDN
+  // URL we can't read.
+  const presetThumbnailUrl = !isEditing ? preset?.thumbnailUrl ?? null : null
+  const fileNameFromUrl = (url: string, fallback: string) => url.split("/").pop() || fallback
 
   // ─── Basic fields ──────────────────────────────────────
   const [title, setTitle] = useState(seed?.title ?? "")
@@ -67,14 +73,27 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
   const [savePreset, setSavePreset] = useState(false)
 
   // ─── Thumbnail ─────────────────────────────────────────
-  const [thumbnail, setThumbnail] = useState<ThumbnailSource>(
-    seedThumbnailUrl ? { type: "url", url: seedThumbnailUrl } : null,
+  // The user's chosen source. Bytes are resolved + validated here (in
+  // `thumbBlob`) before submit; the data layer never fetches a URL itself.
+  type ThumbSelection =
+    | { kind: "file"; file: File }
+    | { kind: "url"; url: string }
+    | { kind: "media"; url: string }
+    | null
+  const [thumbSelection, setThumbSelection] = useState<ThumbSelection>(
+    presetThumbnailUrl ? { kind: "url", url: presetThumbnailUrl } : null,
   )
-  const [thumbnailFileName, setThumbnailFileName] = useState<string | undefined>(
-    seedThumbnailUrl ? (seedThumbnailUrl.split("/").pop() || "Preset thumbnail") : undefined,
+  const [thumbName, setThumbName] = useState<string | undefined>(
+    presetThumbnailUrl ? fileNameFromUrl(presetThumbnailUrl, "Preset thumbnail") : undefined,
   )
+  const [thumbBlob, setThumbBlob] = useState<Blob | null>(null)
+  const [thumbStatus, setThumbStatus] = useState<ThumbnailStatus>("idle")
+  const [thumbError, setThumbError] = useState<string | null>(null)
+  const [thumbPreviewUrl, setThumbPreviewUrl] = useState<string | null>(null)
   const [thumbnailUrlInput, setThumbnailUrlInput] = useState("")
   const [thumbnailMode, setThumbnailMode] = useState<"file" | "url" | "media">("file")
+  // Discards results from a superseded resolution (e.g. paste URL A then B).
+  const resolveSeqRef = useRef(0)
 
   // ─── Category, tags, playlist ──────────────────────────
   const [categoryId, setCategoryId] = useState<string | null>(seed?.categoryId ?? null)
@@ -95,10 +114,15 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
 
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const canSubmit = Boolean(title.trim()) && !isSubmitting
+  // Hard-gate Create on a validated thumbnail: a selected source must have
+  // resolved to bytes (never while resolving, never after a resolve failure).
+  const thumbReady = !thumbSelection || (thumbStatus === "ready" && thumbBlob !== null)
+  const canSubmit = Boolean(title.trim()) && !isSubmitting && thumbReady
 
-  // Filter media to only images (thumbnails must be images)
-  const imageMedia = mediaItems.filter((m) => m.type === "image")
+  // Thumbnails must be images, and must be fetchable as bytes. Items probed
+  // as unfetchable (blobFetchable === false) are hidden; legacy/unprobed
+  // (null) stay selectable and are re-validated on selection.
+  const imageMedia = mediaItems.filter((m) => m.type === "image" && m.blobFetchable !== false)
 
   // Fetch categories, playlists, and media when modal opens.
   // Collect failures and surface a single toast so a network outage doesn't
@@ -149,10 +173,59 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
     }
   }, [latencyPreference])
 
+  // Resolve the selected thumbnail to bytes whenever the selection changes
+  // (seeded preset on open, mode switch, URL confirm, media pick). Each run
+  // owns exactly one preview object URL and revokes it on cleanup; a stale
+  // resolution (selection changed mid-fetch) is discarded via the seq guard.
+  useEffect(() => {
+    const sel = thumbSelection
+    if (!sel) {
+      setThumbBlob(null)
+      setThumbStatus("idle")
+      setThumbError(null)
+      setThumbPreviewUrl(null)
+      return
+    }
+    const seq = ++resolveSeqRef.current
+
+    if (sel.kind === "file") {
+      const objUrl = URL.createObjectURL(sel.file)
+      setThumbBlob(sel.file)
+      setThumbStatus("ready")
+      setThumbError(null)
+      setThumbPreviewUrl(objUrl)
+      return () => URL.revokeObjectURL(objUrl)
+    }
+
+    setThumbStatus("resolving")
+    setThumbError(null)
+    setThumbBlob(null)
+    setThumbPreviewUrl(null)
+    let createdUrl: string | null = null
+    fetchImageBlob(sel.url)
+      .then((blob) => {
+        if (resolveSeqRef.current !== seq) return
+        createdUrl = URL.createObjectURL(blob)
+        setThumbBlob(blob)
+        setThumbStatus("ready")
+        setThumbPreviewUrl(createdUrl)
+      })
+      .catch(() => {
+        if (resolveSeqRef.current !== seq) return
+        setThumbBlob(null)
+        setThumbStatus("error")
+        setThumbError(UNFETCHABLE_THUMBNAIL_MESSAGE)
+        setThumbPreviewUrl(null)
+      })
+    return () => {
+      if (createdUrl) URL.revokeObjectURL(createdUrl)
+    }
+  }, [thumbSelection])
+
   const resetForm = useCallback(() => {
     const reset = stream ?? preset ?? null
     const resetScheduledStart = stream ? stream.scheduledStartTime : preset?.scheduledStartTime ?? null
-    const resetThumbnailUrl = stream ? stream.thumbnailUrl ?? null : preset?.thumbnailUrl ?? null
+    const resetPresetThumbUrl = !stream ? preset?.thumbnailUrl ?? null : null
     setTitle(reset?.title ?? "")
     setDescription(reset?.description ?? "")
     setPrivacyStatus(reset?.privacyStatus ?? "unlisted")
@@ -160,8 +233,9 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
     setScheduledStartTime(
       resetScheduledStart ? formatUtcIsoForDateTimeInput(resetScheduledStart, browserTimeZone) : "",
     )
-    setThumbnail(resetThumbnailUrl ? { type: "url", url: resetThumbnailUrl } : null)
-    setThumbnailFileName(resetThumbnailUrl ? (resetThumbnailUrl.split("/").pop() || "Current thumbnail") : undefined)
+    // The resolve effect re-derives blob/status/preview from the selection.
+    setThumbSelection(resetPresetThumbUrl ? { kind: "url", url: resetPresetThumbUrl } : null)
+    setThumbName(resetPresetThumbUrl ? (resetPresetThumbUrl.split("/").pop() || "Preset thumbnail") : undefined)
     setThumbnailUrlInput("")
     setThumbnailMode("file")
     setCategoryId(reset?.categoryId ?? null)
@@ -183,31 +257,30 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
 
   function handleFileSelect(file: File | null) {
     if (file) {
-      setThumbnail({ type: "file", file })
-      setThumbnailFileName(file.name)
+      setThumbSelection({ kind: "file", file })
+      setThumbName(file.name)
     } else {
-      setThumbnail(null)
-      setThumbnailFileName(undefined)
+      clearThumbnail()
     }
   }
 
   function handleThumbnailUrlConfirm() {
     const url = thumbnailUrlInput.trim()
     if (!url) return
-    setThumbnail({ type: "url", url })
-    setThumbnailFileName(url.split("/").pop() || "Image from URL")
+    setThumbSelection({ kind: "url", url })
+    setThumbName(url.split("/").pop() || "Image from URL")
   }
 
   function handleMediaSelect(mediaId: string) {
     const item = imageMedia.find((m) => m.id === mediaId)
     if (!item) return
-    setThumbnail({ type: "url", url: item.url })
-    setThumbnailFileName(item.name)
+    setThumbSelection({ kind: "media", url: item.url })
+    setThumbName(item.name)
   }
 
   function clearThumbnail() {
-    setThumbnail(null)
-    setThumbnailFileName(undefined)
+    setThumbSelection(null)
+    setThumbName(undefined)
     setThumbnailUrlInput("")
   }
 
@@ -237,6 +310,16 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
 
   async function handleSubmit() {
     if (!canSubmit) return
+
+    // Gate guarantees: if a source is selected it has resolved to bytes.
+    const thumbnail: ThumbnailSource =
+      thumbSelection && thumbBlob && thumbStatus === "ready"
+        ? {
+            blob: thumbBlob,
+            origin: thumbSelection.kind,
+            sourceUrl: thumbSelection.kind === "file" ? null : thumbSelection.url,
+          }
+        : null
 
     setIsSubmitting(true)
     try {
@@ -291,8 +374,13 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
 
                 {/* ─── Thumbnail ─── */}
                 <StreamThumbnailField
-                  thumbnail={thumbnail}
-                  thumbnailFileName={thumbnailFileName}
+                  hasSelection={thumbSelection !== null}
+                  selectionName={thumbName}
+                  previewUrl={
+                    thumbSelection ? thumbPreviewUrl : isEditing ? stream?.thumbnailUrl ?? null : null
+                  }
+                  status={thumbStatus}
+                  errorMessage={thumbError}
                   thumbnailUrlInput={thumbnailUrlInput}
                   thumbnailMode={thumbnailMode}
                   imageMedia={imageMedia}

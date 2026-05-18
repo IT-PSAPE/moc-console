@@ -22,6 +22,7 @@ type RequestEventType =
 type Body = {
   event_type?: string
   workspace_id?: string
+  request_id?: string | null
   title?: string
   status?: string | null
   requester_name?: string | null
@@ -94,6 +95,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   }
 
   const requesterName = typeof body.requester_name === "string" ? body.requester_name : null
+  const requestId = typeof body.request_id === "string" ? body.request_id : null
 
   let result: { attempted: number; succeeded: number }
   if (event_type === "request.status_changed") {
@@ -106,12 +108,14 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       status: body.status,
       requesterName,
       linkUrl: link_url,
+      requestId,
     })
   } else if (event_type === "request.archived") {
     result = await dispatchEvent(workspace_id, event_type as RequestEventType, {
       title,
       requesterName,
       linkUrl: link_url,
+      requestId,
     })
   } else {
     result = await dispatchEvent(workspace_id, "request.created", {
@@ -119,6 +123,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       status: typeof body.status === "string" ? body.status : null,
       requesterName,
       linkUrl: link_url,
+      requestId,
     })
   }
 

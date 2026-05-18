@@ -80,6 +80,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     title: row.title,
     scheduledStartTime: row.scheduled_start_time,
     streamUrl: row.stream_url,
+    streamId: row.id,
   })
 
   response.status(200).json({ ok: true, ...result })

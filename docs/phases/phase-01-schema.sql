@@ -78,6 +78,11 @@ EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 DO $$ BEGIN
+  CREATE TYPE public.youtube_connection_status AS ENUM ('active', 'reauth_required');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
   CREATE TYPE public.zoom_meeting_type AS ENUM ('instant', 'scheduled', 'recurring_no_fixed', 'recurring_fixed');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
@@ -227,6 +232,7 @@ CREATE TABLE IF NOT EXISTS public.media (
   duration_seconds numeric           NULL,
   width            integer           NULL,
   height           integer           NULL,
+  blob_fetchable   boolean           NULL,
   created_at       timestamptz       NOT NULL DEFAULT now()
 );
 
@@ -423,7 +429,8 @@ CREATE TABLE IF NOT EXISTS public.checklist_item_assignees (
   UNIQUE (checklist_item_id, user_id, duty)
 );
 
--- youtube_connections (phase-13; token_expires_at NOT NULL folded from phase-16)
+-- youtube_connections (phase-13; token_expires_at NOT NULL folded from phase-16;
+-- status folded from patch 2026-05-18)
 CREATE TABLE IF NOT EXISTS public.youtube_connections (
   id               uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id     uuid        NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
@@ -433,6 +440,7 @@ CREATE TABLE IF NOT EXISTS public.youtube_connections (
   access_token     text        NOT NULL,
   refresh_token    text        NOT NULL,
   token_expires_at timestamptz NOT NULL,
+  status           public.youtube_connection_status NOT NULL DEFAULT 'active',
   connected_by     uuid        NOT NULL REFERENCES public.users(id),
   created_at       timestamptz NOT NULL DEFAULT now(),
   updated_at       timestamptz NOT NULL DEFAULT now(),
@@ -603,6 +611,24 @@ CREATE TABLE IF NOT EXISTS public.notification_routes (
   updated_at    timestamptz NOT NULL DEFAULT now()
 );
 
+-- notification_message_templates (phase-29)
+-- Per-workspace custom text for Telegram notifications. One row per
+-- (workspace, scope, message_type); absence of a row means "use the
+-- hardcoded default", so existing workspaces are unaffected.
+--   scope        — 'group' (event routing) | 'dm' (assignment DMs)
+--   message_type — NotificationEventKey for group scope, or
+--                   'assignment.request' | 'assignment.cue' |
+--                   'assignment.checklist_item' for dm scope
+CREATE TABLE IF NOT EXISTS public.notification_message_templates (
+  id           uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id uuid        NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
+  scope        text        NOT NULL,
+  message_type text        NOT NULL,
+  body         text        NOT NULL,
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  updated_at   timestamptz NOT NULL DEFAULT now()
+);
+
 -- ===== INDEXES =====
 
 -- workspace_users
@@ -732,6 +758,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS notification_routes_unique_no_topic
   WHERE thread_id IS NULL;
 CREATE INDEX IF NOT EXISTS notification_routes_lookup_idx
   ON public.notification_routes (workspace_id, event_type) WHERE enabled = true;
+
+-- notification_message_templates (phase-29)
+CREATE UNIQUE INDEX IF NOT EXISTS notification_message_templates_unique
+  ON public.notification_message_templates (workspace_id, scope, message_type);
 
 -- ===== SEED (the ONLY data; safe to skip/replace for a custom setup) =====
 

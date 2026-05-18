@@ -37,6 +37,7 @@ export function YouTubeConnectionCard() {
       description="Live streams"
       isLoading={isLoadingConnection}
       isConnected={Boolean(youtubeConnection)}
+      needsReauth={youtubeConnection?.status === "reauth_required"}
       accountLabel={youtubeConnection?.channelTitle ?? null}
       canManage={role?.can_manage_roles === true}
       onConnect={startOAuthFlow}

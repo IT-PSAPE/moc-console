@@ -6,6 +6,7 @@ import { Drawer } from "@moc/ui/components/overlays/drawer"
 import { Decision } from "@moc/ui/components/display/decision"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
+import { Alert } from "@moc/ui/components/feedback/alert"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { useAuth } from "@/lib/auth-context"
 import { useBroadcast } from "./broadcast-provider"
@@ -15,6 +16,7 @@ import { StreamListItem } from "./stream-list-item"
 import { StreamModal, type StreamFormData } from "./stream-modal"
 import { StreamDetailDrawer } from "./stream-detail-drawer"
 import { createStream, updateStream, deleteStream, syncStreamsFromYouTube, saveStreamPreset } from "@/data/mutate-streams"
+import { uploadStreamThumbnail } from "@/data/mutate-broadcast"
 import { getErrorMessage } from "@moc/utils/get-error-message"
 import type { Stream } from "@moc/types/broadcast/stream"
 import { useNavigate } from "react-router-dom"
@@ -49,18 +51,40 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
   const [filterOpen, setFilterOpen] = useState(false)
 
   const isConnected = Boolean(youtubeConnection)
-  const canCreate = role?.can_create === true
+  const needsReauth = youtubeConnection?.status === "reauth_required"
+  const canCreate = role?.can_create === true && !needsReauth
+
+  const reauthGuard = useCallback(() => {
+    if (!needsReauth) return false
+    toast({
+      title: "YouTube disconnected",
+      description: "Reconnect YouTube in Settings to resume this action.",
+      variant: "error",
+    })
+    return true
+  }, [needsReauth, toast])
 
   const handleCreate = useCallback(async (params: StreamFormData) => {
+    if (reauthGuard()) return
     try {
-      const newStream = await createStream(params)
+      const { stream: newStream, thumbnailError } = await createStream(params)
       syncStream(newStream)
       if (params.savePreset) {
+        // Persist a CORS-safe thumbnail reference: Upload-mode bytes are
+        // mirrored into our own Supabase bucket; URL/Media keep their
+        // already-validated source URL. Never the YouTube CDN URL.
+        let presetThumbnailUrl: string | null = null
+        if (params.thumbnail) {
+          presetThumbnailUrl =
+            params.thumbnail.origin === "file"
+              ? await uploadStreamThumbnail(params.thumbnail.blob).catch(() => null)
+              : params.thumbnail.sourceUrl
+        }
         saveStreamPreset({
           title: params.title,
           description: params.description,
           scheduledStartTime: params.scheduledStartTime,
-          thumbnailUrl: newStream.thumbnailUrl,
+          thumbnailUrl: presetThumbnailUrl,
           privacyStatus: params.privacyStatus,
           isForKids: params.isForKids,
           categoryId: params.categoryId,
@@ -73,30 +97,40 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
           playlistId: params.playlistId,
         }).catch(() => { /* non-fatal */ })
       }
-      toast({ title: "Stream created", variant: "success" })
+      if (thumbnailError) {
+        toast({ title: "Stream created, but the thumbnail wasn't applied", description: thumbnailError, variant: "warning" })
+      } else {
+        toast({ title: "Stream created", variant: "success" })
+      }
     } catch (error) {
       const message = getErrorMessage(error, "The stream could not be created.")
       toast({ title: "Failed to create stream", description: message, variant: "error" })
       throw new Error(message)
     }
-  }, [syncStream, toast])
+  }, [syncStream, toast, reauthGuard])
 
   const handleUpdate = useCallback(async (params: StreamFormData) => {
     if (!editingStream) return
+    if (reauthGuard()) return
     try {
       const { thumbnail, ...fields } = params
-      const updated = await updateStream({ ...editingStream, ...fields }, thumbnail)
+      const { stream: updated, thumbnailError } = await updateStream({ ...editingStream, ...fields }, thumbnail)
       syncStream(updated)
       setEditingStream(null)
-      toast({ title: "Stream updated", variant: "success" })
+      if (thumbnailError) {
+        toast({ title: "Stream updated, but the thumbnail wasn't applied", description: thumbnailError, variant: "warning" })
+      } else {
+        toast({ title: "Stream updated", variant: "success" })
+      }
     } catch (error) {
       const message = getErrorMessage(error, "The stream could not be updated.")
       toast({ title: "Failed to update stream", description: message, variant: "error" })
       throw new Error(message)
     }
-  }, [editingStream, syncStream, toast])
+  }, [editingStream, syncStream, toast, reauthGuard])
 
   const handleDelete = useCallback(async (stream: Stream) => {
+    if (reauthGuard()) return
     try {
       await deleteStream(stream)
       removeStream(stream.id)
@@ -105,9 +139,10 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
     } catch (error) {
       toast({ title: "Failed to delete stream", description: getErrorMessage(error, "The stream could not be deleted."), variant: "error" })
     }
-  }, [removeStream, toast])
+  }, [removeStream, toast, reauthGuard])
 
   const handleSync = useCallback(async () => {
+    if (reauthGuard()) return
     setIsSyncing(true)
     try {
       const synced = await syncStreamsFromYouTube()
@@ -118,7 +153,7 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
     } finally {
       setIsSyncing(false)
     }
-  }, [setStreams, toast])
+  }, [setStreams, toast, reauthGuard])
 
   function handleOpenCreate() {
     setEditingStream(null)
@@ -138,6 +173,14 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
 
   return (
     <>
+      {isConnected && needsReauth && (
+        <Alert
+          variant="error"
+          title="YouTube disconnected"
+          description="The YouTube authorization expired or was revoked. Reconnect to resume syncing, creating, and editing streams."
+          className="mb-1.5"
+        />
+      )}
       <Card>
         <Card.Header tight className="gap-1.5 justify-between">
           <div className="flex items-center gap-1.5">
@@ -147,7 +190,7 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
           {isConnected && (
             <div className="flex items-center gap-1">
               <Button.Icon variant="ghost" icon={<Settings2 />} onClick={() => setFilterOpen(true)} />
-              <Button.Icon variant="ghost" icon={<RefreshCw />} onClick={handleSync} disabled={isSyncing} />
+              <Button.Icon variant="ghost" icon={<RefreshCw />} onClick={handleSync} disabled={isSyncing || needsReauth} />
               {canCreate && (
                 <Button.Icon variant="secondary" icon={<Plus />} onClick={handleOpenCreate} />
               )}
