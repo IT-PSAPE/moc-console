@@ -250,7 +250,9 @@ export async function dispatchEvent<K extends NotificationEventKey>(
   for (const route of routes) {
     const send = await sendTelegramMessageDetailed(route.group_chat_id, text, {
       parseMode: "HTML",
-      disableLinkPreview: true,
+      // Link preview left enabled: the action link lives inside an <a>
+      // tag, and Telegram previews the first link in the message so the
+      // recipient sees a rich preview of where it goes.
       ...(route.thread_id !== null ? { threadId: route.thread_id } : {}),
     })
 

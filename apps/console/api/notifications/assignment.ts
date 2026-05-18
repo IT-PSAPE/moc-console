@@ -235,7 +235,8 @@ export default async function handler(request: ApiRequest, response: ApiResponse
 
   await sendTelegramMessage(user.telegram_chat_id, text, {
     parseMode: "HTML",
-    disableLinkPreview: true,
+    // Link preview left enabled so the assignee gets a rich preview of
+    // the link, even though its URL is hidden inside the <a> tag.
   })
   response.status(200).json({ ok: true })
 }
