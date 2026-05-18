@@ -6,6 +6,7 @@ import { Drawer } from "@moc/ui/components/overlays/drawer"
 import { Decision } from "@moc/ui/components/display/decision"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
+import { Alert } from "@moc/ui/components/feedback/alert"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { useAuth } from "@/lib/auth-context"
 import { useBroadcast } from "./broadcast-provider"
@@ -50,9 +51,21 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
   const [filterOpen, setFilterOpen] = useState(false)
 
   const isConnected = Boolean(youtubeConnection)
-  const canCreate = role?.can_create === true
+  const needsReauth = youtubeConnection?.status === "reauth_required"
+  const canCreate = role?.can_create === true && !needsReauth
+
+  const reauthGuard = useCallback(() => {
+    if (!needsReauth) return false
+    toast({
+      title: "YouTube disconnected",
+      description: "Reconnect YouTube in Settings to resume this action.",
+      variant: "error",
+    })
+    return true
+  }, [needsReauth, toast])
 
   const handleCreate = useCallback(async (params: StreamFormData) => {
+    if (reauthGuard()) return
     try {
       const { stream: newStream, thumbnailError } = await createStream(params)
       syncStream(newStream)
@@ -94,10 +107,11 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
       toast({ title: "Failed to create stream", description: message, variant: "error" })
       throw new Error(message)
     }
-  }, [syncStream, toast])
+  }, [syncStream, toast, reauthGuard])
 
   const handleUpdate = useCallback(async (params: StreamFormData) => {
     if (!editingStream) return
+    if (reauthGuard()) return
     try {
       const { thumbnail, ...fields } = params
       const { stream: updated, thumbnailError } = await updateStream({ ...editingStream, ...fields }, thumbnail)
@@ -113,9 +127,10 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
       toast({ title: "Failed to update stream", description: message, variant: "error" })
       throw new Error(message)
     }
-  }, [editingStream, syncStream, toast])
+  }, [editingStream, syncStream, toast, reauthGuard])
 
   const handleDelete = useCallback(async (stream: Stream) => {
+    if (reauthGuard()) return
     try {
       await deleteStream(stream)
       removeStream(stream.id)
@@ -124,9 +139,10 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
     } catch (error) {
       toast({ title: "Failed to delete stream", description: getErrorMessage(error, "The stream could not be deleted."), variant: "error" })
     }
-  }, [removeStream, toast])
+  }, [removeStream, toast, reauthGuard])
 
   const handleSync = useCallback(async () => {
+    if (reauthGuard()) return
     setIsSyncing(true)
     try {
       const synced = await syncStreamsFromYouTube()
@@ -137,7 +153,7 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
     } finally {
       setIsSyncing(false)
     }
-  }, [setStreams, toast])
+  }, [setStreams, toast, reauthGuard])
 
   function handleOpenCreate() {
     setEditingStream(null)
@@ -157,6 +173,14 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
 
   return (
     <>
+      {isConnected && needsReauth && (
+        <Alert
+          variant="error"
+          title="YouTube disconnected"
+          description="The YouTube authorization expired or was revoked. Reconnect to resume syncing, creating, and editing streams."
+          className="mb-1.5"
+        />
+      )}
       <Card>
         <Card.Header tight className="gap-1.5 justify-between">
           <div className="flex items-center gap-1.5">
@@ -166,7 +190,7 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
           {isConnected && (
             <div className="flex items-center gap-1">
               <Button.Icon variant="ghost" icon={<Settings2 />} onClick={() => setFilterOpen(true)} />
-              <Button.Icon variant="ghost" icon={<RefreshCw />} onClick={handleSync} disabled={isSyncing} />
+              <Button.Icon variant="ghost" icon={<RefreshCw />} onClick={handleSync} disabled={isSyncing || needsReauth} />
               {canCreate && (
                 <Button.Icon variant="secondary" icon={<Plus />} onClick={handleOpenCreate} />
               )}

@@ -78,6 +78,11 @@ EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 DO $$ BEGIN
+  CREATE TYPE public.youtube_connection_status AS ENUM ('active', 'reauth_required');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
   CREATE TYPE public.zoom_meeting_type AS ENUM ('instant', 'scheduled', 'recurring_no_fixed', 'recurring_fixed');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
@@ -424,7 +429,8 @@ CREATE TABLE IF NOT EXISTS public.checklist_item_assignees (
   UNIQUE (checklist_item_id, user_id, duty)
 );
 
--- youtube_connections (phase-13; token_expires_at NOT NULL folded from phase-16)
+-- youtube_connections (phase-13; token_expires_at NOT NULL folded from phase-16;
+-- status folded from patch 2026-05-18)
 CREATE TABLE IF NOT EXISTS public.youtube_connections (
   id               uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id     uuid        NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
@@ -434,6 +440,7 @@ CREATE TABLE IF NOT EXISTS public.youtube_connections (
   access_token     text        NOT NULL,
   refresh_token    text        NOT NULL,
   token_expires_at timestamptz NOT NULL,
+  status           public.youtube_connection_status NOT NULL DEFAULT 'active',
   connected_by     uuid        NOT NULL REFERENCES public.users(id),
   created_at       timestamptz NOT NULL DEFAULT now(),
   updated_at       timestamptz NOT NULL DEFAULT now(),

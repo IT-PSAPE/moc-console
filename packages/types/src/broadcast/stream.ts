@@ -53,6 +53,11 @@ export type StreamPreset = {
   playlistId: string | null
 }
 
+// 'active'          — stored refresh token works; YouTube ops allowed.
+// 'reauth_required' — Google returned invalid_grant on token refresh;
+//                     the user must reconnect YouTube. Cleared on reconnect.
+export type YouTubeConnectionStatus = "active" | "reauth_required"
+
 export type YouTubeConnection = {
   id: string
   workspaceId: string
@@ -61,6 +66,7 @@ export type YouTubeConnection = {
   connectedBy: string
   createdAt: string
   tokenExpiresAt: string
+  status: YouTubeConnectionStatus
   presets: StreamPreset | null
 }
 

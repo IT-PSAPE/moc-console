@@ -74,6 +74,7 @@ export function useYouTubeOAuth() {
             access_token: tokens.access_token,
             refresh_token: tokens.refresh_token,
             token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+            status: "active",
             connected_by: user.id,
           },
           { onConflict: "workspace_id" },

@@ -7,6 +7,19 @@ export type YouTubeOAuthConfig = {
   clientSecret: string
 }
 
+/**
+ * Thrown when Google rejects a refresh token with `invalid_grant` — the
+ * refresh token is permanently dead (expired in testing mode, revoked, or
+ * the account password changed). Distinct from transient failures so the
+ * caller can prompt a reconnect instead of retrying.
+ */
+export class YouTubeReauthRequiredError extends Error {
+  constructor(message = "YouTube refresh token is no longer valid; reconnect required") {
+    super(message)
+    this.name = "YouTubeReauthRequiredError"
+  }
+}
+
 type TokenResponse = {
   access_token: string
   refresh_token?: string
@@ -100,6 +113,14 @@ export async function refreshYouTubeToken(
   })
 
   if (!response.ok) {
+    const contentType = response.headers.get("content-type") ?? ""
+    if (contentType.includes("application/json")) {
+      const data = await response.json() as { error?: string; error_description?: string }
+      if (data.error === "invalid_grant") {
+        throw new YouTubeReauthRequiredError(data.error_description ?? undefined)
+      }
+      throw new Error(data.error_description ?? data.error ?? "YouTube token refresh failed")
+    }
     throw new Error(await getErrorMessage(response, "YouTube token refresh failed"))
   }
 

@@ -1,4 +1,4 @@
-import type { Stream, StreamPreset, YouTubeConnection, YouTubeCategory, YouTubePlaylist } from "@moc/types/broadcast/stream"
+import type { Stream, StreamPreset, YouTubeConnection, YouTubeConnectionStatus, YouTubeCategory, YouTubePlaylist } from "@moc/types/broadcast/stream"
 import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 import { fetchVideoCategories, fetchChannelPlaylists } from "@/lib/youtube-client"
@@ -42,6 +42,7 @@ type ConnectionRow = {
   connected_by: string
   created_at: string
   token_expires_at: string
+  status: YouTubeConnectionStatus
 }
 
 function mapStreamRow(row: StreamRow): Stream {
@@ -86,6 +87,7 @@ function mapConnectionRow(row: ConnectionRow): YouTubeConnection {
     connectedBy: row.connected_by,
     createdAt: row.created_at,
     tokenExpiresAt: row.token_expires_at,
+    status: row.status,
   }
 }
 
@@ -128,7 +130,7 @@ export async function fetchYouTubeConnection(): Promise<YouTubeConnection | null
   const workspaceId = await getCurrentWorkspaceId()
   const { data, error } = await supabase
     .from("youtube_connections")
-    .select("id, workspace_id, channel_id, channel_title, presets, connected_by, created_at, token_expires_at")
+    .select("id, workspace_id, channel_id, channel_title, presets, connected_by, created_at, token_expires_at, status")
     .eq("workspace_id", workspaceId)
     .maybeSingle()
 
