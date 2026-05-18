@@ -51,6 +51,7 @@ ALTER TABLE public.telegram_link_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.telegram_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.telegram_group_topics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_routes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notification_message_templates ENABLE ROW LEVEL SECURITY;
 
 -- ===== IDENTITY TABLE POLICIES (phase-09) =====
 
@@ -1666,6 +1667,32 @@ CREATE POLICY "notification_routes_update" ON public.notification_routes
 
 DROP POLICY IF EXISTS "notification_routes_delete" ON public.notification_routes;
 CREATE POLICY "notification_routes_delete" ON public.notification_routes
+  FOR DELETE TO authenticated
+  USING (private.current_user_can('can_manage_roles'));
+
+-- notification_message_templates (phase-29) — mirrors notification_routes:
+-- workspace members can read; only role managers can write.
+DROP POLICY IF EXISTS "notification_message_templates_select" ON public.notification_message_templates;
+CREATE POLICY "notification_message_templates_select" ON public.notification_message_templates
+  FOR SELECT TO authenticated
+  USING (
+    private.is_workspace_member(workspace_id)
+    OR private.current_user_can('can_manage_roles')
+  );
+
+DROP POLICY IF EXISTS "notification_message_templates_insert" ON public.notification_message_templates;
+CREATE POLICY "notification_message_templates_insert" ON public.notification_message_templates
+  FOR INSERT TO authenticated
+  WITH CHECK (private.current_user_can('can_manage_roles'));
+
+DROP POLICY IF EXISTS "notification_message_templates_update" ON public.notification_message_templates;
+CREATE POLICY "notification_message_templates_update" ON public.notification_message_templates
+  FOR UPDATE TO authenticated
+  USING (private.current_user_can('can_manage_roles'))
+  WITH CHECK (private.current_user_can('can_manage_roles'));
+
+DROP POLICY IF EXISTS "notification_message_templates_delete" ON public.notification_message_templates;
+CREATE POLICY "notification_message_templates_delete" ON public.notification_message_templates
   FOR DELETE TO authenticated
   USING (private.current_user_can('can_manage_roles'));
 

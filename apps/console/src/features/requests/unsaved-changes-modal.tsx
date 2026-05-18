@@ -9,9 +9,13 @@ type UnsavedChangesModalProps = {
     onDiscard: () => void
     onCancel: () => void
     isSaving?: boolean
+    message?: string
 }
 
-export function UnsavedChangesModal({ open, onSave, onDiscard, onCancel, isSaving = false }: UnsavedChangesModalProps) {
+const DEFAULT_MESSAGE =
+    'You are about to close this request with unsaved changes. Would you like to save these changes before closing?'
+
+export function UnsavedChangesModal({ open, onSave, onDiscard, onCancel, isSaving = false, message = DEFAULT_MESSAGE }: UnsavedChangesModalProps) {
     return (
         <Modal open={open} onOpenChange={(o) => { if (!o) onCancel() }}>
             <Modal.Portal>
@@ -24,7 +28,7 @@ export function UnsavedChangesModal({ open, onSave, onDiscard, onCancel, isSavin
                         <Modal.Content className="p-4 flex-row gap-4">
                             <TriangleAlert className='size-8 shrink-0' />
                             <Paragraph.sm className="text-secondary">
-                                You are about to close this request with unsaved changes. Would you like to save these changes before closing?
+                                {message}
                             </Paragraph.sm>
                         </Modal.Content>
                         <Modal.Footer className="justify-end">

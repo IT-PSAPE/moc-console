@@ -1,6 +1,12 @@
 import { getSupabaseAdmin } from "../../server/supabase-admin.js"
 import { sendTelegramMessage } from "../../server/telegram.js"
 import { requireAuthenticatedUser, AuthError } from "../../server/auth-guard.js"
+import { resolveTemplate } from "../../server/notifications/templates.js"
+import {
+  renderTemplate,
+  type DmMessageType,
+  type TokenValues,
+} from "../../src/data/notification-templates-core.js"
 
 type ApiRequest = {
   method?: string
@@ -42,63 +48,48 @@ function resolveBaseUrl(): string | null {
   return null
 }
 
-// Telegram's HTML parser only special-cases &, <, > — quotes don't need escaping.
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
+// Each builder resolves the parent resource (which also yields the
+// workspace the template lookup is keyed by) and returns the flat
+// {{token}} values. Returns null when the parent is gone, preserving
+// the old "skipped: parent_not_found" path. Token names must match
+// TEMPLATE_TOKENS in the core.
+type Resolved = {
+  workspaceId: string
+  messageType: DmMessageType
+  tokens: TokenValues
 }
 
-function buildMessage(args: {
-  heading: string
-  title: string
-  context?: { label: string; value: string }
-  duty: string
-  linkUrl: string
-  linkLabel: string
-}): string {
-  const lines: string[] = []
-  lines.push(`<b>${args.heading}</b>`)
-  lines.push("")
-  lines.push(escapeHtml(args.title))
-  if (args.context) {
-    lines.push(`${args.context.label}: ${escapeHtml(args.context.value)}`)
-  }
-  if (args.duty) {
-    lines.push(`Duty: <i>${escapeHtml(args.duty)}</i>`)
-  }
-  lines.push("")
-  lines.push(`<a href="${args.linkUrl}">${args.linkLabel}</a>`)
-  return lines.join("\n")
-}
-
-async function buildRequestMessage(
+async function buildRequest(
   parentId: string,
   duty: string,
+  assigneeName: string,
   baseUrl: string,
-): Promise<string | null> {
+): Promise<Resolved | null> {
   const admin = getSupabaseAdmin()
   const { data } = await admin
     .from("requests")
-    .select("title")
+    .select("title, workspace_id")
     .eq("id", parentId)
     .maybeSingle()
   if (!data) return null
-  return buildMessage({
-    heading: "You've been assigned to a request",
-    title: data.title,
-    duty,
-    linkUrl: `${baseUrl}/requests/${parentId}`,
-    linkLabel: "Open request",
-  })
+  return {
+    workspaceId: data.workspace_id,
+    messageType: "assignment.request",
+    tokens: {
+      title: data.title,
+      duty,
+      assigneeName,
+      linkUrl: `${baseUrl}/requests/${parentId}`,
+    },
+  }
 }
 
-async function buildCueMessage(
+async function buildCue(
   parentId: string,
   duty: string,
+  assigneeName: string,
   baseUrl: string,
-): Promise<string | null> {
+): Promise<Resolved | null> {
   const admin = getSupabaseAdmin()
   const { data: cue } = await admin
     .from("cues")
@@ -116,26 +107,30 @@ async function buildCueMessage(
 
   const { data: event } = await admin
     .from("events")
-    .select("id, name")
+    .select("id, title, workspace_id")
     .eq("id", track.event_id)
     .maybeSingle()
   if (!event) return null
 
-  return buildMessage({
-    heading: "You've been assigned to a cue",
-    title: cue.label,
-    context: { label: "Event", value: event.name },
-    duty,
-    linkUrl: `${baseUrl}/cue-sheet/events/${event.id}`,
-    linkLabel: "Open event",
-  })
+  return {
+    workspaceId: event.workspace_id,
+    messageType: "assignment.cue",
+    tokens: {
+      title: cue.label,
+      eventName: event.title,
+      duty,
+      assigneeName,
+      linkUrl: `${baseUrl}/cue-sheet/events/${event.id}`,
+    },
+  }
 }
 
-async function buildChecklistItemMessage(
+async function buildChecklistItem(
   parentId: string,
   duty: string,
+  assigneeName: string,
   baseUrl: string,
-): Promise<string | null> {
+): Promise<Resolved | null> {
   const admin = getSupabaseAdmin()
   const { data: item } = await admin
     .from("checklist_items")
@@ -146,19 +141,22 @@ async function buildChecklistItemMessage(
 
   const { data: checklist } = await admin
     .from("checklists")
-    .select("id, name")
+    .select("id, name, workspace_id")
     .eq("id", item.checklist_id)
     .maybeSingle()
   if (!checklist) return null
 
-  return buildMessage({
-    heading: "You've been assigned to a checklist item",
-    title: item.label,
-    context: { label: "Checklist", value: checklist.name },
-    duty,
-    linkUrl: `${baseUrl}/cue-sheet/checklist/${checklist.id}`,
-    linkLabel: "Open checklist",
-  })
+  return {
+    workspaceId: checklist.workspace_id,
+    messageType: "assignment.checklist_item",
+    tokens: {
+      title: item.label,
+      checklistName: checklist.name,
+      duty,
+      assigneeName,
+      linkUrl: `${baseUrl}/cue-sheet/checklist/${checklist.id}`,
+    },
+  }
 }
 
 export default async function handler(request: ApiRequest, response: ApiResponse) {
@@ -210,7 +208,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   const admin = getSupabaseAdmin()
   const { data: user } = await admin
     .from("users")
-    .select("telegram_chat_id")
+    .select("telegram_chat_id, name, surname")
     .eq("id", userId)
     .maybeSingle()
 
@@ -219,25 +217,30 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
+  const assigneeName = [user.name, user.surname].filter(Boolean).join(" ").trim()
+
   const baseUrl = resolveBaseUrl()
   if (!baseUrl) {
     response.status(200).json({ ok: true, skipped: "no_base_url" })
     return
   }
 
-  let text: string | null = null
+  let resolved: Resolved | null = null
   if (kind === "request") {
-    text = await buildRequestMessage(parentId, duty, baseUrl)
+    resolved = await buildRequest(parentId, duty, assigneeName, baseUrl)
   } else if (kind === "cue") {
-    text = await buildCueMessage(parentId, duty, baseUrl)
+    resolved = await buildCue(parentId, duty, assigneeName, baseUrl)
   } else {
-    text = await buildChecklistItemMessage(parentId, duty, baseUrl)
+    resolved = await buildChecklistItem(parentId, duty, assigneeName, baseUrl)
   }
 
-  if (!text) {
+  if (!resolved) {
     response.status(200).json({ ok: true, skipped: "parent_not_found" })
     return
   }
+
+  const template = await resolveTemplate(resolved.workspaceId, "dm", resolved.messageType)
+  const text = renderTemplate(template, resolved.tokens)
 
   await sendTelegramMessage(user.telegram_chat_id, text, {
     parseMode: "HTML",

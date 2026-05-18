@@ -47,6 +47,7 @@ const TermsOfUseScreen = lazy(() => import('./screens/public/terms').then((m) =>
 const SupportScreen = lazy(() => import('./screens/public/support').then((m) => ({ default: m.SupportScreen })))
 const ZoomDocsScreen = lazy(() => import('./screens/public/zoom-docs').then((m) => ({ default: m.ZoomDocsScreen })))
 const SettingsScreen = lazy(() => import('./screens/account/settings/page').then((m) => ({ default: m.SettingsScreen })))
+const MessageTemplateDetailScreen = lazy(() => import('./screens/account/settings/message-templates/detail/page').then((m) => ({ default: m.MessageTemplateDetailScreen })))
 const CueSheetShareScreen = lazy(() => import('./screens/public/cue-sheet-share/page').then((m) => ({ default: m.CueSheetShareScreen })))
 
 function FullScreenSpinner() {
@@ -131,6 +132,7 @@ const router = createBrowserRouter([
             { index: true, element: <Navigate to={`/${routes.dashboard}`} replace /> },
             { path: routes.dashboard, element: <RequestsProvider><EquipmentProvider><BroadcastProvider><CueSheetProvider><DashboardScreen /></CueSheetProvider></BroadcastProvider></EquipmentProvider></RequestsProvider> },
             { path: routes.settings, element: <SettingsScreen /> },
+            { path: routes.messageTemplateDetail, element: <MessageTemplateDetailScreen /> },
             {
                 element: <RequestsProvider><Outlet /></RequestsProvider>,
                 children: [

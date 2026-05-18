@@ -4,6 +4,11 @@ import {
   isNotificationEventKey,
   type NotificationEventKey,
 } from "../../src/data/notification-events.js"
+import {
+  renderTemplate,
+  type TokenValues,
+} from "../../src/data/notification-templates-core.js"
+import { resolveTemplate } from "./templates.js"
 
 export type StreamCreatedPayload = {
   title: string
@@ -67,14 +72,6 @@ type RouteRow = {
   telegram_groups: { active: boolean; removed_at: string | null } | null
 }
 
-// Telegram HTML parser only special-cases &, <, >.
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-}
-
 function formatScheduled(scheduled: string | null): string | null {
   if (!scheduled) return null
   const date = new Date(scheduled)
@@ -82,73 +79,52 @@ function formatScheduled(scheduled: string | null): string | null {
   return date.toUTCString()
 }
 
-function buildMessage<K extends NotificationEventKey>(
+// Flatten a payload into the {{token}} values the renderer substitutes.
+// Date/URL derivation lives here; escaping + line-collapse is the
+// renderer's job. Token names must match TEMPLATE_TOKENS in the core.
+function buildTokens<K extends NotificationEventKey>(
   eventType: K,
   payload: EventPayloadMap[K],
-): string {
+): TokenValues {
   switch (eventType) {
     case "stream.created": {
       const p = payload as StreamCreatedPayload
-      const lines: string[] = [`<b>New YouTube stream</b>`, "", escapeHtml(p.title)]
-      const when = formatScheduled(p.scheduledStartTime)
-      if (when) lines.push(`Scheduled for ${escapeHtml(when)}`)
-      if (p.streamUrl) lines.push("", `<a href="${p.streamUrl}">Open stream</a>`)
-      return lines.join("\n")
+      return {
+        title: p.title,
+        scheduledStartTime: formatScheduled(p.scheduledStartTime),
+        streamUrl: p.streamUrl,
+      }
     }
     case "meeting.created": {
       const p = payload as MeetingCreatedPayload
-      const lines: string[] = [`<b>New Zoom meeting</b>`, "", escapeHtml(p.topic)]
-      const when = formatScheduled(p.startTime)
-      if (when) lines.push(`Scheduled for ${escapeHtml(when)}`)
-      if (p.joinUrl) lines.push("", `<a href="${p.joinUrl}">Join meeting</a>`)
-      return lines.join("\n")
+      return {
+        topic: p.topic,
+        startTime: formatScheduled(p.startTime),
+        joinUrl: p.joinUrl,
+      }
     }
     case "request.created": {
       const p = payload as RequestCreatedPayload
-      const lines: string[] = [`<b>New request</b>`, "", escapeHtml(p.title)]
-      if (p.requesterName) lines.push(`From: ${escapeHtml(p.requesterName)}`)
-      if (p.status) lines.push(`Status: <i>${escapeHtml(p.status)}</i>`)
-      lines.push("", `<a href="${p.linkUrl}">Open request</a>`)
-      return lines.join("\n")
+      return { title: p.title, status: p.status, requesterName: p.requesterName, linkUrl: p.linkUrl }
     }
     case "request.status_changed": {
       const p = payload as RequestStatusChangedPayload
-      const lines: string[] = [
-        `<b>Request status updated</b>`,
-        "",
-        escapeHtml(p.title),
-        `Status: <i>${escapeHtml(p.status)}</i>`,
-      ]
-      if (p.requesterName) lines.push(`From: ${escapeHtml(p.requesterName)}`)
-      lines.push("", `<a href="${p.linkUrl}">Open request</a>`)
-      return lines.join("\n")
+      return { title: p.title, status: p.status, requesterName: p.requesterName, linkUrl: p.linkUrl }
     }
     case "request.archived": {
       const p = payload as RequestArchivedPayload
-      const lines: string[] = [`<b>Request archived</b>`, "", escapeHtml(p.title)]
-      if (p.requesterName) lines.push(`From: ${escapeHtml(p.requesterName)}`)
-      lines.push("", `<a href="${p.linkUrl}">Open request</a>`)
-      return lines.join("\n")
+      return { title: p.title, requesterName: p.requesterName, linkUrl: p.linkUrl }
     }
     case "booking.created": {
       const p = payload as BookingCreatedPayload
-      const lines: string[] = [`<b>New equipment booking</b>`, "", escapeHtml(p.title)]
-      if (p.requesterName) lines.push(`From: ${escapeHtml(p.requesterName)}`)
-      if (p.status) lines.push(`Status: <i>${escapeHtml(p.status)}</i>`)
-      lines.push("", `<a href="${p.linkUrl}">Open booking</a>`)
-      return lines.join("\n")
+      return { title: p.title, status: p.status, requesterName: p.requesterName, linkUrl: p.linkUrl }
     }
     case "booking.status_changed": {
       const p = payload as BookingStatusChangedPayload
-      return [
-        `<b>Equipment booking updated</b>`,
-        "",
-        escapeHtml(p.title),
-        `Status: <i>${escapeHtml(p.status)}</i>`,
-        "",
-        `<a href="${p.linkUrl}">Open booking</a>`,
-      ].join("\n")
+      return { title: p.title, status: p.status, linkUrl: p.linkUrl }
     }
+    default:
+      return {}
   }
 }
 
@@ -223,7 +199,10 @@ export async function dispatchEvent<K extends NotificationEventKey>(
 
   if (routes.length === 0) return { attempted: 0, succeeded: 0 }
 
-  const text = buildMessage(eventType, payload)
+  // One template lookup per dispatch (shared across all routes), then
+  // fall back to the hardcoded default when no custom row is set.
+  const template = await resolveTemplate(workspaceId, "group", eventType)
+  const text = renderTemplate(template, buildTokens(eventType, payload))
   let succeeded = 0
 
   for (const route of routes) {

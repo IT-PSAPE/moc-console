@@ -18,6 +18,7 @@ import { Decision } from "@moc/ui/components/display/decision";
 import { Toggle } from "@moc/ui/components/form/toggle";
 import { Button } from "@moc/ui/components/controls/button";
 import { ConnectEventsModal, type ConnectEventsTarget } from "./connect-events-modal";
+import { MessageTemplates } from "./message-templates/list";
 
 export function TelegramTab() {
     const { toast } = useFeedback();
@@ -166,6 +167,10 @@ export function TelegramTab() {
                     </Decision>
                 </Section.Body>
             </Section>
+
+            <Divider className="py-6" />
+
+            <MessageTemplates />
 
             <ConnectEventsModal target={connectTarget} onClose={() => setConnectTarget(null)} />
         </>
