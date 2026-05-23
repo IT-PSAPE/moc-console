@@ -160,7 +160,11 @@ export default defineConfig(({ mode }) => {
       babel({ presets: [reactCompilerPreset()] }),
       tailwindcss(),
       VitePWA({
-        registerType: 'prompt',
+        // autoUpdate: the new service worker activates silently in the
+        // background (skipWaiting + clientsClaim) and replaces the cache.
+        // The active tab keeps running the JS it loaded with — users get
+        // the new version on their next manual refresh, no prompt.
+        registerType: 'autoUpdate',
         includeAssets: [
           'favicon.svg',
           'logo.svg',
@@ -178,6 +182,18 @@ export default defineConfig(({ mode }) => {
           start_url: '/',
           scope: '/',
           display: 'standalone',
+          // Android Chrome 128+ opts into "draw underneath the system bars"
+          // only via display_override. With just `display: standalone` the
+          // OS reserves the status bar + gesture-bar regions for itself and
+          // shows black behind them. Listing 'edge-to-edge' first asks for
+          // true edge-to-edge; 'standalone' is the fallback for older
+          // browsers that don't know the term. Note: changing display-mode
+          // fields requires users to remove + re-add the PWA for the new
+          // manifest to take effect.
+          // @ts-expect-error vite-plugin-pwa's manifest types don't include
+          // 'edge-to-edge' yet (newer than the bundled type defs); Chrome
+          // 128+ recognises the value at runtime.
+          display_override: ['edge-to-edge', 'standalone'],
           orientation: 'portrait',
           theme_color: '#ffffff',
           background_color: '#ffffff',

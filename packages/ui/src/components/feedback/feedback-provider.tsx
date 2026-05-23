@@ -120,10 +120,13 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
         <FeedbackContext.Provider value={value}>
             {children}
 
-            {/* Toast container — bottom center */}
+            {/* Toast container — bottom center. Bottom offset is
+                max(1.5rem, safe-area-inset-bottom) so toasts don't sit on
+                top of the Android gesture indicator in edge-to-edge PWA
+                installs. */}
             {overlayState.rootElement && toasts.length > 0 && createPortal(
                 <div
-                    className="fixed bottom-6 left-1/2 -translate-x-1/2 flex flex-col-reverse items-center gap-2 pointer-events-auto"
+                    className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 flex flex-col-reverse items-center gap-2 pointer-events-auto"
                     style={{ zIndex }}
                 >
                     {toasts.map(t => (
@@ -133,10 +136,11 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
                 overlayState.rootElement,
             )}
 
-            {/* Notification container — bottom right */}
+            {/* Notification container — bottom right. Same safe-area treatment
+                as toasts, plus right inset for landscape on notched devices. */}
             {overlayState.rootElement && notifications.length > 0 && createPortal(
                 <div
-                    className="fixed bottom-6 right-6 flex flex-col-reverse items-end gap-2 pointer-events-auto"
+                    className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-[max(1.5rem,env(safe-area-inset-right))] flex flex-col-reverse items-end gap-2 pointer-events-auto"
                     style={{ zIndex }}
                 >
                     {notifications.map(n => (

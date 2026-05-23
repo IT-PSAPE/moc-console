@@ -182,7 +182,25 @@ function DrawerPanel({ children, className, ...props }: HTMLAttributes<HTMLDivEl
     }, [state.isOpen, state.isTopmost])
 
     return (
-        <div ref={panelRef} aria-modal="true" className={cn('p-2 fixed w-full', panelClassesBySide[state.side], className)} role="dialog" tabIndex={-1} {...props}>
+        <div
+            ref={panelRef}
+            aria-modal="true"
+            className={cn(
+                'fixed w-full',
+                // See ModalPositioner — same safe-area-aware outer padding
+                // so the drawer never overlaps the status bar or Android
+                // gesture indicator in edge-to-edge PWA mode.
+                'pt-[max(0.5rem,env(safe-area-inset-top))]',
+                'pr-[max(0.5rem,env(safe-area-inset-right))]',
+                'pb-[max(0.5rem,env(safe-area-inset-bottom))]',
+                'pl-[max(0.5rem,env(safe-area-inset-left))]',
+                panelClassesBySide[state.side],
+                className,
+            )}
+            role="dialog"
+            tabIndex={-1}
+            {...props}
+        >
             <div className={cn('h-full pointer-events-auto flex flex-col border border-secondary bg-primary rounded-lg')}>
                 {children}
             </div>

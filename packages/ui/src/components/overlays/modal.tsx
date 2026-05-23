@@ -176,8 +176,21 @@ function ModalBackdrop(props: HTMLAttributes<HTMLDivElement>) {
 // ─── Positioner ──────────────────────────────────────────────────────
 
 function ModalPositioner({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    // Outer padding is max(0.5rem, env(safe-area-inset-*)) so the panel
+    // keeps its baseline 8px gap on desktop but never overlaps the status
+    // bar or gesture indicator on PWA mobile installs (edge-to-edge mode).
     return (
-        <div className={cn('pointer-events-none fixed inset-0 flex items-center justify-center p-2', className)} {...props}>
+        <div
+            className={cn(
+                'pointer-events-none fixed inset-0 flex items-center justify-center',
+                'pt-[max(0.5rem,env(safe-area-inset-top))]',
+                'pr-[max(0.5rem,env(safe-area-inset-right))]',
+                'pb-[max(0.5rem,env(safe-area-inset-bottom))]',
+                'pl-[max(0.5rem,env(safe-area-inset-left))]',
+                className,
+            )}
+            {...props}
+        >
             {children}
         </div>
     )
