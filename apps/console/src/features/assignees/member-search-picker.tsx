@@ -131,7 +131,7 @@ function MemberResultRow({ user, onSelect }: MemberResultRowProps) {
             <UserAvatar size="sm" user={user} />
             <div className="flex-1 min-w-0">
                 <Label.sm>{user.name} {user.surname}</Label.sm>
-                <Paragraph.xs className="text-quaternary truncate">{user.email}</Paragraph.xs>
+                <Paragraph.xs className="text-quaternary truncate">{user.currentDuty ?? user.email}</Paragraph.xs>
             </div>
         </Button>
     );
