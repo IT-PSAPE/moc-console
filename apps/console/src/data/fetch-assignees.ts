@@ -11,12 +11,16 @@ type UserRow = {
   email: string;
   telegram_chat_id: string | null;
   avatar_url: string | null;
+  current_duty: string | null;
+  status_message: string | null;
 };
 
 type RequestAssigneeRow = {
   duty: string;
   users: UserRow | UserRow[] | null;
 };
+
+const USER_COLUMNS = "id, name, surname, email, telegram_chat_id, avatar_url, current_duty, status_message";
 
 function mapUserRow(row: UserRow): User {
   return {
@@ -26,6 +30,8 @@ function mapUserRow(row: UserRow): User {
     email: row.email,
     telegramChatId: row.telegram_chat_id,
     avatarUrl: row.avatar_url,
+    currentDuty: row.current_duty,
+    statusMessage: row.status_message,
   };
 }
 
@@ -38,7 +44,7 @@ export async function fetchAssigneesByRequestId(requestId: string): Promise<Reso
   const workspaceId = await getCurrentWorkspaceId();
   const { data, error } = await supabase
     .from("request_assignees")
-    .select("duty, users(id, name, surname, email, telegram_chat_id, avatar_url), requests!inner(workspace_id)")
+    .select(`duty, users(${USER_COLUMNS}), requests!inner(workspace_id)`)
     .eq("request_id", requestId)
     .eq("requests.workspace_id", workspaceId);
 
@@ -54,7 +60,7 @@ export async function fetchAssigneesByRequestId(requestId: string): Promise<Reso
 export async function fetchAssigneesByCueId(cueId: string): Promise<ResolvedAssignee[]> {
   const { data, error } = await supabase
     .from("cue_assignees")
-    .select("duty, users(id, name, surname, email, telegram_chat_id, avatar_url)")
+    .select(`duty, users(${USER_COLUMNS})`)
     .eq("cue_id", cueId);
 
   if (error) {
@@ -69,7 +75,7 @@ export async function fetchAssigneesByCueId(cueId: string): Promise<ResolvedAssi
 export async function fetchAssigneesByChecklistItemId(checklistItemId: string): Promise<ResolvedAssignee[]> {
   const { data, error } = await supabase
     .from("checklist_item_assignees")
-    .select("duty, users(id, name, surname, email, telegram_chat_id, avatar_url)")
+    .select(`duty, users(${USER_COLUMNS})`)
     .eq("checklist_item_id", checklistItemId);
 
   if (error) {
@@ -84,7 +90,7 @@ export async function fetchAssigneesByChecklistItemId(checklistItemId: string): 
 export async function fetchAssigneesByChecklistId(checklistId: string): Promise<Map<string, ResolvedAssignee[]>> {
   const { data, error } = await supabase
     .from("checklist_item_assignees")
-    .select("checklist_item_id, duty, users(id, name, surname, email, telegram_chat_id, avatar_url), checklist_items!inner(checklist_id)")
+    .select(`checklist_item_id, duty, users(${USER_COLUMNS}), checklist_items!inner(checklist_id)`)
     .eq("checklist_items.checklist_id", checklistId);
 
   if (error) {
@@ -109,7 +115,7 @@ export async function fetchAllUsers(): Promise<User[]> {
   const workspaceId = await getCurrentWorkspaceId();
   const { data, error } = await supabase
     .from("workspace_users")
-    .select("users(id, name, surname, email, telegram_chat_id, avatar_url)")
+    .select(`users(${USER_COLUMNS})`)
     .eq("workspace_id", workspaceId);
 
   if (error) {

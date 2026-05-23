@@ -8,6 +8,8 @@ export type UserWithRole = {
   email: string;
   telegramChatId: string | null;
   avatarUrl: string | null;
+  currentDuty: string | null;
+  statusMessage: string | null;
   workspaceIds: string[];
   role: Role | null;
 };
@@ -19,13 +21,15 @@ type UserRow = {
   email: string;
   telegram_chat_id: string | null;
   avatar_url: string | null;
+  current_duty: string | null;
+  status_message: string | null;
 };
 
 /** Fetch all users with their assigned role */
 export async function fetchUsersWithRoles(): Promise<UserWithRole[]> {
   const { data: users, error: usersError } = await supabase
     .from("users")
-    .select("id, name, surname, email, telegram_chat_id, avatar_url");
+    .select("id, name, surname, email, telegram_chat_id, avatar_url, current_duty, status_message");
 
   if (usersError) throw new Error(usersError.message);
 
@@ -50,6 +54,8 @@ export async function fetchUsersWithRoles(): Promise<UserWithRole[]> {
     email: u.email,
     telegramChatId: u.telegram_chat_id,
     avatarUrl: u.avatar_url,
+    currentDuty: u.current_duty,
+    statusMessage: u.status_message,
     workspaceIds: [],
     role: roleByUserId.get(u.id) ?? null,
   }));
@@ -68,7 +74,13 @@ export async function fetchAvailableRoles(): Promise<Role[]> {
 /** Update a user's profile fields */
 export async function updateUserProfile(
   userId: string,
-  fields: { name?: string; surname?: string; avatar_url?: string | null },
+  fields: {
+    name?: string;
+    surname?: string;
+    avatar_url?: string | null;
+    current_duty?: string | null;
+    status_message?: string | null;
+  },
 ) {
   const { error } = await supabase
     .from("users")

@@ -15,6 +15,8 @@ export type User = {
   email: string;
   telegramChatId: string | null;
   avatarUrl: string | null;
+  currentDuty: string | null;
+  statusMessage: string | null;
 };
 
 export type RequestAssignee = {

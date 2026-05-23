@@ -130,13 +130,18 @@ CREATE TABLE IF NOT EXISTS public.workspaces (
 
 -- users (id matches auth.users.id — no default uuid)
 -- avatar_url folded in from phase-26.
+-- current_duty + status_message folded in from patches/2026-05-23-user-profile-fields.
+-- current_duty is the user's persistent duty title; distinct from the per-assignment
+-- `duty` columns on *_assignees join tables below.
 CREATE TABLE IF NOT EXISTS public.users (
   id               uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   name             text NOT NULL,
   surname          text NOT NULL,
   email            text NOT NULL UNIQUE,
   telegram_chat_id text UNIQUE NULL,
-  avatar_url       text NULL
+  avatar_url       text NULL,
+  current_duty     text NULL,
+  status_message   text NULL
 );
 
 -- user_roles (one role per user)

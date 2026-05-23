@@ -111,7 +111,7 @@ async function fetchProfileForUser(user: User): Promise<Profile | null> {
 
     const { data, error } = await supabase
         .from("users")
-        .select("id, name, surname, email, telegram_chat_id, avatar_url")
+        .select("id, name, surname, email, telegram_chat_id, avatar_url, current_duty, status_message")
         .eq("id", user.id)
         .maybeSingle()
 
@@ -127,6 +127,8 @@ async function fetchProfileForUser(user: User): Promise<Profile | null> {
             surname: data.surname,
             telegramChatId: data.telegram_chat_id,
             avatarUrl: data.avatar_url,
+            currentDuty: data.current_duty,
+            statusMessage: data.status_message,
         }
     }
 
@@ -138,6 +140,8 @@ async function fetchProfileForUser(user: User): Promise<Profile | null> {
             surname: metadataSurname,
             telegramChatId: null,
             avatarUrl: null,
+            currentDuty: null,
+            statusMessage: null,
         }
     }
 
