@@ -85,6 +85,13 @@ CREATE INDEX idx_booking_items_equipment_id     ON public.booking_items (equipme
 -- otherwise NULL (we can't claim a return time while items are still out).
 -- created_at = MIN(checked_out_at) — legacy schema has no created_at column.
 -- title = 'Booking ' || tracking_code (no user title existed for legacy rows).
+-- workspace_id is grouped (not aggregated) because Postgres has no built-in
+-- min() for uuid, and a tracking_code is generated inside a single workspace's
+-- submit RPC call — every legacy row for one code shares one workspace_id by
+-- construction. Including it in GROUP BY is the cleanest path; if any pre-
+-- migration data anomaly somehow split a code across workspaces (impossible
+-- via the RPC) the result would be one header per (code, workspace) rather
+-- than a hard failure.
 INSERT INTO public.bookings (
   id, workspace_id, tracking_code, title,
   booked_by, checked_out_at, expected_return_at,
@@ -92,7 +99,7 @@ INSERT INTO public.bookings (
 )
 SELECT
   gen_random_uuid(),
-  MIN(workspace_id),
+  workspace_id,
   tracking_code,
   'Booking ' || tracking_code,
   MIN(booked_by),
@@ -110,7 +117,7 @@ SELECT
   END,
   MIN(checked_out_at)
 FROM public.bookings_old
-GROUP BY tracking_code;
+GROUP BY tracking_code, workspace_id;
 
 -- ── 5. Backfill booking_items rows ────────────────────────────
 INSERT INTO public.booking_items (booking_id, equipment_id)
