@@ -36,10 +36,18 @@ _Avoid_: "tenant", "org", "account"
 An anonymous operation against Supabase from a public app. From MOC Request: submit a booking, submit a request, look up a request by tracking code, fetch the public equipment catalogue, send a notification event. From MOC Broadcast: list workspaces (anon RPC), read published playlists and their media.
 
 **Authenticated flow**:
-A workspace-scoped operation from MOC Console requiring a signed-in user: managing assignees, broadcasts, streams, telegram routes, zoom credentials, workspace members, etc.
+A workspace-scoped operation from MOC Console requiring a signed-in user: managing assignees, broadcasts, streams, telegram routes, zoom credentials, workspace members, etc. **MOC Console does not create Requests or Bookings** — those are created exclusively by end users via MOC Request. The console can only view, edit, and act on what was submitted.
 
 **Tracking code**:
 The opaque identifier given to an end user after submitting a request, used in MOC Request's lookup flow to retrieve status.
+
+**Booking**:
+A single submission made via MOC Request to reserve one or more pieces of **Equipment** for a date range. Identified by one **Tracking code** and a user-supplied **title**. Carries the entire batch-level state: who booked it, the date range, notes, lifecycle status, and the single moment of return. A Booking is checked out and returned **as one unit** — items are never returned individually.
+_Avoid_: calling a per-equipment row a "booking" — that is a [[booking-item]].
+
+**Booking item**:
+The link between a **Booking** and one piece of **Equipment** it reserves. Carries no lifecycle of its own — status and returned-at live on the parent [[booking]]. A Booking with N equipment ids has N booking items.
+_Avoid_: "booking row"; treating an item as separately returnable.
 
 ### Timeline
 
@@ -88,3 +96,4 @@ In the Cue sheet: a time-boxed event segment (`startMin`, `durationMin`, type). 
 - "Cue" and "Track" are used in two unrelated domains (Cue sheet vs Broadcasts/playlist) with different data shapes. Resolved (2026-05-16) at the primitive level: the shared **Timeline** speaks only **Lane** and **Block**; each domain maps its own `Track`/`Cue` onto them. The domain `Cue` types are *not* unified.
 - **Transport** for a playlist was defined as "the playing media is the clock" (per ADR-0003). Resolved (2026-05-16): a playlist uses an **authoritative master clock**; media are reconciling *subscribers* that follow it (soft catch-up), the clock never follows media. Supersedes that part of ADR-0003 for the playlist domain — see [ADR-0005](./docs/adr/0005-unified-playlist-playback-engine.md).
 - **Lane** z-order was modelled base-lane-at-the-back (ADR-0004: lane order = bottom-up z-stack). Resolved (2026-05-16): **Lane 01 is frontmost**; the **Program** is an alpha composite front-to-back by lane number. Amends ADR-0004 — see [ADR-0005](./docs/adr/0005-unified-playlist-playback-engine.md).
+- "Booking" was overloaded: the user-level submission (1 tracking code, N equipment) vs. a per-equipment DB row. The original schema (`public.bookings`) stored one row per equipment instance and shared `tracking_code` across the batch. Resolved (2026-05-27): **Booking** is the submission (header); **Booking item** is the per-equipment row. Schema split into header + items table. See [ADR-0006](./docs/adr/0006-booking-as-batch.md).
