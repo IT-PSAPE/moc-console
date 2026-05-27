@@ -226,36 +226,40 @@ CREATE TRIGGER on_auth_user_updated
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_auth_user_updated();
 
--- ── Equipment status synchronization (phase-07) ──
-CREATE OR REPLACE FUNCTION public.sync_equipment_status()
-RETURNS trigger
+-- ── Equipment status synchronization (phase-07; reshaped 2026-05-27 — ADR-0006) ──
+-- Equipment lifecycle now derives from the parent booking via booking_items:
+-- the trigger fires both when an item is added/removed (membership change)
+-- and when a booking's status flips (lifecycle change).
+CREATE OR REPLACE FUNCTION public.refresh_equipment_status_for(p_equipment_id uuid)
+RETURNS void
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
 AS $$
 DECLARE
-  v_equipment_id   uuid;
   v_current_status public.equipment_status;
   v_new_status     public.equipment_status;
 BEGIN
-  v_equipment_id := coalesce(new.equipment_id, old.equipment_id);
-
   SELECT status INTO v_current_status
   FROM public.equipment
-  WHERE id = v_equipment_id;
+  WHERE id = p_equipment_id;
 
   IF v_current_status = 'maintenance' THEN
-    RETURN coalesce(new, old);
+    RETURN;
   END IF;
 
   IF EXISTS (
-    SELECT 1 FROM public.bookings
-    WHERE equipment_id = v_equipment_id AND status = 'checked_out'
+    SELECT 1
+    FROM public.booking_items bi
+    JOIN public.bookings b ON b.id = bi.booking_id
+    WHERE bi.equipment_id = p_equipment_id
+      AND b.status = 'checked_out'
   ) THEN
     v_new_status := 'booked_out';
   ELSIF EXISTS (
-    SELECT 1 FROM public.bookings
-    WHERE equipment_id = v_equipment_id AND status = 'booked'
+    SELECT 1
+    FROM public.booking_items bi
+    JOIN public.bookings b ON b.id = bi.booking_id
+    WHERE bi.equipment_id = p_equipment_id
+      AND b.status = 'booked'
   ) THEN
     v_new_status := 'booked';
   ELSE
@@ -264,17 +268,54 @@ BEGIN
 
   UPDATE public.equipment
   SET status = v_new_status
-  WHERE id = v_equipment_id;
+  WHERE id = p_equipment_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.sync_equipment_status_from_item()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  PERFORM public.refresh_equipment_status_for(coalesce(new.equipment_id, old.equipment_id));
+  RETURN coalesce(new, old);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.sync_equipment_status_from_booking()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_equipment_id uuid;
+BEGIN
+  IF TG_OP = 'UPDATE' AND new.status IS NOT DISTINCT FROM old.status THEN
+    RETURN new;
+  END IF;
+
+  FOR v_equipment_id IN
+    SELECT equipment_id
+    FROM public.booking_items
+    WHERE booking_id = coalesce(new.id, old.id)
+  LOOP
+    PERFORM public.refresh_equipment_status_for(v_equipment_id);
+  END LOOP;
 
   RETURN coalesce(new, old);
 END;
 $$;
 
-DROP TRIGGER IF EXISTS sync_equipment_status ON public.bookings;
-CREATE TRIGGER sync_equipment_status
-  AFTER INSERT OR UPDATE OR DELETE ON public.bookings
+DROP TRIGGER IF EXISTS sync_equipment_status_from_item ON public.booking_items;
+CREATE TRIGGER sync_equipment_status_from_item
+  AFTER INSERT OR DELETE ON public.booking_items
   FOR EACH ROW
-  EXECUTE FUNCTION public.sync_equipment_status();
+  EXECUTE FUNCTION public.sync_equipment_status_from_item();
+
+DROP TRIGGER IF EXISTS sync_equipment_status_from_booking ON public.bookings;
+CREATE TRIGGER sync_equipment_status_from_booking
+  AFTER UPDATE OF status ON public.bookings
+  FOR EACH ROW
+  EXECUTE FUNCTION public.sync_equipment_status_from_booking();
 
 -- ── Auto-populate returned_at on booking return (phase-07) ──
 CREATE OR REPLACE FUNCTION public.stamp_booking_returned_at()
@@ -1039,8 +1080,11 @@ BEGIN
 END;
 $$;
 
+-- Folded in from 2026-05-27-booking-as-batch.sql (ADR-0006):
+-- one header per submission + N booking_items in a single transaction.
 CREATE OR REPLACE FUNCTION public.public_submit_booking_batch(
   p_workspace_id       uuid,
+  p_title              text,
   p_equipment_ids      uuid[],
   p_booked_by          text,
   p_checked_out_at     timestamptz,
@@ -1053,29 +1097,30 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_tracking     text;
-  v_equipment_id uuid;
-  v_ids          uuid[] := '{}';
-  v_booking_id   uuid;
+  v_booking_id uuid;
+  v_tracking   text;
 BEGIN
   v_tracking := public.generate_tracking_code('BKG');
 
-  FOREACH v_equipment_id IN ARRAY p_equipment_ids
-  LOOP
-    INSERT INTO public.bookings (
-      workspace_id, equipment_id, booked_by,
-      checked_out_at, expected_return_at, notes, tracking_code
-    )
-    VALUES (
-      p_workspace_id, v_equipment_id, p_booked_by,
-      p_checked_out_at, p_expected_return_at, p_notes, v_tracking
-    )
-    RETURNING id INTO v_booking_id;
+  INSERT INTO public.bookings (
+    workspace_id, tracking_code, title,
+    booked_by, checked_out_at, expected_return_at, notes
+  )
+  VALUES (
+    p_workspace_id, v_tracking, p_title,
+    p_booked_by, p_checked_out_at, p_expected_return_at, p_notes
+  )
+  RETURNING id INTO v_booking_id;
 
-    v_ids := v_ids || v_booking_id;
-  END LOOP;
+  INSERT INTO public.booking_items (booking_id, equipment_id)
+  SELECT v_booking_id, e
+  FROM unnest(p_equipment_ids) AS e;
 
-  RETURN jsonb_build_object('ids', to_jsonb(v_ids), 'tracking_code', v_tracking);
+  RETURN jsonb_build_object(
+    'booking_id',    v_booking_id,
+    'tracking_code', v_tracking,
+    'title',         p_title
+  );
 END;
 $$;
 
@@ -1115,10 +1160,12 @@ BEGIN
         WHEN p_checked_out_at IS NULL OR p_expected_return_at IS NULL THEN
           e.status <> 'maintenance'
         ELSE NOT EXISTS (
-          SELECT 1 FROM public.bookings b
-          WHERE b.equipment_id = e.id
+          SELECT 1
+          FROM public.booking_items bi
+          JOIN public.bookings b ON b.id = bi.booking_id
+          WHERE bi.equipment_id = e.id
             AND b.status <> 'returned'
-            AND b.checked_out_at < p_expected_return_at
+            AND b.checked_out_at  <  p_expected_return_at
             AND b.expected_return_at > p_checked_out_at
         )
       END AS is_available
@@ -1130,10 +1177,12 @@ BEGIN
       CASE
         WHEN e.status = 'maintenance' THEN 1
         WHEN p_checked_out_at IS NOT NULL AND p_expected_return_at IS NOT NULL AND EXISTS (
-          SELECT 1 FROM public.bookings b
-          WHERE b.equipment_id = e.id
+          SELECT 1
+          FROM public.booking_items bi
+          JOIN public.bookings b ON b.id = bi.booking_id
+          WHERE bi.equipment_id = e.id
             AND b.status <> 'returned'
-            AND b.checked_out_at < p_expected_return_at
+            AND b.checked_out_at  <  p_expected_return_at
             AND b.expected_return_at > p_checked_out_at
         ) THEN 1
         ELSE 0
@@ -1142,6 +1191,9 @@ BEGIN
 END;
 $$;
 
+-- Folded in from 2026-05-27-booking-as-batch.sql (ADR-0006):
+-- booking branch returns one header object with title + items array;
+-- items carry no lifecycle (it lives on the parent booking header).
 CREATE OR REPLACE FUNCTION public.public_lookup_tracking(
   p_tracking_code text
 )
@@ -1152,9 +1204,8 @@ SET search_path = public
 STABLE
 AS $$
 DECLARE
-  v_result   jsonb;
-  v_bookings jsonb;
-  v_code     text := upper(trim(p_tracking_code));
+  v_result jsonb;
+  v_code   text := upper(trim(p_tracking_code));
 BEGIN
   SELECT jsonb_build_object(
     'type', 'request',
@@ -1175,36 +1226,34 @@ BEGIN
     RETURN v_result;
   END IF;
 
-  SELECT jsonb_agg(jsonb_build_object(
+  SELECT jsonb_build_object(
+    'type', 'booking',
     'id', b.id,
-    'equipmentName', e.name,
+    'trackingCode', b.tracking_code,
+    'title', b.title,
     'status', b.status::text,
+    'bookedBy', b.booked_by,
     'checkedOutAt', b.checked_out_at,
     'expectedReturnAt', b.expected_return_at,
-    'returnedAt', b.returned_at
-  )) INTO v_bookings
+    'returnedAt', b.returned_at,
+    'notes', b.notes,
+    'createdAt', b.created_at,
+    'items', (
+      SELECT coalesce(jsonb_agg(jsonb_build_object(
+        'id', bi.id,
+        'equipmentId', e.id,
+        'equipmentName', e.name,
+        'equipmentCategory', e.category::text
+      ) ORDER BY e.name), '[]'::jsonb)
+      FROM public.booking_items bi
+      JOIN public.equipment e ON e.id = bi.equipment_id
+      WHERE bi.booking_id = b.id
+    )
+  ) INTO v_result
   FROM public.bookings b
-  JOIN public.equipment e ON e.id = b.equipment_id
   WHERE b.tracking_code = v_code;
 
-  IF v_bookings IS NOT NULL THEN
-    SELECT jsonb_build_object(
-      'type', 'booking',
-      'trackingCode', b.tracking_code,
-      'bookedBy', b.booked_by,
-      'checkedOutAt', b.checked_out_at,
-      'expectedReturnAt', b.expected_return_at,
-      'createdAt', b.checked_out_at,
-      'items', v_bookings
-    ) INTO v_result
-    FROM public.bookings b
-    WHERE b.tracking_code = v_code
-    LIMIT 1;
-
-    RETURN v_result;
-  END IF;
-
-  RETURN NULL;
+  RETURN v_result;
 END;
 $$;
 

@@ -21,7 +21,8 @@ ALTER TABLE public.colors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.request_assignees ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.equipment ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bookings      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.booking_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.media ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.playlists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.playlist_lanes ENABLE ROW LEVEL SECURITY;
@@ -263,6 +264,64 @@ CREATE POLICY "bookings_delete" ON public.bookings
   USING (
     private.is_workspace_member(workspace_id)
     AND private.current_user_can('can_delete')
+  );
+
+-- booking_items inherit tenancy + permission gating from the parent booking
+-- (folded in from 2026-05-27-booking-as-batch.sql, ADR-0006).
+DROP POLICY IF EXISTS "booking_items_select" ON public.booking_items;
+CREATE POLICY "booking_items_select" ON public.booking_items
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.bookings b
+      WHERE b.id = booking_items.booking_id
+        AND private.is_workspace_member(b.workspace_id)
+        AND private.current_user_can('can_read')
+    )
+  );
+
+DROP POLICY IF EXISTS "booking_items_insert" ON public.booking_items;
+CREATE POLICY "booking_items_insert" ON public.booking_items
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.bookings b
+      WHERE b.id = booking_items.booking_id
+        AND private.is_workspace_member(b.workspace_id)
+        AND private.current_user_can('can_create')
+    )
+  );
+
+DROP POLICY IF EXISTS "booking_items_update" ON public.booking_items;
+CREATE POLICY "booking_items_update" ON public.booking_items
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.bookings b
+      WHERE b.id = booking_items.booking_id
+        AND private.is_workspace_member(b.workspace_id)
+        AND private.current_user_can('can_update')
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.bookings b
+      WHERE b.id = booking_items.booking_id
+        AND private.is_workspace_member(b.workspace_id)
+        AND private.current_user_can('can_update')
+    )
+  );
+
+DROP POLICY IF EXISTS "booking_items_delete" ON public.booking_items;
+CREATE POLICY "booking_items_delete" ON public.booking_items
+  FOR DELETE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.bookings b
+      WHERE b.id = booking_items.booking_id
+        AND private.is_workspace_member(b.workspace_id)
+        AND private.current_user_can('can_delete')
+    )
   );
 
 -- media -------------------------------------------------------
@@ -1769,12 +1828,12 @@ CREATE POLICY "avatars_bucket_owner_delete" ON storage.objects
 
 -- phase-12: public submission/lookup RPCs
 GRANT EXECUTE ON FUNCTION public.public_submit_request(uuid, text, public.request_priority, public.request_category, timestamptz, text, text, text, text, text, text, text, text, text, text) TO anon;
-GRANT EXECUTE ON FUNCTION public.public_submit_booking_batch(uuid, uuid[], text, timestamptz, timestamptz, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.public_submit_booking_batch(uuid, text, uuid[], text, timestamptz, timestamptz, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.public_browse_equipment(uuid, timestamptz, timestamptz, text, public.equipment_category) TO anon;
 GRANT EXECUTE ON FUNCTION public.public_lookup_tracking(text) TO anon;
 
 GRANT EXECUTE ON FUNCTION public.public_submit_request(uuid, text, public.request_priority, public.request_category, timestamptz, text, text, text, text, text, text, text, text, text, text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.public_submit_booking_batch(uuid, uuid[], text, timestamptz, timestamptz, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.public_submit_booking_batch(uuid, text, uuid[], text, timestamptz, timestamptz, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.public_browse_equipment(uuid, timestamptz, timestamptz, text, public.equipment_category) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.public_lookup_tracking(text) TO authenticated;
 

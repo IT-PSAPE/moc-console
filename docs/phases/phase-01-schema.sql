@@ -207,20 +207,30 @@ CREATE TABLE IF NOT EXISTS public.equipment (
   thumbnail_url  text                      NULL
 );
 
--- bookings
--- tracking_code folded in from phase-12: NOT NULL, NO unique constraint
--- (batch bookings share one code).
+-- bookings + booking_items
+-- A Booking is the user-level submission: one tracking_code, one title,
+-- one date range, one lifecycle. A Booking Item is a pure join to the
+-- equipment reserved by that booking; it has no lifecycle of its own.
+-- Folded in from patches/2026-05-27-booking-as-batch.sql (see ADR-0006).
 CREATE TABLE IF NOT EXISTS public.bookings (
   id                 uuid                  PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id       uuid                  NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
-  equipment_id       uuid                  NOT NULL REFERENCES public.equipment(id) ON DELETE CASCADE,
+  tracking_code      text                  NOT NULL UNIQUE,
+  title              text                  NOT NULL CHECK (char_length(title) > 0 AND char_length(title) <= 120),
   booked_by          text                  NOT NULL,
   checked_out_at     timestamptz           NOT NULL,
   expected_return_at timestamptz           NOT NULL,
   returned_at        timestamptz           NULL,
   notes              text                  NULL,
   status             public.booking_status NOT NULL DEFAULT 'booked',
-  tracking_code      text                  NOT NULL
+  created_at         timestamptz           NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.booking_items (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_id   uuid NOT NULL REFERENCES public.bookings(id)  ON DELETE CASCADE,
+  equipment_id uuid NOT NULL REFERENCES public.equipment(id) ON DELETE CASCADE,
+  UNIQUE (booking_id, equipment_id)
 );
 
 -- media
@@ -653,9 +663,11 @@ CREATE INDEX IF NOT EXISTS idx_request_assignees_user_id    ON public.request_as
 -- equipment
 CREATE INDEX IF NOT EXISTS idx_equipment_workspace_id ON public.equipment (workspace_id);
 
--- bookings
-CREATE INDEX IF NOT EXISTS idx_bookings_workspace_id  ON public.bookings (workspace_id);
-CREATE INDEX IF NOT EXISTS idx_bookings_equipment_id  ON public.bookings (equipment_id);
+-- bookings + booking_items (folded in from 2026-05-27-booking-as-batch.sql)
+CREATE INDEX IF NOT EXISTS idx_bookings_workspace_id      ON public.bookings (workspace_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_tracking_code     ON public.bookings (tracking_code);
+CREATE INDEX IF NOT EXISTS idx_booking_items_booking_id   ON public.booking_items (booking_id);
+CREATE INDEX IF NOT EXISTS idx_booking_items_equipment_id ON public.booking_items (equipment_id);
 
 -- media
 CREATE INDEX IF NOT EXISTS idx_media_workspace_id ON public.media (workspace_id);
