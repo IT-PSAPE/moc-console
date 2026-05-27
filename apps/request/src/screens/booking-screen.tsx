@@ -26,7 +26,7 @@ export function BookingScreen() {
     if (isLastStep) {
       const result = await actions.submit()
       if (result) {
-        navigate(routes.publicConfirmation, { state: { type: 'booking', trackingCode: result.trackingCode } })
+        navigate(routes.publicConfirmation, { state: { type: 'booking', trackingCode: result.trackingCode, title: result.title } })
       }
     } else {
       actions.nextStep()

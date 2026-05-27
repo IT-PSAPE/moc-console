@@ -19,6 +19,7 @@ type BookingFormAction =
   | { type: 'SUBMIT_ERROR'; error: string }
 
 const initialData: BookingFormData = {
+  title: '',
   equipmentIds: [],
   bookedBy: '',
   checkedOutAt: '',
@@ -55,6 +56,8 @@ function canProceedFromStep(step: number, data: BookingFormData): boolean {
   switch (step) {
     case 1:
       return Boolean(
+        data.title.trim() &&
+        data.title.length <= 120 &&
         data.bookedBy.trim() &&
         data.checkedOutAt &&
         data.expectedReturnAt &&

@@ -16,6 +16,11 @@ export function BookingDetails({ data, onChange }: BookingDetailsProps) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
+        <FormLabel label="Title" required />
+        <Input placeholder="e.g. Sunday Service Setup" maxLength={120} value={data.title} onChange={(e) => onChange('title', e.target.value)} />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
         <FormLabel label="Requested by" required />
         <Input placeholder="Who is booking this equipment?" value={data.bookedBy} onChange={(e) => onChange('bookedBy', e.target.value)} />
       </div>

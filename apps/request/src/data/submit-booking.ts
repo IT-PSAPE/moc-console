@@ -6,6 +6,7 @@ import { notifyBookingCreated } from './notify-event'
 export async function submitPublicBookingBatch(data: BookingFormData): Promise<SubmitBookingResult> {
   const { data: result, error } = await supabase.rpc('public_submit_booking_batch', {
     p_workspace_id: workspaceId,
+    p_title: data.title.trim(),
     p_equipment_ids: data.equipmentIds,
     p_booked_by: data.bookedBy,
     p_checked_out_at: new Date(data.checkedOutAt).toISOString(),
@@ -16,12 +17,12 @@ export async function submitPublicBookingBatch(data: BookingFormData): Promise<S
   if (error) throw new Error(error.message)
 
   const trackingCode: string = result.tracking_code
-  const itemCount = data.equipmentIds?.length ?? 0
+  const title: string = result.title
   notifyBookingCreated({
     trackingCode,
-    title: `Booking ${trackingCode} (${itemCount} item${itemCount === 1 ? '' : 's'})`,
+    title,
     requesterName: data.bookedBy || null,
   })
 
-  return { trackingCode }
+  return { trackingCode, title }
 }

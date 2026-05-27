@@ -1,6 +1,7 @@
 export type BookingStatus = 'booked' | 'checked_out' | 'returned'
 
 export type BookingFormData = {
+  title: string
   equipmentIds: string[]
   bookedBy: string
   checkedOutAt: string
@@ -10,15 +11,17 @@ export type BookingFormData = {
 
 export type SubmitBookingResult = {
   trackingCode: string
+  title: string
 }
 
+// Booking items carry no lifecycle of their own — status / returned_at
+// live on the parent booking. The tracking lookup returns just enough
+// to render the equipment list inside the booking.
 export type TrackingBookingItem = {
   id: string
+  equipmentId: string
   equipmentName: string
-  status: string
-  checkedOutAt: string
-  expectedReturnAt: string
-  returnedAt: string | null
+  equipmentCategory: string
 }
 
 export type TrackingResult = {
@@ -34,5 +37,7 @@ export type TrackingResult = {
   bookedBy?: string
   checkedOutAt?: string
   expectedReturnAt?: string
+  returnedAt?: string | null
+  notes?: string
   items?: TrackingBookingItem[]
 }

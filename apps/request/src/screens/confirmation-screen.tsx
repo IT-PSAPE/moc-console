@@ -9,6 +9,7 @@ import { useState } from 'react'
 type ConfirmationState = {
   type: 'request' | 'booking'
   trackingCode: string
+  title?: string
 }
 
 export function ConfirmationScreen() {
@@ -21,7 +22,7 @@ export function ConfirmationScreen() {
     return <Navigate to={routes.publicHome} replace />
   }
 
-  const { type, trackingCode } = confirmationState
+  const { type, trackingCode, title } = confirmationState
   const typeLabel = type === 'request' ? 'Request' : 'Booking'
 
   function handleBackToHome() {
@@ -37,6 +38,13 @@ export function ConfirmationScreen() {
   return (
     <PublicLayout className="py-16">
       <img src="/assets/icon_check.png" className='size-60 mb-8 mx-auto' />
+
+      {title && (
+        <div className="flex flex-col items-center gap-1 w-full mb-6 text-center">
+          <Label.xs className="text-tertiary uppercase tracking-wider">{typeLabel}</Label.xs>
+          <Title.h5 className="px-4">{title}</Title.h5>
+        </div>
+      )}
 
       <div className="flex flex-col items-center gap-3 w-full mb-8">
         <Paragraph.md className="text-secondary">Your tracking code is:</Paragraph.md>

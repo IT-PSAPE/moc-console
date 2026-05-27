@@ -24,7 +24,7 @@ export function RequestScreen() {
     if (isLastStep) {
       const result = await actions.submit()
       if (result) {
-        navigate(routes.publicConfirmation, { state: { type: 'request', trackingCode: result.trackingCode } })
+        navigate(routes.publicConfirmation, { state: { type: 'request', trackingCode: result.trackingCode, title: state.data.title } })
       }
     } else {
       actions.nextStep()

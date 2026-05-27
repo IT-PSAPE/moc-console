@@ -1,7 +1,7 @@
 import { Badge } from '@moc/ui/components/display/badge'
 import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Label } from '@moc/ui/components/display/text'
-import { Package, User, CalendarDays, CalendarCheck, StickyNote } from 'lucide-react'
+import { Package, User, CalendarDays, CalendarCheck, StickyNote, FileText } from 'lucide-react'
 import type { BookingFormData } from '@/types/booking'
 import type { PublicEquipmentItem } from '@/types/equipment'
 import { formatDateTime } from '@/lib/utils'
@@ -17,6 +17,9 @@ export function BookingReview({ data, selectedEquipment }: BookingReviewProps) {
       <section className="flex flex-col gap-3">
         <Label.xs className="text-tertiary uppercase tracking-wider">Booking Summary</Label.xs>
         <div className="flex flex-col gap-3">
+          <MetaRow icon={<FileText />} label="Title">
+            <Label.sm>{data.title}</Label.sm>
+          </MetaRow>
           <MetaRow icon={<Package />} label="Equipment">
             <div className="flex flex-wrap gap-1.5">
               {selectedEquipment.map((item) => (
