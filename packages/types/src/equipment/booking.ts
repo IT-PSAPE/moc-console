@@ -1,9 +1,19 @@
+import type { EquipmentCategory } from "./category";
+
 export type BookingStatus = "booked" | "checked_out" | "returned";
 
-export type Booking = {
+export type BookingItem = {
   id: string;
   equipmentId: string;
   equipmentName: string;
+  equipmentCategory: EquipmentCategory;
+  equipmentThumbnail: string | null;
+};
+
+export type Booking = {
+  id: string;
+  trackingCode: string;
+  title: string;
   bookedBy: string;
   checkedOutDate: string;
   expectedReturnAt: string;
@@ -11,4 +21,6 @@ export type Booking = {
   duration: string;
   notes: string;
   status: BookingStatus;
+  items: BookingItem[];
+  createdAt: string;
 };

@@ -1,6 +1,50 @@
-import type { Booking } from "@moc/types/equipment/booking";
+import type { Booking, BookingItem } from "@moc/types/equipment/booking";
 import { supabase } from "@moc/data/supabase";
-import { getCurrentWorkspaceId } from "./current-workspace";
+
+const BOOKING_SELECT = `
+  id,
+  tracking_code,
+  title,
+  booked_by,
+  checked_out_at,
+  expected_return_at,
+  returned_at,
+  notes,
+  status,
+  created_at,
+  items:booking_items(
+    id,
+    equipment_id,
+    equipment:equipment_id(id, name, category, thumbnail_url)
+  )
+`;
+
+type BookingItemRow = {
+  id: string;
+  equipment_id: string;
+  equipment:
+    | {
+        id: string;
+        name: string;
+        category: BookingItem["equipmentCategory"];
+        thumbnail_url: string | null;
+      }
+    | null;
+};
+
+type BookingRow = {
+  id: string;
+  tracking_code: string;
+  title: string;
+  booked_by: string;
+  checked_out_at: string;
+  expected_return_at: string;
+  returned_at: string | null;
+  notes: string | null;
+  status: Booking["status"];
+  created_at: string;
+  items: BookingItemRow[] | null;
+};
 
 function getBookingDuration(checkedOutAt: string, returnedAt: string | null, expectedReturnAt: string) {
   const start = new Date(checkedOutAt).getTime();
@@ -17,60 +61,36 @@ function getBookingDuration(checkedOutAt: string, returnedAt: string | null, exp
   return `${hours} ${hours === 1 ? "hour" : "hours"}`;
 }
 
-function mapBookingRow(row: Record<string, unknown>, fallbackEquipmentName: string): Booking {
-  const equipment = Array.isArray(row.equipment) ? row.equipment[0] : row.equipment;
-
+function mapBookingItem(item: BookingItemRow): BookingItem {
   return {
-    id: row.id as string,
-    equipmentId: row.equipment_id as string,
-    equipmentName: (equipment as { name: string } | undefined)?.name ?? fallbackEquipmentName,
-    bookedBy: row.booked_by as string,
-    checkedOutDate: row.checked_out_at as string,
-    expectedReturnAt: row.expected_return_at as string,
-    returnedDate: row.returned_at as string | null,
-    duration: getBookingDuration(
-      row.checked_out_at as string,
-      row.returned_at as string | null,
-      row.expected_return_at as string,
-    ),
-    notes: (row.notes as string) ?? "",
-    status: row.status as Booking["status"],
+    id: item.id,
+    equipmentId: item.equipment_id,
+    equipmentName: item.equipment?.name ?? "Unknown equipment",
+    equipmentCategory: item.equipment?.category ?? ("other" as BookingItem["equipmentCategory"]),
+    equipmentThumbnail: item.equipment?.thumbnail_url ?? null,
   };
 }
 
-export type CreateBookingParams = {
-  equipmentId: string;
-  equipmentName: string;
-  bookedBy: string;
-  checkedOutDate: string;
-  expectedReturnAt: string;
-  notes: string;
-  status: Booking["status"];
-};
-
-export async function createBooking(params: CreateBookingParams): Promise<Booking> {
-  const workspaceId = await getCurrentWorkspaceId();
-  const { data, error } = await supabase
-    .from("bookings")
-    .insert({
-      workspace_id: workspaceId,
-      equipment_id: params.equipmentId,
-      booked_by: params.bookedBy,
-      checked_out_at: params.checkedOutDate,
-      expected_return_at: params.expectedReturnAt,
-      notes: params.notes || null,
-      status: params.status,
-    })
-    .select("id, equipment_id, booked_by, checked_out_at, expected_return_at, returned_at, notes, status, equipment:equipment_id(id, name)")
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return mapBookingRow(data as Record<string, unknown>, params.equipmentName);
+function mapBookingRow(row: BookingRow): Booking {
+  return {
+    id: row.id,
+    trackingCode: row.tracking_code,
+    title: row.title,
+    bookedBy: row.booked_by,
+    checkedOutDate: row.checked_out_at,
+    expectedReturnAt: row.expected_return_at,
+    returnedDate: row.returned_at,
+    duration: getBookingDuration(row.checked_out_at, row.returned_at, row.expected_return_at),
+    notes: row.notes ?? "",
+    status: row.status,
+    createdAt: row.created_at,
+    items: (row.items ?? []).map(mapBookingItem),
+  };
 }
 
+// Title is intentionally not in the update payload — bookings are owned by the
+// requester via MOC Request; the console can amend lifecycle/dates/notes but
+// not relabel the submission.
 export async function updateBooking(booking: Booking): Promise<Booking> {
   const { data, error } = await supabase
     .from("bookings")
@@ -83,14 +103,14 @@ export async function updateBooking(booking: Booking): Promise<Booking> {
       status: booking.status,
     })
     .eq("id", booking.id)
-    .select("id, equipment_id, booked_by, checked_out_at, expected_return_at, returned_at, notes, status, equipment:equipment_id(id, name)")
+    .select(BOOKING_SELECT)
     .single();
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return mapBookingRow(data as Record<string, unknown>, booking.equipmentName);
+  return mapBookingRow(data as unknown as BookingRow);
 }
 
 export async function deleteBooking(id: string): Promise<void> {

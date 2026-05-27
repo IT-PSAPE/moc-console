@@ -132,9 +132,9 @@ export const DEFAULT_TEMPLATES: Record<MessageType, string> = {
   "request.archived":
     "📣 <b>Request archived</b>\n\n📌 <b>Title:</b> {{title}}\n🙋 <b>From:</b> {{requesterName}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the request</a>",
   "booking.created":
-    "✨ <b>New equipment booking</b>\n\n📌 <b>Title:</b> {{title}}\n🙋 <b>From:</b> {{requesterName}}\n🔄 <b>Status:</b> <i>{{status}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
+    "✨ <b>New equipment booking</b>\n\n📌 <b>Title:</b> {{title}} — {{itemCount}} item(s)\n🙋 <b>From:</b> {{requesterName}}\n🔄 <b>Status:</b> <i>{{status}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "booking.status_changed":
-    "📣 <b>Equipment booking updated</b>\n\n📌 <b>Title:</b> {{title}}\n🔄 Now: <i>{{status}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
+    "📣 <b>Equipment booking updated</b>\n\n📌 <b>Title:</b> {{title}} — {{itemCount}} item(s)\n🔄 Now: <i>{{status}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "assignment.request":
     "👋 Hey {{assigneeName}}!\nYou've been assigned to a request\n\n📌 <b>Title:</b> {{title}}\n🛠 <b>Duty:</b> <i>{{duty}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">View Full Request Details</a>",
   "assignment.cue":
@@ -222,7 +222,7 @@ const REQUEST_SAMPLE: TokenValues = {
 };
 
 const BOOKING_SAMPLE: TokenValues = {
-  title: "Booking BKG-77C1 (3 items)",
+  title: "Sunday Service Setup",
   status: "booked",
   requesterName: "Rumbi K.",
   bookedBy: "Rumbi K.",
