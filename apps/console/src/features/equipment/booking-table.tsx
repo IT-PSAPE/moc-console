@@ -8,7 +8,14 @@ import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
 import { BookingDrawer } from "./booking-drawer";
 
 const columns = [
-  { key: "equipmentName", header: "Equipment" },
+  { key: "title", header: "Title" },
+  {
+    key: "items",
+    header: "Items",
+    render: (_: unknown, row: Booking) => (
+      <span className="tabular-nums">{row.items.length}</span>
+    ),
+  },
   { key: "bookedBy", header: "Booked By" },
   {
     key: "status",

@@ -16,7 +16,7 @@ export function InventoryCalendarView({ equipment }: { equipment: Equipment[] })
 
   const visibleBookings = useMemo(() => {
     const ids = new Set(equipment.map((e) => e.id));
-    return bookings.filter((b) => ids.has(b.equipmentId));
+    return bookings.filter((b) => b.items.some((item) => ids.has(item.equipmentId)));
   }, [bookings, equipment]);
 
   if (isLoadingBookings) {

@@ -15,6 +15,7 @@ export function BookingItem({ booking, onDrawerOpenChange }: { booking: Booking;
 
     const checkedOut = formatUtcIsoInBrowserTimeZone(booking.checkedOutDate);
     const expectedReturn = formatUtcIsoInBrowserTimeZone(booking.expectedReturnAt);
+    const itemCount = booking.items.length;
 
     return (
         <Drawer open={open} onOpenChange={handleOpenChange}>
@@ -22,12 +23,12 @@ export function BookingItem({ booking, onDrawerOpenChange }: { booking: Booking;
                 <div className={cn(baseCard, "flex items-start gap-3 p-3")}>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                            <Label.sm className="truncate">{booking.equipmentName}</Label.sm>
+                            <Label.sm className="truncate">{booking.title}</Label.sm>
                             <Badge label={bookingStatusLabel[booking.status]} color={bookingStatusColor[booking.status]} />
                         </div>
                         <Paragraph.xs className="block text-quaternary truncate">{booking.bookedBy}</Paragraph.xs>
                         <Paragraph.xs className="block text-quaternary mt-0.5 truncate">
-                            {checkedOut} → {booking.returnedDate ? formatUtcIsoInBrowserTimeZone(booking.returnedDate) : expectedReturn}
+                            {checkedOut} → {booking.returnedDate ? formatUtcIsoInBrowserTimeZone(booking.returnedDate) : expectedReturn} · {itemCount} item{itemCount === 1 ? "" : "s"}
                         </Paragraph.xs>
                     </div>
                 </div>

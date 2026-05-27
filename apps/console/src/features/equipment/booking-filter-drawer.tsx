@@ -90,12 +90,12 @@ export function BookingFilterDrawer({ filters }: BookingFilterDrawerProps) {
                 </div>
                 <Divider className="px-4" />
                 <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Equipment Name</Paragraph.sm>
+                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Title</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
-                    <Radio name="sort" value="equipmentName-asc" checked={sortValue === "equipmentName-asc"} onChange={() => setSort("equipmentName", "asc")}>
+                    <Radio name="sort" value="title-asc" checked={sortValue === "title-asc"} onChange={() => setSort("title", "asc")}>
                       <FormLabel label="A-Z" />
                     </Radio>
-                    <Radio name="sort" value="equipmentName-desc" checked={sortValue === "equipmentName-desc"} onChange={() => setSort("equipmentName", "desc")}>
+                    <Radio name="sort" value="title-desc" checked={sortValue === "title-desc"} onChange={() => setSort("title", "desc")}>
                       <FormLabel label="Z-A" />
                     </Radio>
                   </div>

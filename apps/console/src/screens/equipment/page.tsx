@@ -47,24 +47,31 @@ export function EquipmentOverviewScreen() {
   const overdueEquipment = useMemo<Equipment[]>(() => {
     const now = new Date();
     const seen = new Set<string>();
-    return bookings
+    const overdue: Equipment[] = [];
+
+    const sorted = bookings
       .filter((booking) =>
         booking.status !== "returned" &&
         !booking.returnedDate &&
-        filteredEquipmentIds.has(booking.equipmentId) &&
-        new Date(booking.expectedReturnAt) < now,
+        new Date(booking.expectedReturnAt) < now &&
+        booking.items.some((item) => filteredEquipmentIds.has(item.equipmentId)),
       )
-      .sort((a, b) => new Date(a.expectedReturnAt).getTime() - new Date(b.expectedReturnAt).getTime())
-      .slice(0, 10)
-      .reduce<Equipment[]>((acc, booking) => {
-        if (seen.has(booking.equipmentId)) return acc;
-        const item = equipmentMap.get(booking.equipmentId);
-        if (item) {
-          seen.add(booking.equipmentId);
-          acc.push(item);
+      .sort((a, b) => new Date(a.expectedReturnAt).getTime() - new Date(b.expectedReturnAt).getTime());
+
+    for (const booking of sorted) {
+      for (const item of booking.items) {
+        if (seen.has(item.equipmentId)) continue;
+        if (!filteredEquipmentIds.has(item.equipmentId)) continue;
+        const equipmentRecord = equipmentMap.get(item.equipmentId);
+        if (equipmentRecord) {
+          seen.add(item.equipmentId);
+          overdue.push(equipmentRecord);
+          if (overdue.length >= 10) return overdue;
         }
-        return acc;
-      }, []);
+      }
+    }
+
+    return overdue;
   }, [bookings, filteredEquipmentIds, equipmentMap]);
 
   const faultyEquipment = useMemo<Equipment[]>(() => (

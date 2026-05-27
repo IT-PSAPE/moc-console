@@ -3,7 +3,7 @@ import type { Booking, BookingStatus } from "@moc/types/equipment";
 
 // ─── Filter / Sort state ───────────────────────────────
 
-export type BookingSortField = "checkedOutDate" | "expectedReturnAt" | "equipmentName" | "bookedBy";
+export type BookingSortField = "checkedOutDate" | "expectedReturnAt" | "title" | "bookedBy";
 export type SortDirection = "asc" | "desc";
 
 export type BookingFilters = {
@@ -28,14 +28,15 @@ export function useBookingFilters(bookings: Booking[]) {
   const filtered = useMemo(() => {
     let result = bookings;
 
-    // Search
+    // Search — title, bookedBy, notes, and any item's equipment name.
     if (filters.search) {
       const q = filters.search.toLowerCase();
       result = result.filter(
         (b) =>
-          b.equipmentName.toLowerCase().includes(q) ||
+          b.title.toLowerCase().includes(q) ||
           b.bookedBy.toLowerCase().includes(q) ||
-          b.notes.toLowerCase().includes(q),
+          b.notes.toLowerCase().includes(q) ||
+          b.items.some((item) => item.equipmentName.toLowerCase().includes(q)),
       );
     }
 
@@ -52,8 +53,8 @@ export function useBookingFilters(bookings: Booking[]) {
           return dir * (new Date(a.checkedOutDate).getTime() - new Date(b.checkedOutDate).getTime());
         case "expectedReturnAt":
           return dir * (new Date(a.expectedReturnAt).getTime() - new Date(b.expectedReturnAt).getTime());
-        case "equipmentName":
-          return dir * a.equipmentName.localeCompare(b.equipmentName);
+        case "title":
+          return dir * a.title.localeCompare(b.title);
         case "bookedBy":
           return dir * a.bookedBy.localeCompare(b.bookedBy);
       }

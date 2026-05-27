@@ -13,13 +13,14 @@ type EquipmentContextValue = {
   };
   actions: {
     loadEquipment: () => Promise<void>;
+    refreshEquipment: () => Promise<void>;
     loadBookings: () => Promise<void>;
     addEquipment: (equipment: Equipment) => void;
     syncEquipment: (equipment: Equipment) => void;
     removeEquipment: (id: string) => void;
     syncBooking: (booking: Booking) => void;
     removeBooking: (id: string) => void;
-    removeBookingsByEquipmentId: (equipmentId: string) => void;
+    removeBookingItemsByEquipmentId: (equipmentId: string) => void;
   };
 };
 
@@ -71,8 +72,17 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
     setBookings((prev) => prev.filter((booking) => booking.id !== id));
   }, []);
 
-  const removeBookingsByEquipmentId = useCallback((equipmentId: string) => {
-    setBookings((prev) => prev.filter((booking) => booking.equipmentId !== equipmentId));
+  // Equipment deletion cascades through booking_items in the database
+  // (ON DELETE CASCADE). The booking row itself survives — possibly with
+  // zero items — as an audit trail of the original submission. The local
+  // mirror drops only the matching item from each booking's items array.
+  const removeBookingItemsByEquipmentId = useCallback((equipmentId: string) => {
+    setBookings((prev) =>
+      prev.map((booking) => ({
+        ...booking,
+        items: booking.items.filter((item) => item.equipmentId !== equipmentId),
+      })),
+    );
   }, []);
 
   const loadEquipment = useCallback(async () => {
@@ -92,6 +102,15 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
 
     return equipmentPromiseRef.current;
   }, [currentWorkspaceId]);
+
+  // Force a full refetch even if equipment was already loaded for this
+  // workspace. Used after booking mutations so the inventory list's
+  // bookedBy / availability data picks up the change across every item
+  // in the booking (a per-id sync would only refresh one piece).
+  const refreshEquipment = useCallback(async () => {
+    equipmentLoadedRef.current = null;
+    return loadEquipment();
+  }, [loadEquipment]);
 
   const loadBookings = useCallback(async () => {
     if (bookingsLoadedRef.current === currentWorkspaceId) return;
@@ -114,9 +133,9 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       state: { equipment, bookings, isLoadingEquipment, isLoadingBookings },
-      actions: { loadEquipment, loadBookings, addEquipment, syncEquipment, removeEquipment, syncBooking, removeBooking, removeBookingsByEquipmentId },
+      actions: { loadEquipment, refreshEquipment, loadBookings, addEquipment, syncEquipment, removeEquipment, syncBooking, removeBooking, removeBookingItemsByEquipmentId },
     }),
-    [equipment, bookings, isLoadingEquipment, isLoadingBookings, loadEquipment, loadBookings, addEquipment, syncEquipment, removeEquipment, syncBooking, removeBooking, removeBookingsByEquipmentId],
+    [equipment, bookings, isLoadingEquipment, isLoadingBookings, loadEquipment, refreshEquipment, loadBookings, addEquipment, syncEquipment, removeEquipment, syncBooking, removeBooking, removeBookingItemsByEquipmentId],
   );
 
   return <EquipmentContext.Provider value={value}>{children}</EquipmentContext.Provider>;

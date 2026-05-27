@@ -2,7 +2,7 @@ import { Drawer, useDrawer } from "@moc/ui/components/overlays/drawer";
 import { Dropdown } from "@moc/ui/components/overlays/dropdown";
 import { Badge } from "@moc/ui/components/display/badge";
 import { Button } from "@moc/ui/components/controls/button";
-import { Paragraph, Title } from "@moc/ui/components/display/text";
+import { Label, Paragraph, Title } from "@moc/ui/components/display/text";
 import { MetaRow } from "@moc/ui/components/display/meta-row";
 import { Input } from "@moc/ui/components/form/input";
 import { Modal } from "@moc/ui/components/overlays/modal";
@@ -10,15 +10,16 @@ import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { useBookingStore } from "./use-booking-store";
 import { useEquipment } from "./equipment-provider";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
-import { fetchEquipmentById } from "@/data/fetch-equipment";
 import { deleteBooking } from "@/data/mutate-booking";
 import {
   bookingStatusLabel,
   bookingStatusColor,
+  equipmentCategoryLabel,
 } from "@moc/types/equipment";
-import type { Booking, BookingStatus } from "@moc/types/equipment";
-import { Calendar, Check, Clock, Loader, Package, StickyNote, Trash2, User, X } from "lucide-react";
+import type { Booking, BookingItem, BookingStatus } from "@moc/types/equipment";
+import { Calendar, Check, ChevronRight, Clock, Loader, Package, StickyNote, Trash2, User, X } from "lucide-react";
 import { useCallback, useEffect, useState, type ChangeEvent, type RefObject } from "react";
+import { useNavigate } from "react-router-dom";
 import { getErrorMessage } from "@moc/utils/get-error-message";
 import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time";
 
@@ -50,7 +51,7 @@ export function BookingDrawer({ booking, onBookingClose, isDirtyRef, requestClos
 function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestCloseRef }: BookingDrawerProps) {
     const { actions: drawerActions } = useDrawer();
     const { toast } = useFeedback();
-    const { actions: { syncBooking, syncEquipment, removeBooking } } = useEquipment();
+    const { actions: { syncBooking, refreshEquipment, removeBooking } } = useEquipment();
 
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
@@ -89,24 +90,20 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
 
   const handleSave = useCallback(async () => {
     try {
-      const savedBooking = await store.actions.save();
-      const refreshedEquipment = await fetchEquipmentById(savedBooking.equipmentId);
-      if (refreshedEquipment) {
-        syncEquipment(refreshedEquipment);
-      }
+      await store.actions.save();
+      // A booking can hold multiple items, so a per-equipment-id sync
+      // can't refresh them all in one call. Refetch the whole inventory.
+      await refreshEquipment();
       toast({ title: "Booking saved", variant: "success" });
     } catch (error) {
       toast({ title: "Failed to save booking", description: getErrorMessage(error, "The booking could not be saved."), variant: "error" });
     }
-  }, [store.actions, syncEquipment, toast]);
+  }, [store.actions, refreshEquipment, toast]);
 
   async function handleModalSave() {
     try {
-      const savedBooking = await store.actions.save();
-      const refreshedEquipment = await fetchEquipmentById(savedBooking.equipmentId);
-      if (refreshedEquipment) {
-        syncEquipment(refreshedEquipment);
-      }
+      await store.actions.save();
+      await refreshEquipment();
       toast({ title: "Booking saved", variant: "success" });
       setShowUnsavedModal(false);
       closeDrawer();
@@ -130,10 +127,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
     try {
       await deleteBooking(booking.id);
       removeBooking(booking.id);
-      const refreshedEquipment = await fetchEquipmentById(booking.equipmentId);
-      if (refreshedEquipment) {
-        syncEquipment(refreshedEquipment);
-      }
+      await refreshEquipment();
       toast({ title: "Booking deleted", variant: "success" });
       setDeleteOpen(false);
       closeDrawer();
@@ -142,7 +136,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
     } finally {
       setIsDeleting(false);
     }
-  }, [booking.equipmentId, booking.id, closeDrawer, removeBooking, syncEquipment, toast]);
+  }, [booking.id, closeDrawer, refreshEquipment, removeBooking, toast]);
 
   function handleSelectStatus(status: BookingStatus) {
     store.actions.updateField("status", status);
@@ -205,13 +199,13 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
       </Drawer.Header>
 
       <Drawer.Content className="py-4">
-        {/* Equipment reference */}
+        {/* Header — title is owned by the requester, so display only. */}
         <div className="flex items-center gap-3 px-4 pb-4">
           <span className="flex size-12 items-center justify-center rounded-lg bg-secondary text-quaternary">
             <Package className="size-6" />
           </span>
-          <div>
-            <Title.h6>{draft.equipmentName}</Title.h6>
+          <div className="min-w-0">
+            <Title.h6 className="truncate">{draft.title}</Title.h6>
             <Paragraph.xs className="text-tertiary">Booking</Paragraph.xs>
           </div>
         </div>
@@ -298,6 +292,9 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
             />
           </MetaRow>
         </div>
+
+        {/* Items */}
+        <BookingItemsSection items={draft.items} onCloseDrawer={closeDrawer} />
       </Drawer.Content>
 
       {store.state.isDirty && (
@@ -341,6 +338,58 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         </Modal.Portal>
       </Modal>
     </>
+  );
+}
+
+function BookingItemsSection({ items, onCloseDrawer }: { items: BookingItem[]; onCloseDrawer: () => void }) {
+  return (
+    <section className="mt-6 px-4">
+      <Label.xs className="uppercase tracking-wide text-quaternary">
+        Items ({items.length})
+      </Label.xs>
+      <div className="mt-2 border-t border-border-secondary">
+        {items.length === 0 && (
+          <Paragraph.sm className="py-3 text-tertiary">
+            No equipment is associated with this booking.
+          </Paragraph.sm>
+        )}
+        {items.map((item) => (
+          <BookingItemRow key={item.id} item={item} onCloseDrawer={onCloseDrawer} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BookingItemRow({ item, onCloseDrawer }: { item: BookingItem; onCloseDrawer: () => void }) {
+  const navigate = useNavigate();
+
+  function handleClick() {
+    onCloseDrawer();
+    navigate(`/equipment/${item.equipmentId}`);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className="flex w-full items-center gap-3 py-3 border-b border-border-secondary text-left hover:bg-background-primary-hover transition-colors"
+    >
+      {item.equipmentThumbnail ? (
+        <img src={item.equipmentThumbnail} alt={item.equipmentName} className="size-10 rounded object-cover" />
+      ) : (
+        <span className="flex size-10 shrink-0 items-center justify-center rounded bg-secondary text-quaternary">
+          <Package className="size-5" />
+        </span>
+      )}
+      <div className="flex-1 min-w-0">
+        <Label.sm className="block truncate">{item.equipmentName}</Label.sm>
+        <Paragraph.xs className="text-tertiary">
+          {equipmentCategoryLabel[item.equipmentCategory]}
+        </Paragraph.xs>
+      </div>
+      <ChevronRight className="size-4 text-quaternary" />
+    </button>
   );
 }
 

@@ -57,7 +57,7 @@ function EquipmentDrawerContent({
   const navigate = useNavigate();
   const { toast } = useFeedback();
   const {
-    actions: { syncEquipment, removeEquipment, removeBookingsByEquipmentId },
+    actions: { syncEquipment, removeEquipment, removeBookingItemsByEquipmentId },
   } = useEquipment();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -176,7 +176,7 @@ function EquipmentDrawerContent({
     try {
       await deleteEquipment(equipment.id);
       removeEquipment(equipment.id);
-      removeBookingsByEquipmentId(equipment.id);
+      removeBookingItemsByEquipmentId(equipment.id);
       toast({ title: "Equipment deleted", variant: "success" });
       setShowDeleteModal(false);
       closeDrawer();

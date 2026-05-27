@@ -48,18 +48,18 @@ function BookingHistoryRow({ booking }: { booking: Booking }) {
       value={booking.id}
       className="border-b border-secondary last:border-b-0"
     >
-      <Accordion.Trigger className="flex items-center justify-between py-3">
-        <div className="flex items-center gap-3">
-          <Label.sm>{booking.bookedBy}</Label.sm>
-          <Paragraph.xs className="text-tertiary">
-            {formatUtcIsoInBrowserTimeZone(booking.checkedOutDate, {
+      <Accordion.Trigger className="flex items-center justify-between py-3 w-full">
+        <div className="flex flex-col items-start min-w-0 flex-1 text-left">
+          <Label.sm className="truncate">{booking.title}</Label.sm>
+          <Paragraph.xs className="text-tertiary truncate">
+            {booking.bookedBy} &middot; {formatUtcIsoInBrowserTimeZone(booking.checkedOutDate, {
               day: "numeric",
               month: "short",
               year: "numeric",
             })}
           </Paragraph.xs>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <ChevronDown className="size-4 text-tertiary transition-transform data-[state=open]:rotate-180" />
         </div>
       </Accordion.Trigger>
