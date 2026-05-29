@@ -5,10 +5,14 @@ import { Alert } from '@moc/ui/components/feedback/alert'
 import { Spinner } from '@moc/ui/components/feedback/spinner'
 import { PublicLayout } from '@/features/components/public-layout'
 import { BookingDetails } from '@/features/components/booking-details'
-import { EquipmentList } from '@/features/components/equipment-list'
+// TODO(equipment-inventory): STOPGAP — live equipment browser disabled while
+// inventory is rebuilt. Restore <EquipmentList /> + useEquipmentBrowser (and
+// remove <BookingEquipmentPicker />) once real inventory is available.
+// import { EquipmentList } from '@/features/components/equipment-list'
+// import { useEquipmentBrowser } from '@/features/hooks/use-equipment-browser'
+import { BookingEquipmentPicker } from '@/features/components/booking-equipment-picker'
 import { BookingReview } from '@/features/components/booking-review'
 import { useBookingForm } from '@/features/hooks/use-booking-form'
-import { useEquipmentBrowser } from '@/features/hooks/use-equipment-browser'
 import { BOOKING_STEPS } from '@/features/constants'
 import { routes } from '@/screens/console-routes'
 import { ArrowLeft } from 'lucide-react'
@@ -17,10 +21,12 @@ import { StepIndicatorBar } from '@/features/components/step-indicator-bar';
 export function BookingScreen() {
   const navigate = useNavigate()
   const { state, actions } = useBookingForm()
-  const equipment = useEquipmentBrowser(state.data.checkedOutAt, state.data.expectedReturnAt)
+  // TODO(equipment-inventory): STOPGAP — restore the live browser + derived
+  // selection once inventory is back.
+  // const equipment = useEquipmentBrowser(state.data.checkedOutAt, state.data.expectedReturnAt)
+  // const selectedEquipment = equipment.items.filter((item) => state.data.equipmentIds.includes(item.id))
   const stepLabels = BOOKING_STEPS.map((s) => s.label)
   const isLastStep = state.step === 3
-  const selectedEquipment = equipment.items.filter((item) => state.data.equipmentIds.includes(item.id))
 
   async function handleNext() {
     if (isLastStep) {
@@ -60,8 +66,17 @@ export function BookingScreen() {
         </div>
 
         {state.step === 1 && <BookingDetails data={state.data} onChange={actions.setField} />}
-        {state.step === 2 && <EquipmentList state={state} equipment={equipment} onToggle={actions.toggleEquipment} />}
-        {state.step === 3 && <BookingReview data={state.data} selectedEquipment={selectedEquipment} />}
+        {/* TODO(equipment-inventory): STOPGAP — hardcoded picker in place of the
+            live <EquipmentList state={state} equipment={equipment} onToggle={actions.toggleEquipment} /> */}
+        {state.step === 2 && (
+          <BookingEquipmentPicker
+            selected={state.data.requestedEquipment}
+            onToggle={actions.toggleRequestedEquipment}
+            otherEquipment={state.data.otherEquipment}
+            onOtherChange={(text) => actions.setField('otherEquipment', text)}
+          />
+        )}
+        {state.step === 3 && <BookingReview data={state.data} />}
         {state.error && <Alert title="Submission failed" description={state.error} variant="error" style="filled" />}
 
         <Button

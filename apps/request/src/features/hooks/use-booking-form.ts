@@ -1,6 +1,10 @@
 import { useReducer, useCallback } from 'react'
 import { submitPublicBookingBatch } from '@/data/submit-booking'
 import type { BookingFormData, SubmitBookingResult } from '@/types/booking'
+// TODO(equipment-inventory): STOPGAP import — only used to order the
+// hardcoded equipment selections in the assembled notes. Remove with the
+// rest of the stopgap once live inventory is restored.
+import { BOOKABLE_EQUIPMENT } from '@/features/components/booking-equipment-picker'
 
 export type BookingFormState = {
   step: number
@@ -11,6 +15,7 @@ export type BookingFormState = {
 
 type BookingFormAction =
   | { type: 'TOGGLE_EQUIPMENT'; id: string }
+  | { type: 'TOGGLE_REQUESTED_EQUIPMENT'; label: string }
   | { type: 'SET_FIELD'; field: keyof BookingFormData; value: string }
   | { type: 'NEXT_STEP' }
   | { type: 'PREV_STEP' }
@@ -21,10 +26,32 @@ type BookingFormAction =
 const initialData: BookingFormData = {
   title: '',
   equipmentIds: [],
+  // TODO(equipment-inventory): STOPGAP — see BookingFormData / picker.
+  requestedEquipment: [],
+  otherEquipment: '',
   bookedBy: '',
   checkedOutAt: '',
   expectedReturnAt: '',
   notes: '',
+}
+
+// TODO(equipment-inventory): STOPGAP — assemble the hardcoded equipment
+// selection into the booking's notes. Selections are listed in display
+// order, with the free-text "Other" entry last. Remove once live inventory
+// (real equipmentIds) is restored.
+function assembleBookingNotes(data: BookingFormData): string {
+  const lines = BOOKABLE_EQUIPMENT
+    .filter((label) => data.requestedEquipment.includes(label))
+    .map((label) => `- ${label}`)
+
+  const other = data.otherEquipment.trim()
+  if (other) lines.push(`- Other: ${other}`)
+
+  const userNotes = data.notes.trim()
+  if (lines.length === 0) return userNotes
+
+  const section = `Requested equipment:\n${lines.join('\n')}`
+  return userNotes ? `${userNotes}\n\n---\n\n${section}` : section
 }
 
 function reducer(state: BookingFormState, action: BookingFormAction): BookingFormState {
@@ -35,6 +62,14 @@ function reducer(state: BookingFormState, action: BookingFormAction): BookingFor
         ? ids.filter((id) => id !== action.id)
         : [...ids, action.id]
       return { ...state, data: { ...state.data, equipmentIds: next } }
+    }
+    // TODO(equipment-inventory): STOPGAP — toggle a hardcoded equipment label.
+    case 'TOGGLE_REQUESTED_EQUIPMENT': {
+      const labels = state.data.requestedEquipment
+      const next = labels.includes(action.label)
+        ? labels.filter((label) => label !== action.label)
+        : [...labels, action.label]
+      return { ...state, data: { ...state.data, requestedEquipment: next } }
     }
     case 'SET_FIELD':
       return { ...state, data: { ...state.data, [action.field]: action.value } }
@@ -64,7 +99,10 @@ function canProceedFromStep(step: number, data: BookingFormData): boolean {
         new Date(data.expectedReturnAt) > new Date(data.checkedOutAt)
       )
     case 2:
-      return data.equipmentIds.length > 0
+      // TODO(equipment-inventory): STOPGAP — gate on the hardcoded selection
+      // instead of equipmentIds. Restore `data.equipmentIds.length > 0` when
+      // live inventory comes back.
+      return data.requestedEquipment.length > 0 || data.otherEquipment.trim().length > 0
     case 3:
       return true
     default:
@@ -89,6 +127,11 @@ export function useBookingForm() {
     dispatch({ type: 'TOGGLE_EQUIPMENT', id })
   }, [])
 
+  // TODO(equipment-inventory): STOPGAP — toggle a hardcoded equipment label.
+  const toggleRequestedEquipment = useCallback((label: string) => {
+    dispatch({ type: 'TOGGLE_REQUESTED_EQUIPMENT', label })
+  }, [])
+
   const setField = useCallback((field: keyof BookingFormData, value: string) => {
     dispatch({ type: 'SET_FIELD', field, value })
   }, [])
@@ -108,7 +151,15 @@ export function useBookingForm() {
   const submit = useCallback(async (): Promise<SubmitBookingResult | null> => {
     dispatch({ type: 'SUBMIT_START' })
     try {
-      const result = await submitPublicBookingBatch(state.data)
+      // TODO(equipment-inventory): STOPGAP — fold the hardcoded equipment
+      // selection into notes and submit with an empty equipmentIds. Restore
+      // submitting `state.data` directly (with real equipmentIds) later.
+      const payload: BookingFormData = {
+        ...state.data,
+        equipmentIds: [],
+        notes: assembleBookingNotes(state.data),
+      }
+      const result = await submitPublicBookingBatch(payload)
       dispatch({ type: 'SUBMIT_SUCCESS' })
       return result
     } catch (err) {
@@ -120,6 +171,6 @@ export function useBookingForm() {
 
   return {
     state,
-    actions: { toggleEquipment, setField, nextStep, prevStep, submit, canProceed },
+    actions: { toggleEquipment, toggleRequestedEquipment, setField, nextStep, prevStep, submit, canProceed },
   }
 }

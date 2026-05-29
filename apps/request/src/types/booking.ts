@@ -3,6 +3,13 @@ export type BookingStatus = 'booked' | 'checked_out' | 'returned'
 export type BookingFormData = {
   title: string
   equipmentIds: string[]
+  // TODO(equipment-inventory): STOPGAP fields. While live inventory is
+  // disabled, equipment is chosen from a hardcoded list (requestedEquipment)
+  // plus a free-text "Other" (otherEquipment); these are folded into `notes`
+  // at submit and `equipmentIds` stays empty. Remove both once the real
+  // equipment browser is restored (see booking-equipment-picker.tsx).
+  requestedEquipment: string[]
+  otherEquipment: string
   bookedBy: string
   checkedOutAt: string
   expectedReturnAt: string

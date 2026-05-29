@@ -1,17 +1,20 @@
 import { Badge } from '@moc/ui/components/display/badge'
 import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Label } from '@moc/ui/components/display/text'
-import { Package, User, CalendarDays, CalendarCheck, StickyNote, FileText } from 'lucide-react'
+import { Package, User, CalendarDays, CalendarCheck, StickyNote, FileText, Plus } from 'lucide-react'
 import type { BookingFormData } from '@/types/booking'
-import type { PublicEquipmentItem } from '@/types/equipment'
 import { formatDateTime } from '@/lib/utils'
 
 type BookingReviewProps = {
   data: BookingFormData
-  selectedEquipment: PublicEquipmentItem[]
 }
 
-export function BookingReview({ data, selectedEquipment }: BookingReviewProps) {
+export function BookingReview({ data }: BookingReviewProps) {
+  // TODO(equipment-inventory): STOPGAP — review reflects the hardcoded
+  // selection (requestedEquipment + otherEquipment) rather than fetched
+  // equipment. Restore the fetched-item summary when inventory is back.
+  const other = data.otherEquipment.trim()
+
   return (
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-3">
@@ -22,11 +25,17 @@ export function BookingReview({ data, selectedEquipment }: BookingReviewProps) {
           </MetaRow>
           <MetaRow icon={<Package />} label="Equipment">
             <div className="flex flex-wrap gap-1.5">
-              {selectedEquipment.map((item) => (
-                <Badge key={item.id} label={item.name} color="blue" variant="outline" />
+              {data.requestedEquipment.map((label) => (
+                <Badge key={label} label={label} color="blue" variant="outline" />
               ))}
+              {other && <Badge label="Other" color="gray" variant="outline" />}
             </div>
           </MetaRow>
+          {other && (
+            <MetaRow icon={<Plus />} label="Other">
+              <Label.sm>{other}</Label.sm>
+            </MetaRow>
+          )}
           <MetaRow icon={<User />} label="Booked by">
             <Label.sm>{data.bookedBy}</Label.sm>
           </MetaRow>
