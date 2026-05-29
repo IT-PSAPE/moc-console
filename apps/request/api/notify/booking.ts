@@ -19,18 +19,23 @@ type ApiResponse = {
 type ClientBody = {
   event_type?: "booking.created" | "booking.status_changed"
   workspace_id?: string
+  booking_id?: string
   tracking_code?: string
   title?: string
   requester_name?: string | null
   status?: string | null
 }
 
-function resolveLinkUrl(): string | null {
+function resolveLinkUrl(bookingId?: string | null): string | null {
   const base = process.env.MOC_CONSOLE_BASE_URL
   if (!base) return null
-  // moc-console doesn't (yet) have a per-booking detail route — link the
-  // bookings list. The Telegram message includes the tracking code in body.
-  return `${base.replace(/\/$/, "")}/equipment/bookings`
+  const root = base.replace(/\/$/, "")
+  // Deep-link straight to the booking's detail page when we know its id;
+  // fall back to the bookings list otherwise (the message also carries the
+  // tracking code in its body).
+  return bookingId
+    ? `${root}/equipment/bookings/${encodeURIComponent(bookingId)}`
+    : `${root}/equipment/bookings`
 }
 
 export default async function handler(request: ApiRequest, response: ApiResponse) {
@@ -49,7 +54,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   }
 
   const body = (request.body ?? {}) as ClientBody
-  const { event_type, workspace_id, tracking_code, title } = body
+  const { event_type, workspace_id, booking_id, tracking_code, title } = body
 
   if (
     !event_type ||
@@ -61,7 +66,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
-  const linkUrl = resolveLinkUrl()
+  const linkUrl = resolveLinkUrl(typeof booking_id === "string" ? booking_id : null)
   if (!linkUrl) {
     response.status(500).json({ error: "MOC_CONSOLE_BASE_URL not set" })
     return
@@ -70,6 +75,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   const payload: Record<string, unknown> = {
     event_type,
     workspace_id,
+    booking_id: typeof booking_id === "string" ? booking_id : null,
     tracking_code,
     title,
     link_url: linkUrl,

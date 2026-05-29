@@ -27,6 +27,7 @@ const CueSheetEventDetailScreen = lazy(() => import('@/screens/cue-sheet/events/
 const CueSheetOverviewScreen = lazy(() => import('@/screens/cue-sheet/page').then((m) => ({ default: m.CueSheetOverviewScreen })))
 const DashboardScreen = lazy(() => import('@/screens/dashboard/page').then((m) => ({ default: m.DashboardScreen })))
 const EquipmentBookingsScreen = lazy(() => import('@/screens/equipment/booking/page').then((m) => ({ default: m.EquipmentBookingsScreen })))
+const BookingDetailScreen = lazy(() => import('@/screens/equipment/booking/detail/page').then((m) => ({ default: m.BookingDetailScreen })))
 const EquipmentInventoryScreen = lazy(() => import('@/screens/equipment/inventory/page').then((m) => ({ default: m.EquipmentInventoryScreen })))
 const EquipmentMaintenanceScreen = lazy(() => import('@/screens/equipment/maintenance/page').then((m) => ({ default: m.EquipmentMaintenanceScreen })))
 const EquipmentOverviewScreen = lazy(() => import('@/screens/equipment/page').then((m) => ({ default: m.EquipmentOverviewScreen })))
@@ -148,6 +149,7 @@ const router = createBrowserRouter([
                     { path: routes.equipmentOverview, element: <EquipmentOverviewScreen /> },
                     { path: routes.equipmentInventory, element: <EquipmentInventoryScreen /> },
                     { path: routes.equipmentBookings, element: <EquipmentBookingsScreen /> },
+                    { path: routes.equipmentBookingDetail, element: <BookingDetailScreen /> },
                     { path: routes.equipmentMaintenance, element: <EquipmentMaintenanceScreen /> },
                     { path: routes.equipmentDetail, element: <EquipmentDetailScreen /> },
                 ],

@@ -34,6 +34,7 @@ export function notifyRequestCreated(args: {
 }
 
 export function notifyBookingCreated(args: {
+  bookingId: string
   trackingCode: string
   title: string
   requesterName: string | null
@@ -41,6 +42,7 @@ export function notifyBookingCreated(args: {
   fire('/api/notify/booking', {
     event_type: 'booking.created',
     workspace_id: workspaceId,
+    booking_id: args.bookingId,
     tracking_code: args.trackingCode,
     title: args.title,
     requester_name: args.requesterName,

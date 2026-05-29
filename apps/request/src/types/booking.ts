@@ -10,6 +10,7 @@ export type BookingFormData = {
 }
 
 export type SubmitBookingResult = {
+  bookingId: string
   trackingCode: string
   title: string
 }

@@ -11,6 +11,7 @@ export const routes = {
     equipmentOverview: 'equipment',
     equipmentInventory: 'equipment/inventory',
     equipmentBookings: 'equipment/bookings',
+    equipmentBookingDetail: 'equipment/bookings/:id',
     equipmentMaintenance: 'equipment/maintenance',
     equipmentDetail: 'equipment/:id',
     broadcastOverview: 'broadcast',

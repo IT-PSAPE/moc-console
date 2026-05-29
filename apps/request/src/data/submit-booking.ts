@@ -16,13 +16,15 @@ export async function submitPublicBookingBatch(data: BookingFormData): Promise<S
 
   if (error) throw new Error(error.message)
 
+  const bookingId: string = result.booking_id
   const trackingCode: string = result.tracking_code
   const title: string = result.title
   notifyBookingCreated({
+    bookingId,
     trackingCode,
     title,
     requesterName: data.bookedBy || null,
   })
 
-  return { trackingCode, title }
+  return { bookingId, trackingCode, title }
 }

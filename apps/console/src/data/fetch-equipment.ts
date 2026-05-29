@@ -189,6 +189,22 @@ export async function fetchBookings(): Promise<Booking[]> {
   return ((data ?? []) as unknown as BookingRow[]).map(mapBookingRow);
 }
 
+export async function fetchBookingById(id: string): Promise<Booking | undefined> {
+  const workspaceId = await getCurrentWorkspaceId();
+  const { data, error } = await supabase
+    .from("bookings")
+    .select(BOOKING_SELECT)
+    .eq("workspace_id", workspaceId)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data ? mapBookingRow(data as unknown as BookingRow) : undefined;
+}
+
 export async function fetchBookingsByEquipmentId(equipmentId: string): Promise<Booking[]> {
   const workspaceId = await getCurrentWorkspaceId();
   const { data, error } = await supabase

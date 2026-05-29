@@ -2,22 +2,22 @@ import { Drawer, useDrawer } from "@moc/ui/components/overlays/drawer";
 import { Dropdown } from "@moc/ui/components/overlays/dropdown";
 import { Badge } from "@moc/ui/components/display/badge";
 import { Button } from "@moc/ui/components/controls/button";
-import { Label, Paragraph, Title } from "@moc/ui/components/display/text";
+import { Paragraph, Title } from "@moc/ui/components/display/text";
 import { MetaRow } from "@moc/ui/components/display/meta-row";
 import { Input } from "@moc/ui/components/form/input";
 import { Modal } from "@moc/ui/components/overlays/modal";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { useBookingStore } from "./use-booking-store";
 import { useEquipment } from "./equipment-provider";
+import { BookingItemsSection } from "./booking-items-section";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import { deleteBooking } from "@/data/mutate-booking";
 import {
   bookingStatusLabel,
   bookingStatusColor,
-  equipmentCategoryLabel,
 } from "@moc/types/equipment";
-import type { Booking, BookingItem, BookingStatus } from "@moc/types/equipment";
-import { Calendar, Check, ChevronRight, Clock, Loader, Package, StickyNote, Trash2, User, X } from "lucide-react";
+import type { Booking, BookingStatus } from "@moc/types/equipment";
+import { Calendar, Check, Clock, Loader, Maximize2, Package, StickyNote, Trash2, User, X } from "lucide-react";
 import { useCallback, useEffect, useState, type ChangeEvent, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
 import { getErrorMessage } from "@moc/utils/get-error-message";
@@ -50,6 +50,7 @@ export function BookingDrawer({ booking, onBookingClose, isDirtyRef, requestClos
 
 function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestCloseRef }: BookingDrawerProps) {
     const { actions: drawerActions } = useDrawer();
+    const navigate = useNavigate();
     const { toast } = useFeedback();
     const { actions: { syncBooking, refreshEquipment, removeBooking } } = useEquipment();
 
@@ -87,6 +88,15 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
     }
     closeDrawer();
   }, [store.state.isDirty, closeDrawer]);
+
+  function handleOpenFullPage() {
+    if (store.state.isDirty) {
+      setShowUnsavedModal(true);
+      return;
+    }
+    closeDrawer();
+    navigate(`/equipment/bookings/${booking.id}`);
+  }
 
   const handleSave = useCallback(async () => {
     try {
@@ -195,6 +205,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
       <Drawer.Header className="flex items-center gap-1">
         <Button.Icon variant="ghost" icon={<X />} onClick={handleClose} />
         <div className="flex-1" />
+        <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={handleOpenFullPage} aria-label="Open full page" />
         <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={handleDeleteRequest} />
       </Drawer.Header>
 
@@ -294,7 +305,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         </div>
 
         {/* Items */}
-        <BookingItemsSection items={draft.items} onCloseDrawer={closeDrawer} />
+        <BookingItemsSection items={draft.items} onNavigate={closeDrawer} />
       </Drawer.Content>
 
       {store.state.isDirty && (
@@ -338,58 +349,6 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         </Modal.Portal>
       </Modal>
     </>
-  );
-}
-
-function BookingItemsSection({ items, onCloseDrawer }: { items: BookingItem[]; onCloseDrawer: () => void }) {
-  return (
-    <section className="mt-6 px-4">
-      <Label.xs className="uppercase tracking-wide text-quaternary">
-        Items ({items.length})
-      </Label.xs>
-      <div className="mt-2 border-t border-border-secondary">
-        {items.length === 0 && (
-          <Paragraph.sm className="py-3 text-tertiary">
-            No equipment is associated with this booking.
-          </Paragraph.sm>
-        )}
-        {items.map((item) => (
-          <BookingItemRow key={item.id} item={item} onCloseDrawer={onCloseDrawer} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function BookingItemRow({ item, onCloseDrawer }: { item: BookingItem; onCloseDrawer: () => void }) {
-  const navigate = useNavigate();
-
-  function handleClick() {
-    onCloseDrawer();
-    navigate(`/equipment/${item.equipmentId}`);
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="flex w-full items-center gap-3 py-3 border-b border-border-secondary text-left hover:bg-background-primary-hover transition-colors"
-    >
-      {item.equipmentThumbnail ? (
-        <img src={item.equipmentThumbnail} alt={item.equipmentName} className="size-10 rounded object-cover" />
-      ) : (
-        <span className="flex size-10 shrink-0 items-center justify-center rounded bg-secondary text-quaternary">
-          <Package className="size-5" />
-        </span>
-      )}
-      <div className="flex-1 min-w-0">
-        <Label.sm className="block truncate">{item.equipmentName}</Label.sm>
-        <Paragraph.xs className="text-tertiary">
-          {equipmentCategoryLabel[item.equipmentCategory]}
-        </Paragraph.xs>
-      </div>
-      <ChevronRight className="size-4 text-quaternary" />
-    </button>
   );
 }
 
