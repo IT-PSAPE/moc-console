@@ -6,6 +6,7 @@ import { Header } from "@moc/ui/components/display/header";
 import { MetaRow } from "@moc/ui/components/display/meta-row";
 import { Paragraph, Title } from "@moc/ui/components/display/text";
 import { Input } from "@moc/ui/components/form/input";
+import { TextArea } from "@moc/ui/components/form/text-area";
 import { Dropdown } from "@moc/ui/components/overlays/dropdown";
 import { Modal } from "@moc/ui/components/overlays/modal";
 import { Spinner } from "@moc/ui/components/feedback/spinner";
@@ -171,7 +172,7 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
     );
   }
 
-  function handleNotesChange(event: ChangeEvent<HTMLInputElement>) {
+  function handleNotesChange(event: ChangeEvent<HTMLTextAreaElement>) {
     store.actions.updateField("notes", event.target.value);
   }
 
@@ -251,7 +252,15 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
         </MetaRow>
 
         <MetaRow icon={<StickyNote />} label="Notes">
-          <Input type="text" value={draft.notes} onChange={handleNotesChange} placeholder="Add notes..." style="ghost" />
+          <TextArea
+            value={draft.notes}
+            onChange={handleNotesChange}
+            placeholder="Add notes..."
+            style="ghost"
+            resize="vertical"
+            rows={5}
+            className="w-full whitespace-pre-wrap"
+          />
         </MetaRow>
       </div>
 

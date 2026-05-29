@@ -5,6 +5,7 @@ import { Button } from "@moc/ui/components/controls/button";
 import { Paragraph, Title } from "@moc/ui/components/display/text";
 import { MetaRow } from "@moc/ui/components/display/meta-row";
 import { Input } from "@moc/ui/components/form/input";
+import { TextArea } from "@moc/ui/components/form/text-area";
 import { Modal } from "@moc/ui/components/overlays/modal";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { useBookingStore } from "./use-booking-store";
@@ -182,7 +183,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
     );
   }
 
-  function handleNotesChange(event: ChangeEvent<HTMLInputElement>) {
+  function handleNotesChange(event: ChangeEvent<HTMLTextAreaElement>) {
     store.actions.updateField("notes", event.target.value);
   }
 
@@ -294,12 +295,14 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
 
           {/* Notes */}
           <MetaRow icon={<StickyNote />} label="Notes">
-            <Input
-              type="text"
+            <TextArea
               value={draft.notes}
               onChange={handleNotesChange}
               placeholder="Add notes..."
               style="ghost"
+              resize="vertical"
+              rows={5}
+              className="w-full whitespace-pre-wrap"
             />
           </MetaRow>
         </div>
