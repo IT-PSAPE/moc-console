@@ -1,30 +1,25 @@
 import { Drawer, useDrawer } from "@moc/ui/components/overlays/drawer";
-import { Dropdown } from "@moc/ui/components/overlays/dropdown";
-import { Badge } from "@moc/ui/components/display/badge";
 import { Button } from "@moc/ui/components/controls/button";
 import { Paragraph, Title } from "@moc/ui/components/display/text";
 import { MetaRow } from "@moc/ui/components/display/meta-row";
 import { Input } from "@moc/ui/components/form/input";
 import { TextArea } from "@moc/ui/components/form/text-area";
-import { Modal } from "@moc/ui/components/overlays/modal";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { useBookingStore } from "./use-booking-store";
 import { useEquipment } from "./equipment-provider";
 import { BookingItemsSection } from "./booking-items-section";
+import { BookingDeleteModal } from "./booking-delete-modal";
+import { BookingScanModal } from "./booking-scan-modal";
+import { BookingStatusDropdown } from "./booking-status-dropdown";
+import { useBookingCollection } from "./use-booking-collection";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import { deleteBooking } from "@/data/mutate-booking";
-import {
-  bookingStatusLabel,
-  bookingStatusColor,
-} from "@moc/types/equipment";
 import type { Booking, BookingStatus } from "@moc/types/equipment";
-import { Calendar, Check, Clock, Loader, Maximize2, Package, StickyNote, Trash2, User, X } from "lucide-react";
+import { Calendar, Clock, Loader, Maximize2, Package, ScanLine, StickyNote, Trash2, User, X } from "lucide-react";
 import { useCallback, useEffect, useState, type ChangeEvent, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
 import { getErrorMessage } from "@moc/utils/get-error-message";
 import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time";
-
-const allStatuses: BookingStatus[] = ["booked", "checked_out", "returned"];
 
 export type BookingDrawerProps = {
   booking: Booking;
@@ -99,9 +94,9 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
     navigate(`/equipment/bookings/${booking.id}`);
   }
 
-  const handleSave = useCallback(async () => {
+  const persistBooking = useCallback(async (nextBooking?: Booking) => {
     try {
-      await store.actions.save();
+      await store.actions.save(nextBooking);
       // A booking can hold multiple items, so a per-equipment-id sync
       // can't refresh them all in one call. Refetch the whole inventory.
       await refreshEquipment();
@@ -110,6 +105,25 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
       toast({ title: "Failed to save booking", description: getErrorMessage(error, "The booking could not be saved."), variant: "error" });
     }
   }, [store.actions, refreshEquipment, toast]);
+
+  const collection = useBookingCollection({
+    booking: store.state.draft,
+    onDraftChange: store.actions.replaceDraft,
+    onCollectionComplete: persistBooking,
+    onItemCollected: (item) => {
+      toast({ title: "Item collected", description: item.equipmentName, variant: "success" });
+    },
+    onItemAlreadyCollected: (item) => {
+      toast({ title: "Already collected", description: `${item.equipmentName} was already scanned.`, variant: "error" });
+    },
+    onUnknownCode: () => {
+      toast({ title: "Item not in booking", description: "That QR code does not match any equipment in this booking.", variant: "error" });
+    },
+  });
+
+  const handleSave = useCallback(async () => {
+    await persistBooking();
+  }, [persistBooking]);
 
   async function handleModalSave() {
     try {
@@ -191,10 +205,6 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
     setDeleteOpen(true);
   }
 
-  function handleDeleteCancel() {
-    setDeleteOpen(false);
-  }
-
   function handleDeleteOpenChange(open: boolean) {
     setDeleteOpen(open);
   }
@@ -206,6 +216,13 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
       <Drawer.Header className="flex items-center gap-1">
         <Button.Icon variant="ghost" icon={<X />} onClick={handleClose} />
         <div className="flex-1" />
+        <Button.Icon
+          variant="secondary"
+          aria-label={collection.state.isComplete ? "All items collected" : "Scan booking items"}
+          disabled={!collection.state.canScan}
+          icon={<ScanLine />}
+          onClick={collection.actions.openScanner}
+        />
         <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={handleOpenFullPage} aria-label="Open full page" />
         <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={handleDeleteRequest} />
       </Drawer.Header>
@@ -226,25 +243,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         <div className="px-4 space-y-3">
           {/* Status */}
           <MetaRow icon={<Loader />} label="Status">
-            <Dropdown placement="bottom">
-              <Dropdown.Trigger>
-                <Badge
-                  label={bookingStatusLabel[draft.status]}
-                  color={bookingStatusColor[draft.status]}
-                  className="cursor-pointer"
-                />
-              </Dropdown.Trigger>
-              <Dropdown.Panel>
-                {allStatuses.map((s) => (
-                  <BookingStatusOption
-                    key={s}
-                    status={s}
-                    selected={s === draft.status}
-                    onSelectStatus={handleSelectStatus}
-                  />
-                ))}
-              </Dropdown.Panel>
-            </Dropdown>
+            <BookingStatusDropdown status={draft.status} onSelectStatus={handleSelectStatus} />
           </MetaRow>
 
           {/* Booked By */}
@@ -328,54 +327,17 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         isSaving={store.state.isSaving}
       />
 
-      <Modal open={deleteOpen} onOpenChange={handleDeleteOpenChange}>
-        <Modal.Portal>
-          <Modal.Backdrop />
-          <Modal.Positioner>
-            <Modal.Panel>
-              <Modal.Header>
-                <Title.h6>Delete Booking</Title.h6>
-              </Modal.Header>
-              <Modal.Content className="p-4">
-                <Paragraph.sm className="text-secondary">
-                  Are you sure you want to delete this booking? This action cannot be undone.
-                </Paragraph.sm>
-              </Modal.Content>
-              <Modal.Footer className="justify-end">
-                <Button variant="secondary" onClick={handleDeleteCancel}>Cancel</Button>
-                <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
-                  {isDeleting ? "Deleting..." : "Delete Booking"}
-                </Button>
-              </Modal.Footer>
-            </Modal.Panel>
-          </Modal.Positioner>
-        </Modal.Portal>
-      </Modal>
+      <BookingDeleteModal open={deleteOpen} isDeleting={isDeleting} onConfirm={handleDelete} onOpenChange={handleDeleteOpenChange} />
+      <BookingScanModal
+        open={collection.state.isOpen}
+        isStarting={collection.state.isStarting}
+        isSupported={collection.state.isSupported}
+        error={collection.state.error}
+        collectedCount={collection.state.collectedCount}
+        totalCount={collection.state.totalCount}
+        onClose={collection.actions.closeScanner}
+        videoRef={collection.meta.videoRef}
+      />
     </>
-  );
-}
-
-type BookingStatusOptionProps = {
-  status: BookingStatus;
-  selected: boolean;
-  onSelectStatus: (status: BookingStatus) => void;
-};
-
-function BookingStatusOption({
-  status,
-  selected,
-  onSelectStatus,
-}: BookingStatusOptionProps) {
-  function handleSelect() {
-    onSelectStatus(status);
-  }
-
-  return (
-    <Dropdown.Item onSelect={handleSelect}>
-      <span className="size-4 shrink-0 flex items-center justify-center">
-        {selected && <Check className="size-3.5 text-brand_secondary" />}
-      </span>
-      {bookingStatusLabel[status]}
-    </Dropdown.Item>
   );
 }

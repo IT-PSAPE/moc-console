@@ -1,6 +1,8 @@
+import { Badge } from "@moc/ui/components/display/badge";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { equipmentCategoryLabel } from "@moc/types/equipment";
 import type { BookingItem } from "@moc/types/equipment";
+import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
 import { ChevronRight, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -28,6 +30,13 @@ export function BookingItemsSection({ items, onNavigate }: { items: BookingItem[
 
 function BookingItemRow({ item, onNavigate }: { item: BookingItem; onNavigate?: () => void }) {
   const navigate = useNavigate();
+  const collectedLabel = item.collectedAt
+    ? formatUtcIsoInBrowserTimeZone(item.collectedAt, {
+      dateStyle: "medium",
+      timeStyle: "short",
+      fallback: "Collected",
+    })
+    : null;
 
   function handleClick() {
     onNavigate?.();
@@ -52,7 +61,13 @@ function BookingItemRow({ item, onNavigate }: { item: BookingItem; onNavigate?: 
         <Paragraph.xs className="text-tertiary">
           {equipmentCategoryLabel[item.equipmentCategory]}
         </Paragraph.xs>
+        {collectedLabel ? (
+          <Paragraph.xs className="mt-0.5 text-tertiary">
+            Collected {collectedLabel}
+          </Paragraph.xs>
+        ) : null}
       </div>
+      {item.collectedAt ? <Badge color="green" label="Collected" /> : null}
       <ChevronRight className="size-4 text-quaternary" />
     </button>
   );

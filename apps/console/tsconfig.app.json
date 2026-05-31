@@ -16,6 +16,13 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
+      "@moc/ui/styles.css": ["../../packages/ui/src/index.css"],
+      "@moc/ui/components/timeline": ["../../packages/ui/src/components/display/timeline/index.ts"],
+      "@moc/ui/*": ["../../packages/ui/src/*"],
+      "@moc/data/*": ["../../packages/data/src/*"],
+      "@moc/types/*": ["../../packages/types/src/*"],
+      "@moc/utils/*": ["../../packages/utils/src/*"],
+      "@moc/player/*": ["../../packages/player/src/*"],
       "@/*": ["./src/*"],
       "@features/*": ["./src/features/*"],
       "@hooks/*": ["./src/hooks/*"],

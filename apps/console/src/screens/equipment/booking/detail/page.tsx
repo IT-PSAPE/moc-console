@@ -1,5 +1,4 @@
 import { useBreadcrumbOverride } from "@moc/ui/components/navigation/breadcrumb";
-import { Badge } from "@moc/ui/components/display/badge";
 import { Button } from "@moc/ui/components/controls/button";
 import { Divider } from "@moc/ui/components/display/divider";
 import { Header } from "@moc/ui/components/display/header";
@@ -7,27 +6,26 @@ import { MetaRow } from "@moc/ui/components/display/meta-row";
 import { Paragraph, Title } from "@moc/ui/components/display/text";
 import { Input } from "@moc/ui/components/form/input";
 import { TextArea } from "@moc/ui/components/form/text-area";
-import { Dropdown } from "@moc/ui/components/overlays/dropdown";
-import { Modal } from "@moc/ui/components/overlays/modal";
 import { Spinner } from "@moc/ui/components/feedback/spinner";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { TopBarActions } from "@/features/topbar";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
+import { BookingDeleteModal } from "@/features/equipment/booking-delete-modal";
 import { useBookingStore } from "@/features/equipment/use-booking-store";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 import { BookingItemsSection } from "@/features/equipment/booking-items-section";
+import { BookingScanModal } from "@/features/equipment/booking-scan-modal";
+import { BookingStatusDropdown } from "@/features/equipment/booking-status-dropdown";
+import { useBookingCollection } from "@/features/equipment/use-booking-collection";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import { fetchBookingById } from "@/data/fetch-equipment";
 import { deleteBooking } from "@/data/mutate-booking";
-import { bookingStatusLabel, bookingStatusColor } from "@moc/types/equipment";
 import type { Booking, BookingStatus } from "@moc/types/equipment";
-import { Calendar, Check, Clock, ClipboardList, Loader, Package, Pencil, Save, StickyNote, Trash2, Undo2, User } from "lucide-react";
+import { Calendar, Clock, ClipboardList, Loader, Package, Pencil, Save, ScanLine, StickyNote, Trash2, Undo2, User } from "lucide-react";
 import { useCallback, useEffect, useState, type ChangeEvent } from "react";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
 import { getErrorMessage } from "@moc/utils/get-error-message";
 import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time";
-
-const allStatuses: BookingStatus[] = ["booked", "checked_out", "returned"];
 
 export function BookingDetailScreen() {
   const { id } = useParams<{ id: string }>();
@@ -98,9 +96,9 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [store.state.isDirty]);
 
-  const handleSave = useCallback(async () => {
+  const persistBooking = useCallback(async (nextBooking?: Booking) => {
     try {
-      await store.actions.save();
+      await store.actions.save(nextBooking);
       // A booking can hold multiple items, so refetch the whole inventory
       // to keep availability / bookedBy in sync across all of them.
       await refreshEquipment();
@@ -109,6 +107,25 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
       toast({ title: "Failed to save booking", description: getErrorMessage(error, "The booking could not be saved."), variant: "error" });
     }
   }, [store.actions, refreshEquipment, toast]);
+
+  const collection = useBookingCollection({
+    booking: store.state.draft,
+    onDraftChange: store.actions.replaceDraft,
+    onCollectionComplete: persistBooking,
+    onItemCollected: (item) => {
+      toast({ title: "Item collected", description: item.equipmentName, variant: "success" });
+    },
+    onItemAlreadyCollected: (item) => {
+      toast({ title: "Already collected", description: `${item.equipmentName} was already scanned.`, variant: "error" });
+    },
+    onUnknownCode: () => {
+      toast({ title: "Item not in booking", description: "That QR code does not match any equipment in this booking.", variant: "error" });
+    },
+  });
+
+  const handleSave = useCallback(async () => {
+    await persistBooking();
+  }, [persistBooking]);
 
   async function handleBlockerSave() {
     try {
@@ -181,6 +198,9 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
   return (
     <section className="mx-auto max-w-content-md">
       <TopBarActions>
+        <Button variant="secondary" icon={<ScanLine />} onClick={collection.actions.openScanner} disabled={!collection.state.canScan}>
+          {collection.state.isComplete ? "All collected" : "Scan"}
+        </Button>
         {store.state.isDirty ? (
           <>
             <Button variant="ghost" icon={<Undo2 />} onClick={store.actions.discard}>Discard</Button>
@@ -210,25 +230,7 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
       {/* Properties */}
       <div className="p-4 space-y-3">
         <MetaRow icon={<Loader />} label="Status">
-          <Dropdown placement="bottom">
-            <Dropdown.Trigger>
-              <Badge
-                label={bookingStatusLabel[draft.status]}
-                color={bookingStatusColor[draft.status]}
-                className="cursor-pointer"
-              />
-            </Dropdown.Trigger>
-            <Dropdown.Panel>
-              {allStatuses.map((s) => (
-                <Dropdown.Item key={s} onSelect={() => handleSelectStatus(s)}>
-                  <span className="size-4 shrink-0 flex items-center justify-center">
-                    {s === draft.status && <Check className="size-3.5 text-brand_secondary" />}
-                  </span>
-                  {bookingStatusLabel[s]}
-                </Dropdown.Item>
-              ))}
-            </Dropdown.Panel>
-          </Dropdown>
+          <BookingStatusDropdown status={draft.status} onSelectStatus={handleSelectStatus} />
         </MetaRow>
 
         <MetaRow icon={<User />} label="Booked By">
@@ -278,29 +280,17 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
       />
 
       {/* Delete confirmation modal */}
-      <Modal open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-        <Modal.Portal>
-          <Modal.Backdrop />
-          <Modal.Positioner>
-            <Modal.Panel>
-              <Modal.Header>
-                <Title.h6>Delete Booking</Title.h6>
-              </Modal.Header>
-              <Modal.Content className="p-4">
-                <Paragraph.sm className="text-secondary">
-                  Are you sure you want to delete this booking? This action cannot be undone.
-                </Paragraph.sm>
-              </Modal.Content>
-              <Modal.Footer className="justify-end">
-                <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-                <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
-                  {isDeleting ? "Deleting..." : "Delete Booking"}
-                </Button>
-              </Modal.Footer>
-            </Modal.Panel>
-          </Modal.Positioner>
-        </Modal.Portal>
-      </Modal>
+      <BookingDeleteModal open={showDeleteModal} isDeleting={isDeleting} onConfirm={handleDelete} onOpenChange={setShowDeleteModal} />
+      <BookingScanModal
+        open={collection.state.isOpen}
+        isStarting={collection.state.isStarting}
+        isSupported={collection.state.isSupported}
+        error={collection.state.error}
+        collectedCount={collection.state.collectedCount}
+        totalCount={collection.state.totalCount}
+        onClose={collection.actions.closeScanner}
+        videoRef={collection.meta.videoRef}
+      />
     </section>
   );
 }

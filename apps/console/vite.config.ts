@@ -8,12 +8,52 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { proxyZoomApiRequest } from './server/zoom-api'
 import { exchangeZoomCode, refreshZoomToken, resolveZoomOAuthConfig, revokeZoomAccessToken } from './server/zoom-oauth'
 
-const aliasEntries = {
-  '@': fileURLToPath(new URL('./src', import.meta.url)),
-  '@features': fileURLToPath(new URL('./src/features', import.meta.url)),
-  '@hooks': fileURLToPath(new URL('./src/hooks', import.meta.url)),
-  '@screens': fileURLToPath(new URL('./src/screens', import.meta.url)),
-}
+const aliasEntries = [
+  {
+    find: '@moc/ui/styles.css',
+    replacement: fileURLToPath(new URL('../../packages/ui/src/index.css', import.meta.url)),
+  },
+  {
+    find: '@moc/ui/components/timeline',
+    replacement: fileURLToPath(new URL('../../packages/ui/src/components/display/timeline/index.ts', import.meta.url)),
+  },
+  {
+    find: '@moc/ui',
+    replacement: fileURLToPath(new URL('../../packages/ui/src', import.meta.url)),
+  },
+  {
+    find: '@moc/data',
+    replacement: fileURLToPath(new URL('../../packages/data/src', import.meta.url)),
+  },
+  {
+    find: '@moc/types',
+    replacement: fileURLToPath(new URL('../../packages/types/src', import.meta.url)),
+  },
+  {
+    find: '@moc/utils',
+    replacement: fileURLToPath(new URL('../../packages/utils/src', import.meta.url)),
+  },
+  {
+    find: '@moc/player',
+    replacement: fileURLToPath(new URL('../../packages/player/src', import.meta.url)),
+  },
+  {
+    find: '@features',
+    replacement: fileURLToPath(new URL('./src/features', import.meta.url)),
+  },
+  {
+    find: '@hooks',
+    replacement: fileURLToPath(new URL('./src/hooks', import.meta.url)),
+  },
+  {
+    find: '@screens',
+    replacement: fileURLToPath(new URL('./src/screens', import.meta.url)),
+  },
+  {
+    find: '@',
+    replacement: fileURLToPath(new URL('./src', import.meta.url)),
+  },
+]
 
 type JsonBody = Record<string, unknown>
 
