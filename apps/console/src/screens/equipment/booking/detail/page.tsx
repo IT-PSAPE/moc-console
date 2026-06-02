@@ -96,9 +96,9 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [store.state.isDirty]);
 
-  const persistBooking = useCallback(async (nextBooking?: Booking) => {
+  const persistBooking = useCallback(async () => {
     try {
-      await store.actions.save(nextBooking);
+      await store.actions.save();
       // A booking can hold multiple items, so refetch the whole inventory
       // to keep availability / bookedBy in sync across all of them.
       await refreshEquipment();
@@ -110,8 +110,6 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
 
   const collection = useBookingCollection({
     booking: store.state.draft,
-    onDraftChange: store.actions.replaceDraft,
-    onCollectionComplete: persistBooking,
     onItemCollected: (item) => {
       toast({ title: "Item collected", description: item.equipmentName, variant: "success" });
     },
@@ -164,7 +162,14 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
   }, [booking.id, navigate, refreshEquipment, removeBooking, toast]);
 
   function handleSelectStatus(status: BookingStatus) {
+    const previousStatus = store.state.draft.status;
     store.actions.updateField("status", status);
+    // Setting the booking to checked_out is the act of collection, so stamp the
+    // actual handover moment onto checked_out_at — mirrors how returned fills
+    // returnedDate. Guarded on the transition so re-saving doesn't move it.
+    if (status === "checked_out" && previousStatus !== "checked_out") {
+      store.actions.updateField("checkedOutDate", new Date().toISOString());
+    }
     if (status === "returned" && !store.state.draft.returnedDate) {
       store.actions.updateField("returnedDate", new Date().toISOString());
     }
@@ -199,7 +204,7 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
     <section className="mx-auto max-w-content-md">
       <TopBarActions>
         <Button variant="secondary" icon={<ScanLine />} onClick={collection.actions.openScanner} disabled={!collection.state.canScan}>
-          {collection.state.isComplete ? "All collected" : "Scan"}
+          {collection.state.isComplete ? "All scanned" : "Scan"}
         </Button>
         {store.state.isDirty ? (
           <>
@@ -268,7 +273,7 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
 
       {/* Items */}
       <Divider className="px-4 my-2" />
-      <BookingItemsSection items={draft.items} />
+      <BookingItemsSection items={draft.items} scannedItemIds={collection.state.scannedItemIds} />
 
       {/* Navigation guard modal */}
       <UnsavedChangesModal
@@ -286,7 +291,7 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
         isStarting={collection.state.isStarting}
         isSupported={collection.state.isSupported}
         error={collection.state.error}
-        collectedCount={collection.state.collectedCount}
+        scannedCount={collection.state.scannedCount}
         totalCount={collection.state.totalCount}
         onClose={collection.actions.closeScanner}
         videoRef={collection.meta.videoRef}

@@ -2,13 +2,22 @@ import { Badge } from "@moc/ui/components/display/badge";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { equipmentCategoryLabel } from "@moc/types/equipment";
 import type { BookingItem } from "@moc/types/equipment";
-import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
 import { ChevronRight, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 // Shared between the booking drawer and the booking detail page so the
-// equipment-item list renders identically in both places.
-export function BookingItemsSection({ items, onNavigate }: { items: BookingItem[]; onNavigate?: () => void }) {
+// equipment-item list renders identically in both places. `scannedItemIds`
+// reflects transient, per-session scan progress and is only supplied where a
+// scan flow is active; the "Scanned" tick is not persisted state.
+export function BookingItemsSection({
+  items,
+  scannedItemIds,
+  onNavigate,
+}: {
+  items: BookingItem[];
+  scannedItemIds?: ReadonlySet<string>;
+  onNavigate?: () => void;
+}) {
   return (
     <section className="mt-6 px-4">
       <Label.xs className="uppercase tracking-wide text-quaternary">
@@ -21,22 +30,20 @@ export function BookingItemsSection({ items, onNavigate }: { items: BookingItem[
           </Paragraph.sm>
         )}
         {items.map((item) => (
-          <BookingItemRow key={item.id} item={item} onNavigate={onNavigate} />
+          <BookingItemRow
+            key={item.id}
+            item={item}
+            isScanned={scannedItemIds?.has(item.id) ?? false}
+            onNavigate={onNavigate}
+          />
         ))}
       </div>
     </section>
   );
 }
 
-function BookingItemRow({ item, onNavigate }: { item: BookingItem; onNavigate?: () => void }) {
+function BookingItemRow({ item, isScanned, onNavigate }: { item: BookingItem; isScanned: boolean; onNavigate?: () => void }) {
   const navigate = useNavigate();
-  const collectedLabel = item.collectedAt
-    ? formatUtcIsoInBrowserTimeZone(item.collectedAt, {
-      dateStyle: "medium",
-      timeStyle: "short",
-      fallback: "Collected",
-    })
-    : null;
 
   function handleClick() {
     onNavigate?.();
@@ -61,13 +68,8 @@ function BookingItemRow({ item, onNavigate }: { item: BookingItem; onNavigate?: 
         <Paragraph.xs className="text-tertiary">
           {equipmentCategoryLabel[item.equipmentCategory]}
         </Paragraph.xs>
-        {collectedLabel ? (
-          <Paragraph.xs className="mt-0.5 text-tertiary">
-            Collected {collectedLabel}
-          </Paragraph.xs>
-        ) : null}
       </div>
-      {item.collectedAt ? <Badge color="green" label="Collected" /> : null}
+      {isScanned ? <Badge color="green" label="Scanned" /> : null}
       <ChevronRight className="size-4 text-quaternary" />
     </button>
   );

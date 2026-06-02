@@ -10,7 +10,7 @@ type BookingScanModalProps = {
   isStarting: boolean;
   isSupported: boolean;
   error: string | null;
-  collectedCount: number;
+  scannedCount: number;
   totalCount: number;
   onClose: () => void;
   videoRef: RefObject<HTMLVideoElement | null>;
@@ -21,7 +21,7 @@ export function BookingScanModal({
   isStarting,
   isSupported,
   error,
-  collectedCount,
+  scannedCount,
   totalCount,
   onClose,
   videoRef,
@@ -42,14 +42,14 @@ export function BookingScanModal({
               <div>
                 <Title.h6>Scan Booking Items</Title.h6>
                 <Paragraph.sm className="mt-1 text-tertiary">
-                  Scan each equipment QR code to mark it as collected.
+                  Scan each item to tick it off as you gather it.
                 </Paragraph.sm>
               </div>
             </Modal.Header>
 
             <Modal.Content className="flex-col gap-4 p-4">
               <div className="rounded-lg border border-secondary bg-secondary/40 p-3">
-                <Label.sm>{collectedCount} of {totalCount} collected</Label.sm>
+                <Label.sm>{scannedCount} of {totalCount} scanned</Label.sm>
               </div>
 
               {isSupported ? (

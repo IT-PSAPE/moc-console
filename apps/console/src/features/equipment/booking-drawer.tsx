@@ -94,9 +94,9 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
     navigate(`/equipment/bookings/${booking.id}`);
   }
 
-  const persistBooking = useCallback(async (nextBooking?: Booking) => {
+  const persistBooking = useCallback(async () => {
     try {
-      await store.actions.save(nextBooking);
+      await store.actions.save();
       // A booking can hold multiple items, so a per-equipment-id sync
       // can't refresh them all in one call. Refetch the whole inventory.
       await refreshEquipment();
@@ -108,8 +108,6 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
 
   const collection = useBookingCollection({
     booking: store.state.draft,
-    onDraftChange: store.actions.replaceDraft,
-    onCollectionComplete: persistBooking,
     onItemCollected: (item) => {
       toast({ title: "Item collected", description: item.equipmentName, variant: "success" });
     },
@@ -164,7 +162,14 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
   }, [booking.id, closeDrawer, refreshEquipment, removeBooking, toast]);
 
   function handleSelectStatus(status: BookingStatus) {
+    const previousStatus = store.state.draft.status;
     store.actions.updateField("status", status);
+    // Setting the booking to checked_out is the act of collection, so stamp the
+    // actual handover moment onto checked_out_at — mirrors how returned fills
+    // returnedDate. Guarded on the transition so re-saving doesn't move it.
+    if (status === "checked_out" && previousStatus !== "checked_out") {
+      store.actions.updateField("checkedOutDate", new Date().toISOString());
+    }
     if (status === "returned" && !store.state.draft.returnedDate) {
       store.actions.updateField("returnedDate", new Date().toISOString());
     }
@@ -218,7 +223,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         <div className="flex-1" />
         <Button.Icon
           variant="secondary"
-          aria-label={collection.state.isComplete ? "All items collected" : "Scan booking items"}
+          aria-label={collection.state.isComplete ? "All items scanned" : "Scan booking items"}
           disabled={!collection.state.canScan}
           icon={<ScanLine />}
           onClick={collection.actions.openScanner}
@@ -307,7 +312,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         </div>
 
         {/* Items */}
-        <BookingItemsSection items={draft.items} onNavigate={closeDrawer} />
+        <BookingItemsSection items={draft.items} scannedItemIds={collection.state.scannedItemIds} onNavigate={closeDrawer} />
       </Drawer.Content>
 
       {store.state.isDirty && (
@@ -333,7 +338,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         isStarting={collection.state.isStarting}
         isSupported={collection.state.isSupported}
         error={collection.state.error}
-        collectedCount={collection.state.collectedCount}
+        scannedCount={collection.state.scannedCount}
         totalCount={collection.state.totalCount}
         onClose={collection.actions.closeScanner}
         videoRef={collection.meta.videoRef}

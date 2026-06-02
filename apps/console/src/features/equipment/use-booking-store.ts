@@ -14,7 +14,6 @@ type BookingStoreState = {
 
 type Action =
   | { type: "UPDATE_FIELD"; field: keyof Booking; value: Booking[keyof Booking] }
-  | { type: "REPLACE_DRAFT"; booking: Booking }
   | { type: "SAVE_START" }
   | { type: "SAVE_SUCCESS"; booking: Booking }
   | { type: "SAVE_ERROR"; error: string }
@@ -25,8 +24,6 @@ function reducer(state: BookingStoreState, action: Action): BookingStoreState {
   switch (action.type) {
     case "UPDATE_FIELD":
       return { ...state, draft: { ...state.draft, [action.field]: action.value } };
-    case "REPLACE_DRAFT":
-      return { ...state, draft: action.booking };
     case "SAVE_START":
       return { ...state, isSaving: true, error: null };
     case "SAVE_SUCCESS":
@@ -69,17 +66,10 @@ export function useBookingStore(initialBooking: Booking, options?: UseBookingSto
     dispatch({ type: "UPDATE_FIELD", field, value });
   }, []);
 
-  const replaceDraft = useCallback((booking: Booking) => {
-    dispatch({ type: "REPLACE_DRAFT", booking });
-  }, []);
-
-  const save = useCallback(async (draftOverride?: Booking) => {
+  const save = useCallback(async () => {
     const previous = state.original;
-    const next = draftOverride ?? state.draft;
+    const next = state.draft;
 
-    if (draftOverride) {
-      dispatch({ type: "REPLACE_DRAFT", booking: draftOverride });
-    }
     dispatch({ type: "SAVE_START" });
     options?.syncBooking?.(next);
 
@@ -114,7 +104,6 @@ export function useBookingStore(initialBooking: Booking, options?: UseBookingSto
     },
     actions: {
       updateField,
-      replaceDraft,
       save,
       discard,
       reset,

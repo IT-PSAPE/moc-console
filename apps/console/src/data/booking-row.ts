@@ -14,7 +14,6 @@ export const BOOKING_SELECT = `
   items:booking_items(
     id,
     equipment_id,
-    collected_at,
     equipment:equipment_id(id, name, category, thumbnail_url)
   )
 `;
@@ -22,7 +21,6 @@ export const BOOKING_SELECT = `
 export type BookingItemRow = {
   id: string;
   equipment_id: string;
-  collected_at: string | null;
   equipment:
     | {
         id: string;
@@ -69,7 +67,6 @@ function mapBookingItem(item: BookingItemRow): BookingItem {
     equipmentName: item.equipment?.name ?? "Unknown equipment",
     equipmentCategory: item.equipment?.category ?? ("other" as BookingItem["equipmentCategory"]),
     equipmentThumbnail: item.equipment?.thumbnail_url ?? null,
-    collectedAt: item.collected_at,
   };
 }
 

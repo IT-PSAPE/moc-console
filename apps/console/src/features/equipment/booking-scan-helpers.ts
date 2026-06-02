@@ -1,9 +1,17 @@
-import type { Booking, BookingItem } from "@moc/types/equipment";
+import type { BookingItem } from "@moc/types/equipment";
+import { parseEquipmentQrPayload } from "./equipment-qr";
 
 function normalizeScannedValue(rawValue: string) {
   const trimmedValue = rawValue.trim();
   if (!trimmedValue) {
     return "";
+  }
+
+  // Structured equipment QR (JSON) — the canonical format produced by the
+  // per-equipment generator. Resolve straight to its equipment id.
+  const payload = parseEquipmentQrPayload(trimmedValue);
+  if (payload) {
+    return payload.id;
   }
 
   try {
@@ -16,14 +24,6 @@ function normalizeScannedValue(rawValue: string) {
   }
 }
 
-export function countCollectedBookingItems(items: BookingItem[]) {
-  return items.filter((item) => item.collectedAt).length;
-}
-
-export function areAllBookingItemsCollected(items: BookingItem[]) {
-  return items.length > 0 && countCollectedBookingItems(items) === items.length;
-}
-
 export function findBookingItemFromScan(items: BookingItem[], rawValue: string) {
   const normalizedValue = normalizeScannedValue(rawValue);
   if (!normalizedValue) {
@@ -33,21 +33,9 @@ export function findBookingItemFromScan(items: BookingItem[], rawValue: string) 
   return items.find((item) => item.equipmentId === normalizedValue || item.id === normalizedValue) ?? null;
 }
 
-export function buildCollectedBookingDraft(booking: Booking, itemId: string, collectedAt: string) {
-  const nextItems = booking.items.map((item) => {
-    if (item.id !== itemId || item.collectedAt) {
-      return item;
-    }
-
-    return {
-      ...item,
-      collectedAt,
-    };
-  });
-
-  return {
-    ...booking,
-    items: nextItems,
-    status: areAllBookingItemsCollected(nextItems) && booking.status === "booked" ? "checked_out" : booking.status,
-  };
+// Scan progress is transient (a Set of item ids in component state); collection
+// itself is a booking-level concern. "All scanned" just means every item in the
+// booking has been ticked off this session.
+export function areAllItemsScanned(items: BookingItem[], scannedItemIds: ReadonlySet<string>) {
+  return items.length > 0 && items.every((item) => scannedItemIds.has(item.id));
 }
