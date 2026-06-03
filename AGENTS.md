@@ -18,6 +18,13 @@ This file is the non-negotiable source of truth for how AI agents create, modify
 - Follow existing patterns before introducing new ones.
 - Do not add new libraries without strong justification and explicit approval.
 
+## Git and version control (strict)
+
+- Never create a branch without explicit permission from the user for that specific action.
+- Never push to any remote without explicit permission from the user for that specific action.
+- Permission is per-action and does not carry over. Approval given earlier in a thread, conversation, or session does not authorize a later branch creation or push — ask again every time.
+- Committing locally, creating PRs, and other git operations still follow the user's instruction for the current task; when in doubt, ask before doing anything that changes branches or touches a remote.
+
 ## Before adding UI or logic
 
 You must do all of the following before creating any new component, hook, or utility:
