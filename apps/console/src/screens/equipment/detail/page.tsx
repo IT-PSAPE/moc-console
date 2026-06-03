@@ -10,6 +10,7 @@ import { DeleteEquipmentModal } from "@/features/equipment/delete-equipment-moda
 import { EquipmentPropertiesSection } from "@/features/equipment/equipment-properties-section";
 import { EquipmentNotesSection } from "@/features/equipment/equipment-notes-section";
 import { BookingHistorySection } from "@/features/equipment/booking-history-section";
+import { EquipmentQrSection } from "@/features/equipment/equipment-qr-section";
 import { useEquipmentStore } from "@/features/equipment/use-equipment-store";
 import { useEquipment } from "@/features/equipment/equipment-provider";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
@@ -233,6 +234,12 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
           bookings={bookings}
           isLoading={isLoadingBookings}
         />
+      </div>
+
+      {/* QR Code */}
+      <Divider className="px-4 my-2" />
+      <div className="py-4">
+        <EquipmentQrSection equipment={draft} />
       </div>
 
       {/* Navigation guard modal */}

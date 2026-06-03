@@ -230,7 +230,6 @@ CREATE TABLE IF NOT EXISTS public.booking_items (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   booking_id   uuid NOT NULL REFERENCES public.bookings(id)  ON DELETE CASCADE,
   equipment_id uuid NOT NULL REFERENCES public.equipment(id) ON DELETE CASCADE,
-  collected_at timestamptz NULL,
   UNIQUE (booking_id, equipment_id)
 );
 

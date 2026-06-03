@@ -1,17 +1,10 @@
 import type { Booking, BookingItem } from "@moc/types/equipment";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQrScanner } from "@/hooks/use-qr-scanner";
-import {
-  areAllBookingItemsCollected,
-  buildCollectedBookingDraft,
-  countCollectedBookingItems,
-  findBookingItemFromScan,
-} from "./booking-scan-helpers";
+import { areAllItemsScanned, findBookingItemFromScan } from "./booking-scan-helpers";
 
 type UseBookingCollectionOptions = {
   booking: Booking;
-  onDraftChange: (booking: Booking) => void;
-  onCollectionComplete: (booking: Booking) => Promise<void>;
   onItemCollected: (item: BookingItem) => void;
   onItemAlreadyCollected: (item: BookingItem) => void;
   onUnknownCode: (rawValue: string) => void;
@@ -19,20 +12,32 @@ type UseBookingCollectionOptions = {
 
 export function useBookingCollection({
   booking,
-  onDraftChange,
-  onCollectionComplete,
   onItemCollected,
   onItemAlreadyCollected,
   onUnknownCode,
 }: UseBookingCollectionOptions) {
+  // Per-session scan progress only — never persisted. The booking is marked
+  // collected explicitly via its status (see handleSelectStatus in the screens),
+  // not by scanning. These ticks just help confirm every item was gathered.
+  const [scannedItemIds, setScannedItemIds] = useState<ReadonlySet<string>>(() => new Set());
   const bookingRef = useRef(booking);
+  const scannedItemIdsRef = useRef(scannedItemIds);
   const closeScannerRef = useRef<() => void>(() => undefined);
 
   useEffect(() => {
     bookingRef.current = booking;
   }, [booking]);
 
-  const handleDetected = useCallback(async (rawValue: string) => {
+  useEffect(() => {
+    scannedItemIdsRef.current = scannedItemIds;
+  }, [scannedItemIds]);
+
+  // Drop scan progress when the hook is pointed at a different booking.
+  useEffect(() => {
+    setScannedItemIds(new Set());
+  }, [booking.id]);
+
+  const handleDetected = useCallback((rawValue: string) => {
     const currentBooking = bookingRef.current;
     const matchedItem = findBookingItemFromScan(currentBooking.items, rawValue);
 
@@ -41,27 +46,21 @@ export function useBookingCollection({
       return;
     }
 
-    if (matchedItem.collectedAt) {
+    if (scannedItemIdsRef.current.has(matchedItem.id)) {
       onItemAlreadyCollected(matchedItem);
       return;
     }
 
-    const collectedAt = new Date().toISOString();
-    const nextBooking = buildCollectedBookingDraft(currentBooking, matchedItem.id, collectedAt);
-    const updatedItem = nextBooking.items.find((item) => item.id === matchedItem.id);
+    const nextScanned = new Set(scannedItemIdsRef.current);
+    nextScanned.add(matchedItem.id);
+    scannedItemIdsRef.current = nextScanned;
+    setScannedItemIds(nextScanned);
+    onItemCollected(matchedItem);
 
-    bookingRef.current = nextBooking;
-    onDraftChange(nextBooking);
-
-    if (updatedItem) {
-      onItemCollected(updatedItem);
-    }
-
-    if (areAllBookingItemsCollected(nextBooking.items)) {
+    if (areAllItemsScanned(currentBooking.items, nextScanned)) {
       closeScannerRef.current();
-      await onCollectionComplete(nextBooking);
     }
-  }, [onCollectionComplete, onDraftChange, onItemAlreadyCollected, onItemCollected, onUnknownCode]);
+  }, [onItemAlreadyCollected, onItemCollected, onUnknownCode]);
 
   const scanner = useQrScanner({ onDetected: handleDetected });
   const closeScanner = scanner.actions.closeScanner;
@@ -73,9 +72,12 @@ export function useBookingCollection({
     closeScannerRef.current = closeScanner;
   }, [closeScanner]);
 
-  const collectedCount = useMemo(() => countCollectedBookingItems(booking.items), [booking.items]);
+  const scannedCount = useMemo(
+    () => booking.items.filter((item) => scannedItemIds.has(item.id)).length,
+    [booking.items, scannedItemIds],
+  );
   const totalCount = booking.items.length;
-  const isComplete = useMemo(() => areAllBookingItemsCollected(booking.items), [booking.items]);
+  const isComplete = useMemo(() => areAllItemsScanned(booking.items, scannedItemIds), [booking.items, scannedItemIds]);
   const canScan = totalCount > 0 && !isComplete;
 
   const openScanner = useCallback(() => {
@@ -88,9 +90,10 @@ export function useBookingCollection({
   return {
     state: {
       canScan,
-      collectedCount,
+      scannedCount,
       isComplete,
       totalCount,
+      scannedItemIds,
       ...scannerState,
     },
     actions: {

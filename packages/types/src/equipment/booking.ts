@@ -8,7 +8,6 @@ export type BookingItem = {
   equipmentName: string;
   equipmentCategory: EquipmentCategory;
   equipmentThumbnail: string | null;
-  collectedAt: string | null;
 };
 
 export type Booking = {
