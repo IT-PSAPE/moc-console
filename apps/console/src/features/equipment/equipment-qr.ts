@@ -2,18 +2,16 @@ import type { Equipment } from "@moc/types/equipment";
 
 // Canonical shape encoded into an equipment QR code. Kept here as the single
 // source of truth so the generator and the booking scanner can't drift.
+//
+// Deliberately minimal: the scanner only needs `id`, so we drop the redundant
+// deep-link `url` (it just repeated the id). A shorter payload encodes to a
+// lower-version QR with larger modules, so a label printed small still scans
+// reliably.
 export type EquipmentQrPayload = {
   id: string;
   name: string;
   serialNumber: string;
-  url: string;
 };
-
-// Console deep link for the item. APP_BASE_URL is not exposed to the browser by
-// Vite, so we build from the current origin like the rest of the app does.
-export function buildEquipmentQrUrl(id: string): string {
-  return `${window.location.origin}/equipment/${id}`;
-}
 
 export function buildEquipmentQrPayload(
   equipment: Pick<Equipment, "id" | "name" | "serialNumber">,
@@ -22,7 +20,6 @@ export function buildEquipmentQrPayload(
     id: equipment.id,
     name: equipment.name,
     serialNumber: equipment.serialNumber,
-    url: buildEquipmentQrUrl(equipment.id),
   };
   return JSON.stringify(payload);
 }
