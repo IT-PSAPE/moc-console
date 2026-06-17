@@ -29,7 +29,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useState, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   RequestMetaFields,
@@ -39,6 +39,7 @@ import {
   RequestAssigneeList,
 } from "./request-properties";
 import { getErrorMessage } from "@moc/utils/get-error-message";
+import { RequestShareActions } from "./request-share-actions";
 
 export type RequestDrawerProps = {
   request: Request;
@@ -74,6 +75,7 @@ function RequestDrawerContent({
   isDirtyRef,
   requestCloseRef,
 }: RequestDrawerProps) {
+  const shareTargetRef = useRef<HTMLDivElement | null>(null);
   const { state: drawerState, actions: drawerActions } = useDrawer();
   const navigate = useNavigate();
   const { toast } = useFeedback();
@@ -209,6 +211,14 @@ function RequestDrawerContent({
     setShowUnsavedModal(false);
   }
 
+  function handleDeleteModalOpen() {
+    setShowDeleteModal(true);
+  }
+
+  function handleDeleteModalClose() {
+    setShowDeleteModal(false);
+  }
+
   async function handleArchiveToggle() {
     try {
       const updatedAt = new Date().toISOString();
@@ -259,85 +269,91 @@ function RequestDrawerContent({
   return (
     <>
       {/* Toolbar */}
-      <Drawer.Header className="flex items-center gap-1">
-        <Button.Icon variant="ghost" icon={<X />} onClick={handleClose} />
-        <Button.Icon
-          variant="ghost"
-          icon={<Maximize2 />}
-          onClick={handleOpenFullPage}
-        />
-        <div className="flex-1" />
-        <Dropdown placement="bottom">
-          <Dropdown.Trigger>
-            <Button.Icon variant="ghost" icon={<EllipsisVertical />} />
-          </Dropdown.Trigger>
-          <Dropdown.Panel>
-            <Dropdown.Item onSelect={handleArchiveToggle}>
-              {request.status === "archived" ? (
-                <>
-                  <ArchiveRestore className="size-4" />
-                  Unarchive
-                </>
-              ) : (
-                <>
-                  <Archive className="size-4" />
-                  Archive
-                </>
+      <RequestShareActions.Root request={store.state.draft} targetRef={shareTargetRef}>
+        <Drawer.Header className="flex items-center gap-1">
+          <Button.Icon variant="ghost" icon={<X />} onClick={handleClose} />
+          <Button.Icon
+            variant="ghost"
+            icon={<Maximize2 />}
+            onClick={handleOpenFullPage}
+          />
+          <div className="flex-1" />
+          <RequestShareActions.LinkButton />
+          <RequestShareActions.ScreenshotButton />
+          <Dropdown placement="bottom">
+            <Dropdown.Trigger>
+              <Button.Icon variant="ghost" icon={<EllipsisVertical />} />
+            </Dropdown.Trigger>
+            <Dropdown.Panel>
+              <Dropdown.Item onSelect={handleArchiveToggle}>
+                {request.status === "archived" ? (
+                  <>
+                    <ArchiveRestore className="size-4" />
+                    Unarchive
+                  </>
+                ) : (
+                  <>
+                    <Archive className="size-4" />
+                    Archive
+                  </>
               )}
-            </Dropdown.Item>
-            <Dropdown.Separator />
-            <Dropdown.Item onSelect={() => setShowDeleteModal(true)}>
-              <Trash2 className="size-4 text-utility-red-600" />
-              <span className="text-utility-red-600">Delete</span>
-            </Dropdown.Item>
-          </Dropdown.Panel>
-        </Dropdown>
-      </Drawer.Header>
+              </Dropdown.Item>
+              <Dropdown.Separator />
+              <Dropdown.Item onSelect={handleDeleteModalOpen}>
+                <Trash2 className="size-4 text-utility-red-600" />
+                <span className="text-utility-red-600">Delete</span>
+              </Dropdown.Item>
+            </Dropdown.Panel>
+          </Dropdown>
+        </Drawer.Header>
 
-      <Drawer.Content className="py-4">
-        <div className="px-4 pb-4">
-          <Title.h6>{store.state.draft.title}</Title.h6>
-        </div>
+        <Drawer.Content className="py-4">
+          <div ref={shareTargetRef}>
+            <div className="px-4 pb-4">
+              <Title.h6>{store.state.draft.title}</Title.h6>
+            </div>
 
-        <div className="px-4">
-          <RequestMetaFields
-            request={store.state.draft}
-            editable
-            onFieldChange={store.actions.updateField}
-          />
-        </div>
+            <div className="px-4">
+              <RequestMetaFields
+                request={store.state.draft}
+                editable
+                onFieldChange={store.actions.updateField}
+              />
+            </div>
 
-        <>
-          <Divider className="px-4 py-6" />
-          <RequestFiveW request={store.state.draft} className="px-4" />
-        </>
+            <>
+              <Divider className="px-4 py-6" />
+              <RequestFiveW request={store.state.draft} className="px-4" />
+            </>
 
-        {store.state.draft.notes && (
-          <>
+            {store.state.draft.notes && (
+              <>
+                <Divider className="px-4 py-6" />
+                <RequestNotes request={store.state.draft} className="px-4" />
+              </>
+            )}
+
+            {store.state.draft.flow && (
+              <>
+                <Divider className="px-4 py-6" />
+                <RequestFlow request={store.state.draft} className="px-4" />
+              </>
+            )}
+
             <Divider className="px-4 py-6" />
-            <RequestNotes request={store.state.draft} className="px-4" />
-          </>
-        )}
-
-        {store.state.draft.flow && (
-          <>
-            <Divider className="px-4 py-6" />
-            <RequestFlow request={store.state.draft} className="px-4" />
-          </>
-        )}
-
-        <Divider className="px-4 py-6" />
-        {isLoadingAssignees ? (
-          <LoadingSpinner className="py-6" />
-        ) : (
-          <RequestAssigneeList
-            assignees={assignees}
-            onAddMember={handleAddMember}
-            onRemoveMember={handleRemoveMember}
-            className="px-4"
-          />
-        )}
-      </Drawer.Content>
+            {isLoadingAssignees ? (
+              <LoadingSpinner className="py-6" />
+            ) : (
+              <RequestAssigneeList
+                assignees={assignees}
+                onAddMember={handleAddMember}
+                onRemoveMember={handleRemoveMember}
+                className="px-4"
+              />
+            )}
+          </div>
+        </Drawer.Content>
+      </RequestShareActions.Root>
 
       {/* Save footer — visible only when dirty */}
       {store.state.isDirty && (
@@ -364,7 +380,7 @@ function RequestDrawerContent({
       <DeleteRequestModal
         open={showDeleteModal}
         onDelete={handleDelete}
-        onCancel={() => setShowDeleteModal(false)}
+        onCancel={handleDeleteModalClose}
         isDeleting={isDeleting}
       />
     </>
