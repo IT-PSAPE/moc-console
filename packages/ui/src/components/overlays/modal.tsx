@@ -1,9 +1,14 @@
+import { Dialog } from '@base-ui/react/dialog'
 import { cn } from '@moc/utils/cn'
-import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type HTMLAttributes, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type ReactNode } from 'react'
 import { useOverlayStack } from './overlay-provider'
-import { OverlayBackdrop, OverlayClose, OverlayContent, OverlayFooter, OverlayHeader, OverlayPortal, OverlayTrigger } from './overlay-primitives'
+import { OverlayContent, OverlayFooter, OverlayHeader } from './overlay-primitives'
 
 // ─── Context ─────────────────────────────────────────────────────────
+//
+// Base UI's Dialog owns focus-trapping, scroll-lock and dismissal. We keep a
+// thin context (controlling Base UI via `open`/`onOpenChange`) so the public
+// `useModal()` contract — { state, actions, meta } — is preserved.
 
 type ModalContextValue = {
     state: {
@@ -18,10 +23,6 @@ type ModalContextValue = {
     }
     meta: {
         closeOnBackdropClick: boolean
-        descriptionId?: string
-        setDescriptionId: (id?: string) => void
-        setTitleId: (id?: string) => void
-        titleId?: string
     }
 }
 
@@ -49,136 +50,93 @@ type ModalRootProps = {
 }
 
 function ModalRoot({ children, closeOnBackdropClick = true, closeOnEscape = true, defaultOpen = false, onOpenChange, open }: ModalRootProps) {
-    const modalId = useId()
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
-    const [titleId, setTitleId] = useState<string | undefined>(undefined)
-    const [descriptionId, setDescriptionId] = useState<string | undefined>(undefined)
-    const { state: overlayState, actions: overlayActions, meta: overlayMeta } = useOverlayStack()
-
     const isOpen = isControlled ? open : uncontrolledOpen
-    const stackIndex = overlayState.stack.indexOf(modalId)
-    const isTopmost = stackIndex === overlayState.stack.length - 1 && stackIndex >= 0
-    const zIndex = overlayMeta.baseZIndex + Math.max(stackIndex, 0) * 10
 
-    const setOpenState = useCallback((nextOpen: boolean) => {
+    const setOpen = useCallback((nextOpen: boolean) => {
         if (!isControlled) {
             setUncontrolledOpen(nextOpen)
         }
-
         onOpenChange?.(nextOpen)
     }, [isControlled, onOpenChange])
 
-    const openModal = useCallback(() => {
-        setOpenState(true)
-    }, [setOpenState])
-
-    const closeModal = useCallback(() => {
-        setOpenState(false)
-    }, [setOpenState])
-
-    const assignTitleId = useCallback((id?: string) => {
-        setTitleId(id)
-    }, [])
-
-    const assignDescriptionId = useCallback((id?: string) => {
-        setDescriptionId(id)
-    }, [])
-
-    useEffect(() => {
-        if (!isOpen) {
-            return undefined
-        }
-
-        overlayActions.register(modalId)
-
-        return () => {
-            overlayActions.unregister(modalId)
-        }
-    }, [isOpen, modalId, overlayActions])
-
-    useEffect(() => {
-        if (!isOpen || !isTopmost || !closeOnEscape) {
-            return undefined
-        }
-
-        function handleDocumentKeyDown(event: KeyboardEvent) {
-            if (event.key !== 'Escape') {
-                return
-            }
-
-            event.preventDefault()
-            closeModal()
-        }
-
-        document.addEventListener('keydown', handleDocumentKeyDown)
-
-        return () => {
-            document.removeEventListener('keydown', handleDocumentKeyDown)
-        }
-    }, [closeModal, closeOnEscape, isOpen, isTopmost])
-
     const value = useMemo<ModalContextValue>(() => ({
-        state: {
-            isOpen,
-            isTopmost,
-            zIndex,
-        },
+        state: { isOpen, isTopmost: true, zIndex: 9000 },
         actions: {
-            close: closeModal,
-            open: openModal,
-            setOpen: setOpenState,
+            close: () => setOpen(false),
+            open: () => setOpen(true),
+            setOpen,
         },
-        meta: {
-            closeOnBackdropClick,
-            descriptionId,
-            setDescriptionId: assignDescriptionId,
-            setTitleId: assignTitleId,
-            titleId,
-        },
-    }), [assignDescriptionId, assignTitleId, closeModal, closeOnBackdropClick, descriptionId, isOpen, isTopmost, openModal, setOpenState, titleId, zIndex])
+        meta: { closeOnBackdropClick },
+    }), [closeOnBackdropClick, isOpen, setOpen])
 
     return (
         <ModalContext.Provider value={value}>
-            {children}
+            <Dialog.Root
+                open={isOpen}
+                onOpenChange={(nextOpen, eventDetails) => {
+                    if (!nextOpen) {
+                        if (!closeOnEscape && eventDetails.reason === 'escape-key') return
+                        if (!closeOnBackdropClick && eventDetails.reason === 'outside-press') return
+                    }
+                    setOpen(nextOpen)
+                }}
+            >
+                {children}
+            </Dialog.Root>
         </ModalContext.Provider>
     )
 }
 
 // ─── Trigger ─────────────────────────────────────────────────────────
 
-function ModalTrigger(props: HTMLAttributes<HTMLSpanElement>) {
-    const { actions } = useModal()
-    return <OverlayTrigger onOpen={actions.open} {...props} />
+function ModalTrigger({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
+    return (
+        <Dialog.Trigger nativeButton={false} render={<span />} className={cn('contents', className)} {...props}>
+            {children}
+        </Dialog.Trigger>
+    )
 }
 
 // ─── Close ───────────────────────────────────────────────────────────
 
-function ModalClose(props: HTMLAttributes<HTMLSpanElement>) {
-    const { actions } = useModal()
-    return <OverlayClose onClose={actions.close} {...props} />
+function ModalClose({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
+    return (
+        <Dialog.Close nativeButton={false} render={<span />} className={cn('contents', className)} {...props}>
+            {children}
+        </Dialog.Close>
+    )
 }
 
 // ─── Portal ──────────────────────────────────────────────────────────
 
 function ModalPortal({ children }: { children: ReactNode }) {
-    const { state } = useModal()
-    return <OverlayPortal isOpen={state.isOpen} zIndex={state.zIndex}>{children}</OverlayPortal>
+    const { state: overlayState } = useOverlayStack()
+    return <Dialog.Portal container={overlayState.rootElement ?? undefined}>{children}</Dialog.Portal>
 }
 
 // ─── Backdrop ────────────────────────────────────────────────────────
 
-function ModalBackdrop(props: HTMLAttributes<HTMLDivElement>) {
-    const { actions, meta } = useModal()
-    return <OverlayBackdrop closeOnClick={meta.closeOnBackdropClick} onClose={actions.close} {...props} />
+function ModalBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    return (
+        <Dialog.Backdrop
+            className={cn(
+                'pointer-events-auto fixed inset-0 bg-linear-to-t from-black/30 to-black/3 backdrop-blur-xs',
+                'transition-opacity duration-200 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
+                className,
+            )}
+            {...props}
+        />
+    )
 }
 
 // ─── Positioner ──────────────────────────────────────────────────────
 
 function ModalPositioner({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    // Outer padding is max(0.5rem, env(safe-area-inset-*)) so the panel
-    // keeps its baseline 8px gap on desktop but never overlaps the status
-    // bar or gesture indicator on PWA mobile installs (edge-to-edge mode).
+    // Outer padding is max(0.5rem, env(safe-area-inset-*)) so the panel keeps
+    // its baseline 8px gap on desktop but never overlaps the status bar or
+    // gesture indicator on PWA mobile installs (edge-to-edge mode).
     return (
         <div
             className={cn(
@@ -199,30 +157,19 @@ function ModalPositioner({ children, className, ...props }: HTMLAttributes<HTMLD
 // ─── Panel ───────────────────────────────────────────────────────────
 
 function ModalPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    const panelRef = useRef<HTMLDivElement | null>(null)
-    const { state, meta } = useModal()
-
-    useEffect(() => {
-        if (!state.isOpen || !state.isTopmost) {
-            return
-        }
-
-        panelRef.current?.focus()
-    }, [state.isOpen, state.isTopmost])
-
     return (
-        <div
-            ref={panelRef}
-            aria-describedby={meta.descriptionId}
-            aria-labelledby={meta.titleId}
-            aria-modal="true"
-            className={cn('pointer-events-auto flex w-full max-w-md flex-col rounded-xl border border-secondary bg-primary', className)}
-            role="dialog"
-            tabIndex={-1}
+        <Dialog.Popup
+            className={cn(
+                'pointer-events-auto flex w-full max-w-md flex-col rounded-xl border border-secondary bg-primary',
+                'origin-center transition-[opacity,transform] duration-200',
+                'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+                'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
+                className,
+            )}
             {...props}
         >
             {children}
-        </div>
+        </Dialog.Popup>
     )
 }
 
