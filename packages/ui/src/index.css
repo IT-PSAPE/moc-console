@@ -718,6 +718,13 @@ body,
   isolation: isolate;
 }
 
+/* Base UI requires a positioned <body> so overlay backdrops anchor
+   correctly on iOS Safari 26+. The #root above already establishes the
+   `isolation: isolate` stacking context Base UI popups render above. */
+body {
+  position: relative;
+}
+
 #overlay-root {
   position: fixed;
   inset: 0;
