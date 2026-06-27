@@ -6,6 +6,7 @@ import {
 } from "../../src/data/notification-events.js"
 import {
   renderTemplate,
+  type TemplateScope,
   type TokenValues,
 } from "../../src/data/notification-templates-core.js"
 import { resolveTemplate } from "./templates.js"
@@ -57,6 +58,15 @@ export type RequestArchivedPayload = {
   requestId?: string | null
 }
 
+export type RequestStalePayload = {
+  title: string
+  status?: string | null
+  requesterName?: string | null
+  linkUrl: string
+  requestId?: string | null
+  staleDays?: string | null
+}
+
 export type BookingCreatedPayload = {
   title: string
   status?: string | null
@@ -72,14 +82,25 @@ export type BookingStatusChangedPayload = {
   trackingCode?: string | null
 }
 
+export type BookingStalePayload = {
+  title: string
+  status?: string | null
+  linkUrl: string
+  trackingCode?: string | null
+  staleDays?: string | null
+  staleReason?: string | null
+}
+
 export type EventPayloadMap = {
   "stream.created": StreamCreatedPayload
   "meeting.created": MeetingCreatedPayload
   "request.created": RequestCreatedPayload
   "request.status_changed": RequestStatusChangedPayload
   "request.archived": RequestArchivedPayload
+  "request.stale": RequestStalePayload
   "booking.created": BookingCreatedPayload
   "booking.status_changed": BookingStatusChangedPayload
+  "booking.stale": BookingStalePayload
 }
 
 type RouteRow = {
@@ -137,14 +158,17 @@ async function buildTokens<K extends NotificationEventKey>(
     }
     case "request.created":
     case "request.status_changed":
-    case "request.archived": {
+    case "request.archived":
+    case "request.stale": {
       const p = payload as RequestCreatedPayload &
         RequestStatusChangedPayload &
-        RequestArchivedPayload
+        RequestArchivedPayload &
+        RequestStalePayload
       const base: TokenValues = {
         title: p.title,
         status: p.status,
         requesterName: p.requesterName,
+        staleDays: p.staleDays,
         linkUrl: p.linkUrl,
       }
       const enriched = p.requestId ? await enrichRequest(p.requestId) : {}
@@ -152,12 +176,17 @@ async function buildTokens<K extends NotificationEventKey>(
       return { ...enriched, ...nonEmpty(base), linkUrl: p.linkUrl }
     }
     case "booking.created":
-    case "booking.status_changed": {
-      const p = payload as BookingCreatedPayload & BookingStatusChangedPayload
+    case "booking.status_changed":
+    case "booking.stale": {
+      const p = payload as BookingCreatedPayload &
+        BookingStatusChangedPayload &
+        BookingStalePayload
       const base: TokenValues = {
         title: p.title,
         status: p.status,
         requesterName: p.requesterName,
+        staleDays: p.staleDays,
+        staleReason: p.staleReason,
         linkUrl: p.linkUrl,
       }
       const enriched = p.trackingCode
@@ -168,6 +197,19 @@ async function buildTokens<K extends NotificationEventKey>(
     default:
       return {}
   }
+}
+
+// Resolve the workspace's template for (scope, eventType) and render it
+// against the enriched tokens. Shared by group dispatch (below) and the
+// stale-items cron's DM path so both render identical wording.
+export async function renderEventText<K extends NotificationEventKey>(
+  workspaceId: string,
+  scope: TemplateScope,
+  eventType: K,
+  payload: EventPayloadMap[K],
+): Promise<string> {
+  const template = await resolveTemplate(workspaceId, scope, eventType)
+  return renderTemplate(template, await buildTokens(workspaceId, eventType, payload))
 }
 
 async function logDeliveryFailure(args: {
@@ -243,8 +285,7 @@ export async function dispatchEvent<K extends NotificationEventKey>(
 
   // One template lookup per dispatch (shared across all routes), then
   // fall back to the hardcoded default when no custom row is set.
-  const template = await resolveTemplate(workspaceId, "group", eventType)
-  const text = renderTemplate(template, await buildTokens(workspaceId, eventType, payload))
+  const text = await renderEventText(workspaceId, "group", eventType, payload)
   let succeeded = 0
 
   for (const route of routes) {

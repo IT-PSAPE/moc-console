@@ -1,5 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/api/cron/weekly-archive", "schedule": "0 0 * * 1" },
+    { "path": "/api/cron/stale-items", "schedule": "0 0 * * *" }
+  ],
   "routes": [
     {
       "handle": "filesystem"

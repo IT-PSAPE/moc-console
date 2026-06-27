@@ -65,6 +65,8 @@ const REQUEST_TOKENS = specs(
   "title", "status", "priority", "category", "requesterName", "requestedBy",
   "dueDate", "createdAt", "updatedAt", "trackingCode",
   "who", "what", "whenText", "whereText", "why", "how", "notes", "flow",
+  // staleDays — days since last update; populated for request.stale only.
+  "staleDays",
   "linkUrl",
 );
 
@@ -73,6 +75,8 @@ const BOOKING_TOKENS = specs(
   "checkedOutAt", "expectedReturnAt", "returnedAt", "notes", "trackingCode",
   "itemCount", "equipmentName", "equipmentNames",
   "equipmentCategory", "equipmentLocation", "equipmentSerial",
+  // staleDays / staleReason — populated for booking.stale only.
+  "staleDays", "staleReason",
   "linkUrl",
 );
 
@@ -104,8 +108,10 @@ export const TEMPLATE_TOKENS: Record<MessageType, readonly TokenSpec[]> = {
   "request.created": REQUEST_TOKENS,
   "request.status_changed": REQUEST_TOKENS,
   "request.archived": REQUEST_TOKENS,
+  "request.stale": REQUEST_TOKENS,
   "booking.created": BOOKING_TOKENS,
   "booking.status_changed": BOOKING_TOKENS,
+  "booking.stale": BOOKING_TOKENS,
   // Request assignment shares the request category, plus the DM-only
   // duty / assignee fields.
   "assignment.request": specs(
@@ -131,10 +137,14 @@ export const DEFAULT_TEMPLATES: Record<MessageType, string> = {
     "📣 <b>Request status updated</b>\n\n📌 <b>Title:</b> {{title}}\n🔄 Now: <i>{{status}}</i>\n🙋 <b>From:</b> {{requesterName}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the request</a>",
   "request.archived":
     "📣 <b>Request archived</b>\n\n📌 <b>Title:</b> {{title}}\n🙋 <b>From:</b> {{requesterName}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the request</a>",
+  "request.stale":
+    "⏰ <b>Request needs attention</b>\n\n📌 <b>Title:</b> {{title}}\n🔄 <b>Status:</b> <i>{{status}}</i>\n⏳ Untouched for {{staleDays}} day(s)\n🙋 <b>From:</b> {{requesterName}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the request</a>",
   "booking.created":
     "✨ <b>New equipment booking</b>\n\n📌 <b>Title:</b> {{title}} — {{itemCount}} item(s)\n🙋 <b>From:</b> {{requesterName}}\n🔄 <b>Status:</b> <i>{{status}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "booking.status_changed":
     "📣 <b>Equipment booking updated</b>\n\n📌 <b>Title:</b> {{title}} — {{itemCount}} item(s)\n🔄 Now: <i>{{status}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
+  "booking.stale":
+    "⏰ <b>Booking needs attention</b>\n\n📌 <b>Title:</b> {{title}} — {{itemCount}} item(s)\n🔄 <b>Status:</b> <i>{{status}}</i>\n⚠️ {{staleReason}}\n⏳ Outstanding for {{staleDays}} day(s)\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "assignment.request":
     "👋 Hey {{assigneeName}}!\nYou've been assigned to a request\n\n📌 <b>Title:</b> {{title}}\n🛠 <b>Duty:</b> <i>{{duty}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">View Full Request Details</a>",
   "assignment.cue":
@@ -271,11 +281,18 @@ export const SAMPLE_TOKENS: Record<MessageType, TokenValues> = {
   "request.created": { ...REQUEST_SAMPLE, status: "not started" },
   "request.status_changed": REQUEST_SAMPLE,
   "request.archived": { ...REQUEST_SAMPLE, status: "archived" },
+  "request.stale": { ...REQUEST_SAMPLE, status: "in progress", staleDays: "5" },
   "booking.created": BOOKING_SAMPLE,
   "booking.status_changed": {
     ...BOOKING_SAMPLE,
     status: "returned",
     returnedAt: "Sun, 24 May 2026 19:30:00 GMT",
+  },
+  "booking.stale": {
+    ...BOOKING_SAMPLE,
+    status: "checked_out",
+    staleReason: "Overdue for return",
+    staleDays: "4",
   },
   "assignment.request": { ...REQUEST_SAMPLE, duty: "Design", assigneeName: "Craig C." },
   "assignment.cue": {

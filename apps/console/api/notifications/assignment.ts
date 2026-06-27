@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "../../server/supabase-admin.js"
 import { sendTelegramMessage } from "../../server/telegram.js"
 import { requireAuthenticatedUser, AuthError } from "../../server/auth-guard.js"
+import { resolveBaseUrl } from "../../server/base-url.js"
 import { resolveTemplate } from "../../server/notifications/templates.js"
 import {
   enrichRequest,
@@ -43,14 +44,6 @@ function normaliseHeaders(
     out[name] = Array.isArray(value) ? value[0] : value
   }
   return out
-}
-
-function resolveBaseUrl(): string | null {
-  const explicit = process.env.APP_BASE_URL
-  if (explicit) return explicit.replace(/\/$/, "")
-  const vercel = process.env.VERCEL_URL
-  if (vercel) return `https://${vercel}`
-  return null
 }
 
 // Each builder resolves the parent resource (which also yields the
