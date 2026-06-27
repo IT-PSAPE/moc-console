@@ -33,12 +33,14 @@ export const bookingStatusLabel: Record<BookingStatus, string> = {
   booked: "Booked",
   checked_out: "Checked Out",
   returned: "Returned",
+  archived: "Archived",
 };
 
 export const bookingStatusGroup = [
     { key: "booked", label: "Booked", color: "blue" },
     { key: "checked_out", label: "Checked Out", color: "yellow" },
     { key: "returned", label: "Returned", color: "green" },
+    { key: "archived", label: "Archived", color: "gray" },
 ] as const;
 
 // ─── Colors ────────────────────────────────────────────
@@ -61,8 +63,9 @@ export const equipmentCategoryColor: Record<EquipmentCategory, "blue" | "purple"
   accessory: "purple",
 };
 
-export const bookingStatusColor: Record<BookingStatus, "blue" | "yellow" | "green"> = {
+export const bookingStatusColor: Record<BookingStatus, "blue" | "yellow" | "green" | "gray"> = {
   booked: "blue",
   checked_out: "yellow",
   returned: "green",
+  archived: "gray",
 };

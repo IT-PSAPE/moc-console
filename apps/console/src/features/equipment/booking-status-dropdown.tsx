@@ -4,6 +4,8 @@ import { bookingStatusColor, bookingStatusLabel } from "@moc/types/equipment";
 import type { BookingStatus } from "@moc/types/equipment";
 import { Check } from "lucide-react";
 
+// Manual lifecycle statuses only. 'archived' is intentionally excluded —
+// bookings are archived automatically by the weekly cron, not by hand.
 const allStatuses: BookingStatus[] = ["booked", "checked_out", "returned"];
 
 type BookingStatusDropdownProps = {

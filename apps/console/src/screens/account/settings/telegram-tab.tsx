@@ -19,6 +19,7 @@ import { Toggle } from "@moc/ui/components/form/toggle";
 import { Button } from "@moc/ui/components/controls/button";
 import { ConnectEventsModal, type ConnectEventsTarget } from "./connect-events-modal";
 import { MessageTemplates } from "./message-templates/list";
+import { StaleAlertsSection } from "./stale-alerts-section";
 
 export function TelegramTab() {
     const { toast } = useFeedback();
@@ -171,6 +172,10 @@ export function TelegramTab() {
             <Divider className="py-6" />
 
             <MessageTemplates />
+
+            <Divider className="py-6" />
+
+            <StaleAlertsSection />
 
             <ConnectEventsModal target={connectTarget} onClose={() => setConnectTarget(null)} />
         </>
