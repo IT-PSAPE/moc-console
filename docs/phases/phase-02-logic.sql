@@ -81,6 +81,22 @@ CREATE TRIGGER set_notification_routes_updated_at
   BEFORE UPDATE ON public.notification_routes
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
+-- phase-30: bookings / notification_settings / notification_recipients reuse set_updated_at()
+DROP TRIGGER IF EXISTS set_bookings_updated_at ON public.bookings;
+CREATE TRIGGER set_bookings_updated_at
+  BEFORE UPDATE ON public.bookings
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+DROP TRIGGER IF EXISTS set_notification_settings_updated_at ON public.notification_settings;
+CREATE TRIGGER set_notification_settings_updated_at
+  BEFORE UPDATE ON public.notification_settings
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+DROP TRIGGER IF EXISTS set_notification_recipients_updated_at ON public.notification_recipients;
+CREATE TRIGGER set_notification_recipients_updated_at
+  BEFORE UPDATE ON public.notification_recipients
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
 -- phase-17: bug_reports has its own updated_at stamper
 CREATE OR REPLACE FUNCTION public.set_bug_reports_updated_at()
 RETURNS trigger LANGUAGE plpgsql AS $$
@@ -1164,7 +1180,7 @@ BEGIN
           FROM public.booking_items bi
           JOIN public.bookings b ON b.id = bi.booking_id
           WHERE bi.equipment_id = e.id
-            AND b.status <> 'returned'
+            AND b.status NOT IN ('returned', 'archived')
             AND b.checked_out_at  <  p_expected_return_at
             AND b.expected_return_at > p_checked_out_at
         )
@@ -1181,7 +1197,7 @@ BEGIN
           FROM public.booking_items bi
           JOIN public.bookings b ON b.id = bi.booking_id
           WHERE bi.equipment_id = e.id
-            AND b.status <> 'returned'
+            AND b.status NOT IN ('returned', 'archived')
             AND b.checked_out_at  <  p_expected_return_at
             AND b.expected_return_at > p_checked_out_at
         ) THEN 1
@@ -1190,6 +1206,62 @@ BEGIN
       e.name;
 END;
 $$;
+
+-- ── Stale-item claim RPCs (phase-30) ──
+-- Used by the daily stale-items cron. Each selects items past their
+-- workspace threshold (notification_settings.stale_threshold_days,
+-- default 3) that haven't been alerted within one threshold window,
+-- stamps stale_notified_at = now(), and returns the claimed rows. The
+-- claim+stamp is atomic so a retried cron run never double-sends.
+CREATE OR REPLACE FUNCTION public.claim_stale_requests()
+RETURNS SETOF public.requests
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  UPDATE public.requests r
+  SET stale_notified_at = now()
+  WHERE r.id IN (
+    SELECT r2.id
+    FROM public.requests r2
+    LEFT JOIN public.notification_settings ns ON ns.workspace_id = r2.workspace_id
+    WHERE r2.status NOT IN ('archived', 'completed')
+      AND r2.updated_at < now() - make_interval(days => coalesce(ns.stale_threshold_days, 3))
+      AND (
+        r2.stale_notified_at IS NULL
+        OR r2.stale_notified_at < now() - make_interval(days => coalesce(ns.stale_threshold_days, 3))
+      )
+  )
+  RETURNING r.*;
+$$;
+
+CREATE OR REPLACE FUNCTION public.claim_stale_bookings()
+RETURNS SETOF public.bookings
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  UPDATE public.bookings b
+  SET stale_notified_at = now()
+  WHERE b.id IN (
+    SELECT b2.id
+    FROM public.bookings b2
+    LEFT JOIN public.notification_settings ns ON ns.workspace_id = b2.workspace_id
+    WHERE b2.status NOT IN ('returned', 'archived')
+      AND (
+        b2.updated_at < now() - make_interval(days => coalesce(ns.stale_threshold_days, 3))
+        OR (b2.expected_return_at < now() AND b2.returned_at IS NULL)
+      )
+      AND (
+        b2.stale_notified_at IS NULL
+        OR b2.stale_notified_at < now() - make_interval(days => coalesce(ns.stale_threshold_days, 3))
+      )
+  )
+  RETURNING b.*;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.claim_stale_requests() TO service_role, authenticated;
+GRANT EXECUTE ON FUNCTION public.claim_stale_bookings() TO service_role, authenticated;
 
 -- Folded in from 2026-05-27-booking-as-batch.sql (ADR-0006):
 -- booking branch returns one header object with title + items array;

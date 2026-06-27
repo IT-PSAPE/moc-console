@@ -52,9 +52,11 @@ EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 DO $$ BEGIN
-  CREATE TYPE public.booking_status AS ENUM ('booked', 'checked_out', 'returned');
+  CREATE TYPE public.booking_status AS ENUM ('booked', 'checked_out', 'returned', 'archived');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
+-- For existing databases the 'archived' value is added by
+-- patches/2026-06-16a-booking-status-archived.sql (ALTER TYPE ... ADD VALUE).
 
 DO $$ BEGIN
   CREATE TYPE public.media_type AS ENUM ('image', 'audio', 'video');
@@ -181,7 +183,9 @@ CREATE TABLE IF NOT EXISTS public.requests (
   notes         text                    NULL,
   flow          text                    NULL,
   content       text                    NULL,
-  tracking_code text                    NOT NULL UNIQUE
+  tracking_code text                    NOT NULL UNIQUE,
+  -- last time the daily stale sweep alerted on this request (throttle)
+  stale_notified_at timestamptz         NULL
 );
 
 -- request_assignees
@@ -223,7 +227,10 @@ CREATE TABLE IF NOT EXISTS public.bookings (
   returned_at        timestamptz           NULL,
   notes              text                  NULL,
   status             public.booking_status NOT NULL DEFAULT 'booked',
-  created_at         timestamptz           NOT NULL DEFAULT now()
+  created_at         timestamptz           NOT NULL DEFAULT now(),
+  updated_at         timestamptz           NOT NULL DEFAULT now(),
+  -- last time the daily stale sweep alerted on this booking (throttle)
+  stale_notified_at  timestamptz           NULL
 );
 
 CREATE TABLE IF NOT EXISTS public.booking_items (
@@ -644,6 +651,27 @@ CREATE TABLE IF NOT EXISTS public.notification_message_templates (
   updated_at   timestamptz NOT NULL DEFAULT now()
 );
 
+-- notification_settings (phase-30) — per-workspace stale-item config.
+-- One row per workspace; absence means the defaults apply.
+CREATE TABLE IF NOT EXISTS public.notification_settings (
+  workspace_id         uuid        PRIMARY KEY REFERENCES public.workspaces(id) ON DELETE CASCADE,
+  stale_threshold_days integer     NOT NULL DEFAULT 3 CHECK (stale_threshold_days > 0),
+  created_at           timestamptz NOT NULL DEFAULT now(),
+  updated_at           timestamptz NOT NULL DEFAULT now()
+);
+
+-- notification_recipients (phase-30) — users who receive stale-item DMs.
+-- DMs only land for users with a linked telegram_chat_id.
+CREATE TABLE IF NOT EXISTS public.notification_recipients (
+  id           uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id uuid        NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
+  user_id      uuid        NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  enabled      boolean     NOT NULL DEFAULT true,
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  updated_at   timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (workspace_id, user_id)
+);
+
 -- ===== INDEXES =====
 
 -- workspace_users
@@ -655,6 +683,7 @@ CREATE INDEX IF NOT EXISTS idx_user_roles_role_id ON public.user_roles (role_id)
 
 -- requests
 CREATE INDEX IF NOT EXISTS idx_requests_workspace_id ON public.requests (workspace_id);
+CREATE INDEX IF NOT EXISTS idx_requests_updated_at   ON public.requests (updated_at);
 
 -- request_assignees
 CREATE INDEX IF NOT EXISTS idx_request_assignees_request_id ON public.request_assignees (request_id);
@@ -666,8 +695,13 @@ CREATE INDEX IF NOT EXISTS idx_equipment_workspace_id ON public.equipment (works
 -- bookings + booking_items (folded in from 2026-05-27-booking-as-batch.sql)
 CREATE INDEX IF NOT EXISTS idx_bookings_workspace_id      ON public.bookings (workspace_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_tracking_code     ON public.bookings (tracking_code);
+CREATE INDEX IF NOT EXISTS idx_bookings_updated_at        ON public.bookings (updated_at);
+CREATE INDEX IF NOT EXISTS idx_bookings_expected_return   ON public.bookings (expected_return_at) WHERE returned_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_booking_items_booking_id   ON public.booking_items (booking_id);
 CREATE INDEX IF NOT EXISTS idx_booking_items_equipment_id ON public.booking_items (equipment_id);
+
+-- notification_recipients (phase-30)
+CREATE INDEX IF NOT EXISTS idx_notification_recipients_workspace_id ON public.notification_recipients (workspace_id);
 
 -- media
 CREATE INDEX IF NOT EXISTS idx_media_workspace_id ON public.media (workspace_id);

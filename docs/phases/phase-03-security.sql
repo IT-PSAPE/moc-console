@@ -53,6 +53,8 @@ ALTER TABLE public.telegram_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.telegram_group_topics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_routes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_message_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notification_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notification_recipients ENABLE ROW LEVEL SECURITY;
 
 -- ===== IDENTITY TABLE POLICIES (phase-09) =====
 
@@ -1752,6 +1754,58 @@ CREATE POLICY "notification_message_templates_update" ON public.notification_mes
 
 DROP POLICY IF EXISTS "notification_message_templates_delete" ON public.notification_message_templates;
 CREATE POLICY "notification_message_templates_delete" ON public.notification_message_templates
+  FOR DELETE TO authenticated
+  USING (private.current_user_can('can_manage_roles'));
+
+-- ===== NOTIFICATION SETTINGS + RECIPIENTS POLICIES (phase-30) =====
+-- Mirror notification_routes: workspace members can read; only role
+-- managers can write.
+
+DROP POLICY IF EXISTS "notification_settings_select" ON public.notification_settings;
+CREATE POLICY "notification_settings_select" ON public.notification_settings
+  FOR SELECT TO authenticated
+  USING (
+    private.is_workspace_member(workspace_id)
+    OR private.current_user_can('can_manage_roles')
+  );
+
+DROP POLICY IF EXISTS "notification_settings_insert" ON public.notification_settings;
+CREATE POLICY "notification_settings_insert" ON public.notification_settings
+  FOR INSERT TO authenticated
+  WITH CHECK (private.current_user_can('can_manage_roles'));
+
+DROP POLICY IF EXISTS "notification_settings_update" ON public.notification_settings;
+CREATE POLICY "notification_settings_update" ON public.notification_settings
+  FOR UPDATE TO authenticated
+  USING (private.current_user_can('can_manage_roles'))
+  WITH CHECK (private.current_user_can('can_manage_roles'));
+
+DROP POLICY IF EXISTS "notification_settings_delete" ON public.notification_settings;
+CREATE POLICY "notification_settings_delete" ON public.notification_settings
+  FOR DELETE TO authenticated
+  USING (private.current_user_can('can_manage_roles'));
+
+DROP POLICY IF EXISTS "notification_recipients_select" ON public.notification_recipients;
+CREATE POLICY "notification_recipients_select" ON public.notification_recipients
+  FOR SELECT TO authenticated
+  USING (
+    private.is_workspace_member(workspace_id)
+    OR private.current_user_can('can_manage_roles')
+  );
+
+DROP POLICY IF EXISTS "notification_recipients_insert" ON public.notification_recipients;
+CREATE POLICY "notification_recipients_insert" ON public.notification_recipients
+  FOR INSERT TO authenticated
+  WITH CHECK (private.current_user_can('can_manage_roles'));
+
+DROP POLICY IF EXISTS "notification_recipients_update" ON public.notification_recipients;
+CREATE POLICY "notification_recipients_update" ON public.notification_recipients
+  FOR UPDATE TO authenticated
+  USING (private.current_user_can('can_manage_roles'))
+  WITH CHECK (private.current_user_can('can_manage_roles'));
+
+DROP POLICY IF EXISTS "notification_recipients_delete" ON public.notification_recipients;
+CREATE POLICY "notification_recipients_delete" ON public.notification_recipients
   FOR DELETE TO authenticated
   USING (private.current_user_can('can_manage_roles'));
 
