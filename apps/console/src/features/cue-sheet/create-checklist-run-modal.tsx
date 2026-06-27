@@ -1,6 +1,7 @@
 import { Modal } from '@moc/ui/components/overlays/modal'
 import { Button } from '@moc/ui/components/controls/button'
 import { Input } from '@moc/ui/components/form/input'
+import { DateTimeFields } from '@moc/ui/components/form/date-time-fields'
 import { FormLabel } from '@moc/ui/components/form/form-label'
 import { Label } from '@moc/ui/components/display/text'
 import type { Checklist } from '@moc/types/cue-sheet'
@@ -49,6 +50,10 @@ export function CreateChecklistRunModal({ open, onOpenChange, template, onSubmit
         }
     }, [canSubmit, description, name, onOpenChange, onSubmit, scheduledAt, template])
 
+    function handleScheduledAtChange(value: string) {
+        setScheduledAt(value)
+    }
+
     return (
         <Modal open={open} onOpenChange={onOpenChange}>
             <Modal.Portal>
@@ -68,10 +73,7 @@ export function CreateChecklistRunModal({ open, onOpenChange, template, onSubmit
                                     <FormLabel label="Description" optional />
                                     <Input placeholder="Brief description" value={description} onChange={(e) => setDescription(e.target.value)} />
                                 </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <FormLabel label="Scheduled" required />
-                                    <Input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
-                                </div>
+                                <DateTimeFields label="Scheduled" required value={scheduledAt} onChange={handleScheduledAtChange} />
                             </div>
                         </Modal.Content>
                         <Modal.Footer>

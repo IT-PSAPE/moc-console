@@ -3,6 +3,7 @@ import type { ChangeEvent } from "react"
 import { Modal } from "@moc/ui/components/overlays/modal"
 import { Button } from "@moc/ui/components/controls/button"
 import { Input } from "@moc/ui/components/form/input"
+import { DateTimeFields } from "@moc/ui/components/form/date-time-fields"
 import { TextArea } from "@moc/ui/components/form/text-area"
 import { Select } from "@moc/ui/components/form/select"
 import { FormLabel } from "@moc/ui/components/form/form-label"
@@ -73,6 +74,10 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
     if (!nextOpen) resetForm()
   }
 
+  function handleStartTimeChange(value: string) {
+    setStartTime(value)
+  }
+
   async function handleSubmit() {
     if (!canSubmit) return
 
@@ -132,14 +137,7 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
                 </div>
 
                 {/* Start time */}
-                <div className="flex flex-col gap-1.5">
-                  <FormLabel label="Start Date & Time" required />
-                  <Input
-                    type="datetime-local"
-                    value={startTime}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setStartTime(e.target.value)}
-                  />
-                </div>
+                <DateTimeFields label="Start" required value={startTime} onChange={handleStartTimeChange} />
 
                 {/* Duration */}
                 <div className="flex flex-col gap-1.5">

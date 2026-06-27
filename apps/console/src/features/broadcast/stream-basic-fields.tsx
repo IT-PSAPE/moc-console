@@ -1,8 +1,8 @@
 import type { ChangeEvent } from "react"
 import { Input } from "@moc/ui/components/form/input"
+import { DateTimeFields } from "@moc/ui/components/form/date-time-fields"
 import { TextArea } from "@moc/ui/components/form/text-area"
 import { FormLabel } from "@moc/ui/components/form/form-label"
-import { Paragraph } from "@moc/ui/components/display/text"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import type { StreamPrivacy } from "@moc/types/broadcast/stream"
 import { streamPrivacyLabel } from "@moc/types/broadcast/stream-constants"
@@ -32,6 +32,10 @@ export function StreamBasicFields({
   onPrivacyChange,
   onIsForKidsChange,
 }: StreamBasicFieldsProps) {
+  function handleScheduledStartChange(value: string) {
+    onScheduledStartChange(value)
+  }
+
   return (
     <>
       {/* ─── Title ─── */}
@@ -56,19 +60,13 @@ export function StreamBasicFields({
       </div>
 
       {/* ─── Scheduled Start ─── */}
-      <div className="flex flex-col gap-1.5">
-        <FormLabel label="Scheduled Start" />
-        <Input
-          type="datetime-local"
-          value={scheduledStartTime}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => onScheduledStartChange(e.target.value)}
-        />
-        {!scheduledStartTime && (
-          <Paragraph.xs className="text-quaternary">
-            Leave empty to start immediately when going live.
-          </Paragraph.xs>
-        )}
-      </div>
+      <DateTimeFields
+        label="Scheduled Start"
+        optional
+        value={scheduledStartTime}
+        onChange={handleScheduledStartChange}
+        helperText={!scheduledStartTime ? "Leave empty to start immediately when going live." : undefined}
+      />
 
       {/* ─── Privacy ─── */}
       <div className="flex flex-col gap-1.5">

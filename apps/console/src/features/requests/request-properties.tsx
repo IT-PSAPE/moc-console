@@ -9,6 +9,7 @@ import { Archive, Calendar, Check, CircleAlert, CircleChevronDown, CircleDashed,
 import { MemberSearchPicker } from "@/features/assignees/member-search-picker";
 import { cn } from "@moc/utils/cn";
 import { Input } from "@moc/ui/components/form/input";
+import { DateTimeFields } from "@moc/ui/components/form/date-time-fields";
 import { formatUtcIsoForBrowserDateTimeInput, formatUtcIsoInBrowserTimeZone, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time";
 
 export function formatDate(iso: string) {
@@ -51,6 +52,11 @@ type RequestMetaFieldsProps = {
 };
 
 export function RequestMetaFields({ request, editable = false, onFieldChange }: RequestMetaFieldsProps) {
+    function handleDueDateChange(value: string) {
+        if (!value || !onFieldChange) return;
+        onFieldChange("dueDate", parseBrowserDateTimeInputToUtcIso(value));
+    }
+
     return (
         <div className="space-y-3">
             {/* Status */}
@@ -125,14 +131,9 @@ export function RequestMetaFields({ request, editable = false, onFieldChange }: 
             {/* Due Date */}
             <MetaRow icon={<Calendar className="size-4" />} label="Due Date">
                 {editable && onFieldChange ? (
-                    <Input
-                        type="datetime-local"
+                    <DateTimeFields
                         value={formatUtcIsoForBrowserDateTimeInput(request.dueDate)}
-                        onChange={(e) => {
-                            const v = e.target.value;
-                            if (!v) return;
-                            onFieldChange("dueDate", parseBrowserDateTimeInputToUtcIso(v));
-                        }}
+                        onChange={handleDueDateChange}
                         required
                         style="ghost"
                     />

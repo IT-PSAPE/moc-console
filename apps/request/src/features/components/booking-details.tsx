@@ -1,7 +1,7 @@
 import { Input } from '@moc/ui/components/form/input'
+import { DateTimeFields } from '@moc/ui/components/form/date-time-fields'
 import { TextArea } from '@moc/ui/components/form/text-area'
 import { FormLabel } from '@moc/ui/components/form/form-label'
-import { Paragraph } from '@moc/ui/components/display/text'
 import type { BookingFormData } from '@/types/booking'
 import { isReturnBeforeCheckout } from '../hooks/use-booking-form'
 
@@ -12,6 +12,14 @@ type BookingDetailsProps = {
 
 export function BookingDetails({ data, onChange }: BookingDetailsProps) {
   const invalidRange = isReturnBeforeCheckout(data)
+
+  function handleCheckedOutAtChange(value: string) {
+    onChange('checkedOutAt', value)
+  }
+
+  function handleExpectedReturnAtChange(value: string) {
+    onChange('expectedReturnAt', value)
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -25,20 +33,20 @@ export function BookingDetails({ data, onChange }: BookingDetailsProps) {
         <Input placeholder="Who is booking this equipment?" value={data.bookedBy} onChange={(e) => onChange('bookedBy', e.target.value)} />
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <FormLabel label="Checkout date" required />
-          <Input type="datetime-local" value={data.checkedOutAt} onChange={(e) => onChange('checkedOutAt', e.target.value)} />
-        </div>
+      <DateTimeFields
+        label="Checkout"
+        required
+        value={data.checkedOutAt}
+        onChange={handleCheckedOutAtChange}
+      />
 
-        <div className="flex flex-col gap-1.5">
-          <FormLabel label="Expected return" required />
-          <Input type="datetime-local" value={data.expectedReturnAt} onChange={(e) => onChange('expectedReturnAt', e.target.value)} />
-          {invalidRange && (
-            <Paragraph.xs className="text-error">Expected return must be after checkout.</Paragraph.xs>
-          )}
-        </div>
-      </div>
+      <DateTimeFields
+        label="Expected return"
+        required
+        value={data.expectedReturnAt}
+        onChange={handleExpectedReturnAtChange}
+        errorText={invalidRange ? 'Expected return must be after checkout.' : undefined}
+      />
 
       <div className="flex flex-col gap-1.5">
         <FormLabel label="Notes" optional />

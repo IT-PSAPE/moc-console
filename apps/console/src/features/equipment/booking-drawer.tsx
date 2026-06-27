@@ -3,6 +3,7 @@ import { Button } from "@moc/ui/components/controls/button";
 import { Paragraph, Title } from "@moc/ui/components/display/text";
 import { MetaRow } from "@moc/ui/components/display/meta-row";
 import { Input } from "@moc/ui/components/form/input";
+import { DateTimeFields } from "@moc/ui/components/form/date-time-fields";
 import { TextArea } from "@moc/ui/components/form/text-area";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { useBookingStore } from "./use-booking-store";
@@ -179,25 +180,25 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
     store.actions.updateField("bookedBy", event.target.value);
   }
 
-  function handleCheckedOutDateChange(event: ChangeEvent<HTMLInputElement>) {
+  function handleCheckedOutDateChange(value: string) {
     store.actions.updateField(
       "checkedOutDate",
-      parseBrowserDateTimeInputToUtcIso(event.target.value),
+      value ? parseBrowserDateTimeInputToUtcIso(value) : "",
     );
   }
 
-  function handleExpectedReturnChange(event: ChangeEvent<HTMLInputElement>) {
+  function handleExpectedReturnChange(value: string) {
     store.actions.updateField(
       "expectedReturnAt",
-      parseBrowserDateTimeInputToUtcIso(event.target.value),
+      value ? parseBrowserDateTimeInputToUtcIso(value) : "",
     );
   }
 
-  function handleReturnedDateChange(event: ChangeEvent<HTMLInputElement>) {
+  function handleReturnedDateChange(value: string) {
     store.actions.updateField(
       "returnedDate",
-      event.target.value
-        ? parseBrowserDateTimeInputToUtcIso(event.target.value)
+      value
+        ? parseBrowserDateTimeInputToUtcIso(value)
         : null,
     );
   }
@@ -264,31 +265,33 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
 
           {/* Checked Out */}
           <MetaRow icon={<Calendar />} label="Checked Out">
-            <Input
-              type="datetime-local"
+            <DateTimeFields
               value={formatUtcIsoForBrowserDateTimeInput(draft.checkedOutDate)}
               onChange={handleCheckedOutDateChange}
               style="ghost"
+              required
+              fieldsClassName="sm:grid-cols-2"
             />
           </MetaRow>
 
           {/* Expected Return */}
           <MetaRow icon={<Clock />} label="Expected Return">
-            <Input
-              type="datetime-local"
+            <DateTimeFields
               value={formatUtcIsoForBrowserDateTimeInput(draft.expectedReturnAt)}
               onChange={handleExpectedReturnChange}
               style="ghost"
+              required
+              fieldsClassName="sm:grid-cols-2"
             />
           </MetaRow>
 
           {/* Returned */}
           <MetaRow icon={<Calendar />} label="Returned">
-            <Input
-              type="datetime-local"
+            <DateTimeFields
               value={draft.returnedDate ? formatUtcIsoForBrowserDateTimeInput(draft.returnedDate) : ""}
               onChange={handleReturnedDateChange}
               style="ghost"
+              fieldsClassName="sm:grid-cols-2"
             />
           </MetaRow>
 
