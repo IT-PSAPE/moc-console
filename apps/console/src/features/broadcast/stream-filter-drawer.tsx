@@ -4,7 +4,7 @@ import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Checkbox } from "@moc/ui/components/form/checkbox"
 import { FormLabel } from "@moc/ui/components/form/form-label"
 import { Input } from "@moc/ui/components/form/input"
-import { Radio } from "@moc/ui/components/form/radio"
+import { Radio, RadioGroup } from "@moc/ui/components/form/radio"
 import { Tabs } from "@moc/ui/components/layout/tabs"
 import { Drawer } from "@moc/ui/components/overlays/drawer"
 import { streamStatusLabel, streamPrivacyLabel } from "@moc/types/broadcast/stream-constants"
@@ -127,13 +127,20 @@ export function StreamFilterDrawer({ filters }: StreamFilterDrawerProps) {
 
               {/* ── Sort ── */}
               <Tabs.Panel value="sort">
+                <RadioGroup
+                  value={sortValue}
+                  onValueChange={(value) => {
+                    const i = value.lastIndexOf("-");
+                    setSort(value.slice(0, i) as Parameters<typeof setSort>[0], value.slice(i + 1) as Parameters<typeof setSort>[1]);
+                  }}
+                >
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Title</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
-                    <Radio name="stream-sort" value="title-asc" checked={sortValue === "title-asc"} onChange={() => setSort("title", "asc")}>
+                    <Radio value="title-asc">
                       <FormLabel label="A–Z" />
                     </Radio>
-                    <Radio name="stream-sort" value="title-desc" checked={sortValue === "title-desc"} onChange={() => setSort("title", "desc")}>
+                    <Radio value="title-desc">
                       <FormLabel label="Z–A" />
                     </Radio>
                   </div>
@@ -142,10 +149,10 @@ export function StreamFilterDrawer({ filters }: StreamFilterDrawerProps) {
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Scheduled Date</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
-                    <Radio name="stream-sort" value="scheduledStartTime-asc" checked={sortValue === "scheduledStartTime-asc"} onChange={() => setSort("scheduledStartTime", "asc")}>
+                    <Radio value="scheduledStartTime-asc">
                       <FormLabel label="Earliest first" />
                     </Radio>
-                    <Radio name="stream-sort" value="scheduledStartTime-desc" checked={sortValue === "scheduledStartTime-desc"} onChange={() => setSort("scheduledStartTime", "desc")}>
+                    <Radio value="scheduledStartTime-desc">
                       <FormLabel label="Latest first" />
                     </Radio>
                   </div>
@@ -154,10 +161,10 @@ export function StreamFilterDrawer({ filters }: StreamFilterDrawerProps) {
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Created Date</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
-                    <Radio name="stream-sort" value="createdAt-asc" checked={sortValue === "createdAt-asc"} onChange={() => setSort("createdAt", "asc")}>
+                    <Radio value="createdAt-asc">
                       <FormLabel label="Oldest first" />
                     </Radio>
-                    <Radio name="stream-sort" value="createdAt-desc" checked={sortValue === "createdAt-desc"} onChange={() => setSort("createdAt", "desc")}>
+                    <Radio value="createdAt-desc">
                       <FormLabel label="Newest first" />
                     </Radio>
                   </div>
@@ -166,14 +173,15 @@ export function StreamFilterDrawer({ filters }: StreamFilterDrawerProps) {
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Status</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
-                    <Radio name="stream-sort" value="status-asc" checked={sortValue === "status-asc"} onChange={() => setSort("status", "asc")}>
+                    <Radio value="status-asc">
                       <FormLabel label="A–Z" />
                     </Radio>
-                    <Radio name="stream-sort" value="status-desc" checked={sortValue === "status-desc"} onChange={() => setSort("status", "desc")}>
+                    <Radio value="status-desc">
                       <FormLabel label="Z–A" />
                     </Radio>
                   </div>
                 </div>
+                </RadioGroup>
               </Tabs.Panel>
             </Tabs.Panels>
           </Tabs>

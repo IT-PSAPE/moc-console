@@ -4,7 +4,7 @@ import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { Checkbox } from '@moc/ui/components/form/checkbox'
 import { FormLabel } from '@moc/ui/components/form/form-label'
 import { Input } from '@moc/ui/components/form/input'
-import { Radio } from '@moc/ui/components/form/radio'
+import { Radio, RadioGroup } from '@moc/ui/components/form/radio'
 import { Tabs } from '@moc/ui/components/layout/tabs'
 import { Drawer } from '@moc/ui/components/overlays/drawer'
 import { RotateCcw, X } from 'lucide-react'
@@ -67,13 +67,17 @@ export function ChecklistRunFilterDrawer({ filters }: ChecklistRunFilterDrawerPr
                                 <Divider className="px-4" />
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Completion</Paragraph.sm>
-                                    <div className="grid grid-cols-1 gap-2 px-3">
+                                    <RadioGroup
+                                        className="grid grid-cols-1 gap-2 px-3"
+                                        value={state.completion}
+                                        onValueChange={(value) => setCompletion(value as ChecklistRunCompletionFilter)}
+                                    >
                                         {completionFilters.map((option) => (
-                                            <Radio key={option.value} name="checklist-completion" value={option.value} checked={state.completion === option.value} onChange={() => setCompletion(option.value)}>
+                                            <Radio key={option.value} value={option.value}>
                                                 <FormLabel label={option.label} />
                                             </Radio>
                                         ))}
-                                    </div>
+                                    </RadioGroup>
                                 </div>
                                 <Divider className="px-4" />
                                 <div className="py-2">
@@ -91,31 +95,39 @@ export function ChecklistRunFilterDrawer({ filters }: ChecklistRunFilterDrawerPr
                                 </div>
                             </Tabs.Panel>
                             <Tabs.Panel value="sort">
+                                <RadioGroup
+                                    value={sortValue}
+                                    onValueChange={(value) => {
+                                        const i = value.lastIndexOf("-");
+                                        setSort(value.slice(0, i) as Parameters<typeof setSort>[0], value.slice(i + 1) as Parameters<typeof setSort>[1]);
+                                    }}
+                                >
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Scheduled Date</Paragraph.sm>
                                     <div className="grid grid-cols-2 gap-2 px-3">
-                                        <Radio name="checklist-run-sort" value="scheduledAt-asc" checked={sortValue === 'scheduledAt-asc'} onChange={() => setSort('scheduledAt', 'asc')}><FormLabel label="Ascending" /></Radio>
-                                        <Radio name="checklist-run-sort" value="scheduledAt-desc" checked={sortValue === 'scheduledAt-desc'} onChange={() => setSort('scheduledAt', 'desc')}><FormLabel label="Descending" /></Radio>
+                                        <Radio value="scheduledAt-asc"><FormLabel label="Ascending" /></Radio>
+                                        <Radio value="scheduledAt-desc"><FormLabel label="Descending" /></Radio>
                                     </div>
                                 </div>
                                 <Divider className="px-4" />
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Name</Paragraph.sm>
                                     <div className="grid grid-cols-2 gap-2 px-3">
-                                        <Radio name="checklist-run-sort" value="name-asc" checked={sortValue === 'name-asc'} onChange={() => setSort('name', 'asc')}><FormLabel label="A-Z" /></Radio>
-                                        <Radio name="checklist-run-sort" value="name-desc" checked={sortValue === 'name-desc'} onChange={() => setSort('name', 'desc')}><FormLabel label="Z-A" /></Radio>
+                                        <Radio value="name-asc"><FormLabel label="A-Z" /></Radio>
+                                        <Radio value="name-desc"><FormLabel label="Z-A" /></Radio>
                                     </div>
                                 </div>
                                 <Divider className="px-4" />
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Checklist Progress</Paragraph.sm>
                                     <div className="grid grid-cols-2 gap-2 px-3">
-                                        <Radio name="checklist-run-sort" value="items-asc" checked={sortValue === 'items-asc'} onChange={() => setSort('items', 'asc')}><FormLabel label="Fewest items" /></Radio>
-                                        <Radio name="checklist-run-sort" value="items-desc" checked={sortValue === 'items-desc'} onChange={() => setSort('items', 'desc')}><FormLabel label="Most items" /></Radio>
-                                        <Radio name="checklist-run-sort" value="completed-asc" checked={sortValue === 'completed-asc'} onChange={() => setSort('completed', 'asc')}><FormLabel label="Least complete" /></Radio>
-                                        <Radio name="checklist-run-sort" value="completed-desc" checked={sortValue === 'completed-desc'} onChange={() => setSort('completed', 'desc')}><FormLabel label="Most complete" /></Radio>
+                                        <Radio value="items-asc"><FormLabel label="Fewest items" /></Radio>
+                                        <Radio value="items-desc"><FormLabel label="Most items" /></Radio>
+                                        <Radio value="completed-asc"><FormLabel label="Least complete" /></Radio>
+                                        <Radio value="completed-desc"><FormLabel label="Most complete" /></Radio>
                                     </div>
                                 </div>
+                                </RadioGroup>
                             </Tabs.Panel>
                         </Tabs.Panels>
                     </Tabs>

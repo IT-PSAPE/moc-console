@@ -4,7 +4,7 @@ import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { Checkbox } from "@moc/ui/components/form/checkbox";
 import { FormLabel } from "@moc/ui/components/form/form-label";
 import { Input } from "@moc/ui/components/form/input";
-import { Radio } from "@moc/ui/components/form/radio";
+import { Radio, RadioGroup } from "@moc/ui/components/form/radio";
 import { Tabs } from "@moc/ui/components/layout/tabs";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { categoryLabel, priorityLabel } from "@moc/types/requests";
@@ -104,13 +104,20 @@ export function RequestFilterDrawer({ filters }: RequestFilterDrawerProps) {
 
                             {/* ── Sort ── */}
                             <Tabs.Panel value="sort">
+                                <RadioGroup
+                                    value={sortValue}
+                                    onValueChange={(value) => {
+                                        const i = value.lastIndexOf("-");
+                                        setSort(value.slice(0, i) as Parameters<typeof setSort>[0], value.slice(i + 1) as Parameters<typeof setSort>[1]);
+                                    }}
+                                >
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Name</Paragraph.sm>
                                     <div className="grid grid-cols-2 gap-2 px-3">
-                                        <Radio name="sort" value="title-asc" checked={sortValue === "title-asc"} onChange={() => setSort("title", "asc")}>
+                                        <Radio value="title-asc">
                                             <FormLabel label="A-Z" />
                                         </Radio>
-                                        <Radio name="sort" value="title-desc" checked={sortValue === "title-desc"} onChange={() => setSort("title", "desc")}>
+                                        <Radio value="title-desc">
                                             <FormLabel label="Z-A" />
                                         </Radio>
                                     </div>
@@ -119,10 +126,10 @@ export function RequestFilterDrawer({ filters }: RequestFilterDrawerProps) {
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Due date</Paragraph.sm>
                                     <div className="grid grid-cols-2 gap-2 px-3">
-                                        <Radio name="sort" value="dueDate-asc" checked={sortValue === "dueDate-asc"} onChange={() => setSort("dueDate", "asc")}>
+                                        <Radio value="dueDate-asc">
                                             <FormLabel label="Ascending" />
                                         </Radio>
-                                        <Radio name="sort" value="dueDate-desc" checked={sortValue === "dueDate-desc"} onChange={() => setSort("dueDate", "desc")}>
+                                        <Radio value="dueDate-desc">
                                             <FormLabel label="Descending" />
                                         </Radio>
                                     </div>
@@ -131,10 +138,10 @@ export function RequestFilterDrawer({ filters }: RequestFilterDrawerProps) {
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Created date</Paragraph.sm>
                                     <div className="grid grid-cols-2 gap-2 px-3">
-                                        <Radio name="sort" value="createdAt-asc" checked={sortValue === "createdAt-asc"} onChange={() => setSort("createdAt", "asc")}>
+                                        <Radio value="createdAt-asc">
                                             <FormLabel label="Ascending" />
                                         </Radio>
-                                        <Radio name="sort" value="createdAt-desc" checked={sortValue === "createdAt-desc"} onChange={() => setSort("createdAt", "desc")}>
+                                        <Radio value="createdAt-desc">
                                             <FormLabel label="Descending" />
                                         </Radio>
                                     </div>
@@ -143,14 +150,15 @@ export function RequestFilterDrawer({ filters }: RequestFilterDrawerProps) {
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Type</Paragraph.sm>
                                     <div className="grid grid-cols-2 gap-2 px-3">
-                                        <Radio name="sort" value="category-asc" checked={sortValue === "category-asc"} onChange={() => setSort("category", "asc")}>
+                                        <Radio value="category-asc">
                                             <FormLabel label="A-Z" />
                                         </Radio>
-                                        <Radio name="sort" value="category-desc" checked={sortValue === "category-desc"} onChange={() => setSort("category", "desc")}>
+                                        <Radio value="category-desc">
                                             <FormLabel label="Z-A" />
                                         </Radio>
                                     </div>
                                 </div>
+                                </RadioGroup>
                             </Tabs.Panel>
                         </Tabs.Panels>
                     </Tabs>

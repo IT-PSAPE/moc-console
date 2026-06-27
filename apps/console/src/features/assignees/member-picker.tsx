@@ -2,8 +2,8 @@ import { Button } from "@moc/ui/components/controls/button";
 import { UserAvatar } from "@moc/ui/components/display/user-avatar";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { Input } from "@moc/ui/components/form/input";
-import { Radio } from "@moc/ui/components/form/radio";
 import { Popover } from "@moc/ui/components/overlays/popover";
+import { cn } from "@moc/utils/cn";
 import { fetchAllUsers, type ResolvedAssignee } from "@/data/fetch-assignees";
 import type { User } from "@moc/types/requests";
 import { Spinner } from "@moc/ui/components/feedback/spinner";
@@ -187,7 +187,15 @@ function DutyRow({ role, selected, onSelect }: DutyRowProps) {
             className="w-full flex items-center justify-start gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-secondary transition-colors cursor-pointer"
             onClick={handleClick}
         >
-            <Radio value={role} checked={selected} />
+            <span
+                aria-hidden="true"
+                className={cn(
+                    "inline-flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors",
+                    selected ? "border-brand bg-brand_solid" : "border-secondary bg-primary",
+                )}
+            >
+                <span className={cn("size-2 rounded-full bg-primary transition-opacity", selected ? "opacity-100" : "opacity-0")} />
+            </span>
             <Label.sm className={selected ? "text-primary" : "text-secondary"}>{role}</Label.sm>
         </Button>
     );

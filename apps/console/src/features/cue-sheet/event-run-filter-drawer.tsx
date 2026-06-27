@@ -4,7 +4,7 @@ import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { Checkbox } from '@moc/ui/components/form/checkbox'
 import { FormLabel } from '@moc/ui/components/form/form-label'
 import { Input } from '@moc/ui/components/form/input'
-import { Radio } from '@moc/ui/components/form/radio'
+import { Radio, RadioGroup } from '@moc/ui/components/form/radio'
 import { Tabs } from '@moc/ui/components/layout/tabs'
 import { Drawer } from '@moc/ui/components/overlays/drawer'
 import { RotateCcw, X } from 'lucide-react'
@@ -14,17 +14,11 @@ type SortRadioProps = {
     field: EventRunSortField
     direction: EventRunSortDirection
     label: string
-    selected: boolean
-    onSelect: (field: EventRunSortField, direction: EventRunSortDirection) => void
 }
 
-function SortRadio({ field, direction, label, selected, onSelect }: SortRadioProps) {
-    function handleChange() {
-        onSelect(field, direction)
-    }
-
+function SortRadio({ field, direction, label }: SortRadioProps) {
     return (
-        <Radio name="event-run-sort" value={`${field}-${direction}`} checked={selected} onChange={handleChange}>
+        <Radio value={`${field}-${direction}`}>
             <FormLabel label={label} />
         </Radio>
     )
@@ -152,39 +146,47 @@ export function EventRunFilterDrawer({ filters }: EventRunFilterDrawerProps) {
                                 </div>
                             </Tabs.Panel>
                             <Tabs.Panel value="sort">
+                                <RadioGroup
+                                    value={sortValue}
+                                    onValueChange={(value) => {
+                                        const i = value.lastIndexOf("-");
+                                        setSort(value.slice(0, i) as Parameters<typeof setSort>[0], value.slice(i + 1) as Parameters<typeof setSort>[1]);
+                                    }}
+                                >
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Scheduled Date</Paragraph.sm>
                                     <div className="grid grid-cols-2 gap-2 px-3">
-                                        <SortRadio field="scheduledAt" direction="asc" label="Ascending" selected={sortValue === 'scheduledAt-asc'} onSelect={setSort} />
-                                        <SortRadio field="scheduledAt" direction="desc" label="Descending" selected={sortValue === 'scheduledAt-desc'} onSelect={setSort} />
+                                        <SortRadio field="scheduledAt" direction="asc" label="Ascending" />
+                                        <SortRadio field="scheduledAt" direction="desc" label="Descending" />
                                     </div>
                                 </div>
                                 <Divider className="px-4" />
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Name</Paragraph.sm>
                                     <div className="grid grid-cols-2 gap-2 px-3">
-                                        <SortRadio field="title" direction="asc" label="A-Z" selected={sortValue === 'title-asc'} onSelect={setSort} />
-                                        <SortRadio field="title" direction="desc" label="Z-A" selected={sortValue === 'title-desc'} onSelect={setSort} />
+                                        <SortRadio field="title" direction="asc" label="A-Z" />
+                                        <SortRadio field="title" direction="desc" label="Z-A" />
                                     </div>
                                 </div>
                                 <Divider className="px-4" />
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Timeline</Paragraph.sm>
                                     <div className="grid grid-cols-2 gap-2 px-3">
-                                        <SortRadio field="tracks" direction="asc" label="Fewest tracks" selected={sortValue === 'tracks-asc'} onSelect={setSort} />
-                                        <SortRadio field="tracks" direction="desc" label="Most tracks" selected={sortValue === 'tracks-desc'} onSelect={setSort} />
-                                        <SortRadio field="cues" direction="asc" label="Fewest cues" selected={sortValue === 'cues-asc'} onSelect={setSort} />
-                                        <SortRadio field="cues" direction="desc" label="Most cues" selected={sortValue === 'cues-desc'} onSelect={setSort} />
+                                        <SortRadio field="tracks" direction="asc" label="Fewest tracks" />
+                                        <SortRadio field="tracks" direction="desc" label="Most tracks" />
+                                        <SortRadio field="cues" direction="asc" label="Fewest cues" />
+                                        <SortRadio field="cues" direction="desc" label="Most cues" />
                                     </div>
                                 </div>
                                 <Divider className="px-4" />
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Duration</Paragraph.sm>
                                     <div className="grid grid-cols-2 gap-2 px-3">
-                                        <SortRadio field="duration" direction="asc" label="Shortest" selected={sortValue === 'duration-asc'} onSelect={setSort} />
-                                        <SortRadio field="duration" direction="desc" label="Longest" selected={sortValue === 'duration-desc'} onSelect={setSort} />
+                                        <SortRadio field="duration" direction="asc" label="Shortest" />
+                                        <SortRadio field="duration" direction="desc" label="Longest" />
                                     </div>
                                 </div>
+                                </RadioGroup>
                             </Tabs.Panel>
                         </Tabs.Panels>
                     </Tabs>

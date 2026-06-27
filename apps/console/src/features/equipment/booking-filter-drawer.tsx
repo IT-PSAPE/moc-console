@@ -3,7 +3,7 @@ import { Divider } from "@moc/ui/components/display/divider";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { Checkbox } from "@moc/ui/components/form/checkbox";
 import { FormLabel } from "@moc/ui/components/form/form-label";
-import { Radio } from "@moc/ui/components/form/radio";
+import { Radio, RadioGroup } from "@moc/ui/components/form/radio";
 import { Tabs } from "@moc/ui/components/layout/tabs";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { bookingStatusLabel } from "@moc/types/equipment";
@@ -65,13 +65,20 @@ export function BookingFilterDrawer({ filters }: BookingFilterDrawerProps) {
 
               {/* ── Sort ── */}
               <Tabs.Panel value="sort">
+                <RadioGroup
+                  value={sortValue}
+                  onValueChange={(value) => {
+                    const i = value.lastIndexOf("-");
+                    setSort(value.slice(0, i) as Parameters<typeof setSort>[0], value.slice(i + 1) as Parameters<typeof setSort>[1]);
+                  }}
+                >
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Checked Out Date</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
-                    <Radio name="sort" value="checkedOutDate-desc" checked={sortValue === "checkedOutDate-desc"} onChange={() => setSort("checkedOutDate", "desc")}>
+                    <Radio value="checkedOutDate-desc">
                       <FormLabel label="Newest first" />
                     </Radio>
-                    <Radio name="sort" value="checkedOutDate-asc" checked={sortValue === "checkedOutDate-asc"} onChange={() => setSort("checkedOutDate", "asc")}>
+                    <Radio value="checkedOutDate-asc">
                       <FormLabel label="Oldest first" />
                     </Radio>
                   </div>
@@ -80,10 +87,10 @@ export function BookingFilterDrawer({ filters }: BookingFilterDrawerProps) {
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Expected Return</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
-                    <Radio name="sort" value="expectedReturnAt-asc" checked={sortValue === "expectedReturnAt-asc"} onChange={() => setSort("expectedReturnAt", "asc")}>
+                    <Radio value="expectedReturnAt-asc">
                       <FormLabel label="Due soon" />
                     </Radio>
-                    <Radio name="sort" value="expectedReturnAt-desc" checked={sortValue === "expectedReturnAt-desc"} onChange={() => setSort("expectedReturnAt", "desc")}>
+                    <Radio value="expectedReturnAt-desc">
                       <FormLabel label="Due later" />
                     </Radio>
                   </div>
@@ -92,10 +99,10 @@ export function BookingFilterDrawer({ filters }: BookingFilterDrawerProps) {
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Title</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
-                    <Radio name="sort" value="title-asc" checked={sortValue === "title-asc"} onChange={() => setSort("title", "asc")}>
+                    <Radio value="title-asc">
                       <FormLabel label="A-Z" />
                     </Radio>
-                    <Radio name="sort" value="title-desc" checked={sortValue === "title-desc"} onChange={() => setSort("title", "desc")}>
+                    <Radio value="title-desc">
                       <FormLabel label="Z-A" />
                     </Radio>
                   </div>
@@ -104,14 +111,15 @@ export function BookingFilterDrawer({ filters }: BookingFilterDrawerProps) {
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Booked By</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
-                    <Radio name="sort" value="bookedBy-asc" checked={sortValue === "bookedBy-asc"} onChange={() => setSort("bookedBy", "asc")}>
+                    <Radio value="bookedBy-asc">
                       <FormLabel label="A-Z" />
                     </Radio>
-                    <Radio name="sort" value="bookedBy-desc" checked={sortValue === "bookedBy-desc"} onChange={() => setSort("bookedBy", "desc")}>
+                    <Radio value="bookedBy-desc">
                       <FormLabel label="Z-A" />
                     </Radio>
                   </div>
                 </div>
+                </RadioGroup>
               </Tabs.Panel>
             </Tabs.Panels>
           </Tabs>

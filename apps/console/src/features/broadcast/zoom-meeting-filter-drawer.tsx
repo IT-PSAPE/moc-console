@@ -4,7 +4,7 @@ import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Checkbox } from "@moc/ui/components/form/checkbox"
 import { FormLabel } from "@moc/ui/components/form/form-label"
 import { Input } from "@moc/ui/components/form/input"
-import { Radio } from "@moc/ui/components/form/radio"
+import { Radio, RadioGroup } from "@moc/ui/components/form/radio"
 import { Tabs } from "@moc/ui/components/layout/tabs"
 import { Drawer } from "@moc/ui/components/overlays/drawer"
 import { zoomRecurrenceLabel } from "@moc/types/broadcast/zoom-constants"
@@ -110,13 +110,20 @@ export function ZoomMeetingFilterDrawer({ filters }: ZoomMeetingFilterDrawerProp
 
               {/* ── Sort ── */}
               <Tabs.Panel value="sort">
+                <RadioGroup
+                  value={sortValue}
+                  onValueChange={(value) => {
+                    const i = value.lastIndexOf("-");
+                    setSort(value.slice(0, i) as Parameters<typeof setSort>[0], value.slice(i + 1) as Parameters<typeof setSort>[1]);
+                  }}
+                >
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Topic</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
-                    <Radio name="meeting-sort" value="topic-asc" checked={sortValue === "topic-asc"} onChange={() => setSort("topic", "asc")}>
+                    <Radio value="topic-asc">
                       <FormLabel label="A–Z" />
                     </Radio>
-                    <Radio name="meeting-sort" value="topic-desc" checked={sortValue === "topic-desc"} onChange={() => setSort("topic", "desc")}>
+                    <Radio value="topic-desc">
                       <FormLabel label="Z–A" />
                     </Radio>
                   </div>
@@ -125,10 +132,10 @@ export function ZoomMeetingFilterDrawer({ filters }: ZoomMeetingFilterDrawerProp
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Start Time</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
-                    <Radio name="meeting-sort" value="startTime-asc" checked={sortValue === "startTime-asc"} onChange={() => setSort("startTime", "asc")}>
+                    <Radio value="startTime-asc">
                       <FormLabel label="Earliest first" />
                     </Radio>
-                    <Radio name="meeting-sort" value="startTime-desc" checked={sortValue === "startTime-desc"} onChange={() => setSort("startTime", "desc")}>
+                    <Radio value="startTime-desc">
                       <FormLabel label="Latest first" />
                     </Radio>
                   </div>
@@ -137,10 +144,10 @@ export function ZoomMeetingFilterDrawer({ filters }: ZoomMeetingFilterDrawerProp
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Duration</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
-                    <Radio name="meeting-sort" value="duration-asc" checked={sortValue === "duration-asc"} onChange={() => setSort("duration", "asc")}>
+                    <Radio value="duration-asc">
                       <FormLabel label="Shortest first" />
                     </Radio>
-                    <Radio name="meeting-sort" value="duration-desc" checked={sortValue === "duration-desc"} onChange={() => setSort("duration", "desc")}>
+                    <Radio value="duration-desc">
                       <FormLabel label="Longest first" />
                     </Radio>
                   </div>
@@ -149,14 +156,15 @@ export function ZoomMeetingFilterDrawer({ filters }: ZoomMeetingFilterDrawerProp
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Created Date</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
-                    <Radio name="meeting-sort" value="createdAt-asc" checked={sortValue === "createdAt-asc"} onChange={() => setSort("createdAt", "asc")}>
+                    <Radio value="createdAt-asc">
                       <FormLabel label="Oldest first" />
                     </Radio>
-                    <Radio name="meeting-sort" value="createdAt-desc" checked={sortValue === "createdAt-desc"} onChange={() => setSort("createdAt", "desc")}>
+                    <Radio value="createdAt-desc">
                       <FormLabel label="Newest first" />
                     </Radio>
                   </div>
                 </div>
+                </RadioGroup>
               </Tabs.Panel>
             </Tabs.Panels>
           </Tabs>
