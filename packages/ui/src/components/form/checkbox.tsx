@@ -1,7 +1,8 @@
+import { Checkbox as BaseCheckbox } from "@base-ui/react/checkbox";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
 import { Check, Minus } from "lucide-react";
-import { useEffect, useRef, type InputHTMLAttributes, type ReactNode } from "react";
+import type { ChangeEvent, InputHTMLAttributes, ReactNode } from "react";
 
 type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size" | "type"> & {
     children?: ReactNode
@@ -13,37 +14,65 @@ const checkboxControlVariants = cv({
         "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-sm border",
         "bg-primary text-primary_on-brand transition-colors",
         "border-secondary group-hover:border-brand",
-        "peer-focus-visible:border-brand peer-focus-visible:ring-3 peer-focus-visible:ring-border-brand/10",
-        "peer-checked:border-brand peer-checked:bg-brand_solid",
-        "peer-indeterminate:border-brand peer-indeterminate:bg-brand_solid",
-        "peer-disabled:border-disabled peer-disabled:bg-disabled",
-        "peer-disabled:group-hover:border-disabled peer-disabled:group-hover:bg-disabled",
-        "peer-disabled:text-foreground-disabled",
-        "peer-checked:[&_[data-checkbox-icon=check]]:opacity-100",
-        "peer-indeterminate:[&_[data-checkbox-icon=check]]:opacity-0",
-        "peer-indeterminate:[&_[data-checkbox-icon=minus]]:opacity-100",
+        // Base UI puts focus on Checkbox.Root itself (no sibling `peer` input to
+        // target), so focus styles are applied directly rather than via `peer-*`.
+        "focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-border-brand/10 focus-visible:outline-none",
+        // Checked / indeterminate / disabled are surfaced as data-attributes on
+        // Base UI's Checkbox.Root rather than the native `:checked`/`:disabled`
+        // pseudo-classes the old `peer-*` selectors relied on.
+        "data-[checked]:border-brand data-[checked]:bg-brand_solid",
+        "data-[indeterminate]:border-brand data-[indeterminate]:bg-brand_solid",
+        "data-[disabled]:border-disabled data-[disabled]:bg-disabled data-[disabled]:text-foreground-disabled",
+        "data-[disabled]:group-hover:border-disabled data-[disabled]:group-hover:bg-disabled",
     ],
 });
 
-export function Checkbox({ children, className, indeterminate = false, ...props }: CheckboxProps) {
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        if (!inputRef.current) {
-            return;
-        }
-
-        inputRef.current.indeterminate = indeterminate && !inputRef.current.checked;
-    }, [indeterminate, props.checked]);
-
+export function Checkbox({
+    children,
+    className,
+    indeterminate = false,
+    checked,
+    defaultChecked,
+    onChange,
+    disabled,
+    name,
+    value,
+    required,
+    id,
+    "aria-label": ariaLabel,
+    "aria-labelledby": ariaLabelledby,
+    "aria-describedby": ariaDescribedby,
+}: CheckboxProps) {
     return (
         <label className={cn("group flex w-fit items-start gap-1.5 has-[:disabled]:cursor-not-allowed *:even:mt-0.75", className)}>
-            <span className="relative inline-flex shrink-0">
-                <input {...props} ref={inputRef} type="checkbox" aria-checked={indeterminate ? "mixed" : undefined} className="peer sr-only" />
-                <span className={checkboxControlVariants()} aria-hidden="true">
+            <BaseCheckbox.Root
+                checked={checked as boolean | undefined}
+                defaultChecked={defaultChecked as boolean | undefined}
+                indeterminate={indeterminate}
+                disabled={disabled}
+                name={name}
+                value={value as string | undefined}
+                required={required}
+                id={id}
+                aria-label={ariaLabel}
+                aria-labelledby={ariaLabelledby}
+                aria-describedby={ariaDescribedby}
+                onCheckedChange={(next) => {
+                    if (!onChange) return
+                    // Bridge Base UI's (boolean) callback back to the native
+                    // ChangeEvent shape consumers read via `event.target.checked`.
+                    const target = { checked: next, name: name ?? "", value: value ?? "", type: "checkbox" }
+                    onChange({ target, currentTarget: target } as unknown as ChangeEvent<HTMLInputElement>)
+                }}
+                className={checkboxControlVariants()}
+            >
+                <BaseCheckbox.Indicator
+                    keepMounted
+                    className="inline-flex opacity-0 data-[checked]:opacity-100 data-[indeterminate]:opacity-100"
+                >
                     {indeterminate ? <Minus className="size-4" /> : <Check className="size-4" />}
-                </span>
-            </span>
+                </BaseCheckbox.Indicator>
+            </BaseCheckbox.Root>
             {children}
         </label>
     );
