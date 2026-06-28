@@ -1,4 +1,5 @@
 import { Input } from '@moc/ui/components/form/input'
+import { DateTimeFields } from '@moc/ui/components/form/date-time-fields'
 import { FormLabel } from '@moc/ui/components/form/form-label'
 import { Dropdown } from '@moc/ui/components/overlays/dropdown'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
@@ -13,16 +14,36 @@ type RequestBasicInfoProps = {
 }
 
 export function RequestBasicInfo({ data, onChange }: RequestBasicInfoProps) {
+  function handleTitleChange(value: string) {
+    onChange('title', value)
+  }
+
+  function handleRequestedByChange(value: string) {
+    onChange('requestedBy', value)
+  }
+
+  function handlePriorityChange(value: string) {
+    onChange('priority', value)
+  }
+
+  function handleCategoryChange(value: string) {
+    onChange('category', value)
+  }
+
+  function handleDueDateChange(value: string) {
+    onChange('dueDate', value)
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
         <FormLabel label="Title" required />
-        <Input placeholder="e.g. Easter service recap video" value={data.title} onChange={(e) => onChange('title', e.target.value)} />
+        <Input placeholder="e.g. Easter service recap video" value={data.title} onChange={(e) => handleTitleChange(e.target.value)} />
       </div>
 
       <div className="flex flex-col gap-1.5">
         <FormLabel label="Requested by" required />
-        <Input placeholder="e.g. Lead Pastor" value={data.requestedBy} onChange={(e) => onChange('requestedBy', e.target.value)} />
+        <Input placeholder="e.g. Lead Pastor" value={data.requestedBy} onChange={(e) => handleRequestedByChange(e.target.value)} />
       </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -32,7 +53,7 @@ export function RequestBasicInfo({ data, onChange }: RequestBasicInfoProps) {
             value={data.priority}
             options={PRIORITIES}
             labels={PRIORITY_LABELS}
-            onSelect={(value) => onChange('priority', value)}
+            onSelect={handlePriorityChange}
           />
         </div>
 
@@ -42,15 +63,17 @@ export function RequestBasicInfo({ data, onChange }: RequestBasicInfoProps) {
             value={data.category}
             options={CATEGORIES}
             labels={CATEGORY_LABELS}
-            onSelect={(value) => onChange('category', value)}
+            onSelect={handleCategoryChange}
           />
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <FormLabel label="Due date" required />
-        <Input type="date" value={data.dueDate} onChange={(e) => onChange('dueDate', e.target.value)} />
-      </div>
+      <DateTimeFields
+        label="Due date"
+        required
+        value={data.dueDate}
+        onChange={handleDueDateChange}
+      />
     </div>
   )
 }
