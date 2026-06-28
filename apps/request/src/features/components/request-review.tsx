@@ -5,7 +5,7 @@ import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { User, FileText, Flag, CalendarDays, Tag, Users, MapPin, Clock, Target, Lightbulb, Wrench, StickyNote, GitBranch } from 'lucide-react'
 import { PRIORITY_LABELS, PRIORITY_COLORS, CATEGORY_LABELS } from '../constants'
 import type { RequestFormData, RequestPriority } from '@/types/request'
-import { formatDate } from '@/lib/utils'
+import { formatDateTime } from '@/lib/utils'
 
 export function RequestReview({ data }: { data: RequestFormData }) {
   return (
@@ -26,7 +26,7 @@ export function RequestReview({ data }: { data: RequestFormData }) {
             <Badge label={CATEGORY_LABELS[data.category]} color="blue" variant="outline" />
           </MetaRow>
           <MetaRow icon={<CalendarDays />} label="Due date">
-            <Label.sm>{formatDate(data.dueDate)}</Label.sm>
+            <Label.sm>{formatDateTime(data.dueDate)}</Label.sm>
           </MetaRow>
         </div>
       </section>

@@ -1,4 +1,5 @@
 import { supabase } from '@moc/data/supabase'
+import { parseBrowserDateTimeInputToUtcIso } from '@moc/utils/browser-date-time'
 import { workspaceId } from '@/lib/workspace'
 import type { RequestFormData, SubmitRequestResult } from '@/types/request'
 import { notifyRequestCreated } from './notify-event'
@@ -9,7 +10,7 @@ export async function submitPublicRequest(data: RequestFormData): Promise<Submit
     p_title: data.title,
     p_priority: data.priority,
     p_category: data.category,
-    p_due_date: new Date(data.dueDate).toISOString(),
+    p_due_date: parseBrowserDateTimeInputToUtcIso(data.dueDate),
     p_requested_by: data.requestedBy,
     p_who: data.who,
     p_what: data.what,
