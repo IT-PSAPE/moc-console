@@ -5,11 +5,13 @@ import {
   type NotificationEventKey,
 } from "../../src/data/notification-events.js"
 import {
+  formatDateTokens,
   renderTemplate,
   type TemplateScope,
   type TokenValues,
 } from "../../src/data/notification-templates-core.js"
 import { resolveTemplate } from "./templates.js"
+import { fetchFormatSettings } from "./format-settings.js"
 import {
   enrichBooking,
   enrichRequest,
@@ -110,11 +112,14 @@ type RouteRow = {
   telegram_groups: { active: boolean; removed_at: string | null } | null
 }
 
+// Normalise to ISO; the workspace zone/format is applied later by
+// renderEventText via formatDateTokens (scheduledStartTime/startTime are
+// localised date tokens).
 function formatScheduled(scheduled: string | null): string | null {
   if (!scheduled) return null
   const date = new Date(scheduled)
   if (Number.isNaN(date.getTime())) return null
-  return date.toUTCString()
+  return date.toISOString()
 }
 
 function nonEmpty(values: TokenValues): TokenValues {
@@ -208,8 +213,15 @@ export async function renderEventText<K extends NotificationEventKey>(
   eventType: K,
   payload: EventPayloadMap[K],
 ): Promise<string> {
-  const template = await resolveTemplate(workspaceId, scope, eventType)
-  return renderTemplate(template, await buildTokens(workspaceId, eventType, payload))
+  const [template, format, tokens] = await Promise.all([
+    resolveTemplate(workspaceId, scope, eventType),
+    fetchFormatSettings(workspaceId),
+    buildTokens(workspaceId, eventType, payload),
+  ])
+  return renderTemplate(
+    template,
+    formatDateTokens(tokens, format.timezone, format.dateFormat),
+  )
 }
 
 async function logDeliveryFailure(args: {

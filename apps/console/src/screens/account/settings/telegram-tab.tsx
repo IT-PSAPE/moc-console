@@ -19,6 +19,7 @@ import { Toggle } from "@moc/ui/components/form/toggle";
 import { Button } from "@moc/ui/components/controls/button";
 import { ConnectEventsModal, type ConnectEventsTarget } from "./connect-events-modal";
 import { MessageTemplates } from "./message-templates/list";
+import { MessageFormatSection } from "./message-format-section";
 import { StaleAlertsSection } from "./stale-alerts-section";
 
 export function TelegramTab() {
@@ -172,6 +173,10 @@ export function TelegramTab() {
             <Divider className="py-6" />
 
             <MessageTemplates />
+
+            <Divider className="py-6" />
+
+            <MessageFormatSection />
 
             <Divider className="py-6" />
 

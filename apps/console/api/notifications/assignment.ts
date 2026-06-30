@@ -3,12 +3,14 @@ import { sendTelegramMessage } from "../../server/telegram.js"
 import { requireAuthenticatedUser, AuthError } from "../../server/auth-guard.js"
 import { resolveBaseUrl } from "../../server/base-url.js"
 import { resolveTemplate } from "../../server/notifications/templates.js"
+import { fetchFormatSettings } from "../../server/notifications/format-settings.js"
 import {
   enrichRequest,
   enrichCue,
   enrichChecklistItem,
 } from "../../server/notifications/enrich.js"
 import {
+  formatDateTokens,
   renderTemplate,
   type DmMessageType,
   type TokenValues,
@@ -223,8 +225,14 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
-  const template = await resolveTemplate(resolved.workspaceId, "dm", resolved.messageType)
-  const text = renderTemplate(template, resolved.tokens)
+  const [template, format] = await Promise.all([
+    resolveTemplate(resolved.workspaceId, "dm", resolved.messageType),
+    fetchFormatSettings(resolved.workspaceId),
+  ])
+  const text = renderTemplate(
+    template,
+    formatDateTokens(resolved.tokens, format.timezone, format.dateFormat),
+  )
 
   await sendTelegramMessage(user.telegram_chat_id, text, {
     parseMode: "HTML",

@@ -1,4 +1,9 @@
 import { supabase } from "@moc/data/supabase";
+import {
+  DEFAULT_DATE_FORMAT,
+  DEFAULT_TIMEZONE,
+  type DateFormatPreset,
+} from "./notification-templates-core";
 
 // Per-workspace stale-item config. The threshold is both the "flag after
 // N days idle" window and the re-nag cadence (the daily sweep re-alerts
@@ -8,12 +13,15 @@ export const DEFAULT_STALE_THRESHOLD_DAYS = 3;
 export type NotificationSettings = {
   workspaceId: string;
   staleThresholdDays: number;
+  // How dates render in Telegram messages — see notification-templates-core.
+  timezone: string;
+  dateFormat: DateFormatPreset;
 };
 
 export async function fetchNotificationSettings(workspaceId: string): Promise<NotificationSettings> {
   const { data, error } = await supabase
     .from("notification_settings")
-    .select("stale_threshold_days")
+    .select("stale_threshold_days, timezone, date_format")
     .eq("workspace_id", workspaceId)
     .maybeSingle();
 
@@ -21,6 +29,8 @@ export async function fetchNotificationSettings(workspaceId: string): Promise<No
   return {
     workspaceId,
     staleThresholdDays: data?.stale_threshold_days ?? DEFAULT_STALE_THRESHOLD_DAYS,
+    timezone: data?.timezone ?? DEFAULT_TIMEZONE,
+    dateFormat: (data?.date_format as DateFormatPreset) ?? DEFAULT_DATE_FORMAT,
   };
 }
 
@@ -29,6 +39,22 @@ export async function updateStaleThresholdDays(workspaceId: string, days: number
     .from("notification_settings")
     .upsert(
       { workspace_id: workspaceId, stale_threshold_days: days },
+      { onConflict: "workspace_id" },
+    );
+  if (error) throw new Error(error.message);
+}
+
+// Upsert only the formatting columns so the stale threshold (and its DB
+// default on first insert) is left untouched.
+export async function updateMessageFormat(
+  workspaceId: string,
+  timezone: string,
+  dateFormat: DateFormatPreset,
+): Promise<void> {
+  const { error } = await supabase
+    .from("notification_settings")
+    .upsert(
+      { workspace_id: workspaceId, timezone, date_format: dateFormat },
       { onConflict: "workspace_id" },
     );
   if (error) throw new Error(error.message);

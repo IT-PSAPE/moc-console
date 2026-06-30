@@ -10,10 +10,13 @@
 import { getSupabaseAdmin } from "../supabase-admin.js";
 import type { TokenValues } from "../../src/data/notification-templates-core.js";
 
+// Date tokens are emitted as raw ISO and localised at the render
+// boundary (dispatch/assignment) once the workspace's timezone + format
+// are known — see formatDateTokens in notification-templates-core.
 function fmtDate(v: string | null | undefined): string {
   if (!v) return "";
   const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? "" : d.toUTCString();
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString();
 }
 
 function yesNo(v: boolean | null | undefined): string {
