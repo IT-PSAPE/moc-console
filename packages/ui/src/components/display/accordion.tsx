@@ -1,147 +1,78 @@
+import { Accordion as BaseAccordion } from "@base-ui/react/accordion";
 import { cn } from "@moc/utils/cn";
-import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes } from "react";
-
-// ─── Accordion Context ──────────────────────────────────
-
-type AccordionContextValue = {
-  openItems: Set<string>;
-  toggle: (value: string) => void;
-};
-
-const AccordionContext = createContext<AccordionContextValue | null>(null);
-
-function useAccordion() {
-  const context = useContext(AccordionContext);
-  if (!context) throw new Error("Accordion components must be used within Accordion");
-  return context;
-}
-
-// ─── Item Context ───────────────────────────────────────
-
-type AccordionItemContextValue = {
-  value: string;
-  isOpen: boolean;
-};
-
-const AccordionItemContext = createContext<AccordionItemContextValue | null>(null);
-
-function useAccordionItem() {
-  const context = useContext(AccordionItemContext);
-  if (!context) throw new Error("Accordion.Trigger/Content must be used within Accordion.Item");
-  return context;
-}
+import type { HTMLAttributes } from "react";
 
 // ─── Root ───────────────────────────────────────────────
 
 type AccordionRootProps = HTMLAttributes<HTMLDivElement> & {
-  type?: "single" | "multiple";
-  defaultValue?: string | string[];
+    type?: "single" | "multiple";
+    defaultValue?: string | string[];
 };
 
 function AccordionRoot({ type = "single", defaultValue, children, className, ...props }: AccordionRootProps) {
-  const [openItems, setOpenItems] = useState<Set<string>>(() => {
-    if (!defaultValue) return new Set();
-    return new Set(Array.isArray(defaultValue) ? defaultValue : [defaultValue]);
-  });
+    const defaultArray = defaultValue === undefined ? undefined : Array.isArray(defaultValue) ? defaultValue : [defaultValue];
 
-  const toggle = useCallback(
-    (value: string) => {
-      setOpenItems((prev) => {
-        const next = new Set(prev);
-        if (next.has(value)) {
-          next.delete(value);
-        } else {
-          if (type === "single") next.clear();
-          next.add(value);
-        }
-        return next;
-      });
-    },
-    [type],
-  );
-
-  const contextValue = useMemo(() => ({ openItems, toggle }), [openItems, toggle]);
-
-  return (
-    <AccordionContext.Provider value={contextValue}>
-      <div className={cn(className)} {...props}>
-        {children}
-      </div>
-    </AccordionContext.Provider>
-  );
+    return (
+        <BaseAccordion.Root multiple={type === "multiple"} defaultValue={defaultArray} className={cn(className)} {...props}>
+            {children}
+        </BaseAccordion.Root>
+    );
 }
 
 // ─── Item ───────────────────────────────────────────────
 
 type AccordionItemProps = HTMLAttributes<HTMLDivElement> & {
-  value: string;
+    value: string;
 };
 
 function AccordionItem({ value, children, className, ...props }: AccordionItemProps) {
-  const { openItems } = useAccordion();
-  const isOpen = openItems.has(value);
-
-  const contextValue = useMemo(() => ({ value, isOpen }), [value, isOpen]);
-
-  return (
-    <AccordionItemContext.Provider value={contextValue}>
-      <div className={cn(className)} data-state={isOpen ? "open" : "closed"} {...props}>
-        {children}
-      </div>
-    </AccordionItemContext.Provider>
-  );
+    return (
+        <BaseAccordion.Item value={value} className={cn(className)} {...props}>
+            {children}
+        </BaseAccordion.Item>
+    );
 }
 
 // ─── Trigger ────────────────────────────────────────────
+//
+// Wrapped in Base UI's Header for correct heading semantics. The `group` class
+// lets descendants react to the trigger's `data-panel-open` state, e.g. a
+// chevron with `group-data-[panel-open]:rotate-180`.
 
 type AccordionTriggerProps = HTMLAttributes<HTMLButtonElement>;
 
-function AccordionTrigger({ children, className, onClick, ...props }: AccordionTriggerProps) {
-  const { toggle } = useAccordion();
-  const { value, isOpen } = useAccordionItem();
-
-  return (
-    <button
-      type="button"
-      className={cn("w-full cursor-pointer", className)}
-      data-state={isOpen ? "open" : "closed"}
-      onClick={(e) => {
-        toggle(value);
-        onClick?.(e);
-      }}
-      {...props}
-    >
-      {children}
-    </button>
-  );
+function AccordionTrigger({ children, className, ...props }: AccordionTriggerProps) {
+    return (
+        <BaseAccordion.Header className="m-0">
+            <BaseAccordion.Trigger className={cn("group w-full cursor-pointer", className)} {...props}>
+                {children}
+            </BaseAccordion.Trigger>
+        </BaseAccordion.Header>
+    );
 }
 
 // ─── Content ────────────────────────────────────────────
+//
+// Base UI exposes the resting height as `--accordion-panel-height`, letting the
+// collapse animate via CSS height (replacing the previous grid-rows trick).
 
 type AccordionContentProps = HTMLAttributes<HTMLDivElement>;
 
 function AccordionContent({ children, className, ...props }: AccordionContentProps) {
-  const { isOpen } = useAccordionItem();
-
-  return (
-    <div
-      className={cn("grid transition-[grid-template-rows] duration-200 ease-out", isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}
-      data-state={isOpen ? "open" : "closed"}
-      {...props}
-    >
-      <div className={cn("overflow-hidden", className)}>
-        {children}
-      </div>
-    </div>
-  );
+    return (
+        <BaseAccordion.Panel
+            className="h-[var(--accordion-panel-height)] overflow-hidden transition-[height] duration-200 ease-out data-[starting-style]:h-0 data-[ending-style]:h-0"
+            {...props}
+        >
+            <div className={cn(className)}>{children}</div>
+        </BaseAccordion.Panel>
+    );
 }
 
 // ─── Compound Export ────────────────────────────────────
 
 export const Accordion = Object.assign(AccordionRoot, {
-  Item: AccordionItem,
-  Trigger: AccordionTrigger,
-  Content: AccordionContent,
+    Item: AccordionItem,
+    Trigger: AccordionTrigger,
+    Content: AccordionContent,
 });
-
-export { useAccordionItem };

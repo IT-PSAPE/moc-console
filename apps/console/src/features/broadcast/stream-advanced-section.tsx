@@ -37,7 +37,7 @@ export function StreamAdvancedSection({
     <Accordion.Item value="advanced">
       <Accordion.Trigger className="flex items-center gap-2 py-2 text-left">
         <Label.sm className="flex-1">Advanced Settings</Label.sm>
-        <ChevronDown className="size-4 text-tertiary transition-transform data-[state=open]:rotate-180" />
+        <ChevronDown className="size-4 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
       </Accordion.Trigger>
       <Accordion.Content>
         <div className="flex flex-col gap-4 pb-2 pt-1">

@@ -60,7 +60,7 @@ function BookingHistoryRow({ booking }: { booking: Booking }) {
           </Paragraph.xs>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <ChevronDown className="size-4 text-tertiary transition-transform data-[state=open]:rotate-180" />
+          <ChevronDown className="size-4 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
         </div>
       </Accordion.Trigger>
       <Accordion.Content>
