@@ -40,7 +40,7 @@ export function TrackingResult({ data }: { data: TrackingResultType }) {
                 </MetaRow>
               )}
               {data.dueDate && (
-                <MetaRow icon={<CalendarDays />} label="Due date">{formatDate(data.dueDate)}</MetaRow>
+                <MetaRow icon={<CalendarDays />} label="Due date">{formatDateTime(data.dueDate)}</MetaRow>
               )}
             </>
           )}
