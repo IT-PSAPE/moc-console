@@ -1,9 +1,9 @@
 import { getSupabaseAdmin } from "../../server/supabase-admin.js"
 import { isAuthorizedCron } from "../../server/cron-auth.js"
 
-// Weekly archive sweep — wired to a Vercel Cron (Mon 00:00 UTC, see
-// vercel.json). Flips finished work to 'archived' so it drops out of the
-// active views without being deleted:
+// Weekly archive sweep. Flips finished work to 'archived' after each
+// workspace's configured delay so it drops out of active views without
+// being deleted:
 //   • requests: completed -> archived
 //   • bookings: returned  -> archived
 // Set-based and idempotent (filtered by source status), so a re-run is a
@@ -21,6 +21,10 @@ type ApiResponse = {
   setHeader: (name: string, value: string) => void
 }
 
+type ArchivedRow = {
+  id: string
+}
+
 export default async function handler(request: ApiRequest, response: ApiResponse) {
   response.setHeader("Content-Type", "application/json")
 
@@ -31,22 +35,14 @@ export default async function handler(request: ApiRequest, response: ApiResponse
 
   const admin = getSupabaseAdmin()
 
-  const { data: requests, error: requestsError } = await admin
-    .from("requests")
-    .update({ status: "archived" })
-    .eq("status", "completed")
-    .select("id")
+  const { data: requests, error: requestsError } = await admin.rpc("archive_completed_requests")
 
   if (requestsError) {
     response.status(500).json({ error: `Failed to archive requests: ${requestsError.message}` })
     return
   }
 
-  const { data: bookings, error: bookingsError } = await admin
-    .from("bookings")
-    .update({ status: "archived" })
-    .eq("status", "returned")
-    .select("id")
+  const { data: bookings, error: bookingsError } = await admin.rpc("archive_returned_bookings")
 
   if (bookingsError) {
     response.status(500).json({ error: `Failed to archive bookings: ${bookingsError.message}` })
@@ -55,7 +51,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
 
   response.status(200).json({
     ok: true,
-    archivedRequests: requests?.length ?? 0,
-    archivedBookings: bookings?.length ?? 0,
+    archivedRequests: ((requests ?? []) as ArchivedRow[]).length,
+    archivedBookings: ((bookings ?? []) as ArchivedRow[]).length,
   })
 }

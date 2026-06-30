@@ -10,6 +10,7 @@ import { updateWorkspace } from '@/data/mutate-workspace'
 import { useAuth } from '@/lib/auth-context'
 import { useWorkspace } from '@/lib/workspace-context'
 import { useEffect, useMemo, useState } from 'react'
+import { UsersTab } from './users-tab'
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
@@ -153,6 +154,10 @@ export function WorkspaceTab() {
                     </div>
                 </>
             )}
+
+            <Divider className="py-6" />
+
+            <UsersTab />
         </div>
     )
 }

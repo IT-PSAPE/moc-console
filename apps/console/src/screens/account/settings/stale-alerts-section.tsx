@@ -136,7 +136,7 @@ export function StaleAlertsSection() {
         <Section>
             <Section.Header
                 title="Stale-item alerts"
-                description="Telegram reminders when requests or bookings go unattended. People below are DM'd; connect these events to a group in the section above to also post there."
+                description="Telegram reminders when requests or bookings go unattended. People below are DM'd; Telegram group routing still lives in Telegram settings."
             />
 
             <Divider className="py-6" />
