@@ -1263,6 +1263,50 @@ $$;
 GRANT EXECUTE ON FUNCTION public.claim_stale_requests() TO service_role, authenticated;
 GRANT EXECUTE ON FUNCTION public.claim_stale_bookings() TO service_role, authenticated;
 
+-- ── Auto-archive claim RPCs (phase-31) ──
+-- Used by the weekly archive cron. Each workspace controls how long a
+-- completed/returned item remains visible before it moves to archived.
+CREATE OR REPLACE FUNCTION public.archive_completed_requests()
+RETURNS SETOF public.requests
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  UPDATE public.requests r
+  SET status = 'archived',
+      updated_at = now()
+  WHERE r.id IN (
+    SELECT r2.id
+    FROM public.requests r2
+    LEFT JOIN public.notification_settings ns ON ns.workspace_id = r2.workspace_id
+    WHERE r2.status = 'completed'
+      AND r2.updated_at < now() - make_interval(days => coalesce(ns.auto_archive_completed_requests_days, 7))
+  )
+  RETURNING r.*;
+$$;
+
+CREATE OR REPLACE FUNCTION public.archive_returned_bookings()
+RETURNS SETOF public.bookings
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  UPDATE public.bookings b
+  SET status = 'archived',
+      updated_at = now()
+  WHERE b.id IN (
+    SELECT b2.id
+    FROM public.bookings b2
+    LEFT JOIN public.notification_settings ns ON ns.workspace_id = b2.workspace_id
+    WHERE b2.status = 'returned'
+      AND coalesce(b2.returned_at, b2.updated_at) < now() - make_interval(days => coalesce(ns.auto_archive_returned_bookings_days, 7))
+  )
+  RETURNING b.*;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.archive_completed_requests() TO service_role, authenticated;
+GRANT EXECUTE ON FUNCTION public.archive_returned_bookings() TO service_role, authenticated;
+
 -- Folded in from 2026-05-27-booking-as-batch.sql (ADR-0006):
 -- booking branch returns one header object with title + items array;
 -- items carry no lifecycle (it lives on the parent booking header).

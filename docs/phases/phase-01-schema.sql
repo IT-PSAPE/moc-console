@@ -651,18 +651,20 @@ CREATE TABLE IF NOT EXISTS public.notification_message_templates (
   updated_at   timestamptz NOT NULL DEFAULT now()
 );
 
--- notification_settings (phase-30) — per-workspace notification config.
--- One row per workspace; absence means the defaults apply. timezone +
--- date_format control how dates render in Telegram messages (patch
--- 2026-06-30); date_format is a preset key resolved app-side
--- (notification-templates-core), so it's stored as plain text.
+-- notification_settings (phase-30) — per-workspace notification +
+-- automation config. One row per workspace; absence means the defaults
+-- apply. timezone + date_format control how dates render in Telegram
+-- messages (patch 2026-06-30); date_format is a preset key resolved
+-- app-side (notification-templates-core), so it's stored as plain text.
 CREATE TABLE IF NOT EXISTS public.notification_settings (
-  workspace_id         uuid        PRIMARY KEY REFERENCES public.workspaces(id) ON DELETE CASCADE,
-  stale_threshold_days integer     NOT NULL DEFAULT 3 CHECK (stale_threshold_days > 0),
-  timezone             text        NOT NULL DEFAULT 'Africa/Harare',
-  date_format          text        NOT NULL DEFAULT 'day-month-time',
-  created_at           timestamptz NOT NULL DEFAULT now(),
-  updated_at           timestamptz NOT NULL DEFAULT now()
+  workspace_id uuid PRIMARY KEY REFERENCES public.workspaces(id) ON DELETE CASCADE,
+  stale_threshold_days integer NOT NULL DEFAULT 3 CHECK (stale_threshold_days > 0),
+  auto_archive_completed_requests_days integer NOT NULL DEFAULT 7 CHECK (auto_archive_completed_requests_days > 0),
+  auto_archive_returned_bookings_days integer NOT NULL DEFAULT 7 CHECK (auto_archive_returned_bookings_days > 0),
+  timezone text NOT NULL DEFAULT 'Africa/Harare',
+  date_format text NOT NULL DEFAULT 'day-month-time',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 -- notification_recipients (phase-30) — users who receive stale-item DMs.
