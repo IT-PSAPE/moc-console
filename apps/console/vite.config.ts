@@ -219,9 +219,35 @@ export default defineConfig(({ mode }) => {
           name: 'MOC Console',
           short_name: 'MOC Console',
           description: 'Production operations console for broadcast teams — streams, meetings, cues, requests.',
+          // Stable app identity, decoupled from start_url. Browsers key an
+          // installed app — and its "open supported links" preference — to
+          // this id, so it must stay fixed even if start_url later changes,
+          // otherwise link capturing would silently reset for existing users.
+          id: '/',
           start_url: '/',
+          // Every console route lives under this scope, so any link to console
+          // (https://<console-origin>/...) is an in-scope navigation and is
+          // eligible to be captured by the installed PWA instead of a tab.
           scope: '/',
           display: 'standalone',
+          // Link capturing: when the PWA is installed, clicking a link whose
+          // URL is within `scope` opens it in the app rather than the browser.
+          // launch_handler.client_mode decides what "open in the app" does —
+          // 'navigate-existing' routes the link into the already-open console
+          // window (navigating it to the target route) instead of spawning a
+          // new window every time; 'auto' is the fallback used when no window
+          // is open yet (a fresh window is created).
+          //
+          // Platform notes: Android Chrome / ChromeOS capture in-scope links
+          // for installed PWAs automatically. Desktop Chrome/Edge expose it as
+          // a per-app "Open supported links in this app" toggle (users flip it
+          // from the app menu / chrome://apps). Firefox and Safari don't yet
+          // support declarative link capturing. No manifest field can force
+          // capturing on every platform; launch_handler is the standard
+          // declarative control for how a captured launch behaves.
+          launch_handler: {
+            client_mode: ['navigate-existing', 'auto'],
+          },
           // Android Chrome 128+ opts into "draw underneath the system bars"
           // only via display_override. With just `display: standalone` the
           // OS reserves the status bar + gesture-bar regions for itself and
