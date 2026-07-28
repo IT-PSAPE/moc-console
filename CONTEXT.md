@@ -27,6 +27,13 @@ _Avoid_: "the archive page"; treating archived bookings as part of it — a Book
 The MOC Console feature for YouTube live streams and Zoom meetings — creating them, syncing their state from the provider, and holding the workspace-level OAuth connections. The only broadcast-adjacent feature that remains.
 _Avoid_: "Broadcast" / "Broadcasts section" — that area was removed (see Removed features).
 
+**Notification route**:
+A workspace-level rule in Settings binding one notification event to one Telegram destination. An event with no route sends nothing. Many routes per event are allowed.
+
+**Destination override**:
+A per-creation choice of Telegram destinations, made in the stream or meeting modal. A non-empty override **replaces** the event's **Notification routes** for that one notification — it does not add to them — and works even when the event has no route at all. An empty override means the routes decide, including deciding to send nothing.
+_Avoid_: "notification settings override" (it overrides routing, not templates or format); treating it as an extra recipient list.
+
 **Workspace**:
 A tenancy boundary inside MOC Console. Every authenticated console operation is scoped to a workspace; users belong to one or more workspaces.
 _Avoid_: "tenant", "org", "account"

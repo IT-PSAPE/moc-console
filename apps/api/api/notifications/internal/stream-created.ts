@@ -1,11 +1,30 @@
 import { getSupabaseAdmin } from "../../../server/supabase-admin.js"
-import { dispatchEvent } from "../../../server/notifications/dispatch.js"
+import { dispatchEvent, type NotifyDestination } from "../../../server/notifications/dispatch.js"
 import { requireAuthenticatedUser, AuthError } from "../../../server/auth-guard.js"
 import { applyCors } from "../../../server/cors.js"
 import { normaliseHeaders } from "../../../server/http.js"
 import type { ApiRequest, ApiResponse } from "../../../server/http.js"
 
-type Body = { streamId?: string }
+type Body = { streamId?: string; destinations?: unknown }
+
+// Destinations arrive from the browser. Shape-check here; dispatchEvent
+// re-validates each one against the workspace's registered groups before
+// sending, so an unknown or spoofed chat id simply never receives anything.
+function parseDestinations(value: unknown): NotifyDestination[] | undefined {
+  if (!Array.isArray(value)) return undefined
+
+  const parsed: NotifyDestination[] = []
+  for (const entry of value) {
+    if (typeof entry !== "object" || entry === null) continue
+    const { groupChatId, threadId } = entry as Record<string, unknown>
+    if (typeof groupChatId !== "string" || !groupChatId) continue
+    if (threadId !== null && typeof threadId !== "number") continue
+    parsed.push({ groupChatId, threadId: threadId as number | null })
+  }
+
+  return parsed.length > 0 ? parsed : undefined
+}
+
 
 export default async function handler(request: ApiRequest, response: ApiResponse) {
   if (applyCors(request, response)) return
@@ -32,6 +51,8 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     response.status(400).json({ error: "Missing streamId" })
     return
   }
+
+  const destinations = parseDestinations(body.destinations)
 
   // Atomic claim: only the first call where notified_at IS NULL gets a row back.
   const admin = getSupabaseAdmin()
@@ -62,7 +83,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     scheduledStartTime: row.scheduled_start_time,
     streamUrl: row.stream_url,
     streamId: row.id,
-  })
+  }, { destinations })
 
   response.status(200).json({ ok: true, ...result })
 }

@@ -29,6 +29,24 @@ difference is trust: the notify pair is the public, unauthenticated surface the
 request PWA posts to; the notifications pair is the signed surface for senders
 outside this repo.
 
+## Destination overrides
+
+The two `internal/*-created` endpoints accept an optional `destinations`
+array of `{ groupChatId, threadId }`. When present and non-empty it **replaces**
+the workspace's configured `notification_routes` for that one notification, and
+works even when no route is configured for the event.
+
+Destinations come from a browser, so `dispatchEvent` re-validates every one
+against `telegram_groups` for that workspace: the group must be active and not
+removed, and a non-null `threadId` must name an existing, open topic on it.
+Anything else is dropped. If every requested destination fails validation the
+dispatcher logs a delivery failure rather than failing silently — the caller
+explicitly asked for delivery, so silence would look like the notification
+vanished.
+
+An override changes *where* a notification goes, never *what it says*: the
+template and token rendering are identical either way.
+
 ## CORS
 
 Browser calls arrive cross-origin and carry credentials in headers

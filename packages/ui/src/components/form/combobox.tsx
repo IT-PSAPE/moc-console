@@ -1,0 +1,201 @@
+import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
+import { cn } from '@moc/utils/cn'
+import { Check, ChevronDown, X } from 'lucide-react'
+import { Fragment, type ReactNode } from 'react'
+import { useOverlayStack } from '../overlays/overlay-provider'
+
+// A filterable select over `@base-ui/react/combobox`, in the same visual
+// language as Input/Select — same border, focus ring and disabled treatment.
+//
+// Base UI's multi-select needs a precise nesting of InputGroup › Chips ›
+// Value › Chip/Input, and the popup silently never opens if you get it wrong.
+// `Combobox.ChipsField` renders that whole structure so callers can't
+// misassemble it:
+//
+//   <Combobox.Root multiple items={options} value={value} onValueChange={setValue}>
+//     <Combobox.ChipsField placeholder="Search…" chipLabel={(o) => o.label} />
+//     <Combobox.Content>
+//       {(o) => <Combobox.Item key={o.id} value={o}>{o.label}</Combobox.Item>}
+//     </Combobox.Content>
+//   </Combobox.Root>
+
+// ─── Root ────────────────────────────────────────────────────────────
+
+type ComboboxRootProps<Value> = {
+    children: ReactNode
+    /** The full option list. Base UI filters it against the input value. */
+    items?: readonly Value[]
+    value?: Value[] | Value | null
+    defaultValue?: Value[] | Value | null
+    onValueChange?: (value: never) => void
+    multiple?: boolean
+    disabled?: boolean
+    name?: string
+    /** Renders an object option as its display string. Not needed for `{ value, label }`. */
+    itemToStringLabel?: (item: Value) => string
+    /** Identity for object options that aren't referentially stable. */
+    isItemEqualToValue?: (item: Value, value: Value) => boolean
+}
+
+function ComboboxRoot<Value>({ children, ...props }: ComboboxRootProps<Value>) {
+    // Base UI resolves `multiple` at the type level into single- vs
+    // multi-value generics, which a runtime-boolean wrapper can't express.
+    // The cast is contained here.
+    const Root = BaseCombobox.Root as unknown as (
+        p: ComboboxRootProps<Value>,
+    ) => React.JSX.Element
+    return <Root {...props}>{children}</Root>
+}
+
+// Base UI allows `className` to be a function of component state. None of
+// these wrappers need that, and cn() only takes strings, so each one narrows
+// the prop to a plain string.
+type Styled<P> = Omit<P, 'className'> & { className?: string }
+
+const fieldShell = cn(
+    'flex w-full flex-wrap items-center gap-1 rounded-lg border border-secondary bg-primary px-3 py-2',
+    'focus-within:border-brand focus-within:ring-3 focus-within:ring-border-brand/10',
+    'has-[:disabled]:cursor-not-allowed has-[:disabled]:bg-disabled has-[:disabled]:border-disabled',
+)
+
+// ─── Single-value field ──────────────────────────────────────────────
+
+function ComboboxField({ className, ...props }: Styled<React.ComponentProps<typeof BaseCombobox.Input>>) {
+    return (
+        <BaseCombobox.InputGroup className={cn(fieldShell, 'flex-nowrap', className)}>
+            <BaseCombobox.Input
+                className="w-full min-w-0 flex-1 bg-transparent paragraph-sm !leading-none focus:!outline-none focus-visible:!outline-0 placeholder:text-placeholder disabled:cursor-not-allowed"
+                {...props}
+            />
+            <BaseCombobox.Icon className="shrink-0 text-quaternary">
+                <ChevronDown className="size-4" />
+            </BaseCombobox.Icon>
+        </BaseCombobox.InputGroup>
+    )
+}
+
+// ─── Multi-value field ───────────────────────────────────────────────
+
+type ChipsFieldProps<Value> = {
+    /** Chip text for one selected value. */
+    chipLabel: (value: Value) => string
+    /** Stable React key for one selected value. */
+    chipKey?: (value: Value) => string
+    placeholder?: string
+    className?: string
+}
+
+function ComboboxChipsField<Value>({ chipLabel, chipKey, placeholder, className }: ChipsFieldProps<Value>) {
+    return (
+        <BaseCombobox.InputGroup className={cn(fieldShell, className)}>
+            <BaseCombobox.Chips className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+                <BaseCombobox.Value>
+                    {(selected: Value[]) => (
+                        <Fragment>
+                            {selected.map((item, index) => (
+                                <BaseCombobox.Chip
+                                    key={chipKey ? chipKey(item) : `${chipLabel(item)}-${index}`}
+                                    className="group flex items-center gap-1 rounded-md bg-secondary px-1.5 py-0.5 label-xs text-secondary outline-none focus-within:bg-tertiary data-[highlighted]:bg-tertiary"
+                                    aria-label={chipLabel(item)}
+                                >
+                                    {chipLabel(item)}
+                                    <BaseCombobox.ChipRemove
+                                        className="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-sm border-0 bg-transparent p-0 text-quaternary hover:text-primary"
+                                        aria-label={`Remove ${chipLabel(item)}`}
+                                    >
+                                        <X className="size-3" />
+                                    </BaseCombobox.ChipRemove>
+                                </BaseCombobox.Chip>
+                            ))}
+                            <BaseCombobox.Input
+                                placeholder={selected.length > 0 ? '' : placeholder}
+                                className="h-5 min-w-24 flex-1 border-0 bg-transparent p-0 paragraph-sm !leading-none focus:!outline-none focus-visible:!outline-0 placeholder:text-placeholder disabled:cursor-not-allowed"
+                            />
+                        </Fragment>
+                    )}
+                </BaseCombobox.Value>
+            </BaseCombobox.Chips>
+            <BaseCombobox.Icon className="shrink-0 text-quaternary">
+                <ChevronDown className="size-4" />
+            </BaseCombobox.Icon>
+        </BaseCombobox.InputGroup>
+    )
+}
+
+// ─── Popup ───────────────────────────────────────────────────────────
+
+type ComboboxContentProps = {
+    children: ReactNode | ((item: never, index: number) => ReactNode)
+    className?: string
+    /** Shown when filtering leaves no options. */
+    empty?: ReactNode
+}
+
+function ComboboxContent({ children, className, empty = 'No matches' }: ComboboxContentProps) {
+    const { state: overlayState } = useOverlayStack()
+
+    return (
+        <BaseCombobox.Portal container={overlayState.rootElement ?? undefined}>
+            <BaseCombobox.Positioner sideOffset={6} className="z-[9050] outline-none">
+                <BaseCombobox.Popup
+                    className={cn(
+                        'max-h-[min(var(--available-height),16rem)] w-[var(--anchor-width)] max-w-[var(--available-width)] overflow-y-auto overscroll-contain rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none',
+                        'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150',
+                        'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+                        'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
+                        className,
+                    )}
+                >
+                    <BaseCombobox.Empty className="px-2 py-3 text-center paragraph-xs text-quaternary">
+                        {empty}
+                    </BaseCombobox.Empty>
+                    <BaseCombobox.List>{children as never}</BaseCombobox.List>
+                </BaseCombobox.Popup>
+            </BaseCombobox.Positioner>
+        </BaseCombobox.Portal>
+    )
+}
+
+function ComboboxItem({ children, className, ...props }: Styled<React.ComponentProps<typeof BaseCombobox.Item>>) {
+    return (
+        <BaseCombobox.Item
+            className={cn(
+                'grid cursor-pointer grid-cols-[1rem_1fr] items-center gap-2 rounded-sm px-2 py-1.5 paragraph-sm text-secondary outline-none select-none',
+                'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
+                className,
+            )}
+            {...props}
+        >
+            <BaseCombobox.ItemIndicator className="col-start-1 text-brand_solid">
+                <Check className="size-3.5" />
+            </BaseCombobox.ItemIndicator>
+            <span className="col-start-2 min-w-0 truncate">{children}</span>
+        </BaseCombobox.Item>
+    )
+}
+
+function ComboboxGroup({ children, className, ...props }: Styled<React.ComponentProps<typeof BaseCombobox.Group>>) {
+    return (
+        <BaseCombobox.Group className={cn('py-0.5', className)} {...props}>
+            {children}
+        </BaseCombobox.Group>
+    )
+}
+
+function ComboboxGroupLabel({ children, className, ...props }: Styled<React.ComponentProps<typeof BaseCombobox.GroupLabel>>) {
+    return (
+        <BaseCombobox.GroupLabel className={cn('px-2 py-1 label-xs text-quaternary', className)} {...props}>
+            {children}
+        </BaseCombobox.GroupLabel>
+    )
+}
+
+export const Combobox = {
+    Root: ComboboxRoot,
+    Field: ComboboxField,
+    ChipsField: ComboboxChipsField,
+    Content: ComboboxContent,
+    Item: ComboboxItem,
+    Group: ComboboxGroup,
+    GroupLabel: ComboboxGroupLabel,
+}

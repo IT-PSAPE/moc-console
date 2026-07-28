@@ -15,6 +15,8 @@ import { StreamBasicFields } from "./stream-basic-fields"
 import { StreamThumbnailField, type ThumbnailStatus } from "./stream-thumbnail-field"
 import { StreamOptionsSection } from "./stream-options-section"
 import { StreamAdvancedSection } from "./stream-advanced-section"
+import { NotifyDestinationField } from "./notify-destination-field"
+import type { NotifyDestination } from "@moc/types/streams"
 
 type StreamModalProps = {
   open: boolean
@@ -40,6 +42,10 @@ export type StreamFormData = {
   enableAutoStop: boolean
   playlistId: string | null
   thumbnail: ThumbnailSource
+  // Overrides where the stream.created Telegram notification goes. Empty
+  // means "follow the workspace notification settings". Not part of the
+  // preset — it is a per-stream decision, not a default worth remembering.
+  notifyDestinations: NotifyDestination[]
   // When true in create mode, persist the current settings as the workspace preset.
   savePreset: boolean
 }
@@ -69,6 +75,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
     seedScheduledStart ? formatUtcIsoForDateTimeInput(seedScheduledStart, browserTimeZone) : "",
   )
   const [savePreset, setSavePreset] = useState(false)
+  const [notifyDestinations, setNotifyDestinations] = useState<NotifyDestination[]>([])
 
   // ─── Thumbnail ─────────────────────────────────────────
   // The user's chosen source. Bytes are resolved + validated here (in
@@ -235,6 +242,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
     setEnableAutoStart(reset?.enableAutoStart ?? false)
     setEnableAutoStop(reset?.enableAutoStop ?? true)
     setSavePreset(false)
+    setNotifyDestinations([])
   }, [browserTimeZone, stream, preset])
 
   function handleModalOpenChange(nextOpen: boolean) {
@@ -319,6 +327,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
         playlistId,
         savePreset,
         thumbnail,
+        notifyDestinations,
       })
       resetForm()
       onOpenChange(false)
@@ -369,6 +378,14 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
                   onUrlConfirm={handleThumbnailUrlConfirm}
                   onClear={clearThumbnail}
                 />
+
+                {/* ─── Notification destination override ─── */}
+                {!isEditing && (
+                  <NotifyDestinationField
+                    value={notifyDestinations}
+                    onChange={setNotifyDestinations}
+                  />
+                )}
 
                 {/* ─── Remember settings (save workspace preset) ─── */}
                 {!isEditing && (

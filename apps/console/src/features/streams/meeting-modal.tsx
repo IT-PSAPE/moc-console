@@ -14,6 +14,8 @@ import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/streams/zoom"
 import { zoomRecurrenceLabel } from "@moc/types/streams/zoom-constants"
 import type { CreateMeetingParams } from "@/data/mutate-zoom"
 import { formatUtcIsoForDateTimeInput, parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time"
+import { NotifyDestinationField } from "./notify-destination-field"
+import type { NotifyDestination } from "@moc/types/streams"
 
 type MeetingModalProps = {
   open: boolean
@@ -52,6 +54,7 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
   const [waitingRoom, setWaitingRoom] = useState(meeting?.waitingRoom ?? true)
   const [muteOnEntry, setMuteOnEntry] = useState(meeting?.muteOnEntry ?? true)
   const [continuousChat, setContinuousChat] = useState(meeting?.continuousChat ?? false)
+  const [notifyDestinations, setNotifyDestinations] = useState<NotifyDestination[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const canSubmit = Boolean(topic.trim()) && Boolean(startTime) && !isSubmitting
@@ -67,6 +70,7 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
     setWaitingRoom(meeting?.waitingRoom ?? true)
     setMuteOnEntry(meeting?.muteOnEntry ?? true)
     setContinuousChat(meeting?.continuousChat ?? false)
+    setNotifyDestinations([])
   }, [meeting])
 
   function handleModalOpenChange(nextOpen: boolean) {
@@ -95,6 +99,7 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
         waitingRoom,
         muteOnEntry,
         continuousChat,
+        notifyDestinations,
       })
       resetForm()
       onOpenChange(false)
@@ -227,6 +232,13 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
                     <Paragraph.sm>Allow continuous chat</Paragraph.sm>
                   </Checkbox>
                 </div>
+
+                {!isEditing && (
+                  <NotifyDestinationField
+                    value={notifyDestinations}
+                    onChange={setNotifyDestinations}
+                  />
+                )}
               </div>
             </Modal.Content>
 

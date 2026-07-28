@@ -1,4 +1,5 @@
 import type { Stream, StreamPreset, StreamPrivacy, LatencyPreference } from "@moc/types/streams/stream"
+import type { NotifyDestination } from "@moc/types/streams"
 import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 import {
@@ -81,6 +82,8 @@ type CreateStreamParams = {
   enableAutoStop: boolean
   playlistId: string | null
   thumbnail: ThumbnailSource
+  // Optional per-stream override of the Telegram notification destination.
+  notifyDestinations?: NotifyDestination[]
 }
 
 type YouTubeBroadcastSyncRow = {
@@ -317,7 +320,7 @@ export async function createStream(params: CreateStreamParams): Promise<StreamMu
     throw new Error("Created stream could not be reloaded")
   }
 
-  notifyStreamCreated(saved.id)
+  notifyStreamCreated(saved.id, params.notifyDestinations)
 
   return { stream: saved, thumbnailError }
 }

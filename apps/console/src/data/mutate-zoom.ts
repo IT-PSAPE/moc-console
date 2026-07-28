@@ -6,6 +6,7 @@ import { fetchZoomMeetingById } from "./fetch-zoom"
 import { formatUtcIsoForZoomApi, parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time"
 import { randomId } from "@moc/utils/random-id"
 import { notifyMeetingCreated } from "./notify-event"
+import type { NotifyDestination } from "@moc/types/streams"
 
 export type CreateMeetingParams = {
   topic: string
@@ -19,6 +20,8 @@ export type CreateMeetingParams = {
   waitingRoom: boolean
   muteOnEntry: boolean
   continuousChat: boolean
+  // Optional per-meeting override of the Telegram notification destination.
+  notifyDestinations?: NotifyDestination[]
 }
 
 type ZoomMeetingSyncRow = {
@@ -187,7 +190,7 @@ export async function createZoomMeeting(params: CreateMeetingParams): Promise<Zo
     throw new Error("Created meeting could not be reloaded")
   }
 
-  notifyMeetingCreated(saved.id)
+  notifyMeetingCreated(saved.id, params.notifyDestinations)
 
   return saved
 }

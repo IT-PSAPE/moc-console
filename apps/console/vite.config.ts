@@ -119,6 +119,11 @@ export default defineConfig(() => {
     ],
     resolve: {
       alias: aliasEntries,
+      // @moc/ui is aliased to source, so its Base UI import resolves React
+      // from packages/ui/node_modules while the app resolves it from the
+      // root — two module instances, and every Base UI hook throws
+      // "Invalid hook call". Dedupe pins both to one copy.
+      dedupe: ['react', 'react-dom'],
     },
   }
 })

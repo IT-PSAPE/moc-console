@@ -110,6 +110,87 @@ type RouteRow = {
   telegram_groups: { active: boolean; removed_at: string | null } | null
 }
 
+// A Telegram delivery target. Mirrors notification_routes' (group_chat_id,
+// thread_id) pair, so a configured route and a caller-supplied override
+// address a destination identically.
+export type NotifyDestination = {
+  groupChatId: string
+  threadId: number | null
+}
+
+type Target = {
+  /** notification_routes.id, or "" for an override (no route row behind it). */
+  routeId: string
+  groupChatId: string
+  threadId: number | null
+}
+
+/**
+ * Turns caller-supplied destinations into send targets, keeping only those
+ * that are genuinely registered to this workspace.
+ *
+ * Destinations arrive from a browser, so none of it is trusted: a chat id is
+ * usable only if it belongs to an active, non-removed telegram_group of this
+ * workspace, and a thread id only if that topic exists on that group and is
+ * open. Anything else is dropped — the caller gets a count back and can see
+ * that fewer messages went out than it asked for.
+ */
+async function resolveOverrideTargets(
+  workspaceId: string,
+  destinations: readonly NotifyDestination[],
+): Promise<Target[]> {
+  const admin = getSupabaseAdmin()
+  const chatIds = [...new Set(destinations.map((d) => d.groupChatId))]
+
+  const { data, error } = await admin
+    .from("telegram_groups")
+    .select("chat_id, active, removed_at, telegram_group_topics(thread_id, closed)")
+    .eq("workspace_id", workspaceId)
+    .in("chat_id", chatIds)
+
+  if (error) return []
+
+  type GroupRow = {
+    chat_id: string
+    active: boolean
+    removed_at: string | null
+    telegram_group_topics: { thread_id: number; closed: boolean }[] | null
+  }
+
+  const groups = new Map<string, GroupRow>()
+  for (const row of (data ?? []) as GroupRow[]) {
+    if (row.active !== true || row.removed_at) continue
+    groups.set(row.chat_id, row)
+  }
+
+  const seen = new Set<string>()
+  const targets: Target[] = []
+
+  for (const destination of destinations) {
+    const group = groups.get(destination.groupChatId)
+    if (!group) continue
+
+    if (destination.threadId !== null) {
+      const topic = (group.telegram_group_topics ?? []).find(
+        (t) => t.thread_id === destination.threadId,
+      )
+      if (!topic || topic.closed) continue
+    }
+
+    const key = `${destination.groupChatId}:${destination.threadId ?? "main"}`
+    if (seen.has(key)) continue
+    seen.add(key)
+
+    targets.push({
+      routeId: "",
+      groupChatId: destination.groupChatId,
+      threadId: destination.threadId,
+    })
+  }
+
+  return targets
+}
+
 // Normalise to ISO; the workspace zone/format is applied later by
 // renderEventText via formatDateTokens (scheduledStartTime/startTime are
 // localised date tokens).
@@ -255,56 +336,96 @@ async function logDeliveryFailure(args: {
   }
 }
 
+export type DispatchOptions = {
+  /**
+   * Overrides the workspace's configured routing for this one event.
+   *
+   * A non-empty list REPLACES the notification_routes lookup — it does not
+   * add to it — and works even when the workspace has no route configured
+   * for this event at all. Omitted or empty falls back to the configured
+   * routes, including the "no routes, send nothing" case.
+   */
+  destinations?: readonly NotifyDestination[]
+}
+
 export async function dispatchEvent<K extends NotificationEventKey>(
   workspaceId: string,
   eventType: K,
   payload: EventPayloadMap[K],
+  options: DispatchOptions = {},
 ): Promise<{ attempted: number; succeeded: number }> {
   if (!isNotificationEventKey(eventType)) {
     return { attempted: 0, succeeded: 0 }
   }
 
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from("notification_routes")
-    .select("id, group_chat_id, thread_id, telegram_groups(active, removed_at)")
-    .eq("workspace_id", workspaceId)
-    .eq("event_type", eventType)
-    .eq("enabled", true)
+  let targets: Target[]
 
-  if (error) {
-    await logDeliveryFailure({
-      workspaceId,
-      eventType,
-      routeId: "",
-      groupChatId: "",
-      threadId: null,
-      errorCode: null,
-      description: `Route lookup failed: ${error.message}`,
-      payload,
-    })
-    return { attempted: 0, succeeded: 0 }
+  if (options.destinations && options.destinations.length > 0) {
+    targets = await resolveOverrideTargets(workspaceId, options.destinations)
+
+    // Every requested destination failed validation. Surface it: the caller
+    // explicitly asked for delivery, so silence here would look like the
+    // notification simply vanished.
+    if (targets.length === 0) {
+      await logDeliveryFailure({
+        workspaceId,
+        eventType,
+        routeId: "",
+        groupChatId: "",
+        threadId: null,
+        errorCode: null,
+        description:
+          "Notification destination override matched no active registered group or open topic in this workspace; nothing was sent.",
+        payload,
+      })
+      return { attempted: 0, succeeded: 0 }
+    }
+  } else {
+    const admin = getSupabaseAdmin()
+    const { data, error } = await admin
+      .from("notification_routes")
+      .select("id, group_chat_id, thread_id, telegram_groups(active, removed_at)")
+      .eq("workspace_id", workspaceId)
+      .eq("event_type", eventType)
+      .eq("enabled", true)
+
+    if (error) {
+      await logDeliveryFailure({
+        workspaceId,
+        eventType,
+        routeId: "",
+        groupChatId: "",
+        threadId: null,
+        errorCode: null,
+        description: `Route lookup failed: ${error.message}`,
+        payload,
+      })
+      return { attempted: 0, succeeded: 0 }
+    }
+
+    targets = ((data ?? []) as unknown as RouteRow[])
+      .filter((r) => {
+        const group = Array.isArray(r.telegram_groups) ? r.telegram_groups[0] : r.telegram_groups
+        return group?.active === true && !group.removed_at
+      })
+      .map((r) => ({ routeId: r.id, groupChatId: r.group_chat_id, threadId: r.thread_id }))
   }
 
-  const routes = ((data ?? []) as unknown as RouteRow[]).filter((r) => {
-    const group = Array.isArray(r.telegram_groups) ? r.telegram_groups[0] : r.telegram_groups
-    return group?.active === true && !group.removed_at
-  })
+  if (targets.length === 0) return { attempted: 0, succeeded: 0 }
 
-  if (routes.length === 0) return { attempted: 0, succeeded: 0 }
-
-  // One template lookup per dispatch (shared across all routes), then
-  // fall back to the hardcoded default when no custom row is set.
+  // One template lookup per dispatch (shared across all targets), then
+  // fall back to the hardcoded default when no custom row is set. An
+  // override changes where a notification goes, never what it says.
   const text = await renderEventText(workspaceId, "group", eventType, payload)
   let succeeded = 0
 
-  for (const route of routes) {
-    const send = await sendTelegramMessageDetailed(route.group_chat_id, text, {
+  for (const route of targets) {
+    const send = await sendTelegramMessageDetailed(route.groupChatId, text, {
       parseMode: "HTML",
       // Link preview left enabled: the action link lives inside an <a>
       // tag, and Telegram previews the first link in the message so the
       // recipient sees a rich preview of where it goes.
-      ...(route.thread_id !== null ? { threadId: route.thread_id } : {}),
+      ...(route.threadId !== null ? { threadId: route.threadId } : {}),
     })
 
     if (send.ok) {
@@ -313,9 +434,9 @@ export async function dispatchEvent<K extends NotificationEventKey>(
       await logDeliveryFailure({
         workspaceId,
         eventType,
-        routeId: route.id,
-        groupChatId: route.group_chat_id,
-        threadId: route.thread_id,
+        routeId: route.routeId,
+        groupChatId: route.groupChatId,
+        threadId: route.threadId,
         errorCode: send.errorCode,
         description: send.description,
         payload,
@@ -323,5 +444,5 @@ export async function dispatchEvent<K extends NotificationEventKey>(
     }
   }
 
-  return { attempted: routes.length, succeeded }
+  return { attempted: targets.length, succeeded }
 }
