@@ -139,14 +139,24 @@ function ComboboxContent({ children, className, empty = 'No matches' }: Combobox
             <BaseCombobox.Positioner sideOffset={6} className="z-[9050] outline-none">
                 <BaseCombobox.Popup
                     className={cn(
-                        'max-h-[min(var(--available-height),16rem)] w-[var(--anchor-width)] max-w-[var(--available-width)] overflow-y-auto overscroll-contain rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none',
+                        // `pointer-events-auto` is required: #overlay-root sets
+                        // `pointer-events: none` so a portalled layer never blocks the
+                        // page behind it, and each popup surface opts back in. Without
+                        // it the list renders but no item can be clicked or hovered.
+                        'pointer-events-auto max-h-[min(var(--available-height),16rem)] w-[var(--anchor-width)] max-w-[var(--available-width)] overflow-y-auto overscroll-contain rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none',
                         'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150',
                         'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
                         'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
                         className,
                     )}
                 >
-                    <BaseCombobox.Empty className="px-2 py-3 text-center paragraph-xs text-quaternary">
+                    {/* Base UI keeps this element mounted even when the list is
+                        non-empty — it's an aria-live region, and hiding or
+                        conditionally rendering it breaks screen-reader
+                        announcements. Only its children are conditional, so
+                        `empty:p-0` collapses the padding away instead; otherwise
+                        every popup carries a blank 24px strip above the options. */}
+                    <BaseCombobox.Empty className="px-2 py-3 text-center paragraph-xs text-quaternary empty:p-0">
                         {empty}
                     </BaseCombobox.Empty>
                     <BaseCombobox.List>{children as never}</BaseCombobox.List>
