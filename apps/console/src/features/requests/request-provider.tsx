@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 type RequestsContextValue = {
     state: {
+        allRequests: Request[]
         activeRequests: Request[]
         archivedRequests: Request[]
         requestsById: Record<string, Request>
@@ -110,11 +111,13 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
         setRequestsById((previous) => ({ ...previous, [request.id]: request }))
     }, [])
 
-    const activeRequests = useMemo(() => Object.values(requestsById).filter((request) => request.status !== 'archived'), [requestsById])
-    const archivedRequests = useMemo(() => Object.values(requestsById).filter((request) => request.status === 'archived'), [requestsById])
+    const allRequests = useMemo(() => Object.values(requestsById), [requestsById])
+    const activeRequests = useMemo(() => allRequests.filter((request) => request.status !== 'archived'), [allRequests])
+    const archivedRequests = useMemo(() => allRequests.filter((request) => request.status === 'archived'), [allRequests])
 
     const value = useMemo(() => ({
         state: {
+            allRequests,
             activeRequests,
             archivedRequests,
             requestsById,
@@ -128,7 +131,7 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
             syncRequest,
             removeRequest,
         },
-    }), [activeRequests, archivedRequests, loadActiveRequests, loadArchivedRequests, loadRequest, requestsById, syncRequest, removeRequest, isLoadingActive, isLoadingArchived])
+    }), [allRequests, activeRequests, archivedRequests, loadActiveRequests, loadArchivedRequests, loadRequest, requestsById, syncRequest, removeRequest, isLoadingActive, isLoadingArchived])
 
     return <RequestsContext.Provider value={value}>{children}</RequestsContext.Provider>
 }

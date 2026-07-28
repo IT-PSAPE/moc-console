@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { Request } from "@moc/types/requests";
 import type { Category } from "@moc/types/requests/category";
 import type { Priority } from "@moc/types/requests/priority";
+import type { Status } from "@moc/types/requests/status";
 
 // ─── Filter / Sort state ───────────────────────────────
 
@@ -12,6 +13,7 @@ export type RequestFilters = {
     search: string;
     categories: Set<Category>;
     priorities: Set<Priority>;
+    statuses: Set<Status>;
     dateRange: { start: string; end: string };
     sortField: SortField;
     sortDirection: SortDirection;
@@ -21,6 +23,7 @@ const defaultFilters: RequestFilters = {
     search: "",
     categories: new Set(),
     priorities: new Set(),
+    statuses: new Set(),
     dateRange: { start: "", end: "" },
     sortField: "createdAt",
     sortDirection: "desc",
@@ -53,6 +56,15 @@ export function useRequestFilters(requests: Request[]) {
         // Priority filter
         if (filters.priorities.size > 0) {
             result = result.filter((r) => filters.priorities.has(r.priority));
+        }
+
+        // Status filter. Archived requests are hidden unless the caller asks
+        // for them explicitly — "Archived" is a status like any other here,
+        // it just isn't part of the default view.
+        if (filters.statuses.size > 0) {
+            result = result.filter((r) => filters.statuses.has(r.status));
+        } else {
+            result = result.filter((r) => r.status !== "archived");
         }
 
         // Date range
@@ -110,6 +122,15 @@ export function useRequestFilters(requests: Request[]) {
         });
     }
 
+    function toggleStatus(status: Status) {
+        setFilters((f) => {
+            const next = new Set(f.statuses);
+            if (next.has(status)) next.delete(status);
+            else next.add(status);
+            return { ...f, statuses: next };
+        });
+    }
+
     function setDateRange(start: string, end: string) {
         setFilters((f) => ({ ...f, dateRange: { start, end } }));
     }
@@ -125,16 +146,23 @@ export function useRequestFilters(requests: Request[]) {
     const hasActiveFilters =
         filters.categories.size > 0 ||
         filters.priorities.size > 0 ||
+        filters.statuses.size > 0 ||
         filters.dateRange.start !== "" ||
         filters.dateRange.end !== "";
+
+    // True when the current view includes archived requests, so callers know
+    // they must have loaded them.
+    const includesArchived = filters.statuses.has("archived");
 
     return {
         filters,
         filtered,
         hasActiveFilters,
+        includesArchived,
         setSearch,
         toggleCategory,
         togglePriority,
+        toggleStatus,
         setDateRange,
         setSort,
         reset,

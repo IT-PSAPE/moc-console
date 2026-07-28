@@ -7,9 +7,10 @@ import { Input } from "@moc/ui/components/form/input";
 import { Radio, RadioGroup } from "@moc/ui/components/form/radio";
 import { Tabs } from "@moc/ui/components/layout/tabs";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
-import { categoryLabel, priorityLabel } from "@moc/types/requests";
+import { categoryLabel, priorityLabel, statusLabel } from "@moc/types/requests";
 import type { Category } from "@moc/types/requests/category";
 import type { Priority } from "@moc/types/requests/priority";
+import type { Status } from "@moc/types/requests/status";
 import { RotateCcw, X } from "lucide-react";
 import type { useRequestFilters } from "./use-request-filters";
 
@@ -18,7 +19,7 @@ type RequestFilterDrawerProps = {
 };
 
 export function RequestFilterDrawer({ filters }: RequestFilterDrawerProps) {
-    const { filters: state, toggleCategory, togglePriority, setDateRange, setSort, reset, hasActiveFilters } = filters;
+    const { filters: state, toggleCategory, togglePriority, toggleStatus, setDateRange, setSort, reset, hasActiveFilters } = filters;
 
     const sortValue = `${state.sortField}-${state.sortDirection}`;
 
@@ -57,6 +58,23 @@ export function RequestFilterDrawer({ filters }: RequestFilterDrawerProps) {
                                                 key={key}
                                                 checked={state.categories.has(key)}
                                                 onChange={() => toggleCategory(key)}
+                                            >
+                                                <FormLabel label={label} />
+                                            </Checkbox>
+                                        ))}
+                                    </div>
+                                </div>
+                                <Divider className="px-4" />
+                                <div className="py-2">
+                                    {/* Archived requests are excluded from the
+                                        default view; tick Archived to see them. */}
+                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Status</Paragraph.sm>
+                                    <div className="grid grid-cols-2 gap-2 px-3">
+                                        {(Object.entries(statusLabel) as [Status, string][]).map(([key, label]) => (
+                                            <Checkbox
+                                                key={key}
+                                                checked={state.statuses.has(key)}
+                                                onChange={() => toggleStatus(key)}
                                             >
                                                 <FormLabel label={label} />
                                             </Checkbox>
