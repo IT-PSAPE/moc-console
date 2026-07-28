@@ -9,7 +9,7 @@ import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import { ChevronRight } from "lucide-react";
 import { useWorkspace } from "@/lib/workspace-context";
 import { routes } from "@/screens/console-routes";
-import type { MessageType } from "@/data/notification-templates-core";
+import type { MessageType } from "@moc/notifications";
 import { fetchNotificationTemplates } from "@/data/notification-templates";
 import { GROUP_MESSAGE_TYPES, DM_MESSAGE_TYPES, messageTypeMeta } from "./meta";
 

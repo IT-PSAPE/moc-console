@@ -1,13 +1,14 @@
 import { workspaceId } from '@/lib/workspace'
+import { apiUrl } from '@moc/utils/api-url'
 
-// Fire-and-forget notify calls to this app's serverless functions, which
-// HMAC-sign and forward to moc-console. Notification failures must never
-// break the public submission UI.
+// Fire-and-forget notify calls to the MOC API app, which dispatches straight
+// to the configured Telegram routes. Notification failures must never break
+// the public submission UI.
 
 function fire(path: string, body: Record<string, unknown>): void {
   void (async () => {
     try {
-      await fetch(path, {
+      await fetch(apiUrl(path), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

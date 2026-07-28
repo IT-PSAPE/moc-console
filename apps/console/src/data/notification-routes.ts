@@ -1,5 +1,5 @@
 import { supabase } from "@moc/data/supabase";
-import type { NotificationEventKey } from "./notification-events";
+import type { NotificationEventKey } from "@moc/notifications";
 
 export type NotificationRoute = {
   id: string;

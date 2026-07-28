@@ -20,7 +20,7 @@ import {
     renderTemplate,
     validateTemplate,
     type MessageType,
-} from "@/data/notification-templates-core";
+} from "@moc/notifications";
 import {
     deleteNotificationTemplate,
     fetchNotificationTemplates,

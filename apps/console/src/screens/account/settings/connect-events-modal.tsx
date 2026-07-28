@@ -9,7 +9,7 @@ import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import {
     NOTIFICATION_EVENTS,
     type NotificationEventKey,
-} from "@/data/notification-events";
+} from "@moc/notifications";
 import {
     createNotificationRoute,
     deleteNotificationRoute,

@@ -11,7 +11,7 @@ import {
     DEFAULT_TIMEZONE,
     formatInstant,
     type DateFormatPreset,
-} from "@/data/notification-templates-core";
+} from "@moc/notifications";
 import {
     fetchNotificationSettings,
     updateMessageFormat,

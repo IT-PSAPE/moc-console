@@ -1,24 +1,24 @@
 import { useEffect } from "react"
 import { Section } from "@moc/ui/components/display/section"
-import { BroadcastProvider, useBroadcast } from "@/features/broadcast/broadcast-provider"
-import { YouTubeConnectionCard } from "@/features/broadcast/youtube-connection-card"
-import { ZoomConnectionCard } from "@/features/broadcast/zoom-connection-card"
-import { useYouTubeOAuth } from "@/features/broadcast/use-youtube-oauth"
-import { useZoomOAuth } from "@/features/broadcast/use-zoom-oauth"
+import { StreamsProvider, useStreams } from "@/features/streams/streams-provider"
+import { YouTubeConnectionCard } from "@/features/streams/youtube-connection-card"
+import { ZoomConnectionCard } from "@/features/streams/zoom-connection-card"
+import { useYouTubeOAuth } from "@/features/streams/use-youtube-oauth"
+import { useZoomOAuth } from "@/features/streams/use-zoom-oauth"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { Divider } from "@moc/ui/components/display/divider";
 
 export function StreamsTab() {
     return (
-        <BroadcastProvider>
+        <StreamsProvider>
             <StreamsTabContent />
-        </BroadcastProvider>
+        </StreamsProvider>
     )
 }
 
 function StreamsTabContent() {
     const { toast } = useFeedback()
-    const { actions: { loadYouTubeConnection, loadZoomConnection } } = useBroadcast()
+    const { actions: { loadYouTubeConnection, loadZoomConnection } } = useStreams()
     const { handleOAuthCallback: handleYouTubeCallback } = useYouTubeOAuth()
     const { handleOAuthCallback: handleZoomCallback } = useZoomOAuth()
 

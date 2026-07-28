@@ -1,5 +1,6 @@
 import { supabase } from "@moc/data/supabase"
 import { buildSessionHeaders } from "./api-auth"
+import { apiUrl } from "@moc/utils/api-url"
 import { getCurrentWorkspaceId } from "@/data/current-workspace"
 
 type ConnectionTokens = {
@@ -47,7 +48,7 @@ export async function getValidAccessToken(): Promise<string> {
   }
 
   const sessionHeaders = await buildSessionHeaders()
-  const response = await fetch("/api/zoom/oauth/refresh", {
+  const response = await fetch(apiUrl("/api/zoom/oauth/refresh"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -87,7 +88,7 @@ export async function getValidAccessToken(): Promise<string> {
 /** Exchange an authorization code for tokens. */
 export async function exchangeZoomCodeForTokens(code: string, redirectUri: string) {
   const sessionHeaders = await buildSessionHeaders()
-  const response = await fetch("/api/zoom/oauth/exchange", {
+  const response = await fetch(apiUrl("/api/zoom/oauth/exchange"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

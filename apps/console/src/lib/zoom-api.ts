@@ -1,4 +1,5 @@
 import { buildSessionHeaders } from "./api-auth"
+import { apiUrl } from "@moc/utils/api-url"
 import { getValidAccessToken, getZoomErrorMessage } from "./zoom-auth"
 
 /** Make an authenticated Zoom API call. Handles token refresh automatically. */
@@ -8,7 +9,7 @@ export async function zoomApiFetch(
 ): Promise<Response> {
   const accessToken = await getValidAccessToken()
   const sessionHeaders = await buildSessionHeaders()
-  const url = path.startsWith("http") ? path : `/api/zoom/v2${path}`
+  const url = path.startsWith("http") ? path : apiUrl(`/api/zoom/v2${path}`)
 
   return fetch(url, {
     ...options,
@@ -24,7 +25,7 @@ export async function zoomApiFetch(
 /** Revoke Zoom OAuth token. */
 export async function revokeZoomToken(accessToken: string): Promise<void> {
   const sessionHeaders = await buildSessionHeaders()
-  const response = await fetch("/api/zoom/oauth/revoke", {
+  const response = await fetch(apiUrl("/api/zoom/oauth/revoke"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

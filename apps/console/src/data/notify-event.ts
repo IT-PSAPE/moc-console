@@ -1,4 +1,5 @@
 import { buildSessionHeaders } from "@/lib/api-auth";
+import { apiUrl } from "@moc/utils/api-url";
 
 // Fire-and-forget POST to the internal notify endpoint. The server
 // atomically claims the row via `notified_at`, so duplicate calls are
@@ -7,7 +8,7 @@ function fireNotify(path: string, body: Record<string, unknown>): void {
   void (async () => {
     try {
       const headers = await buildSessionHeaders();
-      await fetch(path, {
+      await fetch(apiUrl(path), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
