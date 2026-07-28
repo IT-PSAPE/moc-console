@@ -35,12 +35,14 @@ The RPC signatures are defined in [docs/phases/phase-12-public-access.sql](docs/
 
 ## Outbound notifications
 
-After a successful submission, the client fires a request to a local Vercel serverless function which HMAC-signs the payload and forwards it to moc-console's `/api/notifications/{requests,bookings}` endpoint, which dispatches Telegram notifications to configured groups/topics.
+After a successful submission, the client POSTs to `/api/notify/{request,booking}` on the **MOC API app** (`apps/api`), which dispatches Telegram notifications to the workspace's configured groups/topics.
+
+This app has no server-side code of its own. The handlers used to live here and HMAC-forward to moc-console; both sides now live in the API app, so the hop is gone.
 
 - Client helpers: [src/data/notify-event.ts](src/data/notify-event.ts)
-- Relay handlers: [api/notify/request.ts](api/notify/request.ts), [api/notify/booking.ts](api/notify/booking.ts)
+- Handlers: `apps/api/api/notify/request.ts`, `apps/api/api/notify/booking.ts`
 
-The relay no-ops silently if `MOC_CONSOLE_BASE_URL` or `NOTIFICATIONS_INGEST_SECRET` is unset, so local development stays quiet.
+The API no-ops silently when `CONSOLE_BASE_URL` is unset there, so local development stays quiet.
 
 ## Environment variables
 
@@ -51,16 +53,13 @@ Client (`VITE_*` — exposed to the browser):
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
 - `VITE_WORKSPACE_ID` — UUID of the workspace this deployment submits into.
+- `VITE_API_BASE_URL` — origin of the MOC API app, e.g. `https://api.psape.co.zw`. Blank keeps `/api/*` calls relative to this app's own origin.
 
-Server (only available in the Vercel serverless runtime):
-
-- `MOC_CONSOLE_BASE_URL` — origin of the moc-console deployment, e.g. `https://moc-console.example.com`.
-- `NOTIFICATIONS_INGEST_SECRET` — shared HMAC secret. Must match the value set in moc-console.
+There are no server-side variables: this app ships no serverless functions. Server secrets live in `apps/api/.env.example`.
 
 ## Project structure
 
 ```
-api/notify/              Vercel serverless functions (HMAC relay to moc-console)
 docs/phases/             Shared Supabase migrations (kept in sync with moc-console)
 src/data/                Supabase RPC clients + outbound notify helpers
 src/features/            Domain hooks (use-request-form, use-booking-form, etc.)

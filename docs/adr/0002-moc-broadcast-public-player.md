@@ -1,5 +1,7 @@
 # MOC Broadcast: a public playlist player as a third app
 
+> **Superseded by [ADR-0007](./0007-simplify-console-to-five-features.md) (2026-07-28).** The system described below was removed from the repo. Kept as history — do not treat it as current design.
+
 MOC Console's "Broadcasts" section is a playlist *authoring* tool — staff assemble ordered cues (image/audio/video media) into playlists — but nothing can play those playlists anywhere. We are adding a third app, `apps/broadcast` (**MOC Broadcast**): a public, no-auth front-end where a viewer picks a workspace, browses its *published* playlists, and plays one on a continuous loop (foyer/auditorium display use case). "Broadcasting" is treated as a verb — making a playlist publicly playable — not a new domain entity; the thing played is still a `Playlist`.
 
 ## Considered options

@@ -16,9 +16,7 @@ It separates:
 | Auth | Supabase Auth + Supabase | `src/lib/auth-context.tsx`, `src/screens/auth/reset-password.tsx`, `src/screens/auth/password-recovery.tsx` | `users` reads now include `telegram_chat_id`, and password recovery completes through the dedicated recovery route. |
 | Workspace | Supabase with default-workspace fallback | `src/data/current-workspace.ts`, `src/data/fetch-workspaces.ts`, `src/features/users/users-provider.tsx` | Runtime can fall back to the seeded `default-workspace` slug when memberships are missing. |
 | Equipment | Supabase | `src/data/fetch-equipment.ts`, `src/data/mutate-equipment.ts` | Equipment rows remain normalized; booking-derived display fields are added in the mapper. |
-| Broadcast | Supabase | `src/data/fetch-broadcast.ts`, `src/data/mutate-broadcast.ts` | Playlists still expose nested cues in memory, but the stored model is `playlists` plus `queue`. |
 | Streams | Supabase + Edge Functions | `src/data/fetch-streams.ts`, `src/data/mutate-streams.ts`, `src/data/youtube-api.ts` | YouTube API calls go through Supabase Edge Functions (`supabase/functions/youtube-api/`). OAuth handled by `supabase/functions/youtube-oauth-callback/`. Local `streams` table is a cache of YouTube state. |
-| Cue Sheet | Supabase + RPC helpers | `src/data/fetch-cue-sheet.ts`, `src/data/mutate-cue-sheet.ts`, `src/features/cue-sheet/cue-sheet-provider.tsx` | Storage is split between templates and runs; the runtime model still re-combines them behind a `kind` field. |
 | Seed data | Checked-in SQL | `docs/phases/phase-11-seed-data.sql` | Replaces the deleted mock JSON and normalization scripts. |
 
 ## Current Live Code Changes
@@ -31,7 +29,6 @@ The codebase was updated in this pass to align the runtime layer with the docume
 - removed `can_manage_assignees` from the role model and user-management permission checks
 - added `telegramChatId` to the user profile read model
 - made request `dueDate` required in the app model
-- changed cue-sheet track color storage from raw CSS values to stable color keys plus a mapping utility
 - added a workspace directory layer plus current-workspace caching and reset hooks around auth changes
 - added the email-reset plus recovery-route password update flow
 
@@ -45,8 +42,6 @@ Examples:
 
 - `bookings.equipment_id`
 - `bookings.booked_by`
-- `queue.media_id`
-- `tracks.color_id`
 - `requests.workspace_id`
 
 ### Read model
@@ -57,8 +52,6 @@ Examples:
 
 - `Booking.equipmentName`
 - `Equipment.bookedBy`
-- `QueueItem.mediaName`
-- `Track.colorKey`
 - `UserWithRole.workspaceIds`
 
 ## Equipment Example
@@ -174,26 +167,6 @@ Current rollout rule:
 2. user membership should come from `workspace_users`
 3. screens should filter by workspace membership or parent record `workspaceId`
 4. when membership rows are missing during bootstrap, the app can fall back to the seeded default workspace instead of blocking the UI
-
-## Track Color Mapping
-
-The cue-sheet track-color flow now follows the rebrand-safe pattern discussed in planning:
-
-1. stored data carries a stable key
-2. the app maps that key to an actual CSS color
-3. a future rebrand changes the mapping in code, not the stored rows
-4. the lookup table behind that mapping should stay shared as `colors`, not be tied to one feature
-
-Current runtime example:
-
-```ts
-type Track = {
-  id: string;
-  name: string;
-  colorKey: "blue" | "purple" | "red" | "green" | "orange";
-  cues: Cue[];
-};
-```
 
 ## Seed Data Guidance
 

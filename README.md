@@ -2,10 +2,10 @@
 
 MOC Console is a React 19 admin application for managing operational workflows across:
 
-- requests
-- equipment
-- broadcast media and playlists
-- cue sheet views
+- requests (archived ones behind a filter)
+- equipment inventory
+- equipment bookings
+- YouTube streams and Zoom meetings
 - authenticated users and role-aware navigation
 
 The UI is built with React, TypeScript, Vite, and Tailwind CSS v4.
@@ -21,41 +21,30 @@ The UI is built with React, TypeScript, Vite, and Tailwind CSS v4.
 
 ## Feature Areas
 
+Navigation is flat: one sidebar item per feature, no nested sections.
+
 ### Requests
 
-- overview dashboard
-- all requests
-- archived requests
+- all submitted requests
 - request detail view
 - request assignees and request duty roles
 
-Requests use local mock JSON data, and request assignees start blank. Adding or removing assignees only updates local app state. The live auth domain still provides users, roles, and auth sessions for sign-in and assignment pickers.
-
 ### Equipment
 
-- overview
-- inventory
-- bookings
-- maintenance
-- equipment detail view
-- reports placeholder
+- full inventory (list, table and kanban views)
+- status filter, including items in maintenance
+- equipment detail view with QR and notes
 
-Equipment currently reads from mock JSON files and uses mock mutations.
+### Bookings
 
-### Broadcast
+- equipment bookings (list, table and calendar views)
+- booking detail view with scan-based checkout and return
 
-- overview
-- media library
-- playlists
-- playlist detail view
+### Streams
 
-Broadcast media and playlists currently read from mock JSON files and use mock mutations.
-
-### Cue Sheet
-
-- overview
-- event
-- checklist
+- YouTube live streams
+- Zoom meetings
+- stream and meeting detail views
 
 ## Authentication
 
@@ -117,9 +106,10 @@ files.
       and all RPCs.
    3. `docs/phases/03-security.sql` — row-level security policies,
       storage buckets, and grants.
-3. **Configure the apps.** For each app (`apps/console`,
-   `apps/request`, `apps/broadcast`) copy `.env.example` to
-   `.env.local` and set the Supabase project URL and anon key.
+3. **Configure the apps.** For each app (`apps/console`, `apps/request`,
+   `apps/api`) copy `.env.example` to `.env.local`. The two frontends need
+   only the Supabase URL + publishable key and `VITE_API_BASE_URL`; every
+   server secret lives in `apps/api`.
 
 That's it — the database is fully provisioned. Sign-up works
 immediately: the first user is auto-joined to the default workspace
@@ -142,17 +132,23 @@ You never need it on a brand-new project.
 features — Telegram bot linking/notifications, YouTube and Zoom
 streaming — additionally require their own credentials and external
 services (bot token, OAuth apps); these are app/config concerns, not
-database setup. Live event-playback sync uses Supabase Realtime
-*Broadcast* channels, which need no extra database configuration.
+database setup.
 
 ## Project Structure
 
-Main source folders:
+The repo is a bun-workspaces monorepo:
+
+- `apps/console` — the authenticated admin app (this README)
+- `apps/request` — the public submission PWA
+- `apps/api` — every serverless function and the `server/` library behind it; see [apps/api/README.md](apps/api/README.md)
+- `packages/{ui,types,utils,data,notifications}` — shared code
+
+Inside a frontend app:
 
 - `src/screens` for route-level screens
 - `src/features` for domain-specific state and UI
 - `src/components` for shared UI primitives and composed components
-- `src/data` for data access and mock data
+- `src/data` for Supabase reads, writes and mappers
 - `src/types` for domain models
 - `src/lib` for app infrastructure such as Supabase and auth context
 - `docs` for project documentation
@@ -171,7 +167,7 @@ Use them together:
 
 Important caveat:
 
-- This schema documentation is inferred from the current TypeScript models, Supabase queries, and mock data in the repository.
+- This schema documentation is inferred from the current TypeScript models and Supabase queries in the repository.
 - There are no checked-in SQL migrations or generated database types in this repo at the moment.
 
 ## Current Data Backing
@@ -185,19 +181,10 @@ Important caveat:
 - auth sessions
 - request duty role presets
 
-### Mock-backed
+### Not backed by mocks
 
-- requests
-- request assignees
-- equipment
-- equipment bookings
-- broadcast media
-- broadcast playlists
-- playlist cues
-
-Mock data lives under `src/data/mock`.
-
-All mock record ids are UUID strings.
+Nothing is mock-backed any more — every operational domain reads and
+writes Supabase directly.
 
 ## Routing Summary
 
@@ -207,21 +194,14 @@ Main app sections:
 
 - `/dashboard`
 - `/requests`
-- `/requests/all-requests`
-- `/requests/archived`
 - `/requests/:id`
 - `/equipment`
-- `/equipment/inventory`
-- `/equipment/bookings`
-- `/equipment/maintenance`
 - `/equipment/:id`
-- `/broadcast`
-- `/broadcast/media`
-- `/broadcast/playlists`
-- `/broadcast/playlists/:id`
-- `/cue-sheet`
-- `/cue-sheet/event`
-- `/cue-sheet/checklist`
+- `/bookings`
+- `/bookings/:id`
+- `/streams`
+- `/streams/stream/:id`
+- `/streams/meeting/:id`
 
 Auth routes:
 
