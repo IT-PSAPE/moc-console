@@ -1,6 +1,7 @@
 import { buildSessionHeaders } from "@/lib/api-auth";
+import { apiUrl } from "@moc/utils/api-url";
 
-export type AssignmentKind = "request" | "cue" | "checklist_item";
+export type AssignmentKind = "request";
 
 // Fire-and-forget: notification failures must never break the assignment UI.
 // The server endpoint silently no-ops when the assignee has no Telegram linked.
@@ -13,7 +14,7 @@ export function notifyAssignment(
   void (async () => {
     try {
       const headers = await buildSessionHeaders();
-      await fetch("/api/notifications/assignment", {
+      await fetch(apiUrl("/api/notifications/assignment"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

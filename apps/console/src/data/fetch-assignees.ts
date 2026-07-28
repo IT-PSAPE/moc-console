@@ -57,60 +57,6 @@ export async function fetchAssigneesByRequestId(requestId: string): Promise<Reso
     .filter((assignee): assignee is ResolvedAssignee => assignee !== null);
 }
 
-export async function fetchAssigneesByCueId(cueId: string): Promise<ResolvedAssignee[]> {
-  const { data, error } = await supabase
-    .from("cue_assignees")
-    .select(`duty, users(${USER_COLUMNS})`)
-    .eq("cue_id", cueId);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return ((data ?? []) as Array<{ duty: string; users: UserRow | UserRow[] | null }>)
-    .map(mapAssigneeRow)
-    .filter((assignee): assignee is ResolvedAssignee => assignee !== null);
-}
-
-export async function fetchAssigneesByChecklistItemId(checklistItemId: string): Promise<ResolvedAssignee[]> {
-  const { data, error } = await supabase
-    .from("checklist_item_assignees")
-    .select(`duty, users(${USER_COLUMNS})`)
-    .eq("checklist_item_id", checklistItemId);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return ((data ?? []) as Array<{ duty: string; users: UserRow | UserRow[] | null }>)
-    .map(mapAssigneeRow)
-    .filter((assignee): assignee is ResolvedAssignee => assignee !== null);
-}
-
-export async function fetchAssigneesByChecklistId(checklistId: string): Promise<Map<string, ResolvedAssignee[]>> {
-  const { data, error } = await supabase
-    .from("checklist_item_assignees")
-    .select(`checklist_item_id, duty, users(${USER_COLUMNS}), checklist_items!inner(checklist_id)`)
-    .eq("checklist_items.checklist_id", checklistId);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const result = new Map<string, ResolvedAssignee[]>();
-  for (const row of (data ?? []) as Array<{ checklist_item_id: string; duty: string; users: UserRow | UserRow[] | null }>) {
-    const assignee = mapAssigneeRow(row);
-    if (!assignee) continue;
-    const existing = result.get(row.checklist_item_id);
-    if (existing) {
-      existing.push(assignee);
-    } else {
-      result.set(row.checklist_item_id, [assignee]);
-    }
-  }
-  return result;
-}
-
 export async function fetchAllUsers(): Promise<User[]> {
   const workspaceId = await getCurrentWorkspaceId();
   const { data, error } = await supabase
