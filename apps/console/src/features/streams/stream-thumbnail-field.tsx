@@ -49,7 +49,7 @@ export function StreamThumbnailField({
 
       {hasSelection ? (
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2 rounded-lg border border-secondary bg-primary px-3 py-2">
+          <div className="flex items-center gap-2 rounded-lg border border-secondary bg-primary p-2">
             {previewUrl && (
               <img src={previewUrl} alt="" className="size-8 rounded object-cover shrink-0" />
             )}
@@ -69,7 +69,7 @@ export function StreamThumbnailField({
       ) : (
         <div className="flex flex-col gap-2">
           {previewUrl && (
-            <div className="flex items-center gap-2 rounded-lg border border-secondary bg-primary px-3 py-2">
+            <div className="flex items-center gap-2 rounded-lg border border-secondary bg-primary p-2">
               <img src={previewUrl} alt="" className="size-8 rounded object-cover shrink-0" />
               <Paragraph.sm className="text-quaternary truncate flex-1">
                 Current thumbnail — choose a source below to replace it.
