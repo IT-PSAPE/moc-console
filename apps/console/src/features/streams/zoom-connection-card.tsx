@@ -1,5 +1,5 @@
 import { useAuth } from "@/lib/auth-context"
-import { useBroadcast } from "./broadcast-provider"
+import { useStreams } from "./streams-provider"
 import { useZoomOAuth } from "./use-zoom-oauth"
 import { disconnectZoom } from "@/data/mutate-zoom"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
@@ -13,7 +13,7 @@ export function ZoomConnectionCard() {
   const {
     state: { zoomConnection, isLoadingZoomConnection },
     actions: { setZoomConnection },
-  } = useBroadcast()
+  } = useStreams()
   const { startOAuthFlow } = useZoomOAuth()
   const [isDisconnecting, setIsDisconnecting] = useState(false)
 

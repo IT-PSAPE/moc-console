@@ -1,4 +1,4 @@
-import type { Stream, StreamPreset, StreamPrivacy, LatencyPreference } from "@moc/types/broadcast/stream"
+import type { Stream, StreamPreset, StreamPrivacy, LatencyPreference } from "@moc/types/streams/stream"
 import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 import {
@@ -16,11 +16,36 @@ import { notifyStreamCreated } from "./notify-event"
 // layer never fetches a thumbnail URL itself (that fetch is CORS-gated and was
 // the source of the silent-failure bug) — it only POSTs these bytes to
 // YouTube. `origin`/`sourceUrl` carry what the workspace preset should persist:
-// Upload mode mirrors `blob` to Supabase (sourceUrl null); URL/Media modes
-// persist the already-validated `sourceUrl`.
+// Upload mode mirrors `blob` to Supabase (sourceUrl null); URL mode persists
+// the already-validated `sourceUrl`.
 export type ThumbnailSource =
-  | { blob: Blob; origin: "file" | "url" | "media"; sourceUrl: string | null }
+  | { blob: Blob; origin: "file" | "url"; sourceUrl: string | null }
   | null
+
+// Mirrors a resolved stream-thumbnail blob into the public `media` storage
+// bucket, namespaced under <workspace_id>/stream-thumbnails/, so the workspace
+// stream preset references a durable, CORS-safe Supabase URL for Upload-mode
+// thumbnails instead of a YouTube CDN URL we can't re-fetch.
+export async function uploadStreamThumbnail(blob: Blob): Promise<string> {
+  const workspaceId = await getCurrentWorkspaceId()
+  const ext = blob.type === "image/png" ? "png" : "jpg"
+  const path = `${workspaceId}/stream-thumbnails/${randomId()}.${ext}`
+
+  const { error: uploadError } = await supabase.storage
+    .from("media")
+    .upload(path, blob, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: blob.type || "image/jpeg",
+    })
+
+  if (uploadError) {
+    throw new Error(uploadError.message)
+  }
+
+  const { data } = supabase.storage.from("media").getPublicUrl(path)
+  return data.publicUrl
+}
 
 // createStream/updateStream are non-fatal w.r.t. the thumbnail: the stream is
 // always created/updated. If YouTube itself rejects the thumbnail POST after

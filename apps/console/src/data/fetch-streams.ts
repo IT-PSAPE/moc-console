@@ -1,4 +1,4 @@
-import type { Stream, StreamPreset, YouTubeConnection, YouTubeConnectionStatus, YouTubeCategory, YouTubePlaylist } from "@moc/types/broadcast/stream"
+import type { Stream, StreamPreset, YouTubeConnection, YouTubeConnectionStatus, YouTubeCategory, YouTubePlaylist } from "@moc/types/streams/stream"
 import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 import { fetchVideoCategories, fetchChannelPlaylists } from "@/lib/youtube-client"

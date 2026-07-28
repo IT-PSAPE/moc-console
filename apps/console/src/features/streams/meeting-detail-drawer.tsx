@@ -8,8 +8,8 @@ import { Divider } from "@moc/ui/components/display/divider"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
 import { useAuth } from "@/lib/auth-context"
 import { routes } from "@/screens/console-routes"
-import { zoomRecurrenceLabel } from "@moc/types/broadcast/zoom-constants"
-import type { ZoomMeeting } from "@moc/types/broadcast/zoom"
+import { zoomRecurrenceLabel } from "@moc/types/streams/zoom-constants"
+import type { ZoomMeeting } from "@moc/types/streams/zoom"
 import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
 import {
   Calendar,
@@ -61,7 +61,7 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
   const handleOpenFullPage = useCallback(() => {
     if (!meeting) return
     onOpenChange(false)
-    navigate(`/${routes.broadcastMeetingDetail.replace(":id", meeting.id)}`)
+    navigate(`/${routes.meetingDetail.replace(":id", meeting.id)}`)
   }, [meeting, navigate, onOpenChange])
 
   if (!meeting) return null

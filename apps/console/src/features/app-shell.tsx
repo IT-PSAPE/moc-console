@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { routes } from '@/screens/console-routes'
 import { Sidebar } from '@moc/ui/components/navigation/sidebar'
 import { Breadcrumb } from '@moc/ui/components/navigation/breadcrumb'
-import { Cast, Drama, FileText, LayoutGrid, Package } from 'lucide-react'
+import { CalendarCheck, FileText, LayoutGrid, Package, Radio } from 'lucide-react'
 import { TopBar } from './topbar'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useSidebar } from '@moc/ui/components/navigation/sidebar'
@@ -33,8 +33,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         navigate(`/${route}`)
     }
 
+    // A section stays active on its detail pages too (e.g. /requests/:id).
     function isActive(route: string) {
-        return pathname === `/${route}`
+        return pathname === `/${route}` || pathname.startsWith(`/${route}/`)
     }
 
     const handleSignOut = useCallback(async () => {
@@ -79,29 +80,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
                         <Sidebar.Group>
                             <Sidebar.GroupContent>
-                                <Sidebar.MenuItem title={"Requests"} icon={<FileText />}>
-                                    <Sidebar.MenuItem title={"Overview"} active={isActive(routes.requestsOverview)} onClick={() => navigateToRoute(routes.requestsOverview)} />
-                                    <Sidebar.MenuItem title={"All requests"} active={isActive(routes.requestsAllRequests)} onClick={() => navigateToRoute(routes.requestsAllRequests)} />
-                                    <Sidebar.MenuItem title={"Archived"} active={isActive(routes.requestsArchived)} onClick={() => navigateToRoute(routes.requestsArchived)} />
-                                </Sidebar.MenuItem>
-                                <Sidebar.MenuItem title={"Equipment"} icon={<Package />}>
-                                    <Sidebar.MenuItem title={"Overview"} active={isActive(routes.equipmentOverview)} onClick={() => navigateToRoute(routes.equipmentOverview)} />
-                                    <Sidebar.MenuItem title={"Inventory"} active={isActive(routes.equipmentInventory)} onClick={() => navigateToRoute(routes.equipmentInventory)} />
-                                    <Sidebar.MenuItem title={"Bookings"} active={isActive(routes.equipmentBookings)} onClick={() => navigateToRoute(routes.equipmentBookings)} />
-                                    <Sidebar.MenuItem title={"Maintenance"} active={isActive(routes.equipmentMaintenance)} onClick={() => navigateToRoute(routes.equipmentMaintenance)} />
-                                </Sidebar.MenuItem>
-                                <Sidebar.MenuItem title={"Broadcast"} icon={<Cast />}>
-                                    <Sidebar.MenuItem title={"Overview"} active={isActive(routes.broadcastOverview)} onClick={() => navigateToRoute(routes.broadcastOverview)} />
-                                    <Sidebar.MenuItem title={"Media"} active={isActive(routes.broadcastMedia)} onClick={() => navigateToRoute(routes.broadcastMedia)} />
-                                    <Sidebar.MenuItem title={"Playlists"} active={isActive(routes.broadcastPlaylists)} onClick={() => navigateToRoute(routes.broadcastPlaylists)} />
-                                    <Sidebar.MenuItem title={"Streams"} active={isActive(routes.broadcastStreams)} onClick={() => navigateToRoute(routes.broadcastStreams)} />
-                                </Sidebar.MenuItem>
-                                <Sidebar.MenuItem title={"Cue Sheet"} icon={<Drama />}>
-                                    <Sidebar.MenuItem title={"Overview"} active={isActive(routes.cueSheetOverview)} onClick={() => navigateToRoute(routes.cueSheetOverview)} />
-                                    <Sidebar.MenuItem title={"Events"} active={isActive(routes.cueSheetEvents)} onClick={() => navigateToRoute(routes.cueSheetEvents)} />
-                                    <Sidebar.MenuItem title={"Checklists"} active={isActive(routes.cueSheetChecklists)} onClick={() => navigateToRoute(routes.cueSheetChecklists)} />
-                                    <Sidebar.MenuItem title={"Templates"} active={isActive(routes.cueSheetTemplates)} onClick={() => navigateToRoute(routes.cueSheetTemplates)} />
-                                </Sidebar.MenuItem>
+                                <Sidebar.MenuItem title={"Requests"} icon={<FileText />} active={isActive(routes.requests)} onClick={() => navigateToRoute(routes.requests)} />
+                                <Sidebar.MenuItem title={"Equipment"} icon={<Package />} active={isActive(routes.equipment)} onClick={() => navigateToRoute(routes.equipment)} />
+                                <Sidebar.MenuItem title={"Bookings"} icon={<CalendarCheck />} active={isActive(routes.bookings)} onClick={() => navigateToRoute(routes.bookings)} />
+                                <Sidebar.MenuItem title={"Streams"} icon={<Radio />} active={isActive(routes.streams)} onClick={() => navigateToRoute(routes.streams)} />
                             </Sidebar.GroupContent>
                         </Sidebar.Group>
                     </Sidebar.Content>

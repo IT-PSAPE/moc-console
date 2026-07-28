@@ -5,12 +5,10 @@ import { Button } from "@moc/ui/components/controls/button"
 import { Checkbox } from "@moc/ui/components/form/checkbox"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Accordion } from "@moc/ui/components/display/accordion"
-import type { Stream, StreamPreset, StreamPrivacy, LatencyPreference, YouTubeCategory, YouTubePlaylist } from "@moc/types/broadcast/stream"
-import type { MediaItem } from "@moc/types/broadcast/media-item"
+import type { Stream, StreamPreset, StreamPrivacy, LatencyPreference, YouTubeCategory, YouTubePlaylist } from "@moc/types/streams/stream"
 import type { ThumbnailSource } from "@/data/mutate-streams"
 import { fetchImageBlob, UNFETCHABLE_THUMBNAIL_MESSAGE } from "@moc/utils/blob-fetch"
 import { fetchCategories, fetchPlaylists } from "@/data/fetch-streams"
-import { fetchMedia } from "@/data/fetch-broadcast"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { formatUtcIsoForDateTimeInput, parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time"
 import { StreamBasicFields } from "./stream-basic-fields"
@@ -78,7 +76,6 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
   type ThumbSelection =
     | { kind: "file"; file: File }
     | { kind: "url"; url: string }
-    | { kind: "media"; url: string }
     | null
   const [thumbSelection, setThumbSelection] = useState<ThumbSelection>(
     presetThumbnailUrl ? { kind: "url", url: presetThumbnailUrl } : null,
@@ -91,7 +88,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
   const [thumbError, setThumbError] = useState<string | null>(null)
   const [thumbPreviewUrl, setThumbPreviewUrl] = useState<string | null>(null)
   const [thumbnailUrlInput, setThumbnailUrlInput] = useState("")
-  const [thumbnailMode, setThumbnailMode] = useState<"file" | "url" | "media">("file")
+  const [thumbnailMode, setThumbnailMode] = useState<"file" | "url">("file")
   // Discards results from a superseded resolution (e.g. paste URL A then B).
   const resolveSeqRef = useRef(0)
 
@@ -111,7 +108,6 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
   // ─── Remote data ───────────────────────────────────────
   const [categories, setCategories] = useState<YouTubeCategory[]>([])
   const [playlists, setPlaylists] = useState<YouTubePlaylist[]>([])
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   // Hard-gate Create on a validated thumbnail: a selected source must have
@@ -119,14 +115,9 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
   const thumbReady = !thumbSelection || (thumbStatus === "ready" && thumbBlob !== null)
   const canSubmit = Boolean(title.trim()) && !isSubmitting && thumbReady
 
-  // Thumbnails must be images, and must be fetchable as bytes. Items probed
-  // as unfetchable (blobFetchable === false) are hidden; legacy/unprobed
-  // (null) stay selectable and are re-validated on selection.
-  const imageMedia = mediaItems.filter((m) => m.type === "image" && m.blobFetchable !== false)
-
-  // Fetch categories, playlists, and media when modal opens.
-  // Collect failures and surface a single toast so a network outage doesn't
-  // fire three notifications at once.
+  // Fetch categories and playlists when the modal opens. Collect failures and
+  // surface a single toast so a network outage doesn't fire two notifications
+  // at once.
   useEffect(() => {
     if (!open) return
     const failures: string[] = []
@@ -138,10 +129,6 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
       fetchPlaylists().then(setPlaylists).catch((e) => {
         console.error("Failed to load YouTube playlists", e)
         failures.push("playlists")
-      }),
-      fetchMedia().then(setMediaItems).catch((e) => {
-        console.error("Failed to load media library", e)
-        failures.push("media library")
       }),
     ]).then(() => {
       if (failures.length === 0) return
@@ -174,7 +161,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
   }, [latencyPreference])
 
   // Resolve the selected thumbnail to bytes whenever the selection changes
-  // (seeded preset on open, mode switch, URL confirm, media pick). Each run
+  // (seeded preset on open, mode switch, URL confirm). Each run
   // owns exactly one preview object URL and revokes it on cleanup; a stale
   // resolution (selection changed mid-fetch) is discarded via the seq guard.
   useEffect(() => {
@@ -269,13 +256,6 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
     if (!url) return
     setThumbSelection({ kind: "url", url })
     setThumbName(url.split("/").pop() || "Image from URL")
-  }
-
-  function handleMediaSelect(mediaId: string) {
-    const item = imageMedia.find((m) => m.id === mediaId)
-    if (!item) return
-    setThumbSelection({ kind: "media", url: item.url })
-    setThumbName(item.name)
   }
 
   function clearThumbnail() {
@@ -383,12 +363,10 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
                   errorMessage={thumbError}
                   thumbnailUrlInput={thumbnailUrlInput}
                   thumbnailMode={thumbnailMode}
-                  imageMedia={imageMedia}
                   onModeChange={setThumbnailMode}
                   onFileSelect={handleFileSelect}
                   onUrlInputChange={setThumbnailUrlInput}
                   onUrlConfirm={handleThumbnailUrlConfirm}
-                  onMediaSelect={handleMediaSelect}
                   onClear={clearThumbnail}
                 />
 

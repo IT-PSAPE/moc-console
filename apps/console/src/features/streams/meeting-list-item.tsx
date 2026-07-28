@@ -1,8 +1,8 @@
 import { cn } from "@moc/utils/cn"
 import { Badge } from "@moc/ui/components/display/badge"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
-import { zoomRecurrenceLabel } from "@moc/types/broadcast/zoom-constants"
-import type { ZoomMeeting } from "@moc/types/broadcast/zoom"
+import { zoomRecurrenceLabel } from "@moc/types/streams/zoom-constants"
+import type { ZoomMeeting } from "@moc/types/streams/zoom"
 import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
 import { Calendar, Repeat } from "lucide-react"
 

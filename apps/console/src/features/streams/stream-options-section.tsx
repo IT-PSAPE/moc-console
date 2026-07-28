@@ -4,7 +4,7 @@ import { FormLabel } from "@moc/ui/components/form/form-label"
 import { Button } from "@moc/ui/components/controls/button"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Accordion } from "@moc/ui/components/display/accordion"
-import type { YouTubeCategory, YouTubePlaylist } from "@moc/types/broadcast/stream"
+import type { YouTubeCategory, YouTubePlaylist } from "@moc/types/streams/stream"
 import { ChevronDown, X } from "lucide-react"
 
 type StreamOptionsSectionProps = {

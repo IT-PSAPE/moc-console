@@ -1,8 +1,8 @@
 import { cn } from "@moc/utils/cn"
 import { Badge } from "@moc/ui/components/display/badge"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
-import { streamStatusColor, streamStatusLabel } from "@moc/types/broadcast/stream-constants"
-import type { Stream } from "@moc/types/broadcast/stream"
+import { streamStatusColor, streamStatusLabel } from "@moc/types/streams/stream-constants"
+import type { Stream } from "@moc/types/streams/stream"
 import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
 import { Calendar, CheckCircle, Radio } from "lucide-react"
 

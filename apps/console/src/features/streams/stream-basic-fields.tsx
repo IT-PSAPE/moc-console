@@ -4,8 +4,8 @@ import { DateTimeFields } from "@moc/ui/components/form/date-time-fields"
 import { TextArea } from "@moc/ui/components/form/text-area"
 import { FormLabel } from "@moc/ui/components/form/form-label"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
-import type { StreamPrivacy } from "@moc/types/broadcast/stream"
-import { streamPrivacyLabel } from "@moc/types/broadcast/stream-constants"
+import type { StreamPrivacy } from "@moc/types/streams/stream"
+import { streamPrivacyLabel } from "@moc/types/streams/stream-constants"
 
 type StreamBasicFieldsProps = {
   title: string

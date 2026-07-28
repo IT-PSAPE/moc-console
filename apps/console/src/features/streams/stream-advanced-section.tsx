@@ -4,8 +4,8 @@ import { Checkbox } from "@moc/ui/components/form/checkbox"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Accordion } from "@moc/ui/components/display/accordion"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
-import type { LatencyPreference } from "@moc/types/broadcast/stream"
-import { latencyPreferenceLabel, latencyPreferenceHint } from "@moc/types/broadcast/stream-constants"
+import type { LatencyPreference } from "@moc/types/streams/stream"
+import { latencyPreferenceLabel, latencyPreferenceHint } from "@moc/types/streams/stream-constants"
 import { ChevronDown } from "lucide-react"
 
 type StreamAdvancedSectionProps = {

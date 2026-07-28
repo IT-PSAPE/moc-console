@@ -8,9 +8,9 @@ import { Divider } from "@moc/ui/components/display/divider"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
 import { useAuth } from "@/lib/auth-context"
 import { routes } from "@/screens/console-routes"
-import { streamStatusColor, streamStatusLabel, streamPrivacyLabel } from "@moc/types/broadcast/stream-constants"
-import type { Stream } from "@moc/types/broadcast/stream"
-import { latencyPreferenceLabel } from "@moc/types/broadcast/stream-constants"
+import { streamStatusColor, streamStatusLabel, streamPrivacyLabel } from "@moc/types/streams/stream-constants"
+import type { Stream } from "@moc/types/streams/stream"
+import { latencyPreferenceLabel } from "@moc/types/streams/stream-constants"
 import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
 import {
   Calendar,
@@ -65,7 +65,7 @@ export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelet
   const handleOpenFullPage = useCallback(() => {
     if (!stream) return
     onOpenChange(false)
-    navigate(`/${routes.broadcastStreamDetail.replace(":id", stream.id)}`)
+    navigate(`/${routes.streamDetail.replace(":id", stream.id)}`)
   }, [stream, navigate, onOpenChange])
 
   if (!stream) return null

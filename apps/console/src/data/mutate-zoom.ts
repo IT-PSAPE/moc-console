@@ -1,4 +1,4 @@
-import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/broadcast/zoom"
+import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/streams/zoom"
 import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 import { zoomApiFetch, revokeZoomToken } from "@/lib/zoom-client"

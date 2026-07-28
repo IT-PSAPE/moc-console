@@ -9,16 +9,16 @@ import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Alert } from "@moc/ui/components/feedback/alert"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { useAuth } from "@/lib/auth-context"
-import { useBroadcast } from "./broadcast-provider"
+import { useStreams } from "./streams-provider"
 import { useStreamFilters } from "./use-stream-filters"
 import { StreamFilterDrawer } from "./stream-filter-drawer"
 import { StreamListItem } from "./stream-list-item"
 import { StreamModal, type StreamFormData } from "./stream-modal"
 import { StreamDetailDrawer } from "./stream-detail-drawer"
 import { createStream, updateStream, deleteStream, syncStreamsFromYouTube, saveStreamPreset } from "@/data/mutate-streams"
-import { uploadStreamThumbnail } from "@/data/mutate-broadcast"
+import { uploadStreamThumbnail } from "@/data/mutate-streams"
 import { getErrorMessage } from "@moc/utils/get-error-message"
-import type { Stream } from "@moc/types/broadcast/stream"
+import type { Stream } from "@moc/types/streams/stream"
 import { useNavigate } from "react-router-dom"
 import { Plus, RefreshCw, Settings2, Tv } from "lucide-react"
 
@@ -29,7 +29,7 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
   const {
     state: { streams, youtubeConnection, isLoadingStreams },
     actions: { loadStreams, loadYouTubeConnection, syncStream, removeStream, setStreams },
-  } = useBroadcast()
+  } = useStreams()
 
   useEffect(() => {
     void loadYouTubeConnection()
@@ -71,7 +71,7 @@ export function YouTubeStreamsView({ searchQuery }: { searchQuery: string }) {
       syncStream(newStream)
       if (params.savePreset) {
         // Persist a CORS-safe thumbnail reference: Upload-mode bytes are
-        // mirrored into our own Supabase bucket; URL/Media keep their
+        // mirrored into our own Supabase bucket; URL mode keeps its
         // already-validated source URL. Never the YouTube CDN URL.
         let presetThumbnailUrl: string | null = null
         if (params.thumbnail) {

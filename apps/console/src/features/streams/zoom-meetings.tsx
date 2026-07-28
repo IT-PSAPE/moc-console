@@ -8,7 +8,7 @@ import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { useAuth } from "@/lib/auth-context"
-import { useBroadcast } from "./broadcast-provider"
+import { useStreams } from "./streams-provider"
 import { useZoomMeetingFilters } from "./use-zoom-meeting-filters"
 import { ZoomMeetingFilterDrawer } from "./zoom-meeting-filter-drawer"
 import { MeetingListItem } from "./meeting-list-item"
@@ -16,7 +16,7 @@ import { MeetingModal } from "./meeting-modal"
 import { MeetingDetailDrawer } from "./meeting-detail-drawer"
 import { createZoomMeeting, updateZoomMeeting, deleteZoomMeeting, syncZoomMeetings, type CreateMeetingParams } from "@/data/mutate-zoom"
 import { getErrorMessage } from "@moc/utils/get-error-message"
-import type { ZoomMeeting } from "@moc/types/broadcast/zoom"
+import type { ZoomMeeting } from "@moc/types/streams/zoom"
 import { useNavigate } from "react-router-dom"
 import { Plus, RefreshCw, Settings2, Video } from "lucide-react"
 
@@ -27,7 +27,7 @@ export function ZoomMeetingsView({ searchQuery }: { searchQuery: string }) {
   const {
     state: { zoomConnection, zoomMeetings, isLoadingZoomMeetings },
     actions: { loadZoomConnection, loadZoomMeetings, syncMeeting, removeMeeting, setZoomMeetings },
-  } = useBroadcast()
+  } = useStreams()
 
   useEffect(() => {
     void loadZoomConnection()

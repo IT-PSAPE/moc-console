@@ -1,7 +1,6 @@
-import { ChevronRight } from 'lucide-react'
 import { cn } from '@moc/utils/cn'
 import { cv } from '@moc/utils/cv'
-import { Children, createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type MouseEventHandler, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type MouseEventHandler, type ReactNode } from 'react'
 import { Label } from '../display/text'
 
 // ─── Context ─────────────────────────────────────────────
@@ -56,34 +55,6 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     )
 }
 
-// ─── Menu Level Context ──────────────────────────────────
-
-type SidebarMenuLevelContextValue = {
-    state: {
-        isChild: boolean
-    }
-    actions: Record<string, never>
-    meta: Record<string, never>
-}
-
-const sidebarMenuLevelContextDefaultValue: SidebarMenuLevelContextValue = {
-    state: {
-        isChild: false,
-    },
-    actions: {},
-    meta: {},
-}
-
-const SidebarMenuLevelContext = createContext<SidebarMenuLevelContextValue>(sidebarMenuLevelContextDefaultValue)
-
-const nestedSidebarMenuLevelContextValue: SidebarMenuLevelContextValue = {
-    state: {
-        isChild: true,
-    },
-    actions: {},
-    meta: {},
-}
-
 const menuItemVarients = cv({
     base: [
         'py-1 rounded-md inline-flex justify-start items-center gap-2 overflow-hidden w-full min-h-9',
@@ -102,10 +73,6 @@ const menuItemVarients = cv({
         state: 'inactive',
     },
 })
-
-function useSidebarMenuLevel() {
-    return useContext(SidebarMenuLevelContext)
-}
 
 // ─── Components ──────────────────────────────────────────
 
@@ -191,72 +158,35 @@ function SidebarGroupContent({ children, className }: HTMLAttributes<HTMLDivElem
 }
 
 type SidebarMenuItemProps = {
-    children?: ReactNode
     icon?: ReactNode
     active?: boolean
     onClick?: MouseEventHandler<HTMLButtonElement>
     title: string
 }
 
-function SidebarMenuItem({ title, children, icon, active = false, onClick }: SidebarMenuItemProps) {
-    const { state: levelState } = useSidebarMenuLevel()
+// Menu items are flat — one item, one destination. There is no nesting and
+// no expand/collapse; the only collapsing left is the panel rail itself.
+function SidebarMenuItem({ title, icon, active = false, onClick }: SidebarMenuItemProps) {
     const { state: sidebarState } = useSidebar()
-    const [isOpen, setIsOpen] = useState(true)
-    const menuChildren = Children.toArray(children)
-    const hasChildren = menuChildren.length > 0
     const itemState = active ? 'active' : 'inactive'
     const isCollapsed = sidebarState.isCollapsed
-
-    function handleToggle() {
-        if (!hasChildren) {
-            return
-        }
-
-        setIsOpen(!isOpen)
-    }
-
-    const handleClick = hasChildren ? handleToggle : onClick
-    const cursorClassName = handleClick ? 'cursor-pointer' : 'cursor-default'
+    const cursorClassName = onClick ? 'cursor-pointer' : 'cursor-default'
 
     return (
         <div className={isCollapsed ? "w-fit" : "w-full"}>
-            <button type="button" className={cn(menuItemVarients({ state: itemState, isCollapsed: isCollapsed ? 'true' : 'false'}), cursorClassName)} onClick={handleClick} aria-expanded={hasChildren ? isOpen : undefined} title={isCollapsed ? title : undefined} > 
+            <button type="button" className={cn(menuItemVarients({ state: itemState, isCollapsed: isCollapsed ? 'true' : 'false'}), cursorClassName)} onClick={onClick} title={isCollapsed ? title : undefined} >
                 <div className={cn("flex-1 px-1 flex justify-start items-center gap-1.5", isCollapsed && "justify-center px-0")}>
                     <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
-                        {levelState.isChild ? null : icon}
+                        {icon}
                     </div>
                     {!isCollapsed && (
-                        <Label.sm className={cn("flex-1 text-left whitespace-nowrap text-inherit", levelState.isChild && "!font-normal", (!active && levelState.isChild) && "!text-quaternary")}>
+                        <Label.sm className="flex-1 text-left whitespace-nowrap text-inherit">
                             {title}
                         </Label.sm>
                     )}
-                    {(!isCollapsed && hasChildren) && (
-                        <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
-                            <ChevronRight className={cn('size-4 transition-transform', isOpen ? 'rotate-90' : 'rotate-0')} aria-hidden="true" />
-                        </div>
-                    )}
                 </div>
             </button>
-            <SidebarMenuItemChildren expanded={isOpen}>
-                {menuChildren}
-            </SidebarMenuItemChildren>
         </div>
-    )
-}
-
-function SidebarMenuItemChildren({ children, expanded }: HTMLAttributes<HTMLDivElement> & { expanded?: boolean }) {
-    const { state } = useSidebar()
-
-    const showChildren = (Children.toArray(children).length > 0) && expanded && !state.isCollapsed
-
-    if (!showChildren) return null;
-
-    return (
-        <SidebarMenuLevelContext.Provider value={nestedSidebarMenuLevelContextValue}>
-            <div className="flex flex-col justify-start items-start pt-0.5 w-full">
-                {children}
-            </div>
-        </SidebarMenuLevelContext.Provider>
     )
 }
 

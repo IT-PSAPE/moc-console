@@ -120,7 +120,7 @@ export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequ
             removeRequest(request.id)
             toast({ title: 'Request deleted', variant: 'success' })
             setShowDeleteModal(false)
-            navigate('/requests/all-requests')
+            navigate('/requests')
         } catch (error) {
             toast({ title: 'Failed to delete request', description: getErrorMessage(error, 'The request could not be deleted.'), variant: 'error' })
         } finally {

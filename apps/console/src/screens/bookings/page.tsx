@@ -17,7 +17,7 @@ import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import { Decision } from "@moc/ui/components/display/decision";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 
-export function EquipmentBookingsScreen() {
+export function BookingsScreen() {
   const {
     state: { bookings, isLoadingBookings },
     actions: { loadBookings, loadEquipment },

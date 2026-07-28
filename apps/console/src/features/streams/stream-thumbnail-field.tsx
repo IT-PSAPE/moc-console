@@ -1,15 +1,13 @@
 import type { ChangeEvent } from "react"
 import { Button } from "@moc/ui/components/controls/button"
 import { Input } from "@moc/ui/components/form/input"
-import { Select } from "@moc/ui/components/form/select"
 import { FormLabel } from "@moc/ui/components/form/form-label"
 import { FileDropzone } from "@moc/ui/components/form/file-dropzone"
 import { Paragraph } from "@moc/ui/components/display/text"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
-import type { MediaItem } from "@moc/types/broadcast/media-item"
-import { Image, Link, Loader2, X } from "lucide-react"
+import { Link, Loader2, X } from "lucide-react"
 
-type ThumbnailMode = "file" | "url" | "media"
+type ThumbnailMode = "file" | "url"
 export type ThumbnailStatus = "idle" | "resolving" | "ready" | "error"
 
 type StreamThumbnailFieldProps = {
@@ -24,12 +22,10 @@ type StreamThumbnailFieldProps = {
   errorMessage: string | null
   thumbnailUrlInput: string
   thumbnailMode: ThumbnailMode
-  imageMedia: MediaItem[]
   onModeChange: (mode: ThumbnailMode) => void
   onFileSelect: (file: File | null) => void
   onUrlInputChange: (value: string) => void
   onUrlConfirm: () => void
-  onMediaSelect: (mediaId: string) => void
   onClear: () => void
 }
 
@@ -41,12 +37,10 @@ export function StreamThumbnailField({
   errorMessage,
   thumbnailUrlInput,
   thumbnailMode,
-  imageMedia,
   onModeChange,
   onFileSelect,
   onUrlInputChange,
   onUrlConfirm,
-  onMediaSelect,
   onClear,
 }: StreamThumbnailFieldProps) {
   return (
@@ -90,7 +84,6 @@ export function StreamThumbnailField({
           >
             <SegmentedControl.Item value="file">Upload</SegmentedControl.Item>
             <SegmentedControl.Item value="url">URL</SegmentedControl.Item>
-            <SegmentedControl.Item value="media" icon={<Image className="size-3.5" />}>Media</SegmentedControl.Item>
           </SegmentedControl>
 
           {thumbnailMode === "file" && (
@@ -115,28 +108,6 @@ export function StreamThumbnailField({
                 Set
               </Button>
             </div>
-          )}
-
-          {thumbnailMode === "media" && (
-            imageMedia.length > 0 ? (
-              <Select
-                value=""
-                onChange={(e: ChangeEvent<HTMLSelectElement>) => onMediaSelect(e.target.value)}
-              >
-                <option value="" disabled>
-                  Select an image from media library...
-                </option>
-                {imageMedia.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </Select>
-            ) : (
-              <Paragraph.xs className="text-quaternary py-2">
-                No usable images found in your media library.
-              </Paragraph.xs>
-            )
           )}
 
           {status === "error" && errorMessage && (

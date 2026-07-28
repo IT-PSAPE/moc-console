@@ -1,4 +1,4 @@
-import type { ZoomConnection, ZoomMeeting } from "@moc/types/broadcast/zoom"
+import type { ZoomConnection, ZoomMeeting } from "@moc/types/streams/zoom"
 import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 

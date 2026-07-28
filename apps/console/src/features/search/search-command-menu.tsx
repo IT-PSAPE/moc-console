@@ -5,14 +5,12 @@ import { Sidebar } from "@moc/ui/components/navigation/sidebar"
 import { CommandMenu, useCommandMenu } from "@moc/ui/components/overlays/command-menu"
 import { fetchRequests } from "@/data/fetch-requests"
 import { fetchEquipment } from "@/data/fetch-equipment"
-import { fetchMedia, fetchPlaylists } from "@/data/fetch-broadcast"
-import { fetchCueSheetEvents, fetchCueSheetChecklists } from "@/data/fetch-cue-sheet"
+import { fetchStreams } from "@/data/fetch-streams"
 import { routes } from "@/screens/console-routes"
 import type { Request } from "@moc/types/requests"
 import type { Equipment } from "@moc/types/equipment"
-import type { MediaItem, Playlist } from "@moc/types/broadcast"
-import type { CueSheetEvent, Checklist } from "@moc/types/cue-sheet"
-import { Cast, Calendar, ClipboardList, Drama, FileText, LayoutGrid, ListMusic, Package, Film, Search } from "lucide-react"
+import type { Stream } from "@moc/types/streams"
+import { CalendarCheck, FileText, LayoutGrid, Package, Radio, Search } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
@@ -23,20 +21,10 @@ export function SearchMenuItem() {
 
 const searchablePages = [
     { group: 'General', label: 'Dashboard', route: routes.dashboard, icon: <LayoutGrid className="size-4" /> },
-    { group: 'Requests', label: 'Requests Overview', route: routes.requestsOverview, icon: <FileText className="size-4" /> },
-    { group: 'Requests', label: 'All Requests', route: routes.requestsAllRequests, icon: <FileText className="size-4" /> },
-    { group: 'Requests', label: 'Archived Requests', route: routes.requestsArchived, icon: <FileText className="size-4" /> },
-    { group: 'Equipment', label: 'Equipment Overview', route: routes.equipmentOverview, icon: <Package className="size-4" /> },
-    { group: 'Equipment', label: 'Inventory', route: routes.equipmentInventory, icon: <Package className="size-4" /> },
-    { group: 'Equipment', label: 'Bookings', route: routes.equipmentBookings, icon: <Package className="size-4" /> },
-    { group: 'Equipment', label: 'Maintenance', route: routes.equipmentMaintenance, icon: <Package className="size-4" /> },
-    { group: 'Broadcast', label: 'Broadcast Overview', route: routes.broadcastOverview, icon: <Cast className="size-4" /> },
-    { group: 'Broadcast', label: 'Media', route: routes.broadcastMedia, icon: <Cast className="size-4" /> },
-    { group: 'Broadcast', label: 'Playlists', route: routes.broadcastPlaylists, icon: <Cast className="size-4" /> },
-    { group: 'Cue Sheet', label: 'Cue Sheet Overview', route: routes.cueSheetOverview, icon: <Drama className="size-4" /> },
-    { group: 'Cue Sheet', label: 'Checklists', route: routes.cueSheetChecklists, icon: <Drama className="size-4" /> },
-    { group: 'Cue Sheet', label: 'Events', route: routes.cueSheetEvents, icon: <Drama className="size-4" /> },
-    { group: 'Cue Sheet', label: 'Templates', route: routes.cueSheetTemplates, icon: <Drama className="size-4" /> },
+    { group: 'Requests', label: 'Requests', route: routes.requests, icon: <FileText className="size-4" /> },
+    { group: 'Equipment', label: 'Equipment', route: routes.equipment, icon: <Package className="size-4" /> },
+    { group: 'Bookings', label: 'Bookings', route: routes.bookings, icon: <CalendarCheck className="size-4" /> },
+    { group: 'Streams', label: 'Streams', route: routes.streams, icon: <Radio className="size-4" /> },
 ] as const
 
 type SearchablePage = (typeof searchablePages)[number]
@@ -60,13 +48,10 @@ function useSearchableItems(isOpen: boolean) {
         loadedRef.current = true
 
         async function load() {
-            const [requests, equipment, media, playlists, events, checklists] = await Promise.all([
+            const [requests, equipment, streams] = await Promise.all([
                 fetchRequests().catch(() => [] as Request[]),
                 fetchEquipment().catch(() => [] as Equipment[]),
-                fetchMedia().catch(() => [] as MediaItem[]),
-                fetchPlaylists().catch(() => [] as Playlist[]),
-                fetchCueSheetEvents().catch(() => [] as CueSheetEvent[]),
-                fetchCueSheetChecklists().catch(() => [] as Checklist[]),
+                fetchStreams().catch(() => [] as Stream[]),
             ])
 
             const searchable: SearchableItem[] = [
@@ -74,7 +59,7 @@ function useSearchableItems(isOpen: boolean) {
                     id: r.id,
                     label: r.title,
                     description: r.what,
-                    route: `/${routes.requestsOverview}/${r.id}`,
+                    route: `/${routes.requestsDetail.replace(':id', r.id)}`,
                     group: 'Requests',
                     icon: <FileText className="size-4" />,
                 })),
@@ -82,41 +67,17 @@ function useSearchableItems(isOpen: boolean) {
                     id: e.id,
                     label: e.name,
                     description: e.location,
-                    route: `/${routes.equipmentOverview}/${e.id}`,
+                    route: `/${routes.equipmentDetail.replace(':id', e.id)}`,
                     group: 'Equipment',
                     icon: <Package className="size-4" />,
                 })),
-                ...media.map((m) => ({
-                    id: m.id,
-                    label: m.name,
-                    description: m.type,
-                    route: `/${routes.broadcastMedia}`,
-                    group: 'Media',
-                    icon: <Film className="size-4" />,
-                })),
-                ...playlists.map((p) => ({
-                    id: p.id,
-                    label: p.name,
-                    description: p.description,
-                    route: `/${routes.broadcastPlaylists}/${p.id}`,
-                    group: 'Playlists',
-                    icon: <ListMusic className="size-4" />,
-                })),
-                ...events.map((e) => ({
-                    id: e.id,
-                    label: e.title,
-                    description: e.description,
-                    route: `/${routes.cueSheetEvents}/${e.id}`,
-                    group: 'Events',
-                    icon: <Calendar className="size-4" />,
-                })),
-                ...checklists.map((c) => ({
-                    id: c.id,
-                    label: c.name,
-                    description: c.description,
-                    route: `/${routes.cueSheetChecklists}/${c.id}`,
-                    group: 'Checklists',
-                    icon: <ClipboardList className="size-4" />,
+                ...streams.map((s) => ({
+                    id: s.id,
+                    label: s.title,
+                    description: s.description,
+                    route: `/${routes.streamDetail.replace(':id', s.id)}`,
+                    group: 'Streams',
+                    icon: <Radio className="size-4" />,
                 })),
             ]
 

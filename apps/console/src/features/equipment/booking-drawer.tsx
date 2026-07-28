@@ -92,7 +92,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
       return;
     }
     closeDrawer();
-    navigate(`/equipment/bookings/${booking.id}`);
+    navigate(`/bookings/${booking.id}`);
   }
 
   const persistBooking = useCallback(async () => {

@@ -1,41 +1,27 @@
-import { fetchMedia, fetchPlaylists } from "@/data/fetch-broadcast"
-import { backfillMediaDurations } from "@/data/mutate-broadcast"
 import { fetchStreams, fetchYouTubeConnection } from "@/data/fetch-streams"
 import { fetchZoomConnection, fetchZoomMeetings } from "@/data/fetch-zoom"
-import type { MediaItem } from "@moc/types/broadcast/media-item"
-import type { Playlist } from "@moc/types/broadcast/broadcast"
-import type { Stream } from "@moc/types/broadcast/stream"
-import type { YouTubeConnection } from "@moc/types/broadcast/stream"
-import type { ZoomConnection, ZoomMeeting } from "@moc/types/broadcast/zoom"
+import type { Stream } from "@moc/types/streams/stream"
+import type { YouTubeConnection } from "@moc/types/streams/stream"
+import type { ZoomConnection, ZoomMeeting } from "@moc/types/streams/zoom"
 import { useWorkspace } from "@/lib/workspace-context"
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react"
 
-type BroadcastContextValue = {
+type StreamsContextValue = {
   state: {
-    media: MediaItem[]
-    playlists: Playlist[]
     streams: Stream[]
     youtubeConnection: YouTubeConnection | null
     zoomConnection: ZoomConnection | null
     zoomMeetings: ZoomMeeting[]
-    isLoadingMedia: boolean
-    isLoadingPlaylists: boolean
     isLoadingStreams: boolean
     isLoadingConnection: boolean
     isLoadingZoomConnection: boolean
     isLoadingZoomMeetings: boolean
   }
   actions: {
-    loadMedia: () => Promise<void>
-    loadPlaylists: () => Promise<void>
     loadStreams: () => Promise<void>
     loadYouTubeConnection: () => Promise<void>
     loadZoomConnection: () => Promise<void>
     loadZoomMeetings: () => Promise<void>
-    syncPlaylist: (playlist: Playlist) => void
-    removePlaylist: (id: string) => void
-    syncMediaItem: (item: MediaItem) => void
-    removeMediaItem: (id: string) => void
     syncStream: (stream: Stream) => void
     removeStream: (id: string) => void
     setStreams: (streams: Stream[]) => void
@@ -47,26 +33,18 @@ type BroadcastContextValue = {
   }
 }
 
-const BroadcastContext = createContext<BroadcastContextValue | null>(null)
+const StreamsContext = createContext<StreamsContextValue | null>(null)
 
-export function BroadcastProvider({ children }: { children: ReactNode }) {
-  const [media, setMedia] = useState<MediaItem[]>([])
-  const [playlists, setPlaylists] = useState<Playlist[]>([])
+export function StreamsProvider({ children }: { children: ReactNode }) {
   const [streams, setStreams] = useState<Stream[]>([])
   const [youtubeConnection, setYouTubeConnection] = useState<YouTubeConnection | null>(null)
   const [zoomConnection, setZoomConnectionState] = useState<ZoomConnection | null>(null)
   const [zoomMeetings, setZoomMeetings] = useState<ZoomMeeting[]>([])
-  const [isLoadingMedia, setIsLoadingMedia] = useState(false)
-  const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(false)
   const [isLoadingStreams, setIsLoadingStreams] = useState(false)
   const [isLoadingConnection, setIsLoadingConnection] = useState(false)
   const [isLoadingZoomConnection, setIsLoadingZoomConnection] = useState(false)
   const [isLoadingZoomMeetings, setIsLoadingZoomMeetings] = useState(false)
 
-  const mediaLoadedRef = useRef<string | null>(null)
-  const mediaPromiseRef = useRef<Promise<void> | null>(null)
-  const playlistsLoadedRef = useRef<string | null>(null)
-  const playlistsPromiseRef = useRef<Promise<void> | null>(null)
   const streamsLoadedRef = useRef<string | null>(null)
   const streamsPromiseRef = useRef<Promise<void> | null>(null)
   const connectionLoadedRef = useRef<string | null>(null)
@@ -80,41 +58,11 @@ export function BroadcastProvider({ children }: { children: ReactNode }) {
   const [trackedWorkspaceId, setTrackedWorkspaceId] = useState(currentWorkspaceId)
   if (trackedWorkspaceId !== currentWorkspaceId) {
     setTrackedWorkspaceId(currentWorkspaceId)
-    setMedia([])
-    setPlaylists([])
     setStreams([])
     setYouTubeConnection(null)
     setZoomConnectionState(null)
     setZoomMeetings([])
   }
-
-  // ─── Playlist actions ──────────────────────────────────
-
-  const syncPlaylist = useCallback((updated: Playlist) => {
-    setPlaylists((prev) => {
-      const exists = prev.some((p) => p.id === updated.id)
-      if (exists) return prev.map((p) => (p.id === updated.id ? updated : p))
-      return [updated, ...prev]
-    })
-  }, [])
-
-  const removePlaylist = useCallback((id: string) => {
-    setPlaylists((prev) => prev.filter((p) => p.id !== id))
-  }, [])
-
-  // ─── Media actions ─────────────────────────────────────
-
-  const syncMediaItem = useCallback((updated: MediaItem) => {
-    setMedia((prev) => {
-      const exists = prev.some((m) => m.id === updated.id)
-      if (exists) return prev.map((m) => (m.id === updated.id ? updated : m))
-      return [updated, ...prev]
-    })
-  }, [])
-
-  const removeMediaItem = useCallback((id: string) => {
-    setMedia((prev) => prev.filter((m) => m.id !== id))
-  }, [])
 
   // ─── YouTube actions ───────────────────────────────────
 
@@ -159,37 +107,6 @@ export function BroadcastProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // ─── Loaders ───────────────────────────────────────────
-
-  const loadMedia = useCallback(async () => {
-    if (mediaLoadedRef.current === currentWorkspaceId) return
-    if (mediaPromiseRef.current) return mediaPromiseRef.current
-
-    setIsLoadingMedia(true)
-    mediaPromiseRef.current = fetchMedia()
-      .then(async (data) => {
-        setMedia(data)
-        mediaLoadedRef.current = currentWorkspaceId
-        // Self-healing: probe + persist durations for assets uploaded
-        // before capture existed, then merge the patched values in.
-        const healed = await backfillMediaDurations(data)
-        if (healed !== data) setMedia(healed)
-      })
-      .finally(() => { mediaPromiseRef.current = null; setIsLoadingMedia(false) })
-
-    return mediaPromiseRef.current
-  }, [currentWorkspaceId])
-
-  const loadPlaylists = useCallback(async () => {
-    if (playlistsLoadedRef.current === currentWorkspaceId) return
-    if (playlistsPromiseRef.current) return playlistsPromiseRef.current
-
-    setIsLoadingPlaylists(true)
-    playlistsPromiseRef.current = fetchPlaylists()
-      .then((data) => { setPlaylists(data); playlistsLoadedRef.current = currentWorkspaceId })
-      .finally(() => { playlistsPromiseRef.current = null; setIsLoadingPlaylists(false) })
-
-    return playlistsPromiseRef.current
-  }, [currentWorkspaceId])
 
   const loadStreams = useCallback(async () => {
     if (streamsLoadedRef.current === currentWorkspaceId) return
@@ -244,15 +161,14 @@ export function BroadcastProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       state: {
-        media, playlists, streams, youtubeConnection,
+        streams, youtubeConnection,
         zoomConnection, zoomMeetings,
-        isLoadingMedia, isLoadingPlaylists, isLoadingStreams, isLoadingConnection,
+        isLoadingStreams, isLoadingConnection,
         isLoadingZoomConnection, isLoadingZoomMeetings,
       },
       actions: {
-        loadMedia, loadPlaylists, loadStreams, loadYouTubeConnection,
+        loadStreams, loadYouTubeConnection,
         loadZoomConnection, loadZoomMeetings,
-        syncPlaylist, removePlaylist, syncMediaItem, removeMediaItem,
         syncStream, removeStream, setStreams,
         setYouTubeConnection: handleSetYouTubeConnection,
         syncMeeting, removeMeeting, setZoomMeetings,
@@ -260,27 +176,26 @@ export function BroadcastProvider({ children }: { children: ReactNode }) {
       },
     }),
     [
-      media, playlists, streams, youtubeConnection,
+      streams, youtubeConnection,
       zoomConnection, zoomMeetings,
-      isLoadingMedia, isLoadingPlaylists, isLoadingStreams, isLoadingConnection,
+      isLoadingStreams, isLoadingConnection,
       isLoadingZoomConnection, isLoadingZoomMeetings,
-      loadMedia, loadPlaylists, loadStreams, loadYouTubeConnection,
+      loadStreams, loadYouTubeConnection,
       loadZoomConnection, loadZoomMeetings,
-      syncPlaylist, removePlaylist, syncMediaItem, removeMediaItem,
       syncStream, removeStream,
       handleSetYouTubeConnection, handleSetZoomConnection,
       syncMeeting, removeMeeting,
     ],
   )
 
-  return <BroadcastContext.Provider value={value}>{children}</BroadcastContext.Provider>
+  return <StreamsContext.Provider value={value}>{children}</StreamsContext.Provider>
 }
 
-export function useBroadcast() {
-  const context = useContext(BroadcastContext)
+export function useStreams() {
+  const context = useContext(StreamsContext)
 
   if (!context) {
-    throw new Error("useBroadcast must be used within a BroadcastProvider")
+    throw new Error("useStreams must be used within a StreamsProvider")
   }
 
   return context

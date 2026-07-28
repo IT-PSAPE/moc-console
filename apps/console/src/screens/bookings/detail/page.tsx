@@ -154,7 +154,7 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
       await refreshEquipment();
       toast({ title: "Booking deleted", variant: "success" });
       setShowDeleteModal(false);
-      navigate("/equipment/bookings");
+      navigate("/bookings");
     } catch (error) {
       toast({ title: "Failed to delete booking", description: getErrorMessage(error, "The booking could not be deleted."), variant: "error" });
     } finally {

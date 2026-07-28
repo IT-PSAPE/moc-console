@@ -1,5 +1,5 @@
 import { useAuth } from "@/lib/auth-context"
-import { useBroadcast } from "./broadcast-provider"
+import { useStreams } from "./streams-provider"
 import { useYouTubeOAuth } from "./use-youtube-oauth"
 import { disconnectYouTube } from "@/data/mutate-streams"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
@@ -13,7 +13,7 @@ export function YouTubeConnectionCard() {
   const {
     state: { youtubeConnection, isLoadingConnection },
     actions: { setYouTubeConnection },
-  } = useBroadcast()
+  } = useStreams()
   const { startOAuthFlow } = useYouTubeOAuth()
   const [isDisconnecting, setIsDisconnecting] = useState(false)
 

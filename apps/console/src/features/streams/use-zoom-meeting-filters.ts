@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/broadcast/zoom"
+import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/streams/zoom"
 
 export type ZoomMeetingSortField = "topic" | "startTime" | "createdAt" | "duration"
 export type SortDirection = "asc" | "desc"
