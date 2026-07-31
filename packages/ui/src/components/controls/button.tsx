@@ -1,4 +1,5 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { Button as BaseButton } from "@base-ui/react/button";
+import type { ButtonHTMLAttributes, ComponentProps, ReactNode } from "react";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
 import { Label } from "../display/text";
@@ -76,7 +77,7 @@ function ButtonRoot({ children, className, disabled, icon, iconPosition = "leadi
     const trailing = iconPosition === "trailing";
 
     return (
-        <button
+        <BaseButton
             type={type}
             disabled={disabled}
             className={cn(buttonVariants({ variant, size: "default" }), className)}
@@ -85,23 +86,45 @@ function ButtonRoot({ children, className, disabled, icon, iconPosition = "leadi
             {showIcon && !trailing ? <IconSpan icon={icon} /> : null}
             {showLabel ? <Label.sm className="inline-flex items-center justify-center gap-2 text-[inherit]">{children}</Label.sm> : null}
             {showIcon && trailing ? <IconSpan icon={icon} /> : null}
-        </button>
+        </BaseButton>
     );
 }
 
 function IconButton({ icon, className, disabled, type = "button", variant = "primary", ...props }: IconButtonProps) {
     return (
-        <button
+        <BaseButton
             type={type}
             disabled={disabled}
             className={cn(buttonVariants({ variant, size: "icon" }), className)}
             {...props}
         >
             <IconSpan icon={icon} />
-        </button>
+        </BaseButton>
+    );
+}
+
+function UnstyledButton({ children, className, disabled, type = "button", ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
+    return (
+        <BaseButton type={type} disabled={disabled} className={className} {...props}>
+            {children}
+        </BaseButton>
+    );
+}
+
+type SurfaceButtonProps = Omit<ComponentProps<typeof BaseButton>, "className" | "nativeButton" | "render"> & {
+    className?: string
+};
+
+function SurfaceButton({ children, className, ...props }: SurfaceButtonProps) {
+    return (
+        <BaseButton nativeButton={false} render={<div />} className={className} {...props}>
+            {children}
+        </BaseButton>
     );
 }
 
 export const Button = Object.assign(ButtonRoot, {
     Icon: IconButton,
+    Surface: SurfaceButton,
+    Unstyled: UnstyledButton,
 });

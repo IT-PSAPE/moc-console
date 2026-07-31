@@ -1,10 +1,9 @@
+import { Separator } from "@base-ui/react/separator";
 import { cn } from "@moc/utils/cn";
 import type { HTMLAttributes } from "react";
 
-export function Divider({ className }: HTMLAttributes<HTMLDivElement>) {
+export function Divider({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("w-full flex flex-col items-start p-0.5", className)}>
-            <div className="w-full h-px bg-border-secondary" />
-        </div>
+        <Separator className={cn("my-0.5 h-px w-full bg-border-secondary", className)} {...props} />
     )
 }

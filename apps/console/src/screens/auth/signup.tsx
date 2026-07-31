@@ -65,8 +65,8 @@ export function SignupScreen() {
         setConfirmPassword(event.target.value)
     }
 
-    function handleWorkspaceChange(event: ChangeEvent<HTMLSelectElement>) {
-        setWorkspaceSlug(event.target.value)
+    function handleWorkspaceChange(value: string | null) {
+        setWorkspaceSlug(value ?? "")
     }
 
     async function handleSubmit(e: FormEvent) {
@@ -119,6 +119,12 @@ export function SignupScreen() {
         )
     }
 
+    const workspaceItems = workspacesLoading
+        ? [{ label: "Loading workspaces…", value: "" }]
+        : workspaces.length === 0
+            ? [{ label: "No workspaces available", value: "" }]
+            : workspaces.map((workspace) => ({ label: workspace.name, value: workspace.slug }))
+
     return (
         <AuthLayout>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -168,18 +174,22 @@ export function SignupScreen() {
 
                 <div className="space-y-1">
                     <FormLabel label="Workspace" required />
-                    <Select
+                    <Select.Root
+                        items={workspaceItems}
                         value={workspaceSlug}
-                        onChange={handleWorkspaceChange}
+                        onValueChange={handleWorkspaceChange}
                         disabled={workspacesLoading || workspaces.length === 0}
                         required
                     >
-                        {workspacesLoading && <option value="">Loading workspaces…</option>}
-                        {!workspacesLoading && workspaces.length === 0 && <option value="">No workspaces available</option>}
+                        <Select.Trigger aria-label="Workspace" />
+                        <Select.Content>
+                        {workspacesLoading && <Select.Item value="" disabled>Loading workspaces…</Select.Item>}
+                        {!workspacesLoading && workspaces.length === 0 && <Select.Item value="" disabled>No workspaces available</Select.Item>}
                         {workspaces.map((workspace) => (
-                            <option key={workspace.slug} value={workspace.slug}>{workspace.name}</option>
+                            <Select.Item key={workspace.slug} value={workspace.slug}>{workspace.name}</Select.Item>
                         ))}
-                    </Select>
+                        </Select.Content>
+                    </Select.Root>
                 </div>
 
                 <div className="space-y-1">

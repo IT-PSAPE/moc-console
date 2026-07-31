@@ -1,3 +1,4 @@
+import { Input as BaseInput } from "@base-ui/react/input";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
 import type { InputHTMLAttributes, ReactNode } from "react";
@@ -37,7 +38,7 @@ export function Input({ className, style = 'outline', state, ...props }: InputPr
     return (
         <div className={cn(inputVariants({ state: state, style: style }), className)}>
             {props.icon && <span className='*:size-4 text-tertiary'>{props.icon}</span>}
-            <input className="w-full !p-0 focus:!outline-none focus-visible:!outline-0 !focus:ring-0 paragraph-sm !leading-none" {...props} />
+            <BaseInput className="w-full !p-0 focus:!outline-none focus-visible:!outline-0 !focus:ring-0 paragraph-sm !leading-none" {...props} />
         </div>
     )
 }

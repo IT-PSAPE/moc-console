@@ -38,6 +38,7 @@ const COMMON_TIMEZONES = [
   "Asia/Shanghai",
   "Australia/Sydney",
 ]
+const TIMEZONE_ITEMS = COMMON_TIMEZONES.map((value) => ({ label: value, value }))
 
 export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingModalProps) {
   const isEditing = Boolean(meeting)
@@ -80,6 +81,10 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
 
   function handleStartTimeChange(value: string) {
     setStartTime(value)
+  }
+
+  function handleTimezoneChange(value: string | null) {
+    if (value !== null) setTimezone(value)
   }
 
   async function handleSubmit() {
@@ -158,14 +163,14 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
                 {/* Timezone */}
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Timezone" />
-                  <Select
-                    value={timezone}
-                    onChange={(e: ChangeEvent<HTMLSelectElement>) => setTimezone(e.target.value)}
-                  >
+                  <Select.Root items={TIMEZONE_ITEMS} value={timezone} onValueChange={handleTimezoneChange}>
+                    <Select.Trigger aria-label="Timezone" />
+                    <Select.Content>
                     {COMMON_TIMEZONES.map((tz) => (
-                      <option key={tz} value={tz}>{tz}</option>
+                      <Select.Item key={tz} value={tz}>{tz}</Select.Item>
                     ))}
-                  </Select>
+                    </Select.Content>
+                  </Select.Root>
                 </div>
 
                 {/* Recurrence */}

@@ -1,5 +1,6 @@
+import { Input as BaseInput } from '@base-ui/react/input'
 import { cn } from '@moc/utils/cn'
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
 
 type InlineEditableTextProps = {
     value: string
@@ -57,13 +58,25 @@ export function InlineEditableText({ value, onSave, className, placeholder = 'Un
         }
     }, [commit, value])
 
+    function handleChange(event: ChangeEvent<HTMLInputElement>) {
+        setDraft(event.target.value)
+    }
+
+    function handleStartEditing() {
+        setIsEditing(true)
+    }
+
+    function handleDisplayKeyDown(event: KeyboardEvent<HTMLSpanElement>) {
+        if (event.key === 'Enter') setIsEditing(true)
+    }
+
     if (isEditing) {
         return (
-            <input
+            <BaseInput
                 ref={inputRef}
                 type="text"
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={handleChange}
                 onBlur={commit}
                 onKeyDown={handleKeyDown}
                 className={cn(
@@ -79,12 +92,10 @@ export function InlineEditableText({ value, onSave, className, placeholder = 'Un
     return (
         <span
             className={cn('cursor-text select-none truncate', className)}
-            onDoubleClick={() => setIsEditing(true)}
+            onDoubleClick={handleStartEditing}
             role="textbox"
             tabIndex={0}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter') setIsEditing(true)
-            }}
+            onKeyDown={handleDisplayKeyDown}
         >
             {value || placeholder}
         </span>

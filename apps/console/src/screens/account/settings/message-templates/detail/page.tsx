@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Navigate, useBlocker, useNavigate, useParams } from "react-router-dom";
 import { Header } from "@moc/ui/components/display/header";
 import { Title, Label, Paragraph } from "@moc/ui/components/display/text";
@@ -57,6 +57,10 @@ function Editor({ messageType }: { messageType: MessageType }) {
     const [view, setView] = useState<"source" | "preview">("source");
     const [saving, setSaving] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    function handleBack() {
+        navigate(SETTINGS_TELEGRAM);
+    }
 
     useEffect(() => {
         if (!currentWorkspaceId) return;
@@ -129,6 +133,11 @@ function Editor({ messageType }: { messageType: MessageType }) {
         [body],
     );
 
+    function handleInsertToken(event: MouseEvent<HTMLButtonElement>) {
+        const token = event.currentTarget.dataset.token;
+        if (token) insertToken(token);
+    }
+
     const handleSave = useCallback(async (): Promise<boolean> => {
         if (!currentWorkspaceId) return false;
         setSaving(true);
@@ -197,14 +206,14 @@ function Editor({ messageType }: { messageType: MessageType }) {
         <section className="mx-auto max-w-content-md">
             <Header className="p-4 pt-8">
                 <Header.Lead className="gap-1">
-                    <button
+                    <Button.Unstyled
                         type="button"
-                        onClick={() => navigate(SETTINGS_TELEGRAM)}
+                        onClick={handleBack}
                         className="flex items-center gap-1 text-tertiary hover:text-primary"
                     >
                         <ArrowLeft className="size-4" />
                         <Label.xs className="text-inherit">Message templates</Label.xs>
-                    </button>
+                    </Button.Unstyled>
                     <Title.h6 className="pt-2">{meta.label}</Title.h6>
                     <Paragraph.xs className="text-tertiary pt-1">{meta.description}</Paragraph.xs>
                 </Header.Lead>
@@ -245,14 +254,15 @@ function Editor({ messageType }: { messageType: MessageType }) {
                                     />
                                     <div className="flex flex-wrap gap-1.5">
                                         {TEMPLATE_TOKENS[messageType].map((t) => (
-                                            <button
+                                            <Button.Unstyled
                                                 key={t.name}
                                                 type="button"
-                                                onClick={() => insertToken(t.name)}
+                                                data-token={t.name}
+                                                onClick={handleInsertToken}
                                                 className="rounded bg-utility-gray-50 px-1.5 py-0.5 font-mono text-utility-gray-700 hover:bg-utility-gray-100"
                                             >
                                                 <Label.xs className="text-inherit">{`{{ ${t.name} }}`}</Label.xs>
-                                            </button>
+                                            </Button.Unstyled>
                                         ))}
                                     </div>
                                     {unknown.length > 0 && (

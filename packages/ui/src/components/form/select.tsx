@@ -1,48 +1,110 @@
+import { Select as BaseSelect } from "@base-ui/react/select";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
-import { ChevronDown } from "lucide-react";
-import type { SelectHTMLAttributes } from "react";
+import { Check, ChevronDown } from "lucide-react";
+import type { ComponentProps, ReactNode } from "react";
+import { useOverlayStack } from "../overlays/overlay-provider";
 
-type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
-    ref?: React.Ref<HTMLSelectElement>
-    state?: 'active' | 'inactive'
-    style?: 'outline' | 'ghost'
+type SelectRootProps<Value> = BaseSelect.Root.Props<Value, false>;
+type Styled<Props> = Omit<Props, "className"> & { className?: string };
+
+function SelectRoot<Value>(props: SelectRootProps<Value>) {
+    return <BaseSelect.Root {...props} />;
 }
 
-const selectVariants = cv({
+type SelectTriggerProps = Omit<ComponentProps<typeof BaseSelect.Trigger>, "children" | "className"> & {
+    children?: ReactNode
+    className?: string
+    placeholder?: ReactNode
+    state?: "active" | "inactive"
+    style?: "outline" | "ghost"
+};
+
+const triggerVariants = cv({
     base: [
-        'relative flex items-center gap-1.5 has-[:disabled]:cursor-not-allowed',
-        'bg-primary has-[:disabled]:bg-disabled',
+        "relative flex w-full items-center gap-1.5 text-left paragraph-sm !leading-none",
+        "bg-primary data-[disabled]:cursor-not-allowed data-[disabled]:bg-disabled",
+        "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-border-brand/10",
     ],
     variants: {
         state: {
-            active: [''],
-            inactive: [''],
+            active: [""],
+            inactive: [""],
         },
         style: {
             outline: [
-                'py-2 px-3',
-                'rounded-lg border border-secondary focus-within:border-brand has-[:disabled]:border-disabled',
-                'focus-within:ring-3 focus-within:ring-border-brand/10',
+                "rounded-lg border border-secondary px-3 py-2",
+                "focus-visible:border-brand data-[disabled]:border-disabled",
             ],
-            ghost: [''],
+            ghost: [""],
         },
     },
     defaultVariants: {
-        state: 'inactive',
+        state: "inactive",
+        style: "outline",
     },
-})
+});
 
-export function Select({ className, style = 'outline', state, children, ...props }: SelectProps) {
+function SelectTrigger({ children, className, placeholder, state, style = "outline", ...props }: SelectTriggerProps) {
     return (
-        <div className={cn(selectVariants({ state, style }), className)}>
-            <select
-                className="w-full appearance-none bg-transparent !p-0 pr-5 focus:!outline-none focus-visible:!outline-0 paragraph-sm !leading-none"
-                {...props}
-            >
-                {children}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 size-4 text-tertiary" />
-        </div>
-    )
+        <BaseSelect.Trigger className={cn(triggerVariants({ state, style }), className)} {...props}>
+            {children ?? (
+                <>
+                    <BaseSelect.Value className="min-w-0 flex-1 truncate" placeholder={placeholder} />
+                    <BaseSelect.Icon className="shrink-0 text-tertiary">
+                        <ChevronDown className="size-4" />
+                    </BaseSelect.Icon>
+                </>
+            )}
+        </BaseSelect.Trigger>
+    );
 }
+
+function SelectContent({ children, className }: { children: ReactNode; className?: string }) {
+    const { state: overlayState } = useOverlayStack();
+
+    return (
+        <BaseSelect.Portal container={overlayState.rootElement ?? undefined}>
+            <BaseSelect.Positioner alignItemWithTrigger={false} sideOffset={6} className="z-[9050] outline-none">
+                <BaseSelect.Popup
+                    className={cn(
+                        "pointer-events-auto max-h-[min(var(--available-height),16rem)] min-w-[var(--anchor-width)] max-w-[var(--available-width)] overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg outline-none",
+                        "origin-[var(--transform-origin)] transition-[opacity,transform] duration-150",
+                        "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
+                        "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
+                        className,
+                    )}
+                >
+                    <BaseSelect.List className="max-h-[inherit] overflow-y-auto overscroll-contain p-1">
+                        {children}
+                    </BaseSelect.List>
+                </BaseSelect.Popup>
+            </BaseSelect.Positioner>
+        </BaseSelect.Portal>
+    );
+}
+
+function SelectItem({ children, className, ...props }: Styled<ComponentProps<typeof BaseSelect.Item>>) {
+    return (
+        <BaseSelect.Item
+            className={cn(
+                "grid cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-lg px-3 py-2 paragraph-sm text-secondary outline-none",
+                "data-[highlighted]:bg-secondary data-[highlighted]:text-primary data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+                className,
+            )}
+            {...props}
+        >
+            <BaseSelect.ItemIndicator className="text-brand_secondary">
+                <Check className="size-4" />
+            </BaseSelect.ItemIndicator>
+            <BaseSelect.ItemText className="truncate">{children}</BaseSelect.ItemText>
+        </BaseSelect.Item>
+    );
+}
+
+export const Select = {
+    Content: SelectContent,
+    Item: SelectItem,
+    Root: SelectRoot,
+    Trigger: SelectTrigger,
+};

@@ -1,3 +1,4 @@
+import { Button as BaseButton } from '@base-ui/react/button'
 import { cn } from '@moc/utils/cn'
 import { cv } from '@moc/utils/cv'
 import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type MouseEventHandler, type ReactNode } from 'react'
@@ -174,7 +175,7 @@ function SidebarMenuItem({ title, icon, active = false, onClick }: SidebarMenuIt
 
     return (
         <div className={isCollapsed ? "w-fit" : "w-full"}>
-            <button type="button" className={cn(menuItemVarients({ state: itemState, isCollapsed: isCollapsed ? 'true' : 'false'}), cursorClassName)} onClick={onClick} title={isCollapsed ? title : undefined} >
+            <BaseButton type="button" className={cn(menuItemVarients({ state: itemState, isCollapsed: isCollapsed ? 'true' : 'false'}), cursorClassName)} onClick={onClick} title={isCollapsed ? title : undefined} >
                 <div className={cn("flex-1 px-1 flex justify-start items-center gap-1.5", isCollapsed && "justify-center px-0")}>
                     <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
                         {icon}
@@ -185,7 +186,7 @@ function SidebarMenuItem({ title, icon, active = false, onClick }: SidebarMenuIt
                         </Label.sm>
                     )}
                 </div>
-            </button>
+            </BaseButton>
         </div>
     )
 }

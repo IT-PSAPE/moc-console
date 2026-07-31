@@ -2,6 +2,7 @@ import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { TextArea } from '@moc/ui/components/form/text-area'
 import { FormLabel } from '@moc/ui/components/form/form-label'
 import { cn } from '@moc/utils/cn'
+import { Button } from '@moc/ui/components/controls/button'
 import { Check } from 'lucide-react'
 import { useState } from 'react'
 
@@ -83,20 +84,10 @@ export function BookingEquipmentPicker({ selected, onToggle, otherEquipment, onO
 }
 
 function PickerRow({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      onClick()
-    }
-  }
-
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <Button.Surface
       aria-pressed={selected}
       onClick={onClick}
-      onKeyDown={handleKeyDown}
       className={cn(
         'flex items-center justify-between gap-2 rounded-lg border p-3 transition-all cursor-pointer hover:bg-secondary/60 active:scale-[0.98]',
         selected
@@ -113,6 +104,6 @@ function PickerRow({ label, selected, onClick }: { label: string; selected: bool
       >
         <Check className="size-3.5" />
       </span>
-    </div>
+    </Button.Surface>
   )
 }

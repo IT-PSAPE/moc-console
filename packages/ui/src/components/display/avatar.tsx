@@ -1,6 +1,6 @@
+import { Avatar as BaseAvatar } from "@base-ui/react/avatar";
 import { cv } from "@moc/utils/cv";
 import { cn } from "@moc/utils/cn";
-import { useState } from "react";
 
 
 type AvatarProps = {
@@ -32,38 +32,22 @@ type AvatarImageProps = AvatarProps & {
 }
 
 export function Avatar({ size, className, src, name }: AvatarImageProps) {
-    const [failed, setFailed] = useState(false)
-    const [prevSrc, setPrevSrc] = useState(src)
-
-    if (src !== prevSrc) {
-        setPrevSrc(src)
-        setFailed(false)
-    }
-
-    if (failed && name) {
-        return (
-            <div className={cn(variants({ size }), className)}>
-                <span className="block text-center align-middle text-inherit">{name}</span>
-            </div>
-        )
-    }
-
     return (
-        <div className={cn(variants({ size }), className)}>
-            <img
+        <BaseAvatar.Root className={cn(variants({ size }), className)}>
+            <BaseAvatar.Image
                 src={src}
                 alt={name ? `${name} avatar` : "Avatar"}
                 className="w-full h-full object-cover"
-                onError={() => setFailed(true)}
             />
-        </div>
+            {name ? <BaseAvatar.Fallback className="block text-center align-middle text-inherit">{name}</BaseAvatar.Fallback> : null}
+        </BaseAvatar.Root>
     )
 }
 
 Avatar.initials = function AvatarInitials({ size, className, name }: AvatarProps & { name: string }) {
     return (
-        <div className={cn(variants({ size }), className)}>
-            <span className="block text-center align-middle text-inherit">{name}</span>
-        </div>
+        <BaseAvatar.Root className={cn(variants({ size }), className)}>
+            <BaseAvatar.Fallback className="block text-center align-middle text-inherit">{name}</BaseAvatar.Fallback>
+        </BaseAvatar.Root>
     )
 }

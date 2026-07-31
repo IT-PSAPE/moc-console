@@ -1,5 +1,6 @@
-import type { ChangeEvent, KeyboardEvent } from "react"
+import type { ChangeEvent, KeyboardEvent, MouseEvent } from "react"
 import { Select } from "@moc/ui/components/form/select"
+import { Input } from "@moc/ui/components/form/input"
 import { FormLabel } from "@moc/ui/components/form/form-label"
 import { Button } from "@moc/ui/components/controls/button"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
@@ -36,6 +37,32 @@ export function StreamOptionsSection({
   onRemoveTag,
   onPlaylistChange,
 }: StreamOptionsSectionProps) {
+  const categoryItems = [
+    { label: "None", value: "" },
+    ...categories.map((category) => ({ label: category.title, value: category.id })),
+  ]
+  const playlistItems = [
+    { label: "None", value: "" },
+    ...playlists.map((playlist) => ({ label: `${playlist.title} (${playlist.itemCount} items)`, value: playlist.id })),
+  ]
+
+  function handleCategoryChange(value: string | null) {
+    onCategoryChange(value || null)
+  }
+
+  function handlePlaylistChange(value: string | null) {
+    onPlaylistChange(value || null)
+  }
+
+  function handleTagInputChange(event: ChangeEvent<HTMLInputElement>) {
+    onTagInputChange(event.target.value)
+  }
+
+  function handleRemoveTag(event: MouseEvent<HTMLButtonElement>) {
+    const tag = event.currentTarget.dataset.tag
+    if (tag) onRemoveTag(tag)
+  }
+
   return (
     <Accordion.Item value="optionals">
       <Accordion.Trigger className="flex items-center gap-2 py-2 text-left">
@@ -47,17 +74,17 @@ export function StreamOptionsSection({
           {/* ─── Category ─── */}
           <div className="flex flex-col gap-1.5">
             <FormLabel label="Category" optional />
-            <Select
-              value={categoryId ?? ""}
-              onChange={(e: ChangeEvent<HTMLSelectElement>) => onCategoryChange(e.target.value || null)}
-            >
-              <option value="">None</option>
+            <Select.Root items={categoryItems} value={categoryId ?? ""} onValueChange={handleCategoryChange}>
+              <Select.Trigger aria-label="Category" />
+              <Select.Content>
+              <Select.Item value="">None</Select.Item>
               {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
+                <Select.Item key={cat.id} value={cat.id}>
                   {cat.title}
-                </option>
+                </Select.Item>
               ))}
-            </Select>
+              </Select.Content>
+            </Select.Root>
           </div>
 
           {/* ─── Tags ─── */}
@@ -73,13 +100,15 @@ export function StreamOptionsSection({
                   <Button.Icon
                     variant="ghost"
                     icon={<X className="size-3" />}
-                    onClick={() => onRemoveTag(tag)}
+                    data-tag={tag}
+                    onClick={handleRemoveTag}
                   />
                 </span>
               ))}
-              <input
+              <Input
+                style="ghost"
                 value={tagInput}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => onTagInputChange(e.target.value)}
+                onChange={handleTagInputChange}
                 onKeyDown={onTagKeyDown}
                 onBlur={onTagBlur}
                 placeholder={tags.length === 0 ? "Add tags..." : ""}
@@ -94,17 +123,17 @@ export function StreamOptionsSection({
           {/* Playlist */}
           <div className="flex flex-col gap-1.5">
             <FormLabel label="Add to Playlist" optional />
-            <Select
-              value={playlistId ?? ""}
-              onChange={(e: ChangeEvent<HTMLSelectElement>) => onPlaylistChange(e.target.value || null)}
-            >
-              <option value="">None</option>
+            <Select.Root items={playlistItems} value={playlistId ?? ""} onValueChange={handlePlaylistChange}>
+              <Select.Trigger aria-label="Playlist" />
+              <Select.Content>
+              <Select.Item value="">None</Select.Item>
               {playlists.map((pl) => (
-                <option key={pl.id} value={pl.id}>
+                <Select.Item key={pl.id} value={pl.id}>
                   {pl.title} ({pl.itemCount} items)
-                </option>
+                </Select.Item>
               ))}
-            </Select>
+              </Select.Content>
+            </Select.Root>
           </div>
         </div>
       </Accordion.Content>

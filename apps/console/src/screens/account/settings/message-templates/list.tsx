@@ -8,6 +8,7 @@ import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import { ChevronRight } from "lucide-react";
 import { useWorkspace } from "@/lib/workspace-context";
+import { Button } from "@moc/ui/components/controls/button";
 import { routes } from "@/screens/console-routes";
 import type { MessageType } from "@moc/notifications";
 import { fetchNotificationTemplates } from "@/data/notification-templates";
@@ -28,7 +29,7 @@ function TemplateRow({
 }) {
     const meta = messageTypeMeta(type);
     return (
-        <button
+        <Button.Unstyled
             type="button"
             onClick={onOpen}
             className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left border-b border-tertiary last:border-b-0 hover:bg-secondary"
@@ -41,7 +42,7 @@ function TemplateRow({
                 <Paragraph.xs className="text-quaternary">{meta.description}</Paragraph.xs>
             </div>
             <ChevronRight className="size-4 shrink-0 text-quaternary" />
-        </button>
+        </Button.Unstyled>
     );
 }
 

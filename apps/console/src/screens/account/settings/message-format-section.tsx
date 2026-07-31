@@ -16,7 +16,7 @@ import {
     fetchNotificationSettings,
     updateMessageFormat,
 } from "@/data/notification-settings";
-import { useCallback, useEffect, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const COMMON_TIMEZONES = [
     "Africa/Harare",
@@ -39,6 +39,10 @@ const COMMON_TIMEZONES = [
 // A fixed instant (a Thursday evening) used purely to render the live
 // "e.g. …" previews next to each control.
 const PREVIEW_ISO = "2026-05-21T17:00:00Z";
+const DATE_FORMAT_SELECT_ITEMS = DATE_FORMAT_OPTIONS.map((option) => ({
+    label: `${option.label} — ${option.example}`,
+    value: option.value,
+}));
 
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : "Unknown error";
@@ -96,8 +100,8 @@ export function MessageFormatSection() {
     );
 
     const handleTimezone = useCallback(
-        (event: ChangeEvent<HTMLSelectElement>) => {
-            const next = event.target.value;
+        (next: string | null) => {
+            if (next === null) return;
             setTimezone(next);
             void save(next, dateFormat);
         },
@@ -105,8 +109,8 @@ export function MessageFormatSection() {
     );
 
     const handleDateFormat = useCallback(
-        (event: ChangeEvent<HTMLSelectElement>) => {
-            const next = event.target.value as DateFormatPreset;
+        (next: DateFormatPreset | null) => {
+            if (next === null) return;
             setDateFormat(next);
             void save(timezone, next);
         },
@@ -117,6 +121,7 @@ export function MessageFormatSection() {
     const timezoneOptions = COMMON_TIMEZONES.includes(timezone)
         ? COMMON_TIMEZONES
         : [timezone, ...COMMON_TIMEZONES];
+    const timezoneSelectItems = timezoneOptions.map((value) => ({ label: value, value }));
 
     return (
         <Section>
@@ -134,13 +139,16 @@ export function MessageFormatSection() {
                     <>
                         <div className="flex flex-col gap-2 max-w-xs">
                             <Label.sm>Time zone</Label.sm>
-                            <Select value={timezone} onChange={handleTimezone}>
+                            <Select.Root items={timezoneSelectItems} value={timezone} onValueChange={handleTimezone}>
+                                <Select.Trigger aria-label="Time zone" />
+                                <Select.Content>
                                 {timezoneOptions.map((tz) => (
-                                    <option key={tz} value={tz}>
+                                    <Select.Item key={tz} value={tz}>
                                         {tz}
-                                    </option>
+                                    </Select.Item>
                                 ))}
-                            </Select>
+                                </Select.Content>
+                            </Select.Root>
                             <Paragraph.xs className="text-quaternary">
                                 All times in messages are shown in this zone.
                             </Paragraph.xs>
@@ -148,13 +156,16 @@ export function MessageFormatSection() {
 
                         <div className="flex flex-col gap-2 max-w-xs">
                             <Label.sm>Date format</Label.sm>
-                            <Select value={dateFormat} onChange={handleDateFormat}>
+                            <Select.Root items={DATE_FORMAT_SELECT_ITEMS} value={dateFormat} onValueChange={handleDateFormat}>
+                                <Select.Trigger aria-label="Date format" />
+                                <Select.Content>
                                 {DATE_FORMAT_OPTIONS.map((option) => (
-                                    <option key={option.value} value={option.value}>
+                                    <Select.Item key={option.value} value={option.value}>
                                         {option.label} — {option.example}
-                                    </option>
+                                    </Select.Item>
                                 ))}
-                            </Select>
+                                </Select.Content>
+                            </Select.Root>
                             <Paragraph.xs className="text-quaternary">
                                 Preview: {formatInstant(PREVIEW_ISO, timezone, dateFormat)}
                             </Paragraph.xs>

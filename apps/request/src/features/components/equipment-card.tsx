@@ -4,6 +4,7 @@ import { cn } from '@moc/utils/cn'
 import { MapPin } from 'lucide-react'
 import { EQUIPMENT_CATEGORY_LABELS } from '../constants'
 import type { PublicEquipmentItem } from '@/types/equipment'
+import { Button } from '@moc/ui/components/controls/button'
 
 export function EquipmentCard({ item, selected, onSelect }: { item: PublicEquipmentItem; selected: boolean; onSelect: (id: string) => void }) {
   const available = item.isAvailable
@@ -13,16 +14,8 @@ export function EquipmentCard({ item, selected, onSelect }: { item: PublicEquipm
     onSelect(item.id)
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (!available) return
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      onSelect(item.id)
-    }
-  }
-
   return (
-    <div
+    <Button.Surface
       className={cn(
         'flex flex-col gap-2 rounded-lg p-3 transition-all border',
         available
@@ -33,10 +26,7 @@ export function EquipmentCard({ item, selected, onSelect }: { item: PublicEquipm
           : 'border-secondary bg-primary'
       )}
       onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={available ? 0 : -1}
-      aria-disabled={!available}
+      disabled={!available}
     >
       <div className="flex items-start justify-between gap-2">
         <Label.sm className="line-clamp-1">{item.name}</Label.sm>
@@ -50,6 +40,6 @@ export function EquipmentCard({ item, selected, onSelect }: { item: PublicEquipm
         <Paragraph.xs className="text-tertiary">{item.location}</Paragraph.xs>
       </div>
       <Paragraph.xs className="text-quaternary">{item.serialNumber}</Paragraph.xs>
-    </div>
+    </Button.Surface>
   )
 }

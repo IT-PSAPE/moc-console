@@ -1,3 +1,4 @@
+import { Button as BaseButton } from '@base-ui/react/button'
 import { cn } from '@moc/utils/cn'
 import { cv } from '@moc/utils/cv'
 import { Label, Paragraph } from '../display/text'
@@ -92,14 +93,14 @@ export function Alert({ title, description, variant = 'info', style = 'filled', 
                 )}
             </div>
             {dismissible && onDismiss && (
-                <button
+                <BaseButton
                     type="button"
                     onClick={onDismiss}
                     className="shrink-0 mt-0.5 cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
                     aria-label="Dismiss"
                 >
                     <X className="size-4" />
-                </button>
+                </BaseButton>
             )}
         </div>
     )
