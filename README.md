@@ -5,6 +5,7 @@ MOC Console is a React 19 admin application for managing operational workflows a
 - requests (archived ones behind a filter)
 - equipment inventory
 - equipment bookings
+- checklist runs and reusable templates
 - YouTube streams and Zoom meetings
 - authenticated users and role-aware navigation
 
@@ -39,6 +40,12 @@ Navigation is flat: one sidebar item per feature, no nested sections.
 
 - equipment bookings (list, table and calendar views)
 - booking detail view with scan-based checkout and return
+
+### Checklists
+
+- active and completed checklist runs
+- reusable checklist templates
+- item grouping, ordering, completion, and assignments
 
 ### Streams
 

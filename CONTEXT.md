@@ -61,7 +61,7 @@ _Avoid_: "the maintenance page"
 
 ## Relationships
 
-- A **Workspace** owns many **Requests**, **Bookings**, **Equipment**, and **Streams**.
+- A **Workspace** owns many **Requests**, **Bookings**, **Equipment**, **Checklists**, and **Streams**.
 - A **Request** is created via a **Public flow** (MOC Request) and managed via the **Requests portal** (MOC Console); once archived it stays on the same page, behind the status filter.
 - **MOC Console** and **MOC Request** share the same Supabase project; RLS distinguishes **Public flow** access from **Authenticated flow** access.
 - Both frontends reach **MOC API** by absolute URL (`VITE_API_BASE_URL`), so every browser call to it is cross-origin and gated by that app's `ALLOWED_ORIGINS` allow-list.
@@ -76,6 +76,7 @@ The sidebar is flat — one item, one destination, no expand/collapse and no sec
 | Requests | `/requests` | All submitted requests; archived ones behind the status filter |
 | Equipment | `/equipment` | Full inventory, filterable by status incl. maintenance |
 | Bookings | `/bookings` | Equipment bookings |
+| Checklists | `/checklists` | Active and completed checklist runs; reusable templates at `/checklists/templates` |
 | Streams | `/streams` | YouTube streams and Zoom meetings |
 
 Two things that read like features but are filters: **Archive** (a request status) and **Maintenance** (an equipment status).
@@ -86,7 +87,7 @@ Removed 2026-07-28. Kept here so the terms are recognised as *gone*, not merely 
 
 - **Broadcasts section** — the Console playlist authoring area (playlist editor, media library). Removed with its `playlists`, `playlist_lanes`, `queue` and `media` tables.
 - **MOC Broadcast** — the public player app (`apps/broadcast`) and the shared playback engine (`@moc/player`). Nothing plays playlists any more.
-- **Cue Sheet (QSheets)** — events, tracks, cues, checklists, their templates, public event shares and playhead sync.
+- **Cue Sheet (QSheets)** — events, tracks, cues, public event shares and playhead sync. Checklists were restored as a standalone feature on 2026-07-31; see [ADR-0009](./docs/adr/0009-restore-checklists-as-standalone-feature.md).
 - **Timeline** — the shared domain-agnostic time-axis primitive, along with **Lane**, **Block**, **Transport**, **Program** and **Playhead**. It existed only to serve the two domains above.
 - **Media library** — the `media` table. The `media` *storage bucket* is retained: stream thumbnails still upload to it under `<workspace_id>/stream-thumbnails/`.
 - **Maintenance page** — folded into the Equipment page's status filter.
