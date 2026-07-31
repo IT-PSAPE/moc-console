@@ -8,6 +8,7 @@ import { AppShell } from './features/app-shell'
 import { RequestsProvider } from '@/features/requests/request-provider'
 import { EquipmentProvider } from '@/features/equipment/equipment-provider'
 import { StreamsProvider } from '@/features/streams/streams-provider'
+import { ChecklistsProvider } from '@/features/checklists/checklists-provider'
 import { BreadcrumbProvider } from '@moc/ui/components/navigation/breadcrumb'
 import { SidebarProvider } from '@moc/ui/components/navigation/sidebar'
 import { TopBarProvider } from './features/topbar'
@@ -23,6 +24,9 @@ const EquipmentScreen = lazy(() => import('@/screens/equipment/page').then((m) =
 const EquipmentDetailScreen = lazy(() => import('@/screens/equipment/detail/page').then((m) => ({ default: m.EquipmentDetailScreen })))
 const RequestsScreen = lazy(() => import('@/screens/requests/page').then((m) => ({ default: m.RequestsScreen })))
 const RequestDetailScreen = lazy(() => import('@/screens/requests/detail/page').then((m) => ({ default: m.RequestDetailScreen })))
+const ChecklistsScreen = lazy(() => import('@/screens/checklists/page').then((m) => ({ default: m.ChecklistsScreen })))
+const ChecklistTemplatesScreen = lazy(() => import('@/screens/checklists/templates/page').then((m) => ({ default: m.ChecklistTemplatesScreen })))
+const ChecklistDetailScreen = lazy(() => import('@/screens/checklists/detail/page').then((m) => ({ default: m.ChecklistDetailScreen })))
 const LoginScreen = lazy(() => import('./screens/auth/login').then((m) => ({ default: m.LoginScreen })))
 const SignupScreen = lazy(() => import('./screens/auth/signup').then((m) => ({ default: m.SignupScreen })))
 const ResetPasswordScreen = lazy(() => import('./screens/auth/reset-password').then((m) => ({ default: m.ResetPasswordScreen })))
@@ -138,6 +142,14 @@ const router = createBrowserRouter([
                     { path: routes.streams, element: <StreamsScreen /> },
                     { path: routes.streamDetail, element: <StreamDetailScreen /> },
                     { path: routes.meetingDetail, element: <MeetingDetailScreen /> },
+                ],
+            },
+            {
+                element: <ChecklistsProvider><Outlet /></ChecklistsProvider>,
+                children: [
+                    { path: routes.checklists, element: <ChecklistsScreen /> },
+                    { path: routes.checklistTemplates, element: <ChecklistTemplatesScreen /> },
+                    { path: routes.checklistDetail, element: <ChecklistDetailScreen /> },
                 ],
             },
         ],

@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { routes } from '@/screens/console-routes'
 import { Sidebar } from '@moc/ui/components/navigation/sidebar'
 import { Breadcrumb } from '@moc/ui/components/navigation/breadcrumb'
-import { CalendarCheck, FileText, LayoutGrid, Package, Radio } from 'lucide-react'
+import { CalendarCheck, FileText, LayoutGrid, ListChecks, Package, Radio } from 'lucide-react'
 import { TopBar } from './topbar'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useSidebar } from '@moc/ui/components/navigation/sidebar'
@@ -83,6 +83,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 <Sidebar.MenuItem title={"Requests"} icon={<FileText />} active={isActive(routes.requests)} onClick={() => navigateToRoute(routes.requests)} />
                                 <Sidebar.MenuItem title={"Equipment"} icon={<Package />} active={isActive(routes.equipment)} onClick={() => navigateToRoute(routes.equipment)} />
                                 <Sidebar.MenuItem title={"Bookings"} icon={<CalendarCheck />} active={isActive(routes.bookings)} onClick={() => navigateToRoute(routes.bookings)} />
+                                <Sidebar.MenuItem title={"Checklists"} icon={<ListChecks />} active={isActive(routes.checklists)} onClick={() => navigateToRoute(routes.checklists)} />
                                 <Sidebar.MenuItem title={"Streams"} icon={<Radio />} active={isActive(routes.streams)} onClick={() => navigateToRoute(routes.streams)} />
                             </Sidebar.GroupContent>
                         </Sidebar.Group>
