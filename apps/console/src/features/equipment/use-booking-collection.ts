@@ -10,6 +10,11 @@ type UseBookingCollectionOptions = {
   onUnknownCode: (rawValue: string) => void;
 };
 
+type BookingScanProgress = {
+  bookingId: string;
+  scannedItemIds: ReadonlySet<string>;
+};
+
 export function useBookingCollection({
   booking,
   onItemCollected,
@@ -19,7 +24,17 @@ export function useBookingCollection({
   // Per-session scan progress only — never persisted. The booking is marked
   // collected explicitly via its status (see handleSelectStatus in the screens),
   // not by scanning. These ticks just help confirm every item was gathered.
-  const [scannedItemIds, setScannedItemIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [scanProgress, setScanProgress] = useState<BookingScanProgress>(() => ({
+    bookingId: booking.id,
+    scannedItemIds: new Set(),
+  }));
+  let scannedItemIds = scanProgress.scannedItemIds;
+
+  if (scanProgress.bookingId !== booking.id) {
+    scannedItemIds = new Set();
+    setScanProgress({ bookingId: booking.id, scannedItemIds });
+  }
+
   const bookingRef = useRef(booking);
   const scannedItemIdsRef = useRef(scannedItemIds);
   const closeScannerRef = useRef<() => void>(() => undefined);
@@ -31,11 +46,6 @@ export function useBookingCollection({
   useEffect(() => {
     scannedItemIdsRef.current = scannedItemIds;
   }, [scannedItemIds]);
-
-  // Drop scan progress when the hook is pointed at a different booking.
-  useEffect(() => {
-    setScannedItemIds(new Set());
-  }, [booking.id]);
 
   const handleDetected = useCallback((rawValue: string) => {
     const currentBooking = bookingRef.current;
@@ -54,7 +64,7 @@ export function useBookingCollection({
     const nextScanned = new Set(scannedItemIdsRef.current);
     nextScanned.add(matchedItem.id);
     scannedItemIdsRef.current = nextScanned;
-    setScannedItemIds(nextScanned);
+    setScanProgress({ bookingId: currentBooking.id, scannedItemIds: nextScanned });
     onItemCollected(matchedItem);
 
     if (areAllItemsScanned(currentBooking.items, nextScanned)) {
