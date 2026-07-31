@@ -1,3 +1,4 @@
+import { Toast as BaseToast } from '@base-ui/react/toast'
 import { cn } from '@moc/utils/cn'
 import { Label, Paragraph } from '../display/text'
 import { AlertCircle, CheckCircle2, Info, Lightbulb, TriangleAlert, X } from 'lucide-react'
@@ -41,57 +42,50 @@ const colorMap: Record<FeedbackVariant, Record<FeedbackStyle, string>> = {
 // ─── Types ──────────────────────────────────────────────────────────
 
 export type NotificationData = {
-    id: string
-    title: string
-    description?: string
     variant: FeedbackVariant
     style: FeedbackStyle
     dismissible: boolean
-    action?: { label: string; onClick: () => void }
 }
 
 // ─── Component ──────────────────────────────────────────────────────
 
 type NotificationProps = {
-    notification: NotificationData
-    onDismiss: (id: string) => void
+    notification: BaseToast.Root.ToastObject<NotificationData>
 }
 
-export function Notification({ notification, onDismiss }: NotificationProps) {
-    const { id, title, description, variant, style, dismissible, action } = notification
+export function Notification({ notification }: NotificationProps) {
+    const variant = notification.data?.variant ?? 'info'
+    const style = notification.data?.style ?? 'filled'
+    const dismissible = notification.data?.dismissible ?? true
 
     return (
-        <div
-            role="alert"
+        <BaseToast.Root
+            toast={notification}
+            swipeDirection={dismissible ? 'right' : []}
             className={cn(
-                'flex items-start gap-3 rounded-lg border p-3 shadow-lg min-w-80 max-w-96 animate-in fade-in slide-in-from-right-2',
+                'pointer-events-auto w-full rounded-lg border shadow-lg outline-none',
+                '[transform:translateX(var(--toast-swipe-movement-x))] transition-[opacity,transform] duration-200',
+                'data-[starting-style]:translate-x-2 data-[starting-style]:opacity-0 data-[ending-style]:translate-x-2 data-[ending-style]:opacity-0',
                 colorMap[variant][style],
             )}
         >
-            <span className="shrink-0 mt-0.5">{variantIcons[variant]}</span>
-            <div className="flex-1 min-w-0">
-                <Label.sm className="text-inherit">{title}</Label.sm>
-                {description && (
-                    <Paragraph.sm className="text-inherit/80 mt-0.5">{description}</Paragraph.sm>
-                )}
-                {action && (
-                    <div className="mt-2">
-                        <Button variant="secondary" onClick={action.onClick}>
-                            {action.label}
-                        </Button>
-                    </div>
-                )}
-            </div>
-            {dismissible && (
-                <button
-                    type="button"
-                    onClick={() => onDismiss(id)}
-                    className="shrink-0 mt-0.5 cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
-                    aria-label="Dismiss"
-                >
-                    <X className="size-4" />
-                </button>
-            )}
-        </div>
+            <BaseToast.Content className="flex items-start gap-3 p-3">
+                <span className="mt-0.5 shrink-0">{variantIcons[variant]}</span>
+                <div className="min-w-0 flex-1">
+                    <BaseToast.Title render={<Label.sm className="text-inherit" />} />
+                    {notification.description ? <BaseToast.Description render={<Paragraph.sm className="mt-0.5 text-inherit/80" />} /> : null}
+                    {notification.actionProps ? (
+                        <div className="mt-2">
+                            <BaseToast.Action render={<Button variant="secondary" />} />
+                        </div>
+                    ) : null}
+                </div>
+                {dismissible ? (
+                    <BaseToast.Close className="mt-0.5 shrink-0 cursor-pointer opacity-70 transition-opacity hover:opacity-100" aria-label="Dismiss">
+                        <X className="size-4" />
+                    </BaseToast.Close>
+                ) : null}
+            </BaseToast.Content>
+        </BaseToast.Root>
     )
 }

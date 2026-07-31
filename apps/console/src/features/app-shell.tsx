@@ -53,7 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }, [actions, isSigningOut, signOut, toast])
 
     return (
-        <CommandMenu>
+        <CommandMenu.Root>
             <div className="app-grid md:app-grid-desktop bg-primary text-primary">
                 <Sidebar.Panel>
                     <Sidebar.Header>
@@ -113,6 +113,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
 
             <SearchCommandMenuContent />
-        </CommandMenu>
+        </CommandMenu.Root>
     )
 }

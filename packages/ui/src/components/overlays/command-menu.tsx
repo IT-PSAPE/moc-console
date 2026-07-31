@@ -1,29 +1,19 @@
+import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
+import { Dialog } from '@base-ui/react/dialog'
 import { cn } from '@moc/utils/cn'
-import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type HTMLAttributes, type InputHTMLAttributes, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ComponentProps, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react'
 import { useOverlayStack } from './overlay-provider'
-import { OverlayBackdrop, OverlayClose, OverlayPortal } from './overlay-primitives'
-
-// ─── Context ─────────────────────────────────────────────────────────
 
 type CommandMenuContextValue = {
     state: {
         isOpen: boolean
-        isTopmost: boolean
-        zIndex: number
         search: string
-        activeIndex: number
     }
     actions: {
         close: () => void
         open: () => void
         setOpen: (nextOpen: boolean) => void
         setSearch: (value: string) => void
-        setActiveIndex: (index: number) => void
-        registerItem: (id: string) => void
-        unregisterItem: (id: string) => void
-    }
-    meta: {
-        itemIds: string[]
     }
 }
 
@@ -39,8 +29,6 @@ export function useCommandMenu() {
     return context
 }
 
-// ─── Root ────────────────────────────────────────────────────────────
-
 type CommandMenuRootProps = {
     children: ReactNode
     closeOnEscape?: boolean
@@ -51,345 +39,185 @@ type CommandMenuRootProps = {
 }
 
 function CommandMenuRoot({ children, closeOnEscape = true, defaultOpen = false, onOpenChange, open, shortcut = true }: CommandMenuRootProps) {
-    const menuId = useId()
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
     const [search, setSearch] = useState('')
-    const [activeIndex, setActiveIndex] = useState(0)
-    const [itemIds, setItemIds] = useState<string[]>([])
-    const { state: overlayState, actions: overlayActions, meta: overlayMeta } = useOverlayStack()
-
     const isOpen = isControlled ? open : uncontrolledOpen
-    const stackIndex = overlayState.stack.indexOf(menuId)
-    const isTopmost = stackIndex === overlayState.stack.length - 1 && stackIndex >= 0
-    const zIndex = overlayMeta.baseZIndex + Math.max(stackIndex, 0) * 10
 
-    const setOpenState = useCallback((nextOpen: boolean) => {
-        if (!isControlled) {
-            setUncontrolledOpen(nextOpen)
-        }
-
-        if (!nextOpen) {
-            setSearch('')
-            setActiveIndex(0)
-        }
-
+    const setOpen = useCallback((nextOpen: boolean) => {
+        if (!isControlled) setUncontrolledOpen(nextOpen)
+        if (!nextOpen) setSearch('')
         onOpenChange?.(nextOpen)
     }, [isControlled, onOpenChange])
 
     const openMenu = useCallback(() => {
-        setOpenState(true)
-    }, [setOpenState])
+        setOpen(true)
+    }, [setOpen])
 
     const closeMenu = useCallback(() => {
-        setOpenState(false)
-    }, [setOpenState])
+        setOpen(false)
+    }, [setOpen])
 
-    const registerItem = useCallback((id: string) => {
-        setItemIds(prev => prev.includes(id) ? prev : [...prev, id])
-    }, [])
-
-    const unregisterItem = useCallback((id: string) => {
-        setItemIds(prev => {
-            const next = prev.filter(itemId => itemId !== id)
-            return next.length === prev.length ? prev : next
-        })
-    }, [])
-
-    // Overlay stack registration
     useEffect(() => {
-        if (!isOpen) {
-            return undefined
-        }
+        if (!shortcut) return undefined
 
-        overlayActions.register(menuId)
-
-        return () => {
-            overlayActions.unregister(menuId)
-        }
-    }, [isOpen, menuId, overlayActions])
-
-    // Cmd+K / Ctrl+K shortcut
-    useEffect(() => {
-        if (!shortcut) {
-            return
-        }
-
-        function handleKeyDown(event: KeyboardEvent) {
+        function handleShortcut(event: KeyboardEvent) {
             if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
                 event.preventDefault()
-                setOpenState(!isOpen)
+                setOpen(!isOpen)
             }
         }
 
-        document.addEventListener('keydown', handleKeyDown)
-
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown)
-        }
-    }, [isOpen, setOpenState, shortcut])
-
-    // Escape key
-    useEffect(() => {
-        if (!isOpen || !isTopmost || !closeOnEscape) {
-            return undefined
-        }
-
-        function handleDocumentKeyDown(event: KeyboardEvent) {
-            if (event.key !== 'Escape') {
-                return
-            }
-
-            event.preventDefault()
-            closeMenu()
-        }
-
-        document.addEventListener('keydown', handleDocumentKeyDown)
-
-        return () => {
-            document.removeEventListener('keydown', handleDocumentKeyDown)
-        }
-    }, [closeMenu, closeOnEscape, isOpen, isTopmost])
-
-    const state = useMemo<CommandMenuContextValue['state']>(() => ({
-        isOpen,
-        isTopmost,
-        zIndex,
-        search,
-        activeIndex,
-    }), [activeIndex, isOpen, isTopmost, search, zIndex])
-
-    const actions = useMemo<CommandMenuContextValue['actions']>(() => ({
-        close: closeMenu,
-        open: openMenu,
-        setOpen: setOpenState,
-        setSearch,
-        setActiveIndex,
-        registerItem,
-        unregisterItem,
-    }), [closeMenu, openMenu, registerItem, setOpenState, unregisterItem])
-
-    const meta = useMemo<CommandMenuContextValue['meta']>(() => ({
-        itemIds,
-    }), [itemIds])
+        document.addEventListener('keydown', handleShortcut)
+        return () => document.removeEventListener('keydown', handleShortcut)
+    }, [isOpen, setOpen, shortcut])
 
     const value = useMemo<CommandMenuContextValue>(() => ({
-        state,
-        actions,
-        meta,
-    }), [actions, meta, state])
+        state: { isOpen, search },
+        actions: { close: closeMenu, open: openMenu, setOpen, setSearch },
+    }), [closeMenu, isOpen, openMenu, search, setOpen])
+
+    function handleDialogOpenChange(nextOpen: boolean, eventDetails: Dialog.Root.ChangeEventDetails) {
+        if (!nextOpen && !closeOnEscape && eventDetails.reason === 'escape-key') return
+        setOpen(nextOpen)
+    }
 
     return (
         <CommandMenuContext.Provider value={value}>
-            {children}
+            <Dialog.Root open={isOpen} onOpenChange={handleDialogOpenChange}>
+                {children}
+            </Dialog.Root>
         </CommandMenuContext.Provider>
     )
 }
 
-// ─── Portal ──────────────────────────────────────────────────────────
-
 function CommandMenuPortal({ children }: { children: ReactNode }) {
-    const { state } = useCommandMenu()
-    return <OverlayPortal isOpen={state.isOpen} zIndex={state.zIndex}>{children}</OverlayPortal>
+    const { state: overlayState } = useOverlayStack()
+    return <Dialog.Portal container={overlayState.rootElement ?? undefined}>{children}</Dialog.Portal>
 }
 
-// ─── Backdrop ────────────────────────────────────────────────────────
-
-function CommandMenuBackdrop(props: HTMLAttributes<HTMLDivElement>) {
-    const { actions } = useCommandMenu()
-    return <OverlayBackdrop closeOnClick onClose={actions.close} {...props} />
-}
-
-// ─── Close ───────────────────────────────────────────────────────────
-
-function CommandMenuClose(props: HTMLAttributes<HTMLSpanElement>) {
-    const { actions } = useCommandMenu()
-    return <OverlayClose onClose={actions.close} {...props} />
-}
-
-// ─── Panel ───────────────────────────────────────────────────────────
-
-function CommandMenuPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    const panelRef = useRef<HTMLDivElement | null>(null)
-    const { state, actions, meta } = useCommandMenu()
-
-    function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-        const itemCount = meta.itemIds.length
-
-        if (itemCount === 0) {
-            return
-        }
-
-        if (event.key === 'ArrowDown') {
-            event.preventDefault()
-            actions.setActiveIndex((state.activeIndex + 1) % itemCount)
-        } else if (event.key === 'ArrowUp') {
-            event.preventDefault()
-            actions.setActiveIndex((state.activeIndex - 1 + itemCount) % itemCount)
-        } else if (event.key === 'Enter') {
-            event.preventDefault()
-            const activeItem = panelRef.current?.querySelector('[aria-selected="true"]') as HTMLElement | null
-            activeItem?.click()
-        }
-    }
-
+function CommandMenuBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className="pointer-events-none fixed inset-0 flex items-start justify-center p-2 pt-[20vh]">
-            <div
-                ref={panelRef}
-                aria-modal="true"
-                className={cn(
-                    'pointer-events-auto flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg',
-                    className,
-                )}
-                onKeyDown={handleKeyDown}
-                role="dialog"
-                tabIndex={-1}
-                {...props}
-            >
-                {children}
-            </div>
-        </div>
-    )
-}
-
-// ─── Input ───────────────────────────────────────────────────────────
-
-type CommandMenuInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'type'>
-
-function CommandMenuInput({ className, ...props }: CommandMenuInputProps) {
-    const inputRef = useRef<HTMLInputElement | null>(null)
-    const { state, actions } = useCommandMenu()
-
-    useEffect(() => {
-        if (state.isOpen && state.isTopmost) {
-            inputRef.current?.focus()
-        }
-    }, [state.isOpen, state.isTopmost])
-
-    return (
-        <input
-            ref={inputRef}
-            className={cn('w-full border-b border-secondary bg-transparent px-4 py-3 text-sm text-primary outline-none placeholder:text-quaternary focus:!outline-none focus-visible:!outline-none ', className)}
-            onChange={event => {
-                actions.setSearch(event.target.value)
-                actions.setActiveIndex(0)
-            }}
-            placeholder="Search..."
-            type="text"
-            value={state.search}
+        <Dialog.Backdrop
+            className={cn(
+                'pointer-events-auto fixed inset-0 bg-black/30 backdrop-blur-xs transition-opacity duration-150',
+                'data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
+                className,
+            )}
             {...props}
         />
     )
 }
 
-// ─── List ────────────────────────────────────────────────────────────
-
-function CommandMenuList({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+function CommandMenuClose({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
     return (
-        <div className={cn('flex max-h-72 flex-col overflow-y-auto p-1', className)} role="listbox" {...props}>
+        <Dialog.Close nativeButton={false} render={<span />} className={className} {...props}>
             {children}
+        </Dialog.Close>
+    )
+}
+
+function CommandMenuPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    const { state, actions } = useCommandMenu()
+
+    function handleInputValueChange(value: string) {
+        actions.setSearch(value)
+    }
+
+    return (
+        <div className="pointer-events-none fixed inset-0 flex items-start justify-center p-2 pt-[20vh]">
+            <Dialog.Popup
+                className={cn(
+                    'pointer-events-auto flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg outline-none',
+                    'origin-center transition-[opacity,transform] duration-150',
+                    'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+                    'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
+                    className,
+                )}
+                {...props}
+            >
+                <BaseCombobox.Root open inputValue={state.search} onInputValueChange={handleInputValueChange} filter={null} autoHighlight>
+                    {children}
+                </BaseCombobox.Root>
+            </Dialog.Popup>
         </div>
     )
 }
 
-// ─── Group ───────────────────────────────────────────────────────────
+type CommandMenuInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'type'>
 
-type CommandMenuGroupProps = HTMLAttributes<HTMLDivElement> & {
+function CommandMenuInput({ className, ...props }: CommandMenuInputProps) {
+    return (
+        <BaseCombobox.Input
+            className={cn('w-full border-b border-secondary bg-transparent px-4 py-3 text-sm text-primary outline-none placeholder:text-quaternary focus:!outline-none focus-visible:!outline-none', className)}
+            type="text"
+            {...props}
+        />
+    )
+}
+
+type Styled<Props> = Omit<Props, 'className'> & { className?: string }
+
+function CommandMenuList({ className, ...props }: Styled<ComponentProps<typeof BaseCombobox.List>>) {
+    return <BaseCombobox.List className={cn('flex max-h-72 flex-col overflow-y-auto p-1 outline-none', className)} {...props} />
+}
+
+type CommandMenuGroupProps = Styled<ComponentProps<typeof BaseCombobox.Group>> & {
     heading?: string
 }
 
 function CommandMenuGroup({ children, className, heading, ...props }: CommandMenuGroupProps) {
     return (
-        <div className={cn('flex flex-col', className)} role="group" {...props}>
-            {heading && (
-                <div className="px-3 py-1.5 text-xs text-quaternary">{heading}</div>
-            )}
+        <BaseCombobox.Group className={cn('flex flex-col', className)} {...props}>
+            {heading ? <BaseCombobox.GroupLabel className="px-3 py-1.5 text-xs text-quaternary">{heading}</BaseCombobox.GroupLabel> : null}
             {children}
-        </div>
+        </BaseCombobox.Group>
     )
 }
 
-// ─── Item ────────────────────────────────────────────────────────────
-
-type CommandMenuItemProps = HTMLAttributes<HTMLDivElement> & {
+type CommandMenuItemProps = Styled<ComponentProps<typeof BaseCombobox.Item>> & {
     onSelect?: () => void
-    value?: string
 }
+type CommandMenuItemClickEvent = Parameters<NonNullable<ComponentProps<typeof BaseCombobox.Item>['onClick']>>[0]
 
-function CommandMenuItem({ children, className, onClick, onSelect, value, ...props }: CommandMenuItemProps) {
-    const itemId = useId()
-    const { state, actions, meta } = useCommandMenu()
-    const itemIndex = meta.itemIds.indexOf(itemId)
-    const isActive = itemIndex === state.activeIndex
+function CommandMenuItem({ children, className, onClick, onSelect, ...props }: CommandMenuItemProps) {
+    const { actions } = useCommandMenu()
 
-    useEffect(() => {
-        actions.registerItem(itemId)
-
-        return () => {
-            actions.unregisterItem(itemId)
-        }
-    }, [actions, itemId])
-
-    function handleClick(event: React.MouseEvent<HTMLDivElement>) {
+    function handleClick(event: CommandMenuItemClickEvent) {
         onClick?.(event)
-
-        if (event.defaultPrevented) {
-            return
-        }
-
+        if (event.defaultPrevented) return
         onSelect?.()
         actions.close()
     }
 
-    function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-        if (event.key === 'Enter') {
-            event.preventDefault()
-            onSelect?.()
-            actions.close()
-        }
-    }
-
     return (
-        <div
-            aria-selected={isActive}
+        <BaseCombobox.Item
             className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-secondary',
-                isActive && 'bg-secondary text-primary',
+                'flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-secondary outline-none',
+                'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
                 className,
             )}
-            data-value={value}
             onClick={handleClick}
-            onKeyDown={handleKeyDown}
-            onPointerMove={() => actions.setActiveIndex(itemIndex)}
-            role="option"
             {...props}
         >
             {children}
-        </div>
+        </BaseCombobox.Item>
     )
 }
-
-// ─── Empty ───────────────────────────────────────────────────────────
 
 function CommandMenuEmpty({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    return (
-        <div className={cn('px-4 py-6 text-center text-sm text-quaternary', className)} {...props}>
-            {children ?? 'No results found.'}
-        </div>
-    )
+    return <div className={cn('px-4 py-6 text-center text-sm text-quaternary', className)} {...props}>{children ?? 'No results found.'}</div>
 }
 
-// ─── Compound Export ─────────────────────────────────────────────────
-
-export const CommandMenu = Object.assign(CommandMenuRoot, {
-    Portal: CommandMenuPortal,
+export const CommandMenu = {
     Backdrop: CommandMenuBackdrop,
-    Panel: CommandMenuPanel,
-    Input: CommandMenuInput,
-    List: CommandMenuList,
-    Group: CommandMenuGroup,
-    Item: CommandMenuItem,
-    Empty: CommandMenuEmpty,
     Close: CommandMenuClose,
-})
+    Empty: CommandMenuEmpty,
+    Group: CommandMenuGroup,
+    Input: CommandMenuInput,
+    Item: CommandMenuItem,
+    List: CommandMenuList,
+    Panel: CommandMenuPanel,
+    Portal: CommandMenuPortal,
+    Root: CommandMenuRoot,
+}

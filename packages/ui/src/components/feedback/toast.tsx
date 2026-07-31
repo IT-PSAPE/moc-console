@@ -1,3 +1,4 @@
+import { Toast as BaseToast } from '@base-ui/react/toast'
 import { cn } from '@moc/utils/cn'
 import { Label, Paragraph } from '../display/text'
 import { AlertCircle, CheckCircle2, Info, Lightbulb, TriangleAlert, X } from 'lucide-react'
@@ -40,48 +41,41 @@ const colorMap: Record<FeedbackVariant, Record<FeedbackStyle, string>> = {
 // ─── Types ──────────────────────────────────────────────────────────
 
 export type ToastData = {
-    id: string
-    title: string
-    description?: string
     variant: FeedbackVariant
     style: FeedbackStyle
-    duration: number
 }
 
 // ─── Component ──────────────────────────────────────────────────────
 
 type ToastProps = {
-    toast: ToastData
-    onDismiss: (id: string) => void
+    toast: BaseToast.Root.ToastObject<ToastData>
 }
 
-export function Toast({ toast, onDismiss }: ToastProps) {
-    const { id, title, description, variant, style } = toast
+export function Toast({ toast }: ToastProps) {
+    const variant = toast.data?.variant ?? 'info'
+    const style = toast.data?.style ?? 'filled'
 
     return (
-        <div
-            role="status"
-            aria-live="polite"
+        <BaseToast.Root
+            toast={toast}
+            swipeDirection="down"
             className={cn(
-                'flex items-start gap-3 rounded-lg border p-3 shadow-lg min-w-72 max-w-96 animate-in fade-in slide-in-from-bottom-2',
+                'pointer-events-auto w-full rounded-lg border shadow-lg outline-none',
+                '[transform:translateY(var(--toast-swipe-movement-y))] transition-[opacity,transform] duration-200',
+                'data-[starting-style]:translate-y-2 data-[starting-style]:opacity-0 data-[ending-style]:translate-y-2 data-[ending-style]:opacity-0',
                 colorMap[variant][style],
             )}
         >
-            <span className="shrink-0 mt-0.5">{variantIcons[variant]}</span>
-            <div className="flex-1 min-w-0">
-                <Label.sm className="text-inherit">{title}</Label.sm>
-                {description && (
-                    <Paragraph.sm className="text-inherit/80 mt-0.5">{description}</Paragraph.sm>
-                )}
-            </div>
-            <button
-                type="button"
-                onClick={() => onDismiss(id)}
-                className="shrink-0 mt-0.5 cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
-                aria-label="Dismiss"
-            >
-                <X className="size-4" />
-            </button>
-        </div>
+            <BaseToast.Content className="flex items-start gap-3 p-3">
+                <span className="mt-0.5 shrink-0">{variantIcons[variant]}</span>
+                <div className="min-w-0 flex-1">
+                    <BaseToast.Title render={<Label.sm className="text-inherit" />} />
+                    {toast.description ? <BaseToast.Description render={<Paragraph.sm className="mt-0.5 text-inherit/80" />} /> : null}
+                </div>
+                <BaseToast.Close className="mt-0.5 shrink-0 cursor-pointer opacity-70 transition-opacity hover:opacity-100" aria-label="Dismiss">
+                    <X className="size-4" />
+                </BaseToast.Close>
+            </BaseToast.Content>
+        </BaseToast.Root>
     )
 }

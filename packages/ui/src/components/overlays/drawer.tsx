@@ -1,17 +1,25 @@
-import { Dialog } from '@base-ui/react/dialog'
+import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
 import { cn } from '@moc/utils/cn'
 import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type ReactNode } from 'react'
 import { useOverlayStack } from './overlay-provider'
-import { OverlayContent, OverlayFooter, OverlayHeader } from './overlay-primitives'
+import { OverlayFooter, OverlayHeader } from './overlay-primitives'
 
 // ─── Context ─────────────────────────────────────────────────────────
 //
-// Backed by Base UI's Dialog (focus-trap, scroll-lock, dismissal), controlled
+// Backed by Base UI's Drawer (focus-trap, scroll-lock, dismissal and swipe
+// gestures), controlled
 // via `open`/`onOpenChange`. The context preserves the public `useDrawer()`
 // contract { state, actions, meta } that drawer content relies on to close
 // itself.
 
 type Side = 'left' | 'right' | 'top' | 'bottom'
+
+const swipeDirectionBySide = {
+    bottom: 'down',
+    left: 'left',
+    right: 'right',
+    top: 'up',
+} as const
 
 type DrawerContextValue = {
     state: {
@@ -78,18 +86,19 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
 
     return (
         <DrawerContext.Provider value={value}>
-            <Dialog.Root
+            <BaseDrawer.Root
                 open={isOpen}
+                disablePointerDismissal={!closeOnBackdropClick}
+                swipeDirection={swipeDirectionBySide[side]}
                 onOpenChange={(nextOpen, eventDetails) => {
                     if (!nextOpen) {
                         if (!closeOnEscape && eventDetails.reason === 'escape-key') return
-                        if (!closeOnBackdropClick && eventDetails.reason === 'outside-press') return
                     }
                     setOpen(nextOpen)
                 }}
             >
                 {children}
-            </Dialog.Root>
+            </BaseDrawer.Root>
         </DrawerContext.Provider>
     )
 }
@@ -98,9 +107,9 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
 
 function DrawerTrigger({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
     return (
-        <Dialog.Trigger nativeButton={false} render={<span />} className={cn('contents', className)} {...props}>
+        <BaseDrawer.Trigger nativeButton={false} render={<span />} className={cn('contents', className)} {...props}>
             {children}
-        </Dialog.Trigger>
+        </BaseDrawer.Trigger>
     )
 }
 
@@ -108,9 +117,9 @@ function DrawerTrigger({ children, className, ...props }: HTMLAttributes<HTMLSpa
 
 function DrawerClose({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
     return (
-        <Dialog.Close nativeButton={false} render={<span />} className={className} {...props}>
+        <BaseDrawer.Close nativeButton={false} render={<span />} className={className} {...props}>
             {children}
-        </Dialog.Close>
+        </BaseDrawer.Close>
     )
 }
 
@@ -118,14 +127,14 @@ function DrawerClose({ children, className, ...props }: HTMLAttributes<HTMLSpanE
 
 function DrawerPortal({ children }: { children: ReactNode }) {
     const { state: overlayState } = useOverlayStack()
-    return <Dialog.Portal container={overlayState.rootElement ?? undefined}>{children}</Dialog.Portal>
+    return <BaseDrawer.Portal container={overlayState.rootElement ?? undefined}>{children}</BaseDrawer.Portal>
 }
 
 // ─── Backdrop ────────────────────────────────────────────────────────
 
 function DrawerBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <Dialog.Backdrop
+        <BaseDrawer.Backdrop
             className={cn(
                 'pointer-events-auto fixed inset-0 bg-linear-to-t from-black/30 to-black/3 backdrop-blur-xs',
                 'transition-opacity duration-200 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
@@ -146,36 +155,38 @@ const panelClassesBySide: Record<Side, string> = {
 }
 
 const slideBySide: Record<Side, string> = {
-    left: 'data-[starting-style]:-translate-x-full data-[ending-style]:-translate-x-full',
-    right: 'data-[starting-style]:translate-x-full data-[ending-style]:translate-x-full',
-    top: 'data-[starting-style]:-translate-y-full data-[ending-style]:-translate-y-full',
-    bottom: 'data-[starting-style]:translate-y-full data-[ending-style]:translate-y-full',
+    left: '[transform:translateX(var(--drawer-swipe-movement-x))] data-[starting-style]:[transform:translateX(-100%)] data-[ending-style]:[transform:translateX(-100%)]',
+    right: '[transform:translateX(var(--drawer-swipe-movement-x))] data-[starting-style]:[transform:translateX(100%)] data-[ending-style]:[transform:translateX(100%)]',
+    top: '[transform:translateY(var(--drawer-swipe-movement-y))] data-[starting-style]:[transform:translateY(-100%)] data-[ending-style]:[transform:translateY(-100%)]',
+    bottom: '[transform:translateY(var(--drawer-swipe-movement-y))] data-[starting-style]:[transform:translateY(100%)] data-[ending-style]:[transform:translateY(100%)]',
 }
 
 function DrawerPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     const { state } = useDrawer()
 
     return (
-        <Dialog.Popup
-            className={cn(
-                'pointer-events-auto fixed w-full transition-transform duration-200',
-                // See ModalPositioner — same safe-area-aware outer padding so the
-                // drawer never overlaps the status bar or Android gesture indicator
-                // in edge-to-edge PWA mode.
-                'pt-[max(0.5rem,env(safe-area-inset-top))]',
-                'pr-[max(0.5rem,env(safe-area-inset-right))]',
-                'pb-[max(0.5rem,env(safe-area-inset-bottom))]',
-                'pl-[max(0.5rem,env(safe-area-inset-left))]',
-                panelClassesBySide[state.side],
-                slideBySide[state.side],
-                className,
-            )}
-            {...props}
-        >
-            <div className="flex h-full flex-col rounded-lg border border-secondary bg-primary">
-                {children}
-            </div>
-        </Dialog.Popup>
+        <BaseDrawer.Viewport className="pointer-events-none fixed inset-0">
+            <BaseDrawer.Popup
+                className={cn(
+                    'pointer-events-auto fixed w-full transition-transform duration-200 data-[swiping]:duration-0',
+                    // See ModalPositioner — same safe-area-aware outer padding so the
+                    // drawer never overlaps the status bar or Android gesture indicator
+                    // in edge-to-edge PWA mode.
+                    'pt-[max(0.5rem,env(safe-area-inset-top))]',
+                    'pr-[max(0.5rem,env(safe-area-inset-right))]',
+                    'pb-[max(0.5rem,env(safe-area-inset-bottom))]',
+                    'pl-[max(0.5rem,env(safe-area-inset-left))]',
+                    panelClassesBySide[state.side],
+                    slideBySide[state.side],
+                    className,
+                )}
+                {...props}
+            >
+                <div className="flex h-full flex-col rounded-lg border border-secondary bg-primary">
+                    {children}
+                </div>
+            </BaseDrawer.Popup>
+        </BaseDrawer.Viewport>
     )
 }
 
@@ -185,8 +196,8 @@ function DrawerHeader(props: HTMLAttributes<HTMLDivElement>) {
     return <OverlayHeader {...props} />
 }
 
-function DrawerContent(props: HTMLAttributes<HTMLDivElement>) {
-    return <OverlayContent {...props} />
+function DrawerContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    return <BaseDrawer.Content className={cn('min-h-0 flex flex-1 flex-col overflow-y-auto', className)} {...props} />
 }
 
 function DrawerFooter(props: HTMLAttributes<HTMLDivElement>) {
