@@ -141,7 +141,7 @@ export function AvatarCropperModal({ open, file, onCancel, onConfirm }: AvatarCr
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
-                    <Modal.Panel className="w-full !max-w-md">
+          <Modal.FullScreenPanel className="w-full md:!max-w-md">
                         <Modal.Header>
                             <div className="flex flex-col gap-0.5">
                                 <Label.md>Adjust your photo</Label.md>
@@ -196,7 +196,7 @@ export function AvatarCropperModal({ open, file, onCancel, onConfirm }: AvatarCr
                                 {isExporting ? 'Saving...' : 'Use photo'}
                             </Button>
                         </Modal.Footer>
-                    </Modal.Panel>
+          </Modal.FullScreenPanel>
                 </Modal.Positioner>
             </Modal.Portal>
         </Modal>

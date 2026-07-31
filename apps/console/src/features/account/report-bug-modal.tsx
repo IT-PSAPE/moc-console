@@ -68,7 +68,7 @@ export function ReportBugModal({ open, onOpenChange, errorContext }: Props) {
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
-                    <Modal.Panel className="w-full !max-w-md">
+          <Modal.FullScreenPanel className="w-full md:!max-w-md">
                         <Modal.Header>
                             <div className="flex flex-col gap-0.5">
                                 <Label.md>Report a bug</Label.md>
@@ -116,7 +116,7 @@ export function ReportBugModal({ open, onOpenChange, errorContext }: Props) {
                                 {isSubmitting ? 'Sending...' : 'Send report'}
                             </Button>
                         </Modal.Footer>
-                    </Modal.Panel>
+          </Modal.FullScreenPanel>
                 </Modal.Positioner>
             </Modal.Portal>
         </Modal>

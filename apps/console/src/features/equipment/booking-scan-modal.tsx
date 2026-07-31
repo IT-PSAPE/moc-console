@@ -37,7 +37,7 @@ export function BookingScanModal({
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
-          <Modal.Panel className="max-w-lg overflow-hidden">
+          <Modal.FullScreenPanel className="overflow-hidden md:max-w-lg">
             <Modal.Header className="items-start">
               <div>
                 <Title.h6>Scan Booking Items</Title.h6>
@@ -91,7 +91,7 @@ export function BookingScanModal({
                 Close
               </Button>
             </Modal.Footer>
-          </Modal.Panel>
+          </Modal.FullScreenPanel>
         </Modal.Positioner>
       </Modal.Portal>
     </Modal>

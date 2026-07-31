@@ -56,7 +56,7 @@ export function MemberSearchPicker({
         <div className={cn("flex flex-col gap-3", className)}>
             <Combobox.Root items={available} value={null} onValueChange={handleSelect} itemToStringLabel={userToSearchLabel}>
                 <Combobox.Field placeholder={placeholder} disabled={isLoading} />
-                <Combobox.Content empty={isLoading ? <Spinner size="sm" /> : "No members found"} className="max-h-64">
+                <Combobox.Content empty={isLoading ? <Spinner size="sm" /> : "No members found"} searchPlaceholder="Search members" title="Choose a member" className="max-h-64">
                     {available.map((user) => (
                         <Combobox.Item key={user.id} value={user}>
                             <span className="flex min-w-0 items-center gap-2">

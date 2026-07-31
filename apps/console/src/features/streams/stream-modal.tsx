@@ -341,13 +341,13 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
-          <Modal.Panel className="max-w-lg">
+          <Modal.FullScreenPanel className="md:max-w-lg">
             <Modal.Header>
               <Label.md>{isEditing ? "Edit Stream" : "Create Stream"}</Label.md>
             </Modal.Header>
 
             <Modal.Content>
-              <div className="flex flex-col gap-4 p-4 max-h-[70vh] overflow-y-auto">
+              <div className="flex flex-col gap-4 p-4">
                 <StreamBasicFields
                   title={title}
                   description={description}
@@ -445,7 +445,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
                 <Button variant="secondary">Cancel</Button>
               </Modal.Close>
             </Modal.Footer>
-          </Modal.Panel>
+          </Modal.FullScreenPanel>
         </Modal.Positioner>
       </Modal.Portal>
     </Modal>

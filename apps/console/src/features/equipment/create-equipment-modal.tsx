@@ -42,7 +42,7 @@ export function CreateEquipmentModal({ open, onOpenChange, onCreate }: CreateEqu
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
-          <Modal.Panel className="w-full max-w-md">
+          <Modal.FullScreenPanel className="w-full md:max-w-md">
             <Modal.Header>
               <Label.md>New Equipment</Label.md>
             </Modal.Header>
@@ -99,7 +99,7 @@ export function CreateEquipmentModal({ open, onOpenChange, onCreate }: CreateEqu
               </Modal.Close>
               <Button onClick={handleSubmit} disabled={!canSubmit}>Create</Button>
             </Modal.Footer>
-          </Modal.Panel>
+          </Modal.FullScreenPanel>
         </Modal.Positioner>
       </Modal.Portal>
     </Modal>

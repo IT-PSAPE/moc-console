@@ -34,7 +34,7 @@ export function CreateChecklistModal({ open, onOpenChange, onCreate }: CreateChe
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
-                    <Modal.Panel className="w-full max-w-md">
+                    <Modal.FullScreenPanel className="w-full md:max-w-md">
                         <Modal.Header>
                             <Label.md>New Checklist</Label.md>
                         </Modal.Header>
@@ -64,7 +64,7 @@ export function CreateChecklistModal({ open, onOpenChange, onCreate }: CreateChe
                             </Modal.Close>
                             <Button onClick={handleSubmit} disabled={!canSubmit}>Create</Button>
                         </Modal.Footer>
-                    </Modal.Panel>
+                    </Modal.FullScreenPanel>
                 </Modal.Positioner>
             </Modal.Portal>
         </Modal>

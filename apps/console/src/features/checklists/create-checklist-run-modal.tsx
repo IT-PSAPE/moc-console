@@ -59,7 +59,7 @@ export function CreateChecklistRunModal({ open, onOpenChange, template, onSubmit
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
-                    <Modal.Panel className="w-full max-w-md">
+                    <Modal.FullScreenPanel className="w-full md:max-w-md">
                         <Modal.Header>
                             <Label.md>{template ? `New Run from "${template.name}"` : 'New Blank Checklist Run'}</Label.md>
                         </Modal.Header>
@@ -84,7 +84,7 @@ export function CreateChecklistRunModal({ open, onOpenChange, template, onSubmit
                                 {isSubmitting ? 'Creating...' : 'Create'}
                             </Button>
                         </Modal.Footer>
-                    </Modal.Panel>
+                    </Modal.FullScreenPanel>
                 </Modal.Positioner>
             </Modal.Portal>
         </Modal>

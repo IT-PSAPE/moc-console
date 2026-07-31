@@ -118,7 +118,7 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
-          <Modal.Panel className="w-full max-w-md">
+          <Modal.FullScreenPanel className="w-full md:max-w-md">
             <Modal.Header>
               <Label.md>{isEditing ? "Edit Meeting" : "Schedule Meeting"}</Label.md>
             </Modal.Header>
@@ -257,7 +257,7 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
                 <Button variant="secondary">Cancel</Button>
               </Modal.Close>
             </Modal.Footer>
-          </Modal.Panel>
+          </Modal.FullScreenPanel>
         </Modal.Positioner>
       </Modal.Portal>
     </Modal>

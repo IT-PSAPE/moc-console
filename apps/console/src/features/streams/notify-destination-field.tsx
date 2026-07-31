@@ -156,7 +156,7 @@ export function NotifyDestinationField({ value, onChange }: NotifyDestinationFie
                 : "No Telegram groups registered"
           }
         />
-        <Combobox.Content empty="No matching group or topic">
+        <Combobox.Content empty="No matching group or topic" searchPlaceholder="Search groups and topics">
           {(option: DestinationOption) => (
             <Combobox.Item key={notifyDestinationKey(option)} value={option}>
               {option.label}
