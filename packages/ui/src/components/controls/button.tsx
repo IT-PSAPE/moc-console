@@ -19,7 +19,7 @@ type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const buttonVariants = cv({
     base: [
-        "inline-flex items-center justify-center gap-2 rounded-md border text-nowrap",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border text-nowrap md:min-h-0",
         "transition-colors",
         "focus-visible:outline-2 focus-visible:outline-offset-1",
         "disabled:cursor-not-allowed",
@@ -54,7 +54,7 @@ const buttonVariants = cv({
         },
         size: {
             default: ["px-3 py-2"],
-            icon: ["px-2 py-2"],
+            icon: ["min-w-11 px-2 py-2 md:min-w-0"],
         },
     },
     defaultVariants: {

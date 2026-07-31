@@ -1,7 +1,9 @@
 import { Menu } from '@base-ui/react/menu'
 import { cn } from '@moc/utils/cn'
-import { createContext, useContext, type ComponentProps, type HTMLAttributes, type ReactNode } from 'react'
-import { useOverlayStack } from './overlay-provider'
+import { createContext, useContext, useState, type ComponentProps, type HTMLAttributes, type ReactNode } from 'react'
+import { useIsMobile } from '../../hooks/use-is-mobile'
+import { MobileSheetHandle, mobileSheetBackdropClassName, mobileSheetPopupClassName, mobileSheetPositionerClassName } from './mobile-sheet'
+import { useOverlayRegistration, useOverlayStack } from './overlay-provider'
 
 // ─── Placement ───────────────────────────────────────────────────────
 //
@@ -36,15 +38,23 @@ type DropdownRootProps = {
 }
 
 function DropdownRoot({ children, closeOnEscape = true, defaultOpen, onOpenChange, open, placement = 'bottom' }: DropdownRootProps) {
+    const isControlled = open !== undefined
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false)
+    const isOpen = isControlled ? open : uncontrolledOpen
+    useOverlayRegistration(isOpen)
+
     function handleOpenChange(nextOpen: boolean, eventDetails: Menu.Root.ChangeEventDetails) {
         if (!closeOnEscape && eventDetails.reason === 'escape-key') return
+
+        if (!isControlled) {
+            setUncontrolledOpen(nextOpen)
+        }
         onOpenChange?.(nextOpen)
     }
 
     return (
         <Menu.Root
-            open={open}
-            defaultOpen={defaultOpen}
+            open={isOpen}
             onOpenChange={handleOpenChange}
         >
             <PlacementContext.Provider value={placement}>
@@ -72,22 +82,29 @@ function DropdownTrigger({ children, className, ...props }: HTMLAttributes<HTMLS
 // ─── Panel ───────────────────────────────────────────────────────────
 
 function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    const isMobile = useIsMobile()
     const { side, align } = toSideAlign(useContext(PlacementContext))
     const { state: overlayState } = useOverlayStack()
 
     return (
         <Menu.Portal container={overlayState.rootElement ?? undefined}>
-            <Menu.Positioner side={side} align={align} sideOffset={6} className="z-[9050] outline-none">
+            {isMobile ? <Menu.Backdrop className={mobileSheetBackdropClassName} /> : null}
+            <Menu.Positioner side={side} align={align} sideOffset={6} className={isMobile ? mobileSheetPositionerClassName : 'z-[9050] outline-none'}>
                 <Menu.Popup
                     className={cn(
-                        'pointer-events-auto flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none',
-                        'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150',
-                        'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
-                        'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
+                        isMobile
+                            ? cn(mobileSheetPopupClassName, 'p-1 pt-0')
+                            : cn(
+                                'pointer-events-auto flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none',
+                                'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150',
+                                'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+                                'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
+                            ),
                         className,
                     )}
                     {...props}
                 >
+                    {isMobile ? <MobileSheetHandle /> : null}
                     {children}
                 </Menu.Popup>
             </Menu.Positioner>
@@ -110,7 +127,7 @@ function DropdownItem({ children, className, onClick, onSelect, ...props }: Drop
     return (
         <Menu.Item
             className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 text-sm text-secondary outline-none',
+                'flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm text-secondary outline-none md:min-h-0 md:rounded-sm md:px-2 md:py-1',
                 'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
                 className,
             )}

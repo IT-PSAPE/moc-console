@@ -47,7 +47,7 @@ type RadioProps = {
 
 export function Radio({ value, children, className, disabled, ...rest }: RadioProps) {
     return (
-        <label className="group flex w-fit items-center gap-1.5 has-[:disabled]:cursor-not-allowed">
+        <label className="group flex min-h-11 w-fit items-center gap-1.5 has-[:disabled]:cursor-not-allowed md:min-h-0">
             <BaseRadio.Root
                 value={value}
                 disabled={disabled}

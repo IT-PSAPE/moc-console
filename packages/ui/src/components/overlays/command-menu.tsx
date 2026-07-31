@@ -2,7 +2,9 @@ import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { Dialog } from '@base-ui/react/dialog'
 import { cn } from '@moc/utils/cn'
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ComponentProps, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react'
-import { useOverlayStack } from './overlay-provider'
+import { useIsMobile } from '../../hooks/use-is-mobile'
+import { MobileSheetHandle, mobileSheetPopupClassName, mobileSheetPositionerClassName } from './mobile-sheet'
+import { useOverlayRegistration, useOverlayStack } from './overlay-provider'
 
 type CommandMenuContextValue = {
     state: {
@@ -43,6 +45,7 @@ function CommandMenuRoot({ children, closeOnEscape = true, defaultOpen = false, 
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
     const [search, setSearch] = useState('')
     const isOpen = isControlled ? open : uncontrolledOpen
+    useOverlayRegistration(isOpen)
 
     const setOpen = useCallback((nextOpen: boolean) => {
         if (!isControlled) setUncontrolledOpen(nextOpen)
@@ -109,15 +112,8 @@ function CommandMenuBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElem
     )
 }
 
-function CommandMenuClose({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
-    return (
-        <Dialog.Close nativeButton={false} render={<span />} className={className} {...props}>
-            {children}
-        </Dialog.Close>
-    )
-}
-
 function CommandMenuPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    const isMobile = useIsMobile()
     const { state, actions } = useCommandMenu()
 
     function handleInputValueChange(value: string) {
@@ -125,17 +121,22 @@ function CommandMenuPanel({ children, className, ...props }: HTMLAttributes<HTML
     }
 
     return (
-        <div className="pointer-events-none fixed inset-0 flex items-start justify-center p-2 pt-[20vh]">
+        <div className={isMobile ? mobileSheetPositionerClassName : 'pointer-events-none fixed inset-0 flex items-start justify-center p-2 pt-[20vh]'}>
             <Dialog.Popup
                 className={cn(
-                    'pointer-events-auto flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg outline-none',
-                    'origin-center transition-[opacity,transform] duration-150',
-                    'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
-                    'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
+                    isMobile
+                        ? cn(mobileSheetPopupClassName, 'h-[calc(100dvh-max(0.5rem,env(safe-area-inset-top)))]')
+                        : cn(
+                            'pointer-events-auto flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg outline-none',
+                            'origin-center transition-[opacity,transform] duration-150',
+                            'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+                            'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
+                        ),
                     className,
                 )}
                 {...props}
             >
+                {isMobile ? <MobileSheetHandle /> : null}
                 <BaseCombobox.Root open inputValue={state.search} onInputValueChange={handleInputValueChange} filter={null} autoHighlight>
                     {children}
                 </BaseCombobox.Root>
@@ -159,7 +160,7 @@ function CommandMenuInput({ className, ...props }: CommandMenuInputProps) {
 type Styled<Props> = Omit<Props, 'className'> & { className?: string }
 
 function CommandMenuList({ className, ...props }: Styled<ComponentProps<typeof BaseCombobox.List>>) {
-    return <BaseCombobox.List className={cn('flex max-h-72 flex-col overflow-y-auto p-1 outline-none', className)} {...props} />
+    return <BaseCombobox.List className={cn('flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain p-1 outline-none md:max-h-72 md:flex-none', className)} {...props} />
 }
 
 type CommandMenuGroupProps = Styled<ComponentProps<typeof BaseCombobox.Group>> & {
@@ -193,7 +194,7 @@ function CommandMenuItem({ children, className, onClick, onSelect, ...props }: C
     return (
         <BaseCombobox.Item
             className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-secondary outline-none',
+                'flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm text-secondary outline-none md:min-h-0 md:px-3',
                 'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
                 className,
             )}
@@ -211,7 +212,6 @@ function CommandMenuEmpty({ children, className, ...props }: HTMLAttributes<HTML
 
 export const CommandMenu = {
     Backdrop: CommandMenuBackdrop,
-    Close: CommandMenuClose,
     Empty: CommandMenuEmpty,
     Group: CommandMenuGroup,
     Input: CommandMenuInput,

@@ -1,8 +1,10 @@
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { cn } from '@moc/utils/cn'
-import { Check, ChevronDown, X } from 'lucide-react'
-import { Fragment, type ReactNode } from 'react'
-import { useOverlayStack } from '../overlays/overlay-provider'
+import { Check, ChevronDown, Search, X } from 'lucide-react'
+import { createContext, Fragment, useContext, useState, type ReactNode } from 'react'
+import { useIsMobile } from '../../hooks/use-is-mobile'
+import { MobileSheetHandle, mobileSheetBackdropClassName, mobileSheetPopupClassName, mobileSheetPositionerClassName } from '../overlays/mobile-sheet'
+import { useOverlayRegistration, useOverlayStack } from '../overlays/overlay-provider'
 
 // A filterable select over `@base-ui/react/combobox`, in the same visual
 // language as Input/Select — same border, focus ring and disabled treatment.
@@ -35,16 +37,54 @@ type ComboboxRootProps<Value> = {
     itemToStringLabel?: (item: Value) => string
     /** Identity for object options that aren't referentially stable. */
     isItemEqualToValue?: (item: Value, value: Value) => boolean
+    open?: boolean
+    defaultOpen?: boolean
+    onOpenChange?: (open: boolean, eventDetails: BaseCombobox.Root.ChangeEventDetails) => void
 }
 
-function ComboboxRoot<Value>({ children, ...props }: ComboboxRootProps<Value>) {
+type ComboboxContextValue = {
+    itemToStringLabel?: (item: unknown) => string
+    isMobile: boolean
+    multiple: boolean
+}
+
+const ComboboxContext = createContext<ComboboxContextValue | null>(null)
+
+function useComboboxContext(): ComboboxContextValue {
+    const context = useContext(ComboboxContext)
+
+    if (!context) {
+        throw new Error('Combobox parts must be used within Combobox.Root')
+    }
+
+    return context
+}
+
+function ComboboxRoot<Value>({ children, defaultOpen, itemToStringLabel, multiple = false, onOpenChange, open, ...props }: ComboboxRootProps<Value>) {
+    const isMobile = useIsMobile()
+    const isControlled = open !== undefined
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false)
+    const isOpen = isControlled ? open : uncontrolledOpen
+    useOverlayRegistration(isOpen)
+
+    function handleOpenChange(nextOpen: boolean, eventDetails: BaseCombobox.Root.ChangeEventDetails) {
+        if (!isControlled) {
+            setUncontrolledOpen(nextOpen)
+        }
+        onOpenChange?.(nextOpen, eventDetails)
+    }
+
     // Base UI resolves `multiple` at the type level into single- vs
     // multi-value generics, which a runtime-boolean wrapper can't express.
     // The cast is contained here.
     const Root = BaseCombobox.Root as unknown as (
         p: ComboboxRootProps<Value>,
     ) => React.JSX.Element
-    return <Root {...props}>{children}</Root>
+    return (
+        <ComboboxContext.Provider value={{ isMobile, itemToStringLabel: itemToStringLabel as ((item: unknown) => string) | undefined, multiple }}>
+            <Root {...props} itemToStringLabel={itemToStringLabel} multiple={multiple} open={isOpen} onOpenChange={handleOpenChange}>{children}</Root>
+        </ComboboxContext.Provider>
+    )
 }
 
 // Base UI allows `className` to be a function of component state. None of
@@ -53,7 +93,7 @@ function ComboboxRoot<Value>({ children, ...props }: ComboboxRootProps<Value>) {
 type Styled<P> = Omit<P, 'className'> & { className?: string }
 
 const fieldShell = cn(
-    'flex w-full flex-wrap items-center gap-1 rounded-lg border border-secondary bg-primary px-3 py-2',
+    'flex min-h-11 w-full flex-wrap items-center gap-1 rounded-lg border border-secondary bg-primary px-3 py-2 md:min-h-0',
     'focus-within:border-brand focus-within:ring-3 focus-within:ring-border-brand/10',
     'has-[:disabled]:cursor-not-allowed has-[:disabled]:bg-disabled has-[:disabled]:border-disabled',
 )
@@ -61,6 +101,28 @@ const fieldShell = cn(
 // ─── Single-value field ──────────────────────────────────────────────
 
 function ComboboxField({ className, ...props }: Styled<React.ComponentProps<typeof BaseCombobox.Input>>) {
+    const { isMobile, itemToStringLabel } = useComboboxContext()
+
+    if (isMobile) {
+        return (
+            <BaseCombobox.Trigger className={cn(fieldShell, 'flex-nowrap text-left', className)} disabled={props.disabled} aria-label={props['aria-label'] ?? props.placeholder}>
+                <span className="min-w-0 flex-1 truncate paragraph-sm text-primary">
+                    <BaseCombobox.Value>
+                        {(selected: unknown) => {
+                            if (selected === null || selected === undefined) return props.placeholder
+                            if (itemToStringLabel) return itemToStringLabel(selected)
+                            if (typeof selected === 'object' && 'label' in selected && typeof selected.label === 'string') return selected.label
+                            return String(selected)
+                        }}
+                    </BaseCombobox.Value>
+                </span>
+                <BaseCombobox.Icon className="shrink-0 text-quaternary">
+                    <ChevronDown className="size-4" />
+                </BaseCombobox.Icon>
+            </BaseCombobox.Trigger>
+        )
+    }
+
     return (
         <BaseCombobox.InputGroup className={cn(fieldShell, 'flex-nowrap', className)}>
             <BaseCombobox.Input
@@ -86,6 +148,26 @@ type ChipsFieldProps<Value> = {
 }
 
 function ComboboxChipsField<Value>({ chipLabel, chipKey, placeholder, className }: ChipsFieldProps<Value>) {
+    const { isMobile } = useComboboxContext()
+
+    if (isMobile) {
+        return (
+            <BaseCombobox.Trigger className={cn(fieldShell, 'flex-nowrap text-left', className)} aria-label={placeholder}>
+                <span className="min-w-0 flex-1 truncate paragraph-sm text-primary">
+                    <BaseCombobox.Value placeholder={placeholder}>
+                        {(selected: Value[]) => {
+                            if (selected.length === 1) return chipLabel(selected[0])
+                            return selected.length > 1 ? `${selected.length} selected` : placeholder
+                        }}
+                    </BaseCombobox.Value>
+                </span>
+                <BaseCombobox.Icon className="shrink-0 text-quaternary">
+                    <ChevronDown className="size-4" />
+                </BaseCombobox.Icon>
+            </BaseCombobox.Trigger>
+        )
+    }
+
     return (
         <BaseCombobox.InputGroup className={cn(fieldShell, className)}>
             <BaseCombobox.Chips className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
@@ -129,10 +211,52 @@ type ComboboxContentProps = {
     className?: string
     /** Shown when filtering leaves no options. */
     empty?: ReactNode
+    searchPlaceholder?: string
+    title?: string
 }
 
-function ComboboxContent({ children, className, empty = 'No matches' }: ComboboxContentProps) {
+function ComboboxContent({ children, className, empty = 'No matches', searchPlaceholder = 'Search options', title = 'Choose an option' }: ComboboxContentProps) {
+    const { isMobile, multiple } = useComboboxContext()
     const { state: overlayState } = useOverlayStack()
+
+    if (isMobile) {
+        return (
+            <BaseCombobox.Portal container={overlayState.rootElement ?? undefined}>
+                <BaseCombobox.Backdrop className={mobileSheetBackdropClassName} />
+                <BaseCombobox.Positioner className={mobileSheetPositionerClassName}>
+                    <BaseCombobox.Popup className={cn(mobileSheetPopupClassName, 'h-[min(85dvh,44rem)]', className)}>
+                        <MobileSheetHandle />
+                        <div className="flex shrink-0 flex-col gap-3 border-b border-secondary px-4 pb-3">
+                            <span className="label-md text-primary">{multiple ? 'Select options' : title}</span>
+                            <BaseCombobox.InputGroup className={cn(fieldShell, 'flex-nowrap')}>
+                                <BaseCombobox.Input
+                                    autoFocus
+                                    placeholder={searchPlaceholder}
+                                    className="w-full min-w-0 flex-1 bg-transparent paragraph-sm !leading-none focus:!outline-none focus-visible:!outline-0 placeholder:text-placeholder"
+                                />
+                                <BaseCombobox.Icon className="shrink-0 text-quaternary">
+                                    <Search className="size-4" />
+                                </BaseCombobox.Icon>
+                            </BaseCombobox.InputGroup>
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
+                            <BaseCombobox.Empty className="px-2 py-6 text-center paragraph-sm text-quaternary empty:p-0">
+                                {empty}
+                            </BaseCombobox.Empty>
+                            <BaseCombobox.List>{children as never}</BaseCombobox.List>
+                        </div>
+                        {multiple ? (
+                            <div className="shrink-0 border-t border-secondary p-3">
+                                <BaseCombobox.Trigger className="flex min-h-11 w-full items-center justify-center rounded-md bg-brand_solid px-3 label-sm text-primary_on-brand">
+                                    Done
+                                </BaseCombobox.Trigger>
+                            </div>
+                        ) : null}
+                    </BaseCombobox.Popup>
+                </BaseCombobox.Positioner>
+            </BaseCombobox.Portal>
+        )
+    }
 
     return (
         <BaseCombobox.Portal container={overlayState.rootElement ?? undefined}>
@@ -170,7 +294,7 @@ function ComboboxItem({ children, className, ...props }: Styled<React.ComponentP
     return (
         <BaseCombobox.Item
             className={cn(
-                'grid cursor-pointer grid-cols-[1rem_1fr] items-center gap-2 rounded-sm px-2 py-1.5 paragraph-sm text-secondary outline-none select-none',
+                'grid min-h-11 cursor-pointer grid-cols-[1rem_1fr] items-center gap-2 rounded-lg px-4 py-2 paragraph-sm text-secondary outline-none select-none md:min-h-0 md:rounded-sm md:px-2 md:py-1.5',
                 'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
                 className,
             )}

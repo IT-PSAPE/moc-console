@@ -44,7 +44,7 @@ export function Checkbox({
     "aria-describedby": ariaDescribedby,
 }: CheckboxProps) {
     return (
-        <label className={cn("group flex w-fit items-start gap-1.5 has-[:disabled]:cursor-not-allowed *:even:mt-0.75", className)}>
+        <label className={cn("group flex min-h-11 w-fit items-center gap-1.5 has-[:disabled]:cursor-not-allowed md:min-h-0 md:items-start md:*:even:mt-0.75", className)}>
             <BaseCheckbox.Root
                 checked={checked as boolean | undefined}
                 defaultChecked={defaultChecked as boolean | undefined}

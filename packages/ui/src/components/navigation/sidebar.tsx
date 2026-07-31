@@ -58,7 +58,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
 const menuItemVarients = cv({
     base: [
-        'py-1 rounded-md inline-flex justify-start items-center gap-2 overflow-hidden w-full min-h-9',
+        'min-h-11 py-1 rounded-md inline-flex justify-start items-center gap-2 overflow-hidden w-full md:min-h-9',
     ],
     variants: {
         state: {
@@ -92,7 +92,7 @@ function SidebarPanel({ children, className }: HTMLAttributes<HTMLDivElement>) {
                 // Desktop: static in grid, always visible
                 'md:static md:z-auto md:translate-x-0',
                 // Width from CSS tokens
-                state.isCollapsed ? 'w-sidebar-collapsed' : state.isMobileOpen ? 'w-[80%]' : 'w-sidebar',
+                state.isCollapsed ? 'w-sidebar-collapsed' : state.isMobileOpen ? 'w-[min(88%,24rem)]' : 'w-sidebar',
                 className,
             )}
         >

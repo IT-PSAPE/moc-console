@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useId, useMemo, useState, type ReactNode } from 'react'
 
 const OVERLAY_ROOT_ID = 'overlay-root'
 const OVERLAY_BASE_Z_INDEX = 1
@@ -60,18 +60,6 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
         })
     }, [])
 
-    useEffect(() => {
-        const previousOverflow = document.body.style.overflow
-
-        if (stack.length > 0) {
-            document.body.style.overflow = 'hidden'
-        }
-
-        return () => {
-            document.body.style.overflow = previousOverflow
-        }
-    }, [stack.length])
-
     const state = useMemo<OverlayStackContextValue['state']>(() => ({
         rootElement,
         stack,
@@ -107,4 +95,20 @@ export function useOverlayStack() {
     }
 
     return context
+}
+
+export function useOverlayRegistration(isOpen: boolean): string {
+    const id = useId()
+    const { actions } = useOverlayStack()
+
+    useEffect(() => {
+        if (!isOpen) {
+            return
+        }
+
+        actions.register(id)
+        return () => actions.unregister(id)
+    }, [actions, id, isOpen])
+
+    return id
 }

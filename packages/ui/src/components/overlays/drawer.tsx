@@ -1,7 +1,9 @@
 import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
 import { cn } from '@moc/utils/cn'
-import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type ReactNode } from 'react'
-import { useOverlayStack } from './overlay-provider'
+import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type ReactElement, type ReactNode } from 'react'
+import { useIsMobile } from '../../hooks/use-is-mobile'
+import { MobileSheetHandle } from './mobile-sheet'
+import { useOverlayRegistration, useOverlayStack } from './overlay-provider'
 import { OverlayFooter, OverlayHeader } from './overlay-primitives'
 
 // ─── Context ─────────────────────────────────────────────────────────
@@ -35,6 +37,7 @@ type DrawerContextValue = {
     }
     meta: {
         closeOnBackdropClick: boolean
+        overlayId: string
     }
 }
 
@@ -63,9 +66,12 @@ type DrawerRootProps = {
 }
 
 function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = true, defaultOpen = false, onOpenChange, open, side = 'right' }: DrawerRootProps) {
+    const isMobile = useIsMobile()
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
     const isOpen = isControlled ? open : uncontrolledOpen
+    const effectiveSide = isMobile ? 'bottom' : side
+    const overlayId = useOverlayRegistration(isOpen)
 
     const setOpen = useCallback((nextOpen: boolean) => {
         if (!isControlled) {
@@ -75,27 +81,30 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
     }, [isControlled, onOpenChange])
 
     const value = useMemo<DrawerContextValue>(() => ({
-        state: { isOpen, isTopmost: true, zIndex: 9000, side },
+        state: { isOpen, isTopmost: true, zIndex: 9000, side: effectiveSide },
         actions: {
             close: () => setOpen(false),
             open: () => setOpen(true),
             setOpen,
         },
-        meta: { closeOnBackdropClick },
-    }), [closeOnBackdropClick, isOpen, setOpen, side])
+        meta: { closeOnBackdropClick, overlayId },
+    }), [closeOnBackdropClick, effectiveSide, isOpen, overlayId, setOpen])
+
+    function handleOpenChange(nextOpen: boolean, eventDetails: BaseDrawer.Root.ChangeEventDetails) {
+        if (!nextOpen && !closeOnEscape && eventDetails.reason === 'escape-key') {
+            return
+        }
+
+        setOpen(nextOpen)
+    }
 
     return (
         <DrawerContext.Provider value={value}>
             <BaseDrawer.Root
                 open={isOpen}
                 disablePointerDismissal={!closeOnBackdropClick}
-                swipeDirection={swipeDirectionBySide[side]}
-                onOpenChange={(nextOpen, eventDetails) => {
-                    if (!nextOpen) {
-                        if (!closeOnEscape && eventDetails.reason === 'escape-key') return
-                    }
-                    setOpen(nextOpen)
-                }}
+                swipeDirection={swipeDirectionBySide[effectiveSide]}
+                onOpenChange={handleOpenChange}
             >
                 {children}
             </BaseDrawer.Root>
@@ -105,21 +114,23 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
 
 // ─── Trigger ─────────────────────────────────────────────────────────
 
-function DrawerTrigger({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
+type DrawerControlProps = Omit<HTMLAttributes<HTMLElement>, 'children'> & {
+    children: ReactElement
+}
+
+function DrawerTrigger({ children, className, ...props }: DrawerControlProps) {
+    const nativeButton = typeof children.type !== 'string' || children.type === 'button'
+
     return (
-        <BaseDrawer.Trigger nativeButton={false} render={<span />} className={cn('contents', className)} {...props}>
-            {children}
-        </BaseDrawer.Trigger>
+        <BaseDrawer.Trigger nativeButton={nativeButton} render={children} className={className} {...props} />
     )
 }
 
 // ─── Close ───────────────────────────────────────────────────────────
 
-function DrawerClose({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
+function DrawerClose({ children, className, ...props }: DrawerControlProps) {
     return (
-        <BaseDrawer.Close nativeButton={false} render={<span />} className={className} {...props}>
-            {children}
-        </BaseDrawer.Close>
+        <BaseDrawer.Close render={children} className={className} {...props} />
     )
 }
 
@@ -127,7 +138,11 @@ function DrawerClose({ children, className, ...props }: HTMLAttributes<HTMLSpanE
 
 function DrawerPortal({ children }: { children: ReactNode }) {
     const { state: overlayState } = useOverlayStack()
-    return <BaseDrawer.Portal container={overlayState.rootElement ?? undefined}>{children}</BaseDrawer.Portal>
+    return (
+        <BaseDrawer.VirtualKeyboardProvider>
+            <BaseDrawer.Portal container={overlayState.rootElement ?? undefined}>{children}</BaseDrawer.Portal>
+        </BaseDrawer.VirtualKeyboardProvider>
+    )
 }
 
 // ─── Backdrop ────────────────────────────────────────────────────────
@@ -151,7 +166,7 @@ const panelClassesBySide: Record<Side, string> = {
     left: 'inset-y-0 left-0 w-full max-w-md',
     right: 'inset-y-0 right-0 w-full max-w-md',
     top: 'inset-x-0 top-0 h-auto max-h-[80vh]',
-    bottom: 'inset-x-0 bottom-0 h-auto max-h-[80vh]',
+    bottom: 'inset-x-0 bottom-0 h-[calc(100dvh-max(0.5rem,env(safe-area-inset-top)))] max-h-[94dvh] md:h-auto md:max-h-[80vh]',
 }
 
 const slideBySide: Record<Side, string> = {
@@ -162,27 +177,35 @@ const slideBySide: Record<Side, string> = {
 }
 
 function DrawerPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    const { state } = useDrawer()
+    const isMobile = useIsMobile()
+    const { state, meta } = useDrawer()
+    const { state: overlayState } = useOverlayStack()
+    const stackIndex = overlayState.stack.indexOf(meta.overlayId)
+    const isCovered = stackIndex >= 0 && stackIndex < overlayState.stack.length - 1
 
     return (
         <BaseDrawer.Viewport className="pointer-events-none fixed inset-0">
             <BaseDrawer.Popup
                 className={cn(
-                    'pointer-events-auto fixed w-full transition-transform duration-200 data-[swiping]:duration-0',
-                    // See ModalPositioner — same safe-area-aware outer padding so the
-                    // drawer never overlaps the status bar or Android gesture indicator
-                    // in edge-to-edge PWA mode.
-                    'pt-[max(0.5rem,env(safe-area-inset-top))]',
-                    'pr-[max(0.5rem,env(safe-area-inset-right))]',
-                    'pb-[max(0.5rem,env(safe-area-inset-bottom))]',
-                    'pl-[max(0.5rem,env(safe-area-inset-left))]',
+                    'pointer-events-auto fixed w-full outline-none transition-transform duration-200 data-[swiping]:duration-0',
+                    isMobile && '!max-w-none',
+                    !isMobile && 'pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))]',
                     panelClassesBySide[state.side],
                     slideBySide[state.side],
                     className,
                 )}
                 {...props}
             >
-                <div className="flex h-full flex-col rounded-lg border border-secondary bg-primary">
+                <div
+                    data-overlay-covered={isMobile && isCovered ? '' : undefined}
+                    className={cn(
+                        'flex h-full flex-col border border-secondary bg-primary transition-[transform,border-radius] duration-250',
+                        isMobile
+                            ? 'origin-top rounded-t-3xl border-b-0 data-[overlay-covered]:-translate-y-3 data-[overlay-covered]:scale-[0.96] data-[overlay-covered]:rounded-t-[2rem]'
+                            : 'rounded-lg',
+                    )}
+                >
+                    {isMobile ? <MobileSheetHandle /> : null}
                     {children}
                 </div>
             </BaseDrawer.Popup>
@@ -197,7 +220,7 @@ function DrawerHeader(props: HTMLAttributes<HTMLDivElement>) {
 }
 
 function DrawerContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    return <BaseDrawer.Content className={cn('min-h-0 flex flex-1 flex-col overflow-y-auto', className)} {...props} />
+    return <BaseDrawer.Content className={cn('min-h-0 flex flex-1 flex-col overflow-y-auto overscroll-contain max-md:pb-[max(1rem,env(safe-area-inset-bottom))]', className)} {...props} />
 }
 
 function DrawerFooter(props: HTMLAttributes<HTMLDivElement>) {
