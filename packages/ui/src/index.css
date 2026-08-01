@@ -729,7 +729,13 @@ body {
   position: fixed;
   inset: 0;
   z-index: 9000;
+  isolation: isolate;
   pointer-events: none;
+}
+
+#root {
+  position: relative;
+  z-index: 0;
 }
 
 /* SCROLLBAR */

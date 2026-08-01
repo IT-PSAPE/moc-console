@@ -2,9 +2,9 @@ import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
 import { cn } from '@moc/utils/cn'
 import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type ReactElement, type ReactNode } from 'react'
 import { useIsMobile } from '../../hooks/use-is-mobile'
-import { MobileSheetHandle } from './mobile-sheet'
-import { useOverlayRegistration, useOverlayStack } from './overlay-provider'
-import { OverlayContent, OverlayFooter, OverlayHeader } from './overlay-primitives'
+import { MobileSheetHandle, mobileDrawerStackContentClassName, mobileDrawerStackPopupClassName } from './mobile-sheet'
+import { useOverlayStack } from './overlay-provider'
+import { overlayHeaderClassName, OverlayContent, OverlayFooter } from './overlay-primitives'
 
 // ─── Context ─────────────────────────────────────────────────────────
 //
@@ -25,7 +25,6 @@ type ModalContextValue = {
     }
     meta: {
         closeOnBackdropClick: boolean
-        overlayId: string
     }
 }
 
@@ -56,8 +55,6 @@ function ModalRoot({ children, closeOnBackdropClick = true, closeOnEscape = true
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
     const isOpen = isControlled ? open : uncontrolledOpen
-    const overlayId = useOverlayRegistration(isOpen)
-
     const setOpen = useCallback((nextOpen: boolean) => {
         if (!isControlled) {
             setUncontrolledOpen(nextOpen)
@@ -72,8 +69,8 @@ function ModalRoot({ children, closeOnBackdropClick = true, closeOnEscape = true
             open: () => setOpen(true),
             setOpen,
         },
-        meta: { closeOnBackdropClick, overlayId },
-    }), [closeOnBackdropClick, isOpen, overlayId, setOpen])
+        meta: { closeOnBackdropClick },
+    }), [closeOnBackdropClick, isOpen, setOpen])
 
     function handleOpenChange(nextOpen: boolean, eventDetails: BaseDrawer.Root.ChangeEventDetails) {
         if (!nextOpen) {
@@ -137,7 +134,7 @@ function ModalBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>) 
     return (
         <BaseDrawer.Backdrop
             className={cn(
-                'pointer-events-auto fixed inset-0 bg-linear-to-t from-black/30 to-black/3 backdrop-blur-xs',
+                'pointer-events-auto fixed inset-0 z-0 bg-black/40 md:bg-black/30',
                 'transition-opacity duration-200 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
                 className,
             )}
@@ -154,7 +151,7 @@ function ModalPositioner({ children, className, ...props }: HTMLAttributes<HTMLD
     return (
         <BaseDrawer.Viewport
             className={cn(
-                'pointer-events-none fixed inset-0 flex justify-center',
+                'pointer-events-none fixed inset-0 z-10 flex justify-center',
                 isMobile
                     ? 'items-end'
                     : 'items-center pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))]',
@@ -173,26 +170,18 @@ type ModalPanelMode = 'compact' | 'full-screen'
 
 function ModalPanelSurface({ children, className, mode, ...props }: HTMLAttributes<HTMLDivElement> & { mode: ModalPanelMode }) {
     const isMobile = useIsMobile()
-    const { meta } = useModal()
-    const { state: overlayState } = useOverlayStack()
-    const stackIndex = overlayState.stack.indexOf(meta.overlayId)
-    const isCovered = stackIndex >= 0 && stackIndex < overlayState.stack.length - 1
-
     return (
         <BaseDrawer.Popup
             data-base-ui-swipe-ignore={isMobile ? undefined : ''}
-            data-overlay-covered={isMobile && isCovered ? '' : undefined}
             className={cn(
                 'pointer-events-auto flex w-full flex-col border border-secondary bg-primary outline-none',
                 isMobile
                     ? cn(
-                        '!max-w-none origin-bottom rounded-t-3xl border-b-0',
-                        '[transform:translateY(var(--drawer-swipe-movement-y))] transition-[opacity,transform,border-radius] duration-250 data-[swiping]:duration-0',
-                        'data-[starting-style]:translate-y-full data-[starting-style]:opacity-0 data-[ending-style]:translate-y-full data-[ending-style]:opacity-0',
-                        'data-[overlay-covered]:!-translate-y-3 data-[overlay-covered]:!scale-[0.96] data-[overlay-covered]:rounded-t-[2rem]',
+                        mobileDrawerStackPopupClassName,
+                        '!max-w-none rounded-t-3xl border-b-0 shadow-xl',
                         mode === 'full-screen'
                             ? 'h-[calc(100dvh-max(0.5rem,env(safe-area-inset-top)))]'
-                            : 'max-h-[90dvh]',
+                            : 'min-h-[40dvh] max-h-[90dvh]',
                     )
                     : 'max-h-[calc(100dvh-1rem)] max-w-md origin-center rounded-xl transition-[opacity,transform] duration-200 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
                 className,
@@ -200,7 +189,7 @@ function ModalPanelSurface({ children, className, mode, ...props }: HTMLAttribut
             {...props}
         >
             {isMobile ? <MobileSheetHandle /> : null}
-            {children}
+            <div className={isMobile ? mobileDrawerStackContentClassName : 'flex min-h-0 flex-1 flex-col'}>{children}</div>
         </BaseDrawer.Popup>
     )
 }
@@ -215,8 +204,8 @@ function ModalFullScreenPanel(props: HTMLAttributes<HTMLDivElement>) {
 
 // ─── Header / Content / Footer ───────────────────────────────────────
 
-function ModalHeader(props: HTMLAttributes<HTMLDivElement>) {
-    return <OverlayHeader {...props} />
+function ModalHeader({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    return <BaseDrawer.Title render={<div />} className={cn(overlayHeaderClassName, className)} {...props}>{children}</BaseDrawer.Title>
 }
 
 function ModalContent(props: HTMLAttributes<HTMLDivElement>) {

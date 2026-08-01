@@ -5,7 +5,7 @@ import { Check, ChevronDown } from "lucide-react";
 import { useState, type ComponentProps, type ReactNode } from "react";
 import { useIsMobile } from "../../hooks/use-is-mobile";
 import { MobileSheetHandle, mobileSheetBackdropClassName, mobileSheetPopupClassName, mobileSheetPositionerClassName } from "../overlays/mobile-sheet";
-import { useOverlayRegistration, useOverlayStack } from "../overlays/overlay-provider";
+import { useOverlayStack } from "../overlays/overlay-provider";
 
 type SelectRootProps<Value> = BaseSelect.Root.Props<Value, false>;
 type Styled<Props> = Omit<Props, "className"> & { className?: string };
@@ -14,8 +14,6 @@ function SelectRoot<Value>({ defaultOpen, onOpenChange, open, ...props }: Select
     const isControlled = open !== undefined;
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false);
     const isOpen = isControlled ? open : uncontrolledOpen;
-    useOverlayRegistration(isOpen);
-
     function handleOpenChange(nextOpen: boolean, eventDetails: BaseSelect.Root.ChangeEventDetails) {
         if (!isControlled) {
             setUncontrolledOpen(nextOpen);

@@ -4,7 +4,7 @@ import { cn } from '@moc/utils/cn'
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ComponentProps, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react'
 import { useIsMobile } from '../../hooks/use-is-mobile'
 import { MobileSheetHandle, mobileSheetPopupClassName, mobileSheetPositionerClassName } from './mobile-sheet'
-import { useOverlayRegistration, useOverlayStack } from './overlay-provider'
+import { useOverlayStack } from './overlay-provider'
 
 type CommandMenuContextValue = {
     state: {
@@ -16,6 +16,9 @@ type CommandMenuContextValue = {
         open: () => void
         setOpen: (nextOpen: boolean) => void
         setSearch: (value: string) => void
+    }
+    meta: {
+        closeOnEscape: boolean
     }
 }
 
@@ -45,8 +48,6 @@ function CommandMenuRoot({ children, closeOnEscape = true, defaultOpen = false, 
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
     const [search, setSearch] = useState('')
     const isOpen = isControlled ? open : uncontrolledOpen
-    useOverlayRegistration(isOpen)
-
     const setOpen = useCallback((nextOpen: boolean) => {
         if (!isControlled) setUncontrolledOpen(nextOpen)
         if (!nextOpen) setSearch('')
@@ -78,25 +79,30 @@ function CommandMenuRoot({ children, closeOnEscape = true, defaultOpen = false, 
     const value = useMemo<CommandMenuContextValue>(() => ({
         state: { isOpen, search },
         actions: { close: closeMenu, open: openMenu, setOpen, setSearch },
-    }), [closeMenu, isOpen, openMenu, search, setOpen])
-
-    function handleDialogOpenChange(nextOpen: boolean, eventDetails: Dialog.Root.ChangeEventDetails) {
-        if (!nextOpen && !closeOnEscape && eventDetails.reason === 'escape-key') return
-        setOpen(nextOpen)
-    }
+        meta: { closeOnEscape },
+    }), [closeMenu, closeOnEscape, isOpen, openMenu, search, setOpen])
 
     return (
         <CommandMenuContext.Provider value={value}>
-            <Dialog.Root open={isOpen} onOpenChange={handleDialogOpenChange}>
-                {children}
-            </Dialog.Root>
+            {children}
         </CommandMenuContext.Provider>
     )
 }
 
 function CommandMenuPortal({ children }: { children: ReactNode }) {
+    const { state, actions, meta } = useCommandMenu()
     const { state: overlayState } = useOverlayStack()
-    return <Dialog.Portal container={overlayState.rootElement ?? undefined}>{children}</Dialog.Portal>
+
+    function handleDialogOpenChange(nextOpen: boolean, eventDetails: Dialog.Root.ChangeEventDetails) {
+        if (!nextOpen && !meta.closeOnEscape && eventDetails.reason === 'escape-key') return
+        actions.setOpen(nextOpen)
+    }
+
+    return (
+        <Dialog.Root open={state.isOpen} onOpenChange={handleDialogOpenChange}>
+            <Dialog.Portal container={overlayState.rootElement ?? undefined}>{children}</Dialog.Portal>
+        </Dialog.Root>
+    )
 }
 
 function CommandMenuBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>) {

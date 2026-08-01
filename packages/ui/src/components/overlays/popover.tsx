@@ -3,7 +3,7 @@ import { cn } from '@moc/utils/cn'
 import { createContext, useContext, useState, type HTMLAttributes, type ReactNode } from 'react'
 import { useIsMobile } from '../../hooks/use-is-mobile'
 import { MobileSheetHandle, mobileSheetBackdropClassName, mobileSheetPopupClassName, mobileSheetPositionerClassName } from './mobile-sheet'
-import { useOverlayRegistration, useOverlayStack } from './overlay-provider'
+import { useOverlayStack } from './overlay-provider'
 
 // ─── Placement ───────────────────────────────────────────────────────
 
@@ -38,8 +38,6 @@ function PopoverRoot({ children, closeOnEscape = true, defaultOpen, onOpenChange
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false)
     const isOpen = isControlled ? open : uncontrolledOpen
-    useOverlayRegistration(isOpen)
-
     function handleOpenChange(nextOpen: boolean, eventDetails: BasePopover.Root.ChangeEventDetails) {
         if (!closeOnEscape && eventDetails.reason === 'escape-key') {
             return

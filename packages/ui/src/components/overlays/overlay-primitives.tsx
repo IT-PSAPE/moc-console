@@ -4,10 +4,11 @@ import { type HTMLAttributes } from 'react'
 // ─── Header ──────────────────────────────────────────────────────────
 
 type OverlayHeaderProps = HTMLAttributes<HTMLDivElement>
+export const overlayHeaderClassName = 'flex min-h-14 shrink-0 items-center gap-2 border-b border-secondary px-3 py-2'
 
 export function OverlayHeader({ children, className, ...props }: OverlayHeaderProps) {
     return (
-        <div className={cn('flex min-h-14 shrink-0 items-center gap-2 border-b border-secondary px-3 py-2', className)} {...props}>
+        <div className={cn(overlayHeaderClassName, className)} {...props}>
             {children}
         </div>
     )

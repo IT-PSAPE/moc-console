@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useId, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 
 const OVERLAY_ROOT_ID = 'overlay-root'
 const OVERLAY_BASE_Z_INDEX = 1
@@ -6,18 +6,15 @@ const OVERLAY_BASE_Z_INDEX = 1
 type OverlayStackContextValue = {
     state: {
         rootElement: HTMLElement | null
-        stack: string[]
     }
-    actions: {
-        register: (id: string) => void
-        unregister: (id: string) => void
-    }
+    actions: Record<string, never>
     meta: {
         baseZIndex: number
     }
 }
 
 const OverlayStackContext = createContext<OverlayStackContextValue | null>(null)
+const EMPTY_ACTIONS: Record<string, never> = {}
 
 function ensureOverlayRoot() {
     const existingRoot = document.getElementById(OVERLAY_ROOT_ID)
@@ -41,34 +38,9 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
 
         return ensureOverlayRoot()
     })
-    const [stack, setStack] = useState<string[]>([])
-
-    const register = useCallback((id: string) => {
-        setStack(previousStack => {
-            if (previousStack.includes(id)) {
-                return previousStack
-            }
-
-            return [...previousStack, id]
-        })
-    }, [])
-
-    const unregister = useCallback((id: string) => {
-        setStack(previousStack => {
-            const next = previousStack.filter(entryId => entryId !== id)
-            return next.length === previousStack.length ? previousStack : next
-        })
-    }, [])
-
     const state = useMemo<OverlayStackContextValue['state']>(() => ({
         rootElement,
-        stack,
-    }), [rootElement, stack])
-
-    const actions = useMemo<OverlayStackContextValue['actions']>(() => ({
-        register,
-        unregister,
-    }), [register, unregister])
+    }), [rootElement])
 
     const meta = useMemo<OverlayStackContextValue['meta']>(() => ({
         baseZIndex: OVERLAY_BASE_Z_INDEX,
@@ -76,9 +48,9 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
 
     const value = useMemo<OverlayStackContextValue>(() => ({
         state,
-        actions,
+        actions: EMPTY_ACTIONS,
         meta,
-    }), [actions, meta, state])
+    }), [meta, state])
 
     return (
         <OverlayStackContext.Provider value={value}>
@@ -95,20 +67,4 @@ export function useOverlayStack() {
     }
 
     return context
-}
-
-export function useOverlayRegistration(isOpen: boolean): string {
-    const id = useId()
-    const { actions } = useOverlayStack()
-
-    useEffect(() => {
-        if (!isOpen) {
-            return
-        }
-
-        actions.register(id)
-        return () => actions.unregister(id)
-    }, [actions, id, isOpen])
-
-    return id
 }

@@ -2,9 +2,9 @@ import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
 import { cn } from '@moc/utils/cn'
 import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type ReactElement, type ReactNode } from 'react'
 import { useIsMobile } from '../../hooks/use-is-mobile'
-import { MobileSheetHandle } from './mobile-sheet'
-import { useOverlayRegistration, useOverlayStack } from './overlay-provider'
-import { OverlayFooter, OverlayHeader } from './overlay-primitives'
+import { MobileSheetHandle, mobileDrawerStackContentClassName, mobileDrawerStackPopupClassName } from './mobile-sheet'
+import { useOverlayStack } from './overlay-provider'
+import { overlayHeaderClassName, OverlayFooter } from './overlay-primitives'
 
 // ─── Context ─────────────────────────────────────────────────────────
 //
@@ -37,11 +37,11 @@ type DrawerContextValue = {
     }
     meta: {
         closeOnBackdropClick: boolean
-        overlayId: string
     }
 }
 
 const DrawerContext = createContext<DrawerContextValue | null>(null)
+const MOBILE_SNAP_POINTS = [0.55, 1]
 
 export function useDrawer() {
     const context = useContext(DrawerContext)
@@ -71,8 +71,6 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
     const isOpen = isControlled ? open : uncontrolledOpen
     const effectiveSide = isMobile ? 'bottom' : side
-    const overlayId = useOverlayRegistration(isOpen)
-
     const setOpen = useCallback((nextOpen: boolean) => {
         if (!isControlled) {
             setUncontrolledOpen(nextOpen)
@@ -87,8 +85,8 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
             open: () => setOpen(true),
             setOpen,
         },
-        meta: { closeOnBackdropClick, overlayId },
-    }), [closeOnBackdropClick, effectiveSide, isOpen, overlayId, setOpen])
+        meta: { closeOnBackdropClick },
+    }), [closeOnBackdropClick, effectiveSide, isOpen, setOpen])
 
     function handleOpenChange(nextOpen: boolean, eventDetails: BaseDrawer.Root.ChangeEventDetails) {
         if (!nextOpen && !closeOnEscape && eventDetails.reason === 'escape-key') {
@@ -104,6 +102,9 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
                 open={isOpen}
                 disablePointerDismissal={!closeOnBackdropClick}
                 swipeDirection={swipeDirectionBySide[effectiveSide]}
+                snapPoints={isMobile ? MOBILE_SNAP_POINTS : undefined}
+                defaultSnapPoint={MOBILE_SNAP_POINTS[0]}
+                snapToSequentialPoints={isMobile}
                 onOpenChange={handleOpenChange}
             >
                 {children}
@@ -151,7 +152,7 @@ function DrawerBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>)
     return (
         <BaseDrawer.Backdrop
             className={cn(
-                'pointer-events-auto fixed inset-0 bg-linear-to-t from-black/30 to-black/3 backdrop-blur-xs',
+                'pointer-events-auto fixed inset-0 z-0 bg-black/40 md:bg-black/30',
                 'transition-opacity duration-200 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
                 className,
             )}
@@ -178,35 +179,24 @@ const slideBySide: Record<Side, string> = {
 
 function DrawerPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     const isMobile = useIsMobile()
-    const { state, meta } = useDrawer()
-    const { state: overlayState } = useOverlayStack()
-    const stackIndex = overlayState.stack.indexOf(meta.overlayId)
-    const isCovered = stackIndex >= 0 && stackIndex < overlayState.stack.length - 1
+    const { state } = useDrawer()
 
     return (
-        <BaseDrawer.Viewport className="pointer-events-none fixed inset-0">
+        <BaseDrawer.Viewport className="pointer-events-none fixed inset-0 z-10">
             <BaseDrawer.Popup
                 className={cn(
-                    'pointer-events-auto fixed w-full outline-none transition-transform duration-200 data-[swiping]:duration-0',
+                    'pointer-events-auto fixed w-full outline-none',
                     isMobile && '!max-w-none',
                     !isMobile && 'pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))]',
                     panelClassesBySide[state.side],
-                    slideBySide[state.side],
+                    isMobile ? mobileDrawerStackPopupClassName : slideBySide[state.side],
                     className,
                 )}
                 {...props}
             >
-                <div
-                    data-overlay-covered={isMobile && isCovered ? '' : undefined}
-                    className={cn(
-                        'flex h-full flex-col border border-secondary bg-primary transition-[transform,border-radius] duration-250',
-                        isMobile
-                            ? 'origin-top rounded-t-3xl border-b-0 data-[overlay-covered]:-translate-y-3 data-[overlay-covered]:scale-[0.96] data-[overlay-covered]:rounded-t-[2rem]'
-                            : 'rounded-lg',
-                    )}
-                >
+                <div className={cn('flex h-full flex-col border border-secondary bg-primary', isMobile ? 'rounded-t-3xl border-b-0 shadow-xl' : 'rounded-lg')}>
                     {isMobile ? <MobileSheetHandle /> : null}
-                    {children}
+                    <div className={isMobile ? mobileDrawerStackContentClassName : 'flex min-h-0 flex-1 flex-col'}>{children}</div>
                 </div>
             </BaseDrawer.Popup>
         </BaseDrawer.Viewport>
@@ -215,8 +205,8 @@ function DrawerPanel({ children, className, ...props }: HTMLAttributes<HTMLDivEl
 
 // ─── Header / Content / Footer ───────────────────────────────────────
 
-function DrawerHeader(props: HTMLAttributes<HTMLDivElement>) {
-    return <OverlayHeader {...props} />
+function DrawerHeader({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    return <BaseDrawer.Title render={<div />} className={cn(overlayHeaderClassName, className)} {...props}>{children}</BaseDrawer.Title>
 }
 
 function DrawerContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {

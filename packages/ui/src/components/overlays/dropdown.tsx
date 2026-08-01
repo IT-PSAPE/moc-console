@@ -3,7 +3,7 @@ import { cn } from '@moc/utils/cn'
 import { createContext, useContext, useState, type ComponentProps, type HTMLAttributes, type ReactNode } from 'react'
 import { useIsMobile } from '../../hooks/use-is-mobile'
 import { MobileSheetHandle, mobileSheetBackdropClassName, mobileSheetPopupClassName, mobileSheetPositionerClassName } from './mobile-sheet'
-import { useOverlayRegistration, useOverlayStack } from './overlay-provider'
+import { useOverlayStack } from './overlay-provider'
 
 // ─── Placement ───────────────────────────────────────────────────────
 //
@@ -41,8 +41,6 @@ function DropdownRoot({ children, closeOnEscape = true, defaultOpen, onOpenChang
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false)
     const isOpen = isControlled ? open : uncontrolledOpen
-    useOverlayRegistration(isOpen)
-
     function handleOpenChange(nextOpen: boolean, eventDetails: Menu.Root.ChangeEventDetails) {
         if (!closeOnEscape && eventDetails.reason === 'escape-key') return
 
