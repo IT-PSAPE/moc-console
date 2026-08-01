@@ -4,6 +4,7 @@ import { TextArea } from '@moc/ui/components/form/text-area'
 import { FormLabel } from '@moc/ui/components/form/form-label'
 import type { BookingFormData } from '@/types/booking'
 import { isReturnBeforeCheckout } from '../hooks/use-booking-form'
+import type { ChangeEvent } from 'react'
 
 type BookingDetailsProps = {
   data: BookingFormData
@@ -21,20 +22,33 @@ export function BookingDetails({ data, onChange }: BookingDetailsProps) {
     onChange('expectedReturnAt', value)
   }
 
+  function handleTitleChange(event: ChangeEvent<HTMLInputElement>) {
+    onChange('title', event.target.value)
+  }
+
+  function handleBookedByChange(event: ChangeEvent<HTMLInputElement>) {
+    onChange('bookedBy', event.target.value)
+  }
+
+  function handleNotesChange(event: ChangeEvent<HTMLTextAreaElement>) {
+    onChange('notes', event.target.value)
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
         <FormLabel label="Title" required />
-        <Input placeholder="e.g. Sunday Service Setup" maxLength={120} value={data.title} onChange={(e) => onChange('title', e.target.value)} />
+        <Input aria-label="Title" name="title" autoComplete="off" placeholder="e.g. Sunday service setup" maxLength={120} value={data.title} onChange={handleTitleChange} />
       </div>
 
       <div className="flex flex-col gap-1.5">
         <FormLabel label="Requested by" required />
-        <Input placeholder="Who is booking this equipment?" value={data.bookedBy} onChange={(e) => onChange('bookedBy', e.target.value)} />
+        <Input aria-label="Requested by" name="booked-by" autoComplete="name" placeholder="Who is booking this equipment?" value={data.bookedBy} onChange={handleBookedByChange} />
       </div>
 
       <DateTimeFields
         label="Checkout"
+        name="checkout"
         required
         value={data.checkedOutAt}
         onChange={handleCheckedOutAtChange}
@@ -42,6 +56,7 @@ export function BookingDetails({ data, onChange }: BookingDetailsProps) {
 
       <DateTimeFields
         label="Expected return"
+        name="expected-return"
         required
         value={data.expectedReturnAt}
         onChange={handleExpectedReturnAtChange}
@@ -50,7 +65,7 @@ export function BookingDetails({ data, onChange }: BookingDetailsProps) {
 
       <div className="flex flex-col gap-1.5">
         <FormLabel label="Notes" optional />
-        <TextArea placeholder="Any notes about this booking..." value={data.notes} onChange={(e) => onChange('notes', e.target.value)} rows={3} />
+        <TextArea aria-label="Notes" name="notes" placeholder="Any notes about this booking…" value={data.notes} onChange={handleNotesChange} rows={3} />
       </div>
     </div>
   )

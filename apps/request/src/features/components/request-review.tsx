@@ -11,7 +11,7 @@ export function RequestReview({ data }: { data: RequestFormData }) {
   return (
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-3">
-        <Label.xs className="text-tertiary uppercase tracking-wider">Basic Info</Label.xs>
+        <Label.xs className="text-tertiary uppercase tracking-wider">Basic info</Label.xs>
         <div className="flex flex-col gap-3">
           <MetaRow icon={<FileText />} label="Title">
             <Label.sm>{data.title}</Label.sm>
