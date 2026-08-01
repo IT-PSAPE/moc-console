@@ -1,5 +1,5 @@
 import { cn } from '@moc/utils/cn'
-import { useCallback, useMemo, useState, type HTMLAttributes, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '../controls/button'
 import { Drawer } from '../overlays/drawer'
@@ -112,6 +112,23 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
         onMonthChange?.(next)
     }, [onMonthChange])
 
+    function handlePreviousMonth() {
+        navigate(-1)
+    }
+
+    function handleNextMonth() {
+        navigate(1)
+    }
+
+    function handleDateSelect(event: MouseEvent<HTMLButtonElement>) {
+        const timestamp = Number(event.currentTarget.dataset.timestamp)
+        setSelectedDate(new Date(timestamp))
+    }
+
+    function handleDrawerOpenChange(open: boolean) {
+        if (!open) setSelectedDate(null)
+    }
+
     const eventsByDate = useMemo(() => {
         const map = new Map<string, CalendarEvent<T>[]>()
 
@@ -154,9 +171,9 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
             <div className="flex items-center justify-between pb-4">
                 <span className="title-h5">{MONTH_LABELS[month]} {year}</span>
                 <div className="flex items-center gap-1">
-                    <Button.Icon variant="secondary" icon={<ChevronLeft />} onClick={() => navigate(-1)} />
+                    <Button.Icon aria-label="Previous month" variant="secondary" icon={<ChevronLeft />} onClick={handlePreviousMonth} />
                     <Button variant="secondary" onClick={goToToday}>Today</Button>
-                    <Button.Icon variant="secondary" icon={<ChevronRight />} onClick={() => navigate(1)} />
+                    <Button.Icon aria-label="Next month" variant="secondary" icon={<ChevronRight />} onClick={handleNextMonth} />
                 </div>
             </div>
 
@@ -182,16 +199,18 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
 
                     if (cellDrawer) {
                         return (
-                            <div
+                            <Button.Unstyled
                                 key={index}
+                                aria-label={`Open ${formatDrawerDate(date)}`}
+                                data-timestamp={date.getTime()}
                                 className={cn(
-                                    'border-r border-b border-secondary cursor-pointer transition-colors hover:bg-secondary/50',
+                                    'border-r border-b border-secondary text-left transition-colors hover:bg-secondary/50',
                                     !renderDay && '[&>div]:border-0',
                                 )}
-                                onClick={() => setSelectedDate(date)}
+                                onClick={handleDateSelect}
                             >
                                 {cellContent}
-                            </div>
+                            </Button.Unstyled>
                         )
                     }
 
@@ -210,8 +229,9 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
             {/* Cell drawer */}
             {cellDrawer && (
                 <Drawer
+                    mobileSide="bottom"
                     open={selectedDate !== null}
-                    onOpenChange={(open) => { if (!open) setSelectedDate(null) }}
+                    onOpenChange={handleDrawerOpenChange}
                 >
                     <Drawer.Portal>
                         <Drawer.Backdrop />
@@ -224,7 +244,7 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
                                     </Paragraph.xs>
                                 </div>
                                 <Drawer.Close>
-                                    <Button.Icon variant="ghost" icon={<ChevronRight />} />
+                                    <Button.Icon aria-label="Close day details" variant="ghost" icon={<ChevronRight />} />
                                 </Drawer.Close>
                             </Drawer.Header>
                             <Drawer.Content>
@@ -289,7 +309,7 @@ function CalendarCell({ date, events, isCurrentMonth, isToday }: CalendarCellPro
                             'truncate rounded px-1.5 py-0.5 paragraph-xs',
                             eventColorMap[event.color ?? 'gray'],
                         )}
-                        title={event.label}
+                        aria-label={event.label}
                     >
                         {event.label}
                     </div>

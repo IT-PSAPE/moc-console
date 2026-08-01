@@ -8,7 +8,7 @@
 @source "./**/*.{ts,tsx}";
 
 @theme {
-  --breakpoint-mobile: 480px;
+  --breakpoint-mobile: 48rem;
 }
 
 @theme {
@@ -519,6 +519,14 @@
   --spacing-content: 80rem;
   --spacing-content-sm: 45rem;
   --spacing-content-md: 64rem;
+  --spacing-page-gutter: 1rem;
+  --spacing-page-top: 2rem;
+}
+
+@media (min-width: 40rem) {
+  :root {
+    --spacing-page-gutter: 1.5rem;
+  }
 }
 
 @layer components {

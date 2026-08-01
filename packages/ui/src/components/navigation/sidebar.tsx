@@ -1,7 +1,8 @@
 import { Button as BaseButton } from '@base-ui/react/button'
+import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip'
 import { cn } from '@moc/utils/cn'
 import { cv } from '@moc/utils/cv'
-import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type MouseEventHandler, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type MouseEventHandler, type ReactElement, type ReactNode } from 'react'
 import { Label } from '../display/text'
 
 // ─── Context ─────────────────────────────────────────────
@@ -50,9 +51,11 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     }), [isCollapsed, isMobileOpen, actions])
 
     return (
-        <SidebarContext.Provider value={value}>
-            {children}
-        </SidebarContext.Provider>
+        <BaseTooltip.Provider delay={350} closeDelay={100}>
+            <SidebarContext.Provider value={value}>
+                {children}
+            </SidebarContext.Provider>
+        </BaseTooltip.Provider>
     )
 }
 
@@ -87,7 +90,7 @@ function SidebarPanel({ children, className }: HTMLAttributes<HTMLDivElement>) {
                 'area-sidebar',
                 // Mobile: fixed overlay, slide in/out
                 'fixed inset-y-0 left-0 z-50',
-                'transition-transform duration-300 ease-in-out',
+                'transition-transform duration-300 ease-in-out motion-reduce:transition-none',
                 state.isMobileOpen ? 'translate-x-0' : '-translate-x-full',
                 // Desktop: static in grid, always visible
                 'md:static md:z-auto md:translate-x-0',
@@ -162,20 +165,20 @@ type SidebarMenuItemProps = {
     icon?: ReactNode
     active?: boolean
     onClick?: MouseEventHandler<HTMLButtonElement>
+    render?: ReactElement
     title: string
 }
 
 // Menu items are flat — one item, one destination. There is no nesting and
 // no expand/collapse; the only collapsing left is the panel rail itself.
-function SidebarMenuItem({ title, icon, active = false, onClick }: SidebarMenuItemProps) {
+function SidebarMenuItem({ title, icon, active = false, onClick, render }: SidebarMenuItemProps) {
     const { state: sidebarState } = useSidebar()
     const itemState = active ? 'active' : 'inactive'
     const isCollapsed = sidebarState.isCollapsed
     const cursorClassName = onClick ? 'cursor-pointer' : 'cursor-default'
 
-    return (
-        <div className={isCollapsed ? "w-fit" : "w-full"}>
-            <BaseButton type="button" className={cn(menuItemVarients({ state: itemState, isCollapsed: isCollapsed ? 'true' : 'false'}), cursorClassName)} onClick={onClick} title={isCollapsed ? title : undefined} >
+    const menuButton = (
+        <BaseButton nativeButton={render === undefined} render={render} type={render ? undefined : 'button'} className={cn(menuItemVarients({ state: itemState, isCollapsed: isCollapsed ? 'true' : 'false'}), cursorClassName)} onClick={onClick} aria-label={isCollapsed ? title : undefined}>
                 <div className={cn("flex-1 px-1 flex justify-start items-center gap-1.5", isCollapsed && "justify-center px-0")}>
                     <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
                         {icon}
@@ -186,7 +189,21 @@ function SidebarMenuItem({ title, icon, active = false, onClick }: SidebarMenuIt
                         </Label.sm>
                     )}
                 </div>
-            </BaseButton>
+        </BaseButton>
+    )
+
+    return (
+        <div className={isCollapsed ? "w-fit" : "w-full"}>
+            <BaseTooltip.Root disabled={!isCollapsed}>
+                <BaseTooltip.Trigger render={menuButton} />
+                <BaseTooltip.Portal>
+                    <BaseTooltip.Positioner side="right" sideOffset={8} className="z-[9100]">
+                        <BaseTooltip.Popup className="rounded-md bg-background-primary-solid px-2 py-1 label-xs text-white shadow-md">
+                            {title}
+                        </BaseTooltip.Popup>
+                    </BaseTooltip.Positioner>
+                </BaseTooltip.Portal>
+            </BaseTooltip.Root>
         </div>
     )
 }

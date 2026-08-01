@@ -1,8 +1,6 @@
 import { Popover as BasePopover } from '@base-ui/react/popover'
 import { cn } from '@moc/utils/cn'
-import { createContext, useContext, useState, type HTMLAttributes, type ReactNode } from 'react'
-import { useIsMobile } from '../../hooks/use-is-mobile'
-import { MobileSheetHandle, mobileSheetBackdropClassName, mobileSheetPopupClassName, mobileSheetPositionerClassName } from './mobile-sheet'
+import { createContext, useContext, useState, type HTMLAttributes, type ReactElement, type ReactNode } from 'react'
 import { useOverlayStack } from './overlay-provider'
 
 // ─── Placement ───────────────────────────────────────────────────────
@@ -50,53 +48,47 @@ function PopoverRoot({ children, closeOnEscape = true, defaultOpen, onOpenChange
     }
 
     return (
-        <BasePopover.Root
-            open={isOpen}
-            onOpenChange={handleOpenChange}
-        >
-            <PlacementContext.Provider value={placement}>
-                <span className="relative inline-flex">{children}</span>
-            </PlacementContext.Provider>
-        </BasePopover.Root>
+        <PlacementContext.Provider value={placement}>
+            <BasePopover.Root open={isOpen} onOpenChange={handleOpenChange}>
+                {children}
+            </BasePopover.Root>
+        </PlacementContext.Provider>
     )
 }
 
 // ─── Trigger ─────────────────────────────────────────────────────────
 
-function PopoverTrigger({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
+type PopoverControlProps = Omit<HTMLAttributes<HTMLElement>, 'children'> & {
+    children: ReactElement
+}
+
+function PopoverTrigger({ children, className, ...props }: PopoverControlProps) {
+    const nativeButton = typeof children.type !== 'string' || children.type === 'button'
+
     return (
-        <BasePopover.Trigger nativeButton={false} render={<span />} className={className} {...props}>
-            {children}
-        </BasePopover.Trigger>
+        <BasePopover.Trigger nativeButton={nativeButton} render={children} className={className} {...props} />
     )
 }
 
 // ─── Panel ───────────────────────────────────────────────────────────
 
 function PopoverPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    const isMobile = useIsMobile()
     const { side, align } = toSideAlign(useContext(PlacementContext))
     const { state: overlayState } = useOverlayStack()
 
     return (
         <BasePopover.Portal container={overlayState.rootElement ?? undefined}>
-            {isMobile ? <BasePopover.Backdrop className={mobileSheetBackdropClassName} /> : null}
-            <BasePopover.Positioner side={side} align={align} sideOffset={6} className={isMobile ? mobileSheetPositionerClassName : 'z-[9050] outline-none'}>
+            <BasePopover.Positioner side={side} align={align} sideOffset={6} className="z-[9050] outline-none">
                 <BasePopover.Popup
                     className={cn(
-                        isMobile
-                            ? mobileSheetPopupClassName
-                            : cn(
-                                'pointer-events-auto flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-xl border border-secondary bg-primary shadow-lg outline-none',
-                                'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150',
-                                'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
-                                'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
-                            ),
+                        'pointer-events-auto flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-xl border border-secondary bg-primary shadow-lg outline-none',
+                        'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150 motion-reduce:transition-none',
+                        'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+                        'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
                         className,
                     )}
                     {...props}
                 >
-                    {isMobile ? <MobileSheetHandle /> : null}
                     {children}
                 </BasePopover.Popup>
             </BasePopover.Positioner>
@@ -124,11 +116,11 @@ function PopoverContent({ children, className, ...props }: HTMLAttributes<HTMLDi
 
 // ─── Close ───────────────────────────────────────────────────────────
 
-function PopoverClose({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
+function PopoverClose({ children, className, ...props }: PopoverControlProps) {
+    const nativeButton = typeof children.type !== 'string' || children.type === 'button'
+
     return (
-        <BasePopover.Close nativeButton={false} render={<span />} className={className} {...props}>
-            {children}
-        </BasePopover.Close>
+        <BasePopover.Close nativeButton={nativeButton} render={children} className={className} {...props} />
     )
 }
 

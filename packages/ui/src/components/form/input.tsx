@@ -4,6 +4,7 @@ import { cv } from "@moc/utils/cv";
 import type { InputHTMLAttributes, ReactNode } from "react";
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
+    "aria-label": string
     ref?: React.Ref<HTMLInputElement>
     icon?: ReactNode
     state?: 'active' | 'inactive'

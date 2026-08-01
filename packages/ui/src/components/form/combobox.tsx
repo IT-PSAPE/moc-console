@@ -228,7 +228,6 @@ function ComboboxContent({ children, className, empty = 'No matches', searchPlac
                             <span className="label-md text-primary">{multiple ? 'Select options' : title}</span>
                             <BaseCombobox.InputGroup className={cn(fieldShell, 'flex-nowrap')}>
                                 <BaseCombobox.Input
-                                    autoFocus
                                     placeholder={searchPlaceholder}
                                     className="w-full min-w-0 flex-1 bg-transparent paragraph-sm !leading-none focus:!outline-none focus-visible:!outline-0 placeholder:text-placeholder"
                                 />
@@ -266,7 +265,7 @@ function ComboboxContent({ children, className, empty = 'No matches', searchPlac
                         // page behind it, and each popup surface opts back in. Without
                         // it the list renders but no item can be clicked or hovered.
                         'pointer-events-auto max-h-[min(var(--available-height),16rem)] w-[var(--anchor-width)] max-w-[var(--available-width)] overflow-y-auto overscroll-contain rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none',
-                        'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150',
+                        'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150 motion-reduce:transition-none',
                         'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
                         'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
                         className,

@@ -26,6 +26,7 @@ const swipeDirectionBySide = {
 type DrawerContextValue = {
     state: {
         isOpen: boolean
+        isSheet: boolean
         isTopmost: boolean
         zIndex: number
         side: Side
@@ -63,14 +64,16 @@ type DrawerRootProps = {
     onOpenChange?: (nextOpen: boolean) => void
     open?: boolean
     side?: Side
+    mobileSide?: Side
 }
 
-function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = true, defaultOpen = false, onOpenChange, open, side = 'right' }: DrawerRootProps) {
+function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = true, defaultOpen = false, mobileSide, onOpenChange, open, side = 'right' }: DrawerRootProps) {
     const isMobile = useIsMobile()
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
     const isOpen = isControlled ? open : uncontrolledOpen
-    const effectiveSide = isMobile ? 'bottom' : side
+    const isMobileSheet = isMobile && mobileSide !== undefined
+    const effectiveSide = isMobileSheet ? mobileSide : side
     const setOpen = useCallback((nextOpen: boolean) => {
         if (!isControlled) {
             setUncontrolledOpen(nextOpen)
@@ -79,14 +82,14 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
     }, [isControlled, onOpenChange])
 
     const value = useMemo<DrawerContextValue>(() => ({
-        state: { isOpen, isTopmost: true, zIndex: 9000, side: effectiveSide },
+        state: { isOpen, isSheet: isMobileSheet, isTopmost: true, zIndex: 9000, side: effectiveSide },
         actions: {
             close: () => setOpen(false),
             open: () => setOpen(true),
             setOpen,
         },
         meta: { closeOnBackdropClick },
-    }), [closeOnBackdropClick, effectiveSide, isOpen, setOpen])
+    }), [closeOnBackdropClick, effectiveSide, isMobileSheet, isOpen, setOpen])
 
     function handleOpenChange(nextOpen: boolean, eventDetails: BaseDrawer.Root.ChangeEventDetails) {
         if (!nextOpen && !closeOnEscape && eventDetails.reason === 'escape-key') {
@@ -102,9 +105,9 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
                 open={isOpen}
                 disablePointerDismissal={!closeOnBackdropClick}
                 swipeDirection={swipeDirectionBySide[effectiveSide]}
-                snapPoints={isMobile ? MOBILE_SNAP_POINTS : undefined}
-                defaultSnapPoint={MOBILE_SNAP_POINTS[0]}
-                snapToSequentialPoints={isMobile}
+                snapPoints={isMobileSheet ? MOBILE_SNAP_POINTS : undefined}
+                defaultSnapPoint={isMobileSheet ? MOBILE_SNAP_POINTS[0] : undefined}
+                snapToSequentialPoints={isMobileSheet}
                 onOpenChange={handleOpenChange}
             >
                 {children}
@@ -153,7 +156,7 @@ function DrawerBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>)
         <BaseDrawer.Backdrop
             className={cn(
                 'pointer-events-auto fixed inset-0 z-0 bg-black/40 md:bg-black/30',
-                'transition-opacity duration-200 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
+                'transition-opacity duration-200 motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
                 className,
             )}
             {...props}
@@ -178,7 +181,6 @@ const slideBySide: Record<Side, string> = {
 }
 
 function DrawerPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    const isMobile = useIsMobile()
     const { state } = useDrawer()
 
     return (
@@ -186,17 +188,17 @@ function DrawerPanel({ children, className, ...props }: HTMLAttributes<HTMLDivEl
             <BaseDrawer.Popup
                 className={cn(
                     'pointer-events-auto fixed w-full outline-none',
-                    isMobile && '!max-w-none',
-                    !isMobile && 'pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))]',
+                    state.isSheet && '!max-w-none',
+                    !state.isSheet && 'pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))]',
                     panelClassesBySide[state.side],
-                    isMobile ? mobileDrawerStackPopupClassName : slideBySide[state.side],
+                    state.isSheet ? mobileDrawerStackPopupClassName : slideBySide[state.side],
                     className,
                 )}
                 {...props}
             >
-                <div className={cn('flex h-full flex-col border border-secondary bg-primary', isMobile ? 'rounded-t-3xl border-b-0 shadow-xl' : 'rounded-lg')}>
-                    {isMobile ? <MobileSheetHandle /> : null}
-                    <div className={isMobile ? mobileDrawerStackContentClassName : 'flex min-h-0 flex-1 flex-col'}>{children}</div>
+                <div className={cn('flex h-full flex-col border border-secondary bg-primary', state.isSheet ? 'rounded-t-3xl border-b-0 shadow-xl' : 'rounded-lg')}>
+                    {state.isSheet ? <MobileSheetHandle /> : null}
+                    <div className={state.isSheet ? mobileDrawerStackContentClassName : 'flex min-h-0 flex-1 flex-col'}>{children}</div>
                 </div>
             </BaseDrawer.Popup>
         </BaseDrawer.Viewport>

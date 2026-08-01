@@ -61,7 +61,7 @@ type AccordionContentProps = HTMLAttributes<HTMLDivElement>;
 function AccordionContent({ children, className, ...props }: AccordionContentProps) {
     return (
         <BaseAccordion.Panel
-            className="h-[var(--accordion-panel-height)] overflow-hidden transition-[height] duration-200 ease-out data-[starting-style]:h-0 data-[ending-style]:h-0"
+            className="h-[var(--accordion-panel-height)] overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none data-[starting-style]:h-0 data-[ending-style]:h-0"
             {...props}
         >
             <div className={cn(className)}>{children}</div>

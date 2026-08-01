@@ -109,7 +109,7 @@ function CommandMenuBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElem
     return (
         <Dialog.Backdrop
             className={cn(
-                'pointer-events-auto fixed inset-0 bg-black/30 backdrop-blur-xs transition-opacity duration-150',
+                'pointer-events-auto fixed inset-0 bg-black/30 backdrop-blur-xs transition-opacity duration-150 motion-reduce:transition-none',
                 'data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
                 className,
             )}
@@ -134,7 +134,7 @@ function CommandMenuPanel({ children, className, ...props }: HTMLAttributes<HTML
                         ? cn(mobileSheetPopupClassName, 'h-[calc(100dvh-max(0.5rem,env(safe-area-inset-top)))]')
                         : cn(
                             'pointer-events-auto flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg outline-none',
-                            'origin-center transition-[opacity,transform] duration-150',
+                            'origin-center transition-[opacity,transform] duration-150 motion-reduce:transition-none',
                             'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
                             'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
                         ),

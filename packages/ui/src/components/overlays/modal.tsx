@@ -135,7 +135,7 @@ function ModalBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>) 
         <BaseDrawer.Backdrop
             className={cn(
                 'pointer-events-auto fixed inset-0 z-0 bg-black/40 md:bg-black/30',
-                'transition-opacity duration-200 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
+                'transition-opacity duration-200 motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
                 className,
             )}
             {...props}
@@ -183,7 +183,7 @@ function ModalPanelSurface({ children, className, mode, ...props }: HTMLAttribut
                             ? 'h-[calc(100dvh-max(0.5rem,env(safe-area-inset-top)))]'
                             : 'min-h-[40dvh] max-h-[90dvh]',
                     )
-                    : 'max-h-[calc(100dvh-1rem)] max-w-md origin-center rounded-xl transition-[opacity,transform] duration-200 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
+                    : 'max-h-[calc(100dvh-1rem)] max-w-md origin-center rounded-xl transition-[opacity,transform] duration-200 motion-reduce:transition-none data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
                 className,
             )}
             {...props}

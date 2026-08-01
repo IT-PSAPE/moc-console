@@ -43,6 +43,12 @@ export function Checkbox({
     "aria-labelledby": ariaLabelledby,
     "aria-describedby": ariaDescribedby,
 }: CheckboxProps) {
+    function handleCheckedChange(next: boolean) {
+        if (!onChange) return
+        const target = { checked: next, name: name ?? "", value: value ?? "", type: "checkbox" }
+        onChange({ target, currentTarget: target } as unknown as ChangeEvent<HTMLInputElement>)
+    }
+
     return (
         <label className={cn("group flex min-h-11 w-fit items-center gap-1.5 has-[:disabled]:cursor-not-allowed md:min-h-0 md:items-start md:*:even:mt-0.75", className)}>
             <BaseCheckbox.Root
@@ -57,13 +63,7 @@ export function Checkbox({
                 aria-label={ariaLabel}
                 aria-labelledby={ariaLabelledby}
                 aria-describedby={ariaDescribedby}
-                onCheckedChange={(next) => {
-                    if (!onChange) return
-                    // Bridge Base UI's (boolean) callback back to the native
-                    // ChangeEvent shape consumers read via `event.target.checked`.
-                    const target = { checked: next, name: name ?? "", value: value ?? "", type: "checkbox" }
-                    onChange({ target, currentTarget: target } as unknown as ChangeEvent<HTMLInputElement>)
-                }}
+                onCheckedChange={handleCheckedChange}
                 className={checkboxControlVariants()}
             >
                 <BaseCheckbox.Indicator

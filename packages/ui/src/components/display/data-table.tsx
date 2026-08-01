@@ -3,7 +3,7 @@ import { Table } from "./table";
 import { cn } from "@moc/utils/cn";
 
 
-type Column<T> = {
+export type DataTableColumn<T> = {
   key: string;
   header: string;
   width?: number | string;
@@ -15,7 +15,7 @@ type Column<T> = {
 
 type DataTableProps<T> = {
   data: T[];
-  columns: Column<T>[];
+  columns: DataTableColumn<T>[];
   className?: string;
   onRowClick?: (row: T, index: number) => void;
   rowClassName?: string | ((row: T, index: number) => string);
@@ -30,14 +30,14 @@ export function DataTable<T extends Record<string, unknown>>({
   rowClassName,
   emptyMessage = "No data",
 }: DataTableProps<T>) {
-  function getCellValue(row: T, column: Column<T>) {
+  function getCellValue(row: T, column: DataTableColumn<T>) {
     if (column.accessor) return column.accessor(row);
     return row[column.key];
   }
 
   return (
     <div className="overflow-x-auto">
-    <Table className={cn("w-full", className)}>
+    <Table className={cn("w-full overflow-hidden rounded-lg border border-secondary", className)}>
       <Table.ColGroup>
         {columns.map((col) => (
           <Table.Col key={col.key} width={col.width} />

@@ -3,6 +3,7 @@ import { cv } from "@moc/utils/cv";
 import type { TextareaHTMLAttributes } from "react";
 
 type TextAreaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
+    "aria-label": string
     ref?: React.Ref<HTMLTextAreaElement>
     state?: 'active' | 'inactive'
     style?: 'outline' | 'ghost'
@@ -13,7 +14,7 @@ const textAreaVariants = cv({
     base: [
         'w-full bg-primary disabled:cursor-not-allowed disabled:bg-disabled',
         'paragraph-sm',
-        'focus:outline-none',
+        'focus-visible:outline-none',
     ],
     variants: {
         state: {
@@ -23,8 +24,8 @@ const textAreaVariants = cv({
         style: {
             outline: [
                 'py-2 px-3',
-                'rounded-lg border border-secondary focus:border-brand disabled:border-disabled',
-                'focus:ring-3 focus:ring-border-brand/10',
+                'rounded-lg border border-secondary focus-visible:border-brand disabled:border-disabled',
+                'focus-visible:ring-3 focus-visible:ring-border-brand/10',
             ],
             ghost: [''],
         },

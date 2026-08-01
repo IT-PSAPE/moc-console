@@ -1,8 +1,6 @@
 import { Menu } from '@base-ui/react/menu'
 import { cn } from '@moc/utils/cn'
-import { createContext, useContext, useState, type ComponentProps, type HTMLAttributes, type ReactNode } from 'react'
-import { useIsMobile } from '../../hooks/use-is-mobile'
-import { MobileSheetHandle, mobileSheetBackdropClassName, mobileSheetPopupClassName, mobileSheetPositionerClassName } from './mobile-sheet'
+import { createContext, useContext, useState, type ComponentProps, type HTMLAttributes, type ReactElement, type ReactNode } from 'react'
 import { useOverlayStack } from './overlay-provider'
 
 // ─── Placement ───────────────────────────────────────────────────────
@@ -25,6 +23,11 @@ function toSideAlign(placement: Placement): { side: 'top' | 'bottom' | 'left' | 
 }
 
 const PlacementContext = createContext<Placement>('bottom')
+
+const dropdownItemClassName = [
+    'flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm text-secondary outline-none md:min-h-0 md:rounded-sm md:px-2 md:py-1',
+    'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
+].join(' ')
 
 // ─── Root ────────────────────────────────────────────────────────────
 
@@ -51,58 +54,50 @@ function DropdownRoot({ children, closeOnEscape = true, defaultOpen, onOpenChang
     }
 
     return (
-        <Menu.Root
-            open={isOpen}
-            onOpenChange={handleOpenChange}
-        >
-            <PlacementContext.Provider value={placement}>
-                <span className="relative inline-flex">{children}</span>
-            </PlacementContext.Provider>
-        </Menu.Root>
+        <PlacementContext.Provider value={placement}>
+            <Menu.Root open={isOpen} onOpenChange={handleOpenChange}>
+                {children}
+            </Menu.Root>
+        </PlacementContext.Provider>
     )
 }
 
 // ─── Trigger ─────────────────────────────────────────────────────────
 //
-// Rendered as a <span> (not Base UI's default <button>) so it can wrap an
-// existing <Button>/<Badge> without nesting interactive elements, matching the
-// previous `<span role="button">` DOM. `nativeButton={false}` lets Base UI add
-// the button role, tabindex and keyboard handling to the span.
+// Reuses the supplied interactive element as Base UI's trigger, avoiding
+// wrapper elements and nested buttons.
 
-function DropdownTrigger({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
+type DropdownTriggerProps = Omit<HTMLAttributes<HTMLElement>, 'children'> & {
+    children: ReactElement
+}
+
+function DropdownTrigger({ children, className, ...props }: DropdownTriggerProps) {
+    const nativeButton = typeof children.type !== 'string' || children.type === 'button'
+
     return (
-        <Menu.Trigger nativeButton={false} render={<span />} className={className} {...props}>
-            {children}
-        </Menu.Trigger>
+        <Menu.Trigger nativeButton={nativeButton} render={children} className={className} {...props} />
     )
 }
 
 // ─── Panel ───────────────────────────────────────────────────────────
 
 function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    const isMobile = useIsMobile()
     const { side, align } = toSideAlign(useContext(PlacementContext))
     const { state: overlayState } = useOverlayStack()
 
     return (
         <Menu.Portal container={overlayState.rootElement ?? undefined}>
-            {isMobile ? <Menu.Backdrop className={mobileSheetBackdropClassName} /> : null}
-            <Menu.Positioner side={side} align={align} sideOffset={6} className={isMobile ? mobileSheetPositionerClassName : 'z-[9050] outline-none'}>
+            <Menu.Positioner side={side} align={align} sideOffset={6} className="z-[9050] outline-none">
                 <Menu.Popup
                     className={cn(
-                        isMobile
-                            ? cn(mobileSheetPopupClassName, 'p-1 pt-0')
-                            : cn(
-                                'pointer-events-auto flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none',
-                                'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150',
-                                'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
-                                'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
-                            ),
+                        'pointer-events-auto flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none',
+                        'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150 motion-reduce:transition-none',
+                        'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+                        'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
                         className,
                     )}
                     {...props}
                 >
-                    {isMobile ? <MobileSheetHandle /> : null}
                     {children}
                 </Menu.Popup>
             </Menu.Positioner>
@@ -112,7 +107,10 @@ function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDiv
 
 // ─── Item ────────────────────────────────────────────────────────────
 
-type DropdownItemProps = HTMLAttributes<HTMLDivElement> & {
+type DropdownItemProps = Omit<ComponentProps<typeof Menu.Item>, 'children' | 'className' | 'onClick'> & {
+    children: ReactNode
+    className?: string
+    onClick?: ComponentProps<typeof Menu.Item>['onClick']
     onSelect?: () => void
 }
 
@@ -124,14 +122,24 @@ function DropdownItem({ children, className, onClick, onSelect, ...props }: Drop
 
     return (
         <Menu.Item
-            className={cn(
-                'flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm text-secondary outline-none md:min-h-0 md:rounded-sm md:px-2 md:py-1',
-                'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
-                className,
-            )}
+            className={cn(dropdownItemClassName, className)}
             onClick={handleClick}
             {...props}
         >
+            {children}
+        </Menu.Item>
+    )
+}
+
+type DropdownLinkProps = {
+    children: ReactNode
+    className?: string
+    render: ReactElement
+}
+
+function DropdownLink({ children, className, render }: DropdownLinkProps) {
+    return (
+        <Menu.Item nativeButton={false} render={render} className={cn(dropdownItemClassName, className)}>
             {children}
         </Menu.Item>
     )
@@ -149,5 +157,6 @@ export const Dropdown = Object.assign(DropdownRoot, {
     Trigger: DropdownTrigger,
     Panel: DropdownPanel,
     Item: DropdownItem,
+    Link: DropdownLink,
     Separator: DropdownSeparator,
 })

@@ -3,7 +3,7 @@ import type { HTMLAttributes } from 'react'
 
 export const mobileSheetBackdropClassName = cn(
     'pointer-events-auto fixed inset-0 z-[9040] bg-black/40',
-    'transition-opacity duration-200 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
+    'transition-opacity duration-200 motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
 )
 
 export const mobileSheetPositionerClassName = cn(
@@ -13,7 +13,7 @@ export const mobileSheetPositionerClassName = cn(
 export const mobileSheetPopupClassName = cn(
     'pointer-events-auto flex !w-full !max-w-none flex-col overflow-hidden rounded-t-3xl border border-b-0 border-secondary bg-primary shadow-xl outline-none',
     '!max-h-[calc(100dvh-max(0.5rem,env(safe-area-inset-top)))] pb-[env(safe-area-inset-bottom)]',
-    'origin-bottom transition-[opacity,transform] duration-250',
+    'origin-bottom transition-[opacity,transform] duration-250 motion-reduce:transition-none',
     'data-[starting-style]:translate-y-full data-[starting-style]:opacity-0',
     'data-[ending-style]:translate-y-full data-[ending-style]:opacity-0',
 )
@@ -33,7 +33,7 @@ export const mobileDrawerStackPopupClassName = cn(
     'data-[nested-drawer-open]:[--sheet-translate-y:calc(var(--drawer-swipe-movement-y)-var(--sheet-stack-peek-offset)-(var(--sheet-stack-shrink)*var(--sheet-stack-height)))]',
     '[transform:translateY(var(--sheet-translate-y))_scale(var(--sheet-stack-scale))]',
     'origin-[50%_100%] will-change-transform',
-    'transition-[transform,height,opacity] duration-[450ms] ease-[cubic-bezier(0.32,0.72,0,1)]',
+    'transition-[transform,height,opacity] duration-[450ms] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none',
     'data-[swiping]:duration-0 data-[nested-drawer-swiping]:duration-0',
     'data-[starting-style]:[transform:translateY(100%)] data-[starting-style]:opacity-0',
     'data-[ending-style]:[transform:translateY(100%)] data-[ending-style]:opacity-0',
@@ -41,7 +41,7 @@ export const mobileDrawerStackPopupClassName = cn(
 )
 
 export const mobileDrawerStackContentClassName = cn(
-    'flex min-h-0 flex-1 flex-col transition-opacity duration-300',
+    'flex min-h-0 flex-1 flex-col transition-opacity duration-300 motion-reduce:transition-none',
     'group-data-[nested-drawer-open]/sheet:opacity-0 group-data-[nested-drawer-swiping]/sheet:opacity-100',
 )
 

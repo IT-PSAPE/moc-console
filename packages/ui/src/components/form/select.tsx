@@ -86,7 +86,7 @@ function SelectContent({ children, className }: { children: ReactNode; className
                             ? mobileSheetPopupClassName
                             : cn(
                                 "pointer-events-auto max-h-[min(var(--available-height),16rem)] min-w-[var(--anchor-width)] max-w-[var(--available-width)] overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg outline-none",
-                                "origin-[var(--transform-origin)] transition-[opacity,transform] duration-150",
+                                "origin-[var(--transform-origin)] transition-[opacity,transform] duration-150 motion-reduce:transition-none",
                                 "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
                                 "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
                             ),

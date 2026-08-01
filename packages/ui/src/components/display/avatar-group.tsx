@@ -41,9 +41,9 @@ export function AvatarGroup({ items, max = 3, size = '2xs', className }: AvatarG
     const overflow = items.length - visible.length
 
     return (
-        <div className={cn('flex items-center', overlapClassBySize[size], className)}>
+        <div className={cn('flex items-center', overlapClassBySize[size], className)} aria-label={items.map((item) => item.title).filter(Boolean).join(', ') || undefined}>
             {visible.map((item) => (
-                <div key={item.key} title={item.title} className="relative">
+                <div key={item.key} className="relative">
                     {item.avatarUrl ? (
                         <Avatar src={item.avatarUrl} name={item.initials} size={size} className={ringClass} />
                     ) : (
@@ -58,7 +58,7 @@ export function AvatarGroup({ items, max = 3, size = '2xs', className }: AvatarG
                         overflowClassBySize[size],
                         ringClass,
                     )}
-                    title={`${overflow} more`}
+                    aria-label={`${overflow} more`}
                 >
                     +{overflow}
                 </div>
