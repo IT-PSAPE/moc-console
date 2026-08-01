@@ -1,48 +1,21 @@
-import { useAuth } from "@/lib/auth-context"
-import { useStreams } from "./streams-provider"
-import { useYouTubeOAuth } from "./use-youtube-oauth"
-import { disconnectYouTube } from "@/data/mutate-streams"
-import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
-import { getErrorMessage } from "@moc/utils/get-error-message"
 import { IntegrationCard } from "./integration-card"
-import { useCallback, useState } from "react"
+import { useYouTubeConnection } from "./use-youtube-connection"
 
 export function YouTubeConnectionCard() {
-  const { role } = useAuth()
-  const { toast } = useFeedback()
-  const {
-    state: { youtubeConnection, isLoadingConnection },
-    actions: { setYouTubeConnection },
-  } = useStreams()
-  const { startOAuthFlow } = useYouTubeOAuth()
-  const [isDisconnecting, setIsDisconnecting] = useState(false)
-
-  const handleDisconnect = useCallback(async () => {
-    setIsDisconnecting(true)
-    try {
-      await disconnectYouTube()
-      setYouTubeConnection(null)
-      toast({ title: "YouTube disconnected", variant: "success" })
-    } catch (error) {
-      toast({ title: "Failed to disconnect YouTube", description: getErrorMessage(error, "The YouTube connection could not be removed."), variant: "error" })
-    } finally {
-      setIsDisconnecting(false)
-    }
-  }, [setYouTubeConnection, toast])
+  const { state, actions, meta } = useYouTubeConnection()
 
   return (
     <IntegrationCard
-      icon={<img src="/resources/logo/Youtube.svg" alt="YouTube" />}
+      icon={<img src="/resources/logo/Youtube.svg" alt="YouTube" width="20" height="20" />}
       name="YouTube"
-      description="Live streams"
-      isLoading={isLoadingConnection}
-      isConnected={Boolean(youtubeConnection)}
-      needsReauth={youtubeConnection?.status === "reauth_required"}
-      accountLabel={youtubeConnection?.channelTitle ?? null}
-      canManage={role?.can_manage_roles === true}
-      onConnect={startOAuthFlow}
-      onDisconnect={handleDisconnect}
-      isDisconnecting={isDisconnecting}
+      isLoading={meta.isLoading}
+      isConnected={Boolean(meta.connection)}
+      needsReauth={meta.connection?.status === "reauth_required"}
+      accountLabel={meta.connection?.channelTitle ?? null}
+      canManage={meta.canManage}
+      onConnect={actions.connect}
+      onDisconnect={actions.disconnect}
+      isDisconnecting={state.isDisconnecting}
     />
   )
 }

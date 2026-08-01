@@ -1,14 +1,13 @@
-import { Button } from '@moc/ui/components/controls/button'
-import { Divider } from '@moc/ui/components/display/divider'
-import { Label, Paragraph } from '@moc/ui/components/display/text'
+import { Label } from '@moc/ui/components/display/text'
 import { Checkbox } from '@moc/ui/components/form/checkbox'
 import { FormLabel } from '@moc/ui/components/form/form-label'
 import { Input } from '@moc/ui/components/form/input'
 import { Radio, RadioGroup } from '@moc/ui/components/form/radio'
 import { Tabs } from '@moc/ui/components/layout/tabs'
-import { Drawer } from '@moc/ui/components/overlays/drawer'
-import { RotateCcw, X } from 'lucide-react'
+import { FilterDrawer } from '@moc/ui/components/overlays/filter-drawer'
+import type { ChangeEvent } from 'react'
 import type { ChecklistRunCompletionFilter, useChecklistRunFilters } from './use-checklist-run-filters'
+import { parseSortValue } from '@/utils/parse-sort-value'
 
 type ChecklistRunFilterDrawerProps = {
     filters: ReturnType<typeof useChecklistRunFilters>
@@ -24,21 +23,37 @@ export function ChecklistRunFilterDrawer({ filters }: ChecklistRunFilterDrawerPr
     const { filters: state, hasActiveFilters, reset, setCompletion, setDateRange, setIncludePast, setItemCount, setSort } = filters
     const sortValue = `${state.sortField}-${state.sortDirection}`
 
-    return (
-        <Drawer.Portal>
-            <Drawer.Backdrop />
-            <Drawer.Panel>
-                <Drawer.Header>
-                    <div className="flex-1">
-                        <Label.md>Filter Checklist Runs</Label.md>
-                        <Paragraph.xs className="text-tertiary">Narrow runs by schedule, item count, and completion.</Paragraph.xs>
-                    </div>
-                    <Drawer.Close>
-                        <Button.Icon variant="ghost" icon={<X />} />
-                    </Drawer.Close>
-                </Drawer.Header>
+    function handleSortChange(value: string) {
+        const [field, direction] = parseSortValue(value)
+        setSort(field as Parameters<typeof setSort>[0], direction as Parameters<typeof setSort>[1])
+    }
 
-                <Drawer.Content>
+    function handleIncludePastChange(event: ChangeEvent<HTMLInputElement>) {
+        setIncludePast(event.target.checked)
+    }
+
+    function handleStartDateChange(event: ChangeEvent<HTMLInputElement>) {
+        setDateRange(event.target.value, state.dateRange.end)
+    }
+
+    function handleEndDateChange(event: ChangeEvent<HTMLInputElement>) {
+        setDateRange(state.dateRange.start, event.target.value)
+    }
+
+    function handleCompletionChange(value: string) {
+        setCompletion(value as ChecklistRunCompletionFilter)
+    }
+
+    function handleMinimumItemsChange(event: ChangeEvent<HTMLInputElement>) {
+        setItemCount(event.target.value, state.itemCount.max)
+    }
+
+    function handleMaximumItemsChange(event: ChangeEvent<HTMLInputElement>) {
+        setItemCount(state.itemCount.min, event.target.value)
+    }
+
+    return (
+        <FilterDrawer hasActiveFilters={hasActiveFilters} onReset={reset}>
                     <Tabs defaultTab="filters">
                         <Tabs.List>
                             <Tabs.Tab value="filters"><Label.sm>Filters</Label.sm></Tabs.Tab>
@@ -46,31 +61,28 @@ export function ChecklistRunFilterDrawer({ filters }: ChecklistRunFilterDrawerPr
                         </Tabs.List>
                         <Tabs.Panels>
                             <Tabs.Panel value="filters">
-                                <div className="py-2">
-                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Schedule</Paragraph.sm>
-                                    <div className="flex flex-col gap-3 px-3">
-                                        <Checkbox checked={state.includePast} onChange={(event) => setIncludePast(event.target.checked)}>
+                                <FilterDrawer.Group label="Schedule">
+                                    <div className="flex flex-col gap-3">
+                                        <Checkbox checked={state.includePast} onChange={handleIncludePastChange}>
                                             <FormLabel label="Include past runs" />
                                         </Checkbox>
                                         <div className="flex gap-2">
                                             <label className="space-y-1 *:odd:ml-1">
                                                 <FormLabel label="Start Date" />
-                                                <Input type="date" value={state.dateRange.start} onChange={(event) => setDateRange(event.target.value, state.dateRange.end)} />
+                                                <Input aria-label="Schedule start date" name="schedule-start" type="date" value={state.dateRange.start} onChange={handleStartDateChange} />
                                             </label>
                                             <label className="space-y-1 *:odd:ml-1">
                                                 <FormLabel label="End Date" />
-                                                <Input type="date" value={state.dateRange.end} onChange={(event) => setDateRange(state.dateRange.start, event.target.value)} />
+                                                <Input aria-label="Schedule end date" name="schedule-end" type="date" value={state.dateRange.end} onChange={handleEndDateChange} />
                                             </label>
                                         </div>
                                     </div>
-                                </div>
-                                <Divider />
-                                <div className="py-2">
-                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Completion</Paragraph.sm>
+                                </FilterDrawer.Group>
+                                <FilterDrawer.Group label="Completion">
                                     <RadioGroup
-                                        className="grid grid-cols-1 gap-2 px-3"
+                                        className="grid grid-cols-1 gap-2"
                                         value={state.completion}
-                                        onValueChange={(value) => setCompletion(value as ChecklistRunCompletionFilter)}
+                                        onValueChange={handleCompletionChange}
                                     >
                                         {completionFilters.map((option) => (
                                             <Radio key={option.value} value={option.value}>
@@ -78,66 +90,49 @@ export function ChecklistRunFilterDrawer({ filters }: ChecklistRunFilterDrawerPr
                                             </Radio>
                                         ))}
                                     </RadioGroup>
-                                </div>
-                                <Divider />
-                                <div className="py-2">
-                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Checklist Size</Paragraph.sm>
-                                    <div className="grid grid-cols-2 gap-2 px-3">
+                                </FilterDrawer.Group>
+                                <FilterDrawer.Group label="Checklist Size">
+                                    <FilterDrawer.Options>
                                         <label className="space-y-1 *:odd:ml-1">
                                             <FormLabel label="Min Items" />
-                                            <Input type="number" min={0} value={state.itemCount.min} onChange={(event) => setItemCount(event.target.value, state.itemCount.max)} />
+                                            <Input aria-label="Minimum checklist items" name="minimum-checklist-items" type="number" min={0} value={state.itemCount.min} onChange={handleMinimumItemsChange} />
                                         </label>
                                         <label className="space-y-1 *:odd:ml-1">
                                             <FormLabel label="Max Items" />
-                                            <Input type="number" min={0} value={state.itemCount.max} onChange={(event) => setItemCount(state.itemCount.min, event.target.value)} />
+                                            <Input aria-label="Maximum checklist items" name="maximum-checklist-items" type="number" min={0} value={state.itemCount.max} onChange={handleMaximumItemsChange} />
                                         </label>
-                                    </div>
-                                </div>
+                                    </FilterDrawer.Options>
+                                </FilterDrawer.Group>
                             </Tabs.Panel>
                             <Tabs.Panel value="sort">
                                 <RadioGroup
                                     value={sortValue}
-                                    onValueChange={(value) => {
-                                        const i = value.lastIndexOf("-");
-                                        setSort(value.slice(0, i) as Parameters<typeof setSort>[0], value.slice(i + 1) as Parameters<typeof setSort>[1]);
-                                    }}
+                                    onValueChange={handleSortChange}
                                 >
-                                <div className="py-2">
-                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Scheduled Date</Paragraph.sm>
-                                    <div className="grid grid-cols-2 gap-2 px-3">
+                                <FilterDrawer.Group label="Scheduled Date">
+                                    <FilterDrawer.Options>
                                         <Radio value="scheduledAt-asc"><FormLabel label="Ascending" /></Radio>
                                         <Radio value="scheduledAt-desc"><FormLabel label="Descending" /></Radio>
-                                    </div>
-                                </div>
-                                <Divider />
-                                <div className="py-2">
-                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Name</Paragraph.sm>
-                                    <div className="grid grid-cols-2 gap-2 px-3">
+                                    </FilterDrawer.Options>
+                                </FilterDrawer.Group>
+                                <FilterDrawer.Group label="Name">
+                                    <FilterDrawer.Options>
                                         <Radio value="name-asc"><FormLabel label="A-Z" /></Radio>
                                         <Radio value="name-desc"><FormLabel label="Z-A" /></Radio>
-                                    </div>
-                                </div>
-                                <Divider />
-                                <div className="py-2">
-                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Checklist Progress</Paragraph.sm>
-                                    <div className="grid grid-cols-2 gap-2 px-3">
+                                    </FilterDrawer.Options>
+                                </FilterDrawer.Group>
+                                <FilterDrawer.Group label="Checklist Progress">
+                                    <FilterDrawer.Options>
                                         <Radio value="items-asc"><FormLabel label="Fewest items" /></Radio>
                                         <Radio value="items-desc"><FormLabel label="Most items" /></Radio>
                                         <Radio value="completed-asc"><FormLabel label="Least complete" /></Radio>
                                         <Radio value="completed-desc"><FormLabel label="Most complete" /></Radio>
-                                    </div>
-                                </div>
+                                    </FilterDrawer.Options>
+                                </FilterDrawer.Group>
                                 </RadioGroup>
                             </Tabs.Panel>
                         </Tabs.Panels>
                     </Tabs>
-                </Drawer.Content>
-
-                <Drawer.Footer className="*:w-full">
-                    {hasActiveFilters && <Button variant="secondary" icon={<RotateCcw />} className="w-full" onClick={reset}>Reset</Button>}
-                    <Drawer.Close><Button className="w-full">Done</Button></Drawer.Close>
-                </Drawer.Footer>
-            </Drawer.Panel>
-        </Drawer.Portal>
+        </FilterDrawer>
     )
 }

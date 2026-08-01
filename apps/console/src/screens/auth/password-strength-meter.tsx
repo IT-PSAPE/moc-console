@@ -32,7 +32,7 @@ export function PasswordStrengthMeter({ strength, tooShort }: { strength: Passwo
                         <span
                             key={i}
                             className={cn(
-                                "h-1 flex-1 rounded-full transition-colors duration-300",
+                                "h-1 flex-1 rounded-full transition-colors duration-300 motion-reduce:transition-none",
                                 i <= filled ? "bg-brand_solid" : "bg-quaternary",
                             )}
                         />

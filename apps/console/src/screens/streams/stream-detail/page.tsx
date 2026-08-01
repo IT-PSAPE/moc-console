@@ -1,28 +1,21 @@
-import { useCallback, useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import { Header } from "@moc/ui/components/display/header"
 import { Badge } from "@moc/ui/components/display/badge"
 import { Button } from "@moc/ui/components/controls/button"
-import { Divider } from "@moc/ui/components/display/divider"
-import { Label, Paragraph, Title } from "@moc/ui/components/display/text"
+import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
 import { Spinner } from "@moc/ui/components/feedback/spinner"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
-import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { useBreadcrumbOverride } from "@moc/ui/components/navigation/breadcrumb"
 import { TopBarActions } from "@/features/topbar"
-import { useAuth } from "@/lib/auth-context"
-import { useStreams } from "@/features/streams/streams-provider"
 import { StreamModal } from "@/features/streams/stream-modal"
-import type { StreamFormData } from "@/features/streams/stream-modal"
-import { updateStream, deleteStream } from "@/data/mutate-streams"
-import { fetchStreamById } from "@/data/fetch-streams"
+import { useStreamDetail } from "@/features/streams/use-stream-detail"
 import { streamStatusColor, streamStatusLabel, streamPrivacyLabel, latencyPreferenceLabel } from "@moc/types/streams/stream-constants"
-import type { Stream } from "@moc/types/streams/stream"
 import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
-import { getErrorMessage } from "@moc/utils/get-error-message"
-import { Modal } from "@moc/ui/components/overlays/modal"
-import { Calendar, Check, Code, Copy, ExternalLink, Eye, Gauge, Key, ListVideo, Loader, Monitor, Pencil, Play, Radio, Shield, Square, Tag, Trash2, TriangleAlert} from "lucide-react"
+import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
+import { Page } from "@moc/ui/components/layout/page"
+import { DetailPage } from "@moc/ui/components/layout/detail-page"
+import { Calendar, Check, Code, Copy, ExternalLink, Eye, Gauge, Key, ListVideo, Loader, Monitor, Pencil, Play, Radio, Shield, Square, Tag, Trash2} from "lucide-react"
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return "Not set"
@@ -31,141 +24,69 @@ function formatDateTime(iso: string | null): string {
 
 export function StreamDetailScreen() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const { toast } = useFeedback()
-  const { role } = useAuth()
-  const {
-    state: { streams },
-    actions: { loadStreams, syncStream, removeStream },
-  } = useStreams()
-
-  const [stream, setStream] = useState<Stream | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [editOpen, setEditOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [copiedField, setCopiedField] = useState<string | null>(null)
-
-  useEffect(() => { loadStreams() }, [loadStreams])
-
-  useEffect(() => {
-    if (!id) return
-    const fromContext = streams.find((s) => s.id === id)
-    if (fromContext) {
-      setStream(fromContext)
-      setIsLoading(false)
-      return
-    }
-    let cancelled = false
-    fetchStreamById(id).then((data) => {
-      if (!cancelled) {
-        setStream(data ?? null)
-        setIsLoading(false)
-      }
-    })
-    return () => { cancelled = true }
-  }, [id, streams])
+  const { state, actions, meta } = useStreamDetail(id)
+  const { stream, isLoading, editOpen, deleteOpen, isDeleting, copiedField } = state
 
   useBreadcrumbOverride(id ?? "", stream?.title)
   useBreadcrumbOverride("stream", "Stream")
 
-  const handleCopy = useCallback((text: string, field: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedField(field)
-    setTimeout(() => setCopiedField(null), 2000)
-  }, [])
+  function handleOpenEdit() {
+    actions.setEditOpen(true)
+  }
 
-  const handleUpdate = useCallback(
-    async (params: StreamFormData) => {
-      if (!stream) return
-      try {
-        const { thumbnail, ...fields } = params
-        const { stream: updated, thumbnailError } = await updateStream({ ...stream, ...fields }, thumbnail)
-        syncStream(updated)
-        setStream(updated)
-        if (thumbnailError) {
-          toast({ title: "Stream updated, but the thumbnail wasn't applied", description: thumbnailError, variant: "warning" })
-        } else {
-          toast({ title: "Stream updated", variant: "success" })
-        }
-      } catch (error) {
-        const message = getErrorMessage(error, "The stream could not be updated.")
-        toast({ title: "Failed to update stream", description: message, variant: "error" })
-        throw new Error(message)
-      }
-    },
-    [stream, syncStream, toast],
-  )
-
-  const handleDelete = useCallback(async () => {
-    if (!stream) return
-    setIsDeleting(true)
-    try {
-      await deleteStream(stream)
-      removeStream(stream.id)
-      toast({ title: "Stream deleted", variant: "success" })
-      navigate("/streams")
-    } catch (error) {
-      toast({ title: "Failed to delete stream", description: getErrorMessage(error, "The stream could not be deleted."), variant: "error" })
-    } finally {
-      setIsDeleting(false)
-      setDeleteOpen(false)
-    }
-  }, [stream, removeStream, toast, navigate])
+  function handleOpenDelete() {
+    actions.setDeleteOpen(true)
+  }
 
   if (isLoading) {
     return (
-      <section className="flex justify-center py-16 mx-auto max-w-content-sm">
-        <Spinner size="lg" />
-      </section>
+      <Page><Page.Content width="readable" className="flex justify-center py-16"><Spinner size="lg" /></Page.Content></Page>
     )
   }
 
   if (!stream) {
     return (
-      <section className="mx-auto max-w-content-md">
-        <EmptyState icon={<Radio />} title="Stream not found" description="The stream you're looking for doesn't exist." />
-      </section>
+      <Page><Page.Content width="standard">
+        <EmptyState headingLevel="h1" icon={<Radio />} title="Stream not found" description="The stream you're looking for doesn't exist." />
+      </Page.Content></Page>
     )
   }
 
-  const canEdit = role?.can_update === true
-  const canDelete = role?.can_delete === true
-  const canViewStreamKey = role?.can_create === true
-
   return (
-    <section className="mx-auto max-w-content-md">
+    <DetailPage>
       <TopBarActions>
-        {canEdit && (
-          <Button variant="secondary" icon={<Pencil />} onClick={() => setEditOpen(true)}>Edit</Button>
+        {meta.canEdit && (
+          <Button variant="secondary" icon={<Pencil />} onClick={handleOpenEdit}>Edit</Button>
         )}
-        {canDelete && (
-          <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setDeleteOpen(true)} />
+        {meta.canDelete && (
+          <Button.Icon aria-label="Delete stream" variant="danger-secondary" icon={<Trash2 />} onClick={handleOpenDelete} />
         )}
       </TopBarActions>
 
       {stream.thumbnailUrl && (
-        <div className="px-4 pt-8">
+        <DetailPage.Section className="pb-0 pt-8">
           <img
             src={stream.thumbnailUrl}
             alt={stream.title}
+            width="640"
+            height="360"
             className="w-full rounded-lg object-cover aspect-video border border-tertiary"
           />
-        </div>
+        </DetailPage.Section>
       )}
 
       {/* Header */}
-      <Header className="px-4 pt-8">
+      <DetailPage.Header className="pt-8">
         <Header.Lead className="gap-2">
-            <Title.h5>{stream.title}</Title.h5>
+            <Page.Title>{stream.title}</Page.Title>
           {stream.description && (
             <Paragraph.sm className="text-tertiary">{stream.description}</Paragraph.sm>
           )}
         </Header.Lead>
-      </Header>
+      </DetailPage.Header>
 
       {/* Properties */}
-      <div className="p-4">
+      <DetailPage.Section>
         <div className="space-y-3">
           <MetaRow icon={<Loader />} label="Status">
             <Badge
@@ -218,11 +139,11 @@ export function StreamDetailScreen() {
             </MetaRow>
           )}
         </div>
-      </div>
+      </DetailPage.Section>
 
       {/* Playback */}
-      <Divider className="my-2" />
-      <div className="p-4">
+      <DetailPage.Divider />
+      <DetailPage.Section>
         <Label.md className="block pb-3">Playback</Label.md>
         <div className="space-y-3">
           <MetaRow icon={<Gauge />} label="Latency">
@@ -245,43 +166,43 @@ export function StreamDetailScreen() {
             <Paragraph.sm>{stream.enableAutoStop ? "On" : "Off"}</Paragraph.sm>
           </MetaRow>
         </div>
-      </div>
+      </DetailPage.Section>
 
       {/* YouTube Link */}
       {stream.streamUrl && (
         <>
-          <Divider className="my-2" />
-          <div className="p-4">
-            <Label.md className="block pb-3">YouTube Link</Label.md>
+          <DetailPage.Divider />
+          <DetailPage.Section>
+            <Label.md className="block pb-3">YouTube link</Label.md>
             <div className="flex items-center gap-2">
               <Paragraph.sm className="text-tertiary truncate flex-1">{stream.streamUrl}</Paragraph.sm>
               <Button.Icon
+                aria-label="Copy stream link"
                 variant="ghost"
                 icon={copiedField === "url" ? <Check className="text-utility-green-700" /> : <Copy />}
-                onClick={() => handleCopy(stream.streamUrl!, "url")}
+                onClick={actions.copyStreamUrl}
               />
-              <a href={stream.streamUrl} target="_blank" rel="noopener noreferrer">
-                <Button.Icon variant="ghost" icon={<ExternalLink />} />
-              </a>
+              <Button.IconLink render={<a href={stream.streamUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open stream link" variant="ghost" icon={<ExternalLink />} />
             </div>
-          </div>
+          </DetailPage.Section>
         </>
       )}
 
       {/* Stream Setup */}
-      {canViewStreamKey && stream.streamKey && (
+      {meta.canViewStreamKey && stream.streamKey && (
         <>
-          <Divider className="my-2" />
-          <div className="p-4">
-            <Label.md className="block pb-3">Stream Setup (OBS / Encoder)</Label.md>
+          <DetailPage.Divider />
+          <DetailPage.Section>
+            <Label.md className="block pb-3">Stream setup (OBS / encoder)</Label.md>
             <div className="space-y-3">
-              <MetaRow icon={<Key />} label="Stream Key">
+              <MetaRow icon={<Key />} label="Stream key">
                 <div className="flex items-center gap-1 min-w-0">
                   <Paragraph.sm className="font-mono truncate">{stream.streamKey}</Paragraph.sm>
                   <Button.Icon
+                    aria-label="Copy stream key"
                     variant="ghost"
                     icon={copiedField === "key" ? <Check className="text-utility-green-700" /> : <Copy />}
-                    onClick={() => handleCopy(stream.streamKey!, "key")}
+                    onClick={actions.copyStreamKey}
                   />
                 </div>
               </MetaRow>
@@ -291,49 +212,35 @@ export function StreamDetailScreen() {
                   <div className="flex items-center gap-1 min-w-0">
                     <Paragraph.sm className="font-mono truncate">{stream.ingestionUrl}</Paragraph.sm>
                     <Button.Icon
+                      aria-label="Copy server URL"
                       variant="ghost"
                       icon={copiedField === "ingestion" ? <Check className="text-utility-green-700" /> : <Copy />}
-                      onClick={() => handleCopy(stream.ingestionUrl!, "ingestion")}
+                      onClick={actions.copyIngestionUrl}
                     />
                   </div>
                 </MetaRow>
               )}
             </div>
-          </div>
+          </DetailPage.Section>
         </>
       )}
 
       <StreamModal
         open={editOpen}
-        onOpenChange={setEditOpen}
-        onSubmit={handleUpdate}
+        onOpenChange={actions.setEditOpen}
+        onSubmit={actions.update}
         stream={stream}
       />
 
-      <Modal open={deleteOpen} onOpenChange={(o) => { if (!o) setDeleteOpen(false) }}>
-        <Modal.Portal>
-          <Modal.Backdrop />
-          <Modal.Positioner>
-            <Modal.Panel>
-              <Modal.Header>
-                <Label.md>Delete Stream</Label.md>
-              </Modal.Header>
-              <Modal.Content className="p-4 flex-row gap-4">
-                <TriangleAlert className="size-8 shrink-0 text-utility-red-600" />
-                <Paragraph.sm className="text-secondary">
-                  Are you sure you want to delete this stream? This will also remove the broadcast from YouTube. This action cannot be undone.
-                </Paragraph.sm>
-              </Modal.Content>
-              <Modal.Footer className="justify-end">
-                <Button variant="secondary" onClick={() => setDeleteOpen(false)}>Cancel</Button>
-                <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
-                  {isDeleting ? "Deleting..." : "Delete Stream"}
-                </Button>
-              </Modal.Footer>
-            </Modal.Panel>
-          </Modal.Positioner>
-        </Modal.Portal>
-      </Modal>
-    </section>
+      <ConfirmationDialog
+        open={deleteOpen}
+        onOpenChange={actions.setDeleteOpen}
+        title="Delete stream?"
+        description="This also removes the broadcast from YouTube. This action cannot be undone."
+        confirmLabel="Delete stream"
+        isConfirming={isDeleting}
+        onConfirm={actions.remove}
+      />
+    </DetailPage>
   )
 }

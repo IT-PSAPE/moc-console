@@ -33,10 +33,30 @@ export function StreamAdvancedSection({
   onAutoStartChange,
   onAutoStopChange,
 }: StreamAdvancedSectionProps) {
+  function handleLatencyChange(value: string) {
+    onLatencyChange(value as LatencyPreference)
+  }
+
+  function handleDvrChange(event: ChangeEvent<HTMLInputElement>) {
+    onDvrChange(event.target.checked)
+  }
+
+  function handleEmbedChange(event: ChangeEvent<HTMLInputElement>) {
+    onEmbedChange(event.target.checked)
+  }
+
+  function handleAutoStartChange(event: ChangeEvent<HTMLInputElement>) {
+    onAutoStartChange(event.target.checked)
+  }
+
+  function handleAutoStopChange(event: ChangeEvent<HTMLInputElement>) {
+    onAutoStopChange(event.target.checked)
+  }
+
   return (
     <Accordion.Item value="advanced">
       <Accordion.Trigger className="flex items-center gap-2 py-2 text-left">
-        <Label.sm className="flex-1">Advanced Settings</Label.sm>
+        <Label.sm className="flex-1">Advanced settings</Label.sm>
         <ChevronDown className="size-4 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
       </Accordion.Trigger>
       <Accordion.Content>
@@ -47,7 +67,7 @@ export function StreamAdvancedSection({
             <SegmentedControl
               fill
               value={latencyPreference}
-              onValueChange={(v: string) => onLatencyChange(v as LatencyPreference)}
+              onValueChange={handleLatencyChange}
             >
               {(Object.keys(latencyPreferenceLabel) as LatencyPreference[]).map((key) => (
                 <SegmentedControl.Item key={key} value={key}>
@@ -64,7 +84,7 @@ export function StreamAdvancedSection({
           <Checkbox
             checked={enableDvr}
             disabled={latencyPreference === "ultraLow"}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => onDvrChange(e.target.checked)}
+            onChange={handleDvrChange}
           >
             <div className="flex flex-col">
               <Paragraph.sm>Enable DVR</Paragraph.sm>
@@ -79,7 +99,7 @@ export function StreamAdvancedSection({
           {/* Embedding */}
           <Checkbox
             checked={enableEmbed}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => onEmbedChange(e.target.checked)}
+            onChange={handleEmbedChange}
           >
             <div className="flex flex-col">
               <Paragraph.sm>Allow embedding</Paragraph.sm>
@@ -92,7 +112,7 @@ export function StreamAdvancedSection({
           {/* Auto-start */}
           <Checkbox
             checked={enableAutoStart}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => onAutoStartChange(e.target.checked)}
+            onChange={handleAutoStartChange}
           >
             <div className="flex flex-col">
               <Paragraph.sm>Auto-start</Paragraph.sm>
@@ -105,7 +125,7 @@ export function StreamAdvancedSection({
           {/* Auto-stop */}
           <Checkbox
             checked={enableAutoStop}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => onAutoStopChange(e.target.checked)}
+            onChange={handleAutoStopChange}
           >
             <div className="flex flex-col">
               <Paragraph.sm>Auto-stop</Paragraph.sm>

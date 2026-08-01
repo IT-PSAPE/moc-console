@@ -1,124 +1,53 @@
-import { Button } from '@moc/ui/components/controls/button'
-import { Label, Paragraph } from '@moc/ui/components/display/text'
-import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
-import { Modal } from '@moc/ui/components/overlays/modal'
-import { TextArea } from '@moc/ui/components/form/text-area'
-import {
-    captureBugReportContext,
-    submitBugReport,
-    type BugReportErrorContext,
-} from '@/data/bug-reports'
-import { useAuth } from '@/lib/auth-context'
-import { AlertTriangle } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import type { BugReportErrorContext } from "@/data/bug-reports"
+import { Button } from "@moc/ui/components/controls/button"
+import { Label, Paragraph } from "@moc/ui/components/display/text"
+import { Alert } from "@moc/ui/components/feedback/alert"
+import { TextArea } from "@moc/ui/components/form/text-area"
+import { Modal } from "@moc/ui/components/overlays/modal"
+import { BUG_REPORT_MAX_LENGTH, BUG_REPORT_MIN_LENGTH, useReportBugForm } from "./use-report-bug-form"
 
-const MAX_LENGTH = 2000
-const MIN_LENGTH = 10
-
-type Props = {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    errorContext?: BugReportErrorContext | null
+type ReportBugModalProps = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  errorContext?: BugReportErrorContext | null
 }
 
-export function ReportBugModal({ open, onOpenChange, errorContext }: Props) {
-    const { profile } = useAuth()
-    const { toast } = useFeedback()
-    const [description, setDescription] = useState('')
-    const [isSubmitting, setIsSubmitting] = useState(false)
+export function ReportBugModal({ open, onOpenChange, errorContext }: ReportBugModalProps) {
+  const { state, actions, meta } = useReportBugForm(open, onOpenChange, errorContext)
 
-    useEffect(() => {
-        if (!open) {
-            setDescription('')
-            setIsSubmitting(false)
-        }
-    }, [open])
-
-    const trimmedLength = description.trim().length
-    const canSubmit = !isSubmitting && trimmedLength >= MIN_LENGTH && trimmedLength <= MAX_LENGTH && profile
-
-    const handleSubmit = useCallback(async () => {
-        if (!profile || !canSubmit) return
-        setIsSubmitting(true)
-        try {
-            const context = captureBugReportContext()
-            await submitBugReport({
-                userId: profile.id,
-                description: description.trim(),
-                ...context,
-                errorContext: errorContext ?? null,
-            })
-            toast({ title: 'Bug report sent', description: 'Thanks — the team will take a look.', variant: 'success' })
-            onOpenChange(false)
-        } catch (error) {
-            toast({
-                title: 'Could not send report',
-                description: error instanceof Error ? error.message : 'Please try again.',
-                variant: 'error',
-            })
-        } finally {
-            setIsSubmitting(false)
-        }
-    }, [canSubmit, description, errorContext, onOpenChange, profile, toast])
-
-    const remaining = MAX_LENGTH - description.length
-
-    return (
-        <Modal open={open} onOpenChange={onOpenChange}>
-            <Modal.Portal>
-                <Modal.Backdrop />
-                <Modal.Positioner>
+  return (
+    <Modal open={open} onOpenChange={onOpenChange}>
+      <Modal.Portal>
+        <Modal.Backdrop />
+        <Modal.Positioner>
           <Modal.FullScreenPanel className="w-full md:!max-w-md">
-                        <Modal.Header>
-                            <div className="flex flex-col gap-0.5">
-                                <Label.md>Report a bug</Label.md>
-                                <Paragraph.xs className="text-tertiary">
-                                    Describe what went wrong. We'll attach your device and page info automatically.
-                                </Paragraph.xs>
-                            </div>
-                        </Modal.Header>
-                        <Modal.Content>
-                            <div className="flex flex-col gap-3 p-4">
-                                {errorContext && (
-                                    <div className="flex items-start gap-2 rounded-md border border-utility-red-200 bg-utility-red-50 p-2.5">
-                                        <AlertTriangle className="size-4 shrink-0 mt-0.5 text-utility-red-600" />
-                                        <Paragraph.xs className="text-utility-red-700">
-                                            An error report from this page will be attached automatically.
-                                            You don't need to describe the technical details — just tell us what you were doing.
-                                        </Paragraph.xs>
-                                    </div>
-                                )}
-                                <TextArea
-                                    autoFocus
-                                    rows={6}
-                                    maxLength={MAX_LENGTH}
-                                    placeholder="What were you trying to do? What did you see vs. what you expected?"
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                />
-                                <div className="flex items-center justify-between">
-                                    <Paragraph.xs className="text-quaternary">
-                                        {trimmedLength < MIN_LENGTH
-                                            ? `At least ${MIN_LENGTH} characters`
-                                            : 'Thanks for the detail'}
-                                    </Paragraph.xs>
-                                    <Paragraph.xs className={remaining < 100 ? 'text-error' : 'text-quaternary'}>
-                                        {remaining}
-                                    </Paragraph.xs>
-                                </div>
-                            </div>
-                        </Modal.Content>
-                        <Modal.Footer>
-                            <Modal.Close>
-                                <Button variant="secondary">Cancel</Button>
-                            </Modal.Close>
-                            <Button onClick={handleSubmit} disabled={!canSubmit}>
-                                {isSubmitting ? 'Sending...' : 'Send report'}
-                            </Button>
-                        </Modal.Footer>
+            <Modal.Header><Label.md>Report a bug</Label.md></Modal.Header>
+            <Modal.Content>
+              <div className="flex flex-col gap-3 p-4">
+                {errorContext && <Alert variant="info" title="The page error will be attached automatically." />}
+                <TextArea
+                  aria-label="Bug report description"
+                  autoComplete="off"
+                  name="bug-description"
+                  rows={6}
+                  maxLength={BUG_REPORT_MAX_LENGTH}
+                  placeholder="What were you doing, and what happened?"
+                  value={state.description}
+                  onChange={actions.changeDescription}
+                />
+                <div className="flex items-center justify-between">
+                  <Paragraph.xs className="text-quaternary">{meta.trimmedLength < BUG_REPORT_MIN_LENGTH ? `At least ${BUG_REPORT_MIN_LENGTH} characters` : ""}</Paragraph.xs>
+                  <Paragraph.xs className={meta.remaining < 100 ? "text-error" : "text-quaternary"}>{meta.remaining}</Paragraph.xs>
+                </div>
+              </div>
+            </Modal.Content>
+            <Modal.Footer>
+              <Modal.Close><Button variant="secondary">Cancel</Button></Modal.Close>
+              <Button onClick={actions.submit} disabled={!meta.canSubmit}>{state.isSubmitting ? "Sending…" : "Send report"}</Button>
+            </Modal.Footer>
           </Modal.FullScreenPanel>
-                </Modal.Positioner>
-            </Modal.Portal>
-        </Modal>
-    )
+        </Modal.Positioner>
+      </Modal.Portal>
+    </Modal>
+  )
 }

@@ -1,13 +1,15 @@
 import { Title, Paragraph, Label } from "@moc/ui/components/display/text"
-import { Divider } from "@moc/ui/components/display/divider"
+import { Card } from "@moc/ui/components/display/card"
 import { Link } from "react-router-dom"
 import { routes } from "@/screens/console-routes"
 import { PublicLayout } from "./layout"
+import { PublicDocumentSection as Section } from "./public-document-section"
+import { PublicDocumentFaq } from "./public-document-faq"
 
 export function SupportScreen() {
   return (
     <PublicLayout>
-      <Title.h3 className="mb-2">Support</Title.h3>
+      <Title.h1 className="mb-2 title-h3">Support</Title.h1>
       <Paragraph.sm className="text-tertiary mb-8">
         Help with connecting Zoom, syncing meetings, managing users, and everything else in MOC Console.
       </Paragraph.sm>
@@ -16,10 +18,10 @@ export function SupportScreen() {
         <Paragraph.md className="mb-3">
           The fastest way to reach the team is by email. We read every message and respond in the order received.
         </Paragraph.md>
-        <div className="rounded-lg border border-tertiary bg-secondary_alt p-5 mb-4">
+        <Card.Content className="mb-4 bg-secondary_alt p-5">
           <Label.sm className="block mb-1">Email</Label.sm>
           <a href="mailto:psape.dev@gmail.com" className="title-h6 text-brand hover:underline">psape.dev@gmail.com</a>
-        </div>
+        </Card.Content>
         <Paragraph.md>
           <strong>Response time:</strong> we aim to reply within <strong>2 business days</strong>.
           Urgent issues affecting a live broadcast are prioritized — put <em>URGENT</em> in the subject line.
@@ -38,26 +40,11 @@ export function SupportScreen() {
       </Section>
 
       <Section title="Common questions">
-        <FAQ
-          question="How do I connect my Zoom account?"
-          answer={<>Open <em>Streams → Zoom</em> and click <strong>Connect Zoom</strong>. You'll be redirected to Zoom to approve the requested scopes, then returned to MOC Console. The full walkthrough is in the <Link to={`/${routes.zoomDocs}`} className="text-brand hover:underline">Zoom integration guide</Link>.</>}
-        />
-        <FAQ
-          question="My Zoom meetings aren't showing up."
-          answer={<>Click the <strong>refresh</strong> icon in the Zoom Meetings section to trigger a manual sync. If meetings created outside MOC Console still don't appear, disconnect and reconnect Zoom to re-issue your access tokens.</>}
-        />
-        <FAQ
-          question="How do I disconnect Zoom?"
-          answer={<>Open <em>Streams → Zoom</em> and click <strong>Disconnect</strong>. This revokes the OAuth token with Zoom and removes the stored connection. You can also uninstall the app from the Zoom Marketplace under <em>Settings → Integrations</em>.</>}
-        />
-        <FAQ
-          question="What data does MOC Console read from Zoom?"
-          answer={<>Only what the workflow needs: your Zoom user profile and metadata for the meetings you manage through the Service. No recordings, transcripts, chat messages, or participant lists. See the <Link to={`/${routes.privacy}`} className="text-brand hover:underline">Privacy Policy</Link> for details.</>}
-        />
-        <FAQ
-          question="How do I delete my account or my data?"
-          answer={<>Email <a href="mailto:psape.dev@gmail.com" className="text-brand hover:underline">psape.dev@gmail.com</a> from the address associated with your account and we will process the request within the timeframe required by applicable law. You can also disconnect Zoom at any time directly from the Streams screen.</>}
-        />
+        <PublicDocumentFaq question="How do I connect my Zoom account?">Open <em>Streams → Zoom</em> and click <strong>Connect Zoom</strong>. You'll be redirected to Zoom to approve the requested scopes, then returned to MOC Console. The full walkthrough is in the <Link to={`/${routes.zoomDocs}`} className="text-brand hover:underline">Zoom integration guide</Link>.</PublicDocumentFaq>
+        <PublicDocumentFaq question="My Zoom meetings aren't showing up.">Click the <strong>refresh</strong> icon in the Zoom Meetings section to trigger a manual sync. If meetings created outside MOC Console still don't appear, disconnect and reconnect Zoom to re-issue your access tokens.</PublicDocumentFaq>
+        <PublicDocumentFaq question="How do I disconnect Zoom?">Open <em>Streams → Zoom</em> and click <strong>Disconnect</strong>. This revokes the OAuth token with Zoom and removes the stored connection. You can also uninstall the app from the Zoom Marketplace under <em>Settings → Integrations</em>.</PublicDocumentFaq>
+        <PublicDocumentFaq question="What data does MOC Console read from Zoom?">Only what the workflow needs: your Zoom user profile and metadata for the meetings you manage through the Service. No recordings, transcripts, chat messages, or participant lists. See the <Link to={`/${routes.privacy}`} className="text-brand hover:underline">Privacy Policy</Link> for details.</PublicDocumentFaq>
+        <PublicDocumentFaq question="How do I delete my account or my data?">Email <a href="mailto:psape.dev@gmail.com" className="text-brand hover:underline">psape.dev@gmail.com</a> from the address associated with your account and we will process the request within the timeframe required by applicable law. You can also disconnect Zoom at any time directly from the Streams screen.</PublicDocumentFaq>
       </Section>
 
       <Section title="Status and incidents">
@@ -68,24 +55,5 @@ export function SupportScreen() {
         </Paragraph.md>
       </Section>
     </PublicLayout>
-  )
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="mb-8">
-      <Divider className="mb-6" />
-      <Label.lg className="block mb-4">{title}</Label.lg>
-      {children}
-    </section>
-  )
-}
-
-function FAQ({ question, answer }: { question: string; answer: React.ReactNode }) {
-  return (
-    <div className="mb-5">
-      <Label.md className="block mb-1.5">{question}</Label.md>
-      <Paragraph.md className="text-tertiary">{answer}</Paragraph.md>
-    </div>
   )
 }

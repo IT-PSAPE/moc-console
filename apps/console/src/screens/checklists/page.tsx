@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FilePlus2, ListChecks, Plus, Search, Settings2 } from 'lucide-react'
 import { Button } from '@moc/ui/components/controls/button'
-import { Card } from '@moc/ui/components/display/card'
-import { Header } from '@moc/ui/components/display/header'
-import { Label, Paragraph, Title } from '@moc/ui/components/display/text'
+import { GroupedList } from '@moc/ui/components/display/grouped-list'
+import { Label } from '@moc/ui/components/display/text'
+import { Page } from '@moc/ui/components/layout/page'
 import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import { Input } from '@moc/ui/components/form/input'
 import { Decision } from '@moc/ui/components/display/decision'
@@ -12,166 +11,122 @@ import { Drawer } from '@moc/ui/components/overlays/drawer'
 import { Dropdown } from '@moc/ui/components/overlays/dropdown'
 import { ChecklistItemCard } from '@/features/checklists/checklist-item'
 import { ChecklistRunFilterDrawer } from '@/features/checklists/checklist-run-filter-drawer'
-import { CreateChecklistRunModal, type ChecklistRunSubmit } from '@/features/checklists/create-checklist-run-modal'
-import { useChecklists } from '@/features/checklists/checklists-provider'
-import { partitionChecklistRuns } from '@/features/checklists/run-status'
-import { useChecklistRunFilters } from '@/features/checklists/use-checklist-run-filters'
-import { routes } from '@/screens/console-routes'
+import { CreateChecklistRunModal } from '@/features/checklists/create-checklist-run-modal'
+import { useChecklistsScreen } from '@/features/checklists/use-checklists-screen'
+import type { ChangeEvent } from 'react'
 import type { Checklist } from '@moc/types/checklists'
-import { useNavigate } from 'react-router-dom'
-import { useIsMobile } from '@moc/ui/hooks/use-is-mobile'
 
 export function ChecklistsScreen() {
-    const {
-        state: { checklists, isLoadingChecklists },
-        actions: { loadChecklists, createChecklistInstance, createBlankChecklist },
-    } = useChecklists()
-    const navigate = useNavigate()
-    const isMobile = useIsMobile()
-    const [modalOpen, setModalOpen] = useState(false)
-    const [modalTemplate, setModalTemplate] = useState<Checklist | null>(null)
+    const { state, actions, meta } = useChecklistsScreen()
 
-    useEffect(() => {
-        loadChecklists()
-    }, [loadChecklists])
+    function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
+        actions.setSearch(event.target.value)
+    }
 
-    const checklistTemplates = useMemo(() => checklists.filter((checklist) => checklist.kind === 'template'), [checklists])
-    const checklistRuns = useMemo(() => checklists.filter((checklist) => checklist.kind === 'instance'), [checklists])
-    const checklistFilters = useChecklistRunFilters(checklistRuns)
-    const { filtered, filters, setSearch } = checklistFilters
-    const { active: activeChecklistRuns, completed: completedChecklistRuns } = useMemo(() => partitionChecklistRuns(filtered), [filtered])
-
-    const handlePickBlank = useCallback(() => {
-        setModalTemplate(null)
-        setModalOpen(true)
-    }, [])
-
-    const handlePickTemplate = useCallback((template: Checklist) => {
-        setModalTemplate(template)
-        setModalOpen(true)
-    }, [])
-
-    const handleSubmit = useCallback(async (input: ChecklistRunSubmit) => {
-        if (input.kind === 'template') {
-            await createChecklistInstance(input.template, { name: input.name, description: input.description, scheduledAt: input.scheduledAt })
-        } else {
-            await createBlankChecklist({ name: input.name, description: input.description, scheduledAt: input.scheduledAt })
+    function renderTemplate(checklist: Checklist) {
+        function handleSelect() {
+            actions.pickTemplate(checklist)
         }
-    }, [createBlankChecklist, createChecklistInstance])
+        return <Dropdown.Item key={checklist.id} onSelect={handleSelect}>{checklist.name}</Dropdown.Item>
+    }
 
-    const handleOpenTemplates = useCallback(() => {
-        navigate(`/${routes.checklistTemplates}`)
-    }, [navigate])
+    function renderChecklist(checklist: Checklist) {
+        return <ChecklistItemCard key={checklist.id} checklist={checklist} />
+    }
 
     return (
-        <section>
-            <Header className="p-2 pt-8 mx-auto max-w-content">
-                <Header.Lead className="gap-2">
-                    <Title.h6>Checklist Runs</Title.h6>
-                    <Paragraph.sm className="text-tertiary max-w-2xl">
-                        View preparation checklist runs created from reusable checklist templates.
-                    </Paragraph.sm>
-                </Header.Lead>
-            </Header>
+        <Page>
+            <Page.Header>
+                <Page.Heading>
+                    <Page.Title>Checklists</Page.Title>
+                </Page.Heading>
+            </Page.Header>
 
-            <div className="flex flex-col gap-4 p-2 pt-8 mx-auto w-full max-w-content">
-                <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
-                    <Header.Lead className="gap-2">
-                        <Label.md>Checklists</Label.md>
-                    </Header.Lead>
-                    <Header.Trail className="gap-2 flex-1 justify-end">
-                        <Input icon={<Search />} placeholder="Search checklist runs..." className="w-full max-w-md" value={filters.search} onChange={(event) => setSearch(event.target.value)} />
-                        <Drawer>
+            <Page.Toolbar>
+                    <div className="flex flex-1 gap-2 md:justify-end">
+                        <Input aria-label="Search checklists" name="checklist-search" autoComplete="off" icon={<Search />} placeholder="Search checklists…" className="w-full max-w-md" value={state.search} onChange={handleSearchChange} />
+                        <Drawer mobileSide="bottom">
                             <Drawer.Trigger>
-                                {isMobile
+                                {state.isMobile
                                     ? <Button.Icon icon={<Settings2 />} variant="secondary" aria-label="Filter" />
                                     : <Button icon={<Settings2 />} variant="secondary">Filter</Button>}
                             </Drawer.Trigger>
-                            <ChecklistRunFilterDrawer filters={checklistFilters} />
+                            <ChecklistRunFilterDrawer filters={meta.filters} />
                         </Drawer>
                         <Dropdown placement="bottom">
                             <Dropdown.Trigger>
-                                <Button.Icon variant='secondary' icon={<Plus />} />
+                                <Button.Icon aria-label="Create checklist" variant='secondary' icon={<Plus />} />
                             </Dropdown.Trigger>
                             <Dropdown.Panel>
-                                <Dropdown.Item onSelect={handlePickBlank}>
+                                <Dropdown.Item onSelect={actions.pickBlank}>
                                     <FilePlus2 className="size-4" />
                                     Blank checklist
                                 </Dropdown.Item>
-                                {checklistTemplates.length > 0 && <Dropdown.Separator />}
-                                {checklistTemplates.map((checklist) => (
-                                    <Dropdown.Item key={checklist.id} onSelect={() => handlePickTemplate(checklist)}>
-                                        {checklist.name}
-                                    </Dropdown.Item>
-                                ))}
-                                {checklistTemplates.length > 0 && <Dropdown.Separator />}
-                                <Dropdown.Item onSelect={handleOpenTemplates}>
+                                {state.templates.length > 0 && <Dropdown.Separator />}
+                                {state.templates.map(renderTemplate)}
+                                {state.templates.length > 0 && <Dropdown.Separator />}
+                                <Dropdown.Item onSelect={actions.openTemplates}>
                                     <ListChecks className="size-4" />
                                     Manage checklist templates
                                 </Dropdown.Item>
                             </Dropdown.Panel>
                         </Dropdown>
-                    </Header.Trail>
-                </Header>
+                    </div>
+            </Page.Toolbar>
 
-                <Card>
-                    <Card.Header tight className="gap-1.5">
-                        <div className="flex flex-1 items-center gap-1.5">
+            <Page.Content>
+                <GroupedList>
+                    <GroupedList.Group>
+                        <GroupedList.Header>
                             <ListChecks className="size-4" />
                             <Label.sm>Active</Label.sm>
-                        </div>
-                    </Card.Header>
-                    <Card.Content ghost className="flex flex-col gap-1.5">
-                        <Decision value={activeChecklistRuns} loading={isLoadingChecklists}>
+                        </GroupedList.Header>
+                        <GroupedList.Content>
+                        <Decision value={state.active} loading={state.isLoading}>
                             <Decision.Loading>
                                 <LoadingSpinner className="py-6" />
                             </Decision.Loading>
                             <Decision.Empty>
                                 <EmptyState
                                     icon={<ListChecks />}
-                                    title={filters.search.trim() ? "No active checklist runs match your search" : "No active checklist runs"}
-                                    description={filters.search.trim() ? "Try a different search term." : "Start a checklist run to see it here."}
+                                    title={state.search.trim() ? "No active checklist runs match your search" : "No active checklist runs"}
+                                    description={state.search.trim() ? "Try a different search term." : "Start a checklist run to see it here."}
                                 />
                             </Decision.Empty>
                             <Decision.Data>
-                                {activeChecklistRuns.map((checklist) => (
-                                    <ChecklistItemCard key={checklist.id} checklist={checklist} />
-                                ))}
+                                {state.active.map(renderChecklist)}
                             </Decision.Data>
                         </Decision>
-                    </Card.Content>
-                </Card>
+                        </GroupedList.Content>
+                    </GroupedList.Group>
 
-                <Card>
-                    <Card.Header tight className="gap-1.5">
-                        <div className="flex flex-1 items-center gap-1.5">
+                    <GroupedList.Group>
+                        <GroupedList.Header>
                             <ListChecks className="size-4" />
                             <Label.sm>Completed</Label.sm>
-                        </div>
-                    </Card.Header>
-                    <Card.Content ghost className="flex flex-col gap-1.5">
-                        <Decision value={completedChecklistRuns} loading={isLoadingChecklists}>
+                        </GroupedList.Header>
+                        <GroupedList.Content>
+                        <Decision value={state.completed} loading={state.isLoading}>
                             <Decision.Loading>
                                 <LoadingSpinner className="py-6" />
                             </Decision.Loading>
                             <Decision.Empty>
                                 <EmptyState
                                     icon={<ListChecks />}
-                                    title={filters.search.trim() ? "No completed checklist runs match your search" : "No completed checklist runs"}
-                                    description={filters.search.trim() ? "Try a different search term." : "Completed checklist runs will appear here."}
+                                    title={state.search.trim() ? "No completed checklist runs match your search" : "No completed checklist runs"}
+                                    description={state.search.trim() ? "Try a different search term." : "Completed checklist runs will appear here."}
                                 />
                             </Decision.Empty>
                             <Decision.Data>
-                                {completedChecklistRuns.map((checklist) => (
-                                    <ChecklistItemCard key={checklist.id} checklist={checklist} />
-                                ))}
+                                {state.completed.map(renderChecklist)}
                             </Decision.Data>
                         </Decision>
-                    </Card.Content>
-                </Card>
-            </div>
+                        </GroupedList.Content>
+                    </GroupedList.Group>
+                </GroupedList>
+            </Page.Content>
 
-            <CreateChecklistRunModal open={modalOpen} onOpenChange={setModalOpen} template={modalTemplate} onSubmit={handleSubmit} />
-        </section>
+            <CreateChecklistRunModal open={state.modalOpen} onOpenChange={actions.setModalOpen} template={state.modalTemplate} onSubmit={actions.submit} />
+        </Page>
     )
 }

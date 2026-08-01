@@ -91,6 +91,10 @@ function ErrorFallback({ error, componentStack }: { error: Error; componentStack
         window.location.reload()
     }
 
+    function handleOpenReport() {
+        setReportOpen(true)
+    }
+
     return (
         <div className="flex min-h-[60dvh] flex-col items-center justify-center gap-6 p-6 text-center">
             <span className="flex size-14 items-center justify-center rounded-full bg-utility-red-50 text-utility-red-600">
@@ -106,7 +110,7 @@ function ErrorFallback({ error, componentStack }: { error: Error; componentStack
                 <Button variant="secondary" icon={<RefreshCw />} onClick={handleRefresh}>
                     Refresh page
                 </Button>
-                <Button icon={<MessageSquareWarning />} onClick={() => setReportOpen(true)}>
+                <Button icon={<MessageSquareWarning />} onClick={handleOpenReport}>
                     Send bug report
                 </Button>
             </div>

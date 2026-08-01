@@ -43,6 +43,14 @@ export function StreamThumbnailField({
   onUrlConfirm,
   onClear,
 }: StreamThumbnailFieldProps) {
+  function handleModeChange(value: string) {
+    onModeChange(value as ThumbnailMode)
+  }
+
+  function handleUrlInputChange(event: ChangeEvent<HTMLInputElement>) {
+    onUrlInputChange(event.target.value)
+  }
+
   return (
     <div className="flex flex-col gap-1.5">
       <FormLabel label="Thumbnail" optional />
@@ -51,13 +59,13 @@ export function StreamThumbnailField({
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 rounded-lg border border-secondary bg-primary p-2">
             {previewUrl && (
-              <img src={previewUrl} alt="" className="size-8 rounded object-cover shrink-0" />
+              <img src={previewUrl} alt="" width="32" height="32" className="size-8 shrink-0 rounded object-cover" />
             )}
             <Paragraph.sm className="text-secondary truncate flex-1">{selectionName}</Paragraph.sm>
             {status === "resolving" && (
-              <Loader2 className="size-3.5 animate-spin text-quaternary shrink-0" />
+              <Loader2 className="size-3.5 animate-spin text-quaternary shrink-0 motion-reduce:animate-none" />
             )}
-            <Button.Icon variant="ghost" icon={<X className="size-3.5" />} onClick={onClear} />
+            <Button.Icon aria-label="Remove thumbnail" variant="ghost" icon={<X className="size-3.5" />} onClick={onClear} />
           </div>
           {status === "resolving" && (
             <Paragraph.xs className="text-quaternary">Checking image…</Paragraph.xs>
@@ -70,7 +78,7 @@ export function StreamThumbnailField({
         <div className="flex flex-col gap-2">
           {previewUrl && (
             <div className="flex items-center gap-2 rounded-lg border border-secondary bg-primary p-2">
-              <img src={previewUrl} alt="" className="size-8 rounded object-cover shrink-0" />
+              <img src={previewUrl} alt="" width="32" height="32" className="size-8 shrink-0 rounded object-cover" />
               <Paragraph.sm className="text-quaternary truncate flex-1">
                 Current thumbnail — choose a source below to replace it.
               </Paragraph.sm>
@@ -80,7 +88,7 @@ export function StreamThumbnailField({
           <SegmentedControl
             fill
             value={thumbnailMode}
-            onValueChange={(v: string) => onModeChange(v as ThumbnailMode)}
+            onValueChange={handleModeChange}
           >
             <SegmentedControl.Item value="file">Upload</SegmentedControl.Item>
             <SegmentedControl.Item value="url">URL</SegmentedControl.Item>
@@ -98,9 +106,12 @@ export function StreamThumbnailField({
           {thumbnailMode === "url" && (
             <div className="flex gap-2">
               <Input
+                aria-label="Thumbnail URL"
+                name="thumbnail-url"
+                autoComplete="url"
                 icon={<Link className="size-3.5" />}
                 value={thumbnailUrlInput}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => onUrlInputChange(e.target.value)}
+                onChange={handleUrlInputChange}
                 placeholder="https://example.com/thumbnail.jpg"
                 className="flex-1"
               />

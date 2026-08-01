@@ -1,16 +1,15 @@
-import { Button } from "@moc/ui/components/controls/button"
-import { Divider } from "@moc/ui/components/display/divider"
-import { Label, Paragraph } from "@moc/ui/components/display/text"
+import { Label } from "@moc/ui/components/display/text"
 import { Checkbox } from "@moc/ui/components/form/checkbox"
 import { FormLabel } from "@moc/ui/components/form/form-label"
 import { Input } from "@moc/ui/components/form/input"
 import { Radio, RadioGroup } from "@moc/ui/components/form/radio"
 import { Tabs } from "@moc/ui/components/layout/tabs"
-import { Drawer } from "@moc/ui/components/overlays/drawer"
+import { FilterDrawer } from "@moc/ui/components/overlays/filter-drawer"
 import { zoomRecurrenceLabel } from "@moc/types/streams/zoom-constants"
 import type { ZoomRecurrenceType } from "@moc/types/streams/zoom"
-import { RotateCcw, X } from "lucide-react"
+import type { ChangeEvent } from "react"
 import type { useZoomMeetingFilters } from "./use-zoom-meeting-filters"
+import { parseSortValue } from "@/utils/parse-sort-value"
 
 type ZoomMeetingFilterDrawerProps = {
   filters: ReturnType<typeof useZoomMeetingFilters>
@@ -31,21 +30,29 @@ export function ZoomMeetingFilterDrawer({ filters }: ZoomMeetingFilterDrawerProp
 
   const sortValue = `${state.sortField}-${state.sortDirection}`
 
-  return (
-    <Drawer.Portal>
-      <Drawer.Backdrop />
-      <Drawer.Panel>
-        <Drawer.Header>
-          <div className="flex-1">
-            <Label.md>Filter & Sort</Label.md>
-            <Paragraph.xs className="text-tertiary">Narrow down and order your meetings</Paragraph.xs>
-          </div>
-          <Drawer.Close>
-            <Button.Icon variant="ghost" icon={<X />} />
-          </Drawer.Close>
-        </Drawer.Header>
+  function handleSortChange(value: string) {
+    const [field, direction] = parseSortValue(value)
+    setSort(field as Parameters<typeof setSort>[0], direction as Parameters<typeof setSort>[1])
+  }
 
-        <Drawer.Content>
+  function handleRecurrenceChange(event: ChangeEvent<HTMLInputElement>) {
+    toggleRecurrenceType(event.target.value as ZoomRecurrenceType)
+  }
+
+  function handleStartDateChange(event: ChangeEvent<HTMLInputElement>) {
+    setDateRange(event.target.value, state.dateRange.end)
+  }
+
+  function handleEndDateChange(event: ChangeEvent<HTMLInputElement>) {
+    setDateRange(state.dateRange.start, event.target.value)
+  }
+
+  function handleShowPastChange(event: ChangeEvent<HTMLInputElement>) {
+    setShowPast(event.target.checked)
+  }
+
+  return (
+    <FilterDrawer hasActiveFilters={hasActiveFilters} onReset={reset}>
           <Tabs defaultTab="filters">
             <Tabs.List>
               <Tabs.Tab value="filters">
@@ -58,129 +65,106 @@ export function ZoomMeetingFilterDrawer({ filters }: ZoomMeetingFilterDrawerProp
             <Tabs.Panels>
               {/* ── Filters ── */}
               <Tabs.Panel value="filters">
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Recurrence</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                <FilterDrawer.Group label="Recurrence">
+                  <FilterDrawer.Options>
                     {recurrenceTypes.map((type) => (
                       <Checkbox
                         key={type}
                         checked={state.recurrenceTypes.has(type)}
-                        onChange={() => toggleRecurrenceType(type)}
+                        value={type}
+                        onChange={handleRecurrenceChange}
                       >
                         <FormLabel label={zoomRecurrenceLabel[type]} />
                       </Checkbox>
                     ))}
-                  </div>
-                </div>
-                <Divider />
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Start Date</Paragraph.sm>
-                  <div className="flex gap-2 px-3">
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
+                <FilterDrawer.Group label="Start Date">
+                  <FilterDrawer.Options>
                     <label className="space-y-1 *:odd:ml-1">
                       <FormLabel label="From" />
                       <Input
+                        aria-label="Meeting start date from"
+                        name="meeting-start-from"
                         type="date"
                         value={state.dateRange.start}
-                        onChange={(e) => setDateRange(e.target.value, state.dateRange.end)}
+                        onChange={handleStartDateChange}
                       />
                     </label>
                     <label className="space-y-1 *:odd:ml-1">
                       <FormLabel label="To" />
                       <Input
+                        aria-label="Meeting start date to"
+                        name="meeting-start-to"
                         type="date"
                         value={state.dateRange.end}
-                        onChange={(e) => setDateRange(state.dateRange.start, e.target.value)}
+                        onChange={handleEndDateChange}
                       />
                     </label>
-                  </div>
-                </div>
-                <Divider />
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Past Meetings</Paragraph.sm>
-                  <div className="px-3">
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
+                <FilterDrawer.Group label="Past Meetings">
+                  <div>
                     <Checkbox
                       checked={state.showPast}
-                      onChange={(e) => setShowPast(e.target.checked)}
+                      onChange={handleShowPastChange}
                     >
                       <FormLabel label="Show past one-time meetings" />
                     </Checkbox>
                   </div>
-                </div>
+                </FilterDrawer.Group>
               </Tabs.Panel>
 
               {/* ── Sort ── */}
               <Tabs.Panel value="sort">
                 <RadioGroup
                   value={sortValue}
-                  onValueChange={(value) => {
-                    const i = value.lastIndexOf("-");
-                    setSort(value.slice(0, i) as Parameters<typeof setSort>[0], value.slice(i + 1) as Parameters<typeof setSort>[1]);
-                  }}
+                  onValueChange={handleSortChange}
                 >
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Topic</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                <FilterDrawer.Group label="Topic">
+                  <FilterDrawer.Options>
                     <Radio value="topic-asc">
                       <FormLabel label="A–Z" />
                     </Radio>
                     <Radio value="topic-desc">
                       <FormLabel label="Z–A" />
                     </Radio>
-                  </div>
-                </div>
-                <Divider />
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Start Time</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
+                <FilterDrawer.Group label="Start Time">
+                  <FilterDrawer.Options>
                     <Radio value="startTime-asc">
                       <FormLabel label="Earliest first" />
                     </Radio>
                     <Radio value="startTime-desc">
                       <FormLabel label="Latest first" />
                     </Radio>
-                  </div>
-                </div>
-                <Divider />
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Duration</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
+                <FilterDrawer.Group label="Duration">
+                  <FilterDrawer.Options>
                     <Radio value="duration-asc">
                       <FormLabel label="Shortest first" />
                     </Radio>
                     <Radio value="duration-desc">
                       <FormLabel label="Longest first" />
                     </Radio>
-                  </div>
-                </div>
-                <Divider />
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Created Date</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
+                <FilterDrawer.Group label="Created Date">
+                  <FilterDrawer.Options>
                     <Radio value="createdAt-asc">
                       <FormLabel label="Oldest first" />
                     </Radio>
                     <Radio value="createdAt-desc">
                       <FormLabel label="Newest first" />
                     </Radio>
-                  </div>
-                </div>
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
                 </RadioGroup>
               </Tabs.Panel>
             </Tabs.Panels>
           </Tabs>
-        </Drawer.Content>
-
-        <Drawer.Footer className="*:w-full">
-          {hasActiveFilters && (
-            <Button variant="secondary" icon={<RotateCcw />} className="w-full" onClick={reset}>
-              Reset
-            </Button>
-          )}
-          <Drawer.Close>
-            <Button className="w-full">Done</Button>
-          </Drawer.Close>
-        </Drawer.Footer>
-      </Drawer.Panel>
-    </Drawer.Portal>
+    </FilterDrawer>
   )
 }

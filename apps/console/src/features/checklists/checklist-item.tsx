@@ -1,18 +1,18 @@
 import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { Badge } from '@moc/ui/components/display/badge'
 import { Drawer } from '@moc/ui/components/overlays/drawer'
-import { cn } from '@moc/utils/cn'
 import { cv } from '@moc/utils/cv'
 import type { Checklist } from '@moc/types/checklists'
 import { CalendarClock, CheckCircle2, ListChecks } from 'lucide-react'
-import { useState } from 'react'
 import { ChecklistDrawer } from './checklist-drawer'
 import { getChecklistCounts } from './checklist-content'
 import { formatUtcIsoInBrowserTimeZone } from '@moc/utils/browser-date-time'
+import { ResponsiveDrawerTrigger } from '@/features/responsive-drawer-trigger'
+import { routes } from '@/screens/console-routes'
 
 const itemVariants = cv({
     base: [
-        'w-full flex justify-between px-4 py-3 gap-4 bg-background-primary rounded-lg shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] outline outline-1 outline-offset-[-1px] outline-border-secondary *:flex-1',
+        'flex w-full justify-between gap-4 px-4 py-3 *:flex-1',
         'items-center *:odd:flex-1 *:odd:max-w-xl *:even:justify-end max-mobile:flex-col *:max-mobile:odd:max-none *:max-mobile:even:justify-start *:max-mobile:w-full',
     ],
 })
@@ -23,15 +23,13 @@ function formatScheduledAt(scheduledAt?: string) {
 }
 
 export function ChecklistItemCard({ checklist }: { checklist: Checklist }) {
-    const [open, setOpen] = useState(false)
     const { total, checked } = getChecklistCounts(checklist)
     const allDone = total > 0 && checked === total
     const scheduledAt = formatScheduledAt(checklist.scheduledAt)
 
     return (
-        <Drawer open={open} onOpenChange={setOpen}>
-            <Drawer.Trigger>
-                <div className={cn(itemVariants(), 'cursor-pointer hover:bg-background-primary-hover transition-colors')}>
+        <Drawer>
+            <ResponsiveDrawerTrigger.Card mobileHref={`/${routes.checklists}/${checklist.id}`} className={itemVariants()}>
                     <div>
                         <Label.sm>{checklist.name}</Label.sm>
                         <Paragraph.sm className="text-tertiary">{checklist.description}</Paragraph.sm>
@@ -47,8 +45,7 @@ export function ChecklistItemCard({ checklist }: { checklist: Checklist }) {
                             <Badge label="Complete" icon={<CheckCircle2 />} color="green" />
                         )}
                     </div>
-                </div>
-            </Drawer.Trigger>
+            </ResponsiveDrawerTrigger.Card>
             <ChecklistDrawer checklist={checklist} />
         </Drawer>
     )

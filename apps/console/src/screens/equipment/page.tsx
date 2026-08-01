@@ -1,10 +1,8 @@
 // import { Card } from "@moc/ui/components/display/card";
-import { randomId } from "@moc/utils/random-id";
 import { Button } from "@moc/ui/components/controls/button";
 import { Input } from "@moc/ui/components/form/input";
-import { Header } from "@moc/ui/components/display/header";
+import { Page } from "@moc/ui/components/layout/page";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
-import { Paragraph, Title } from "@moc/ui/components/display/text";
 import {
   Columns3,
   List,
@@ -14,164 +12,100 @@ import {
   Settings2,
   Table as TableIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import { Decision } from "@moc/ui/components/display/decision";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
-import { useEquipment } from "@/features/equipment/equipment-provider";
-import { useEquipmentFilters } from "@/features/equipment/use-equipment-filters";
 import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
 import { CreateEquipmentModal } from "@/features/equipment/create-equipment-modal";
-import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
-import { createEquipment } from "@/data/mutate-equipment";
-import type { Equipment, EquipmentCategory } from "@moc/types/equipment";
-import { getErrorMessage } from "@moc/utils/get-error-message";
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
-import { useIsMobile } from "@moc/ui/hooks/use-is-mobile";
 import { InventoryListView } from "@/features/equipment/inventory-list";
 import { InventoryKanbanView } from "@/features/equipment/inventory-kanban";
 import { InventoryTableView } from "@/features/equipment/inventory-table";
+import { useEquipmentScreen } from "@/features/equipment/use-equipment-screen";
+import type { ChangeEvent } from "react";
 
 export function EquipmentScreen() {
-  const [view, setView] = useState("list");
-  const isMobile = useIsMobile();
-  const activeView = isMobile && view === "kanban" ? "list" : view;
+  const { state, actions, meta } = useEquipmentScreen();
 
-  const {
-    state: { equipment, isLoadingEquipment },
-    actions: { loadEquipment, addEquipment },
-  } = useEquipment();
-  const { toast } = useFeedback();
-
-  useEffect(() => {
-    loadEquipment();
-  }, [loadEquipment]);
-
-  const equipmentFilters = useEquipmentFilters(equipment);
-  const { filtered, setSearch, filters: state } = equipmentFilters;
-
-  const [showCreateModal, setShowCreateModal] = useState(false);
-
-  function handleViewChange(value: string) {
-    setView(value)
+  function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
+    actions.setSearch(event.target.value);
   }
 
-  const handleCreateEquipment = useCallback(
-    async ({
-      name,
-      serialNumber,
-      category,
-      location,
-    }: {
-      name: string;
-      serialNumber: string;
-      category: EquipmentCategory;
-      location: string;
-    }) => {
-      const newEquipment: Equipment = {
-        id: randomId(),
-        name,
-        serialNumber,
-        category,
-        status: "available",
-        location,
-        notes: "",
-        lastActiveDate: new Date().toISOString(),
-        bookedBy: null,
-        thumbnail: null,
-      };
-      try {
-        const saved = await createEquipment(newEquipment);
-        addEquipment(saved);
-        setShowCreateModal(false);
-        toast({ title: "Equipment added", variant: "success" });
-      } catch (error) {
-        toast({
-          title: "Failed to add equipment",
-          description: getErrorMessage(
-            error,
-            "The equipment item could not be added.",
-          ),
-          variant: "error",
-        });
-      }
-    },
-    [addEquipment, toast],
-  );
-
   return (
-    <section>
-      <Header className="p-2 pt-8 mx-auto max-w-content">
-        <Header.Lead className="gap-2">
-          <Title.h6>Equipment</Title.h6>
-          <Paragraph.sm className="text-tertiary max-w-2xl">
-            Browse the full inventory. Filter by category or status — including
-            items in maintenance.
-          </Paragraph.sm>
-        </Header.Lead>
-      </Header>
+    <Page>
+      <Page.Header>
+        <Page.Heading>
+          <Page.Title>Equipment</Page.Title>
+        </Page.Heading>
+      </Page.Header>
 
-      <Header className="p-2 pt-8 mx-auto max-w-content max-mobile:flex-col max-mobile:gap-2 *:max-mobile:w-full">
-        <Header.Lead className="gap-2 w-full">
-          <SegmentedControl value={activeView} onValueChange={handleViewChange} fill={isMobile} >
+      <Page.Toolbar>
+        <div className="w-full md:w-auto">
+          <SegmentedControl value={state.activeView} onValueChange={actions.changeView} fill={state.isMobile} >
             <SegmentedControl.Item value="list" icon={<List />}>
               List
             </SegmentedControl.Item>
-            <SegmentedControl.Item value="table" icon={<TableIcon />}>
+            <SegmentedControl.Item value="table" icon={<TableIcon />} hide={state.isMobile}>
               Table
             </SegmentedControl.Item>
-            <SegmentedControl.Item value="kanban" icon={<Columns3 />} hide={isMobile}>
+            <SegmentedControl.Item value="kanban" icon={<Columns3 />} hide={state.isMobile}>
               Kanban
             </SegmentedControl.Item>
           </SegmentedControl>
-        </Header.Lead>
-        <Header.Trail className="gap-2 flex-1 justify-end ">
+        </div>
+        <div className="flex flex-1 flex-wrap gap-2 md:justify-end">
           <Input
+            aria-label="Search equipment"
+            name="equipment-search"
+            autoComplete="off"
             icon={<Search />}
-            placeholder="Search equipment..."
+            placeholder="Search equipment…"
             className="w-full max-w-md max-mobile:flex-[1_1_100%]"
-            value={state.search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={state.filterState.search}
+            onChange={handleSearchChange}
           />
-          <Drawer>
+          <Drawer mobileSide="bottom">
             <Drawer.Trigger>
-              {isMobile
+              {state.isMobile
                 ? <Button.Icon icon={<Settings2 />} variant="secondary" aria-label="Filter" />
                 : <Button icon={<Settings2 />} variant="secondary">Filter</Button>}
             </Drawer.Trigger>
-            <EquipmentFilterDrawer filters={equipmentFilters} />
+            <EquipmentFilterDrawer filters={meta.filters} />
           </Drawer>
           <Button.Icon
+            aria-label="Add equipment"
             variant="secondary"
             icon={<Plus />}
-            onClick={() => setShowCreateModal(true)}
+            onClick={actions.openCreate}
           />
-        </Header.Trail>
-      </Header>
+        </div>
+      </Page.Toolbar>
 
-      <Decision value={filtered} loading={isLoadingEquipment}>
+      <Page.Content>
+      <Decision value={state.filtered} loading={state.isLoading}>
         <Decision.Loading>
           <LoadingSpinner className="py-6" />
         </Decision.Loading>
         <Decision.Empty>
           <EmptyState
             icon={<Package />}
-            title={state.search.trim() ? "No equipment matches your search" : "No equipment yet"}
-            description={state.search.trim() ? "Try a different search term or clear filters." : "Add equipment to start tracking inventory."}
+            title={state.filterState.search.trim() ? "No equipment matches your search" : "No equipment yet"}
+            description={state.filterState.search.trim() ? "Try a different search term or clear filters." : "Add equipment to start tracking inventory."}
           />
         </Decision.Empty>
         <Decision.Data>
-          {activeView === "list" && <InventoryListView equipment={filtered} />}
-          {activeView === "table" && <InventoryTableView equipment={filtered} />}
-          {activeView === "kanban" && <InventoryKanbanView equipment={filtered} />}
+          {state.activeView === "list" && <InventoryListView equipment={state.filtered} />}
+          {state.activeView === "table" && <InventoryTableView equipment={state.filtered} />}
+          {state.activeView === "kanban" && <InventoryKanbanView equipment={state.filtered} />}
         </Decision.Data>
       </Decision>
+      </Page.Content>
 
       <CreateEquipmentModal
-        open={showCreateModal}
-        onOpenChange={setShowCreateModal}
-        onCreate={handleCreateEquipment}
+        open={state.createOpen}
+        onOpenChange={actions.setCreateOpen}
+        onCreate={actions.create}
       />
-    </section>
+    </Page>
   );
 }

@@ -1,4 +1,4 @@
-import { Card } from "@moc/ui/components/display/card";
+import { GroupedList } from "@moc/ui/components/display/grouped-list";
 import { Indicator } from "@moc/ui/components/display/indicator";
 import { Label } from "@moc/ui/components/display/text";
 import { useMemo } from "react";
@@ -12,25 +12,25 @@ export function InventoryListView({ equipment }: { equipment: Equipment[] }) {
     const visible = useMemo(() => equipment.filter((e) => e.status !== "maintenance"), [equipment]);
 
     return (
-        <div className="flex flex-col gap-4 p-2 pt-0 mx-auto w-full max-w-content">
+        <GroupedList>
             {activeStatusGroups.map((group) => {
                 const items = visible.filter((e) => e.status === group.key);
                 if (items.length === 0) return null;
                 return (
-                    <Card key={group.key}>
-                        <Card.Header tight className="gap-1.5">
+                    <GroupedList.Group key={group.key}>
+                        <GroupedList.Header>
                             <Indicator color={group.color} className="size-6" />
                             <Label.sm>{group.label}</Label.sm>
                             <Label.sm className="text-quaternary ml-auto">{items.length}</Label.sm>
-                        </Card.Header>
-                        <Card.Content ghost className="flex flex-col gap-1.5">
+                        </GroupedList.Header>
+                        <GroupedList.Content>
                             {items.map((e) => (
                                 <EquipmentItem key={e.id} equipment={e} />
                             ))}
-                        </Card.Content>
-                    </Card>
+                        </GroupedList.Content>
+                    </GroupedList.Group>
                 );
             })}
-        </div>
+        </GroupedList>
     );
 }

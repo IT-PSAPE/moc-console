@@ -58,7 +58,7 @@ function BookingItemRow({ item, isScanned, onNavigate }: { item: BookingItem; is
       className="flex w-full items-center gap-3 py-3 border-b border-border-secondary text-left hover:bg-background-primary-hover transition-colors"
     >
       {item.equipmentThumbnail ? (
-        <img src={item.equipmentThumbnail} alt={item.equipmentName} className="size-10 rounded object-cover" />
+        <img src={item.equipmentThumbnail} alt={item.equipmentName} width="40" height="40" className="size-10 rounded object-cover" />
       ) : (
         <span className="flex size-10 shrink-0 items-center justify-center rounded bg-secondary text-quaternary">
           <Package className="size-5" />

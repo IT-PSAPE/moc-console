@@ -1,28 +1,21 @@
-import { useCallback, useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import { Header } from "@moc/ui/components/display/header"
 import { Badge } from "@moc/ui/components/display/badge"
 import { Button } from "@moc/ui/components/controls/button"
-import { Divider } from "@moc/ui/components/display/divider"
-import { Label, Paragraph, Title } from "@moc/ui/components/display/text"
+import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
 import { Spinner } from "@moc/ui/components/feedback/spinner"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
-import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { useBreadcrumbOverride } from "@moc/ui/components/navigation/breadcrumb"
 import { TopBarActions } from "@/features/topbar"
-import { useAuth } from "@/lib/auth-context"
-import { useStreams } from "@/features/streams/streams-provider"
 import { MeetingModal } from "@/features/streams/meeting-modal"
-import { updateZoomMeeting, deleteZoomMeeting } from "@/data/mutate-zoom"
-import type { CreateMeetingParams } from "@/data/mutate-zoom"
-import { fetchZoomMeetingById } from "@/data/fetch-zoom"
+import { useMeetingDetail } from "@/features/streams/use-meeting-detail"
 import { zoomRecurrenceLabel } from "@moc/types/streams/zoom-constants"
-import type { ZoomMeeting } from "@moc/types/streams/zoom"
 import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
-import { getErrorMessage } from "@moc/utils/get-error-message"
-import { Modal } from "@moc/ui/components/overlays/modal"
-import { Calendar, Check, Clock, Copy, ExternalLink, Globe, Key, MessageCircle, Mic, Pencil, Repeat, ShieldCheck, Trash2, TriangleAlert, Video} from "lucide-react"
+import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
+import { Page } from "@moc/ui/components/layout/page"
+import { DetailPage } from "@moc/ui/components/layout/detail-page"
+import { Calendar, Check, Clock, Copy, ExternalLink, Globe, Key, MessageCircle, Mic, Pencil, Repeat, ShieldCheck, Trash2, Video} from "lucide-react"
 
 function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} minutes`
@@ -33,129 +26,61 @@ function formatDuration(minutes: number): string {
 
 export function MeetingDetailScreen() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const { toast } = useFeedback()
-  const { role } = useAuth()
-  const {
-    state: { zoomMeetings },
-    actions: { loadZoomMeetings, syncMeeting, removeMeeting },
-  } = useStreams()
-
-  const [meeting, setMeeting] = useState<ZoomMeeting | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [editOpen, setEditOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [copiedField, setCopiedField] = useState<string | null>(null)
-
-  useEffect(() => { loadZoomMeetings() }, [loadZoomMeetings])
-
-  useEffect(() => {
-    if (!id) return
-    const fromContext = zoomMeetings.find((m) => m.id === id)
-    if (fromContext) {
-      setMeeting(fromContext)
-      setIsLoading(false)
-      return
-    }
-    let cancelled = false
-    fetchZoomMeetingById(id).then((data) => {
-      if (!cancelled) {
-        setMeeting(data ?? null)
-        setIsLoading(false)
-      }
-    })
-    return () => { cancelled = true }
-  }, [id, zoomMeetings])
+  const { state, actions, meta } = useMeetingDetail(id)
+  const { meeting, isLoading, editOpen, deleteOpen, isDeleting, copiedField } = state
 
   useBreadcrumbOverride(id ?? "", meeting?.topic)
   useBreadcrumbOverride("meeting", "Meeting")
 
-  const handleCopy = useCallback((text: string, field: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedField(field)
-    setTimeout(() => setCopiedField(null), 2000)
-  }, [])
+  function handleOpenEdit() {
+    actions.setEditOpen(true)
+  }
 
-  const handleUpdate = useCallback(
-    async (params: CreateMeetingParams) => {
-      if (!meeting) return
-      try {
-        const updated = await updateZoomMeeting({ ...meeting, ...params })
-        syncMeeting(updated)
-        setMeeting(updated)
-        toast({ title: "Meeting updated", variant: "success" })
-      } catch (error) {
-        const message = getErrorMessage(error, "The meeting could not be updated.")
-        toast({ title: "Failed to update meeting", description: message, variant: "error" })
-        throw new Error(message)
-      }
-    },
-    [meeting, syncMeeting, toast],
-  )
-
-  const handleDelete = useCallback(async () => {
-    if (!meeting) return
-    setIsDeleting(true)
-    try {
-      await deleteZoomMeeting(meeting)
-      removeMeeting(meeting.id)
-      toast({ title: "Meeting deleted", variant: "success" })
-      navigate("/streams")
-    } catch (error) {
-      toast({ title: "Failed to delete meeting", description: getErrorMessage(error, "The meeting could not be deleted."), variant: "error" })
-    } finally {
-      setIsDeleting(false)
-      setDeleteOpen(false)
-    }
-  }, [meeting, removeMeeting, toast, navigate])
+  function handleOpenDelete() {
+    actions.setDeleteOpen(true)
+  }
 
   if (isLoading) {
     return (
-      <section className="flex justify-center py-16 mx-auto max-w-content-sm">
-        <Spinner size="lg" />
-      </section>
+      <Page><Page.Content width="readable" className="flex justify-center py-16"><Spinner size="lg" /></Page.Content></Page>
     )
   }
 
   if (!meeting) {
     return (
-      <section className="mx-auto max-w-content-md">
-        <EmptyState icon={<Video />} title="Meeting not found" description="The meeting you're looking for doesn't exist." />
-      </section>
+      <Page><Page.Content width="standard">
+        <EmptyState headingLevel="h1" icon={<Video />} title="Meeting not found" description="The meeting you're looking for doesn't exist." />
+      </Page.Content></Page>
     )
   }
 
   const isPast = meeting.startTime ? new Date(meeting.startTime) < new Date() : false
-  const canEdit = role?.can_update === true
-  const canDelete = role?.can_delete === true
-
   return (
-    <section className="mx-auto max-w-content-md">
+    <DetailPage>
       <TopBarActions>
-        {canEdit && (
-          <Button variant="secondary" icon={<Pencil />} onClick={() => setEditOpen(true)}>Edit</Button>
+        {meta.canEdit && (
+          <Button variant="secondary" icon={<Pencil />} onClick={handleOpenEdit}>Edit</Button>
         )}
-        {canDelete && (
-          <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setDeleteOpen(true)} />
+        {meta.canDelete && (
+          <Button.Icon aria-label="Delete meeting" variant="danger-secondary" icon={<Trash2 />} onClick={handleOpenDelete} />
         )}
       </TopBarActions>
 
       {/* Header */}
-      <Header className="px-4 pt-12">
+      <DetailPage.Header>
         <Header.Lead className="gap-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <Title.h5>{meeting.topic}</Title.h5>
+            <Page.Title>{meeting.topic}</Page.Title>
             <Badge label={isPast ? "Past" : "Upcoming"} color={isPast ? "gray" : "green"} />
           </div>
           {meeting.description && (
             <Paragraph.sm className="text-tertiary">{meeting.description}</Paragraph.sm>
           )}
         </Header.Lead>
-      </Header>
+      </DetailPage.Header>
 
       {/* Schedule */}
-      <div className="p-4">
+      <DetailPage.Section>
         <div className="space-y-3">
           <MetaRow icon={<Calendar />} label="Start">
             <Paragraph.sm>{formatUtcIsoInTimezone(meeting.startTime, meeting.timezone)}</Paragraph.sm>
@@ -175,44 +100,43 @@ export function MeetingDetailScreen() {
             </MetaRow>
           )}
         </div>
-      </div>
+      </DetailPage.Section>
 
       {/* Settings */}
-      <Divider className="my-2" />
-      <div className="p-4">
+      <DetailPage.Divider />
+      <DetailPage.Section>
         <Label.md className="block pb-3">Settings</Label.md>
         <div className="space-y-3">
-          <MetaRow icon={<ShieldCheck />} label="Waiting Room">
+          <MetaRow icon={<ShieldCheck />} label="Waiting room">
             <Paragraph.sm>{meeting.waitingRoom ? "Enabled" : "Disabled"}</Paragraph.sm>
           </MetaRow>
 
-          <MetaRow icon={<Mic />} label="Mute on Entry">
+          <MetaRow icon={<Mic />} label="Mute on entry">
             <Paragraph.sm>{meeting.muteOnEntry ? "On" : "Off"}</Paragraph.sm>
           </MetaRow>
 
-          <MetaRow icon={<MessageCircle />} label="Continuous Chat">
+          <MetaRow icon={<MessageCircle />} label="Continuous chat">
             <Paragraph.sm>{meeting.continuousChat ? "Enabled" : "Disabled"}</Paragraph.sm>
           </MetaRow>
         </div>
-      </div>
+      </DetailPage.Section>
 
       {/* Join Link */}
       {meeting.joinUrl && (
         <>
-          <Divider className="my-2" />
-          <div className="p-4">
-            <Label.md className="block pb-3">Join Link</Label.md>
+          <DetailPage.Divider />
+          <DetailPage.Section>
+            <Label.md className="block pb-3">Join link</Label.md>
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Paragraph.sm className="text-tertiary truncate flex-1">{meeting.joinUrl}</Paragraph.sm>
                 <Button.Icon
+                  aria-label="Copy join link"
                   variant="ghost"
                   icon={copiedField === "join" ? <Check className="text-utility-green-700" /> : <Copy />}
-                  onClick={() => handleCopy(meeting.joinUrl!, "join")}
+                  onClick={actions.copyJoinUrl}
                 />
-                <a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer">
-                  <Button.Icon variant="ghost" icon={<ExternalLink />} />
-                </a>
+                <Button.IconLink render={<a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open join link" variant="ghost" icon={<ExternalLink />} />
               </div>
 
               {meeting.password && (
@@ -220,49 +144,35 @@ export function MeetingDetailScreen() {
                   <div className="flex items-center gap-1">
                     <Paragraph.sm className="font-mono">{meeting.password}</Paragraph.sm>
                     <Button.Icon
+                      aria-label="Copy passcode"
                       variant="ghost"
                       icon={copiedField === "pass" ? <Check className="text-utility-green-700" /> : <Copy />}
-                      onClick={() => handleCopy(meeting.password!, "pass")}
+                      onClick={actions.copyPassword}
                     />
                   </div>
                 </MetaRow>
               )}
             </div>
-          </div>
+          </DetailPage.Section>
         </>
       )}
 
       <MeetingModal
         open={editOpen}
-        onOpenChange={setEditOpen}
-        onSubmit={handleUpdate}
+        onOpenChange={actions.setEditOpen}
+        onSubmit={actions.update}
         meeting={meeting}
       />
 
-      <Modal open={deleteOpen} onOpenChange={(o) => { if (!o) setDeleteOpen(false) }}>
-        <Modal.Portal>
-          <Modal.Backdrop />
-          <Modal.Positioner>
-            <Modal.Panel>
-              <Modal.Header>
-                <Label.md>Delete Meeting</Label.md>
-              </Modal.Header>
-              <Modal.Content className="p-4 flex-row gap-4">
-                <TriangleAlert className="size-8 shrink-0 text-utility-red-600" />
-                <Paragraph.sm className="text-secondary">
-                  Are you sure you want to delete this meeting? This will also remove it from Zoom. This action cannot be undone.
-                </Paragraph.sm>
-              </Modal.Content>
-              <Modal.Footer className="justify-end">
-                <Button variant="secondary" onClick={() => setDeleteOpen(false)}>Cancel</Button>
-                <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
-                  {isDeleting ? "Deleting..." : "Delete Meeting"}
-                </Button>
-              </Modal.Footer>
-            </Modal.Panel>
-          </Modal.Positioner>
-        </Modal.Portal>
-      </Modal>
-    </section>
+      <ConfirmationDialog
+        open={deleteOpen}
+        onOpenChange={actions.setDeleteOpen}
+        title="Delete meeting?"
+        description="This also removes the meeting from Zoom. This action cannot be undone."
+        confirmLabel="Delete meeting"
+        isConfirming={isDeleting}
+        onConfirm={actions.remove}
+      />
+    </DetailPage>
   )
 }

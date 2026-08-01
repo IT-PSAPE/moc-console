@@ -3,7 +3,7 @@ import { Button } from '@moc/ui/components/controls/button'
 import { Input } from '@moc/ui/components/form/input'
 import { FormLabel } from '@moc/ui/components/form/form-label'
 import { Label } from '@moc/ui/components/display/text'
-import { useCallback, useState } from 'react'
+import { useCreateChecklistForm } from './use-create-checklist-form'
 
 type CreateChecklistModalProps = {
     open: boolean
@@ -11,49 +11,40 @@ type CreateChecklistModalProps = {
     onCreate: (checklist: { name: string; description: string }) => void
 }
 
-const initialState = { name: '', description: '' }
-
 export function CreateChecklistModal({ open, onOpenChange, onCreate }: CreateChecklistModalProps) {
-    const [form, setForm] = useState(initialState)
-
-    const resetForm = useCallback(() => setForm(initialState), [])
-
-    const canSubmit = form.name.trim().length > 0
-
-    const handleSubmit = useCallback(() => {
-        if (!canSubmit) return
-        onCreate({
-            name: form.name.trim(),
-            description: form.description.trim(),
-        })
-        resetForm()
-    }, [canSubmit, form, onCreate, resetForm])
+    const { state, actions } = useCreateChecklistForm(onOpenChange, onCreate)
 
     return (
-        <Modal open={open} onOpenChange={(next) => { onOpenChange(next); if (!next) resetForm() }}>
+        <Modal open={open} onOpenChange={actions.changeOpen}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
                     <Modal.FullScreenPanel className="w-full md:max-w-md">
                         <Modal.Header>
-                            <Label.md>New Checklist</Label.md>
+                            <Label.md>New checklist</Label.md>
                         </Modal.Header>
                         <Modal.Content>
                             <div className="flex flex-col gap-4 p-4">
                                 <div className="flex flex-col gap-1.5">
                                     <FormLabel label="Name" required />
                                     <Input
+                                        aria-label="Checklist name"
+                                        name="checklist-name"
+                                        autoComplete="off"
                                         placeholder="Checklist name"
-                                        value={form.name}
-                                        onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                                        value={state.form.name}
+                                        onChange={actions.changeName}
                                     />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                     <FormLabel label="Description" optional />
                                     <Input
+                                        aria-label="Checklist description"
+                                        name="checklist-description"
+                                        autoComplete="off"
                                         placeholder="Brief description"
-                                        value={form.description}
-                                        onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                                        value={state.form.description}
+                                        onChange={actions.changeDescription}
                                     />
                                 </div>
                             </div>
@@ -62,7 +53,7 @@ export function CreateChecklistModal({ open, onOpenChange, onCreate }: CreateChe
                             <Modal.Close>
                                 <Button variant="secondary">Cancel</Button>
                             </Modal.Close>
-                            <Button onClick={handleSubmit} disabled={!canSubmit}>Create</Button>
+                            <Button onClick={actions.submit} disabled={!state.canSubmit}>Create</Button>
                         </Modal.Footer>
                     </Modal.FullScreenPanel>
                 </Modal.Positioner>

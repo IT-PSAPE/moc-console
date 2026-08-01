@@ -1,4 +1,4 @@
-import { Card } from "@moc/ui/components/display/card";
+import { GroupedList } from "@moc/ui/components/display/grouped-list";
 import { Indicator } from "@moc/ui/components/display/indicator";
 import { Label } from "@moc/ui/components/display/text";
 import { BookingItem } from "./booking-item";
@@ -7,25 +7,25 @@ import { bookingStatusGroup } from "@moc/types/equipment";
 
 export function BookingListView({ bookings }: { bookings: Booking[] }) {
   return (
-    <div className="flex flex-col gap-4">
+    <GroupedList>
       {bookingStatusGroup.map((group) => {
         const items = bookings.filter((b) => b.status === group.key);
         if (items.length === 0) return null;
         return (
-          <Card key={group.key}>
-            <Card.Header tight className="gap-1.5">
+          <GroupedList.Group key={group.key}>
+            <GroupedList.Header>
               <Indicator color={group.color} className="size-6" />
               <Label.sm>{group.label}</Label.sm>
               <Label.sm className="text-quaternary ml-auto">{items.length}</Label.sm>
-            </Card.Header>
-            <Card.Content ghost className="flex flex-col gap-1.5">
+            </GroupedList.Header>
+            <GroupedList.Content>
               {items.map((booking) => (
                 <BookingItem key={booking.id} booking={booking} />
               ))}
-            </Card.Content>
-          </Card>
+            </GroupedList.Content>
+          </GroupedList.Group>
         );
       })}
-    </div>
+    </GroupedList>
   );
 }

@@ -32,11 +32,10 @@ function LinkButton({ variant = 'ghost' }: { variant?: IconVariant }) {
   return (
     <Button.Icon
       variant={variant}
-      icon={state.isSharingLink ? <Loader className="animate-spin" /> : <Share2 />}
+      icon={state.isSharingLink ? <Loader className="animate-spin motion-reduce:animate-none" /> : <Share2 />}
       onClick={actions.shareLink}
       disabled={state.isSharingLink || state.isSharingScreenshot}
       aria-label="Share request link"
-      title="Share request link"
     />
   )
 }
@@ -47,11 +46,10 @@ function ScreenshotButton({ variant = 'ghost' }: { variant?: IconVariant }) {
   return (
     <Button.Icon
       variant={variant}
-      icon={state.isSharingScreenshot ? <Loader className="animate-spin" /> : <ImageUp />}
+      icon={state.isSharingScreenshot ? <Loader className="animate-spin motion-reduce:animate-none" /> : <ImageUp />}
       onClick={actions.shareScreenshot}
       disabled={state.isSharingLink || state.isSharingScreenshot}
       aria-label="Share request screenshot"
-      title="Share request screenshot"
     />
   )
 }

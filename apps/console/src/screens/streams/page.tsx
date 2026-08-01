@@ -1,44 +1,45 @@
-import { useState } from "react"
-import { Header } from "@moc/ui/components/display/header"
+import type { ChangeEvent } from "react"
+import { Page } from "@moc/ui/components/layout/page"
 import { Input } from "@moc/ui/components/form/input"
-import { Label, Paragraph, Title } from "@moc/ui/components/display/text"
 import { YouTubeStreamsView } from "@/features/streams/youtube-streams"
 import { ZoomMeetingsView } from "@/features/streams/zoom-meetings"
 import { Search } from "lucide-react"
+import { useStreamsScreen } from "./use-streams-screen"
 
 export function StreamsScreen() {
-  const [searchQuery, setSearchQuery] = useState("")
+  const { state, actions } = useStreamsScreen()
+
+  function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
+    actions.setSearchQuery(event.target.value)
+  }
 
   return (
-    <section>
-      <Header className="p-2 pt-8 mx-auto max-w-content">
-        <Header.Lead className="gap-2">
-          <Title.h6>Streams</Title.h6>
-          <Paragraph.sm className="text-tertiary max-w-2xl">
-            Manage your live streams and scheduled meetings.
-          </Paragraph.sm>
-        </Header.Lead>
-      </Header>
+    <Page>
+      <Page.Header>
+        <Page.Heading>
+          <Page.Title>Streams</Page.Title>
+        </Page.Heading>
+      </Page.Header>
 
-      <div className="flex flex-col gap-4 p-2 pt-0 mx-auto w-full max-w-content">
-        <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
-          <Header.Lead className="gap-2">
-            <Label.md>Live</Label.md>
-          </Header.Lead>
-          <Header.Trail className="gap-2 flex-1 justify-end">
+      <Page.Toolbar>
+          <div className="flex flex-1 justify-end">
             <Input
+              aria-label="Search streams and meetings"
+              name="stream-search"
+              autoComplete="off"
               icon={<Search />}
-              placeholder="Search streams and meetings..."
+              placeholder="Search streams and meetings…"
               className="w-full max-w-md"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={state.searchQuery}
+              onChange={handleSearchChange}
             />
-          </Header.Trail>
-        </Header>
+          </div>
+      </Page.Toolbar>
 
-        <YouTubeStreamsView searchQuery={searchQuery} />
-        <ZoomMeetingsView searchQuery={searchQuery} />
-      </div>
-    </section>
+      <Page.Content className="flex flex-col gap-4">
+        <YouTubeStreamsView searchQuery={state.searchQuery} />
+        <ZoomMeetingsView searchQuery={state.searchQuery} />
+      </Page.Content>
+    </Page>
   )
 }

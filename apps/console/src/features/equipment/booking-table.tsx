@@ -58,7 +58,6 @@ export function BookingTableView({ bookings }: { bookings: Booking[] }) {
         columns={columns}
         emptyMessage="No bookings found"
         onRowClick={(row) => setSelected(row)}
-        className="rounded-lg border border-secondary overflow-hidden"
       />
       <Drawer open={!!selected} onOpenChange={handleOpenChange}>
         {selected && (

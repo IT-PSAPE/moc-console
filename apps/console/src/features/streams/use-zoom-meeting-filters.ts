@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/streams/zoom"
 
 export type ZoomMeetingSortField = "topic" | "startTime" | "createdAt" | "duration"
@@ -86,34 +86,34 @@ export function useZoomMeetingFilters(meetings: ZoomMeeting[]) {
     return result
   }, [meetings, filters])
 
-  function setSearch(search: string) {
+  const setSearch = useCallback((search: string) => {
     setFilters((f) => ({ ...f, search }))
-  }
+  }, [])
 
-  function toggleRecurrenceType(type: ZoomRecurrenceType) {
+  const toggleRecurrenceType = useCallback((type: ZoomRecurrenceType) => {
     setFilters((f) => {
       const next = new Set(f.recurrenceTypes)
       if (next.has(type)) next.delete(type)
       else next.add(type)
       return { ...f, recurrenceTypes: next }
     })
-  }
+  }, [])
 
-  function setDateRange(start: string, end: string) {
+  const setDateRange = useCallback((start: string, end: string) => {
     setFilters((f) => ({ ...f, dateRange: { start, end } }))
-  }
+  }, [])
 
-  function setShowPast(showPast: boolean) {
+  const setShowPast = useCallback((showPast: boolean) => {
     setFilters((f) => ({ ...f, showPast }))
-  }
+  }, [])
 
-  function setSort(field: ZoomMeetingSortField, direction: SortDirection) {
+  const setSort = useCallback((field: ZoomMeetingSortField, direction: SortDirection) => {
     setFilters((f) => ({ ...f, sortField: field, sortDirection: direction }))
-  }
+  }, [])
 
-  function reset() {
+  const reset = useCallback(() => {
     setFilters(defaultFilters)
-  }
+  }, [])
 
   const hasActiveFilters =
     filters.recurrenceTypes.size > 0 ||

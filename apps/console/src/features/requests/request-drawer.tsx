@@ -3,20 +3,7 @@ import { Dropdown } from "@moc/ui/components/overlays/dropdown";
 import { Divider } from "@moc/ui/components/display/divider";
 import { Button } from "@moc/ui/components/controls/button";
 import { Title } from "@moc/ui/components/display/text";
-import {
-  fetchAssigneesByRequestId,
-  type ResolvedAssignee,
-} from "@/data/fetch-assignees";
-import {
-  addRequestAssignee,
-  removeRequestAssignee,
-  archiveRequest,
-  unarchiveRequest,
-  deleteRequest,
-} from "@/data/mutate-requests";
-import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import type { Request } from "@moc/types/requests";
-import { useRequestStore } from "./use-request-store";
 import { UnsavedChangesModal } from "./unsaved-changes-modal";
 import { DeleteRequestModal } from "./delete-request-modal";
 import { useRequests } from "./request-provider";
@@ -29,17 +16,16 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  RequestMetaFields,
-  RequestFiveW,
-  RequestNotes,
-  RequestFlow,
-  RequestAssigneeList,
-} from "./request-properties";
-import { getErrorMessage } from "@moc/utils/get-error-message";
+import { useRef, type RefObject } from "react";
+import { RequestAssigneeList } from "./request-assignee-list";
+import { RequestFiveW } from "./request-five-w";
+import { RequestFlow } from "./request-flow";
+import { RequestMetaFields } from "./request-meta-fields";
+import { RequestNotes } from "./request-notes";
 import { RequestShareActions } from "./request-share-actions";
+import { useRequestDetail } from "./use-request-detail";
+import { useDrawerClose } from "@/hooks/use-drawer-close";
+import { useDrawerEditorGuard } from "@/hooks/use-drawer-editor-guard";
 
 export type RequestDrawerProps = {
   request: Request;
@@ -76,216 +62,38 @@ function RequestDrawerContent({
   requestCloseRef,
 }: RequestDrawerProps) {
   const shareTargetRef = useRef<HTMLDivElement | null>(null);
-  const { state: drawerState, actions: drawerActions } = useDrawer();
-  const navigate = useNavigate();
-  const { toast } = useFeedback();
+  const { state: drawerState } = useDrawer();
   const {
-    actions: { syncRequest, removeRequest },
+    actions: { syncRequest },
   } = useRequests();
-  const [assignees, setAssignees] = useState<ResolvedAssignee[]>([]);
-  const [isLoadingAssignees, setIsLoadingAssignees] = useState(false);
-  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const closeDrawer = useDrawerClose(onRequestClose);
 
-  const store = useRequestStore(request, { syncRequest });
+  const detail = useRequestDetail({ request, syncRequest, assigneesEnabled: drawerState.isOpen, onArchiveChanged: closeDrawer, onDeleted: closeDrawer });
+  const { store } = detail;
 
-  // Sync dirty state to parent ref so RequestItem can intercept close
-  useEffect(() => {
-    if (isDirtyRef) isDirtyRef.current = store.state.isDirty;
-  }, [isDirtyRef, store.state.isDirty]);
-
-  // Register the "request close with modal" handler on the parent ref
-  useEffect(() => {
-    if (requestCloseRef) {
-      requestCloseRef.current = () => setShowUnsavedModal(true);
-    }
-    return () => {
-      if (requestCloseRef) requestCloseRef.current = null;
-    };
-  }, [requestCloseRef]);
-
-  useEffect(() => {
-    if (!drawerState.isOpen) return;
-    setIsLoadingAssignees(true);
-    fetchAssigneesByRequestId(request.id)
-      .then(setAssignees)
-      .finally(() => setIsLoadingAssignees(false));
-  }, [drawerState.isOpen, request.id]);
-
-  const closeDrawer = useCallback(() => {
-    if (onRequestClose) {
-      onRequestClose();
-      return;
-    }
-    drawerActions.close();
-  }, [onRequestClose, drawerActions]);
-
-  function handleOpenFullPage() {
-    if (store.state.isDirty) {
-      setShowUnsavedModal(true);
-      return;
-    }
-    closeDrawer();
-    navigate(`/requests/${request.id}`);
-  }
-
-  const handleClose = useCallback(() => {
-    if (store.state.isDirty) {
-      setShowUnsavedModal(true);
-      return;
-    }
-    closeDrawer();
-  }, [store.state.isDirty, closeDrawer]);
-
-  async function handleAddMember(userId: string, duty: string) {
-    try {
-      await addRequestAssignee(request.id, userId, duty);
-      const updated = await fetchAssigneesByRequestId(request.id);
-      setAssignees(updated);
-    } catch (error) {
-      toast({
-        title: "Failed to add member",
-        description: getErrorMessage(
-          error,
-          "The request member could not be added.",
-        ),
-        variant: "error",
-      });
-    }
-  }
-
-  async function handleRemoveMember(userId: string) {
-    try {
-      await removeRequestAssignee(request.id, userId);
-      const updated = await fetchAssigneesByRequestId(request.id);
-      setAssignees(updated);
-    } catch (error) {
-      toast({
-        title: "Failed to remove member",
-        description: getErrorMessage(
-          error,
-          "The request member could not be removed.",
-        ),
-        variant: "error",
-      });
-    }
-  }
-
-  const handleSave = useCallback(async () => {
-    try {
-      await store.actions.save();
-      toast({ title: "Request saved", variant: "success" });
-    } catch (error) {
-      toast({
-        title: "Failed to save request",
-        description: getErrorMessage(error, "The request could not be saved."),
-        variant: "error",
-      });
-    }
-  }, [store.actions, toast]);
-
-  // Modal actions
-  async function handleModalSave() {
-    try {
-      await store.actions.save();
-      toast({ title: "Request saved", variant: "success" });
-      setShowUnsavedModal(false);
-      closeDrawer();
-    } catch (error) {
-      toast({
-        title: "Failed to save request",
-        description: getErrorMessage(error, "The request could not be saved."),
-        variant: "error",
-      });
-    }
-  }
-
-  function handleModalDiscard() {
-    store.actions.discard();
-    setShowUnsavedModal(false);
-    closeDrawer();
-  }
-
-  function handleModalCancel() {
-    setShowUnsavedModal(false);
-  }
-
-  function handleDeleteModalOpen() {
-    setShowDeleteModal(true);
-  }
-
-  function handleDeleteModalClose() {
-    setShowDeleteModal(false);
-  }
-
-  async function handleArchiveToggle() {
-    try {
-      const updatedAt = new Date().toISOString();
-      if (request.status === "archived") {
-        await unarchiveRequest(request.id);
-        syncRequest({ ...request, status: "not_started", updatedAt });
-        toast({ title: "Request unarchived", variant: "success" });
-      } else {
-        await archiveRequest(request.id);
-        syncRequest({ ...request, status: "archived", updatedAt });
-        toast({ title: "Request archived", variant: "success" });
-      }
-      closeDrawer();
-    } catch (error) {
-      toast({
-        title: "Failed to update request",
-        description: getErrorMessage(
-          error,
-          "The request status could not be updated.",
-        ),
-        variant: "error",
-      });
-    }
-  }
-
-  async function handleDelete() {
-    setIsDeleting(true);
-    try {
-      await deleteRequest(request.id);
-      removeRequest(request.id);
-      toast({ title: "Request deleted", variant: "success" });
-      setShowDeleteModal(false);
-      closeDrawer();
-    } catch (error) {
-      toast({
-        title: "Failed to delete request",
-        description: getErrorMessage(
-          error,
-          "The request could not be deleted.",
-        ),
-        variant: "error",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  }
+  const guard = useDrawerEditorGuard({ close: closeDrawer, discard: store.actions.discard, href: `/requests/${request.id}`, isDirty: store.state.isDirty, isDirtyRef, requestCloseRef, save: detail.actions.handleSave });
 
   return (
     <>
       {/* Toolbar */}
       <RequestShareActions.Root request={store.state.draft} targetRef={shareTargetRef}>
         <Drawer.Header className="flex items-center gap-1">
-          <Button.Icon variant="ghost" icon={<X />} onClick={handleClose} />
+          <Button.Icon aria-label="Close request" variant="ghost" icon={<X />} onClick={guard.actions.requestClose} />
           <Button.Icon
             variant="ghost"
+            aria-label="Open full page"
             icon={<Maximize2 />}
-            onClick={handleOpenFullPage}
+            onClick={guard.actions.openFullPage}
           />
           <div className="flex-1" />
           <RequestShareActions.LinkButton />
           <RequestShareActions.ScreenshotButton />
           <Dropdown placement="bottom">
             <Dropdown.Trigger>
-              <Button.Icon variant="ghost" icon={<EllipsisVertical />} />
+              <Button.Icon aria-label="More request actions" variant="ghost" icon={<EllipsisVertical />} />
             </Dropdown.Trigger>
             <Dropdown.Panel>
-              <Dropdown.Item onSelect={handleArchiveToggle}>
+              <Dropdown.Item onSelect={detail.actions.handleArchiveToggle}>
                 {request.status === "archived" ? (
                   <>
                     <ArchiveRestore className="size-4" />
@@ -299,7 +107,7 @@ function RequestDrawerContent({
               )}
               </Dropdown.Item>
               <Dropdown.Separator />
-              <Dropdown.Item onSelect={handleDeleteModalOpen}>
+              <Dropdown.Item onSelect={detail.actions.openDeleteModal}>
                 <Trash2 className="size-4 text-utility-red-600" />
                 <span className="text-utility-red-600">Delete</span>
               </Dropdown.Item>
@@ -341,13 +149,13 @@ function RequestDrawerContent({
             )}
 
             <Divider className="my-6" />
-            {isLoadingAssignees ? (
+            {detail.isLoadingAssignees ? (
               <LoadingSpinner className="py-6" />
             ) : (
               <RequestAssigneeList
-                assignees={assignees}
-                onAddMember={handleAddMember}
-                onRemoveMember={handleRemoveMember}
+                assignees={detail.assignees}
+                onAddMember={detail.actions.handleAddMember}
+                onRemoveMember={detail.actions.handleRemoveMember}
                 className="px-4"
               />
             )}
@@ -361,27 +169,27 @@ function RequestDrawerContent({
           <Button variant="ghost" onClick={store.actions.discard}>
             Discard
           </Button>
-          <Button onClick={handleSave} disabled={store.state.isSaving}>
-            {store.state.isSaving ? "Saving..." : "Save"}
+          <Button onClick={detail.actions.handleSave} disabled={store.state.isSaving}>
+            {store.state.isSaving ? "Saving…" : "Save"}
           </Button>
         </Drawer.Footer>
       )}
 
       {/* Unsaved changes modal */}
       <UnsavedChangesModal
-        open={showUnsavedModal}
-        onSave={handleModalSave}
-        onDiscard={handleModalDiscard}
-        onCancel={handleModalCancel}
+        open={guard.state.isPromptOpen}
+        onSave={guard.actions.saveAndClose}
+        onDiscard={guard.actions.discardAndClose}
+        onCancel={guard.actions.cancel}
         isSaving={store.state.isSaving}
       />
 
       {/* Delete confirmation modal */}
       <DeleteRequestModal
-        open={showDeleteModal}
-        onDelete={handleDelete}
-        onCancel={handleDeleteModalClose}
-        isDeleting={isDeleting}
+        open={detail.showDeleteModal}
+        onDelete={detail.actions.handleDelete}
+        onCancel={detail.actions.closeDeleteModal}
+        isDeleting={detail.isDeleting}
       />
     </>
   );

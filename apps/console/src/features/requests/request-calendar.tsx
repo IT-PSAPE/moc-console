@@ -8,6 +8,8 @@ import { categoryColor, categoryLabel, statusColor, statusLabel } from "@moc/typ
 import { RequestDrawer } from "./request-drawer";
 import { useMemo } from "react";
 import { Circle } from "lucide-react";
+import { ResponsiveDrawerTrigger } from "@/features/responsive-drawer-trigger";
+import { routes } from "@/screens/console-routes";
 
 const circleColorMap: Record<string, string> = {
     red: "fill-error text-error",
@@ -34,7 +36,7 @@ export function RequestCalendarView({ requests }: { requests: Request[] }) {
     const events = useMemo(() => toCalendarEvents(requests), [requests]);
 
     return (
-        <div className='p-2 pt-0 mx-auto w-full max-w-content'>
+        <div>
             <Calendar
                 events={events}
                 cellDrawer={{
@@ -44,9 +46,8 @@ export function RequestCalendarView({ requests }: { requests: Request[] }) {
 
                         const item = (
                             <div
-                                key={request.id}
                                 className={cn(
-                                    "flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-secondary/50 transition-colors",
+                                    "flex items-center gap-3 px-4 py-3",
                                     index > 0 && "border-t border-secondary",
                                 )}
                             >
@@ -67,7 +68,9 @@ export function RequestCalendarView({ requests }: { requests: Request[] }) {
 
                         return (
                             <Drawer key={request.id}>
-                                <Drawer.Trigger>{item}</Drawer.Trigger>
+                                <ResponsiveDrawerTrigger mobileHref={`/${routes.requests}/${request.id}`} className="w-full text-left hover:bg-secondary/50">
+                                    {item}
+                                </ResponsiveDrawerTrigger>
                                 <RequestDrawer request={request} />
                             </Drawer>
                         );

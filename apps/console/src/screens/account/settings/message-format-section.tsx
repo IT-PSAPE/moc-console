@@ -1,178 +1,45 @@
-import { Section } from "@moc/ui/components/display/section";
-import { Divider } from "@moc/ui/components/display/divider";
-import { Select } from "@moc/ui/components/form/select";
-import { Label, Paragraph } from "@moc/ui/components/display/text";
-import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
-import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
-import { useWorkspace } from "@/lib/workspace-context";
-import {
-    DATE_FORMAT_OPTIONS,
-    DEFAULT_DATE_FORMAT,
-    DEFAULT_TIMEZONE,
-    formatInstant,
-    type DateFormatPreset,
-} from "@moc/notifications";
-import {
-    fetchNotificationSettings,
-    updateMessageFormat,
-} from "@/data/notification-settings";
-import { useCallback, useEffect, useState } from "react";
+import { Section } from '@moc/ui/components/display/section'
+import { Divider } from '@moc/ui/components/display/divider'
+import { Select } from '@moc/ui/components/form/select'
+import { Label, Paragraph } from '@moc/ui/components/display/text'
+import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
+import { DATE_FORMAT_OPTIONS, formatInstant } from '@moc/notifications'
+import { useMessageFormat } from './use-message-format'
 
-const COMMON_TIMEZONES = [
-    "Africa/Harare",
-    "Africa/Johannesburg",
-    "Africa/Lagos",
-    "Africa/Nairobi",
-    "Europe/London",
-    "Europe/Berlin",
-    "America/New_York",
-    "America/Chicago",
-    "America/Denver",
-    "America/Los_Angeles",
-    "Asia/Dubai",
-    "Asia/Shanghai",
-    "Asia/Tokyo",
-    "Australia/Sydney",
-    "UTC",
-];
-
-// A fixed instant (a Thursday evening) used purely to render the live
-// "e.g. …" previews next to each control.
-const PREVIEW_ISO = "2026-05-21T17:00:00Z";
-const DATE_FORMAT_SELECT_ITEMS = DATE_FORMAT_OPTIONS.map((option) => ({
-    label: `${option.label} — ${option.example}`,
-    value: option.value,
-}));
-
-function errorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : "Unknown error";
-}
+const COMMON_TIMEZONES = ['Africa/Harare', 'Africa/Johannesburg', 'Africa/Lagos', 'Africa/Nairobi', 'Europe/London', 'Europe/Berlin', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Asia/Dubai', 'Asia/Shanghai', 'Asia/Tokyo', 'Australia/Sydney', 'UTC']
+const PREVIEW_ISO = '2026-05-21T17:00:00Z'
+const DATE_FORMAT_SELECT_ITEMS = DATE_FORMAT_OPTIONS.map((option) => ({ label: `${option.label} — ${option.example}`, value: option.value }))
 
 export function MessageFormatSection() {
-    const { toast } = useFeedback();
-    const { currentWorkspaceId } = useWorkspace();
-
-    const [timezone, setTimezone] = useState(DEFAULT_TIMEZONE);
-    const [dateFormat, setDateFormat] = useState<DateFormatPreset>(DEFAULT_DATE_FORMAT);
-    const [isLoading, setIsLoading] = useState(true);
-
-    const load = useCallback(async () => {
-        if (!currentWorkspaceId) {
-            setIsLoading(false);
-            return;
-        }
-        setIsLoading(true);
-        try {
-            const settings = await fetchNotificationSettings(currentWorkspaceId);
-            setTimezone(settings.timezone);
-            setDateFormat(settings.dateFormat);
-        } catch (error) {
-            toast({
-                title: "Couldn't load formatting settings",
-                description: errorMessage(error),
-                variant: "error",
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [currentWorkspaceId, toast]);
-
-    useEffect(() => {
-        void load();
-    }, [load]);
-
-    const save = useCallback(
-        async (nextTimezone: string, nextFormat: DateFormatPreset) => {
-            if (!currentWorkspaceId) return;
-            try {
-                await updateMessageFormat(currentWorkspaceId, nextTimezone, nextFormat);
-                toast({ title: "Message format updated", variant: "success" });
-            } catch (error) {
-                toast({
-                    title: "Couldn't update format",
-                    description: errorMessage(error),
-                    variant: "error",
-                });
-                void load();
-            }
-        },
-        [currentWorkspaceId, load, toast],
-    );
-
-    const handleTimezone = useCallback(
-        (next: string | null) => {
-            if (next === null) return;
-            setTimezone(next);
-            void save(next, dateFormat);
-        },
-        [dateFormat, save],
-    );
-
-    const handleDateFormat = useCallback(
-        (next: DateFormatPreset | null) => {
-            if (next === null) return;
-            setDateFormat(next);
-            void save(timezone, next);
-        },
-        [timezone, save],
-    );
-
-    // Keep a non-listed saved zone selectable rather than silently blank.
-    const timezoneOptions = COMMON_TIMEZONES.includes(timezone)
-        ? COMMON_TIMEZONES
-        : [timezone, ...COMMON_TIMEZONES];
-    const timezoneSelectItems = timezoneOptions.map((value) => ({ label: value, value }));
+    const { state, actions } = useMessageFormat()
+    const timezoneOptions = COMMON_TIMEZONES.includes(state.timezone) ? COMMON_TIMEZONES : [state.timezone, ...COMMON_TIMEZONES]
+    const timezoneItems = timezoneOptions.map((value) => ({ label: value, value }))
 
     return (
         <Section>
-            <Section.Header
-                title="Message formatting"
-                description="How dates and times appear in Telegram notifications. Applies to every message — group posts, assignment DMs, and stale-item alerts."
-            />
-
+            <Section.Header title="Message formatting" />
             <Divider className="my-6" />
-
             <Section.Body className="gap-6">
-                {isLoading ? (
-                    <LoadingSpinner className="py-8" />
-                ) : (
+                {state.isLoading ? <LoadingSpinner className="py-8" /> : (
                     <>
-                        <div className="flex flex-col gap-2 max-w-xs">
+                        <div className="flex max-w-xs flex-col gap-2">
                             <Label.sm>Time zone</Label.sm>
-                            <Select.Root items={timezoneSelectItems} value={timezone} onValueChange={handleTimezone}>
+                            <Select.Root name="notification-timezone" items={timezoneItems} value={state.timezone} onValueChange={actions.changeTimezone}>
                                 <Select.Trigger aria-label="Time zone" />
-                                <Select.Content>
-                                {timezoneOptions.map((tz) => (
-                                    <Select.Item key={tz} value={tz}>
-                                        {tz}
-                                    </Select.Item>
-                                ))}
-                                </Select.Content>
+                                <Select.Content>{timezoneOptions.map((timezone) => <Select.Item key={timezone} value={timezone}>{timezone}</Select.Item>)}</Select.Content>
                             </Select.Root>
-                            <Paragraph.xs className="text-quaternary">
-                                All times in messages are shown in this zone.
-                            </Paragraph.xs>
                         </div>
-
-                        <div className="flex flex-col gap-2 max-w-xs">
+                        <div className="flex max-w-xs flex-col gap-2">
                             <Label.sm>Date format</Label.sm>
-                            <Select.Root items={DATE_FORMAT_SELECT_ITEMS} value={dateFormat} onValueChange={handleDateFormat}>
+                            <Select.Root name="notification-date-format" items={DATE_FORMAT_SELECT_ITEMS} value={state.dateFormat} onValueChange={actions.changeDateFormat}>
                                 <Select.Trigger aria-label="Date format" />
-                                <Select.Content>
-                                {DATE_FORMAT_OPTIONS.map((option) => (
-                                    <Select.Item key={option.value} value={option.value}>
-                                        {option.label} — {option.example}
-                                    </Select.Item>
-                                ))}
-                                </Select.Content>
+                                <Select.Content>{DATE_FORMAT_OPTIONS.map((option) => <Select.Item key={option.value} value={option.value}>{option.label} — {option.example}</Select.Item>)}</Select.Content>
                             </Select.Root>
-                            <Paragraph.xs className="text-quaternary">
-                                Preview: {formatInstant(PREVIEW_ISO, timezone, dateFormat)}
-                            </Paragraph.xs>
+                            <Paragraph.xs className="text-quaternary">Preview: {formatInstant(PREVIEW_ISO, state.timezone, state.dateFormat)}</Paragraph.xs>
                         </div>
                     </>
                 )}
             </Section.Body>
         </Section>
-    );
+    )
 }

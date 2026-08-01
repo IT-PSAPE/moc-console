@@ -58,13 +58,12 @@ export function RequestTableView({ requests }: { requests: Request[] }) {
     const visible = useMemo(() => requests.filter((r) => r.status !== "archived"), [requests]);
 
     return (
-        <div className="p-2 pt-0 mx-auto w-full max-w-content">
+        <div>
             <DataTable
                 data={visible}
                 columns={columns}
                 emptyMessage="No requests"
                 onRowClick={(row) => setSelected(row)}
-                className="rounded-lg border border-secondary overflow-hidden"
             />
             <Drawer open={!!selected} onOpenChange={handleOpenChange}>
                 {selected && (

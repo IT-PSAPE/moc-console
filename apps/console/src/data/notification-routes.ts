@@ -48,6 +48,18 @@ export async function fetchNotificationRoutes(workspaceId: string): Promise<Noti
   return ((data ?? []) as Row[]).map(rowToRoute);
 }
 
+export async function fetchNotificationRoutesForTarget(workspaceId: string, groupChatId: string, threadId: number | null): Promise<NotificationRoute[]> {
+  let query = supabase
+    .from("notification_routes")
+    .select("id, workspace_id, event_type, group_chat_id, thread_id, enabled, created_at, updated_at")
+    .eq("workspace_id", workspaceId)
+    .eq("group_chat_id", groupChatId);
+  query = threadId === null ? query.is("thread_id", null) : query.eq("thread_id", threadId);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Row[]).map(rowToRoute);
+}
+
 export async function createNotificationRoute(params: {
   workspaceId: string;
   eventType: NotificationEventKey;

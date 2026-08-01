@@ -1,16 +1,15 @@
-import { Button } from "@moc/ui/components/controls/button";
-import { Divider } from "@moc/ui/components/display/divider";
-import { Label, Paragraph } from "@moc/ui/components/display/text";
+import { Label } from "@moc/ui/components/display/text";
 import { Checkbox } from "@moc/ui/components/form/checkbox";
 import { FormLabel } from "@moc/ui/components/form/form-label";
 import { Radio, RadioGroup } from "@moc/ui/components/form/radio";
 import { Tabs } from "@moc/ui/components/layout/tabs";
-import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { FilterDrawer } from "@moc/ui/components/overlays/filter-drawer";
 import { equipmentCategoryLabel, equipmentStatusLabel } from "@moc/types/equipment";
 import type { EquipmentCategory } from "@moc/types/equipment/category";
 import type { EquipmentStatus } from "@moc/types/equipment/status";
-import { RotateCcw, X } from "lucide-react";
+import type { ChangeEvent } from "react";
 import type { useEquipmentFilters } from "./use-equipment-filters";
+import { parseSortValue } from "@/utils/parse-sort-value";
 
 type EquipmentFilterDrawerProps = {
   filters: ReturnType<typeof useEquipmentFilters>;
@@ -21,21 +20,21 @@ export function EquipmentFilterDrawer({ filters }: EquipmentFilterDrawerProps) {
 
   const sortValue = `${state.sortField}-${state.sortDirection}`;
 
-  return (
-    <Drawer.Portal>
-      <Drawer.Backdrop />
-      <Drawer.Panel>
-        <Drawer.Header>
-          <div className="flex-1">
-            <Label.md>Filter & Sort</Label.md>
-            <Paragraph.xs className="text-tertiary">Narrow down and order your equipment</Paragraph.xs>
-          </div>
-          <Drawer.Close>
-            <Button.Icon variant="ghost" icon={<X />} />
-          </Drawer.Close>
-        </Drawer.Header>
+  function handleSortChange(value: string) {
+    const [field, direction] = parseSortValue(value);
+    setSort(field as Parameters<typeof setSort>[0], direction as Parameters<typeof setSort>[1]);
+  }
 
-        <Drawer.Content>
+  function handleCategoryChange(event: ChangeEvent<HTMLInputElement>) {
+    toggleCategory(event.target.value as EquipmentCategory);
+  }
+
+  function handleStatusChange(event: ChangeEvent<HTMLInputElement>) {
+    toggleStatus(event.target.value as EquipmentStatus);
+  }
+
+  return (
+    <FilterDrawer hasActiveFilters={hasActiveFilters} onReset={reset}>
           <Tabs defaultTab="filters">
             <Tabs.List>
               <Tabs.Tab value="filters">
@@ -48,98 +47,76 @@ export function EquipmentFilterDrawer({ filters }: EquipmentFilterDrawerProps) {
             <Tabs.Panels>
               {/* ── Filters ── */}
               <Tabs.Panel value="filters">
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Category</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                <FilterDrawer.Group label="Category">
+                  <FilterDrawer.Options>
                     {(Object.entries(equipmentCategoryLabel) as [EquipmentCategory, string][]).map(([key, label]) => (
                       <Checkbox
                         key={key}
                         checked={state.categories.has(key)}
-                        onChange={() => toggleCategory(key)}
+                        value={key}
+                        onChange={handleCategoryChange}
                       >
                         <FormLabel label={label} />
                       </Checkbox>
                     ))}
-                  </div>
-                </div>
-                <Divider />
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Status</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
+                <FilterDrawer.Group label="Status">
+                  <FilterDrawer.Options>
                     {(Object.entries(equipmentStatusLabel) as [EquipmentStatus, string][]).map(([key, label]) => (
                       <Checkbox
                         key={key}
                         checked={state.statuses.has(key)}
-                        onChange={() => toggleStatus(key)}
+                        value={key}
+                        onChange={handleStatusChange}
                       >
                         <FormLabel label={label} />
                       </Checkbox>
                     ))}
-                  </div>
-                </div>
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
               </Tabs.Panel>
 
               {/* ── Sort ── */}
               <Tabs.Panel value="sort">
                 <RadioGroup
                   value={sortValue}
-                  onValueChange={(value) => {
-                    const i = value.lastIndexOf("-");
-                    setSort(value.slice(0, i) as Parameters<typeof setSort>[0], value.slice(i + 1) as Parameters<typeof setSort>[1]);
-                  }}
+                  onValueChange={handleSortChange}
                 >
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Name</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                <FilterDrawer.Group label="Name">
+                  <FilterDrawer.Options>
                     <Radio value="name-asc">
                       <FormLabel label="A-Z" />
                     </Radio>
                     <Radio value="name-desc">
                       <FormLabel label="Z-A" />
                     </Radio>
-                  </div>
-                </div>
-                <Divider />
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Last Active</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
+                <FilterDrawer.Group label="Last Active">
+                  <FilterDrawer.Options>
                     <Radio value="lastActiveDate-asc">
                       <FormLabel label="Oldest first" />
                     </Radio>
                     <Radio value="lastActiveDate-desc">
                       <FormLabel label="Newest first" />
                     </Radio>
-                  </div>
-                </div>
-                <Divider />
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Category</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
+                <FilterDrawer.Group label="Category">
+                  <FilterDrawer.Options>
                     <Radio value="category-asc">
                       <FormLabel label="A-Z" />
                     </Radio>
                     <Radio value="category-desc">
                       <FormLabel label="Z-A" />
                     </Radio>
-                  </div>
-                </div>
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
                 </RadioGroup>
               </Tabs.Panel>
             </Tabs.Panels>
           </Tabs>
-        </Drawer.Content>
-
-        <Drawer.Footer className="*:w-full">
-          {hasActiveFilters && (
-            <Button variant="secondary" icon={<RotateCcw />} className="w-full" onClick={reset}>
-              Reset
-            </Button>
-          )}
-          <Drawer.Close>
-            <Button className="w-full">Done</Button>
-          </Drawer.Close>
-        </Drawer.Footer>
-      </Drawer.Panel>
-    </Drawer.Portal>
+    </FilterDrawer>
   );
 }

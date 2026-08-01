@@ -1,13 +1,9 @@
-import { useCallback, useState } from "react"
-import { useNavigate } from "react-router-dom"
 import { Drawer } from "@moc/ui/components/overlays/drawer"
 import { Button } from "@moc/ui/components/controls/button"
 import { Badge } from "@moc/ui/components/display/badge"
 import { Label, Paragraph, Title } from "@moc/ui/components/display/text"
 import { Divider } from "@moc/ui/components/display/divider"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
-import { useAuth } from "@/lib/auth-context"
-import { routes } from "@/screens/console-routes"
 import { zoomRecurrenceLabel } from "@moc/types/streams/zoom-constants"
 import type { ZoomMeeting } from "@moc/types/streams/zoom"
 import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
@@ -28,6 +24,7 @@ import {
   Trash2,
   X,
 } from "lucide-react"
+import { useMeetingDetailDrawer } from "./use-meeting-detail-drawer"
 
 type MeetingDetailDrawerProps = {
   meeting: ZoomMeeting | null
@@ -45,24 +42,7 @@ function formatDuration(minutes: number): string {
 }
 
 export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDelete }: MeetingDetailDrawerProps) {
-  const { role } = useAuth()
-  const navigate = useNavigate()
-  const [copiedField, setCopiedField] = useState<string | null>(null)
-
-  const canEdit = role?.can_update === true
-  const canDelete = role?.can_delete === true
-
-  const handleCopy = useCallback((text: string, field: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedField(field)
-    setTimeout(() => setCopiedField(null), 2000)
-  }, [])
-
-  const handleOpenFullPage = useCallback(() => {
-    if (!meeting) return
-    onOpenChange(false)
-    navigate(`/${routes.meetingDetail.replace(":id", meeting.id)}`)
-  }, [meeting, navigate, onOpenChange])
+  const drawer = useMeetingDetailDrawer(meeting, onOpenChange, onEdit, onDelete)
 
   if (!meeting) return null
 
@@ -74,14 +54,14 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
         <Drawer.Backdrop />
         <Drawer.Panel className="max-w-lg">
           <Drawer.Header className="flex items-center gap-1">
-            <Button.Icon variant="ghost" icon={<X />} onClick={() => onOpenChange(false)} />
-            <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={handleOpenFullPage} />
+            <Button.Icon aria-label="Close meeting" variant="ghost" icon={<X />} onClick={drawer.actions.close} />
+            <Button.Icon aria-label="Open full page" variant="ghost" icon={<Maximize2 />} onClick={drawer.actions.openFullPage} />
             <div className="flex-1" />
-            {canEdit && (
-              <Button.Icon variant="ghost" icon={<Pencil />} onClick={() => onEdit?.(meeting)} />
+            {drawer.meta.canEdit && (
+              <Button.Icon aria-label="Edit meeting" variant="ghost" icon={<Pencil />} onClick={drawer.actions.edit} />
             )}
-            {canDelete && (
-              <Button.Icon variant="ghost" icon={<Trash2 />} onClick={() => onDelete?.(meeting)} />
+            {drawer.meta.canDelete && (
+              <Button.Icon aria-label="Delete meeting" variant="ghost" icon={<Trash2 />} onClick={drawer.actions.remove} />
             )}
           </Drawer.Header>
 
@@ -122,15 +102,15 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
             <div className="px-4 space-y-3">
               <Label.md>Settings</Label.md>
 
-              <MetaRow icon={<ShieldCheck />} label="Waiting Room">
+              <MetaRow icon={<ShieldCheck />} label="Waiting room">
                 <Paragraph.xs>{meeting.waitingRoom ? "Enabled" : "Disabled"}</Paragraph.xs>
               </MetaRow>
 
-              <MetaRow icon={<Mic />} label="Mute on Entry">
+              <MetaRow icon={<Mic />} label="Mute on entry">
                 <Paragraph.xs>{meeting.muteOnEntry ? "On" : "Off"}</Paragraph.xs>
               </MetaRow>
 
-              <MetaRow icon={<MessageCircle />} label="Continuous Chat">
+              <MetaRow icon={<MessageCircle />} label="Continuous chat">
                 <Paragraph.xs>{meeting.continuousChat ? "Enabled" : "Disabled"}</Paragraph.xs>
               </MetaRow>
             </div>
@@ -139,19 +119,18 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
               <>
                 <Divider className="my-6" />
                 <div className="px-4 space-y-3">
-                  <Label.md>Join Link</Label.md>
+                  <Label.md>Join link</Label.md>
                   <div className="flex items-center gap-2">
                     <Paragraph.xs className="text-tertiary truncate flex-1">
                       {meeting.joinUrl}
                     </Paragraph.xs>
                     <Button.Icon
+                      aria-label="Copy join link"
                       variant="ghost"
-                      icon={copiedField === "join" ? <Check className="text-utility-green-700" /> : <Copy />}
-                      onClick={() => handleCopy(meeting.joinUrl!, "join")}
+                      icon={drawer.state.copiedField === "join" ? <Check className="text-utility-green-700" /> : <Copy />}
+                      onClick={drawer.actions.copyJoinUrl}
                     />
-                    <a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer">
-                      <Button.Icon variant="ghost" icon={<ExternalLink />} />
-                    </a>
+                    <Button.IconLink render={<a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open join link" variant="ghost" icon={<ExternalLink />} />
                   </div>
                 </div>
               </>
@@ -165,9 +144,10 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
                     <div className="flex items-center gap-1">
                       <Paragraph.xs className="font-mono">{meeting.password}</Paragraph.xs>
                       <Button.Icon
+                        aria-label="Copy passcode"
                         variant="ghost"
-                        icon={copiedField === "pass" ? <Check className="text-utility-green-700" /> : <Copy />}
-                        onClick={() => handleCopy(meeting.password!, "pass")}
+                        icon={drawer.state.copiedField === "pass" ? <Check className="text-utility-green-700" /> : <Copy />}
+                        onClick={drawer.actions.copyPassword}
                       />
                     </div>
                   </MetaRow>

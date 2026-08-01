@@ -32,8 +32,24 @@ export function StreamBasicFields({
   onPrivacyChange,
   onIsForKidsChange,
 }: StreamBasicFieldsProps) {
+  function handleTitleChange(event: ChangeEvent<HTMLInputElement>) {
+    onTitleChange(event.target.value)
+  }
+
+  function handleDescriptionChange(event: ChangeEvent<HTMLTextAreaElement>) {
+    onDescriptionChange(event.target.value)
+  }
+
   function handleScheduledStartChange(value: string) {
     onScheduledStartChange(value)
+  }
+
+  function handlePrivacyChange(value: string) {
+    onPrivacyChange(value as StreamPrivacy)
+  }
+
+  function handleIsForKidsChange(value: string) {
+    onIsForKidsChange(value === "yes")
   }
 
   return (
@@ -42,8 +58,11 @@ export function StreamBasicFields({
       <div className="flex flex-col gap-1.5">
         <FormLabel label="Title" required />
         <Input
+          aria-label="Stream title"
+          name="stream-title"
+          autoComplete="off"
           value={title}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => onTitleChange(e.target.value)}
+          onChange={handleTitleChange}
           placeholder="Stream title"
         />
       </div>
@@ -52,16 +71,19 @@ export function StreamBasicFields({
       <div className="flex flex-col gap-1.5">
         <FormLabel label="Description" />
         <TextArea
+          aria-label="Stream description"
+          name="stream-description"
           value={description}
-          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => onDescriptionChange(e.target.value)}
-          placeholder="Stream description..."
+          onChange={handleDescriptionChange}
+          placeholder="Stream description…"
           rows={3}
         />
       </div>
 
       {/* ─── Scheduled Start ─── */}
       <DateTimeFields
-        label="Scheduled Start"
+        label="Scheduled start"
+        name="scheduled-start"
         optional
         value={scheduledStartTime}
         onChange={handleScheduledStartChange}
@@ -74,7 +96,7 @@ export function StreamBasicFields({
         <SegmentedControl
           fill
           value={privacyStatus}
-          onValueChange={(v: string) => onPrivacyChange(v as StreamPrivacy)}
+          onValueChange={handlePrivacyChange}
         >
           {(Object.keys(streamPrivacyLabel) as StreamPrivacy[]).map((key) => (
             <SegmentedControl.Item key={key} value={key}>
@@ -90,7 +112,7 @@ export function StreamBasicFields({
         <SegmentedControl
           fill
           value={isForKids ? "yes" : "no"}
-          onValueChange={(v: string) => onIsForKidsChange(v === "yes")}
+          onValueChange={handleIsForKidsChange}
         >
           <SegmentedControl.Item value="no">No</SegmentedControl.Item>
           <SegmentedControl.Item value="yes">Yes</SegmentedControl.Item>

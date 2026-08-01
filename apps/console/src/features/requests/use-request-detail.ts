@@ -1,20 +1,22 @@
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
-import { fetchAssigneesByRequestId, type ResolvedAssignee } from '@/data/fetch-assignees'
-import { addRequestAssignee, archiveRequest, deleteRequest, removeRequestAssignee, unarchiveRequest } from '@/data/mutate-requests'
+import { archiveRequest, deleteRequest, unarchiveRequest } from '@/data/mutate-requests'
 import type { Request } from '@moc/types/requests'
 import { useCallback, useEffect, useState } from 'react'
 import { useBlocker, useNavigate } from 'react-router-dom'
 import { useRequestStore } from './use-request-store'
 import { useRequests } from './request-provider'
 import { getErrorMessage } from '@moc/utils/get-error-message'
+import { useRequestAssignees } from './use-request-assignees'
 
 type UseRequestDetailOptions = {
     request: Request
-    setAssignees: (assignees: ResolvedAssignee[]) => void
     syncRequest: (request: Request) => void
+    assigneesEnabled?: boolean
+    onArchiveChanged?: () => void
+    onDeleted?: () => void
 }
 
-export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequestDetailOptions) {
+export function useRequestDetail({ request, syncRequest, assigneesEnabled = true, onArchiveChanged, onDeleted }: UseRequestDetailOptions) {
     const navigate = useNavigate()
     const { toast } = useFeedback()
     const { actions: { removeRequest } } = useRequests()
@@ -23,6 +25,7 @@ export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequ
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
     const blocker = useBlocker(store.state.isDirty)
+    const assigneeStore = useRequestAssignees(request.id, assigneesEnabled)
 
     useEffect(() => {
         if (!store.state.isDirty) return
@@ -35,35 +38,14 @@ export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequ
         return () => window.removeEventListener('beforeunload', handleBeforeUnload)
     }, [store.state.isDirty])
 
-    const refreshAssignees = useCallback(async () => {
-        const updatedAssignees = await fetchAssigneesByRequestId(request.id)
-        setAssignees(updatedAssignees)
-    }, [request.id, setAssignees])
-
-    const handleAddMember = useCallback(async (userId: string, duty: string) => {
-        try {
-            await addRequestAssignee(request.id, userId, duty)
-            await refreshAssignees()
-        } catch (error) {
-            toast({ title: 'Failed to add member', description: getErrorMessage(error, 'The request member could not be added.'), variant: 'error' })
-        }
-    }, [refreshAssignees, request.id, toast])
-
-    const handleRemoveMember = useCallback(async (userId: string) => {
-        try {
-            await removeRequestAssignee(request.id, userId)
-            await refreshAssignees()
-        } catch (error) {
-            toast({ title: 'Failed to remove member', description: getErrorMessage(error, 'The request member could not be removed.'), variant: 'error' })
-        }
-    }, [refreshAssignees, request.id, toast])
-
     const handleSave = useCallback(async () => {
         try {
             await save()
             toast({ title: 'Request saved', variant: 'success' })
+            return true
         } catch (error) {
             toast({ title: 'Failed to save request', description: getErrorMessage(error, 'The request could not be saved.'), variant: 'error' })
+            return false
         }
     }, [save, toast])
 
@@ -93,16 +75,18 @@ export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequ
                 await unarchiveRequest(request.id)
                 syncRequest({ ...request, status: 'not_started', updatedAt })
                 toast({ title: 'Request unarchived', variant: 'success' })
+                onArchiveChanged?.()
                 return
             }
 
             await archiveRequest(request.id)
             syncRequest({ ...request, status: 'archived', updatedAt })
             toast({ title: 'Request archived', variant: 'success' })
+            onArchiveChanged?.()
         } catch (error) {
             toast({ title: 'Failed to update request', description: getErrorMessage(error, 'The request status could not be updated.'), variant: 'error' })
         }
-    }, [request, syncRequest, toast])
+    }, [onArchiveChanged, request, syncRequest, toast])
 
     const openDeleteModal = useCallback(() => {
         setShowDeleteModal(true)
@@ -120,13 +104,14 @@ export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequ
             removeRequest(request.id)
             toast({ title: 'Request deleted', variant: 'success' })
             setShowDeleteModal(false)
-            navigate('/requests')
+            if (onDeleted) onDeleted()
+            else navigate('/requests')
         } catch (error) {
             toast({ title: 'Failed to delete request', description: getErrorMessage(error, 'The request could not be deleted.'), variant: 'error' })
         } finally {
             setIsDeleting(false)
         }
-    }, [navigate, removeRequest, request.id, toast])
+    }, [navigate, onDeleted, removeRequest, request.id, toast])
 
     const handleContentChange = useCallback((content: string) => {
         updateField('content', content)
@@ -134,19 +119,21 @@ export function useRequestDetail({ request, setAssignees, syncRequest }: UseRequ
 
     return {
         blockerState: blocker.state,
+        assignees: assigneeStore.state.assignees,
+        isLoadingAssignees: assigneeStore.state.isLoading,
         isDeleting,
         showDeleteModal,
         store,
         actions: {
             closeDeleteModal,
-            handleAddMember,
+            handleAddMember: assigneeStore.actions.addMember,
             handleArchiveToggle,
             handleBlockerCancel,
             handleBlockerDiscard,
             handleBlockerSave,
             handleContentChange,
             handleDelete,
-            handleRemoveMember,
+            handleRemoveMember: assigneeStore.actions.removeMember,
             handleSave,
             openDeleteModal,
         },

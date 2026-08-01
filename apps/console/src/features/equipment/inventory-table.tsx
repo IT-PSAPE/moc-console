@@ -56,13 +56,12 @@ export function InventoryTableView({ equipment }: { equipment: Equipment[] }) {
     const visible = useMemo(() => equipment.filter((e) => e.status !== "maintenance"), [equipment]);
 
     return (
-        <div className="p-2 pt-0 mx-auto w-full max-w-content">
+        <div>
             <DataTable
                 data={visible}
                 columns={columns}
                 emptyMessage="No equipment found"
                 onRowClick={(row) => setSelected(row)}
-                className="rounded-lg border border-secondary overflow-hidden"
             />
             <Drawer open={!!selected} onOpenChange={handleOpenChange}>
                 {selected && (

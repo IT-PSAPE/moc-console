@@ -1,151 +1,93 @@
-import { useBreadcrumbOverride } from '@moc/ui/components/navigation/breadcrumb'
-import { Button } from '@moc/ui/components/controls/button'
-import { Divider } from '@moc/ui/components/display/divider'
-import { Dropdown } from '@moc/ui/components/overlays/dropdown'
-import { Header } from '@moc/ui/components/display/header'
-import { Label, Paragraph, Title } from '@moc/ui/components/display/text'
-import { Spinner } from '@moc/ui/components/feedback/spinner'
-import { Badge } from '@moc/ui/components/display/badge'
-import { Modal } from '@moc/ui/components/overlays/modal'
-import { InlineEditableText } from '@moc/ui/components/form/inline-editable-text'
-import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
-import { useChecklists } from '@/features/checklists/checklists-provider'
-import { ChecklistContent, getChecklistCounts, type AddRequest } from '@/features/checklists/checklist-content'
-import { useChecklistAssignees } from '@/features/checklists/use-checklist-assignees'
-import { TopBarActions } from '@/features/topbar'
-import type { Checklist } from '@moc/types/checklists'
-import { FolderPlus, ListChecks, Plus, SquarePlus, Trash2, TriangleAlert } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { routes } from '@/screens/console-routes'
+import { Link } from "react-router-dom"
+import { routes } from "@/screens/console-routes"
+import { ChecklistContent } from "@/features/checklists/checklist-content"
+import { TopBarActions } from "@/features/topbar"
+import { Button } from "@moc/ui/components/controls/button"
+import { Badge } from "@moc/ui/components/display/badge"
+import { Card } from "@moc/ui/components/display/card"
+import { Header } from "@moc/ui/components/display/header"
+import { Label, Paragraph } from "@moc/ui/components/display/text"
+import { EmptyState } from "@moc/ui/components/feedback/empty-state"
+import { Spinner } from "@moc/ui/components/feedback/spinner"
+import { InlineEditableText } from "@moc/ui/components/form/inline-editable-text"
+import { Page } from "@moc/ui/components/layout/page"
+import { DetailPage } from "@moc/ui/components/layout/detail-page"
+import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
+import { Dropdown } from "@moc/ui/components/overlays/dropdown"
+import { FolderPlus, ListChecks, Plus, SquarePlus, Trash2 } from "lucide-react"
+import { useChecklistDetail } from "./use-checklist-detail"
+import { ChecklistAssignees } from "@/features/checklists/checklist-assignees"
 
 export function ChecklistDetailScreen() {
-    const { id } = useParams<{ id: string }>()
-    const {
-        state: { checklists },
-        actions: { loadChecklists, syncChecklist, removeChecklist },
-    } = useChecklists()
-    const { toast } = useFeedback()
-    const navigate = useNavigate()
+  const { state, actions, meta } = useChecklistDetail()
+  const { checklist, counts } = meta
 
-    const checklist = checklists.find((c) => c.id === id) ?? null
-    const [addRequest, setAddRequest] = useState<AddRequest>(null)
-    const [deleteOpen, setDeleteOpen] = useState(false)
-    const { renderItemSlot } = useChecklistAssignees(id ?? '')
+  if (meta.isLoading && !checklist) {
+    return <Page><Page.Content width="readable" className="flex justify-center py-16"><Spinner size="lg" /></Page.Content></Page>
+  }
 
-    useBreadcrumbOverride(id ?? '', checklist?.name)
-
-    useEffect(() => {
-        loadChecklists()
-    }, [loadChecklists])
-
-    const handleChecklistUpdate = useCallback(async (nextChecklist: Checklist) => {
-        try {
-            await syncChecklist(nextChecklist)
-        } catch (error) {
-            toast({ title: 'Failed to save checklist', description: error instanceof Error ? error.message : 'The checklist could not be saved.', variant: 'error' })
-        }
-    }, [syncChecklist, toast])
-
-    if (!checklist) {
-        return (
-            <section className="flex justify-center py-16 mx-auto max-w-content-sm">
-                <Spinner size="lg" />
-            </section>
-        )
-    }
-
-    const { total, checked } = getChecklistCounts(checklist)
-    const destinationAfterDelete = checklist.kind === 'template' ? routes.checklistTemplates : routes.checklists
-
-    async function handleDelete() {
-        if (!id) return
-
-        try {
-            await removeChecklist(id)
-            toast({ title: 'Checklist deleted', variant: 'success' })
-            navigate(`/${destinationAfterDelete}`)
-        } catch (error) {
-            toast({ title: 'Failed to delete checklist', description: error instanceof Error ? error.message : 'The checklist could not be deleted.', variant: 'error' })
-        }
-    }
-
+  if (!checklist) {
     return (
-        <section className="mx-auto max-w-content-md">
-            <TopBarActions>
-                <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={() => setDeleteOpen(true)} />
-                <Dropdown placement="bottom">
-                    <Dropdown.Trigger>
-                        <Button.Icon variant="secondary" icon={<Plus />} />
-                    </Dropdown.Trigger>
-                    <Dropdown.Panel>
-                        <Dropdown.Item onSelect={() => setAddRequest({ type: 'item', target: 'top' })}>
-                            <SquarePlus className="size-4" />
-                            Item
-                        </Dropdown.Item>
-                        <Dropdown.Item onSelect={() => setAddRequest({ type: 'section' })}>
-                            <FolderPlus className="size-4" />
-                            Section
-                        </Dropdown.Item>
-                    </Dropdown.Panel>
-                </Dropdown>
-            </TopBarActions>
-
-            <Header className="px-4 pt-12">
-                <Header.Lead className="gap-2">
-                    <Title.h5>
-                        <InlineEditableText value={checklist.name} onSave={(name) => { void handleChecklistUpdate({ ...checklist, name }) }} className="title-h5" />
-                    </Title.h5>
-                </Header.Lead>
-            </Header>
-
-            <div className="px-4 pt-2 flex items-center gap-3">
-                <Badge
-                    label={`${checked}/${total}`}
-                    icon={<ListChecks />}
-                    color={checked === total && total > 0 ? 'green' : 'gray'}
-                />
-                <Paragraph.sm className="text-tertiary">
-                    <InlineEditableText value={checklist.description} onSave={(description) => { void handleChecklistUpdate({ ...checklist, description }) }} className="text-sm text-tertiary" placeholder="Add description" />
-                </Paragraph.sm>
-            </div>
-
-            <Divider className="my-6" />
-
-            <div className="px-4 pb-8">
-                <Label.md className="block pb-4">Items</Label.md>
-                <div className="rounded-lg border border-secondary overflow-hidden">
-                    <ChecklistContent
-                        checklist={checklist}
-                        onUpdate={(nextChecklist) => { void handleChecklistUpdate(nextChecklist) }}
-                        addRequest={addRequest}
-                        onAddRequestDismiss={() => setAddRequest(null)}
-                        renderItemSlot={renderItemSlot}
-                    />
-                </div>
-            </div>
-            <Modal open={deleteOpen} onOpenChange={setDeleteOpen}>
-                <Modal.Portal>
-                    <Modal.Backdrop />
-                    <Modal.Positioner>
-                        <Modal.Panel>
-                            <Modal.Header>
-                                <Label.md>Delete Checklist</Label.md>
-                            </Modal.Header>
-                            <Modal.Content className="p-4 flex-row gap-4">
-                                <TriangleAlert className="size-8 shrink-0 text-utility-red-600" />
-                                <Paragraph.sm className="text-secondary">
-                                    Are you sure you want to delete this checklist? This action cannot be undone.
-                                </Paragraph.sm>
-                            </Modal.Content>
-                            <Modal.Footer className="justify-end">
-                                <Button variant="secondary" onClick={() => setDeleteOpen(false)}>Cancel</Button>
-                                <Button variant="danger" onClick={handleDelete}>Delete Checklist</Button>
-                            </Modal.Footer>
-                        </Modal.Panel>
-                    </Modal.Positioner>
-                </Modal.Portal>
-            </Modal>
-        </section>
+      <Page>
+        <Page.Content width="readable">
+          <EmptyState
+            headingLevel="h1"
+            icon={<ListChecks />}
+            title="Checklist not found"
+            action={<Button.Link render={<Link to={`/${routes.checklists}`} />} variant="secondary">Back to checklists</Button.Link>}
+          />
+        </Page.Content>
+      </Page>
     )
+  }
+
+  return (
+    <DetailPage>
+        <TopBarActions>
+          <Button.Icon aria-label="Delete checklist" variant="danger-secondary" icon={<Trash2 />} onClick={actions.openDelete} />
+          <Dropdown placement="bottom">
+            <Dropdown.Trigger>
+              <Button.Icon aria-label="Add checklist content" variant="secondary" icon={<Plus />} />
+            </Dropdown.Trigger>
+            <Dropdown.Panel>
+              <Dropdown.Item onSelect={actions.addItem}><SquarePlus className="size-4" />Item</Dropdown.Item>
+              <Dropdown.Item onSelect={actions.addSection}><FolderPlus className="size-4" />Section</Dropdown.Item>
+            </Dropdown.Panel>
+          </Dropdown>
+        </TopBarActions>
+
+        <DetailPage.Header>
+          <Header.Lead className="gap-2">
+            <Page.Title><InlineEditableText value={checklist.name} onSave={actions.updateName} className="title-h5" /></Page.Title>
+          </Header.Lead>
+        </DetailPage.Header>
+
+        <DetailPage.Section className="flex items-center gap-3 pb-0 pt-2">
+          <Badge label={`${counts.checked}/${counts.total}`} icon={<ListChecks />} color={counts.checked === counts.total && counts.total > 0 ? "green" : "gray"} />
+          <Paragraph.sm className="text-tertiary">
+            <InlineEditableText value={checklist.description} onSave={actions.updateDescription} className="text-sm text-tertiary" placeholder="Add description" />
+          </Paragraph.sm>
+        </DetailPage.Section>
+
+        <DetailPage.Divider className="my-6" />
+
+        <DetailPage.Section className="pb-8">
+          <Label.md className="block pb-4">Items</Label.md>
+          <Card.Content className="overflow-hidden">
+            <ChecklistAssignees.Root checklistId={checklist.id}>
+              <ChecklistContent checklist={checklist} onUpdate={actions.update} addRequest={state.addRequest} onAddRequestDismiss={actions.dismissAdd} itemSlot={ChecklistAssignees.Item} />
+            </ChecklistAssignees.Root>
+          </Card.Content>
+        </DetailPage.Section>
+
+        <ConfirmationDialog
+          open={state.deleteOpen}
+          onOpenChange={actions.setDeleteOpen}
+          title="Delete checklist?"
+          description="This permanently deletes the checklist and cannot be undone."
+          confirmLabel="Delete checklist"
+          onConfirm={actions.remove}
+        />
+    </DetailPage>
+  )
 }

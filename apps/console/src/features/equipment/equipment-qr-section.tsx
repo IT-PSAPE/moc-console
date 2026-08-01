@@ -57,7 +57,7 @@ export function EquipmentQrSection({ equipment }: { equipment: Equipment }) {
         "h1{font-size:18px;margin:16px 0 4px;text-align:center;}" +
         "p{margin:0;color:#555;font-size:14px;}" +
         "</style></head>" +
-        `<body><img src="${dataUrl}" alt="${name} QR code"/><h1>${name}</h1><p>${serial}</p>` +
+        `<body><img src="${dataUrl}" alt="${name} QR code" width="256" height="256"/><h1>${name}</h1><p>${serial}</p>` +
         "<script>window.onload=function(){window.focus();window.print();window.close();};</script>" +
         "</body></html>",
     );
@@ -66,7 +66,7 @@ export function EquipmentQrSection({ equipment }: { equipment: Equipment }) {
 
   return (
     <section className="px-4">
-      <Label.xs className="uppercase tracking-wide text-quaternary">QR Code</Label.xs>
+      <Label.xs className="uppercase tracking-wide text-quaternary">QR code</Label.xs>
       <div className="mt-3 flex flex-wrap items-center gap-4">
         <div className="rounded-lg border border-secondary bg-white p-3">
           <QRCodeCanvas ref={canvasRef} value={payload} size={160} level="M" marginSize={4} />

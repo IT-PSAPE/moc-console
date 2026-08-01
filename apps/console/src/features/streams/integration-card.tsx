@@ -1,6 +1,7 @@
 import { Button } from "@moc/ui/components/controls/button"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Badge } from "@moc/ui/components/display/badge"
+import { Card } from "@moc/ui/components/display/card"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { Link2, RefreshCw, Unlink } from "lucide-react"
 import type { ReactNode } from "react"
@@ -8,7 +9,6 @@ import type { ReactNode } from "react"
 type IntegrationCardProps = {
   icon: ReactNode
   name: string
-  description: string
   isLoading: boolean
   isConnected: boolean
   accountLabel: string | null
@@ -21,15 +21,13 @@ type IntegrationCardProps = {
   needsReauth?: boolean
 }
 
-export function IntegrationCard({ icon, name, description, isLoading, isConnected, accountLabel, canManage, onConnect, onDisconnect, isDisconnecting, needsReauth = false }: IntegrationCardProps) {
+export function IntegrationCard({ icon, name, isLoading, isConnected, accountLabel, canManage, onConnect, onDisconnect, isDisconnecting, needsReauth = false }: IntegrationCardProps) {
   if (isLoading) {
-    return (
-      <LoadingSpinner className="py-6 border border-tertiary rounded-lg" />
-    )
+    return <Card.Content><LoadingSpinner className="py-6" /></Card.Content>
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 p-4 border border-tertiary rounded-lg">
+    <Card.Content className="flex flex-col items-stretch justify-between gap-4 p-4 sm:flex-row sm:items-center">
       <div className="flex items-center gap-3">
         <div className="size-10 shrink-0 rounded-lg bg-secondary flex items-center justify-center overflow-hidden border border-secondary ring-2 ring-border-secondary/40">
           {icon}
@@ -47,10 +45,7 @@ export function IntegrationCard({ icon, name, description, isLoading, isConnecte
                 <Badge label="Connected" color="green" />
               )
             ) : (
-              <>
-                <Badge label="Not connected" color="gray" />
-                <Paragraph.xs className="text-quaternary">{description}</Paragraph.xs>
-              </>
+              <Badge label="Not connected" color="gray" />
             )}
           </div>
         </div>
@@ -58,7 +53,7 @@ export function IntegrationCard({ icon, name, description, isLoading, isConnecte
 
       {canManage && (
         isConnected ? (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center [&_button]:w-full sm:[&_button]:w-auto">
             {needsReauth && (
               <Button
                 variant="primary"
@@ -74,7 +69,7 @@ export function IntegrationCard({ icon, name, description, isLoading, isConnecte
               disabled={isDisconnecting}
               icon={<Unlink className="size-4" />}
             >
-              {isDisconnecting ? "Disconnecting..." : "Disconnect"}
+              {isDisconnecting ? "Disconnecting…" : "Disconnect"}
             </Button>
           </div>
         ) : (
@@ -82,6 +77,7 @@ export function IntegrationCard({ icon, name, description, isLoading, isConnecte
             variant="primary"
             onClick={onConnect}
             icon={<Link2 className="size-4" />}
+            className="w-full sm:w-auto"
           >
             Connect
           </Button>
@@ -91,6 +87,6 @@ export function IntegrationCard({ icon, name, description, isLoading, isConnecte
       {!canManage && !isConnected && (
         <Paragraph.xs className="text-quaternary shrink-0">Admin required</Paragraph.xs>
       )}
-    </div>
+    </Card.Content>
   )
 }

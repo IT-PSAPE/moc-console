@@ -1,13 +1,9 @@
-import { useCallback, useState } from "react"
-import { useNavigate } from "react-router-dom"
 import { Drawer } from "@moc/ui/components/overlays/drawer"
 import { Button } from "@moc/ui/components/controls/button"
 import { Badge } from "@moc/ui/components/display/badge"
 import { Label, Paragraph, Title } from "@moc/ui/components/display/text"
 import { Divider } from "@moc/ui/components/display/divider"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
-import { useAuth } from "@/lib/auth-context"
-import { routes } from "@/screens/console-routes"
 import { streamStatusColor, streamStatusLabel, streamPrivacyLabel } from "@moc/types/streams/stream-constants"
 import type { Stream } from "@moc/types/streams/stream"
 import { latencyPreferenceLabel } from "@moc/types/streams/stream-constants"
@@ -33,6 +29,7 @@ import {
   Trash2,
   X,
 } from "lucide-react"
+import { useStreamDetailDrawer } from "./use-stream-detail-drawer"
 
 type StreamDetailDrawerProps = {
   stream: Stream | null
@@ -48,25 +45,7 @@ function formatDateTime(iso: string | null): string {
 }
 
 export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelete }: StreamDetailDrawerProps) {
-  const { role } = useAuth()
-  const navigate = useNavigate()
-  const [copiedField, setCopiedField] = useState<string | null>(null)
-
-  const canEdit = role?.can_update === true
-  const canDelete = role?.can_delete === true
-  const canViewStreamKey = role?.can_create === true
-
-  const handleCopy = useCallback((text: string, field: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedField(field)
-    setTimeout(() => setCopiedField(null), 2000)
-  }, [])
-
-  const handleOpenFullPage = useCallback(() => {
-    if (!stream) return
-    onOpenChange(false)
-    navigate(`/${routes.streamDetail.replace(":id", stream.id)}`)
-  }, [stream, navigate, onOpenChange])
+  const drawer = useStreamDetailDrawer(stream, onOpenChange, onEdit, onDelete)
 
   if (!stream) return null
 
@@ -76,21 +55,23 @@ export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelet
         <Drawer.Backdrop />
         <Drawer.Panel className="max-w-lg">
           <Drawer.Header className="flex items-center gap-1">
-            <Button.Icon variant="ghost" icon={<X />} onClick={() => onOpenChange(false)} />
-            <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={handleOpenFullPage} />
+            <Button.Icon aria-label="Close stream" variant="ghost" icon={<X />} onClick={drawer.actions.close} />
+            <Button.Icon aria-label="Open full page" variant="ghost" icon={<Maximize2 />} onClick={drawer.actions.openFullPage} />
             <div className="flex-1" />
-            {canEdit && (
+            {drawer.meta.canEdit && (
               <Button.Icon
+                aria-label="Edit stream"
                 variant="ghost"
                 icon={<Pencil />}
-                onClick={() => onEdit?.(stream)}
+                onClick={drawer.actions.edit}
               />
             )}
-            {canDelete && (
+            {drawer.meta.canDelete && (
               <Button.Icon
+                aria-label="Delete stream"
                 variant="ghost"
                 icon={<Trash2 />}
-                onClick={() => onDelete?.(stream)}
+                onClick={drawer.actions.remove}
               />
             )}
           </Drawer.Header>
@@ -101,6 +82,8 @@ export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelet
                 <img
                   src={stream.thumbnailUrl}
                   alt={stream.title}
+                  width="640"
+                  height="360"
                   className="w-full rounded-lg object-cover aspect-video"
                 />
               </div>
@@ -190,37 +173,37 @@ export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelet
               <>
                 <Divider className="my-6" />
                 <div className="px-4 space-y-3">
-                  <Label.md>YouTube Link</Label.md>
+                  <Label.md>YouTube link</Label.md>
                   <div className="flex items-center gap-2">
                     <Paragraph.xs className="text-tertiary truncate flex-1">
                       {stream.streamUrl}
                     </Paragraph.xs>
                     <Button.Icon
+                      aria-label="Copy stream link"
                       variant="ghost"
-                      icon={copiedField === "url" ? <Check className="text-utility-green-700" /> : <Copy />}
-                      onClick={() => handleCopy(stream.streamUrl!, "url")}
+                      icon={drawer.state.copiedField === "url" ? <Check className="text-utility-green-700" /> : <Copy />}
+                      onClick={drawer.actions.copyUrl}
                     />
-                    <a href={stream.streamUrl} target="_blank" rel="noopener noreferrer">
-                      <Button.Icon variant="ghost" icon={<ExternalLink />} />
-                    </a>
+                    <Button.IconLink render={<a href={stream.streamUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open stream link" variant="ghost" icon={<ExternalLink />} />
                   </div>
                 </div>
               </>
             )}
 
-            {canViewStreamKey && stream.streamKey && (
+            {drawer.meta.canViewStreamKey && stream.streamKey && (
               <>
                 <Divider className="my-6" />
                 <div className="px-4 space-y-3">
-                  <Label.md>Stream Setup (OBS / Encoder)</Label.md>
+                  <Label.md>Stream setup (OBS / encoder)</Label.md>
 
-                  <MetaRow icon={<Key />} label="Stream Key">
+                  <MetaRow icon={<Key />} label="Stream key">
                     <div className="flex items-center gap-1">
                       <Paragraph.xs className="font-mono truncate">{stream.streamKey}</Paragraph.xs>
                       <Button.Icon
+                        aria-label="Copy stream key"
                         variant="ghost"
-                        icon={copiedField === "key" ? <Check className="text-utility-green-700" /> : <Copy />}
-                        onClick={() => handleCopy(stream.streamKey!, "key")}
+                        icon={drawer.state.copiedField === "key" ? <Check className="text-utility-green-700" /> : <Copy />}
+                        onClick={drawer.actions.copyKey}
                       />
                     </div>
                   </MetaRow>
@@ -230,9 +213,10 @@ export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelet
                       <div className="flex items-center gap-1">
                         <Paragraph.xs className="font-mono truncate">{stream.ingestionUrl}</Paragraph.xs>
                         <Button.Icon
+                          aria-label="Copy server URL"
                           variant="ghost"
-                          icon={copiedField === "ingestion" ? <Check className="text-utility-green-700" /> : <Copy />}
-                          onClick={() => handleCopy(stream.ingestionUrl!, "ingestion")}
+                          icon={drawer.state.copiedField === "ingestion" ? <Check className="text-utility-green-700" /> : <Copy />}
+                          onClick={drawer.actions.copyIngestionUrl}
                         />
                       </div>
                     </MetaRow>

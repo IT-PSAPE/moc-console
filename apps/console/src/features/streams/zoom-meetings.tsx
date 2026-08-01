@@ -1,120 +1,24 @@
-import { useCallback, useEffect, useState } from "react"
 import { Card } from "@moc/ui/components/display/card"
+import { Decision } from "@moc/ui/components/display/decision"
 import { Label } from "@moc/ui/components/display/text"
 import { Button } from "@moc/ui/components/controls/button"
-import { Drawer } from "@moc/ui/components/overlays/drawer"
-import { Decision } from "@moc/ui/components/display/decision"
-import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
-import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
-import { useAuth } from "@/lib/auth-context"
-import { useStreams } from "./streams-provider"
-import { useZoomMeetingFilters } from "./use-zoom-meeting-filters"
-import { ZoomMeetingFilterDrawer } from "./zoom-meeting-filter-drawer"
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
+import { Drawer } from "@moc/ui/components/overlays/drawer"
+import type { ZoomMeeting } from "@moc/types/streams/zoom"
+import { Plus, RefreshCw, Settings2, Video } from "lucide-react"
+import { MeetingDetailDrawer } from "./meeting-detail-drawer"
 import { MeetingListItem } from "./meeting-list-item"
 import { MeetingModal } from "./meeting-modal"
-import { MeetingDetailDrawer } from "./meeting-detail-drawer"
-import { createZoomMeeting, updateZoomMeeting, deleteZoomMeeting, syncZoomMeetings, type CreateMeetingParams } from "@/data/mutate-zoom"
-import { getErrorMessage } from "@moc/utils/get-error-message"
-import type { ZoomMeeting } from "@moc/types/streams/zoom"
-import { useNavigate } from "react-router-dom"
-import { Plus, RefreshCw, Settings2, Video } from "lucide-react"
+import { useZoomMeetings } from "./use-zoom-meetings"
+import { ZoomMeetingFilterDrawer } from "./zoom-meeting-filter-drawer"
 
 export function ZoomMeetingsView({ searchQuery }: { searchQuery: string }) {
-  const navigate = useNavigate()
-  const { role } = useAuth()
-  const { toast } = useFeedback()
-  const {
-    state: { zoomConnection, zoomMeetings, isLoadingZoomMeetings },
-    actions: { loadZoomConnection, loadZoomMeetings, syncMeeting, removeMeeting, setZoomMeetings },
-  } = useStreams()
+  const { state, actions, meta } = useZoomMeetings(searchQuery)
+  const { filters } = meta
 
-  useEffect(() => {
-    void loadZoomConnection()
-    void loadZoomMeetings()
-  }, [loadZoomConnection, loadZoomMeetings])
-
-  const meetingFilters = useZoomMeetingFilters(zoomMeetings)
-  const { filtered, setSearch, filters, hasActiveFilters } = meetingFilters
-
-  useEffect(() => {
-    setSearch(searchQuery)
-  }, [searchQuery, setSearch])
-
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editingMeeting, setEditingMeeting] = useState<ZoomMeeting | null>(null)
-  const [drawerMeeting, setDrawerMeeting] = useState<ZoomMeeting | null>(null)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [isSyncing, setIsSyncing] = useState(false)
-  const [filterOpen, setFilterOpen] = useState(false)
-
-  const isConnected = Boolean(zoomConnection)
-  const canCreate = role?.can_create === true
-
-  const handleCreate = useCallback(async (params: CreateMeetingParams) => {
-    try {
-      const newMeeting = await createZoomMeeting(params)
-      syncMeeting(newMeeting)
-      toast({ title: "Meeting scheduled", variant: "success" })
-    } catch (error) {
-      const message = getErrorMessage(error, "The meeting could not be scheduled.")
-      toast({ title: "Failed to schedule meeting", description: message, variant: "error" })
-      throw new Error(message)
-    }
-  }, [syncMeeting, toast])
-
-  const handleUpdate = useCallback(async (params: CreateMeetingParams) => {
-    if (!editingMeeting) return
-    try {
-      const updated = await updateZoomMeeting({ ...editingMeeting, ...params })
-      syncMeeting(updated)
-      setEditingMeeting(null)
-      toast({ title: "Meeting updated", variant: "success" })
-    } catch (error) {
-      const message = getErrorMessage(error, "The meeting could not be updated.")
-      toast({ title: "Failed to update meeting", description: message, variant: "error" })
-      throw new Error(message)
-    }
-  }, [editingMeeting, syncMeeting, toast])
-
-  const handleDelete = useCallback(async (meeting: ZoomMeeting) => {
-    try {
-      await deleteZoomMeeting(meeting)
-      removeMeeting(meeting.id)
-      setDrawerOpen(false)
-      toast({ title: "Meeting deleted", variant: "success" })
-    } catch (error) {
-      toast({ title: "Failed to delete meeting", description: getErrorMessage(error, "The meeting could not be deleted."), variant: "error" })
-    }
-  }, [removeMeeting, toast])
-
-  const handleSync = useCallback(async () => {
-    setIsSyncing(true)
-    try {
-      const synced = await syncZoomMeetings()
-      setZoomMeetings(synced)
-      toast({ title: "Meetings synced from Zoom", variant: "success" })
-    } catch (error) {
-      toast({ title: "Failed to sync meetings", description: getErrorMessage(error, "Meetings could not be synced from Zoom."), variant: "error" })
-    } finally {
-      setIsSyncing(false)
-    }
-  }, [setZoomMeetings, toast])
-
-  function handleOpenCreate() {
-    setEditingMeeting(null)
-    setModalOpen(true)
-  }
-
-  function handleOpenDrawer(meeting: ZoomMeeting) {
-    setDrawerMeeting(meeting)
-    setDrawerOpen(true)
-  }
-
-  function handleEditFromDrawer(meeting: ZoomMeeting) {
-    setDrawerOpen(false)
-    setEditingMeeting(meeting)
-    setModalOpen(true)
+  function renderMeeting(meeting: ZoomMeeting) {
+    return <MeetingListItem key={meeting.id} meeting={meeting} onSelect={actions.openDetail} />
   }
 
   return (
@@ -123,68 +27,60 @@ export function ZoomMeetingsView({ searchQuery }: { searchQuery: string }) {
         <Card.Header tight className="gap-1.5 justify-between">
           <div className="flex items-center gap-1.5">
             <Video className="size-4" />
-            <Label.sm>Zoom Meetings</Label.sm>
+            <Label.sm>Zoom meetings</Label.sm>
           </div>
-          {isConnected && (
+          {meta.isConnected && (
             <div className="flex items-center gap-1">
-              <Button.Icon variant="ghost" icon={<Settings2 />} onClick={() => setFilterOpen(true)} />
-              <Button.Icon variant="ghost" icon={<RefreshCw />} onClick={handleSync} disabled={isSyncing} />
-              {canCreate && (
-                <Button.Icon variant="secondary" icon={<Plus />} onClick={handleOpenCreate} />
+              <Button.Icon aria-label="Filter Zoom meetings" variant="ghost" icon={<Settings2 />} onClick={actions.openFilters} />
+              <Button.Icon aria-label="Sync Zoom meetings" variant="ghost" icon={<RefreshCw />} onClick={actions.sync} disabled={state.isSyncing} />
+              {meta.canCreate && (
+                <Button.Icon aria-label="Create Zoom meeting" variant="secondary" icon={<Plus />} onClick={actions.openCreate} />
               )}
             </div>
           )}
         </Card.Header>
         <Card.Content ghost className="flex flex-col gap-1.5">
-          <Decision value={isConnected ? filtered : null} loading={isLoadingZoomMeetings}>
+          <Decision value={meta.isConnected ? filters.filtered : null} loading={meta.isLoading}>
             <Decision.Loading>
               <LoadingSpinner className="py-6" />
             </Decision.Loading>
             <Decision.Empty>
-              {isConnected ? (
+              {meta.isConnected ? (
                 <EmptyState
                   icon={<Video />}
-                  title={filters.search || hasActiveFilters ? "No meetings match your filters" : "No meetings scheduled"}
-                  description={filters.search || hasActiveFilters ? "Try a different search term or clear filters." : "Schedule a Zoom meeting to get started."}
+                  title={filters.filters.search || filters.hasActiveFilters ? "No meetings match your filters" : "No meetings scheduled"}
+                  description={filters.filters.search || filters.hasActiveFilters ? "Try a different search term or clear filters." : "Schedule a Zoom meeting to get started."}
                 />
               ) : (
                 <EmptyState
                   icon={<Video />}
                   title="Connect Zoom"
                   description="Connect Zoom in Settings to view and schedule meetings."
-                  action={<Button variant="secondary" onClick={() => navigate('/account/settings?tab=streams')}>Open Settings</Button>}
+                  action={<Button variant="secondary" onClick={actions.openSettings}>Open settings</Button>}
                 />
               )}
             </Decision.Empty>
-            <Decision.Data>
-              {filtered.map((meeting) => (
-                <MeetingListItem
-                  key={meeting.id}
-                  meeting={meeting}
-                  onClick={() => handleOpenDrawer(meeting)}
-                />
-              ))}
-            </Decision.Data>
+            <Decision.Data>{filters.filtered.map(renderMeeting)}</Decision.Data>
           </Decision>
         </Card.Content>
       </Card>
 
-      <Drawer open={filterOpen} onOpenChange={setFilterOpen}>
-        <ZoomMeetingFilterDrawer filters={meetingFilters} />
+      <Drawer mobileSide="bottom" open={state.filterOpen} onOpenChange={actions.setFilterOpen}>
+        <ZoomMeetingFilterDrawer filters={filters} />
       </Drawer>
 
       <MeetingModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        onSubmit={editingMeeting ? handleUpdate : handleCreate}
-        meeting={editingMeeting}
+        open={state.modalOpen}
+        onOpenChange={actions.setModalOpen}
+        onSubmit={state.editingMeeting ? actions.update : actions.create}
+        meeting={state.editingMeeting}
       />
       <MeetingDetailDrawer
-        meeting={drawerMeeting}
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        onEdit={handleEditFromDrawer}
-        onDelete={handleDelete}
+        meeting={state.drawerMeeting}
+        open={state.drawerOpen}
+        onOpenChange={actions.setDrawerOpen}
+        onEdit={actions.edit}
+        onDelete={actions.remove}
       />
     </>
   )

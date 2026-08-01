@@ -74,7 +74,7 @@ export function StreamOptionsSection({
           {/* ─── Category ─── */}
           <div className="flex flex-col gap-1.5">
             <FormLabel label="Category" optional />
-            <Select.Root items={categoryItems} value={categoryId ?? ""} onValueChange={handleCategoryChange}>
+            <Select.Root name="stream-category" items={categoryItems} value={categoryId ?? ""} onValueChange={handleCategoryChange}>
               <Select.Trigger aria-label="Category" />
               <Select.Content>
               <Select.Item value="">None</Select.Item>
@@ -98,6 +98,7 @@ export function StreamOptionsSection({
                 >
                   {tag}
                   <Button.Icon
+                    aria-label={`Remove ${tag}`}
                     variant="ghost"
                     icon={<X className="size-3" />}
                     data-tag={tag}
@@ -106,12 +107,15 @@ export function StreamOptionsSection({
                 </span>
               ))}
               <Input
+                aria-label="Add stream tag"
+                name="stream-tag"
+                autoComplete="off"
                 style="ghost"
                 value={tagInput}
                 onChange={handleTagInputChange}
                 onKeyDown={onTagKeyDown}
                 onBlur={onTagBlur}
-                placeholder={tags.length === 0 ? "Add tags..." : ""}
+                placeholder={tags.length === 0 ? "Add tags…" : ""}
                 className="min-w-[80px] flex-1 bg-transparent text-sm text-primary placeholder:text-quaternary outline-none"
               />
             </div>
@@ -123,7 +127,7 @@ export function StreamOptionsSection({
           {/* Playlist */}
           <div className="flex flex-col gap-1.5">
             <FormLabel label="Add to Playlist" optional />
-            <Select.Root items={playlistItems} value={playlistId ?? ""} onValueChange={handlePlaylistChange}>
+            <Select.Root name="stream-playlist" items={playlistItems} value={playlistId ?? ""} onValueChange={handlePlaylistChange}>
               <Select.Trigger aria-label="Playlist" />
               <Select.Content>
               <Select.Item value="">None</Select.Item>

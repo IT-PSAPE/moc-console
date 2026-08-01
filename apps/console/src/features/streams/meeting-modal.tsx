@@ -1,5 +1,3 @@
-import { useCallback, useState } from "react"
-import type { ChangeEvent } from "react"
 import { Modal } from "@moc/ui/components/overlays/modal"
 import { Button } from "@moc/ui/components/controls/button"
 import { Input } from "@moc/ui/components/form/input"
@@ -13,9 +11,8 @@ import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/streams/zoom"
 import { zoomRecurrenceLabel } from "@moc/types/streams/zoom-constants"
 import type { CreateMeetingParams } from "@/data/mutate-zoom"
-import { formatUtcIsoForDateTimeInput, parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time"
 import { NotifyDestinationField } from "./notify-destination-field"
-import type { NotifyDestination } from "@moc/types/streams"
+import { MEETING_TIMEZONES, useMeetingForm } from "./use-meeting-form"
 
 type MeetingModalProps = {
   open: boolean
@@ -24,103 +21,19 @@ type MeetingModalProps = {
   meeting?: ZoomMeeting | null
 }
 
-const COMMON_TIMEZONES = [
-  "UTC",
-  "Africa/Harare",
-  "Africa/Johannesburg",
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-  "Europe/London",
-  "Europe/Berlin",
-  "Asia/Tokyo",
-  "Asia/Shanghai",
-  "Australia/Sydney",
-]
-const TIMEZONE_ITEMS = COMMON_TIMEZONES.map((value) => ({ label: value, value }))
+const TIMEZONE_ITEMS = MEETING_TIMEZONES.map((value) => ({ label: value, value }))
 
 export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingModalProps) {
-  const isEditing = Boolean(meeting)
-
-  const [topic, setTopic] = useState(meeting?.topic ?? "")
-  const [description, setDescription] = useState(meeting?.description ?? "")
-  const [startTime, setStartTime] = useState(
-    meeting?.startTime ? formatUtcIsoForDateTimeInput(meeting.startTime, meeting.timezone) : "",
-  )
-  const [duration, setDuration] = useState(meeting?.duration ?? 60)
-  const [timezone, setTimezone] = useState(meeting?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone)
-  const [recurrenceType, setRecurrenceType] = useState<ZoomRecurrenceType>(meeting?.recurrenceType ?? "none")
-  const [recurrenceDays, setRecurrenceDays] = useState(meeting?.recurrenceDays ?? "")
-  const [waitingRoom, setWaitingRoom] = useState(meeting?.waitingRoom ?? true)
-  const [muteOnEntry, setMuteOnEntry] = useState(meeting?.muteOnEntry ?? true)
-  const [continuousChat, setContinuousChat] = useState(meeting?.continuousChat ?? false)
-  const [notifyDestinations, setNotifyDestinations] = useState<NotifyDestination[]>([])
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const canSubmit = Boolean(topic.trim()) && Boolean(startTime) && !isSubmitting
-
-  const resetForm = useCallback(() => {
-    setTopic(meeting?.topic ?? "")
-    setDescription(meeting?.description ?? "")
-    setStartTime(meeting?.startTime ? formatUtcIsoForDateTimeInput(meeting.startTime, meeting.timezone) : "")
-    setDuration(meeting?.duration ?? 60)
-    setTimezone(meeting?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone)
-    setRecurrenceType(meeting?.recurrenceType ?? "none")
-    setRecurrenceDays(meeting?.recurrenceDays ?? "")
-    setWaitingRoom(meeting?.waitingRoom ?? true)
-    setMuteOnEntry(meeting?.muteOnEntry ?? true)
-    setContinuousChat(meeting?.continuousChat ?? false)
-    setNotifyDestinations([])
-  }, [meeting])
-
-  function handleModalOpenChange(nextOpen: boolean) {
-    onOpenChange(nextOpen)
-    if (!nextOpen) resetForm()
-  }
-
-  function handleStartTimeChange(value: string) {
-    setStartTime(value)
-  }
-
-  function handleTimezoneChange(value: string | null) {
-    if (value !== null) setTimezone(value)
-  }
-
-  async function handleSubmit() {
-    if (!canSubmit) return
-
-    setIsSubmitting(true)
-    try {
-      await onSubmit({
-        topic: topic.trim(),
-        description: description.trim(),
-        startTime: parseDateTimeInputToUtcIso(startTime, timezone),
-        duration,
-        timezone,
-        recurrenceType,
-        recurrenceInterval: recurrenceType !== "none" ? 1 : null,
-        recurrenceDays: recurrenceDays || null,
-        waitingRoom,
-        muteOnEntry,
-        continuousChat,
-        notifyDestinations,
-      })
-      resetForm()
-      onOpenChange(false)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+  const { state, actions, meta } = useMeetingForm({ meeting, onOpenChange, onSubmit, open })
 
   return (
-    <Modal open={open} onOpenChange={handleModalOpenChange}>
+    <Modal open={open} onOpenChange={actions.changeOpen}>
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
           <Modal.FullScreenPanel className="w-full md:max-w-md">
             <Modal.Header>
-              <Label.md>{isEditing ? "Edit Meeting" : "Schedule Meeting"}</Label.md>
+              <Label.md>{meta.title}</Label.md>
             </Modal.Header>
 
             <Modal.Content>
@@ -129,8 +42,11 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Topic" required />
                   <Input
-                    value={topic}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setTopic(e.target.value)}
+                    aria-label="Meeting topic"
+                    name="meeting-topic"
+                    autoComplete="off"
+                    value={state.topic}
+                    onChange={actions.changeTopic}
                     placeholder="Meeting topic"
                   />
                 </div>
@@ -139,23 +55,27 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Description" />
                   <TextArea
-                    value={description}
-                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
-                    placeholder="Meeting agenda..."
+                    aria-label="Meeting description"
+                    name="meeting-description"
+                    value={state.description}
+                    onChange={actions.changeDescription}
+                    placeholder="Meeting agenda…"
                     rows={3}
                   />
                 </div>
 
                 {/* Start time */}
-                <DateTimeFields label="Start" required value={startTime} onChange={handleStartTimeChange} />
+                <DateTimeFields label="Start" name="meeting-start" required value={state.startTime} onChange={actions.setStartTime} />
 
                 {/* Duration */}
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Duration (minutes)" />
                   <Input
+                    aria-label="Meeting duration in minutes"
+                    name="meeting-duration"
                     type="number"
-                    value={String(duration)}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setDuration(Math.max(1, parseInt(e.target.value) || 60))}
+                    value={String(state.duration)}
+                    onChange={actions.changeDuration}
                     min="1"
                   />
                 </div>
@@ -163,10 +83,10 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
                 {/* Timezone */}
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Timezone" />
-                  <Select.Root items={TIMEZONE_ITEMS} value={timezone} onValueChange={handleTimezoneChange}>
+                  <Select.Root name="meeting-timezone" items={TIMEZONE_ITEMS} value={state.timezone} onValueChange={actions.changeTimezone}>
                     <Select.Trigger aria-label="Timezone" />
                     <Select.Content>
-                    {COMMON_TIMEZONES.map((tz) => (
+                    {MEETING_TIMEZONES.map((tz) => (
                       <Select.Item key={tz} value={tz}>{tz}</Select.Item>
                     ))}
                     </Select.Content>
@@ -178,8 +98,8 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
                   <FormLabel label="Repeat" />
                   <SegmentedControl
                     fill
-                    value={recurrenceType}
-                    onValueChange={(v: string) => setRecurrenceType(v as ZoomRecurrenceType)}
+                    value={state.recurrenceType}
+                    onValueChange={actions.changeRecurrenceType}
                   >
                     {(Object.keys(zoomRecurrenceLabel) as ZoomRecurrenceType[]).map((key) => (
                       <SegmentedControl.Item key={key} value={key}>
@@ -190,24 +110,28 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
                 </div>
 
                 {/* Recurrence days (contextual) */}
-                {recurrenceType === "weekly" && (
+                {state.recurrenceType === "weekly" && (
                   <div className="flex flex-col gap-1.5">
-                    <FormLabel label="Day of week (1=Sun, 2=Mon, ..., 7=Sat)" />
+                    <FormLabel label="Day of week (1=Sun, 2=Mon, …, 7=Sat)" />
                     <Input
-                      value={recurrenceDays}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => setRecurrenceDays(e.target.value)}
+                      aria-label="Weekly recurrence day"
+                      name="weekly-recurrence-day"
+                      value={state.recurrenceDays}
+                      onChange={actions.changeRecurrenceDays}
                       placeholder="e.g. 4 for Wednesday"
                     />
                   </div>
                 )}
 
-                {recurrenceType === "monthly" && (
+                {state.recurrenceType === "monthly" && (
                   <div className="flex flex-col gap-1.5">
                     <FormLabel label="Day of month" />
                     <Input
+                      aria-label="Monthly recurrence day"
+                      name="monthly-recurrence-day"
                       type="number"
-                      value={recurrenceDays}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => setRecurrenceDays(e.target.value)}
+                      value={state.recurrenceDays}
+                      onChange={actions.changeRecurrenceDays}
                       placeholder="e.g. 15"
                       min="1"
                       max="31"
@@ -217,41 +141,39 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
 
                 {/* Meeting settings */}
                 <div className="flex flex-col gap-2 pt-2">
-                  <Paragraph.xs className="text-tertiary font-medium uppercase tracking-wide">Meeting Settings</Paragraph.xs>
+                  <Paragraph.xs className="text-tertiary font-medium uppercase tracking-wide">Meeting settings</Paragraph.xs>
                   <Checkbox
-                    checked={waitingRoom}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setWaitingRoom(e.target.checked)}
+                    checked={state.waitingRoom}
+                    onChange={actions.changeWaitingRoom}
                   >
                     <Paragraph.sm>Waiting room</Paragraph.sm>
                   </Checkbox>
                   <Checkbox
-                    checked={muteOnEntry}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setMuteOnEntry(e.target.checked)}
+                    checked={state.muteOnEntry}
+                    onChange={actions.changeMuteOnEntry}
                   >
                     <Paragraph.sm>Mute participants on entry</Paragraph.sm>
                   </Checkbox>
                   <Checkbox
-                    checked={continuousChat}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setContinuousChat(e.target.checked)}
+                    checked={state.continuousChat}
+                    onChange={actions.changeContinuousChat}
                   >
                     <Paragraph.sm>Allow continuous chat</Paragraph.sm>
                   </Checkbox>
                 </div>
 
-                {!isEditing && (
+                {!meta.isEditing && (
                   <NotifyDestinationField
-                    value={notifyDestinations}
-                    onChange={setNotifyDestinations}
+                    value={state.notifyDestinations}
+                    onChange={actions.setNotifyDestinations}
                   />
                 )}
               </div>
             </Modal.Content>
 
             <Modal.Footer>
-              <Button variant="primary" disabled={!canSubmit} onClick={handleSubmit}>
-                {isSubmitting
-                  ? isEditing ? "Updating..." : "Scheduling..."
-                  : isEditing ? "Update Meeting" : "Schedule Meeting"}
+              <Button variant="primary" disabled={!state.canSubmit} onClick={actions.submit}>
+                {meta.submitLabel}
               </Button>
               <Modal.Close>
                 <Button variant="secondary">Cancel</Button>

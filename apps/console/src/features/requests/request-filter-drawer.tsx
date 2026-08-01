@@ -1,18 +1,17 @@
-import { Button } from "@moc/ui/components/controls/button";
-import { Divider } from "@moc/ui/components/display/divider";
-import { Label, Paragraph } from "@moc/ui/components/display/text";
+import { Label } from "@moc/ui/components/display/text";
 import { Checkbox } from "@moc/ui/components/form/checkbox";
 import { FormLabel } from "@moc/ui/components/form/form-label";
 import { Input } from "@moc/ui/components/form/input";
 import { Radio, RadioGroup } from "@moc/ui/components/form/radio";
 import { Tabs } from "@moc/ui/components/layout/tabs";
-import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { FilterDrawer } from "@moc/ui/components/overlays/filter-drawer";
 import { categoryLabel, priorityLabel, statusLabel } from "@moc/types/requests";
 import type { Category } from "@moc/types/requests/category";
 import type { Priority } from "@moc/types/requests/priority";
 import type { Status } from "@moc/types/requests/status";
-import { RotateCcw, X } from "lucide-react";
+import type { ChangeEvent } from "react";
 import type { useRequestFilters } from "./use-request-filters";
+import { parseSortValue } from "@/utils/parse-sort-value";
 
 type RequestFilterDrawerProps = {
     filters: ReturnType<typeof useRequestFilters>;
@@ -23,21 +22,33 @@ export function RequestFilterDrawer({ filters }: RequestFilterDrawerProps) {
 
     const sortValue = `${state.sortField}-${state.sortDirection}`;
 
-    return (
-        <Drawer.Portal>
-            <Drawer.Backdrop />
-            <Drawer.Panel>
-                <Drawer.Header>
-                    <div className="flex-1">
-                        <Label.md>Filter & Sort</Label.md>
-                        <Paragraph.xs className="text-tertiary">Narrow down and order your requests</Paragraph.xs>
-                    </div>
-                    <Drawer.Close>
-                        <Button.Icon variant="ghost" icon={<X />} />
-                    </Drawer.Close>
-                </Drawer.Header>
+    function handleSortChange(value: string) {
+        const [field, direction] = parseSortValue(value);
+        setSort(field as Parameters<typeof setSort>[0], direction as Parameters<typeof setSort>[1]);
+    }
 
-                <Drawer.Content>
+    function handleCategoryChange(event: ChangeEvent<HTMLInputElement>) {
+        toggleCategory(event.target.value as Category);
+    }
+
+    function handleStatusChange(event: ChangeEvent<HTMLInputElement>) {
+        toggleStatus(event.target.value as Status);
+    }
+
+    function handlePriorityChange(event: ChangeEvent<HTMLInputElement>) {
+        togglePriority(event.target.value as Priority);
+    }
+
+    function handleStartDateChange(event: ChangeEvent<HTMLInputElement>) {
+        setDateRange(event.target.value, state.dateRange.end);
+    }
+
+    function handleEndDateChange(event: ChangeEvent<HTMLInputElement>) {
+        setDateRange(state.dateRange.start, event.target.value);
+    }
+
+    return (
+        <FilterDrawer hasActiveFilters={hasActiveFilters} onReset={reset}>
                     <Tabs defaultTab="filters">
                         <Tabs.List>
                             <Tabs.Tab value="filters">
@@ -50,149 +61,126 @@ export function RequestFilterDrawer({ filters }: RequestFilterDrawerProps) {
                         <Tabs.Panels>
                             {/* ── Filters ── */}
                             <Tabs.Panel value="filters">
-                                <div className="py-2">
-                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Type</Paragraph.sm>
-                                    <div className="grid grid-cols-2 gap-2 px-3">
+                                <FilterDrawer.Group label="Type">
+                                    <FilterDrawer.Options>
                                         {(Object.entries(categoryLabel) as [Category, string][]).map(([key, label]) => (
                                             <Checkbox
                                                 key={key}
                                                 checked={state.categories.has(key)}
-                                                onChange={() => toggleCategory(key)}
+                                                value={key}
+                                                onChange={handleCategoryChange}
                                             >
                                                 <FormLabel label={label} />
                                             </Checkbox>
                                         ))}
-                                    </div>
-                                </div>
-                                <Divider />
-                                <div className="py-2">
+                                    </FilterDrawer.Options>
+                                </FilterDrawer.Group>
+                                <FilterDrawer.Group label="Status">
                                     {/* Archived requests are excluded from the
                                         default view; tick Archived to see them. */}
-                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Status</Paragraph.sm>
-                                    <div className="grid grid-cols-2 gap-2 px-3">
+                                    <FilterDrawer.Options>
                                         {(Object.entries(statusLabel) as [Status, string][]).map(([key, label]) => (
                                             <Checkbox
                                                 key={key}
                                                 checked={state.statuses.has(key)}
-                                                onChange={() => toggleStatus(key)}
+                                                value={key}
+                                                onChange={handleStatusChange}
                                             >
                                                 <FormLabel label={label} />
                                             </Checkbox>
                                         ))}
-                                    </div>
-                                </div>
-                                <Divider />
-                                <div className="py-2">
-                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Priority</Paragraph.sm>
-                                    <div className="grid grid-cols-2 gap-2 px-3">
+                                    </FilterDrawer.Options>
+                                </FilterDrawer.Group>
+                                <FilterDrawer.Group label="Priority">
+                                    <FilterDrawer.Options>
                                         {(Object.entries(priorityLabel) as [Priority, string][]).map(([key, label]) => (
                                             <Checkbox
                                                 key={key}
                                                 checked={state.priorities.has(key)}
-                                                onChange={() => togglePriority(key)}
+                                                value={key}
+                                                onChange={handlePriorityChange}
                                             >
                                                 <FormLabel label={label} />
                                             </Checkbox>
                                         ))}
-                                    </div>
-                                </div>
-                                <Divider />
-                                <div className="py-2">
-                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Timeline</Paragraph.sm>
-                                    <div className="flex gap-2 px-3">
+                                    </FilterDrawer.Options>
+                                </FilterDrawer.Group>
+                                <FilterDrawer.Group label="Timeline">
+                                    <FilterDrawer.Options>
                                         <label className="space-y-1 *:odd:ml-1">
                                             <FormLabel label="Start Date" />
                                             <Input
+                                                aria-label="Request timeline start date"
+                                                name="request-timeline-start"
                                                 type="date"
                                                 value={state.dateRange.start}
-                                                onChange={(e) => setDateRange(e.target.value, state.dateRange.end)}
+                                                onChange={handleStartDateChange}
                                             />
                                         </label>
                                         <label className="space-y-1 *:odd:ml-1">
                                             <FormLabel label="End Date" />
                                             <Input
+                                                aria-label="Request timeline end date"
+                                                name="request-timeline-end"
                                                 type="date"
                                                 value={state.dateRange.end}
-                                                onChange={(e) => setDateRange(state.dateRange.start, e.target.value)}
+                                                onChange={handleEndDateChange}
                                             />
                                         </label>
-                                    </div>
-                                </div>
+                                    </FilterDrawer.Options>
+                                </FilterDrawer.Group>
                             </Tabs.Panel>
 
                             {/* ── Sort ── */}
                             <Tabs.Panel value="sort">
                                 <RadioGroup
                                     value={sortValue}
-                                    onValueChange={(value) => {
-                                        const i = value.lastIndexOf("-");
-                                        setSort(value.slice(0, i) as Parameters<typeof setSort>[0], value.slice(i + 1) as Parameters<typeof setSort>[1]);
-                                    }}
+                                    onValueChange={handleSortChange}
                                 >
-                                <div className="py-2">
-                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Name</Paragraph.sm>
-                                    <div className="grid grid-cols-2 gap-2 px-3">
+                                <FilterDrawer.Group label="Name">
+                                    <FilterDrawer.Options>
                                         <Radio value="title-asc">
                                             <FormLabel label="A-Z" />
                                         </Radio>
                                         <Radio value="title-desc">
                                             <FormLabel label="Z-A" />
                                         </Radio>
-                                    </div>
-                                </div>
-                                <Divider />
-                                <div className="py-2">
-                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Due date</Paragraph.sm>
-                                    <div className="grid grid-cols-2 gap-2 px-3">
+                                    </FilterDrawer.Options>
+                                </FilterDrawer.Group>
+                                <FilterDrawer.Group label="Due date">
+                                    <FilterDrawer.Options>
                                         <Radio value="dueDate-asc">
                                             <FormLabel label="Ascending" />
                                         </Radio>
                                         <Radio value="dueDate-desc">
                                             <FormLabel label="Descending" />
                                         </Radio>
-                                    </div>
-                                </div>
-                                <Divider />
-                                <div className="py-2">
-                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Created date</Paragraph.sm>
-                                    <div className="grid grid-cols-2 gap-2 px-3">
+                                    </FilterDrawer.Options>
+                                </FilterDrawer.Group>
+                                <FilterDrawer.Group label="Created date">
+                                    <FilterDrawer.Options>
                                         <Radio value="createdAt-asc">
                                             <FormLabel label="Ascending" />
                                         </Radio>
                                         <Radio value="createdAt-desc">
                                             <FormLabel label="Descending" />
                                         </Radio>
-                                    </div>
-                                </div>
-                                <Divider />
-                                <div className="py-2">
-                                    <Paragraph.sm className="px-3 py-1.5 text-quaternary">Type</Paragraph.sm>
-                                    <div className="grid grid-cols-2 gap-2 px-3">
+                                    </FilterDrawer.Options>
+                                </FilterDrawer.Group>
+                                <FilterDrawer.Group label="Type">
+                                    <FilterDrawer.Options>
                                         <Radio value="category-asc">
                                             <FormLabel label="A-Z" />
                                         </Radio>
                                         <Radio value="category-desc">
                                             <FormLabel label="Z-A" />
                                         </Radio>
-                                    </div>
-                                </div>
+                                    </FilterDrawer.Options>
+                                </FilterDrawer.Group>
                                 </RadioGroup>
                             </Tabs.Panel>
                         </Tabs.Panels>
                     </Tabs>
-                </Drawer.Content>
-
-                <Drawer.Footer className="*:w-full">
-                    {hasActiveFilters && (
-                        <Button variant="secondary" icon={<RotateCcw />} className="w-full" onClick={reset}>
-                            Reset
-                        </Button>
-                    )}
-                    <Drawer.Close>
-                        <Button className="w-full">Done</Button>
-                    </Drawer.Close>
-                </Drawer.Footer>
-            </Drawer.Panel>
-        </Drawer.Portal>
+        </FilterDrawer>
     );
 }

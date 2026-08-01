@@ -9,6 +9,8 @@ import { BookingDrawer } from "./booking-drawer";
 import { useMemo } from "react";
 import { Circle } from "lucide-react";
 import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
+import { ResponsiveDrawerTrigger } from "@/features/responsive-drawer-trigger";
+import { routes } from "@/screens/console-routes";
 
 type BookingEventData = {
   booking: Booking;
@@ -34,7 +36,7 @@ export function BookingCalendarView({ bookings }: { bookings: Booking[] }) {
   const events = useMemo(() => toCalendarEvents(bookings), [bookings]);
 
   return (
-    <div className="p-2 pt-0 mx-auto w-full max-w-content">
+    <div>
       <Calendar
         events={events}
         cellDrawer={{
@@ -48,10 +50,10 @@ export function BookingCalendarView({ bookings }: { bookings: Booking[] }) {
 
             return (
               <Drawer key={booking.id}>
-                <Drawer.Trigger>
+                <ResponsiveDrawerTrigger mobileHref={`/${routes.bookings}/${booking.id}`} className="w-full text-left hover:bg-secondary/50">
                   <div
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-secondary/50 transition-colors",
+                      "flex items-center gap-3 px-4 py-3",
                       index > 0 && "border-t border-secondary",
                     )}
                   >
@@ -71,7 +73,7 @@ export function BookingCalendarView({ bookings }: { bookings: Booking[] }) {
                       variant="filled"
                     />
                   </div>
-                </Drawer.Trigger>
+                </ResponsiveDrawerTrigger>
                 <BookingDrawer booking={booking} />
               </Drawer>
             );

@@ -2,12 +2,11 @@ import { UserAvatar } from "@moc/ui/components/display/user-avatar";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { Combobox } from "@moc/ui/components/form/combobox";
 import { Spinner } from "@moc/ui/components/feedback/spinner";
-import { Button } from "@moc/ui/components/controls/button";
-import { fetchAllUsers, type ResolvedAssignee } from "@/data/fetch-assignees";
+import { type ResolvedAssignee } from "@/data/fetch-assignees";
 import type { User } from "@moc/types/requests";
 import { cn } from "@moc/utils/cn";
-import { X } from "lucide-react";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useMembers } from "./use-members";
+import { AssignedMemberList } from "./assigned-member-list";
 
 type MemberSearchPickerProps = {
     assignees: ResolvedAssignee[];
@@ -22,21 +21,14 @@ export function MemberSearchPicker({
     assignees,
     onAdd,
     onRemove,
-    placeholder = "Search members...",
+    placeholder = "Search members…",
     emptyLabel = "No assignees yet",
     className,
 }: MemberSearchPickerProps) {
-    const [allUsers, setAllUsers] = useState<User[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        fetchAllUsers()
-            .then(setAllUsers)
-            .finally(() => setIsLoading(false));
-    }, []);
+    const { members, isLoading } = useMembers();
 
     const assignedIds = new Set(assignees.map((a) => a.id));
-    const available = allUsers.filter((user) => !assignedIds.has(user.id));
+    const available = members.filter((user) => !assignedIds.has(user.id));
 
     function handleSelect(user: User | null) {
         if (!user) return;
@@ -45,11 +37,6 @@ export function MemberSearchPicker({
 
     function userToSearchLabel(user: User) {
         return `${user.name} ${user.surname} ${user.email}`;
-    }
-
-    function handleRemove(event: MouseEvent<HTMLButtonElement>) {
-        const userId = event.currentTarget.dataset.userId;
-        if (userId) onRemove(userId);
     }
 
     return (
@@ -71,22 +58,7 @@ export function MemberSearchPicker({
                 </Combobox.Content>
             </Combobox.Root>
 
-            {assignees.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                    {assignees.map((a) => (
-                        <div key={`${a.id}-${a.duty}`} className="flex items-center gap-2 rounded-lg py-1">
-                            <UserAvatar size="sm" user={a} />
-                            <div className="flex-1 min-w-0">
-                                <Label.sm>{a.name} {a.surname}</Label.sm>
-                                {a.duty && <Paragraph.xs className="text-quaternary truncate">{a.duty}</Paragraph.xs>}
-                            </div>
-                            <Button.Icon icon={<X />} variant="ghost" data-user-id={a.id} onClick={handleRemove} />
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <Paragraph.sm className="text-quaternary">{emptyLabel}</Paragraph.sm>
-            )}
+            <AssignedMemberList assignees={assignees} onRemove={onRemove} emptyLabel={emptyLabel} />
         </div>
     );
 }

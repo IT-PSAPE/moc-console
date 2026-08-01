@@ -62,7 +62,7 @@ export function TopBar({ children }: HTMLAttributes<HTMLDivElement>) {
                     icon={<Icon className="size-5" />}
                 />
                 {children}
-                <div ref={slotRef} className="ml-auto flex items-center gap-2" />
+                <div ref={slotRef} className="ml-auto flex items-center gap-2 max-mobile:[&_button]:min-w-11 max-mobile:[&_button]:px-2 max-mobile:[&_.label-sm]:sr-only" />
             </div>
         </header>
     )

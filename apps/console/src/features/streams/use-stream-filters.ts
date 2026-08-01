@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import type { Stream, StreamStatus, StreamPrivacy } from "@moc/types/streams/stream"
 
 export type StreamSortField = "title" | "scheduledStartTime" | "createdAt" | "status"
@@ -85,43 +85,43 @@ export function useStreamFilters(streams: Stream[]) {
     return result
   }, [streams, filters])
 
-  function setSearch(search: string) {
+  const setSearch = useCallback((search: string) => {
     setFilters((f) => ({ ...f, search }))
-  }
+  }, [])
 
-  function toggleStatus(status: StreamStatus) {
+  const toggleStatus = useCallback((status: StreamStatus) => {
     setFilters((f) => {
       const next = new Set(f.statuses)
       if (next.has(status)) next.delete(status)
       else next.add(status)
       return { ...f, statuses: next }
     })
-  }
+  }, [])
 
-  function togglePrivacy(privacy: StreamPrivacy) {
+  const togglePrivacy = useCallback((privacy: StreamPrivacy) => {
     setFilters((f) => {
       const next = new Set(f.privacies)
       if (next.has(privacy)) next.delete(privacy)
       else next.add(privacy)
       return { ...f, privacies: next }
     })
-  }
+  }, [])
 
-  function setScheduledDateRange(start: string, end: string) {
+  const setScheduledDateRange = useCallback((start: string, end: string) => {
     setFilters((f) => ({ ...f, scheduledDateRange: { start, end } }))
-  }
+  }, [])
 
-  function setShowCompleted(showCompleted: boolean) {
+  const setShowCompleted = useCallback((showCompleted: boolean) => {
     setFilters((f) => ({ ...f, showCompleted }))
-  }
+  }, [])
 
-  function setSort(field: StreamSortField, direction: SortDirection) {
+  const setSort = useCallback((field: StreamSortField, direction: SortDirection) => {
     setFilters((f) => ({ ...f, sortField: field, sortDirection: direction }))
-  }
+  }, [])
 
-  function reset() {
+  const reset = useCallback(() => {
     setFilters(defaultFilters)
-  }
+  }, [])
 
   const hasActiveFilters =
     filters.statuses.size > 0 ||

@@ -2,17 +2,18 @@ import { CalendarFold, CircleAlert, Tag } from "lucide-react";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { Badge } from "@moc/ui/components/display/badge";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
-import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
 import type { Request } from "@moc/types/requests";
 import { priorityColor, categoryLabel } from "@moc/types/requests";
 import { RequestDrawer } from "./request-drawer";
 import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
 import { useDrawerItem } from "@/hooks/use-drawer-item";
+import { ResponsiveDrawerTrigger } from "@/features/responsive-drawer-trigger";
+import { routes } from "@/screens/console-routes";
 
 const itemVariants = cv({
     base: [
-        'w-full flex justify-between px-4 py-3 gap-4 bg-background-primary rounded-lg shadow-[0px_1px_2px_0px_rgba(10,13,18,0.05)] outline outline-1 outline-offset-[-1px] outline-border-secondary *:flex-1',
+        'flex w-full justify-between gap-4 px-4 py-3 *:flex-1',
     ],
     variants: {
         vertical: {
@@ -30,8 +31,7 @@ export function RequestItem({ request, vertical, onDrawerOpenChange }: { request
 
     return (
         <Drawer open={open} onOpenChange={handleOpenChange}>
-            <Drawer.Trigger>
-                <div className={cn(itemVariants({ vertical: vertical ? 'true' : 'false' }), 'cursor-pointer hover:bg-background-primary-hover active:bg-background-primary-hover transition-colors')}>
+            <ResponsiveDrawerTrigger.Card mobileHref={`/${routes.requests}/${request.id}`} className={itemVariants({ vertical: vertical ? 'true' : 'false' })}>
                     <div>
                         <Label.sm>{request.title}</Label.sm>
                         <Paragraph.sm className="text-tertiary line-clamp-2
@@ -52,8 +52,7 @@ export function RequestItem({ request, vertical, onDrawerOpenChange }: { request
                             />
                         )}
                     </div>
-                </div>
-            </Drawer.Trigger>
+            </ResponsiveDrawerTrigger.Card>
             <RequestDrawer
                 request={request}
                 onRequestClose={handleClose}

@@ -1,25 +1,49 @@
 import { Button } from "@moc/ui/components/controls/button";
-import { UserAvatar } from "@moc/ui/components/display/user-avatar";
-import { Label, Paragraph } from "@moc/ui/components/display/text";
-import { Input } from "@moc/ui/components/form/input";
+import { Label } from "@moc/ui/components/display/text";
 import { Popover } from "@moc/ui/components/overlays/popover";
-import { cn } from "@moc/utils/cn";
-import { fetchAllUsers, type ResolvedAssignee } from "@/data/fetch-assignees";
-import type { User } from "@moc/types/requests";
-import { Spinner } from "@moc/ui/components/feedback/spinner";
-import { ArrowLeft, Search, X } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { Modal } from "@moc/ui/components/overlays/modal";
+import { useIsMobile } from "@moc/ui/hooks/use-is-mobile";
+import { type ResolvedAssignee } from "@/data/fetch-assignees";
+import { X } from "lucide-react";
+import type { ReactElement } from "react";
+import { MemberPickerPanel } from "./member-picker-panel";
 
 type MemberPickerProps = {
     assignees: ResolvedAssignee[];
     duties: readonly string[];
     onAdd: (userId: string, duty: string) => void;
     onRemove: (userId: string) => void;
-    children: ReactNode;
+    children: ReactElement;
     placement?: 'bottom' | 'bottom-start' | 'bottom-end' | 'top' | 'top-start' | 'top-end';
 };
 
 export function MemberPicker({ assignees, duties, onAdd, onRemove, children, placement = 'bottom-end' }: MemberPickerProps) {
+    const isMobile = useIsMobile();
+
+    if (isMobile) {
+        return (
+            <Modal>
+                <Modal.Trigger>{children}</Modal.Trigger>
+                <Modal.Portal>
+                    <Modal.Backdrop />
+                    <Modal.Positioner>
+                        <Modal.Panel>
+                            <Modal.Header>
+                                <Label.md className="flex-1">Assign member</Label.md>
+                                <Modal.Close>
+                                    <Button.Icon aria-label="Close member picker" variant="ghost" icon={<X />} />
+                                </Modal.Close>
+                            </Modal.Header>
+                            <Modal.Content className="p-0">
+                                <MemberPickerPanel assignees={assignees} duties={duties} onAdd={onAdd} onRemove={onRemove} />
+                            </Modal.Content>
+                        </Modal.Panel>
+                    </Modal.Positioner>
+                </Modal.Portal>
+            </Modal>
+        );
+    }
+
     return (
         <Popover placement={placement}>
             <Popover.Trigger>{children}</Popover.Trigger>
@@ -27,200 +51,5 @@ export function MemberPicker({ assignees, duties, onAdd, onRemove, children, pla
                 <MemberPickerPanel assignees={assignees} duties={duties} onAdd={onAdd} onRemove={onRemove} />
             </Popover.Panel>
         </Popover>
-    );
-}
-
-type Step = 'browse' | 'pick-duty';
-
-type PanelProps = Omit<MemberPickerProps, 'children' | 'placement'>;
-
-function MemberPickerPanel({ assignees, duties, onAdd, onRemove }: PanelProps) {
-    const [step, setStep] = useState<Step>('browse');
-    const [allUsers, setAllUsers] = useState<User[]>([]);
-    const [search, setSearch] = useState("");
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
-    const [duty, setDuty] = useState("");
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        fetchAllUsers()
-            .then(setAllUsers)
-            .finally(() => setIsLoading(false));
-    }, []);
-
-    const matchesSearch = (name: string, surname: string) => {
-        const fullName = `${name} ${surname}`.toLowerCase();
-        return fullName.includes(search.toLowerCase());
-    };
-
-    const assignedIds = new Set(assignees.map((a) => a.id));
-    const assignedFiltered = assignees.filter((a) => matchesSearch(a.name, a.surname));
-    const available = allUsers.filter((u) => !assignedIds.has(u.id) && matchesSearch(u.name, u.surname));
-
-    function handleSelectMember(user: User) {
-        setSelectedUser(user);
-        setDuty("");
-        setStep('pick-duty');
-    }
-
-    function handleConfirm() {
-        if (!selectedUser || !duty) return;
-        onAdd(selectedUser.id, duty);
-        setStep('browse');
-        setSelectedUser(null);
-        setDuty("");
-        setSearch("");
-    }
-
-    function handleBack() {
-        setStep('browse');
-        setSelectedUser(null);
-        setDuty("");
-    }
-
-    if (step === 'pick-duty' && selectedUser) {
-        return (
-            <>
-                <div className="p-2 border-b border-secondary flex items-center gap-2">
-                    <Button.Icon variant="ghost" icon={<ArrowLeft />} onClick={handleBack} />
-                    <UserAvatar size="sm" user={selectedUser} />
-                    <div className="flex-1 min-w-0">
-                        <Label.sm>{selectedUser.name} {selectedUser.surname}</Label.sm>
-                    </div>
-                </div>
-                <div className="py-2 border-b border-secondary">
-                    <Paragraph.xs className="px-3 pb-1.5 text-quaternary">Select a duty</Paragraph.xs>
-                    <div className="max-h-40 px-1 overflow-y-auto space-y-0.5">
-                        {duties.map((role) => (
-                            <DutyRow key={role} role={role} selected={duty === role} onSelect={setDuty} />
-                        ))}
-                    </div>
-                </div>
-                <div className="p-2 border-b border-secondary">
-                    <Paragraph.xs className="px-1 pb-1.5 text-quaternary">Or type a custom duty</Paragraph.xs>
-                    <Input
-                        placeholder="e.g. Camera 1 — main"
-                        value={duty}
-                        onChange={(e) => setDuty(e.target.value)}
-                    />
-                </div>
-                <div className="p-2 flex gap-2">
-                    <Button variant="secondary" className="flex-1" onClick={handleBack}>Back</Button>
-                    <Button className="flex-1" disabled={!duty} onClick={handleConfirm}>Add</Button>
-                </div>
-            </>
-        );
-    }
-
-    return (
-        <>
-            <div className="p-2 border-b border-secondary">
-                <Input
-                    icon={<Search />}
-                    placeholder="Search members..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
-            </div>
-            <div className="max-h-72 overflow-y-auto">
-                {isLoading && (
-                    <div className="flex justify-center py-4">
-                        <Spinner size="sm" />
-                    </div>
-                )}
-
-                {!isLoading && assignedFiltered.length > 0 && (
-                    <div>
-                        <Paragraph.xs className="px-3 pt-2 pb-1 text-quaternary">Assigned</Paragraph.xs>
-                        <div className="px-1 pb-1 flex flex-col gap-0.5">
-                            {assignedFiltered.map((a) => (
-                                <div key={`${a.id}-${a.duty}`} className="w-full flex items-center rounded-lg py-1 px-2 space-x-2">
-                                    <UserAvatar size="sm" user={a} />
-                                    <div className="flex-1 min-w-0">
-                                        <Label.sm>{a.name} {a.surname}</Label.sm>
-                                        {a.duty && <Paragraph.xs className="text-quaternary truncate">{a.duty}</Paragraph.xs>}
-                                    </div>
-                                    <Button.Icon icon={<X />} variant="ghost" onClick={() => onRemove(a.id)} />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {!isLoading && available.length > 0 && (
-                    <div className={assignedFiltered.length > 0 ? "border-t border-secondary" : undefined}>
-                        <Paragraph.xs className="px-3 pt-2 pb-1 text-quaternary">
-                            {assignedFiltered.length > 0 ? 'Available' : 'Members'}
-                        </Paragraph.xs>
-                        <div className="px-1 pb-1 flex flex-col gap-0.5">
-                            {available.map((a) => (
-                                <AvailableMemberRow key={a.id} user={a} onSelect={handleSelectMember} />
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {!isLoading && assignedFiltered.length === 0 && available.length === 0 && (
-                    <div className="px-3 py-4 text-center">
-                        <Paragraph.sm className="text-quaternary">No members found</Paragraph.sm>
-                    </div>
-                )}
-            </div>
-        </>
-    );
-}
-
-type DutyRowProps = {
-    role: string;
-    selected: boolean;
-    onSelect: (role: string) => void;
-};
-
-function DutyRow({ role, selected, onSelect }: DutyRowProps) {
-    function handleClick() {
-        onSelect(role);
-    }
-
-    return (
-        <Button
-            variant="ghost"
-            className="w-full flex items-center justify-start gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-secondary transition-colors cursor-pointer"
-            onClick={handleClick}
-        >
-            <span
-                aria-hidden="true"
-                className={cn(
-                    "inline-flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors",
-                    selected ? "border-brand bg-brand_solid" : "border-secondary bg-primary",
-                )}
-            >
-                <span className={cn("size-2 rounded-full bg-primary transition-opacity", selected ? "opacity-100" : "opacity-0")} />
-            </span>
-            <Label.sm className={selected ? "text-primary" : "text-secondary"}>{role}</Label.sm>
-        </Button>
-    );
-}
-
-type AvailableMemberRowProps = {
-    user: User;
-    onSelect: (user: User) => void;
-};
-
-function AvailableMemberRow({ user, onSelect }: AvailableMemberRowProps) {
-    function handleClick() {
-        onSelect(user);
-    }
-
-    return (
-        <Button
-            variant="ghost"
-            onClick={handleClick}
-            className="w-full flex items-center justify-start rounded-lg py-1 px-2 space-x-2 hover:bg-secondary transition-colors cursor-pointer"
-        >
-            <UserAvatar size="sm" user={user} />
-            <div className="flex-1 min-w-0 text-left">
-                <Label.sm>{user.name} {user.surname}</Label.sm>
-            </div>
-        </Button>
     );
 }

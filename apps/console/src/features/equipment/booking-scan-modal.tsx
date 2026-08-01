@@ -1,6 +1,8 @@
 import { Button } from "@moc/ui/components/controls/button";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
-import { Label, Paragraph, Title } from "@moc/ui/components/display/text";
+import { Paragraph, Title } from "@moc/ui/components/display/text";
+import { Badge } from "@moc/ui/components/display/badge";
+import { Alert } from "@moc/ui/components/feedback/alert";
 import { Modal } from "@moc/ui/components/overlays/modal";
 import { Camera, ScanLine, Smartphone } from "lucide-react";
 import type { RefObject } from "react";
@@ -40,50 +42,39 @@ export function BookingScanModal({
           <Modal.FullScreenPanel className="overflow-hidden md:max-w-lg">
             <Modal.Header className="items-start">
               <div>
-                <Title.h6>Scan Booking Items</Title.h6>
-                <Paragraph.sm className="mt-1 text-tertiary">
-                  Scan each item to tick it off as you gather it.
-                </Paragraph.sm>
+                <Title.h6>Scan booking items</Title.h6>
               </div>
             </Modal.Header>
 
             <Modal.Content className="flex-col gap-4 p-4">
-              <div className="rounded-lg border border-secondary bg-secondary/40 p-3">
-                <Label.sm>{scannedCount} of {totalCount} scanned</Label.sm>
-              </div>
+              <Badge label={`${scannedCount} of ${totalCount} scanned`} color="blue" />
 
               {isSupported ? (
-                <div className="overflow-hidden rounded-lg border border-secondary bg-primary_hover">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    className="aspect-[3/4] w-full bg-secondary object-cover"
-                    muted
-                    playsInline
-                  />
-                </div>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  className="aspect-[3/4] w-full rounded-lg border border-secondary bg-secondary object-cover"
+                  muted
+                  playsInline
+                />
               ) : (
                 <EmptyState
                   className="rounded-lg border border-dashed border-secondary py-10"
                   icon={<Smartphone />}
                   title="QR scanning is unavailable here"
-                  description="This browser does not expose the camera barcode APIs needed for in-app scanning."
+                  description="Use a browser with camera barcode support."
                 />
               )}
 
               {isSupported && (
                 <Paragraph.sm className="text-tertiary">
                   {isStarting
-                    ? "Starting the rear camera..."
+                    ? "Starting the rear camera…"
                     : "Point the camera at one booking item's QR code and hold steady."}
                 </Paragraph.sm>
               )}
 
-              {error ? (
-                <div className="rounded-lg border border-secondary bg-primary_hover p-3">
-                  <Paragraph.sm className="text-secondary">{error}</Paragraph.sm>
-                </div>
-              ) : null}
+              {error ? <Alert title="Scanner error" description={error} variant="error" /> : null}
             </Modal.Content>
 
             <Modal.Footer className="justify-end">
