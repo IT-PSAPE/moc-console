@@ -157,7 +157,7 @@ export function ProfileTab() {
             <Section>
                 <Section.Header title="Your profile" />
 
-                <Divider className="py-6" />
+                <Divider className="my-6" />
 
                 <Section.Body>
                     <SettingsRow
@@ -206,7 +206,7 @@ export function ProfileTab() {
                         </div>
                     </SettingsRow>
 
-                    <Divider className="py-6" />
+                    <Divider className="my-6" />
 
                     <SettingsRow
                         label="First name"
@@ -219,7 +219,7 @@ export function ProfileTab() {
                         />
                     </SettingsRow>
 
-                    <Divider className="py-6" />
+                    <Divider className="my-6" />
 
                     <SettingsRow
                         label="Last name"
@@ -232,7 +232,7 @@ export function ProfileTab() {
                         />
                     </SettingsRow>
 
-                    <Divider className="py-6" />
+                    <Divider className="my-6" />
 
                     <SettingsRow
                         label="Email"
@@ -241,7 +241,7 @@ export function ProfileTab() {
                         <Input value={profile.email} disabled readOnly />
                     </SettingsRow>
 
-                    <Divider className="py-6" />
+                    <Divider className="my-6" />
 
                     <SettingsRow
                         label="Duty"
@@ -254,7 +254,7 @@ export function ProfileTab() {
                         />
                     </SettingsRow>
 
-                    <Divider className="py-6" />
+                    <Divider className="my-6" />
 
                     <SettingsRow
                         label="Status"
@@ -275,7 +275,7 @@ export function ProfileTab() {
                         </div>
                     </SettingsRow>
 
-                    <Divider className="py-6" />
+                    <Divider className="my-6" />
 
                     <SettingsRow
                         label="Telegram"

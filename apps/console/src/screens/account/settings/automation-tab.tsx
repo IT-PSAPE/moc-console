@@ -7,7 +7,7 @@ export function AutomationTab() {
         <>
             <StaleAlertsSection />
 
-            <Divider className="py-6" />
+            <Divider className="my-6" />
 
             <ArchiveAutomationsSection />
         </>

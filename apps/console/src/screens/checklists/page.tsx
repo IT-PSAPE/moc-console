@@ -19,6 +19,7 @@ import { useChecklistRunFilters } from '@/features/checklists/use-checklist-run-
 import { routes } from '@/screens/console-routes'
 import type { Checklist } from '@moc/types/checklists'
 import { useNavigate } from 'react-router-dom'
+import { useIsMobile } from '@moc/ui/hooks/use-is-mobile'
 
 export function ChecklistsScreen() {
     const {
@@ -26,6 +27,7 @@ export function ChecklistsScreen() {
         actions: { loadChecklists, createChecklistInstance, createBlankChecklist },
     } = useChecklists()
     const navigate = useNavigate()
+    const isMobile = useIsMobile()
     const [modalOpen, setModalOpen] = useState(false)
     const [modalTemplate, setModalTemplate] = useState<Checklist | null>(null)
 
@@ -63,7 +65,7 @@ export function ChecklistsScreen() {
 
     return (
         <section>
-            <Header className="p-4 pt-8 mx-auto max-w-content">
+            <Header className="p-2 pt-8 mx-auto max-w-content">
                 <Header.Lead className="gap-2">
                     <Title.h6>Checklist Runs</Title.h6>
                     <Paragraph.sm className="text-tertiary max-w-2xl">
@@ -72,7 +74,7 @@ export function ChecklistsScreen() {
                 </Header.Lead>
             </Header>
 
-            <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
+            <div className="flex flex-col gap-4 p-2 pt-8 mx-auto w-full max-w-content">
                 <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
                     <Header.Lead className="gap-2">
                         <Label.md>Checklists</Label.md>
@@ -81,7 +83,9 @@ export function ChecklistsScreen() {
                         <Input icon={<Search />} placeholder="Search checklist runs..." className="w-full max-w-md" value={filters.search} onChange={(event) => setSearch(event.target.value)} />
                         <Drawer>
                             <Drawer.Trigger>
-                                <Button icon={<Settings2 />} variant="secondary">Filter</Button>
+                                {isMobile
+                                    ? <Button.Icon icon={<Settings2 />} variant="secondary" aria-label="Filter" />
+                                    : <Button icon={<Settings2 />} variant="secondary">Filter</Button>}
                             </Drawer.Trigger>
                             <ChecklistRunFilterDrawer filters={checklistFilters} />
                         </Drawer>

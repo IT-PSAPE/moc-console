@@ -97,7 +97,7 @@ function ChecklistDrawerContent({ checklist }: { checklist: Checklist }) {
                     </Dropdown>
                 </div>
 
-                <Divider className="px-4 py-3" />
+                <Divider className="my-3" />
 
                 <ChecklistContent
                     checklist={checklist}

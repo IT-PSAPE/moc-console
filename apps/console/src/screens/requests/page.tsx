@@ -29,6 +29,7 @@ import { Decision } from "@moc/ui/components/display/decision";
 export function RequestsScreen() {
   const [view, setView] = useState("list");
   const isMobile = useIsMobile();
+  const activeView = isMobile && (view === "table" || view === "kanban") ? "list" : view;
   const {
     state: { allRequests, isLoadingActive, isLoadingArchived },
     actions: { loadActiveRequests, loadArchivedRequests },
@@ -51,9 +52,13 @@ export function RequestsScreen() {
     setSearch(e.target.value)
   }
 
+  function handleViewChange(value: string) {
+    setView(value)
+  }
+
   return (
     <section>
-      <Header className="p-4 pt-8 mx-auto max-w-content">
+      <Header className="p-2 pt-8 mx-auto max-w-content">
         <Header.Lead className="gap-2">
           <Title.h6>Requests</Title.h6>
           <Paragraph.sm className="text-tertiary max-w-2xl">
@@ -63,12 +68,12 @@ export function RequestsScreen() {
         </Header.Lead>
       </Header>
 
-      <Header className="p-4 pt-8 mx-auto max-w-content max-mobile:flex-col max-mobile:gap-2 *:max-mobile:w-full">
+      <Header className="p-2 pt-8 mx-auto max-w-content max-mobile:flex-col max-mobile:gap-2 *:max-mobile:w-full">
         <Header.Lead className="gap-2 w-full">
-          <SegmentedControl defaultValue="list" onValueChange={(value) => setView(value)} fill={isMobile} >
+          <SegmentedControl value={activeView} onValueChange={handleViewChange} fill={isMobile} >
             <SegmentedControl.Item value="list" icon={<List />}>List</SegmentedControl.Item>
-            <SegmentedControl.Item value="table" icon={<TableIcon />}>Table</SegmentedControl.Item>
-            <SegmentedControl.Item value="kanban" icon={<Columns3 />}>Kanban</SegmentedControl.Item>
+            <SegmentedControl.Item value="table" icon={<TableIcon />} hide={isMobile}>Table</SegmentedControl.Item>
+            <SegmentedControl.Item value="kanban" icon={<Columns3 />} hide={isMobile}>Kanban</SegmentedControl.Item>
             <SegmentedControl.Item value="calendar" icon={<CalendarDays />}>Calendar</SegmentedControl.Item>
           </SegmentedControl>
         </Header.Lead>
@@ -76,7 +81,9 @@ export function RequestsScreen() {
           <Input icon={<Search />} placeholder="Search requests..." className="w-full max-w-md" value={state.search} onChange={onSearch} />
           <Drawer>
             <Drawer.Trigger>
-              <Button icon={<Settings2 />} variant="secondary">Filter</Button>
+              {isMobile
+                ? <Button.Icon icon={<Settings2 />} variant="secondary" aria-label="Filter" />
+                : <Button icon={<Settings2 />} variant="secondary">Filter</Button>}
             </Drawer.Trigger>
             <RequestFilterDrawer filters={requestFilters} />
           </Drawer>
@@ -95,10 +102,10 @@ export function RequestsScreen() {
           />
         </Decision.Empty>
         <Decision.Data>
-          {view === "list" && <RequestListView requests={filtered} />}
-          {view === "table" && <RequestTableView requests={filtered} />}
-          {view === "kanban" && <RequestKanbanView requests={filtered} />}
-          {view === "calendar" && <RequestCalendarView requests={filtered} />}
+          {activeView === "list" && <RequestListView requests={filtered} />}
+          {activeView === "table" && <RequestTableView requests={filtered} />}
+          {activeView === "kanban" && <RequestKanbanView requests={filtered} />}
+          {activeView === "calendar" && <RequestCalendarView requests={filtered} />}
         </Decision.Data>
       </Decision>
     </section>

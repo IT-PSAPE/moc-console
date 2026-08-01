@@ -74,7 +74,7 @@ export function StreamFilterDrawer({ filters }: StreamFilterDrawerProps) {
                     ))}
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Visibility</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
@@ -89,7 +89,7 @@ export function StreamFilterDrawer({ filters }: StreamFilterDrawerProps) {
                     ))}
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Scheduled Date</Paragraph.sm>
                   <div className="flex gap-2 px-3">
@@ -111,7 +111,7 @@ export function StreamFilterDrawer({ filters }: StreamFilterDrawerProps) {
                     </label>
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Completed Streams</Paragraph.sm>
                   <div className="px-3">
@@ -145,7 +145,7 @@ export function StreamFilterDrawer({ filters }: StreamFilterDrawerProps) {
                     </Radio>
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Scheduled Date</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
@@ -157,7 +157,7 @@ export function StreamFilterDrawer({ filters }: StreamFilterDrawerProps) {
                     </Radio>
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Created Date</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
@@ -169,7 +169,7 @@ export function StreamFilterDrawer({ filters }: StreamFilterDrawerProps) {
                     </Radio>
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Status</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">

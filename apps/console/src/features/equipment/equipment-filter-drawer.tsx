@@ -62,7 +62,7 @@ export function EquipmentFilterDrawer({ filters }: EquipmentFilterDrawerProps) {
                     ))}
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Status</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
@@ -99,7 +99,7 @@ export function EquipmentFilterDrawer({ filters }: EquipmentFilterDrawerProps) {
                     </Radio>
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Last Active</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
@@ -111,7 +111,7 @@ export function EquipmentFilterDrawer({ filters }: EquipmentFilterDrawerProps) {
                     </Radio>
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Category</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">

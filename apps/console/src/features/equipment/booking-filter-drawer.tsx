@@ -83,7 +83,7 @@ export function BookingFilterDrawer({ filters }: BookingFilterDrawerProps) {
                     </Radio>
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Expected Return</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
@@ -95,7 +95,7 @@ export function BookingFilterDrawer({ filters }: BookingFilterDrawerProps) {
                     </Radio>
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Title</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
@@ -107,7 +107,7 @@ export function BookingFilterDrawer({ filters }: BookingFilterDrawerProps) {
                     </Radio>
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Booked By</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">

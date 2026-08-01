@@ -219,7 +219,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
       </div>
 
       {/* Notes */}
-      <Divider className="px-4 my-2" />
+      <Divider className="my-2" />
       <div className="py-4">
         <EquipmentNotesSection
           draft={draft}
@@ -228,7 +228,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
       </div>
 
       {/* Booking History */}
-      <Divider className="px-4 my-2" />
+      <Divider className="my-2" />
       <div className="py-4">
         <BookingHistorySection
           bookings={bookings}
@@ -237,7 +237,7 @@ function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
       </div>
 
       {/* QR Code */}
-      <Divider className="px-4 my-2" />
+      <Divider className="my-2" />
       <div className="py-4">
         <EquipmentQrSection equipment={draft} />
       </div>

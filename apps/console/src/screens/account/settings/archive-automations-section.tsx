@@ -115,7 +115,7 @@ export function ArchiveAutomationsSection() {
                 description="Move finished work out of active views after it has stayed complete or returned for the configured number of days."
             />
 
-            <Divider className="py-6" />
+            <Divider className="my-6" />
 
             <Section.Body>
                 {isLoading ? (
@@ -136,7 +136,7 @@ export function ArchiveAutomationsSection() {
                             />
                         </SettingsRow>
 
-                        <Divider className="py-6" />
+                        <Divider className="my-6" />
 
                         <SettingsRow
                             label="Returned bookings"

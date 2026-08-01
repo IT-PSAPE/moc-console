@@ -56,7 +56,7 @@ export function InventoryTableView({ equipment }: { equipment: Equipment[] }) {
     const visible = useMemo(() => equipment.filter((e) => e.status !== "maintenance"), [equipment]);
 
     return (
-        <div className="p-4 pt-0 mx-auto w-full max-w-content">
+        <div className="p-2 pt-0 mx-auto w-full max-w-content">
             <DataTable
                 data={visible}
                 columns={columns}

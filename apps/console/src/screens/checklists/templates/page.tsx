@@ -59,7 +59,7 @@ export function ChecklistTemplatesScreen() {
 
     return (
         <section>
-            <Header className="p-4 pt-8 mx-auto max-w-content">
+            <Header className="p-2 pt-8 mx-auto max-w-content">
                 <Header.Lead className="gap-2">
                     <Title.h6>Checklist Templates</Title.h6>
                     <Paragraph.sm className="text-tertiary max-w-2xl">
@@ -68,7 +68,7 @@ export function ChecklistTemplatesScreen() {
                 </Header.Lead>
             </Header>
 
-            <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
+            <div className="flex flex-col gap-4 p-2 pt-8 mx-auto w-full max-w-content">
                 <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
                     <Header.Lead className="gap-2">
                         <Label.md>Templates</Label.md>

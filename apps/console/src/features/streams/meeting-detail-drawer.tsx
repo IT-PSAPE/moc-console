@@ -117,7 +117,7 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
               </MetaRow>
             </div>
 
-            <Divider className="px-4 py-6" />
+            <Divider className="my-6" />
 
             <div className="px-4 space-y-3">
               <Label.md>Settings</Label.md>
@@ -137,7 +137,7 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
 
             {meeting.joinUrl && (
               <>
-                <Divider className="px-4 py-6" />
+                <Divider className="my-6" />
                 <div className="px-4 space-y-3">
                   <Label.md>Join Link</Label.md>
                   <div className="flex items-center gap-2">
@@ -159,7 +159,7 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
 
             {meeting.password && (
               <>
-                <Divider className="px-4 py-6" />
+                <Divider className="my-6" />
                 <div className="px-4 space-y-3">
                   <MetaRow icon={<Key />} label="Passcode">
                     <div className="flex items-center gap-1">

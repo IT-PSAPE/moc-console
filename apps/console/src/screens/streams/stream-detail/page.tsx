@@ -221,7 +221,7 @@ export function StreamDetailScreen() {
       </div>
 
       {/* Playback */}
-      <Divider className="px-4 my-2" />
+      <Divider className="my-2" />
       <div className="p-4">
         <Label.md className="block pb-3">Playback</Label.md>
         <div className="space-y-3">
@@ -250,7 +250,7 @@ export function StreamDetailScreen() {
       {/* YouTube Link */}
       {stream.streamUrl && (
         <>
-          <Divider className="px-4 my-2" />
+          <Divider className="my-2" />
           <div className="p-4">
             <Label.md className="block pb-3">YouTube Link</Label.md>
             <div className="flex items-center gap-2">
@@ -271,7 +271,7 @@ export function StreamDetailScreen() {
       {/* Stream Setup */}
       {canViewStreamKey && stream.streamKey && (
         <>
-          <Divider className="px-4 my-2" />
+          <Divider className="my-2" />
           <div className="p-4">
             <Label.md className="block pb-3">Stream Setup (OBS / Encoder)</Label.md>
             <div className="space-y-3">

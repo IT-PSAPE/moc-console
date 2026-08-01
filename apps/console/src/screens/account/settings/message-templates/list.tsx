@@ -89,7 +89,7 @@ export function MessageTemplates() {
                 title="Message templates"
                 description="Customise the text of Telegram notifications. Click a message to edit its template; leave it untouched to keep the built-in wording."
             />
-            <Divider className="py-6" />
+            <Divider className="my-6" />
             {isLoading ? (
                 <div className="flex justify-center py-6">
                     <LoadingSpinner size="lg" />

@@ -34,7 +34,7 @@ export function RequestCalendarView({ requests }: { requests: Request[] }) {
     const events = useMemo(() => toCalendarEvents(requests), [requests]);
 
     return (
-        <div className='p-4 pt-0 mx-auto w-full max-w-content'>
+        <div className='p-2 pt-0 mx-auto w-full max-w-content'>
             <Calendar
                 events={events}
                 cellDrawer={{

@@ -72,7 +72,7 @@ export function ZoomMeetingFilterDrawer({ filters }: ZoomMeetingFilterDrawerProp
                     ))}
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Start Date</Paragraph.sm>
                   <div className="flex gap-2 px-3">
@@ -94,7 +94,7 @@ export function ZoomMeetingFilterDrawer({ filters }: ZoomMeetingFilterDrawerProp
                     </label>
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Past Meetings</Paragraph.sm>
                   <div className="px-3">
@@ -128,7 +128,7 @@ export function ZoomMeetingFilterDrawer({ filters }: ZoomMeetingFilterDrawerProp
                     </Radio>
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Start Time</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
@@ -140,7 +140,7 @@ export function ZoomMeetingFilterDrawer({ filters }: ZoomMeetingFilterDrawerProp
                     </Radio>
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Duration</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">
@@ -152,7 +152,7 @@ export function ZoomMeetingFilterDrawer({ filters }: ZoomMeetingFilterDrawerProp
                     </Radio>
                   </div>
                 </div>
-                <Divider className="px-4" />
+                <Divider />
                 <div className="py-2">
                   <Paragraph.sm className="px-3 py-1.5 text-quaternary">Created Date</Paragraph.sm>
                   <div className="grid grid-cols-2 gap-2 px-3">

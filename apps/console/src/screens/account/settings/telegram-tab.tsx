@@ -96,7 +96,7 @@ export function TelegramTab() {
                     description="Toggle a group active to allow notifications, then click the link icon on a group or topic to connect events."
                 />
 
-                <Divider className="py-6" />
+                <Divider className="my-6" />
 
                 <Section.Body className="gap-4">
                     <Decision value={groups} loading={isLoading}>
@@ -169,11 +169,11 @@ export function TelegramTab() {
                 </Section.Body>
             </Section>
 
-            <Divider className="py-6" />
+            <Divider className="my-6" />
 
             <MessageTemplates />
 
-            <Divider className="py-6" />
+            <Divider className="my-6" />
 
             <MessageFormatSection />
 

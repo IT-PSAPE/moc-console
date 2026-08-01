@@ -12,7 +12,7 @@ export function SupportTab() {
             <Section>
                 <Section.Header title="Support" />
 
-                <Divider className="py-6" />
+                <Divider className="my-6" />
 
                 <Section.Body>
                     <SettingsLink
@@ -23,7 +23,7 @@ export function SupportTab() {
                         description="Common questions, guides, and how to contact us."
                     />
 
-                    <Divider className="py-6" />
+                    <Divider className="my-6" />
 
                     <SettingsLink
                         external
@@ -33,7 +33,7 @@ export function SupportTab() {
                         description="The agreement governing your use of MOC Console."
                     />
 
-                    <Divider className="py-6" />
+                    <Divider className="my-6" />
 
                     <SettingsLink
                         external

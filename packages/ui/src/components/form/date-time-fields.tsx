@@ -55,14 +55,14 @@ export function DateTimeFields({ value, onChange, label, dateLabel = "Date", tim
     }
 
     return (
-        <div className={cn("flex flex-col gap-1.5", className)}>
+        <div className={cn("flex w-full min-w-0 flex-col gap-1.5", className)}>
             {label && <FormLabel label={label} required={required} optional={optional} />}
-            <div className={cn("grid grid-cols-1 gap-3 sm:grid-cols-2", fieldsClassName)}>
-                <div className="flex flex-col gap-1.5">
+            <div className={cn("grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2", fieldsClassName)}>
+                <div className="flex min-w-0 flex-col gap-1.5">
                     <FormLabel label={dateLabel} />
                     <Input type="date" value={date} onChange={handleDateChange} required={required} disabled={disabled} style={style} />
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex min-w-0 flex-col gap-1.5">
                     <FormLabel label={timeLabel} />
                     <Input type="time" value={time} onChange={handleTimeChange} required={required} disabled={disabled} style={style} />
                 </div>

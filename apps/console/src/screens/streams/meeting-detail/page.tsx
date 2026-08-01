@@ -178,7 +178,7 @@ export function MeetingDetailScreen() {
       </div>
 
       {/* Settings */}
-      <Divider className="px-4 my-2" />
+      <Divider className="my-2" />
       <div className="p-4">
         <Label.md className="block pb-3">Settings</Label.md>
         <div className="space-y-3">
@@ -199,7 +199,7 @@ export function MeetingDetailScreen() {
       {/* Join Link */}
       {meeting.joinUrl && (
         <>
-          <Divider className="px-4 my-2" />
+          <Divider className="my-2" />
           <div className="p-4">
             <Label.md className="block pb-3">Join Link</Label.md>
             <div className="space-y-3">

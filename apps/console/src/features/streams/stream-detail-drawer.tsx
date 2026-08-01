@@ -188,7 +188,7 @@ export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelet
 
             {stream.streamUrl && (
               <>
-                <Divider className="px-4 py-6" />
+                <Divider className="my-6" />
                 <div className="px-4 space-y-3">
                   <Label.md>YouTube Link</Label.md>
                   <div className="flex items-center gap-2">
@@ -210,7 +210,7 @@ export function StreamDetailDrawer({ stream, open, onOpenChange, onEdit, onDelet
 
             {canViewStreamKey && stream.streamKey && (
               <>
-                <Divider className="px-4 py-6" />
+                <Divider className="my-6" />
                 <div className="px-4 space-y-3">
                   <Label.md>Stream Setup (OBS / Encoder)</Label.md>
 

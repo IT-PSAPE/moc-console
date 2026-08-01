@@ -273,7 +273,7 @@ function BookingDetailContent({ booking }: { booking: Booking }) {
       </div>
 
       {/* Items */}
-      <Divider className="px-4 my-2" />
+      <Divider className="my-2" />
       <BookingItemsSection items={draft.items} scannedItemIds={collection.state.scannedItemIds} />
 
       {/* Navigation guard modal */}

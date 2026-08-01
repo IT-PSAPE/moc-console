@@ -30,13 +30,18 @@ export function BookingsScreen() {
 
   const [view, setView] = useState("list");
   const isMobile = useIsMobile()
+  const activeView = isMobile && view === "table" ? "list" : view;
 
   const bookingFilters = useBookingFilters(bookings);
   const { filtered, setSearch, filters: state } = bookingFilters;
 
+  function handleViewChange(value: string) {
+    setView(value)
+  }
+
   return (
     <section>
-      <Header className="p-4 pt-8 mx-auto max-w-content">
+      <Header className="p-2 pt-8 mx-auto max-w-content">
         <Header.Lead className="gap-2">
           <Title.h6>Bookings</Title.h6>
           <Paragraph.sm className="text-tertiary max-w-2xl">
@@ -48,9 +53,9 @@ export function BookingsScreen() {
       <div className="flex flex-col gap-4 p-4 mx-auto w-full max-w-content">
         <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
           <Header.Lead className="gap-2">
-            <SegmentedControl defaultValue="list" onValueChange={(value) => setView(value)} fill={isMobile}>
+            <SegmentedControl value={activeView} onValueChange={handleViewChange} fill={isMobile}>
               <SegmentedControl.Item value="list" icon={<List />}>List</SegmentedControl.Item>
-              <SegmentedControl.Item value="table" icon={<TableIcon />}>Table</SegmentedControl.Item>
+              <SegmentedControl.Item value="table" icon={<TableIcon />} hide={isMobile}>Table</SegmentedControl.Item>
               <SegmentedControl.Item value="calendar" icon={<CalendarDays />}>Calendar</SegmentedControl.Item>
             </SegmentedControl>
           </Header.Lead>
@@ -58,7 +63,9 @@ export function BookingsScreen() {
             <Input icon={<Search />} placeholder="Search bookings..." className="w-full max-w-md" value={state.search} onChange={(e) => setSearch(e.target.value)} />
             <Drawer>
               <Drawer.Trigger>
-                <Button icon={<Settings2 />} variant="secondary">Filter</Button>
+                {isMobile
+                  ? <Button.Icon icon={<Settings2 />} variant="secondary" aria-label="Filter" />
+                  : <Button icon={<Settings2 />} variant="secondary">Filter</Button>}
               </Drawer.Trigger>
               <BookingFilterDrawer filters={bookingFilters} />
             </Drawer>
@@ -77,9 +84,9 @@ export function BookingsScreen() {
             />
           </Decision.Empty>
           <Decision.Data>
-            {view === "list" && <BookingListView bookings={filtered} />}
-            {view === "table" && <BookingTableView bookings={filtered} />}
-            {view === "calendar" && <BookingCalendarView bookings={filtered} />}
+            {activeView === "list" && <BookingListView bookings={filtered} />}
+            {activeView === "table" && <BookingTableView bookings={filtered} />}
+            {activeView === "calendar" && <BookingCalendarView bookings={filtered} />}
           </Decision.Data>
         </Decision>
       </div>

@@ -130,7 +130,7 @@ function RequestDetailContent({ request, assignees, setAssignees, syncRequest }:
                         />
                     </div>
 
-                    <Divider className="px-4 my-2" />
+                    <Divider className="my-2" />
 
                     {/* 5W1H */}
                     <RequestFiveW request={store.state.draft} className="p-4" />
@@ -138,7 +138,7 @@ function RequestDetailContent({ request, assignees, setAssignees, syncRequest }:
                     {/* Notes & Flow side by side when both present */}
                     {(store.state.draft.notes) && (
                         <>
-                            <Divider className="px-4 my-2" />
+                            <Divider className="my-2" />
                             <RequestNotes request={store.state.draft} className="p-4" />
                         </>
                     )}
@@ -146,13 +146,13 @@ function RequestDetailContent({ request, assignees, setAssignees, syncRequest }:
                     {/* Notes & Flow side by side when both present */}
                     {(store.state.draft.flow) && (
                         <>
-                            <Divider className="px-4 my-2" />
+                            <Divider className="my-2" />
                             <RequestFlow request={store.state.draft} className="p-4" />
                         </>
                     )}
 
                     {/* Assignees */}
-                    <Divider className="px-4 my-2" />
+                    <Divider className="my-2" />
                     <div className="p-4">
                         <RequestAssigneeList
                             assignees={assignees}
@@ -162,7 +162,7 @@ function RequestDetailContent({ request, assignees, setAssignees, syncRequest }:
                     </div>
 
                     {/* Content area */}
-                    <Divider className="px-4 my-2" />
+                    <Divider className="my-2" />
                     <div className="p-4">
                         <Label.md className="block pb-3">Content</Label.md>
                         <DocEditor

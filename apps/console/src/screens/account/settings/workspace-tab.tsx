@@ -94,7 +94,7 @@ export function WorkspaceTab() {
             <Section>
                 <Section.Header title="Workspace details" />
                 
-                <Divider className="py-6" />
+                <Divider className="my-6" />
 
                 <Section.Body>
                     <SettingsRow
@@ -109,7 +109,7 @@ export function WorkspaceTab() {
                         />
                     </SettingsRow>
 
-                    <Divider className="py-6" />
+                    <Divider className="my-6" />
 
                     <SettingsRow label="Slug" description="Used in URLs. Lowercase letters, numbers, and hyphens only." >
                         <div className="flex flex-col gap-1">
@@ -127,7 +127,7 @@ export function WorkspaceTab() {
                         </div>
                     </SettingsRow>
 
-                    <Divider className="py-6" />
+                    <Divider className="my-6" />
 
                     <SettingsRow label="Description" description="A short summary of what this workspace is for." >
                         <TextArea
@@ -155,7 +155,7 @@ export function WorkspaceTab() {
                 </>
             )}
 
-            <Divider className="py-6" />
+            <Divider className="my-6" />
 
             <UsersTab />
         </div>

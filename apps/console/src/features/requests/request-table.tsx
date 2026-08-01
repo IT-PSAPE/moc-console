@@ -58,7 +58,7 @@ export function RequestTableView({ requests }: { requests: Request[] }) {
     const visible = useMemo(() => requests.filter((r) => r.status !== "archived"), [requests]);
 
     return (
-        <div className="p-4 pt-0 mx-auto w-full max-w-content">
+        <div className="p-2 pt-0 mx-auto w-full max-w-content">
             <DataTable
                 data={visible}
                 columns={columns}

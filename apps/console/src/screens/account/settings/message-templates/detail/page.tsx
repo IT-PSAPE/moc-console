@@ -204,7 +204,7 @@ function Editor({ messageType }: { messageType: MessageType }) {
 
     return (
         <section className="mx-auto max-w-content-md">
-            <Header className="p-4 pt-8">
+            <Header className="p-2 pt-8">
                 <Header.Lead className="gap-1">
                     <Button.Unstyled
                         type="button"

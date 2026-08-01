@@ -50,7 +50,7 @@ function StreamsTabContent() {
         <Section>
             <Section.Header title="Streaming connections" />
 
-            <Divider className="py-6" />
+            <Divider className="my-6" />
 
             <Section.Body>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

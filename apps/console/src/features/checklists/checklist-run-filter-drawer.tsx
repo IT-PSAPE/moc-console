@@ -64,7 +64,7 @@ export function ChecklistRunFilterDrawer({ filters }: ChecklistRunFilterDrawerPr
                                         </div>
                                     </div>
                                 </div>
-                                <Divider className="px-4" />
+                                <Divider />
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Completion</Paragraph.sm>
                                     <RadioGroup
@@ -79,7 +79,7 @@ export function ChecklistRunFilterDrawer({ filters }: ChecklistRunFilterDrawerPr
                                         ))}
                                     </RadioGroup>
                                 </div>
-                                <Divider className="px-4" />
+                                <Divider />
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Checklist Size</Paragraph.sm>
                                     <div className="grid grid-cols-2 gap-2 px-3">
@@ -109,7 +109,7 @@ export function ChecklistRunFilterDrawer({ filters }: ChecklistRunFilterDrawerPr
                                         <Radio value="scheduledAt-desc"><FormLabel label="Descending" /></Radio>
                                     </div>
                                 </div>
-                                <Divider className="px-4" />
+                                <Divider />
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Name</Paragraph.sm>
                                     <div className="grid grid-cols-2 gap-2 px-3">
@@ -117,7 +117,7 @@ export function ChecklistRunFilterDrawer({ filters }: ChecklistRunFilterDrawerPr
                                         <Radio value="name-desc"><FormLabel label="Z-A" /></Radio>
                                     </div>
                                 </div>
-                                <Divider className="px-4" />
+                                <Divider />
                                 <div className="py-2">
                                     <Paragraph.sm className="px-3 py-1.5 text-quaternary">Checklist Progress</Paragraph.sm>
                                     <div className="grid grid-cols-2 gap-2 px-3">

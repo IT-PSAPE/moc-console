@@ -49,7 +49,7 @@ function KanbanBoardColumns({ children, className, ...props }: HTMLAttributes<HT
         <div className="overflow-x-auto w-full">
             <div
                 className={cn(
-                    "flex gap-3 p-4 pt-0 mx-auto w-full max-w-content *:flex-1 *:min-w-sm",
+                    "flex gap-3 p-2 pt-0 mx-auto w-full max-w-content *:flex-1 *:min-w-sm",
                     className,
                 )}
                 {...props}

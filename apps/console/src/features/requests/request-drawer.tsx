@@ -57,7 +57,7 @@ export function RequestDrawer({
   return (
     <Drawer.Portal>
       <Drawer.Backdrop />
-      <Drawer.Panel className="max-w-lg">
+      <Drawer.Panel aria-label={request.title} className="max-w-lg">
         <RequestDrawerContent
           request={request}
           onRequestClose={onRequestClose}
@@ -322,25 +322,25 @@ function RequestDrawerContent({
             </div>
 
             <>
-              <Divider className="px-4 py-6" />
+              <Divider className="my-6" />
               <RequestFiveW request={store.state.draft} className="px-4" />
             </>
 
             {store.state.draft.notes && (
               <>
-                <Divider className="px-4 py-6" />
+                <Divider className="my-6" />
                 <RequestNotes request={store.state.draft} className="px-4" />
               </>
             )}
 
             {store.state.draft.flow && (
               <>
-                <Divider className="px-4 py-6" />
+                <Divider className="my-6" />
                 <RequestFlow request={store.state.draft} className="px-4" />
               </>
             )}
 
-            <Divider className="px-4 py-6" />
+            <Divider className="my-6" />
             {isLoadingAssignees ? (
               <LoadingSpinner className="py-6" />
             ) : (

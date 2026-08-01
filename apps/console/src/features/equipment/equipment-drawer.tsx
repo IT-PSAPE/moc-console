@@ -241,13 +241,13 @@ function EquipmentDrawerContent({
           onUpdateField={store.actions.updateField}
         />
 
-        <Divider className="px-4 py-6" />
+        <Divider className="my-6" />
         <EquipmentNotesSection
           draft={draft}
           onUpdateField={store.actions.updateField}
         />
 
-        <Divider className="px-4 py-6" />
+        <Divider className="my-6" />
         <BookingHistorySection
           bookings={bookings}
           isLoading={isLoadingBookings}

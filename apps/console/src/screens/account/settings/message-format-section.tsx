@@ -130,7 +130,7 @@ export function MessageFormatSection() {
                 description="How dates and times appear in Telegram notifications. Applies to every message — group posts, assignment DMs, and stale-item alerts."
             />
 
-            <Divider className="py-6" />
+            <Divider className="my-6" />
 
             <Section.Body className="gap-6">
                 {isLoading ? (

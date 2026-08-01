@@ -12,7 +12,7 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 
 const inputVariants = cv({
     base: [
-        'flex min-h-11 items-center gap-1.5 has-[:disabled]:cursor-not-allowed md:min-h-0',
+        'flex min-h-11 w-full min-w-0 items-center gap-1.5 has-[:disabled]:cursor-not-allowed md:min-h-0',
         'bg-primary has-[:disabled]:bg-disabled',
     ],
     variants: {
@@ -38,7 +38,7 @@ export function Input({ className, style = 'outline', state, ...props }: InputPr
     return (
         <div className={cn(inputVariants({ state: state, style: style }), className)}>
             {props.icon && <span className='*:size-4 text-tertiary'>{props.icon}</span>}
-            <BaseInput className="w-full !p-0 focus:!outline-none focus-visible:!outline-0 !focus:ring-0 paragraph-sm !leading-none" {...props} />
+            <BaseInput className="w-full min-w-0 !p-0 focus:!outline-none focus-visible:!outline-0 !focus:ring-0 paragraph-sm !leading-none" {...props} />
         </div>
     )
 }

@@ -7,7 +7,7 @@ import { statusGroups } from "@moc/types/requests";
 
 export function RequestListView({ requests }: { requests: Request[] }) {
     return (
-        <div className='flex flex-col gap-4 p-4 pt-0 mx-auto w-full max-w-content'>
+        <div className='flex flex-col gap-4 p-2 pt-0 mx-auto w-full max-w-content'>
             {statusGroups.map((group) => {
                 const items = requests.filter((r) => r.status === group.key);
                 if (items.length === 0) return null;

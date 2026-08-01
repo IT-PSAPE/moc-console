@@ -176,7 +176,7 @@ function UsersTabContent() {
         <Section>
             <Section.Header title="Members" />
 
-            <Divider className="py-6" />
+            <Divider className="my-6" />
 
             <Section.Body className="gap-4">
                 <div className="flex flex-1 justify-end">

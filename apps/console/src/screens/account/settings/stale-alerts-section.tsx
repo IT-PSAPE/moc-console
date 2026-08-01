@@ -139,7 +139,7 @@ export function StaleAlertsSection() {
                 description="Telegram reminders when requests or bookings go unattended. People below are DM'd; Telegram group routing still lives in Telegram settings."
             />
 
-            <Divider className="py-6" />
+            <Divider className="my-6" />
 
             <Section.Body className="gap-6">
                 {isLoading ? (

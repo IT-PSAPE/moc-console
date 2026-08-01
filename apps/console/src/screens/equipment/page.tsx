@@ -35,6 +35,7 @@ import { InventoryTableView } from "@/features/equipment/inventory-table";
 export function EquipmentScreen() {
   const [view, setView] = useState("list");
   const isMobile = useIsMobile();
+  const activeView = isMobile && view === "kanban" ? "list" : view;
 
   const {
     state: { equipment, isLoadingEquipment },
@@ -50,6 +51,10 @@ export function EquipmentScreen() {
   const { filtered, setSearch, filters: state } = equipmentFilters;
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  function handleViewChange(value: string) {
+    setView(value)
+  }
 
   const handleCreateEquipment = useCallback(
     async ({
@@ -96,7 +101,7 @@ export function EquipmentScreen() {
 
   return (
     <section>
-      <Header className="p-4 pt-8 mx-auto max-w-content">
+      <Header className="p-2 pt-8 mx-auto max-w-content">
         <Header.Lead className="gap-2">
           <Title.h6>Equipment</Title.h6>
           <Paragraph.sm className="text-tertiary max-w-2xl">
@@ -106,16 +111,16 @@ export function EquipmentScreen() {
         </Header.Lead>
       </Header>
 
-      <Header className="p-4 pt-8 mx-auto max-w-content max-mobile:flex-col max-mobile:gap-2 *:max-mobile:w-full">
+      <Header className="p-2 pt-8 mx-auto max-w-content max-mobile:flex-col max-mobile:gap-2 *:max-mobile:w-full">
         <Header.Lead className="gap-2 w-full">
-          <SegmentedControl defaultValue="list" onValueChange={(value) => setView(value)} fill={isMobile} >
+          <SegmentedControl value={activeView} onValueChange={handleViewChange} fill={isMobile} >
             <SegmentedControl.Item value="list" icon={<List />}>
               List
             </SegmentedControl.Item>
             <SegmentedControl.Item value="table" icon={<TableIcon />}>
               Table
             </SegmentedControl.Item>
-            <SegmentedControl.Item value="kanban" icon={<Columns3 />}>
+            <SegmentedControl.Item value="kanban" icon={<Columns3 />} hide={isMobile}>
               Kanban
             </SegmentedControl.Item>
           </SegmentedControl>
@@ -130,9 +135,9 @@ export function EquipmentScreen() {
           />
           <Drawer>
             <Drawer.Trigger>
-              <Button icon={<Settings2 />} variant="secondary">
-                Filter
-              </Button>
+              {isMobile
+                ? <Button.Icon icon={<Settings2 />} variant="secondary" aria-label="Filter" />
+                : <Button icon={<Settings2 />} variant="secondary">Filter</Button>}
             </Drawer.Trigger>
             <EquipmentFilterDrawer filters={equipmentFilters} />
           </Drawer>
@@ -156,9 +161,9 @@ export function EquipmentScreen() {
           />
         </Decision.Empty>
         <Decision.Data>
-          {view === "list" && <InventoryListView equipment={filtered} />}
-          {view === "table" && <InventoryTableView equipment={filtered} />}
-          {view === "kanban" && <InventoryKanbanView equipment={filtered} />}
+          {activeView === "list" && <InventoryListView equipment={filtered} />}
+          {activeView === "table" && <InventoryTableView equipment={filtered} />}
+          {activeView === "kanban" && <InventoryKanbanView equipment={filtered} />}
         </Decision.Data>
       </Decision>
 

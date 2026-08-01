@@ -12,7 +12,7 @@ export function InventoryListView({ equipment }: { equipment: Equipment[] }) {
     const visible = useMemo(() => equipment.filter((e) => e.status !== "maintenance"), [equipment]);
 
     return (
-        <div className="flex flex-col gap-4 p-4 pt-0 mx-auto w-full max-w-content">
+        <div className="flex flex-col gap-4 p-2 pt-0 mx-auto w-full max-w-content">
             {activeStatusGroups.map((group) => {
                 const items = visible.filter((e) => e.status === group.key);
                 if (items.length === 0) return null;

@@ -110,7 +110,7 @@ export function ChecklistDetailScreen() {
                 </Paragraph.sm>
             </div>
 
-            <Divider className="px-4 my-6" />
+            <Divider className="my-6" />
 
             <div className="px-4 pb-8">
                 <Label.md className="block pb-4">Items</Label.md>
