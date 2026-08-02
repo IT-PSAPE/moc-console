@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Geist+Mono:wght@100..900&display=swap');
 @import "tailwindcss";
 
 /* Tailwind v4 auto-detects sources from the Vite project root (the consuming
@@ -15,7 +15,7 @@
   /* FONT FAMILY */
   --font-body: "DM Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --font-display: "DM Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  --font-mono: ui-monospace, "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --font-title: "DM Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --font-subheading: "DM Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --font-label: "DM Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
