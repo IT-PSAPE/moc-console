@@ -1,7 +1,5 @@
-import { Label, Paragraph } from '@moc/ui/components/display/text'
-import { Badge } from '@moc/ui/components/display/badge'
+import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import { Drawer } from '@moc/ui/components/overlays/drawer'
-import { cv } from '@moc/utils/cv'
 import type { Checklist } from '@moc/types/checklists'
 import { CalendarClock, CheckCircle2, ListChecks } from 'lucide-react'
 import { ChecklistDrawer } from './checklist-drawer'
@@ -9,13 +7,6 @@ import { getChecklistCounts } from './checklist-content'
 import { formatUtcIsoInBrowserTimeZone } from '@moc/utils/browser-date-time'
 import { ResponsiveDrawerTrigger } from '@/features/responsive-drawer-trigger'
 import { routes } from '@/screens/console-routes'
-
-const itemVariants = cv({
-    base: [
-        'flex w-full justify-between gap-4 px-4 py-3 *:flex-1',
-        'items-center *:odd:flex-1 *:odd:max-w-xl *:even:justify-end max-mobile:flex-col *:max-mobile:odd:max-none *:max-mobile:even:justify-start *:max-mobile:w-full',
-    ],
-})
 
 function formatScheduledAt(scheduledAt?: string) {
     if (!scheduledAt) return null
@@ -29,22 +20,20 @@ export function ChecklistItemCard({ checklist }: { checklist: Checklist }) {
 
     return (
         <Drawer>
-            <ResponsiveDrawerTrigger.Card mobileHref={`/${routes.checklists}/${checklist.id}`} className={itemVariants()}>
-                    <div>
-                        <Label.sm>{checklist.name}</Label.sm>
-                        <Paragraph.sm className="text-tertiary">{checklist.description}</Paragraph.sm>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                        {scheduledAt && <Badge label={scheduledAt} icon={<CalendarClock />} color="purple" />}
-                        <Badge
-                            label={`${checked}/${total}`}
-                            icon={<ListChecks />}
-                            color={allDone ? 'green' : 'gray'}
-                        />
-                        {allDone && (
-                            <Badge label="Complete" icon={<CheckCircle2 />} color="green" />
-                        )}
-                    </div>
+            <ResponsiveDrawerTrigger.Card mobileHref={`/${routes.checklists}/${checklist.id}`}>
+                <ListItemCard.Root>
+                    <ListItemCard.Content>
+                        <ListItemCard.Title>{checklist.name}</ListItemCard.Title>
+                        {checklist.description && <ListItemCard.Subtitle>{checklist.description}</ListItemCard.Subtitle>}
+                        <ListItemCard.Meta>
+                            {scheduledAt && <ListItemCard.MetaItem icon={<CalendarClock />}>{scheduledAt}</ListItemCard.MetaItem>}
+                            <ListItemCard.MetaItem className={allDone ? 'text-success' : undefined} icon={<ListChecks />}>{checked} of {total} complete</ListItemCard.MetaItem>
+                            {allDone && (
+                                <ListItemCard.MetaItem className="text-success" icon={<CheckCircle2 />}>Complete</ListItemCard.MetaItem>
+                            )}
+                        </ListItemCard.Meta>
+                    </ListItemCard.Content>
+                </ListItemCard.Root>
             </ResponsiveDrawerTrigger.Card>
             <ChecklistDrawer checklist={checklist} />
         </Drawer>

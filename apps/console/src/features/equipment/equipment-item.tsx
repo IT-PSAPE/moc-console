@@ -1,24 +1,28 @@
-import { Label, Paragraph } from "@moc/ui/components/display/text";
+import { ListItemCard } from "@moc/ui/components/display/list-item-card";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
 import type { Equipment } from "@moc/types/equipment";
 import { EquipmentDrawer } from "./equipment-drawer";
-import { EquipmentThumbnail } from "./equipment-thumbnail";
 import { useDrawerItem } from "@/hooks/use-drawer-item";
 import { ResponsiveDrawerTrigger } from "@/features/responsive-drawer-trigger";
 import { routes } from "@/screens/console-routes";
+import { MapPin, Tag } from "lucide-react";
 
 export function EquipmentItem({ equipment, onDrawerOpenChange }: { equipment: Equipment; onDrawerOpenChange?: (open: boolean) => void }) {
     const { open, isDirtyRef, requestCloseRef, handleOpenChange, handleClose } = useDrawerItem(onDrawerOpenChange);
 
     return (
         <Drawer open={open} onOpenChange={handleOpenChange}>
-            <ResponsiveDrawerTrigger.Card mobileHref={`/${routes.equipment}/${equipment.id}`} className="flex items-start gap-3 p-3">
-                    <EquipmentThumbnail equipment={equipment} size="lg" />
-                    <div className="flex-1">
-                        <Label.sm className="block truncate">{equipment.name}</Label.sm>
-                        <Paragraph.xs className="block text-quaternary font-mono truncate">{equipment.serialNumber}</Paragraph.xs>
-                        <Paragraph.xs className="block text-quaternary mt-0.5">{equipment.category} • {equipment.location}</Paragraph.xs>
-                    </div>
+            <ResponsiveDrawerTrigger.Card mobileHref={`/${routes.equipment}/${equipment.id}`}>
+                <ListItemCard.Root>
+                    <ListItemCard.Content>
+                        <ListItemCard.Title>{equipment.name}</ListItemCard.Title>
+                        {equipment.serialNumber && <ListItemCard.Subtitle className="font-mono">{equipment.serialNumber}</ListItemCard.Subtitle>}
+                        <ListItemCard.Meta>
+                            <ListItemCard.MetaItem icon={<Tag />}>{equipment.category}</ListItemCard.MetaItem>
+                            <ListItemCard.MetaItem icon={<MapPin />}>{equipment.location}</ListItemCard.MetaItem>
+                        </ListItemCard.Meta>
+                    </ListItemCard.Content>
+                </ListItemCard.Root>
             </ResponsiveDrawerTrigger.Card>
             <EquipmentDrawer
                 equipment={equipment}

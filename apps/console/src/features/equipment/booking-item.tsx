@@ -1,13 +1,12 @@
-import { Badge } from "@moc/ui/components/display/badge";
-import { Label, Paragraph } from "@moc/ui/components/display/text";
+import { ListItemCard } from "@moc/ui/components/display/list-item-card";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { useDrawerItem } from "@/hooks/use-drawer-item";
-import { bookingStatusColor, bookingStatusLabel } from "@moc/types/equipment";
 import type { Booking } from "@moc/types/equipment";
 import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
 import { BookingDrawer } from "./booking-drawer";
 import { ResponsiveDrawerTrigger } from "@/features/responsive-drawer-trigger";
 import { routes } from "@/screens/console-routes";
+import { CalendarRange, Package, User } from "lucide-react";
 
 export function BookingItem({ booking, onDrawerOpenChange }: { booking: Booking; onDrawerOpenChange?: (open: boolean) => void }) {
     const { open, isDirtyRef, requestCloseRef, handleOpenChange, handleClose } = useDrawerItem(onDrawerOpenChange);
@@ -18,17 +17,20 @@ export function BookingItem({ booking, onDrawerOpenChange }: { booking: Booking;
 
     return (
         <Drawer open={open} onOpenChange={handleOpenChange}>
-            <ResponsiveDrawerTrigger.Card mobileHref={`/${routes.bookings}/${booking.id}`} className="flex items-start gap-3 p-3">
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                            <Label.sm className="truncate">{booking.title}</Label.sm>
-                            <Badge label={bookingStatusLabel[booking.status]} color={bookingStatusColor[booking.status]} />
-                        </div>
-                        <Paragraph.xs className="block text-quaternary truncate">{booking.bookedBy}</Paragraph.xs>
-                        <Paragraph.xs className="block text-quaternary mt-0.5 truncate">
-                            {checkedOut} → {booking.returnedDate ? formatUtcIsoInBrowserTimeZone(booking.returnedDate) : expectedReturn} · {itemCount} item{itemCount === 1 ? "" : "s"}
-                        </Paragraph.xs>
-                    </div>
+            <ResponsiveDrawerTrigger.Card mobileHref={`/${routes.bookings}/${booking.id}`}>
+                <ListItemCard.Root>
+                    <ListItemCard.Content>
+                        <ListItemCard.Title>{booking.title}</ListItemCard.Title>
+                        {booking.notes && <ListItemCard.Subtitle>{booking.notes}</ListItemCard.Subtitle>}
+                        <ListItemCard.Meta>
+                            <ListItemCard.MetaItem icon={<User />}>{booking.bookedBy}</ListItemCard.MetaItem>
+                            <ListItemCard.MetaItem icon={<CalendarRange />}>
+                                {checkedOut} → {booking.returnedDate ? formatUtcIsoInBrowserTimeZone(booking.returnedDate) : expectedReturn}
+                            </ListItemCard.MetaItem>
+                            <ListItemCard.MetaItem icon={<Package />}>{itemCount} item{itemCount === 1 ? "" : "s"}</ListItemCard.MetaItem>
+                        </ListItemCard.Meta>
+                    </ListItemCard.Content>
+                </ListItemCard.Root>
             </ResponsiveDrawerTrigger.Card>
             <BookingDrawer
                 booking={booking}
