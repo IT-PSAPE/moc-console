@@ -20,7 +20,6 @@ export function RequestKanbanView({ requests }: { requests: Request[] }) {
                             <KanbanBoard.ColumnHeader>
                                 <Indicator color={group.color} className="size-6" />
                                 <Label.sm>{group.label}</Label.sm>
-                                <Label.sm className="text-quaternary ml-auto">{items.length}</Label.sm>
                             </KanbanBoard.ColumnHeader>
                             <KanbanBoard.ColumnContent>
                                 {items.map((r) => (
@@ -33,7 +32,7 @@ export function RequestKanbanView({ requests }: { requests: Request[] }) {
             </KanbanBoard.Columns>
 
             <KanbanBoard.Overlay>
-                {drag.state.activeItem && <RequestItem request={drag.state.activeItem} vertical />}
+                {drag.state.activeItem && <RequestItem request={drag.state.activeItem} />}
             </KanbanBoard.Overlay>
         </KanbanBoard>
     );

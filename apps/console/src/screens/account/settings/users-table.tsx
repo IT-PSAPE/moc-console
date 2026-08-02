@@ -29,6 +29,7 @@ export function UsersTable({ users, roles, currentUserId, canManage, onRoleChang
     {
       key: "name",
       header: "Name",
+      width: 240,
       render: (_, user) => (
         <span className="flex items-center gap-3">
           <UserAvatar user={user} size="sm" />
@@ -39,10 +40,11 @@ export function UsersTable({ users, roles, currentUserId, canManage, onRoleChang
         </span>
       ),
     },
-    { key: "email", header: "Email", render: (_, user) => <span className="text-tertiary">{user.email}</span> },
+    { key: "email", header: "Email", width: 280, render: (_, user) => <span className="text-tertiary">{user.email}</span> },
     {
       key: "role",
       header: "Role",
+      width: 180,
       render: (_, user) => canManage
         ? <UserRoleSelect userId={user.id} role={user.role} roles={roles} onChange={onRoleChange} />
         : <Badge label={user.role?.name ?? "No role"} color={getRoleColor(user.role?.name)} icon={<Shield />} />,
@@ -50,11 +52,12 @@ export function UsersTable({ users, roles, currentUserId, canManage, onRoleChang
     {
       key: "telegramChatId",
       header: "Telegram",
+      width: 180,
       render: (_, user) => user.telegramChatId
         ? <Badge label="Connected" color="green" icon={<MessagesSquare />} />
         : <Badge label="Not connected" color="gray" variant="outline" />,
     },
   ]
 
-  return <DataTable data={users} columns={columns} emptyMessage="No members match your search" />
+  return <DataTable data={users} columns={columns} minWidth={880} emptyMessage="No members match your search" />
 }

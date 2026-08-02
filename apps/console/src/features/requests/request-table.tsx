@@ -12,10 +12,11 @@ import { useTableRowDrawer } from "@/hooks/use-drawer-item";
 const empty = <span className="text-quaternary">—</span>;
 
 const columns = [
-    { key: "title", header: "Title" },
+    { key: "title", header: "Title", width: 260 },
     {
         key: "status",
         header: "Status",
+        width: 130,
         render: (_: unknown, row: Request) => (
             <Badge label={statusLabel[row.status]} color={statusColor[row.status]} />
         ),
@@ -23,6 +24,7 @@ const columns = [
     {
         key: "priority",
         header: "Priority",
+        width: 130,
         render: (_: unknown, row: Request) => (
             <Badge label={priorityLabel[row.priority]} icon={<CircleAlert />} color={priorityColor[row.priority]} />
         ),
@@ -30,6 +32,7 @@ const columns = [
     {
         key: "type",
         header: "Type",
+        width: 180,
         render: (_: unknown, row: Request) => (
             <Badge label={categoryLabel[row.category]} icon={<Tag />} color={categoryColor[row.category]} />
         ),
@@ -37,16 +40,19 @@ const columns = [
     {
         key: "requestedBy",
         header: "Requested By",
+        width: 160,
         render: (value: unknown) => (value as string) || empty,
     },
     {
         key: "dueDate",
         header: "Due Date",
+        width: 160,
         render: (value: unknown) => (value ? formatUtcIsoInBrowserTimeZone(value as string, { day: "2-digit", month: "2-digit", year: "numeric" }) : empty),
     },
     {
         key: "updatedAt",
         header: "Updated",
+        width: 160,
         render: (value: unknown) => (value ? formatUtcIsoInBrowserTimeZone(value as string, { day: "2-digit", month: "2-digit", year: "numeric" }) : empty),
     },
 ];
@@ -62,6 +68,7 @@ export function RequestTableView({ requests }: { requests: Request[] }) {
             <DataTable
                 data={visible}
                 columns={columns}
+                minWidth={1180}
                 emptyMessage="No requests"
                 onRowClick={(row) => setSelected(row)}
             />

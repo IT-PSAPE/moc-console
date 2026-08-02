@@ -21,7 +21,7 @@ const defaultFilters: ChecklistRunFilters = {
     includePast: true,
     dateRange: { start: '', end: '' },
     itemCount: { min: '', max: '' },
-    completion: 'all',
+    completion: 'open',
     sortField: 'scheduledAt',
     sortDirection: 'asc',
 }

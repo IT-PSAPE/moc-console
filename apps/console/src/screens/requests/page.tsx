@@ -26,6 +26,7 @@ import { useRequestsScreen } from "./use-requests-screen";
 export function RequestsScreen() {
   const { actions, meta } = useRequestsScreen();
   const { filters, activeView, isMobile } = meta;
+  const CollectionContent = activeView === "table" || activeView === "kanban" ? Page.CollectionContent : Page.Content;
 
   function handleSearch(event: ChangeEvent<HTMLInputElement>) {
     filters.setSearch(event.target.value)
@@ -61,7 +62,7 @@ export function RequestsScreen() {
         </div>
       </Page.Toolbar>
 
-      <Page.Content>
+      <CollectionContent>
       <Decision value={filters.filtered} loading={meta.isLoading}>
         <Decision.Loading>
           <LoadingSpinner className="py-6" />
@@ -80,7 +81,7 @@ export function RequestsScreen() {
           {activeView === "calendar" && <RequestCalendarView requests={filters.filtered} />}
         </Decision.Data>
       </Decision>
-      </Page.Content>
+      </CollectionContent>
     </Page>
   );
 }

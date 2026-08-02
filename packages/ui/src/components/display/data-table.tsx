@@ -17,6 +17,7 @@ type DataTableProps<T> = {
   data: T[];
   columns: DataTableColumn<T>[];
   className?: string;
+  minWidth?: number | string;
   onRowClick?: (row: T, index: number) => void;
   rowClassName?: string | ((row: T, index: number) => string);
   emptyMessage?: string;
@@ -26,6 +27,7 @@ export function DataTable<T extends Record<string, unknown>>({
   data,
   columns,
   className,
+  minWidth,
   onRowClick,
   rowClassName,
   emptyMessage = "No data",
@@ -36,74 +38,76 @@ export function DataTable<T extends Record<string, unknown>>({
   }
 
   return (
-    <div className="overflow-x-auto">
-    <Table className={cn("w-full overflow-hidden rounded-lg border border-secondary", className)}>
-      <Table.ColGroup>
-        {columns.map((col) => (
-          <Table.Col key={col.key} width={col.width} />
-        ))}
-      </Table.ColGroup>
-
-      <Table.Head>
-        <Table.Row>
+    <div className="w-full overflow-x-auto">
+      <Table className={cn("w-full table-fixed overflow-hidden rounded-lg border border-secondary", className)} style={{ minWidth }}>
+        <Table.ColGroup>
           {columns.map((col) => (
-            <Table.Header
-              key={col.key}
-              className={cn(
-                "px-3 py-2",
-                col.align === "center" && "text-center",
-                col.align === "right" && "text-right",
-                col.className,
-              )}
-            >
-              {col.header}
-            </Table.Header>
+            <Table.Col key={col.key} width={col.width} />
           ))}
-        </Table.Row>
-      </Table.Head>
+        </Table.ColGroup>
 
-      <Table.Body className="bg-primary">
-        {data.length === 0 ? (
+        <Table.Head>
           <Table.Row>
-            <Table.Cell className="px-3 py-6 text-center text-tertiary" colSpan={columns.length}>
-              {emptyMessage}
-            </Table.Cell>
+            {columns.map((col) => (
+              <Table.Header
+                key={col.key}
+                className={cn(
+                  "h-10 overflow-hidden whitespace-nowrap px-3 py-2",
+                  col.align === "center" && "text-center",
+                  col.align === "right" && "text-right",
+                  col.className,
+                )}
+              >
+                <div className="truncate">{col.header}</div>
+              </Table.Header>
+            ))}
           </Table.Row>
-        ) : (
-          data.map((row, rowIndex) => (
-            <Table.Row
-              key={rowIndex}
-              className={cn(
-                onRowClick && "cursor-pointer hover:bg-gray-50",
-                typeof rowClassName === "function"
-                  ? rowClassName(row, rowIndex)
-                  : rowClassName,
-              )}
-              onClick={onRowClick ? () => onRowClick(row, rowIndex) : undefined}
-            >
-              {columns.map((col) => {
-                const value = getCellValue(row, col);
-                return (
-                  <Table.Cell
-                    key={col.key}
-                    className={cn(
-                      "px-3 py-2",
-                      col.align === "center" && "text-center",
-                      col.align === "right" && "text-right",
-                      col.className,
-                    )}
-                  >
-                    {col.render
-                      ? col.render(value as T[keyof T], row, rowIndex)
-                      : (value as ReactNode)}
-                  </Table.Cell>
-                );
-              })}
+        </Table.Head>
+
+        <Table.Body className="bg-primary">
+          {data.length === 0 ? (
+            <Table.Row>
+              <Table.Cell className="px-3 py-6 text-center text-tertiary" colSpan={columns.length}>
+                {emptyMessage}
+              </Table.Cell>
             </Table.Row>
-          ))
-        )}
-      </Table.Body>
-    </Table>
+          ) : (
+            data.map((row, rowIndex) => (
+              <Table.Row
+                key={rowIndex}
+                className={cn(
+                  onRowClick && "cursor-pointer hover:bg-gray-50",
+                  typeof rowClassName === "function"
+                    ? rowClassName(row, rowIndex)
+                    : rowClassName,
+                )}
+                onClick={onRowClick ? () => onRowClick(row, rowIndex) : undefined}
+              >
+                {columns.map((col) => {
+                  const value = getCellValue(row, col);
+                  return (
+                    <Table.Cell
+                      key={col.key}
+                      className={cn(
+                        "h-12 overflow-hidden whitespace-nowrap px-3 py-1.5",
+                        col.align === "center" && "text-center",
+                        col.align === "right" && "text-right",
+                        col.className,
+                      )}
+                    >
+                      <div className="truncate">
+                        {col.render
+                          ? col.render(value as T[keyof T], row, rowIndex)
+                          : (value as ReactNode)}
+                      </div>
+                    </Table.Cell>
+                  );
+                })}
+              </Table.Row>
+            ))
+          )}
+        </Table.Body>
+      </Table>
     </div>
   );
 }

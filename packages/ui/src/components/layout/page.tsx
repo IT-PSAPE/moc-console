@@ -85,9 +85,18 @@ function PageContent({ children, className, ...props }: PageContainerProps) {
     )
 }
 
+function PageCollectionContent({ children, className, ...props }: Omit<PageContainerProps, 'width'>) {
+    return (
+        <PageContainer className={cn('max-w-none pb-6', className)} {...props}>
+            {children}
+        </PageContainer>
+    )
+}
+
 export const Page = Object.assign(PageRoot, {
     Actions: PageActions,
     Container: PageContainer,
+    CollectionContent: PageCollectionContent,
     Content: PageContent,
     Description: PageDescription,
     Header: PageHeader,

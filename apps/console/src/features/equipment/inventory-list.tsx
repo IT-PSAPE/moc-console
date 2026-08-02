@@ -21,7 +21,6 @@ export function InventoryListView({ equipment }: { equipment: Equipment[] }) {
                         <GroupedList.Header>
                             <Indicator color={group.color} className="size-6" />
                             <Label.sm>{group.label}</Label.sm>
-                            <Label.sm className="text-quaternary ml-auto">{items.length}</Label.sm>
                         </GroupedList.Header>
                         <GroupedList.Content>
                             {items.map((e) => (

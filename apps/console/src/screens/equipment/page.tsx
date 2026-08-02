@@ -26,6 +26,7 @@ import type { ChangeEvent } from "react";
 
 export function EquipmentScreen() {
   const { state, actions, meta } = useEquipmentScreen();
+  const CollectionContent = state.activeView === "table" || state.activeView === "kanban" ? Page.CollectionContent : Page.Content;
 
   function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
     actions.setSearch(event.target.value);
@@ -81,7 +82,7 @@ export function EquipmentScreen() {
         </div>
       </Page.Toolbar>
 
-      <Page.Content>
+      <CollectionContent>
       <Decision value={state.filtered} loading={state.isLoading}>
         <Decision.Loading>
           <LoadingSpinner className="py-6" />
@@ -99,7 +100,7 @@ export function EquipmentScreen() {
           {state.activeView === "kanban" && <InventoryKanbanView equipment={state.filtered} />}
         </Decision.Data>
       </Decision>
-      </Page.Content>
+      </CollectionContent>
 
       <CreateEquipmentModal
         open={state.createOpen}

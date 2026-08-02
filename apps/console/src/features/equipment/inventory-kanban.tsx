@@ -20,7 +20,6 @@ export function InventoryKanbanView({ equipment }: { equipment: Equipment[] }) {
                             <KanbanBoard.ColumnHeader>
                                 <Indicator color={group.color} className="size-6" />
                                 <Label.sm>{group.label}</Label.sm>
-                                <Label.sm className="text-quaternary ml-auto">{items.length}</Label.sm>
                             </KanbanBoard.ColumnHeader>
                             <KanbanBoard.ColumnContent>
                                 {items.map((e) => (

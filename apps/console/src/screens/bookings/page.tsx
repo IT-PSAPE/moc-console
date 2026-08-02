@@ -17,6 +17,7 @@ import { useBookingsScreen } from "./use-bookings-screen";
 export function BookingsScreen() {
   const { actions, meta } = useBookingsScreen();
   const { filters, activeView, isMobile } = meta;
+  const CollectionContent = activeView === "table" ? Page.CollectionContent : Page.Content;
 
   function handleSearch(event: ChangeEvent<HTMLInputElement>) {
     filters.setSearch(event.target.value);
@@ -51,7 +52,7 @@ export function BookingsScreen() {
           </div>
       </Page.Toolbar>
 
-      <Page.Content className="flex flex-col gap-4">
+      <CollectionContent className="flex flex-col gap-4">
         <Decision value={filters.filtered} loading={meta.isLoading}>
           <Decision.Loading>
             <LoadingSpinner className="py-6" />
@@ -69,7 +70,7 @@ export function BookingsScreen() {
             {activeView === "calendar" && <BookingCalendarView bookings={filters.filtered} />}
           </Decision.Data>
         </Decision>
-      </Page.Content>
+      </CollectionContent>
     </Page>
   );
 }

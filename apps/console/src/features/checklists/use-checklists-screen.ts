@@ -19,6 +19,8 @@ export function useChecklistsScreen() {
     const runs = useMemo(() => checklistState.checklists.filter((checklist) => checklist.kind === 'instance'), [checklistState.checklists])
     const filters = useChecklistRunFilters(runs)
     const groups = useMemo(() => partitionChecklistRuns(filters.filtered), [filters.filtered])
+    const showActive = filters.filters.completion !== 'complete'
+    const showCompleted = filters.filters.completion !== 'open'
 
     useEffect(() => { void loadChecklists() }, [loadChecklists])
 
@@ -40,7 +42,7 @@ export function useChecklistsScreen() {
     const openTemplates = useCallback(() => navigate(`/${routes.checklistTemplates}`), [navigate])
 
     return {
-        state: { isMobile, modalOpen, modalTemplate, templates, active: groups.active, completed: groups.completed, isLoading: checklistState.isLoadingChecklists, search: filters.filters.search },
+        state: { isMobile, modalOpen, modalTemplate, templates, active: groups.active, completed: groups.completed, showActive, showCompleted, isLoading: checklistState.isLoadingChecklists, search: filters.filters.search },
         actions: { setModalOpen, pickBlank, pickTemplate, submit, openTemplates, setSearch: filters.setSearch },
         meta: { filters },
     }

@@ -18,15 +18,17 @@ const columns = [
         width: 48,
         render: (_: unknown, row: Equipment) => <EquipmentThumbnail equipment={row} />,
     },
-    { key: "name", header: "Equipment" },
+    { key: "name", header: "Equipment", width: 220 },
     {
         key: "serialNumber",
         header: "Serial Number",
+        width: 180,
         render: (value: unknown) => <span className="font-mono text-tertiary">{(value as string) || ""}</span>,
     },
     {
         key: "category",
         header: "Category",
+        width: 160,
         render: (_: unknown, row: Equipment) => (
             <Badge label={equipmentCategoryLabel[row.category]} color={equipmentCategoryColor[row.category]} />
         ),
@@ -34,14 +36,16 @@ const columns = [
     {
         key: "status",
         header: "Status",
+        width: 150,
         render: (_: unknown, row: Equipment) => (
             <Badge label={equipmentStatusLabel[row.status]} color={equipmentStatusColor[row.status]} />
         ),
     },
-    { key: "location", header: "Location", render: (value: unknown) => (value as string) || empty },
+    { key: "location", header: "Location", width: 220, render: (value: unknown) => (value as string) || empty },
     {
         key: "lastActiveDate",
         header: "Last Active",
+        width: 160,
         render: (value: unknown) =>
             value
                 ? formatUtcIsoInBrowserTimeZone(value as string, { day: "2-digit", month: "2-digit", year: "numeric" })
@@ -60,6 +64,7 @@ export function InventoryTableView({ equipment }: { equipment: Equipment[] }) {
             <DataTable
                 data={visible}
                 columns={columns}
+                minWidth={1138}
                 emptyMessage="No equipment found"
                 onRowClick={(row) => setSelected(row)}
             />

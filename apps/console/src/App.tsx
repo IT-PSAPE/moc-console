@@ -117,7 +117,7 @@ const router = createBrowserRouter([
         element: <RequireAuth />,
         children: [
             { index: true, element: <Navigate to={`/${routes.dashboard}`} replace /> },
-            { path: routes.dashboard, element: <RequestsProvider><DashboardScreen /></RequestsProvider> },
+            { path: routes.dashboard, element: <RequestsProvider><EquipmentProvider><DashboardScreen /></EquipmentProvider></RequestsProvider> },
             { path: routes.settings, element: <SettingsScreen /> },
             { path: routes.messageTemplateDetail, element: <MessageTemplateDetailScreen /> },
             {

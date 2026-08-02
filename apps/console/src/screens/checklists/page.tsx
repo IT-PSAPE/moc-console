@@ -1,6 +1,7 @@
 import { FilePlus2, ListChecks, Plus, Search, Settings2 } from 'lucide-react'
 import { Button } from '@moc/ui/components/controls/button'
 import { GroupedList } from '@moc/ui/components/display/grouped-list'
+import { Indicator } from '@moc/ui/components/display/indicator'
 import { Label } from '@moc/ui/components/display/text'
 import { Page } from '@moc/ui/components/layout/page'
 import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
@@ -76,9 +77,9 @@ export function ChecklistsScreen() {
 
             <Page.Content>
                 <GroupedList>
-                    <GroupedList.Group>
+                    {state.showActive && <GroupedList.Group>
                         <GroupedList.Header>
-                            <ListChecks className="size-4" />
+                            <Indicator color="blue" className="size-6" />
                             <Label.sm>Active</Label.sm>
                         </GroupedList.Header>
                         <GroupedList.Content>
@@ -98,12 +99,12 @@ export function ChecklistsScreen() {
                             </Decision.Data>
                         </Decision>
                         </GroupedList.Content>
-                    </GroupedList.Group>
+                    </GroupedList.Group>}
 
-                    <GroupedList.Group>
+                    {state.showCompleted && <GroupedList.Group>
                         <GroupedList.Header>
-                            <ListChecks className="size-4" />
-                            <Label.sm>Completed</Label.sm>
+                            <Indicator color="green" className="size-6" />
+                            <Label.sm>Complete</Label.sm>
                         </GroupedList.Header>
                         <GroupedList.Content>
                         <Decision value={state.completed} loading={state.isLoading}>
@@ -122,7 +123,7 @@ export function ChecklistsScreen() {
                             </Decision.Data>
                         </Decision>
                         </GroupedList.Content>
-                    </GroupedList.Group>
+                    </GroupedList.Group>}
                 </GroupedList>
             </Page.Content>
 

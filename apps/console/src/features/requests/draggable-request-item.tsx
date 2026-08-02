@@ -7,7 +7,7 @@ export function DraggableRequestItem({ request }: { request: Request }) {
   const drawer = useKanbanDrawerState()
   return (
     <KanbanBoard.Item id={request.id} data={{ request }} disabled={drawer.state.isDrawerOpen}>
-      <RequestItem request={request} vertical onDrawerOpenChange={drawer.actions.setDrawerOpen} />
+      <RequestItem request={request} onDrawerOpenChange={drawer.actions.setDrawerOpen} />
     </KanbanBoard.Item>
   )
 }
