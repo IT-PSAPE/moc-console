@@ -15,7 +15,7 @@ type ToggleProps = {
 
 const trackVariants = cv({
     base: [
-        'relative inline-flex shrink-0 rounded-full transition-colors after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 md:after:hidden',
+        'relative inline-flex shrink-0 rounded-full transition-colors motion-reduce:transition-none after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 md:after:hidden',
         'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-border-brand/10',
         // Base UI marks the disabled Switch.Root with `data-disabled` + `aria-disabled`
         // (it stays focusable), not the native `:disabled` pseudo-class.
@@ -38,7 +38,7 @@ const trackVariants = cv({
 })
 
 const thumbVariants = cv({
-    base: ['inline-block rounded-full bg-white shadow translate-y-0.5 transition-transform'],
+    base: ['inline-block rounded-full bg-white shadow translate-y-0.5 transition-transform motion-reduce:transition-none'],
     variants: {
         size: {
             sm: ['size-3'],

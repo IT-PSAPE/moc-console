@@ -41,7 +41,7 @@ export function TelegramGroupCard({ group, pendingChatId, onOpenConnect, onToggl
                         onClick={handleOpenConnect}
                         aria-label={`Connect events to ${group.title || 'this group'}`}
                     />
-                    <Toggle checked={group.active} disabled={pendingChatId === group.chatId} onChange={handleToggleGroup} />
+                    <Toggle aria-label={`${group.active ? 'Disable' : 'Enable'} notifications for ${group.title || 'this group'}`} checked={group.active} disabled={pendingChatId === group.chatId} onChange={handleToggleGroup} />
                 </div>
             </Card.Header>
             {group.topics.length > 0 && <Card.Content className="flex flex-col">{group.topics.map(renderTopic)}</Card.Content>}

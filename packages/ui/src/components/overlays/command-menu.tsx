@@ -156,7 +156,7 @@ type CommandMenuInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChan
 function CommandMenuInput({ className, ...props }: CommandMenuInputProps) {
     return (
         <BaseCombobox.Input
-            className={cn('w-full border-b border-secondary bg-transparent px-4 py-3 text-sm text-primary outline-none placeholder:text-quaternary focus:!outline-none focus-visible:!outline-none', className)}
+            className={cn('w-full border-b border-secondary bg-transparent px-4 py-3 text-sm text-primary outline-none placeholder:text-quaternary focus-visible:border-brand', className)}
             type="text"
             {...props}
         />

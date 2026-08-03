@@ -16,7 +16,7 @@ export function ConnectEventRow({ event, connected, disabled, onToggle }: Connec
 
     return (
         <SettingsRow label={event.label}>
-            <Toggle checked={connected} disabled={disabled} onChange={handleChange} />
+            <Toggle aria-label={`${connected ? 'Disconnect' : 'Connect'} ${event.label}`} checked={connected} disabled={disabled} onChange={handleChange} />
         </SettingsRow>
     )
 }

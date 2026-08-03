@@ -737,6 +737,11 @@ body {
   position: relative;
 }
 
+body:has(.app-grid) {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 #overlay-root {
   position: fixed;
   inset: 0;
@@ -796,6 +801,7 @@ select:focus-visible {
 /* DARK MODE OVERRIDES */
 @layer base {
   [data-theme="dark"] {
+    color-scheme: dark;
     --color-text-primary: var(--color-gray-50);
     --color-text-primary_on-brand: var(--color-gray-50);
     --color-text-secondary: var(--color-gray-300);

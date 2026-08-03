@@ -14,7 +14,7 @@ const textAreaVariants = cv({
     base: [
         'w-full resize-none overflow-hidden bg-secondary disabled:cursor-not-allowed disabled:bg-disabled',
         'paragraph-sm',
-        'focus-visible:outline-none',
+        'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-border-brand/10',
     ],
     variants: {
         state: {
@@ -25,7 +25,6 @@ const textAreaVariants = cv({
             outline: [
                 'py-2 px-3',
                 'rounded-lg border border-secondary focus-visible:border-brand disabled:border-disabled',
-                'focus-visible:ring-3 focus-visible:ring-border-brand/10',
             ],
             ghost: ['rounded-md px-2 py-1.5'],
         },

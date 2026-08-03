@@ -30,7 +30,7 @@ const tabsListVariants = cv({
 // Active styling keys off Base UI's `data-active` attribute rather than the
 // previous computed `${variant}-${active|inactive}` state string.
 const tabsTabVariants = cv({
-    base: ['flex min-h-11 cursor-pointer items-center transition-colors outline-none md:min-h-0'],
+    base: ['flex min-h-11 cursor-pointer items-center transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-1 motion-reduce:transition-none md:min-h-0'],
     variants: {
         variant: {
             default: ['py-1.5 border-b-2 paragraph-sm border-transparent data-[active]:border-brand'],
