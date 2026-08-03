@@ -1,4 +1,4 @@
-import { Drawer } from "@moc/ui/components/overlays/drawer"
+import { SplitPanel } from "@moc/ui/components/layout/split-panel"
 import { Button } from "@moc/ui/components/controls/button"
 import { Badge } from "@moc/ui/components/display/badge"
 import { Label, Paragraph, Title } from "@moc/ui/components/display/text"
@@ -26,10 +26,9 @@ import {
 } from "lucide-react"
 import { useMeetingDetailDrawer } from "./use-meeting-detail-drawer"
 
-type MeetingDetailDrawerProps = {
-  meeting: ZoomMeeting | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+type MeetingDetailPanelProps = {
+  meeting: ZoomMeeting
+  onClose: () => void
   onEdit?: (meeting: ZoomMeeting) => void
   onDelete?: (meeting: ZoomMeeting) => void
 }
@@ -41,19 +40,14 @@ function formatDuration(minutes: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h} hour${h > 1 ? "s" : ""}`
 }
 
-export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDelete }: MeetingDetailDrawerProps) {
-  const drawer = useMeetingDetailDrawer(meeting, onOpenChange, onEdit, onDelete)
-
-  if (!meeting) return null
+export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: MeetingDetailPanelProps) {
+  const drawer = useMeetingDetailDrawer(meeting, onClose, onEdit, onDelete)
 
   const isPast = meeting.startTime ? new Date(meeting.startTime) < new Date() : false
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <Drawer.Portal>
-        <Drawer.Backdrop />
-        <Drawer.Panel className="max-w-lg">
-          <Drawer.Header className="flex items-center gap-1">
+    <>
+          <SplitPanel.Header className="flex items-center gap-1">
             <Button.Icon aria-label="Close meeting" variant="ghost" icon={<X />} onClick={drawer.actions.close} />
             <Button.Icon aria-label="Open full page" variant="ghost" icon={<Maximize2 />} onClick={drawer.actions.openFullPage} />
             <div className="flex-1" />
@@ -63,9 +57,9 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
             {drawer.meta.canDelete && (
               <Button.Icon aria-label="Delete meeting" variant="ghost" icon={<Trash2 />} onClick={drawer.actions.remove} />
             )}
-          </Drawer.Header>
+          </SplitPanel.Header>
 
-          <Drawer.Content className="py-4">
+          <SplitPanel.Content className="py-4">
             <div className="px-4 pb-4">
               <Title.h6>{meeting.topic}</Title.h6>
               {meeting.description && (
@@ -154,9 +148,7 @@ export function MeetingDetailDrawer({ meeting, open, onOpenChange, onEdit, onDel
                 </div>
               </>
             )}
-          </Drawer.Content>
-        </Drawer.Panel>
-      </Drawer.Portal>
-    </Drawer>
+          </SplitPanel.Content>
+    </>
   )
 }

@@ -5,6 +5,7 @@ import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
 import { Calendar, Loader } from "lucide-react"
 import { ResponsiveDetailAction } from "@/features/responsive-detail-action"
 import { routes } from "@/screens/console-routes"
+import { StreamProviderIcon } from "./stream-provider-icon"
 
 type StreamListItemProps = {
   stream: Stream
@@ -27,6 +28,9 @@ export function StreamListItem({ stream, onSelect }: StreamListItemProps) {
       onActivate={handleActivate}
     >
       <ListItemCard.Root>
+        <ListItemCard.Leading>
+          <StreamProviderIcon provider="youtube" className="size-5" />
+        </ListItemCard.Leading>
         <ListItemCard.Content>
           <ListItemCard.Title>{stream.title}</ListItemCard.Title>
           {stream.description && <ListItemCard.Subtitle>{stream.description}</ListItemCard.Subtitle>}

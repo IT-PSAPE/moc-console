@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { getErrorMessage } from "@moc/utils/get-error-message"
 import type { Stream } from "@moc/types/streams/stream"
-import type { StreamFormData } from "./stream-modal"
+import type { StreamFormData } from "./use-stream-form"
 import { useStreamFilters } from "./use-stream-filters"
 import { useStreams } from "./streams-provider"
 
@@ -22,15 +22,13 @@ export function useYouTubeStreams(searchQuery: string) {
   const { role } = useAuth()
   const { toast } = useFeedback()
   const {
-    state: { streams, youtubeConnection, isLoadingStreams },
+    state: { streams, youtubeConnection, isLoadingStreams, isLoadingConnection },
     actions: { loadStreams, loadYouTubeConnection, syncStream, removeStream, setStreams },
   } = useStreams()
   const filters = useStreamFilters(streams)
   const { setSearch } = filters
   const [modalOpen, setModalOpen] = useState(false)
   const [editingStream, setEditingStream] = useState<Stream | null>(null)
-  const [drawerStream, setDrawerStream] = useState<Stream | null>(null)
-  const [drawerOpen, setDrawerOpen] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const needsReauth = youtubeConnection?.status === "reauth_required"
@@ -110,7 +108,6 @@ export function useYouTubeStreams(searchQuery: string) {
     try {
       await deleteStream(stream)
       removeStream(stream.id)
-      setDrawerOpen(false)
       toast({ title: "Stream deleted", variant: "success" })
     } catch (error) {
       toast({ title: "Failed to delete stream", description: getErrorMessage(error, "The stream could not be deleted."), variant: "error" })
@@ -131,22 +128,11 @@ export function useYouTubeStreams(searchQuery: string) {
     }
   }, [guardReauthentication, setStreams, toast])
 
-  function openCreate() {
-    setEditingStream(null)
-    setModalOpen(true)
-  }
-
   function openFilters() {
     setFilterOpen(true)
   }
 
-  function openDetail(stream: Stream) {
-    setDrawerStream(stream)
-    setDrawerOpen(true)
-  }
-
   function edit(stream: Stream) {
-    setDrawerOpen(false)
     setEditingStream(stream)
     setModalOpen(true)
   }
@@ -156,15 +142,15 @@ export function useYouTubeStreams(searchQuery: string) {
   }
 
   return {
-    state: { modalOpen, editingStream, drawerStream, drawerOpen, isSyncing, filterOpen },
-    actions: { setModalOpen, setDrawerOpen, setFilterOpen, openCreate, openFilters, openDetail, edit, create, update, remove, sync, openSettings },
+    state: { modalOpen, editingStream, isSyncing, filterOpen },
+    actions: { setModalOpen, setFilterOpen, openFilters, edit, create, update, remove, sync, openSettings },
     meta: {
       connection: youtubeConnection,
       filters,
       isConnected: Boolean(youtubeConnection),
       needsReauth,
       canCreate: role?.can_create === true && !needsReauth,
-      isLoading: isLoadingStreams,
+      isLoading: isLoadingStreams || isLoadingConnection,
     },
   }
 }

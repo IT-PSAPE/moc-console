@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { getErrorMessage } from '@moc/utils/get-error-message'
 import type { Stream } from '@moc/types/streams/stream'
-import type { StreamFormData } from './stream-modal'
+import type { StreamFormData } from './use-stream-form'
 import { useStreams } from './streams-provider'
 import { useCopyFeedback } from '@/hooks/use-copy-feedback'
 

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
 import { createZoomMeeting, deleteZoomMeeting, syncZoomMeetings, updateZoomMeeting, type CreateMeetingParams } from "@/data/mutate-zoom"
 import { useAuth } from "@/lib/auth-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
@@ -9,19 +8,16 @@ import { useStreams } from "./streams-provider"
 import { useZoomMeetingFilters } from "./use-zoom-meeting-filters"
 
 export function useZoomMeetings(searchQuery: string) {
-  const navigate = useNavigate()
   const { role } = useAuth()
   const { toast } = useFeedback()
   const {
-    state: { zoomConnection, zoomMeetings, isLoadingZoomMeetings },
+    state: { zoomConnection, zoomMeetings, isLoadingZoomConnection, isLoadingZoomMeetings },
     actions: { loadZoomConnection, loadZoomMeetings, syncMeeting, removeMeeting, setZoomMeetings },
   } = useStreams()
   const filters = useZoomMeetingFilters(zoomMeetings)
   const { setSearch } = filters
   const [modalOpen, setModalOpen] = useState(false)
   const [editingMeeting, setEditingMeeting] = useState<ZoomMeeting | null>(null)
-  const [drawerMeeting, setDrawerMeeting] = useState<ZoomMeeting | null>(null)
-  const [drawerOpen, setDrawerOpen] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
 
@@ -64,7 +60,6 @@ export function useZoomMeetings(searchQuery: string) {
     try {
       await deleteZoomMeeting(meeting)
       removeMeeting(meeting.id)
-      setDrawerOpen(false)
       toast({ title: "Meeting deleted", variant: "success" })
     } catch (error) {
       toast({ title: "Failed to delete meeting", description: getErrorMessage(error, "The meeting could not be deleted."), variant: "error" })
@@ -84,38 +79,23 @@ export function useZoomMeetings(searchQuery: string) {
     }
   }, [setZoomMeetings, toast])
 
-  function openCreate() {
-    setEditingMeeting(null)
-    setModalOpen(true)
-  }
-
   function openFilters() {
     setFilterOpen(true)
   }
 
-  function openDetail(meeting: ZoomMeeting) {
-    setDrawerMeeting(meeting)
-    setDrawerOpen(true)
-  }
-
   function edit(meeting: ZoomMeeting) {
-    setDrawerOpen(false)
     setEditingMeeting(meeting)
     setModalOpen(true)
   }
 
-  function openSettings() {
-    navigate("/account/settings?tab=streams")
-  }
-
   return {
-    state: { modalOpen, editingMeeting, drawerMeeting, drawerOpen, isSyncing, filterOpen },
-    actions: { setModalOpen, setDrawerOpen, setFilterOpen, openCreate, openFilters, openDetail, edit, create, update, remove, sync, openSettings },
+    state: { modalOpen, editingMeeting, isSyncing, filterOpen },
+    actions: { setModalOpen, setFilterOpen, openFilters, edit, create, update, remove, sync },
     meta: {
       filters,
       isConnected: Boolean(zoomConnection),
       canCreate: role?.can_create === true,
-      isLoading: isLoadingZoomMeetings,
+      isLoading: isLoadingZoomMeetings || isLoadingZoomConnection,
     },
   }
 }

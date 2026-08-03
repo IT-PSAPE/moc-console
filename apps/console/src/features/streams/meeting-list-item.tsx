@@ -1,11 +1,11 @@
-import { Badge } from "@moc/ui/components/display/badge"
 import { ListItemCard } from "@moc/ui/components/display/list-item-card"
 import { zoomRecurrenceLabel } from "@moc/types/streams/zoom-constants"
 import type { ZoomMeeting } from "@moc/types/streams/zoom"
 import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
-import { Calendar, Clock, Repeat } from "lucide-react"
+import { Calendar, Clock, Loader, Repeat } from "lucide-react"
 import { ResponsiveDetailAction } from "@/features/responsive-detail-action"
 import { routes } from "@/screens/console-routes"
+import { StreamProviderIcon } from "./stream-provider-icon"
 
 type MeetingListItemProps = {
   meeting: ZoomMeeting
@@ -33,18 +33,19 @@ export function MeetingListItem({ meeting, onSelect }: MeetingListItemProps) {
       onActivate={handleActivate}
     >
       <ListItemCard.Root>
+        <ListItemCard.Leading>
+          <StreamProviderIcon provider="zoom" className="size-5" />
+        </ListItemCard.Leading>
         <ListItemCard.Content>
           <ListItemCard.Title>{meeting.topic}</ListItemCard.Title>
           {meeting.description && <ListItemCard.Subtitle>{meeting.description}</ListItemCard.Subtitle>}
           <ListItemCard.Meta>
+            <ListItemCard.MetaItem icon={<Loader />}>{isPast ? "Past" : "Upcoming"}</ListItemCard.MetaItem>
             <ListItemCard.MetaItem icon={<Calendar />}>{formatUtcIsoInTimezone(meeting.startTime, meeting.timezone)}</ListItemCard.MetaItem>
             <ListItemCard.MetaItem icon={<Clock />}>{formatDuration(meeting.duration)}</ListItemCard.MetaItem>
             {isRecurring && <ListItemCard.MetaItem icon={<Repeat />}>{zoomRecurrenceLabel[meeting.recurrenceType]}</ListItemCard.MetaItem>}
           </ListItemCard.Meta>
         </ListItemCard.Content>
-        <ListItemCard.Trailing>
-          <Badge label={isPast ? "Past" : "Upcoming"} color={isPast ? "gray" : "green"} />
-        </ListItemCard.Trailing>
       </ListItemCard.Root>
     </ResponsiveDetailAction.Card>
   )

@@ -6,12 +6,12 @@ import type { ZoomMeeting } from "@moc/types/streams/zoom";
 
 type DrawerField = "join" | "pass";
 
-export function useMeetingDetailDrawer(meeting: ZoomMeeting | null, onOpenChange: (open: boolean) => void, onEdit?: (meeting: ZoomMeeting) => void, onDelete?: (meeting: ZoomMeeting) => void) {
+export function useMeetingDetailDrawer(meeting: ZoomMeeting | null, onClose: () => void, onEdit?: (meeting: ZoomMeeting) => void, onDelete?: (meeting: ZoomMeeting) => void) {
   const { role } = useAuth();
   const navigate = useNavigate();
   const copied = useCopyFeedback<DrawerField>();
 
-  function close() { onOpenChange(false); }
+  function close() { onClose(); }
   function openFullPage() {
     if (!meeting) return;
     close();

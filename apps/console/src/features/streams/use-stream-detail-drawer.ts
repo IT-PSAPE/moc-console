@@ -6,12 +6,12 @@ import type { Stream } from "@moc/types/streams/stream";
 
 type DrawerField = "url" | "key" | "ingestion";
 
-export function useStreamDetailDrawer(stream: Stream | null, onOpenChange: (open: boolean) => void, onEdit?: (stream: Stream) => void, onDelete?: (stream: Stream) => void) {
+export function useStreamDetailDrawer(stream: Stream | null, onClose: () => void, onEdit?: (stream: Stream) => void, onDelete?: (stream: Stream) => void) {
   const { role } = useAuth();
   const navigate = useNavigate();
   const copied = useCopyFeedback<DrawerField>();
 
-  function close() { onOpenChange(false); }
+  function close() { onClose(); }
   function openFullPage() {
     if (!stream) return;
     close();
