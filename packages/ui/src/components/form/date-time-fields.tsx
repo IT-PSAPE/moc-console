@@ -19,6 +19,7 @@ type DateTimeFieldsProps = {
     errorText?: string
     incompleteText?: string
     style?: "outline" | "ghost"
+    fieldLabels?: "visible" | "hidden"
     className?: string
     fieldsClassName?: string
 }
@@ -32,12 +33,13 @@ function combineDateTime(date: string, time: string): string {
     return date && time ? `${date}T${time}` : "";
 }
 
-export function DateTimeFields({ value, onChange, label, ariaLabel, name, dateLabel = "Date", timeLabel = "Time", required, optional, disabled, helperText, errorText, incompleteText, style = "outline", className, fieldsClassName }: DateTimeFieldsProps) {
+export function DateTimeFields({ value, onChange, label, ariaLabel, name, dateLabel = "Date", timeLabel = "Time", required, optional, disabled, helperText, errorText, incompleteText, style = "outline", fieldLabels = "visible", className, fieldsClassName }: DateTimeFieldsProps) {
     const [date, setDate] = useState(splitDateTime(value).date);
     const [time, setTime] = useState(splitDateTime(value).time);
     const isIncomplete = Boolean(date || time) && !(date && time);
     const resolvedIncompleteText = incompleteText ?? (required ? "Date and time are both required." : "Choose both date and time, or clear both.");
     const accessibleLabel = ariaLabel ?? label;
+    const fieldLabelClassName = fieldLabels === "hidden" ? "sr-only" : undefined;
 
     useEffect(() => {
         const next = splitDateTime(value);
@@ -62,11 +64,11 @@ export function DateTimeFields({ value, onChange, label, ariaLabel, name, dateLa
             {label && <FormLabel label={label} required={required} optional={optional} />}
             <div className={cn("grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2", fieldsClassName)}>
                 <div className="flex min-w-0 flex-col gap-1.5">
-                    <FormLabel label={dateLabel} />
+                    <FormLabel label={dateLabel} className={fieldLabelClassName} />
                     <Input aria-label={accessibleLabel ? `${accessibleLabel} date` : dateLabel} name={name ? `${name}-date` : undefined} type="date" value={date} onChange={handleDateChange} required={required} disabled={disabled} style={style} />
                 </div>
                 <div className="flex min-w-0 flex-col gap-1.5">
-                    <FormLabel label={timeLabel} />
+                    <FormLabel label={timeLabel} className={fieldLabelClassName} />
                     <Input aria-label={accessibleLabel ? `${accessibleLabel} time` : timeLabel} name={name ? `${name}-time` : undefined} type="time" value={time} onChange={handleTimeChange} required={required} disabled={disabled} style={style} />
                 </div>
             </div>

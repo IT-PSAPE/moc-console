@@ -1,10 +1,8 @@
 import { cn } from '@moc/utils/cn'
-import { useCallback, useMemo, useState, type HTMLAttributes, type MouseEvent, type ReactNode } from 'react'
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useCallback, useMemo, useState, type HTMLAttributes, type ReactNode } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '../controls/button'
-import { Drawer } from '../overlays/drawer'
-import { Label, Paragraph } from './text'
-import { EmptyState } from '../feedback/empty-state'
+import { ButtonGroup } from '../controls/button-group'
 
 // ─── Helpers ─────────────────────────────────────────────
 
@@ -66,11 +64,6 @@ type RenderDayProps<T = unknown> = {
     events: CalendarEvent<T>[]
 }
 
-export type CellDrawerConfig<T = unknown> = {
-    title?: string | ((date: Date, events: CalendarEvent<T>[]) => string)
-    renderItem: (event: CalendarEvent<T>, index: number) => ReactNode
-}
-
 // ─── Root ────────────────────────────────────────────────
 
 type CalendarRootProps<T = unknown> = HTMLAttributes<HTMLDivElement> & {
@@ -78,20 +71,11 @@ type CalendarRootProps<T = unknown> = HTMLAttributes<HTMLDivElement> & {
     events?: CalendarEvent<T>[]
     onMonthChange?: (date: Date) => void
     renderDay?: (props: RenderDayProps<T>) => ReactNode
-    cellDrawer?: CellDrawerConfig<T>
+    renderEvent?: (event: CalendarEvent<T>, index: number) => ReactNode
 }
 
-const DAY_NAMES = [
-    'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
-] as const
-
-function formatDrawerDate(date: Date) {
-    return `${DAY_NAMES[date.getDay()]}, ${date.getDate()} ${MONTH_LABELS[date.getMonth()]} ${date.getFullYear()}`
-}
-
-function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMonthChange, renderDay, cellDrawer, ...props }: CalendarRootProps<T>) {
+function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMonthChange, renderDay, renderEvent, ...props }: CalendarRootProps<T>) {
     const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(defaultMonth ?? new Date()))
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null)
     const today = useMemo(() => new Date(), [])
 
     const year = currentMonth.getFullYear()
@@ -120,15 +104,6 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
         navigate(1)
     }
 
-    function handleDateSelect(event: MouseEvent<HTMLButtonElement>) {
-        const timestamp = Number(event.currentTarget.dataset.timestamp)
-        setSelectedDate(new Date(timestamp))
-    }
-
-    function handleDrawerOpenChange(open: boolean) {
-        if (!open) setSelectedDate(null)
-    }
-
     const eventsByDate = useMemo(() => {
         const map = new Map<string, CalendarEvent<T>[]>()
 
@@ -150,31 +125,16 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
         return eventsByDate.get(key) ?? []
     }
 
-    const selectedDateEvents = useMemo(() => {
-        if (!selectedDate) return []
-
-        const key = `${selectedDate.getFullYear()}-${selectedDate.getMonth()}-${selectedDate.getDate()}`
-        return eventsByDate.get(key) ?? []
-    }, [selectedDate, eventsByDate])
-
-    const drawerTitleContent = cellDrawer?.title
-    const drawerTitle = useMemo(() => {
-        if (!selectedDate) return ''
-        if (!drawerTitleContent) return formatDrawerDate(selectedDate)
-        if (typeof drawerTitleContent === 'string') return drawerTitleContent
-        return drawerTitleContent(selectedDate, selectedDateEvents)
-    }, [drawerTitleContent, selectedDate, selectedDateEvents])
-
     return (
         <div className={cn('flex flex-col', className)} {...props}>
             {/* Header */}
             <div className="flex items-center justify-between pb-4">
-                <span className="title-h5">{MONTH_LABELS[month]} {year}</span>
-                <div className="flex items-center gap-1">
+                <span className="label-md">{MONTH_LABELS[month]} {year}</span>
+                <ButtonGroup aria-label="Calendar navigation">
                     <Button.Icon aria-label="Previous month" variant="secondary" icon={<ChevronLeft />} onClick={handlePreviousMonth} />
                     <Button variant="secondary" onClick={goToToday}>Today</Button>
                     <Button.Icon aria-label="Next month" variant="secondary" icon={<ChevronRight />} onClick={handleNextMonth} />
-                </div>
+                </ButtonGroup>
             </div>
 
             {/* Day headers */}
@@ -193,77 +153,17 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
                     const isDateToday = isSameDay(date, today)
                     const dayEvents = getEventsForDate(date)
 
-                    const cellContent = renderDay
-                        ? renderDay({ date, isCurrentMonth, isToday: isDateToday, events: dayEvents })
-                        : <CalendarCell date={date} events={dayEvents} isCurrentMonth={isCurrentMonth} isToday={isDateToday} />
-
-                    if (cellDrawer) {
-                        return (
-                            <Button.Unstyled
-                                key={index}
-                                aria-label={`Open ${formatDrawerDate(date)}`}
-                                data-timestamp={date.getTime()}
-                                className={cn(
-                                    'border-r border-b border-secondary text-left transition-colors hover:bg-secondary/50',
-                                    !renderDay && '[&>div]:border-0',
-                                )}
-                                onClick={handleDateSelect}
-                            >
-                                {cellContent}
-                            </Button.Unstyled>
-                        )
-                    }
-
                     if (renderDay) {
                         return (
                             <div key={index} className="border-r border-b border-secondary">
-                                {cellContent}
+                                {renderDay({ date, isCurrentMonth, isToday: isDateToday, events: dayEvents })}
                             </div>
                         )
                     }
 
-                    return <CalendarCell key={index} date={date} events={dayEvents} isCurrentMonth={isCurrentMonth} isToday={isDateToday} />
+                    return <CalendarCell key={index} date={date} events={dayEvents} isCurrentMonth={isCurrentMonth} isToday={isDateToday} renderEvent={renderEvent} />
                 })}
             </div>
-
-            {/* Cell drawer */}
-            {cellDrawer && (
-                <Drawer
-                    mobileSide="bottom"
-                    open={selectedDate !== null}
-                    onOpenChange={handleDrawerOpenChange}
-                >
-                    <Drawer.Portal>
-                        <Drawer.Backdrop />
-                        <Drawer.Panel>
-                            <Drawer.Header>
-                                <div className="flex-1">
-                                    <Label.md>{drawerTitle}</Label.md>
-                                    <Paragraph.xs className="text-tertiary">
-                                        {selectedDateEvents.length} {selectedDateEvents.length === 1 ? 'event' : 'events'}
-                                    </Paragraph.xs>
-                                </div>
-                                <Drawer.Close>
-                                    <Button.Icon aria-label="Close day details" variant="ghost" icon={<ChevronRight />} />
-                                </Drawer.Close>
-                            </Drawer.Header>
-                            <Drawer.Content>
-                                {selectedDateEvents.length === 0 ? (
-                                    <EmptyState
-                                        icon={<CalendarDays />}
-                                        title="No events"
-                                        description="There are no events scheduled for this day."
-                                    />
-                                ) : (
-                                    <div className="flex flex-col">
-                                        {selectedDateEvents.map((event, i) => cellDrawer.renderItem(event, i))}
-                                    </div>
-                                )}
-                            </Drawer.Content>
-                        </Drawer.Panel>
-                    </Drawer.Portal>
-                </Drawer>
-            )}
         </div>
     )
 }
@@ -285,9 +185,10 @@ type CalendarCellProps<T = unknown> = {
     events: CalendarEvent<T>[]
     isCurrentMonth: boolean
     isToday: boolean
+    renderEvent?: (event: CalendarEvent<T>, index: number) => ReactNode
 }
 
-function CalendarCell({ date, events, isCurrentMonth, isToday }: CalendarCellProps) {
+function CalendarCell<T = unknown>({ date, events, isCurrentMonth, isToday, renderEvent }: CalendarCellProps<T>) {
     return (
         <div className={cn(
             'flex min-h-24 flex-col border-r border-b border-secondary p-1.5',
@@ -301,23 +202,24 @@ function CalendarCell({ date, events, isCurrentMonth, isToday }: CalendarCellPro
             )}>
                 {date.getDate()}
             </span>
-            <div className="flex flex-col gap-0.5 overflow-hidden">
-                {events.slice(0, 2).map((event, i) => (
-                    <div
-                        key={i}
-                        className={cn(
-                            'truncate rounded px-1.5 py-0.5 paragraph-xs',
-                            eventColorMap[event.color ?? 'gray'],
-                        )}
-                        aria-label={event.label}
-                    >
-                        {event.label}
-                    </div>
-                ))}
-                {events.length > 2 && (
-                    <span className="px-1.5 paragraph-xs text-quaternary">+{events.length - 2} more</span>
+            <div className="flex flex-col gap-0.5">
+                {events.map((event, index) => renderEvent
+                    ? renderEvent(event, index)
+                    : <CalendarEventContent key={event.id ?? index} color={event.color} aria-label={event.label}>{event.label}</CalendarEventContent>
                 )}
             </div>
+        </div>
+    )
+}
+
+type CalendarEventContentProps = HTMLAttributes<HTMLDivElement> & {
+    color?: CalendarEvent['color']
+}
+
+function CalendarEventContent({ children, className, color = 'gray', ...props }: CalendarEventContentProps) {
+    return (
+        <div className={cn('truncate rounded px-1.5 py-0.5 paragraph-xs', eventColorMap[color], className)} {...props}>
+            {children}
         </div>
     )
 }
@@ -326,4 +228,5 @@ function CalendarCell({ date, events, isCurrentMonth, isToday }: CalendarCellPro
 
 export const Calendar = Object.assign(CalendarRoot, {
     Cell: CalendarCell,
+    Event: CalendarEventContent,
 })

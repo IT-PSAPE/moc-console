@@ -9,6 +9,7 @@ const VariantContext = createContext<TabsVariant>('default')
 
 type TabsRootProps = {
     children: ReactNode
+    className?: string
     defaultTab?: string
     value?: string
     onValueChange?: (value: string) => void
@@ -43,13 +44,18 @@ const tabsTabVariants = cv({
     defaultVariants: { variant: 'default' },
 })
 
-function TabsRoot({ children, defaultTab, value, onValueChange, variant = 'default' }: TabsRootProps) {
+function TabsRoot({ children, className, defaultTab, value, onValueChange, variant = 'default' }: TabsRootProps) {
+    function handleValueChange(next: string | number) {
+        onValueChange?.(String(next))
+    }
+
     return (
         <VariantContext.Provider value={variant}>
             <BaseTabs.Root
                 value={value}
                 defaultValue={defaultTab}
-                onValueChange={(next) => onValueChange?.(String(next))}
+                onValueChange={handleValueChange}
+                className={className}
             >
                 {children}
             </BaseTabs.Root>

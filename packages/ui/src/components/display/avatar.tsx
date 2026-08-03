@@ -4,7 +4,7 @@ import { cn } from "@moc/utils/cn";
 
 
 type AvatarProps = {
-    size?: '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+    size?: '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
     className?: string
 }
 
@@ -18,6 +18,7 @@ const variants = cv({
             md: ['size-10 rounded-lg'],
             lg: ['size-12 rounded-lg'],
             xl: ['size-14 rounded-lg'],
+            '2xl': ['size-24 rounded-full text-2xl'],
         },
     },
     defaultVariants: {

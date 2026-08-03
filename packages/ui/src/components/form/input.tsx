@@ -14,7 +14,7 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 const inputVariants = cv({
     base: [
         'flex min-h-11 w-full min-w-0 items-center gap-1.5 has-[:disabled]:cursor-not-allowed md:min-h-0',
-        'bg-primary has-[:disabled]:bg-disabled',
+        'bg-secondary has-[:disabled]:bg-disabled',
     ],
     variants: {
         state: {
@@ -27,7 +27,7 @@ const inputVariants = cv({
                 'rounded-lg border border-secondary focus-within:border-brand has-[:disabled]:border-disabled',
                 'focus-within:ring-3 focus-within:ring-border-brand/10'
             ],
-            ghost: [''],
+            ghost: ['rounded-md px-2 py-1.5'],
         }
     },
     defaultVariants: {

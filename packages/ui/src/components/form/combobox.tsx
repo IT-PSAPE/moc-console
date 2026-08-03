@@ -91,7 +91,7 @@ function ComboboxRoot<Value>({ children, defaultOpen, itemToStringLabel, multipl
 type Styled<P> = Omit<P, 'className'> & { className?: string }
 
 const fieldShell = cn(
-    'flex min-h-11 w-full flex-wrap items-center gap-1 rounded-lg border border-secondary bg-primary px-3 py-2 md:min-h-0',
+    'flex min-h-11 w-full flex-wrap items-center gap-1 rounded-lg border border-secondary bg-secondary px-3 py-2 md:min-h-0',
     'focus-within:border-brand focus-within:ring-3 focus-within:ring-border-brand/10',
     'has-[:disabled]:cursor-not-allowed has-[:disabled]:bg-disabled has-[:disabled]:border-disabled',
 )

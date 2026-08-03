@@ -2,7 +2,6 @@ import { Toast as BaseToast } from '@base-ui/react/toast'
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react'
 import { useOverlayStack } from '../overlays/overlay-provider'
 import { Toast, type ToastData } from './toast'
-import { Notification, type NotificationData } from './notification'
 import type { FeedbackVariant, FeedbackStyle } from './alert'
 
 type ToastOptions = {
@@ -31,7 +30,6 @@ type FeedbackContextValue = {
 
 const FeedbackContext = createContext<FeedbackContextValue | null>(null)
 const toastManager = BaseToast.createToastManager<ToastData>()
-const notificationManager = BaseToast.createToastManager<NotificationData>()
 
 export function useFeedback() {
     const context = useContext(FeedbackContext)
@@ -45,29 +43,17 @@ function ToastViewport({ container, zIndex }: { container: HTMLElement | null; z
     const { toasts } = BaseToast.useToastManager<ToastData>()
     if (!container) return null
 
-    return (
-        <BaseToast.Portal container={container}>
-            <BaseToast.Viewport
-                className="pointer-events-none fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-1/2 flex w-[min(calc(100vw-2rem),24rem)] -translate-x-1/2 flex-col-reverse items-center gap-2 outline-none"
-                style={{ zIndex }}
-            >
-                {toasts.map((toast) => <Toast key={toast.id} toast={toast} />)}
-            </BaseToast.Viewport>
-        </BaseToast.Portal>
-    )
-}
-
-function NotificationViewport({ container, zIndex }: { container: HTMLElement | null; zIndex: number }) {
-    const { toasts } = BaseToast.useToastManager<NotificationData>()
-    if (!container) return null
+    function renderToast(toast: BaseToast.Root.ToastObject<ToastData>) {
+        return <Toast key={toast.id} toast={toast} />
+    }
 
     return (
         <BaseToast.Portal container={container}>
             <BaseToast.Viewport
-                className="pointer-events-none fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-[max(1.5rem,env(safe-area-inset-right))] flex w-[min(calc(100vw-3rem),24rem)] flex-col-reverse items-end gap-2 outline-none"
+                className="pointer-events-none fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] w-[min(calc(100vw-2rem),24rem)] outline-none sm:right-[max(1.5rem,env(safe-area-inset-right))] sm:bottom-[max(1.5rem,env(safe-area-inset-bottom))]"
                 style={{ zIndex }}
             >
-                {toasts.map((notification) => <Notification key={notification.id} notification={notification} />)}
+                {toasts.map(renderToast)}
             </BaseToast.Viewport>
         </BaseToast.Portal>
     )
@@ -81,7 +67,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     }, [])
 
     const dismissNotification = useCallback((id: string) => {
-        notificationManager.close(id)
+        toastManager.close(id)
     }, [])
 
     const toast = useCallback((options: ToastOptions) => {
@@ -90,6 +76,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
             description: options.description,
             timeout: options.duration ?? 4000,
             data: {
+                dismissible: true,
                 variant: options.variant ?? 'info',
                 style: options.style ?? 'filled',
             },
@@ -97,7 +84,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     }, [])
 
     const notify = useCallback((options: NotificationOptions) => {
-        return notificationManager.add({
+        return toastManager.add({
             title: options.title,
             description: options.description,
             timeout: 0,
@@ -128,9 +115,6 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
             {children}
             <BaseToast.Provider toastManager={toastManager} timeout={4000}>
                 <ToastViewport container={overlayState.rootElement} zIndex={zIndex} />
-            </BaseToast.Provider>
-            <BaseToast.Provider toastManager={notificationManager} timeout={0}>
-                <NotificationViewport container={overlayState.rootElement} zIndex={zIndex} />
             </BaseToast.Provider>
         </FeedbackContext.Provider>
     )

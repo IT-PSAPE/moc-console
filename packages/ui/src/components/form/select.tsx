@@ -1,7 +1,7 @@
 import { Select as BaseSelect } from "@base-ui/react/select";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
-import { Check, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useState, type ComponentProps, type ReactNode } from "react";
 import { useIsMobile } from "../../hooks/use-is-mobile";
 import { MobileSheetHandle, mobileSheetBackdropClassName, mobileSheetPopupClassName, mobileSheetPositionerClassName } from "../overlays/mobile-sheet";
@@ -35,7 +35,7 @@ type SelectTriggerProps = Omit<ComponentProps<typeof BaseSelect.Trigger>, "child
 const triggerVariants = cv({
     base: [
         "relative flex min-h-11 w-full items-center gap-1.5 text-left paragraph-sm !leading-none md:min-h-0",
-        "bg-primary data-[disabled]:cursor-not-allowed data-[disabled]:bg-disabled",
+        "bg-secondary data-[disabled]:cursor-not-allowed data-[disabled]:bg-disabled",
         "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-border-brand/10",
     ],
     variants: {
@@ -48,7 +48,7 @@ const triggerVariants = cv({
                 "rounded-lg border border-secondary px-3 py-2",
                 "focus-visible:border-brand data-[disabled]:border-disabled",
             ],
-            ghost: [""],
+            ghost: ["rounded-md px-2 py-1.5"],
         },
     },
     defaultVariants: {
@@ -107,16 +107,18 @@ function SelectItem({ children, className, ...props }: Styled<ComponentProps<typ
     return (
         <BaseSelect.Item
             className={cn(
-                "grid min-h-11 cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-lg px-4 py-2 paragraph-sm text-secondary outline-none md:min-h-0 md:px-3",
+                "group flex min-h-11 w-full cursor-default items-center gap-2 rounded-lg px-4 py-2 paragraph-sm text-secondary outline-none md:min-h-0 md:px-3",
                 "data-[highlighted]:bg-secondary data-[highlighted]:text-primary data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
                 className,
             )}
             {...props}
         >
-            <BaseSelect.ItemIndicator className="text-brand_secondary">
-                <Check className="size-4" />
-            </BaseSelect.ItemIndicator>
-            <BaseSelect.ItemText className="truncate">{children}</BaseSelect.ItemText>
+            <BaseSelect.ItemText className="min-w-0 flex-1 truncate">{children}</BaseSelect.ItemText>
+            <span className="flex size-4 shrink-0 items-center justify-center rounded-full border border-secondary group-data-[selected]:border-brand">
+                <BaseSelect.ItemIndicator keepMounted className="flex size-full items-center justify-center opacity-0 group-data-[selected]:opacity-100">
+                    <span className="size-2 rounded-full bg-brand_solid" />
+                </BaseSelect.ItemIndicator>
+            </span>
         </BaseSelect.Item>
     );
 }
