@@ -21,7 +21,7 @@ export function BookingStatusSelect({ status, onSelectStatus }: BookingStatusSel
 
   return (
     <Select.Root name="booking-status" items={statusItems} value={status} onValueChange={handleChange}>
-      <Select.Trigger aria-label="Booking status" className="w-44" style="ghost" />
+      <Select.Trigger aria-label="Booking status" style="ghost" />
       <Select.Content>{statuses.map(renderStatus)}</Select.Content>
     </Select.Root>
   )

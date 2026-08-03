@@ -1,20 +1,29 @@
 import { GroupedList } from "@moc/ui/components/display/grouped-list";
 import { Indicator } from "@moc/ui/components/display/indicator";
 import { Label } from "@moc/ui/components/display/text";
-import { useMemo } from "react";
 import { equipmentStatusGroup } from "@moc/types/equipment/constants";
 import type { Equipment } from "@moc/types/equipment";
-import { EquipmentItem } from "./equipment-item";
+import { EquipmentItemContent } from "./equipment-item-content";
+import { ResponsiveDetailAction } from "@/features/responsive-detail-action";
+import { routes } from "@/screens/console-routes";
 
-const activeStatusGroups = equipmentStatusGroup.filter((g) => g.key !== "maintenance");
+export function InventoryListView({ equipment, onSelect }: { equipment: Equipment[]; onSelect: (equipment: Equipment) => void }) {
+    function renderEquipment(item: Equipment) {
+        function handleSelect() {
+            onSelect(item)
+        }
 
-export function InventoryListView({ equipment }: { equipment: Equipment[] }) {
-    const visible = useMemo(() => equipment.filter((e) => e.status !== "maintenance"), [equipment]);
+        return (
+            <ResponsiveDetailAction.Card key={item.id} mobileHref={`/${routes.equipment}/${item.id}`} onActivate={handleSelect}>
+                <EquipmentItemContent equipment={item} />
+            </ResponsiveDetailAction.Card>
+        )
+    }
 
     return (
         <GroupedList>
-            {activeStatusGroups.map((group) => {
-                const items = visible.filter((e) => e.status === group.key);
+            {equipmentStatusGroup.map((group) => {
+                const items = equipment.filter((e) => e.status === group.key);
                 if (items.length === 0) return null;
                 return (
                     <GroupedList.Group key={group.key}>
@@ -23,9 +32,7 @@ export function InventoryListView({ equipment }: { equipment: Equipment[] }) {
                             <Label.sm>{group.label}</Label.sm>
                         </GroupedList.Header>
                         <GroupedList.Content>
-                            {items.map((e) => (
-                                <EquipmentItem key={e.id} equipment={e} />
-                            ))}
+                            {items.map(renderEquipment)}
                         </GroupedList.Content>
                     </GroupedList.Group>
                 );

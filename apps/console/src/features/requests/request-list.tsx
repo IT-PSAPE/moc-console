@@ -1,11 +1,25 @@
 import { GroupedList } from "@moc/ui/components/display/grouped-list";
 import { Indicator } from "@moc/ui/components/display/indicator";
-import { RequestItem } from "./request-item";
 import { Label } from "@moc/ui/components/display/text";
 import type { Request } from "@moc/types/requests";
 import { statusGroups } from "@moc/types/requests";
+import { ResponsiveDetailAction } from "@/features/responsive-detail-action";
+import { routes } from "@/screens/console-routes";
+import { RequestItemContent } from "./request-item-content";
 
-export function RequestListView({ requests }: { requests: Request[] }) {
+export function RequestListView({ onSelect, requests }: { onSelect: (request: Request) => void; requests: Request[] }) {
+    function renderRequest(request: Request) {
+        function handleSelect() {
+            onSelect(request)
+        }
+
+        return (
+            <ResponsiveDetailAction.Card key={request.id} mobileHref={`/${routes.requests}/${request.id}`} onActivate={handleSelect}>
+                <RequestItemContent request={request} />
+            </ResponsiveDetailAction.Card>
+        )
+    }
+
     return (
         <GroupedList>
             {statusGroups.map((group) => {
@@ -18,9 +32,7 @@ export function RequestListView({ requests }: { requests: Request[] }) {
                             <Label.sm>{group.label}</Label.sm>
                         </GroupedList.Header>
                         <GroupedList.Content>
-                            {items.map((r) => (
-                                <RequestItem key={r.id} request={r} />
-                            ))}
+                            {items.map(renderRequest)}
                         </GroupedList.Content>
                     </GroupedList.Group>
                 );

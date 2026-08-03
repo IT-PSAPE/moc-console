@@ -26,6 +26,7 @@ import { RequestShareActions } from "./request-share-actions";
 import { useRequestDetail } from "./use-request-detail";
 import { useDrawerClose } from "@/hooks/use-drawer-close";
 import { useDrawerEditorGuard } from "@/hooks/use-drawer-editor-guard";
+import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 
 export type RequestDrawerProps = {
   request: Request;
@@ -61,23 +62,47 @@ function RequestDrawerContent({
   isDirtyRef,
   requestCloseRef,
 }: RequestDrawerProps) {
-  const shareTargetRef = useRef<HTMLDivElement | null>(null);
   const { state: drawerState } = useDrawer();
+  const closeDrawer = useDrawerClose(onRequestClose);
+
+  return (
+    <RequestPanelContent
+      request={request}
+      open={drawerState.isOpen}
+      onClose={closeDrawer}
+      isDirtyRef={isDirtyRef}
+      requestCloseRef={requestCloseRef}
+    />
+  );
+}
+
+type RequestPanelContentProps = Omit<RequestDrawerProps, "onRequestClose"> & {
+  onClose: () => void;
+  open: boolean;
+};
+
+export function RequestPanelContent({
+  request,
+  onClose,
+  open,
+  isDirtyRef,
+  requestCloseRef,
+}: RequestPanelContentProps) {
+  const shareTargetRef = useRef<HTMLDivElement | null>(null);
   const {
     actions: { syncRequest },
   } = useRequests();
-  const closeDrawer = useDrawerClose(onRequestClose);
 
-  const detail = useRequestDetail({ request, syncRequest, assigneesEnabled: drawerState.isOpen, onArchiveChanged: closeDrawer, onDeleted: closeDrawer });
+  const detail = useRequestDetail({ request, syncRequest, assigneesEnabled: open, onArchiveChanged: onClose, onDeleted: onClose });
   const { store } = detail;
 
-  const guard = useDrawerEditorGuard({ close: closeDrawer, discard: store.actions.discard, href: `/requests/${request.id}`, isDirty: store.state.isDirty, isDirtyRef, requestCloseRef, save: detail.actions.handleSave });
+  const guard = useDrawerEditorGuard({ close: onClose, discard: store.actions.discard, href: `/requests/${request.id}`, isDirty: store.state.isDirty, isDirtyRef, requestCloseRef, save: detail.actions.handleSave });
 
   return (
     <>
       {/* Toolbar */}
       <RequestShareActions.Root request={store.state.draft} targetRef={shareTargetRef}>
-        <Drawer.Header className="flex items-center gap-1">
+        <SplitPanel.Header className="flex items-center gap-1">
           <Button.Icon aria-label="Close request" variant="ghost" icon={<X />} onClick={guard.actions.requestClose} />
           <Button.Icon
             variant="ghost"
@@ -113,9 +138,9 @@ function RequestDrawerContent({
               </Dropdown.Item>
             </Dropdown.Panel>
           </Dropdown>
-        </Drawer.Header>
+        </SplitPanel.Header>
 
-        <Drawer.Content className="py-4">
+        <SplitPanel.Content className="py-4">
           <div ref={shareTargetRef}>
             <div className="px-4 pb-4">
               <Title.h6>{store.state.draft.title}</Title.h6>
@@ -160,19 +185,19 @@ function RequestDrawerContent({
               />
             )}
           </div>
-        </Drawer.Content>
+        </SplitPanel.Content>
       </RequestShareActions.Root>
 
       {/* Save footer — visible only when dirty */}
       {store.state.isDirty && (
-        <Drawer.Footer className="justify-end">
+        <SplitPanel.Footer className="justify-end">
           <Button variant="ghost" onClick={store.actions.discard}>
             Discard
           </Button>
           <Button onClick={detail.actions.handleSave} disabled={store.state.isSaving}>
             {store.state.isSaving ? "Saving…" : "Save"}
           </Button>
-        </Drawer.Footer>
+        </SplitPanel.Footer>
       )}
 
       {/* Unsaved changes modal */}

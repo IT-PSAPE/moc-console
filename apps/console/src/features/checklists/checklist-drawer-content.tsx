@@ -4,27 +4,28 @@ import { Divider } from "@moc/ui/components/display/divider";
 import { Paragraph, Title } from "@moc/ui/components/display/text";
 import { InlineEditableText } from "@moc/ui/components/form/inline-editable-text";
 import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog";
-import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 import { Dropdown } from "@moc/ui/components/overlays/dropdown";
 import type { Checklist } from "@moc/types/checklists";
 import { ChecklistContent } from "./checklist-content";
-import { useChecklistDrawer } from "./use-checklist-drawer";
+import { useChecklistPanel } from "./use-checklist-panel";
 import { ChecklistAssignees } from "./checklist-assignees";
+import { ChecklistScheduleField } from "./checklist-schedule-field";
 
-export function ChecklistDrawerContent({ checklist }: { checklist: Checklist }) {
-  const { state, actions, meta } = useChecklistDrawer(checklist);
+export function ChecklistPanelContent({ checklist, onClose }: { checklist: Checklist; onClose: () => void }) {
+  const { state, actions, meta } = useChecklistPanel(checklist, onClose);
 
   return (
     <>
-      <Drawer.Header className="flex items-center gap-1">
+      <SplitPanel.Header className="flex items-center gap-1">
         <Button.Icon aria-label="Close checklist" variant="ghost" icon={<X />} onClick={actions.close} />
         <Button.Icon aria-label="Open full page" variant="ghost" icon={<Maximize2 />} onClick={actions.openFullPage} />
         <div className="flex-1" />
         <Paragraph.sm className="mr-2 text-tertiary">{meta.checked}/{meta.total} done</Paragraph.sm>
         <Button.Icon aria-label="Delete checklist" variant="danger-secondary" icon={<Trash2 />} onClick={actions.openDelete} />
-      </Drawer.Header>
+      </SplitPanel.Header>
 
-      <Drawer.Content className="py-4">
+      <SplitPanel.Content className="py-4">
         <div className="flex items-start gap-2 px-4 pb-2">
           <div className="mr-auto">
             <Title.h6><InlineEditableText value={checklist.name} onSave={actions.updateName} className="title-h6" /></Title.h6>
@@ -39,11 +40,17 @@ export function ChecklistDrawerContent({ checklist }: { checklist: Checklist }) 
           </Dropdown>
         </div>
 
+        {checklist.kind === "instance" && (
+          <div className="px-4 pt-3">
+            <ChecklistScheduleField value={meta.scheduledAtInput} onChange={actions.updateScheduledAt} />
+          </div>
+        )}
+
         <Divider className="my-3" />
         <ChecklistAssignees.Root checklistId={checklist.id}>
           <ChecklistContent checklist={checklist} onUpdate={actions.updateChecklist} addRequest={state.addRequest} onAddRequestDismiss={actions.dismissAdd} itemSlot={ChecklistAssignees.Item} />
         </ChecklistAssignees.Root>
-      </Drawer.Content>
+      </SplitPanel.Content>
 
       <ConfirmationDialog open={state.deleteOpen} onOpenChange={actions.setDeleteOpen} title="Delete checklist?" description="This permanently deletes the checklist and cannot be undone." confirmLabel="Delete checklist" onConfirm={actions.remove} />
     </>

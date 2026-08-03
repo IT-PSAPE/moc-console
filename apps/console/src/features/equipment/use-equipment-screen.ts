@@ -8,8 +8,9 @@ import { useIsMobile } from '@moc/ui/hooks/use-is-mobile'
 import type { Equipment, EquipmentCategory } from '@moc/types/equipment'
 import { useEquipment } from './equipment-provider'
 import { useEquipmentFilters } from './use-equipment-filters'
+import { useListDetailSelection } from '@/hooks/use-list-detail-selection'
 
-const equipmentViews = ['list', 'table', 'kanban'] as const
+const equipmentViews = ['list', 'kanban'] as const
 
 type NewEquipment = {
   name: string
@@ -26,9 +27,14 @@ export function useEquipmentScreen() {
   const { toast } = useFeedback()
   const [createOpen, setCreateOpen] = useState(false)
   const filters = useEquipmentFilters(equipmentState.equipment)
-  const activeView = isMobile && (view === 'table' || view === 'kanban') ? 'list' : view
+  const activeView = isMobile && view === 'kanban' ? 'list' : view
+  const detail = useListDetailSelection<Equipment>()
+  const { close: closeDetail, select: selectEquipment } = detail.actions
 
   useEffect(() => { void loadEquipment() }, [loadEquipment])
+  useEffect(() => {
+    if (activeView !== 'list') closeDetail()
+  }, [activeView, closeDetail])
 
   const create = useCallback(async ({ name, serialNumber, category, location }: NewEquipment) => {
     const equipment: Equipment = { id: randomId(), name, serialNumber, category, status: 'available', location, notes: '', lastActiveDate: new Date().toISOString(), bookedBy: null, thumbnail: null }
@@ -51,8 +57,8 @@ export function useEquipmentScreen() {
   }
 
   return {
-    state: { activeView, isMobile, createOpen, isLoading: equipmentState.isLoadingEquipment, filtered: filters.filtered, filterState: filters.filters },
-    actions: { changeView, setCreateOpen, openCreate, create, setSearch: filters.setSearch },
+    state: { activeView, isMobile, createOpen, detailOpen: detail.state.isOpen, selectedEquipment: detail.state.selectedItem, isLoading: equipmentState.isLoadingEquipment, filtered: filters.filtered, filterState: filters.filters },
+    actions: { changeView, closeDetail, selectEquipment, setCreateOpen, openCreate, create, setSearch: filters.setSearch },
     meta: { filters },
   }
 }

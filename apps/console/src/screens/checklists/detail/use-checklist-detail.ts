@@ -7,6 +7,7 @@ import { getChecklistCounts } from "@/features/checklists/checklist-content"
 import type { ChecklistAddRequest } from "@/features/checklists/checklist-types"
 import { routes } from "@/screens/console-routes"
 import type { Checklist } from "@moc/types/checklists"
+import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time"
 
 export function useChecklistDetail() {
   const { id } = useParams<{ id: string }>()
@@ -20,6 +21,7 @@ export function useChecklistDetail() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const checklist = checklists.find((item) => item.id === id) ?? null
   const counts = checklist ? getChecklistCounts(checklist) : { total: 0, checked: 0 }
+  const scheduledAtInput = checklist?.kind === "instance" && checklist.scheduledAt ? formatUtcIsoForBrowserDateTimeInput(checklist.scheduledAt) : ""
 
   useBreadcrumbOverride(id ?? "", checklist?.name)
 
@@ -41,6 +43,10 @@ export function useChecklistDetail() {
 
   function updateDescription(description: string) {
     if (checklist) void update({ ...checklist, description })
+  }
+
+  function updateScheduledAt(value: string) {
+    if (checklist?.kind === "instance" && value) void update({ ...checklist, scheduledAt: parseBrowserDateTimeInputToUtcIso(value) })
   }
 
   async function remove() {
@@ -72,7 +78,7 @@ export function useChecklistDetail() {
 
   return {
     state: { addRequest, deleteOpen },
-    actions: { setDeleteOpen, openDelete, addItem, addSection, dismissAdd, update, updateName, updateDescription, remove },
-    meta: { checklist, counts, isLoading: isLoadingChecklists },
+    actions: { setDeleteOpen, openDelete, addItem, addSection, dismissAdd, update, updateName, updateDescription, updateScheduledAt, remove },
+    meta: { checklist, counts, scheduledAtInput, isLoading: isLoadingChecklists },
   }
 }

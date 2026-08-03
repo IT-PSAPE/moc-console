@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { Booking, BookingStatus } from "@moc/types/equipment";
+import { areSetsEqual } from "@/utils/sets";
 
 // ─── Filter / Sort state ───────────────────────────────
 
@@ -25,7 +26,7 @@ const defaultFilters: BookingFilters = {
 export function useBookingFilters(bookings: Booking[]) {
   const [filters, setFilters] = useState<BookingFilters>(defaultFilters);
 
-  const filtered = useMemo(() => {
+  const results = useMemo(() => {
     let result = bookings;
 
     // Search — title, bookedBy, notes, and any item's equipment name.
@@ -38,11 +39,6 @@ export function useBookingFilters(bookings: Booking[]) {
           b.notes.toLowerCase().includes(q) ||
           b.items.some((item) => item.equipmentName.toLowerCase().includes(q)),
       );
-    }
-
-    // Status filter
-    if (filters.statuses.size > 0) {
-      result = result.filter((b) => filters.statuses.has(b.status));
     }
 
     // Sort
@@ -60,7 +56,10 @@ export function useBookingFilters(bookings: Booking[]) {
       }
     });
 
-    return result;
+    return {
+      calendarFiltered: result,
+      filtered: result.filter((booking) => filters.statuses.has(booking.status)),
+    };
   }, [bookings, filters]);
 
   // ─── Actions ─────────────────────────────────────────
@@ -86,13 +85,12 @@ export function useBookingFilters(bookings: Booking[]) {
     setFilters(defaultFilters);
   }
 
-  const hasActiveFilters =
-    filters.statuses.size !== defaultFilters.statuses.size ||
-    [...filters.statuses].some((s) => !defaultFilters.statuses.has(s));
+  const hasActiveFilters = !areSetsEqual(filters.statuses, defaultFilters.statuses);
 
   return {
     filters,
-    filtered,
+    filtered: results.filtered,
+    calendarFiltered: results.calendarFiltered,
     hasActiveFilters,
     setSearch,
     toggleStatus,

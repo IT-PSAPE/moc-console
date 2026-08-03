@@ -3,6 +3,7 @@ import type { Request } from "@moc/types/requests";
 import type { Category } from "@moc/types/requests/category";
 import type { Priority } from "@moc/types/requests/priority";
 import type { Status } from "@moc/types/requests/status";
+import { areSetsEqual } from "@/utils/sets";
 
 // ─── Filter / Sort state ───────────────────────────────
 
@@ -23,7 +24,7 @@ const defaultFilters: RequestFilters = {
     search: "",
     categories: new Set(),
     priorities: new Set(),
-    statuses: new Set(),
+    statuses: new Set<Status>(["not_started", "in_progress"]),
     dateRange: { start: "", end: "" },
     sortField: "createdAt",
     sortDirection: "desc",
@@ -34,7 +35,7 @@ const defaultFilters: RequestFilters = {
 export function useRequestFilters(requests: Request[]) {
     const [filters, setFilters] = useState<RequestFilters>(defaultFilters);
 
-    const filtered = useMemo(() => {
+    const results = useMemo(() => {
         let result = requests;
 
         // Search
@@ -56,15 +57,6 @@ export function useRequestFilters(requests: Request[]) {
         // Priority filter
         if (filters.priorities.size > 0) {
             result = result.filter((r) => filters.priorities.has(r.priority));
-        }
-
-        // Status filter. Archived requests are hidden unless the caller asks
-        // for them explicitly — "Archived" is a status like any other here,
-        // it just isn't part of the default view.
-        if (filters.statuses.size > 0) {
-            result = result.filter((r) => filters.statuses.has(r.status));
-        } else {
-            result = result.filter((r) => r.status !== "archived");
         }
 
         // Date range
@@ -95,7 +87,10 @@ export function useRequestFilters(requests: Request[]) {
             }
         });
 
-        return result;
+        return {
+            calendarFiltered: result,
+            filtered: result.filter((request) => filters.statuses.has(request.status)),
+        };
     }, [requests, filters]);
 
     // ─── Actions ───────────────────────────────────────
@@ -146,7 +141,7 @@ export function useRequestFilters(requests: Request[]) {
     const hasActiveFilters =
         filters.categories.size > 0 ||
         filters.priorities.size > 0 ||
-        filters.statuses.size > 0 ||
+        !areSetsEqual(filters.statuses, defaultFilters.statuses) ||
         filters.dateRange.start !== "" ||
         filters.dateRange.end !== "";
 
@@ -156,7 +151,8 @@ export function useRequestFilters(requests: Request[]) {
 
     return {
         filters,
-        filtered,
+        filtered: results.filtered,
+        calendarFiltered: results.calendarFiltered,
         hasActiveFilters,
         includesArchived,
         setSearch,

@@ -73,14 +73,14 @@ export function EquipmentPropertiesSection({
 
       <MetaRow icon={<Tag />} label="Category">
         <Select.Root name="equipment-category" items={categoryItems} value={draft.category} onValueChange={handleCategoryChange}>
-          <Select.Trigger aria-label="Equipment category" className="w-44" style="ghost" />
+          <Select.Trigger aria-label="Equipment category" style="ghost" />
           <Select.Content>{allCategories.map(renderCategory)}</Select.Content>
         </Select.Root>
       </MetaRow>
 
       <MetaRow icon={<Loader />} label="Status">
         <Select.Root name="equipment-status" items={statusItems} value={draft.status} onValueChange={handleStatusChange}>
-          <Select.Trigger aria-label="Equipment status" className="w-44" style="ghost" />
+          <Select.Trigger aria-label="Equipment status" style="ghost" />
           <Select.Content>{allStatuses.map(renderStatus)}</Select.Content>
         </Select.Root>
       </MetaRow>

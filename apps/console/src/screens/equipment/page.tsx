@@ -10,7 +10,6 @@ import {
   Plus,
   Search,
   Settings2,
-  Table as TableIcon,
 } from "lucide-react";
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import { Decision } from "@moc/ui/components/display/decision";
@@ -20,41 +19,39 @@ import { CreateEquipmentModal } from "@/features/equipment/create-equipment-moda
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
 import { InventoryListView } from "@/features/equipment/inventory-list";
 import { InventoryKanbanView } from "@/features/equipment/inventory-kanban";
-import { InventoryTableView } from "@/features/equipment/inventory-table";
 import { useEquipmentScreen } from "@/features/equipment/use-equipment-screen";
 import type { ChangeEvent } from "react";
+import { SplitPanel } from "@moc/ui/components/layout/split-panel";
+import { EquipmentPanelContent } from "@/features/equipment/equipment-drawer";
+import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar";
 
 export function EquipmentScreen() {
   const { state, actions, meta } = useEquipmentScreen();
-  const CollectionContent = state.activeView === "table" || state.activeView === "kanban" ? Page.CollectionContent : Page.Content;
+  const CollectionContent = state.activeView === "kanban" ? Page.CollectionContent : Page.Content;
+  const collectionState = state.activeView === "kanban" ? state.activeView : state.filtered;
 
   function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
     actions.setSearch(event.target.value);
   }
 
   return (
-    <Page>
+    <SplitPanel open={state.detailOpen} onOpenChange={actions.closeDetail} detailLabel="Equipment details">
+      <SplitPanel.Primary>
+      <Page>
       <Page.Header>
         <Page.Heading>
           <Page.Title>Equipment</Page.Title>
         </Page.Heading>
       </Page.Header>
 
-      <Page.Toolbar>
-        <div className="w-full md:w-auto">
+      <CollectionToolbar>
+        <CollectionToolbar.Views>
           <SegmentedControl value={state.activeView} onValueChange={actions.changeView} fill={state.isMobile} >
-            <SegmentedControl.Item value="list" icon={<List />}>
-              List
-            </SegmentedControl.Item>
-            <SegmentedControl.Item value="table" icon={<TableIcon />} hide={state.isMobile}>
-              Table
-            </SegmentedControl.Item>
-            <SegmentedControl.Item value="kanban" icon={<Columns3 />} hide={state.isMobile}>
-              Kanban
-            </SegmentedControl.Item>
+            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={state.isMobile}>Kanban</CollectionToolbar.ViewItem>
           </SegmentedControl>
-        </div>
-        <div className="flex flex-1 flex-wrap gap-2 md:justify-end">
+        </CollectionToolbar.Views>
+        <CollectionToolbar.Actions className="flex-wrap">
           <Input
             aria-label="Search equipment"
             name="equipment-search"
@@ -67,9 +64,7 @@ export function EquipmentScreen() {
           />
           <Drawer mobileSide="bottom">
             <Drawer.Trigger>
-              {state.isMobile
-                ? <Button.Icon icon={<Settings2 />} variant="secondary" aria-label="Filter" />
-                : <Button icon={<Settings2 />} variant="secondary">Filter</Button>}
+              <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter equipment">Filter</CollectionToolbar.ActionButton>
             </Drawer.Trigger>
             <EquipmentFilterDrawer filters={meta.filters} />
           </Drawer>
@@ -79,11 +74,11 @@ export function EquipmentScreen() {
             icon={<Plus />}
             onClick={actions.openCreate}
           />
-        </div>
-      </Page.Toolbar>
+        </CollectionToolbar.Actions>
+      </CollectionToolbar>
 
       <CollectionContent>
-      <Decision value={state.filtered} loading={state.isLoading}>
+      <Decision value={collectionState} loading={state.isLoading}>
         <Decision.Loading>
           <LoadingSpinner className="py-6" />
         </Decision.Loading>
@@ -95,8 +90,7 @@ export function EquipmentScreen() {
           />
         </Decision.Empty>
         <Decision.Data>
-          {state.activeView === "list" && <InventoryListView equipment={state.filtered} />}
-          {state.activeView === "table" && <InventoryTableView equipment={state.filtered} />}
+          {state.activeView === "list" && <InventoryListView equipment={state.filtered} onSelect={actions.selectEquipment} />}
           {state.activeView === "kanban" && <InventoryKanbanView equipment={state.filtered} />}
         </Decision.Data>
       </Decision>
@@ -107,6 +101,11 @@ export function EquipmentScreen() {
         onOpenChange={actions.setCreateOpen}
         onCreate={actions.create}
       />
-    </Page>
+      </Page>
+      </SplitPanel.Primary>
+      <SplitPanel.Detail>
+        {state.selectedEquipment && <EquipmentPanelContent equipment={state.selectedEquipment} open={state.detailOpen} onClose={actions.closeDetail} />}
+      </SplitPanel.Detail>
+    </SplitPanel>
   );
 }

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { Equipment } from "@moc/types/equipment/equipment";
 import type { EquipmentCategory } from "@moc/types/equipment/category";
 import type { EquipmentStatus } from "@moc/types/equipment/status";
+import { areSetsEqual } from "@/utils/sets";
 
 // ─── Filter / Sort state ───────────────────────────────
 
@@ -19,7 +20,7 @@ export type EquipmentFilters = {
 const defaultFilters: EquipmentFilters = {
   search: "",
   categories: new Set(),
-  statuses: new Set(),
+  statuses: new Set<EquipmentStatus>(["available", "booked"]),
   sortField: "lastActiveDate",
   sortDirection: "desc",
 };
@@ -49,9 +50,7 @@ export function useEquipmentFilters(equipment: Equipment[]) {
     }
 
     // Status filter
-    if (filters.statuses.size > 0) {
-      result = result.filter((e) => filters.statuses.has(e.status));
-    }
+    result = result.filter((e) => filters.statuses.has(e.status));
 
     // Sort
     const dir = filters.sortDirection === "asc" ? 1 : -1;
@@ -101,7 +100,7 @@ export function useEquipmentFilters(equipment: Equipment[]) {
     setFilters(defaultFilters);
   }
 
-  const hasActiveFilters = filters.categories.size > 0 || filters.statuses.size > 0;
+  const hasActiveFilters = filters.categories.size > 0 || !areSetsEqual(filters.statuses, defaultFilters.statuses);
 
   return {
     filters,

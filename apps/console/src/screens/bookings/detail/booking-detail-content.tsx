@@ -61,12 +61,12 @@ export function BookingDetailContent({ booking }: { booking: Booking }) {
         <DetailPage.Section className="space-y-3">
           <MetaRow icon={<Loader />} label="Status"><BookingStatusSelect status={draft.status} onSelectStatus={editor.actions.selectStatus} /></MetaRow>
           <MetaRow icon={<User />} label="Booked by"><Input aria-label="Booked by" name="booked-by" autoComplete="name" type="text" value={draft.bookedBy} onChange={editor.actions.changeBookedBy} placeholder="Enter name" style="ghost" /></MetaRow>
-          <MetaRow icon={<Calendar />} label="Checked out"><DateTimeFields ariaLabel="Checked out" name="checked-out" value={formatUtcIsoForBrowserDateTimeInput(draft.checkedOutDate)} onChange={editor.actions.changeCheckedOutDate} style="ghost" required /></MetaRow>
-          <MetaRow icon={<Clock />} label="Expected return"><DateTimeFields ariaLabel="Expected return" name="expected-return" value={formatUtcIsoForBrowserDateTimeInput(draft.expectedReturnAt)} onChange={editor.actions.changeExpectedReturn} style="ghost" required /></MetaRow>
-          <MetaRow icon={<Calendar />} label="Returned"><DateTimeFields ariaLabel="Returned" name="returned" value={draft.returnedDate ? formatUtcIsoForBrowserDateTimeInput(draft.returnedDate) : ""} onChange={editor.actions.changeReturnedDate} style="ghost" /></MetaRow>
+          <MetaRow icon={<Calendar />} label="Checked out"><DateTimeFields ariaLabel="Checked out" name="checked-out" value={formatUtcIsoForBrowserDateTimeInput(draft.checkedOutDate)} onChange={editor.actions.changeCheckedOutDate} style="ghost" fieldLabels="hidden" required /></MetaRow>
+          <MetaRow icon={<Clock />} label="Expected return"><DateTimeFields ariaLabel="Expected return" name="expected-return" value={formatUtcIsoForBrowserDateTimeInput(draft.expectedReturnAt)} onChange={editor.actions.changeExpectedReturn} style="ghost" fieldLabels="hidden" required /></MetaRow>
+          <MetaRow icon={<Calendar />} label="Returned"><DateTimeFields ariaLabel="Returned" name="returned" value={draft.returnedDate ? formatUtcIsoForBrowserDateTimeInput(draft.returnedDate) : ""} onChange={editor.actions.changeReturnedDate} style="ghost" fieldLabels="hidden" /></MetaRow>
           <MetaRow icon={<Clock />} label="Duration"><Paragraph.sm>{draft.duration}</Paragraph.sm></MetaRow>
           <MetaRow icon={<StickyNote />} label="Notes">
-            <TextArea aria-label="Booking notes" name="booking-notes" value={draft.notes} onChange={editor.actions.changeNotes} placeholder="Add notes…" style="ghost" resize="vertical" rows={5} className="w-full whitespace-pre-wrap" />
+            <TextArea aria-label="Booking notes" name="booking-notes" value={draft.notes} onChange={editor.actions.changeNotes} placeholder="Add notes…" style="ghost" rows={5} className="w-full whitespace-pre-wrap" />
           </MetaRow>
         </DetailPage.Section>
 

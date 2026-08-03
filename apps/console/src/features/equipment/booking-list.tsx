@@ -1,11 +1,25 @@
 import { GroupedList } from "@moc/ui/components/display/grouped-list";
 import { Indicator } from "@moc/ui/components/display/indicator";
 import { Label } from "@moc/ui/components/display/text";
-import { BookingItem } from "./booking-item";
 import type { Booking } from "@moc/types/equipment";
 import { bookingStatusGroup } from "@moc/types/equipment";
+import { ResponsiveDetailAction } from "@/features/responsive-detail-action";
+import { routes } from "@/screens/console-routes";
+import { BookingItemContent } from "./booking-item-content";
 
-export function BookingListView({ bookings }: { bookings: Booking[] }) {
+export function BookingListView({ bookings, onSelect }: { bookings: Booking[]; onSelect: (booking: Booking) => void }) {
+  function renderBooking(booking: Booking) {
+    function handleSelect() {
+      onSelect(booking)
+    }
+
+    return (
+      <ResponsiveDetailAction.Card key={booking.id} mobileHref={`/${routes.bookings}/${booking.id}`} onActivate={handleSelect}>
+        <BookingItemContent booking={booking} />
+      </ResponsiveDetailAction.Card>
+    )
+  }
+
   return (
     <GroupedList>
       {bookingStatusGroup.map((group) => {
@@ -18,9 +32,7 @@ export function BookingListView({ bookings }: { bookings: Booking[] }) {
               <Label.sm>{group.label}</Label.sm>
             </GroupedList.Header>
             <GroupedList.Content>
-              {items.map((booking) => (
-                <BookingItem key={booking.id} booking={booking} />
-              ))}
+              {items.map(renderBooking)}
             </GroupedList.Content>
           </GroupedList.Group>
         );

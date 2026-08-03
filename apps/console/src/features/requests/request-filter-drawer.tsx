@@ -76,8 +76,6 @@ export function RequestFilterDrawer({ filters }: RequestFilterDrawerProps) {
                                     </FilterDrawer.Options>
                                 </FilterDrawer.Group>
                                 <FilterDrawer.Group label="Status">
-                                    {/* Archived requests are excluded from the
-                                        default view; tick Archived to see them. */}
                                     <FilterDrawer.Options>
                                         {(Object.entries(statusLabel) as [Status, string][]).map(([key, label]) => (
                                             <Checkbox

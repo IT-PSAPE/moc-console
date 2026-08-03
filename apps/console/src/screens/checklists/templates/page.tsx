@@ -4,7 +4,7 @@ import { Button } from '@moc/ui/components/controls/button'
 import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import { Input } from '@moc/ui/components/form/input'
 import { Page } from '@moc/ui/components/layout/page'
-import { ChecklistItemCard } from '@/features/checklists/checklist-item'
+import { ChecklistDrawerItem } from '@/features/checklists/checklist-drawer-item'
 import { CreateChecklistModal } from '@/features/checklists/create-checklist-modal'
 import type { Checklist } from '@moc/types/checklists'
 import { Decision } from '@moc/ui/components/display/decision'
@@ -19,7 +19,7 @@ export function ChecklistTemplatesScreen() {
     }
 
     function renderTemplate(checklist: Checklist) {
-        return <ChecklistItemCard key={checklist.id} checklist={checklist} />
+        return <ChecklistDrawerItem key={checklist.id} checklist={checklist} />
     }
 
     return (

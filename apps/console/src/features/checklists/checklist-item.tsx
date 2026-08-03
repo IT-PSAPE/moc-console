@@ -1,41 +1,16 @@
-import { ListItemCard } from '@moc/ui/components/display/list-item-card'
-import { Drawer } from '@moc/ui/components/overlays/drawer'
 import type { Checklist } from '@moc/types/checklists'
-import { CalendarClock, CheckCircle2, ListChecks } from 'lucide-react'
-import { ChecklistDrawer } from './checklist-drawer'
-import { getChecklistCounts } from './checklist-content'
-import { formatUtcIsoInBrowserTimeZone } from '@moc/utils/browser-date-time'
-import { ResponsiveDrawerTrigger } from '@/features/responsive-drawer-trigger'
+import { ResponsiveDetailAction } from '@/features/responsive-detail-action'
 import { routes } from '@/screens/console-routes'
+import { ChecklistItemContent } from './checklist-item-content'
 
-function formatScheduledAt(scheduledAt?: string) {
-    if (!scheduledAt) return null
-    return formatUtcIsoInBrowserTimeZone(scheduledAt, { dateStyle: 'medium', timeStyle: 'short' })
-}
-
-export function ChecklistItemCard({ checklist }: { checklist: Checklist }) {
-    const { total, checked } = getChecklistCounts(checklist)
-    const allDone = total > 0 && checked === total
-    const scheduledAt = formatScheduledAt(checklist.scheduledAt)
+export function ChecklistItemCard({ checklist, onSelect }: { checklist: Checklist; onSelect: (checklist: Checklist) => void }) {
+    function handleSelect() {
+        onSelect(checklist)
+    }
 
     return (
-        <Drawer>
-            <ResponsiveDrawerTrigger.Card mobileHref={`/${routes.checklists}/${checklist.id}`}>
-                <ListItemCard.Root>
-                    <ListItemCard.Content>
-                        <ListItemCard.Title>{checklist.name}</ListItemCard.Title>
-                        {checklist.description && <ListItemCard.Subtitle>{checklist.description}</ListItemCard.Subtitle>}
-                        <ListItemCard.Meta>
-                            {scheduledAt && <ListItemCard.MetaItem icon={<CalendarClock />}>{scheduledAt}</ListItemCard.MetaItem>}
-                            <ListItemCard.MetaItem className={allDone ? 'text-success' : undefined} icon={<ListChecks />}>{checked} of {total} complete</ListItemCard.MetaItem>
-                            {allDone && (
-                                <ListItemCard.MetaItem className="text-success" icon={<CheckCircle2 />}>Complete</ListItemCard.MetaItem>
-                            )}
-                        </ListItemCard.Meta>
-                    </ListItemCard.Content>
-                </ListItemCard.Root>
-            </ResponsiveDrawerTrigger.Card>
-            <ChecklistDrawer checklist={checklist} />
-        </Drawer>
+        <ResponsiveDetailAction.Card mobileHref={`/${routes.checklists}/${checklist.id}`} onActivate={handleSelect}>
+            <ChecklistItemContent checklist={checklist} />
+        </ResponsiveDetailAction.Card>
     )
 }

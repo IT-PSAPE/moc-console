@@ -40,17 +40,16 @@ export function useChecklistRunFilters(checklists: Checklist[]) {
     const [filters, setFilters] = useState<ChecklistRunFilters>(defaultFilters)
     const [currentTime] = useState(() => Date.now())
 
-    const filtered = useMemo(() => {
+    const results = useMemo(() => {
         const search = filters.search.trim().toLowerCase()
         const start = filters.dateRange.start ? new Date(filters.dateRange.start).getTime() : null
         const end = filters.dateRange.end ? new Date(filters.dateRange.end).getTime() : null
         const minItems = toNumber(filters.itemCount.min)
         const maxItems = toNumber(filters.itemCount.max)
 
-        const result = checklists.filter((checklist) => {
+        const calendarFiltered = checklists.filter((checklist) => {
             const scheduledTime = getScheduledTime(checklist)
-            const { total, checked } = getChecklistCounts(checklist)
-            const isComplete = total > 0 && total === checked
+            const { total } = getChecklistCounts(checklist)
 
             if (!filters.includePast && scheduledTime < currentTime) return false
             if (search && !checklist.name.toLowerCase().includes(search) && !checklist.description.toLowerCase().includes(search)) return false
@@ -58,18 +57,26 @@ export function useChecklistRunFilters(checklists: Checklist[]) {
             if (end !== null && scheduledTime > end) return false
             if (minItems !== null && total < minItems) return false
             if (maxItems !== null && total > maxItems) return false
-            if (filters.completion === 'complete' && !isComplete) return false
-            if (filters.completion === 'open' && isComplete) return false
             return true
         })
 
         const direction = filters.sortDirection === 'asc' ? 1 : -1
-        return result.sort((a, b) => {
+        calendarFiltered.sort((a, b) => {
             if (filters.sortField === 'name') return direction * a.name.localeCompare(b.name)
             if (filters.sortField === 'items') return direction * (getChecklistCounts(a).total - getChecklistCounts(b).total)
             if (filters.sortField === 'completed') return direction * (getChecklistCounts(a).checked - getChecklistCounts(b).checked)
             return direction * (getScheduledTime(a) - getScheduledTime(b))
         })
+
+        const filtered = calendarFiltered.filter((checklist) => {
+            const { total, checked } = getChecklistCounts(checklist)
+            const isComplete = total > 0 && total === checked
+            if (filters.completion === 'complete') return isComplete
+            if (filters.completion === 'open') return !isComplete
+            return true
+        })
+
+        return { calendarFiltered, filtered }
     }, [checklists, currentTime, filters])
 
     function setSearch(search: string) {
@@ -105,11 +112,12 @@ export function useChecklistRunFilters(checklists: Checklist[]) {
         filters.dateRange.end !== '' ||
         filters.itemCount.min !== '' ||
         filters.itemCount.max !== '' ||
-        filters.completion !== 'all'
+        filters.completion !== defaultFilters.completion
 
     return {
         filters,
-        filtered,
+        filtered: results.filtered,
+        calendarFiltered: results.calendarFiltered,
         hasActiveFilters,
         setSearch,
         setIncludePast,

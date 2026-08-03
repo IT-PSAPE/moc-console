@@ -1,5 +1,6 @@
-import { FilePlus2, ListChecks, Plus, Search, Settings2 } from 'lucide-react'
+import { CalendarDays, FilePlus2, List, ListChecks, Plus, Search, Settings2 } from 'lucide-react'
 import { Button } from '@moc/ui/components/controls/button'
+import { SegmentedControl } from '@moc/ui/components/controls/segmented-control'
 import { GroupedList } from '@moc/ui/components/display/grouped-list'
 import { Indicator } from '@moc/ui/components/display/indicator'
 import { Label } from '@moc/ui/components/display/text'
@@ -16,6 +17,10 @@ import { CreateChecklistRunModal } from '@/features/checklists/create-checklist-
 import { useChecklistsScreen } from '@/features/checklists/use-checklists-screen'
 import type { ChangeEvent } from 'react'
 import type { Checklist } from '@moc/types/checklists'
+import { ChecklistCalendarView } from '@/features/checklists/checklist-calendar'
+import { SplitPanel } from '@moc/ui/components/layout/split-panel'
+import { ChecklistPanelContent } from '@/features/checklists/checklist-drawer-content'
+import { CollectionToolbar } from '@moc/ui/components/layout/collection-toolbar'
 
 export function ChecklistsScreen() {
     const { state, actions, meta } = useChecklistsScreen()
@@ -32,25 +37,31 @@ export function ChecklistsScreen() {
     }
 
     function renderChecklist(checklist: Checklist) {
-        return <ChecklistItemCard key={checklist.id} checklist={checklist} />
+        return <ChecklistItemCard key={checklist.id} checklist={checklist} onSelect={actions.selectChecklist} />
     }
 
     return (
-        <Page>
+        <SplitPanel open={state.detailOpen} onOpenChange={actions.closeDetail} detailLabel="Checklist details">
+            <SplitPanel.Primary>
+            <Page>
             <Page.Header>
                 <Page.Heading>
                     <Page.Title>Checklists</Page.Title>
                 </Page.Heading>
             </Page.Header>
 
-            <Page.Toolbar>
-                    <div className="flex flex-1 gap-2 md:justify-end">
+            <CollectionToolbar>
+                    <CollectionToolbar.Views>
+                        <SegmentedControl value={state.activeView} onValueChange={actions.changeView} fill={state.isMobile}>
+                            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
+                            <CollectionToolbar.ViewItem value="calendar" icon={<CalendarDays />}>Calendar</CollectionToolbar.ViewItem>
+                        </SegmentedControl>
+                    </CollectionToolbar.Views>
+                    <CollectionToolbar.Actions>
                         <Input aria-label="Search checklists" name="checklist-search" autoComplete="off" icon={<Search />} placeholder="Search checklists…" className="w-full max-w-md" value={state.search} onChange={handleSearchChange} />
                         <Drawer mobileSide="bottom">
                             <Drawer.Trigger>
-                                {state.isMobile
-                                    ? <Button.Icon icon={<Settings2 />} variant="secondary" aria-label="Filter" />
-                                    : <Button icon={<Settings2 />} variant="secondary">Filter</Button>}
+                                <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter checklists">Filter</CollectionToolbar.ActionButton>
                             </Drawer.Trigger>
                             <ChecklistRunFilterDrawer filters={meta.filters} />
                         </Drawer>
@@ -72,62 +83,67 @@ export function ChecklistsScreen() {
                                 </Dropdown.Item>
                             </Dropdown.Panel>
                         </Dropdown>
-                    </div>
-            </Page.Toolbar>
+                    </CollectionToolbar.Actions>
+            </CollectionToolbar>
 
             <Page.Content>
-                <GroupedList>
-                    {state.showActive && <GroupedList.Group>
-                        <GroupedList.Header>
-                            <Indicator color="blue" className="size-6" />
-                            <Label.sm>Active</Label.sm>
-                        </GroupedList.Header>
-                        <GroupedList.Content>
-                        <Decision value={state.active} loading={state.isLoading}>
-                            <Decision.Loading>
-                                <LoadingSpinner className="py-6" />
-                            </Decision.Loading>
-                            <Decision.Empty>
-                                <EmptyState
-                                    icon={<ListChecks />}
-                                    title={state.search.trim() ? "No active checklist runs match your search" : "No active checklist runs"}
-                                    description={state.search.trim() ? "Try a different search term." : "Start a checklist run to see it here."}
-                                />
-                            </Decision.Empty>
-                            <Decision.Data>
-                                {state.active.map(renderChecklist)}
-                            </Decision.Data>
-                        </Decision>
-                        </GroupedList.Content>
-                    </GroupedList.Group>}
+                {state.activeView === 'calendar' ? (
+                    <Decision value={meta.calendarFiltered} loading={state.isLoading}>
+                        <Decision.Loading>
+                            <LoadingSpinner className="py-6" />
+                        </Decision.Loading>
+                        <Decision.Empty>
+                            <EmptyState
+                                icon={<CalendarDays />}
+                                title={state.search.trim() ? "No scheduled checklist runs match your search" : "No scheduled checklist runs"}
+                                description={state.search.trim() ? "Try a different search term or clear filters." : "Create a checklist run to see it on the calendar."}
+                            />
+                        </Decision.Empty>
+                        <Decision.Data>
+                            <ChecklistCalendarView checklists={meta.calendarFiltered} />
+                        </Decision.Data>
+                    </Decision>
+                ) : (
+                <Decision value={meta.filtered} loading={state.isLoading}>
+                    <Decision.Loading>
+                        <LoadingSpinner className="py-6" />
+                    </Decision.Loading>
+                    <Decision.Empty>
+                        <EmptyState
+                            icon={<ListChecks />}
+                            title={state.search.trim() ? "No checklist runs match your search" : "No checklist runs"}
+                            description={state.search.trim() ? "Try a different search term or clear filters." : "Create a checklist run to see it here."}
+                        />
+                    </Decision.Empty>
+                    <Decision.Data>
+                        <GroupedList>
+                            {state.showActive && state.active.length > 0 && <GroupedList.Group>
+                                <GroupedList.Header>
+                                    <Indicator color="blue" className="size-6" />
+                                    <Label.sm>Active</Label.sm>
+                                </GroupedList.Header>
+                                <GroupedList.Content>{state.active.map(renderChecklist)}</GroupedList.Content>
+                            </GroupedList.Group>}
 
-                    {state.showCompleted && <GroupedList.Group>
-                        <GroupedList.Header>
-                            <Indicator color="green" className="size-6" />
-                            <Label.sm>Complete</Label.sm>
-                        </GroupedList.Header>
-                        <GroupedList.Content>
-                        <Decision value={state.completed} loading={state.isLoading}>
-                            <Decision.Loading>
-                                <LoadingSpinner className="py-6" />
-                            </Decision.Loading>
-                            <Decision.Empty>
-                                <EmptyState
-                                    icon={<ListChecks />}
-                                    title={state.search.trim() ? "No completed checklist runs match your search" : "No completed checklist runs"}
-                                    description={state.search.trim() ? "Try a different search term." : "Completed checklist runs will appear here."}
-                                />
-                            </Decision.Empty>
-                            <Decision.Data>
-                                {state.completed.map(renderChecklist)}
-                            </Decision.Data>
-                        </Decision>
-                        </GroupedList.Content>
-                    </GroupedList.Group>}
-                </GroupedList>
+                            {state.showCompleted && state.completed.length > 0 && <GroupedList.Group>
+                                <GroupedList.Header>
+                                    <Indicator color="green" className="size-6" />
+                                    <Label.sm>Complete</Label.sm>
+                                </GroupedList.Header>
+                                <GroupedList.Content>{state.completed.map(renderChecklist)}</GroupedList.Content>
+                            </GroupedList.Group>}
+                        </GroupedList>
+                    </Decision.Data>
+                </Decision>
+                )}
             </Page.Content>
 
             <CreateChecklistRunModal open={state.modalOpen} onOpenChange={actions.setModalOpen} template={state.modalTemplate} onSubmit={actions.submit} />
-        </Page>
+            </Page>
+            </SplitPanel.Primary>
+            <SplitPanel.Detail>
+                {state.selectedChecklist && <ChecklistPanelContent checklist={state.selectedChecklist} onClose={actions.closeDetail} />}
+            </SplitPanel.Detail>
+        </SplitPanel>
     )
 }

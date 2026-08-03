@@ -13,6 +13,7 @@ import { Maximize2, Package, Trash2, X } from "lucide-react";
 import type { RefObject } from "react";
 import { useDrawerClose } from "@/hooks/use-drawer-close";
 import { useDrawerEditorGuard } from "@/hooks/use-drawer-editor-guard";
+import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 
 export type EquipmentDrawerProps = {
   equipment: Equipment;
@@ -51,10 +52,20 @@ function EquipmentDrawerContent({
   const { state: drawerState } = useDrawer();
   const closeDrawer = useDrawerClose(onEquipmentClose);
 
-  const editor = useEquipmentEditor(equipment, closeDrawer, drawerState.isOpen);
+  return <EquipmentPanelContent equipment={equipment} open={drawerState.isOpen} onClose={closeDrawer} isDirtyRef={isDirtyRef} requestCloseRef={requestCloseRef} />;
+}
+
+type EquipmentPanelContentProps = Omit<EquipmentDrawerProps, "onEquipmentClose"> & {
+  onClose: () => void;
+  open: boolean;
+};
+
+export function EquipmentPanelContent({ equipment, onClose, open, isDirtyRef, requestCloseRef }: EquipmentPanelContentProps) {
+
+  const editor = useEquipmentEditor(equipment, onClose, open);
   const { store, bookingHistory } = editor;
 
-  const guard = useDrawerEditorGuard({ close: closeDrawer, discard: store.actions.discard, href: `/equipment/${equipment.id}`, isDirty: store.state.isDirty, isDirtyRef, requestCloseRef, save: editor.actions.save });
+  const guard = useDrawerEditorGuard({ close: onClose, discard: store.actions.discard, href: `/equipment/${equipment.id}`, isDirty: store.state.isDirty, isDirtyRef, requestCloseRef, save: editor.actions.save });
 
   function handleDeleteRequest() {
     editor.actions.setDeleteOpen(true);
@@ -69,7 +80,7 @@ function EquipmentDrawerContent({
   return (
     <>
       {/* Header */}
-      <Drawer.Header className="flex items-center gap-1">
+      <SplitPanel.Header className="flex items-center gap-1">
         <Button.Icon aria-label="Close equipment" variant="ghost" icon={<X />} onClick={guard.actions.requestClose} />
         <Button.Icon
           variant="ghost"
@@ -84,9 +95,9 @@ function EquipmentDrawerContent({
           icon={<Trash2 />}
           onClick={handleDeleteRequest}
         />
-      </Drawer.Header>
+      </SplitPanel.Header>
 
-      <Drawer.Content className="py-4">
+      <SplitPanel.Content className="py-4">
         {/* Thumbnail + Name */}
         <div className="flex items-center gap-3 px-4 pb-4">
           {draft.thumbnail ? (
@@ -126,18 +137,18 @@ function EquipmentDrawerContent({
           bookings={bookingHistory.state.bookings}
           isLoading={bookingHistory.state.isLoading}
         />
-      </Drawer.Content>
+      </SplitPanel.Content>
 
       {/* Save footer — visible only when dirty */}
       {store.state.isDirty && (
-        <Drawer.Footer className="justify-end">
+        <SplitPanel.Footer className="justify-end">
           <Button variant="ghost" onClick={store.actions.discard}>
             Discard
           </Button>
           <Button onClick={editor.actions.save} disabled={store.state.isSaving}>
             {store.state.isSaving ? "Saving…" : "Save"}
           </Button>
-        </Drawer.Footer>
+        </SplitPanel.Footer>
       )}
 
       {/* Unsaved changes modal */}

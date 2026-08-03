@@ -17,6 +17,7 @@ import { Dropdown } from "@moc/ui/components/overlays/dropdown"
 import { FolderPlus, ListChecks, Plus, SquarePlus, Trash2 } from "lucide-react"
 import { useChecklistDetail } from "./use-checklist-detail"
 import { ChecklistAssignees } from "@/features/checklists/checklist-assignees"
+import { ChecklistScheduleField } from "@/features/checklists/checklist-schedule-field"
 
 export function ChecklistDetailScreen() {
   const { state, actions, meta } = useChecklistDetail()
@@ -68,6 +69,12 @@ export function ChecklistDetailScreen() {
             <InlineEditableText value={checklist.description} onSave={actions.updateDescription} className="text-sm text-tertiary" placeholder="Add description" />
           </Paragraph.sm>
         </DetailPage.Section>
+
+        {checklist.kind === "instance" && (
+          <DetailPage.Section className="pb-0 pt-4">
+            <ChecklistScheduleField value={meta.scheduledAtInput} onChange={actions.updateScheduledAt} />
+          </DetailPage.Section>
+        )}
 
         <DetailPage.Divider className="my-6" />
 

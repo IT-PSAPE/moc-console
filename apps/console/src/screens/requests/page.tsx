@@ -1,8 +1,6 @@
 import { RequestCalendarView } from "@/features/requests/request-calendar";
 import { RequestKanbanView } from "@/features/requests/request-kanban";
 import { RequestListView } from "@/features/requests/request-list";
-import { RequestTableView } from "@/features/requests/request-table";
-import { Button } from "@moc/ui/components/controls/button";
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
 import { Page } from "@moc/ui/components/layout/page";
 import { Input } from "@moc/ui/components/form/input";
@@ -13,7 +11,6 @@ import {
   List,
   Search,
   Settings2,
-  Table as TableIcon,
 } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
@@ -22,48 +19,52 @@ import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { RequestFilterDrawer } from "@/features/requests/request-filter-drawer";
 import { Decision } from "@moc/ui/components/display/decision";
 import { useRequestsScreen } from "./use-requests-screen";
+import { SplitPanel } from "@moc/ui/components/layout/split-panel";
+import { RequestPanelContent } from "@/features/requests/request-drawer";
+import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar";
 
 export function RequestsScreen() {
-  const { actions, meta } = useRequestsScreen();
+  const { state, actions, meta } = useRequestsScreen();
   const { filters, activeView, isMobile } = meta;
-  const CollectionContent = activeView === "table" || activeView === "kanban" ? Page.CollectionContent : Page.Content;
+  const CollectionContent = activeView === "kanban" ? Page.CollectionContent : Page.Content;
+  const visibleRequests = activeView === "calendar" ? filters.calendarFiltered : filters.filtered;
+  const collectionState = activeView === "kanban" ? activeView : visibleRequests;
 
   function handleSearch(event: ChangeEvent<HTMLInputElement>) {
     filters.setSearch(event.target.value)
   }
 
   return (
-    <Page>
+    <SplitPanel open={state.detailOpen} onOpenChange={actions.closeDetail} detailLabel="Request details">
+      <SplitPanel.Primary>
+      <Page>
       <Page.Header>
         <Page.Heading>
           <Page.Title>Requests</Page.Title>
         </Page.Heading>
       </Page.Header>
 
-      <Page.Toolbar>
-        <div className="w-full md:w-auto">
+      <CollectionToolbar>
+        <CollectionToolbar.Views>
           <SegmentedControl value={activeView} onValueChange={actions.changeView} fill={isMobile} >
-            <SegmentedControl.Item value="list" icon={<List />}>List</SegmentedControl.Item>
-            <SegmentedControl.Item value="table" icon={<TableIcon />} hide={isMobile}>Table</SegmentedControl.Item>
-            <SegmentedControl.Item value="kanban" icon={<Columns3 />} hide={isMobile}>Kanban</SegmentedControl.Item>
-            <SegmentedControl.Item value="calendar" icon={<CalendarDays />}>Calendar</SegmentedControl.Item>
+            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={isMobile}>Kanban</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="calendar" icon={<CalendarDays />}>Calendar</CollectionToolbar.ViewItem>
           </SegmentedControl>
-        </div>
-        <div className="flex flex-1 gap-2 md:justify-end">
+        </CollectionToolbar.Views>
+        <CollectionToolbar.Actions>
           <Input aria-label="Search requests" name="request-search" autoComplete="off" icon={<Search />} placeholder="Search requests…" className="w-full max-w-md" value={filters.filters.search} onChange={handleSearch} />
           <Drawer mobileSide="bottom">
             <Drawer.Trigger>
-              {isMobile
-                ? <Button.Icon icon={<Settings2 />} variant="secondary" aria-label="Filter" />
-                : <Button icon={<Settings2 />} variant="secondary">Filter</Button>}
+              <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter requests">Filter</CollectionToolbar.ActionButton>
             </Drawer.Trigger>
             <RequestFilterDrawer filters={filters} />
           </Drawer>
-        </div>
-      </Page.Toolbar>
+        </CollectionToolbar.Actions>
+      </CollectionToolbar>
 
       <CollectionContent>
-      <Decision value={filters.filtered} loading={meta.isLoading}>
+      <Decision value={collectionState} loading={meta.isLoading}>
         <Decision.Loading>
           <LoadingSpinner className="py-6" />
         </Decision.Loading>
@@ -75,13 +76,17 @@ export function RequestsScreen() {
           />
         </Decision.Empty>
         <Decision.Data>
-          {activeView === "list" && <RequestListView requests={filters.filtered} />}
-          {activeView === "table" && <RequestTableView requests={filters.filtered} />}
-          {activeView === "kanban" && <RequestKanbanView requests={filters.filtered} />}
-          {activeView === "calendar" && <RequestCalendarView requests={filters.filtered} />}
+          {activeView === "list" && <RequestListView requests={visibleRequests} onSelect={actions.selectRequest} />}
+          {activeView === "kanban" && <RequestKanbanView requests={visibleRequests} />}
+          {activeView === "calendar" && <RequestCalendarView requests={visibleRequests} />}
         </Decision.Data>
       </Decision>
       </CollectionContent>
-    </Page>
+      </Page>
+      </SplitPanel.Primary>
+      <SplitPanel.Detail>
+        {state.selectedRequest && <RequestPanelContent request={state.selectedRequest} open={state.detailOpen} onClose={actions.closeDetail} />}
+      </SplitPanel.Detail>
+    </SplitPanel>
   );
 }

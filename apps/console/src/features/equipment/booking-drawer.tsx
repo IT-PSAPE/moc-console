@@ -17,6 +17,7 @@ import type { RefObject } from "react";
 import { formatUtcIsoForBrowserDateTimeInput } from "@moc/utils/browser-date-time";
 import { useDrawerClose } from "@/hooks/use-drawer-close";
 import { useDrawerEditorGuard } from "@/hooks/use-drawer-editor-guard";
+import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 
 export type BookingDrawerProps = {
   booking: Booking;
@@ -44,10 +45,19 @@ export function BookingDrawer({ booking, onBookingClose, isDirtyRef, requestClos
 function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestCloseRef }: BookingDrawerProps) {
   const closeDrawer = useDrawerClose(onBookingClose);
 
-  const editor = useBookingEditor(booking, closeDrawer);
+  return <BookingPanelContent booking={booking} onClose={closeDrawer} isDirtyRef={isDirtyRef} requestCloseRef={requestCloseRef} />;
+}
+
+type BookingPanelContentProps = Omit<BookingDrawerProps, "onBookingClose"> & {
+  onClose: () => void;
+};
+
+export function BookingPanelContent({ booking, onClose, isDirtyRef, requestCloseRef }: BookingPanelContentProps) {
+
+  const editor = useBookingEditor(booking, onClose);
   const { store, collection } = editor;
 
-  const guard = useDrawerEditorGuard({ close: closeDrawer, discard: store.actions.discard, href: `/bookings/${booking.id}`, isDirty: store.state.isDirty, isDirtyRef, requestCloseRef, save: editor.actions.save });
+  const guard = useDrawerEditorGuard({ close: onClose, discard: store.actions.discard, href: `/bookings/${booking.id}`, isDirty: store.state.isDirty, isDirtyRef, requestCloseRef, save: editor.actions.save });
 
   function handleDeleteRequest() {
     editor.actions.setDeleteOpen(true);
@@ -57,7 +67,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
 
   return (
     <>
-      <Drawer.Header className="flex items-center gap-1">
+      <SplitPanel.Header className="flex items-center gap-1">
         <Button.Icon aria-label="Close booking" variant="ghost" icon={<X />} onClick={guard.actions.requestClose} />
         <div className="flex-1" />
         <Button.Icon
@@ -69,9 +79,9 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         />
         <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={guard.actions.openFullPage} aria-label="Open full page" />
         <Button.Icon aria-label="Delete booking" variant="danger-secondary" icon={<Trash2 />} onClick={handleDeleteRequest} />
-      </Drawer.Header>
+      </SplitPanel.Header>
 
-      <Drawer.Content className="py-4">
+      <SplitPanel.Content className="py-4">
         {/* Header — title is owned by the requester, so display only. */}
         <div className="flex items-center gap-3 px-4 pb-4">
           <span className="flex size-12 items-center justify-center rounded-lg bg-secondary text-quaternary">
@@ -112,6 +122,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
               value={formatUtcIsoForBrowserDateTimeInput(draft.checkedOutDate)}
               onChange={editor.actions.changeCheckedOutDate}
               style="ghost"
+              fieldLabels="hidden"
               required
               fieldsClassName="sm:grid-cols-2"
             />
@@ -125,6 +136,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
               value={formatUtcIsoForBrowserDateTimeInput(draft.expectedReturnAt)}
               onChange={editor.actions.changeExpectedReturn}
               style="ghost"
+              fieldLabels="hidden"
               required
               fieldsClassName="sm:grid-cols-2"
             />
@@ -138,6 +150,7 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
               value={draft.returnedDate ? formatUtcIsoForBrowserDateTimeInput(draft.returnedDate) : ""}
               onChange={editor.actions.changeReturnedDate}
               style="ghost"
+              fieldLabels="hidden"
               fieldsClassName="sm:grid-cols-2"
             />
           </MetaRow>
@@ -156,7 +169,6 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
               onChange={editor.actions.changeNotes}
               placeholder="Add notes…"
               style="ghost"
-              resize="vertical"
               rows={5}
               className="w-full whitespace-pre-wrap"
             />
@@ -164,16 +176,16 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         </div>
 
         {/* Items */}
-        <BookingItemsSection items={draft.items} scannedItemIds={collection.state.scannedItemIds} onNavigate={closeDrawer} />
-      </Drawer.Content>
+        <BookingItemsSection items={draft.items} scannedItemIds={collection.state.scannedItemIds} onNavigate={onClose} />
+      </SplitPanel.Content>
 
       {store.state.isDirty && (
-        <Drawer.Footer className="justify-end">
+        <SplitPanel.Footer className="justify-end">
           <Button variant="ghost" onClick={store.actions.discard}>Discard</Button>
           <Button onClick={editor.actions.save} disabled={store.state.isSaving}>
             {store.state.isSaving ? "Saving…" : "Save"}
           </Button>
-        </Drawer.Footer>
+        </SplitPanel.Footer>
       )}
 
       <UnsavedChangesModal
