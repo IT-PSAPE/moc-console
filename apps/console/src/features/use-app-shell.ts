@@ -12,6 +12,7 @@ export function useAppShell() {
   const { signOut } = useAuth()
   const { toast } = useFeedback()
   const [isSigningOut, setIsSigningOut] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
   const [reportBugOpen, setReportBugOpen] = useState(false)
 
   useEffect(() => {
@@ -38,8 +39,13 @@ export function useAppShell() {
     setReportBugOpen(true)
   }
 
+  function openProfile() {
+    closeMobile()
+    setProfileOpen(true)
+  }
+
   return {
-    state: { isSigningOut, reportBugOpen, mobileSidebarOpen: sidebar.state.isMobileOpen },
-    actions: { isRouteActive, signOut: signOutUser, openReportBug, setReportBugOpen, closeMobileSidebar: closeMobile },
+    state: { isSigningOut, profileOpen, reportBugOpen, mobileSidebarOpen: sidebar.state.isMobileOpen },
+    actions: { isRouteActive, signOut: signOutUser, openProfile, setProfileOpen, openReportBug, setReportBugOpen, closeMobileSidebar: closeMobile },
   }
 }

@@ -21,7 +21,7 @@ export function UserRoleSelect({ userId, role, roles, onChange }: UserRoleSelect
 
   return (
     <Select.Root name={`role-${userId}`} items={items} value={role?.id ?? null} onValueChange={handleChange}>
-      <Select.Trigger aria-label="Member role" className="w-36 capitalize" />
+      <Select.Trigger aria-label="Member role" className="w-full capitalize sm:w-36" />
       <Select.Content>{roles.map(renderRole)}</Select.Content>
     </Select.Root>
   )

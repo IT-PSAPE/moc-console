@@ -1,7 +1,6 @@
 import { Section } from '@moc/ui/components/display/section'
-import { Divider } from '@moc/ui/components/display/divider'
+import { SettingsRow } from '@moc/ui/components/display/settings-row'
 import { Input } from '@moc/ui/components/form/input'
-import { Label } from '@moc/ui/components/display/text'
 import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import { MemberSearchPicker } from '@/features/assignees/member-search-picker'
 import type { ResolvedAssignee } from '@/data/fetch-assignees'
@@ -16,19 +15,16 @@ export function StaleAlertsSection() {
     const { state, actions } = useStaleAlerts()
     return (
         <Section>
-            <Section.Header title="Stale-item alerts" />
-            <Divider className="my-6" />
-            <Section.Body className="gap-6">
+            <Section.Header title="Stale-item alerts" description="Notify selected members when work has not been updated." />
+            <Section.Body className="gap-2">
                 {state.isLoading ? <LoadingSpinner className="py-8" /> : (
                     <>
-                        <div className="flex max-w-xs flex-col gap-2">
-                            <Label.sm>Flag after</Label.sm>
-                            <Input aria-label="Days without activity before flagging" name="stale-threshold-days" type="number" min={1} value={state.thresholdInput} onChange={actions.changeThreshold} onBlur={actions.saveThreshold} />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <Label.sm>Recipients</Label.sm>
+                        <SettingsRow label="Flag after" description="Days without activity.">
+                            <Input aria-label="Days without activity before flagging" name="stale-threshold-days" type="number" min={1} value={state.thresholdInput} onChange={actions.changeThreshold} onBlur={actions.saveThreshold} className="max-w-32" />
+                        </SettingsRow>
+                        <SettingsRow label="Recipients">
                             <MemberSearchPicker assignees={state.recipients.map(toAssignee)} onAdd={actions.addRecipient} onRemove={actions.removeRecipient} placeholder="Add a person…" emptyLabel="No recipients yet" />
-                        </div>
+                        </SettingsRow>
                     </>
                 )}
             </Section.Body>

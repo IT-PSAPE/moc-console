@@ -1,11 +1,16 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react"
 import { removeUserAvatar, updateUserProfile, uploadUserAvatar } from "@/data/fetch-users"
 import { useAuth } from "@/lib/auth-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
+import { useEffect, useRef, useState, type ChangeEvent } from "react"
 
 export const PROFILE_STATUS_MAX_LENGTH = 500
 
-export function useProfileSettings() {
+type UseProfileSettingsProps = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export function useProfileSettings({ open, onOpenChange }: UseProfileSettingsProps) {
   const { profile, refreshProfile } = useAuth()
   const { toast } = useFeedback()
   const [name, setName] = useState("")
@@ -19,12 +24,12 @@ export function useProfileSettings() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (!profile) return
+    if (!open || !profile) return
     setName(profile.name)
     setSurname(profile.surname)
     setDuty(profile.currentDuty ?? "")
     setStatus(profile.statusMessage ?? "")
-  }, [profile])
+  }, [open, profile])
 
   const trimmedName = name.trim()
   const trimmedSurname = surname.trim()
@@ -45,6 +50,19 @@ export function useProfileSettings() {
     && !isSaving,
   )
 
+  function reset() {
+    if (!profile) return
+    setName(profile.name)
+    setSurname(profile.surname)
+    setDuty(profile.currentDuty ?? "")
+    setStatus(profile.statusMessage ?? "")
+  }
+
+  function close() {
+    reset()
+    onOpenChange(false)
+  }
+
   async function save() {
     if (!profile || !canSave) return
     setIsSaving(true)
@@ -57,6 +75,7 @@ export function useProfileSettings() {
       })
       await refreshProfile()
       toast({ title: "Profile updated", variant: "success" })
+      onOpenChange(false)
     } catch (error) {
       toast({
         title: "Could not update profile",
@@ -66,14 +85,6 @@ export function useProfileSettings() {
     } finally {
       setIsSaving(false)
     }
-  }
-
-  function discard() {
-    if (!profile) return
-    setName(profile.name)
-    setSurname(profile.surname)
-    setDuty(profile.currentDuty ?? "")
-    setStatus(profile.statusMessage ?? "")
   }
 
   function pickAvatar() {
@@ -143,11 +154,10 @@ export function useProfileSettings() {
 
   return {
     state: { name, surname, duty, status, isSaving, pendingAvatarFile, isUploadingAvatar, removeAvatarOpen },
-    actions: { setName, setSurname, setDuty, setStatus, save, discard, pickAvatar, selectAvatar, uploadAvatar, removeAvatar, openRemoveAvatar, closeRemoveAvatar, cancelAvatarCrop },
+    actions: { setName, setSurname, setDuty, setStatus, close, save, pickAvatar, selectAvatar, uploadAvatar, removeAvatar, openRemoveAvatar, closeRemoveAvatar, cancelAvatarCrop },
     fileInputRef,
     meta: {
       profile,
-      hasChanges,
       canSave,
       initials: profile ? `${profile.name[0] ?? ""}${profile.surname[0] ?? ""}` : "",
       statusLength: trimmedStatus.length,

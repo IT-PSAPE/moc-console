@@ -16,7 +16,7 @@ export function MessageTemplateRow({ type, customised }: MessageTemplateRowProps
     const meta = messageTypeMeta(type)
     const path = `/${routes.messageTemplateDetail.replace(':messageType', encodeURIComponent(type))}`
     return (
-        <InteractiveSurface.Link render={<Link to={path} />} className="flex w-full items-center justify-between gap-3 border-b border-tertiary px-3 py-3 text-left last:border-b-0 hover:bg-secondary">
+        <InteractiveSurface.Link render={<Link to={path} />} className="flex w-full items-center justify-between gap-3 border-b border-tertiary px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-secondary">
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <div className="flex items-center gap-2">
                     <Label.sm>{meta.label}</Label.sm>

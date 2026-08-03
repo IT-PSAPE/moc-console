@@ -14,6 +14,7 @@ import { ReportBugModal } from './account/report-bug-modal'
 import { Button } from '@moc/ui/components/controls/button'
 import { SkipLink } from '@moc/ui/components/navigation/skip-link'
 import { useAppShell } from './use-app-shell'
+import { EditProfileModal } from './account/edit-profile-modal'
 
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -42,8 +43,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <Sidebar.Group>
                             <Sidebar.GroupContent>
                                 <Sidebar.MenuItem title="Requests" icon={<FileText />} active={actions.isRouteActive(routes.requests)} render={<Link to={`/${routes.requests}`} />} />
-                                <Sidebar.MenuItem title="Equipment" icon={<Package />} active={actions.isRouteActive(routes.equipment)} render={<Link to={`/${routes.equipment}`} />} />
                                 <Sidebar.MenuItem title="Bookings" icon={<CalendarCheck />} active={actions.isRouteActive(routes.bookings)} render={<Link to={`/${routes.bookings}`} />} />
+                                <Sidebar.MenuItem title="Equipment" icon={<Package />} active={actions.isRouteActive(routes.equipment)} render={<Link to={`/${routes.equipment}`} />} />
                                 <Sidebar.MenuItem title="Checklists" icon={<ListChecks />} active={actions.isRouteActive(routes.checklists)} render={<Link to={`/${routes.checklists}`} />} />
                                 <Sidebar.MenuItem title="Streams" icon={<Radio />} active={actions.isRouteActive(routes.streams)} render={<Link to={`/${routes.streams}`} />} />
                             </Sidebar.GroupContent>
@@ -55,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             <Sidebar.MenuItem title="Settings" icon={<Settings />} active={actions.isRouteActive(routes.settings)} render={<Link to={`/${routes.settings}`} />} />
                             <Sidebar.MenuItem title="Report a bug" icon={<Bug />} onClick={actions.openReportBug} />
                             <Divider className="my-1" />
-                            <AccountMenu onSignOut={actions.signOut} isSigningOut={state.isSigningOut} />
+                            <AccountMenu onEditProfile={actions.openProfile} onSignOut={actions.signOut} isSigningOut={state.isSigningOut} />
                         </div>
                     </Sidebar.Footer>
                 </Sidebar.Panel>
@@ -73,12 +74,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Breadcrumb />
                 </TopBar>
 
-                <main id="main-content" tabIndex={-1} className="area-content min-h-0 overflow-y-auto bg-[var(--background-color-primary)] outline-none">
+                <main id="main-content" tabIndex={-1} className="area-content min-h-0 overflow-y-auto overscroll-contain bg-[var(--background-color-primary)] outline-none">
                     {children}
                 </main>
             </div>
 
             <SearchCommandMenuContent />
+            <EditProfileModal open={state.profileOpen} onOpenChange={actions.setProfileOpen} />
             <ReportBugModal open={state.reportBugOpen} onOpenChange={actions.setReportBugOpen} />
         </CommandMenu.Root>
     )

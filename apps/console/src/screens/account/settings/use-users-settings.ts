@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo } from "react"
 import { useUsers } from "@/features/users/users-provider"
 import { useAuth } from "@/lib/auth-context"
 import { useWorkspace } from "@/lib/workspace-context"
@@ -12,25 +12,15 @@ export function useUsersSettings() {
   } = useUsers()
   const { currentWorkspaceId } = useWorkspace()
   const { toast } = useFeedback()
-  const [search, setSearch] = useState("")
-
   useEffect(() => {
     void loadUsers()
   }, [loadUsers])
 
-  const filteredUsers = useMemo(() => {
-    const workspaceUsers = currentWorkspaceId
+  const workspaceUsers = useMemo(() => {
+    return currentWorkspaceId
       ? users.filter((user) => user.workspaceIds.includes(currentWorkspaceId))
       : users
-    const query = search.trim().toLowerCase()
-    if (!query) return workspaceUsers
-    return workspaceUsers.filter((user) =>
-      user.name.toLowerCase().includes(query)
-      || user.surname.toLowerCase().includes(query)
-      || user.email.toLowerCase().includes(query)
-      || (user.role?.name ?? "").toLowerCase().includes(query),
-    )
-  }, [currentWorkspaceId, search, users])
+  }, [currentWorkspaceId, users])
 
   const updateRole = useCallback(async (userId: string, roleId: string) => {
     try {
@@ -46,8 +36,7 @@ export function useUsersSettings() {
   }, [changeRole, toast])
 
   return {
-    state: { search },
-    actions: { setSearch, updateRole },
-    meta: { users: filteredUsers, roles, isLoading, canManage: role?.can_manage_roles === true, currentUserId: profile?.id },
+    actions: { updateRole },
+    meta: { users: workspaceUsers, roles, isLoading, canManage: role?.can_manage_roles === true, currentUserId: profile?.id },
   }
 }

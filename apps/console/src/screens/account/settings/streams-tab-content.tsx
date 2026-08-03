@@ -1,6 +1,5 @@
 import { YouTubeConnectionCard } from "@/features/streams/youtube-connection-card"
 import { ZoomConnectionCard } from "@/features/streams/zoom-connection-card"
-import { Divider } from "@moc/ui/components/display/divider"
 import { Section } from "@moc/ui/components/display/section"
 import { useStreamConnections } from "./use-stream-connections"
 
@@ -9,10 +8,9 @@ export function StreamsTabContent() {
 
   return (
     <Section>
-      <Section.Header title="Streaming connections" />
-      <Divider className="my-6" />
+      <Section.Header title="Streaming connections" description="Connect the services used to schedule and manage broadcasts." />
       <Section.Body>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3">
           <YouTubeConnectionCard />
           <ZoomConnectionCard />
         </div>

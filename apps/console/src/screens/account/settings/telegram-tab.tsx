@@ -2,7 +2,6 @@ import { Section } from "@moc/ui/components/display/section";
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { MessagesSquare } from "lucide-react";
-import { Divider } from "@moc/ui/components/display/divider";
 import { Decision } from "@moc/ui/components/display/decision";
 import type { TelegramGroup } from "@/data/fetch-telegram-groups";
 import { ConnectEventsModal } from "./connect-events-modal";
@@ -27,13 +26,9 @@ export function TelegramTab() {
     }
 
     return (
-        <>
+        <div className="flex flex-col gap-10">
             <Section>
-                <Section.Header
-                    title="Telegram groups"
-                />
-
-                <Divider className="my-6" />
+                <Section.Header title="Telegram groups" description="Choose where workspace notifications are delivered." />
 
                 <Section.Body className="gap-4">
                     <Decision value={state.groups} loading={state.isLoading}>
@@ -58,15 +53,11 @@ export function TelegramTab() {
                 </Section.Body>
             </Section>
 
-            <Divider className="my-6" />
-
             <MessageTemplates />
-
-            <Divider className="my-6" />
 
             <MessageFormatSection />
 
             <ConnectEventsModal target={state.connectTarget} onClose={actions.closeConnect} />
-        </>
+        </div>
     );
 }

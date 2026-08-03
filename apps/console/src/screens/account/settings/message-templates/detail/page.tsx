@@ -74,7 +74,6 @@ function Editor({ messageType }: { messageType: MessageType }) {
                                         ref={textareaRef}
                                         value={state.body}
                                         onChange={actions.changeBody}
-                                        resize="vertical"
                                         rows={14}
                                         className="font-mono"
                                     />

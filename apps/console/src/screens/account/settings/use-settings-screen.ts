@@ -2,14 +2,14 @@ import { useSearchParams } from "react-router-dom"
 import { useAuth } from "@/lib/auth-context"
 import { useIsMobile } from "@moc/ui/hooks/use-is-mobile"
 
-export type SettingsTab = "profile" | "workspace" | "telegram" | "streams" | "automation"
+export type SettingsTab = "general" | "members" | "telegram" | "streams" | "automation"
 
 export const settingsTabLabel: Record<SettingsTab, string> = {
   automation: "Automation",
-  profile: "Profile",
+  general: "General",
+  members: "Members",
   streams: "Streaming",
   telegram: "Telegram",
-  workspace: "Workspace & members",
 }
 
 export function getSettingsHref(tab: SettingsTab): string {
@@ -21,10 +21,11 @@ export function useSettingsScreen() {
   const [searchParams] = useSearchParams()
   const isMobile = useIsMobile()
   const canManage = role?.can_manage_roles === true
-  const tabs: SettingsTab[] = canManage ? ["profile", "workspace", "telegram", "streams", "automation"] : ["profile"]
-  const requestedTab = searchParams.get("tab") as SettingsTab | null
+  const tabs: SettingsTab[] = canManage ? ["general", "members", "telegram", "streams", "automation"] : ["general"]
+  const tabParam = searchParams.get("tab")
+  const requestedTab = (tabParam === "workspace" ? "general" : tabParam) as SettingsTab | null
   const requestedTabIsAvailable = requestedTab !== null && tabs.includes(requestedTab)
-  const activeTab: SettingsTab = requestedTabIsAvailable ? requestedTab : "profile"
+  const activeTab: SettingsTab = requestedTabIsAvailable ? requestedTab : "general"
 
   return {
     meta: {

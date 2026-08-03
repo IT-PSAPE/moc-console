@@ -4,8 +4,6 @@ import { useAuth } from "@/lib/auth-context"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-
 export function useWorkspaceSettings() {
   const { role } = useAuth()
   const { workspaces, currentWorkspaceId, refresh } = useWorkspace()
@@ -15,28 +13,17 @@ export function useWorkspaceSettings() {
     [currentWorkspaceId, workspaces],
   )
   const [name, setName] = useState("")
-  const [slug, setSlug] = useState("")
-  const [description, setDescription] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const canManage = role?.can_manage_roles === true
 
   useEffect(() => {
     if (!workspace) return
     setName(workspace.name)
-    setSlug(workspace.slug)
-    setDescription(workspace.description ?? "")
   }, [workspace])
 
   const trimmedName = name.trim()
-  const trimmedSlug = slug.trim()
-  const trimmedDescription = description.trim()
-  const hasChanges = workspace
-    ? trimmedName !== workspace.name
-      || trimmedSlug !== workspace.slug
-      || trimmedDescription !== (workspace.description ?? "")
-    : false
-  const slugValid = SLUG_PATTERN.test(trimmedSlug)
-  const canSave = Boolean(canManage && hasChanges && trimmedName && slugValid && !isSaving)
+  const hasChanges = workspace ? trimmedName !== workspace.name : false
+  const canSave = Boolean(canManage && hasChanges && trimmedName && !isSaving)
 
   async function save() {
     if (!workspace || !canSave) return
@@ -44,8 +31,6 @@ export function useWorkspaceSettings() {
     try {
       await updateWorkspace(workspace.id, {
         name: trimmedName,
-        slug: trimmedSlug,
-        description: trimmedDescription || null,
       })
       await refresh()
       toast({ title: "Workspace updated", variant: "success" })
@@ -63,13 +48,11 @@ export function useWorkspaceSettings() {
   function discard() {
     if (!workspace) return
     setName(workspace.name)
-    setSlug(workspace.slug)
-    setDescription(workspace.description ?? "")
   }
 
   return {
-    state: { name, slug, description, isSaving },
-    actions: { setName, setSlug, setDescription, save, discard },
-    meta: { workspace, canManage, hasChanges, slugValid, canSave, trimmedSlug },
+    state: { name, isSaving },
+    actions: { setName, save, discard },
+    meta: { workspace, canManage, hasChanges, canSave },
   }
 }

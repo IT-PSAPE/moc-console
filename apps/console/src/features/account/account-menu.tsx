@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import { LogOut, UserRound } from 'lucide-react'
 import { Button } from '@moc/ui/components/controls/button'
 import { Avatar } from '@moc/ui/components/display/avatar'
@@ -8,14 +7,14 @@ import { Dropdown } from '@moc/ui/components/overlays/dropdown'
 import { useSidebar } from '@moc/ui/components/navigation/sidebar'
 import { cn } from '@moc/utils/cn'
 import { useAuth } from '@/lib/auth-context'
-import { routes } from '@/screens/console-routes'
 
 type AccountMenuProps = {
     isSigningOut: boolean
+    onEditProfile: () => void
     onSignOut: () => void
 }
 
-export function AccountMenu({ isSigningOut, onSignOut }: AccountMenuProps) {
+export function AccountMenu({ isSigningOut, onEditProfile, onSignOut }: AccountMenuProps) {
     const { state: sidebarState } = useSidebar()
     const { profile, role } = useAuth()
     const userInitials = profile ? `${profile.name[0] ?? ''}${profile.surname[0] ?? ''}` : 'MC'
@@ -45,10 +44,10 @@ export function AccountMenu({ isSigningOut, onSignOut }: AccountMenuProps) {
                     {profile?.email && <Label.xs className="block truncate text-quaternary">{profile.email}</Label.xs>}
                 </div>
                 <Dropdown.Separator />
-                <Dropdown.Link render={<Link to={`/${routes.settings}?tab=profile`} />}>
+                <Dropdown.Item onSelect={onEditProfile}>
                     <UserRound className="size-4" aria-hidden="true" />
-                    Profile
-                </Dropdown.Link>
+                    Edit profile
+                </Dropdown.Item>
                 <Dropdown.Separator />
                 <Dropdown.Item onSelect={onSignOut} disabled={isSigningOut}>
                     <LogOut className="size-4 text-error" aria-hidden="true" />
