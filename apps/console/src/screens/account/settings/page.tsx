@@ -1,7 +1,7 @@
 import { Button } from '@moc/ui/components/controls/button'
 import { Page } from '@moc/ui/components/layout/page'
+import { NavigationList } from '@moc/ui/components/navigation/navigation-list'
 import { Link } from 'react-router-dom'
-import { cn } from '@moc/utils/cn'
 import { TelegramTab } from './telegram-tab'
 import { StreamsTab } from './streams-tab'
 import { WorkspaceTab } from './workspace-tab'
@@ -24,15 +24,15 @@ export function SettingsScreen() {
 
     function renderDesktopTab(tab: SettingsTab) {
         return (
-            <Button.Link
+            <NavigationList.Item
                 key={tab}
+                active={meta.activeTab === tab}
+                nativeButton={false}
                 render={<Link to={getSettingsHref(tab)} />}
-                variant="ghost"
                 aria-current={meta.activeTab === tab ? 'page' : undefined}
-                className={cn('justify-start', meta.activeTab === tab && 'bg-secondary text-primary')}
             >
                 {settingsTabLabel[tab]}
-            </Button.Link>
+            </NavigationList.Item>
         )
     }
 
@@ -56,13 +56,17 @@ export function SettingsScreen() {
 
             <Page.Content>
                 {meta.showMobileIndex ? (
-                    <nav aria-label="Settings" className="flex flex-col gap-2">
-                        {meta.tabs.map(renderMobileTab)}
+                    <nav aria-label="Settings">
+                        <NavigationList.Root>
+                            {meta.tabs.map(renderMobileTab)}
+                        </NavigationList.Root>
                     </nav>
                 ) : (
                     <div className="grid gap-6 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-10">
-                        <nav aria-label="Settings" className="hidden self-start md:sticky md:top-4 md:flex md:flex-col md:gap-1">
-                            {meta.tabs.map(renderDesktopTab)}
+                        <nav aria-label="Settings" className="hidden self-start md:sticky md:top-4 md:block">
+                            <NavigationList.Root>
+                                {meta.tabs.map(renderDesktopTab)}
+                            </NavigationList.Root>
                         </nav>
 
                         <div className="flex min-w-0 flex-col gap-4">

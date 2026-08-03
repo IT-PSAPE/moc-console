@@ -1,9 +1,8 @@
-import { Button as BaseButton } from '@base-ui/react/button'
 import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip'
 import { cn } from '@moc/utils/cn'
-import { cv } from '@moc/utils/cv'
 import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type MouseEventHandler, type ReactElement, type ReactNode } from 'react'
 import { Label } from '../display/text'
+import { NavigationList } from './navigation-list'
 
 // ─── Context ─────────────────────────────────────────────
 
@@ -58,25 +57,6 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
         </BaseTooltip.Provider>
     )
 }
-
-const menuItemVarients = cv({
-    base: [
-        'min-h-11 py-1 rounded-md inline-flex justify-start items-center gap-2 overflow-hidden w-full md:min-h-9',
-    ],
-    variants: {
-        state: {
-            active: ['bg-brand_primary text-brand_secondary hover:bg-brand_secondary'],
-            inactive: ['bg-transparent text-color-secondary hover:bg-secondary active:bg-secondary'],
-        },
-        isCollapsed: {
-            true: ['px-1'],
-            false: []
-        }
-    },
-    defaultVariants: {
-        state: 'inactive',
-    },
-})
 
 // ─── Components ──────────────────────────────────────────
 
@@ -155,9 +135,9 @@ function SidebarGroupTitle({ title, className }: { title: string, className?: st
 
 function SidebarGroupContent({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("w-full px-2 flex flex-col justify-start items-start", className)}>
+        <NavigationList.Root className={cn('px-2', className)}>
             {children}
-        </div>
+        </NavigationList.Root>
     )
 }
 
@@ -173,12 +153,20 @@ type SidebarMenuItemProps = {
 // no expand/collapse; the only collapsing left is the panel rail itself.
 function SidebarMenuItem({ title, icon, active = false, onClick, render }: SidebarMenuItemProps) {
     const { state: sidebarState } = useSidebar()
-    const itemState = active ? 'active' : 'inactive'
     const isCollapsed = sidebarState.isCollapsed
-    const cursorClassName = onClick ? 'cursor-pointer' : 'cursor-default'
 
     const menuButton = (
-        <BaseButton nativeButton={render === undefined} render={render} type={render ? undefined : 'button'} className={cn(menuItemVarients({ state: itemState, isCollapsed: isCollapsed ? 'true' : 'false'}), cursorClassName)} onClick={onClick} aria-label={isCollapsed ? title : undefined}>
+        <NavigationList.Item
+            active={active}
+            tone="brand"
+            nativeButton={render === undefined}
+            render={render}
+            type={render ? undefined : 'button'}
+            className={cn('px-1 py-1', isCollapsed && 'w-fit')}
+            onClick={onClick}
+            aria-current={render && active ? 'page' : undefined}
+            aria-label={isCollapsed ? title : undefined}
+        >
                 <div className={cn("flex-1 px-1 flex justify-start items-center gap-1.5", isCollapsed && "justify-center px-0")}>
                     <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
                         {icon}
@@ -189,7 +177,7 @@ function SidebarMenuItem({ title, icon, active = false, onClick, render }: Sideb
                         </Label.sm>
                     )}
                 </div>
-        </BaseButton>
+        </NavigationList.Item>
     )
 
     return (

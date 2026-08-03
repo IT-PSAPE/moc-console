@@ -1,5 +1,6 @@
 import { routes } from '@/screens/console-routes'
 import { Sidebar } from '@moc/ui/components/navigation/sidebar'
+import { NavigationList } from '@moc/ui/components/navigation/navigation-list'
 import { Breadcrumb } from '@moc/ui/components/navigation/breadcrumb'
 import { Bug, CalendarCheck, FileText, LayoutGrid, ListChecks, Package, Radio, Settings, X } from 'lucide-react'
 import { TopBar } from './topbar'
@@ -52,9 +53,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </Sidebar.Content>
 
                     <Sidebar.Footer>
-                        <div className="flex w-full flex-col gap-1">
-                            <Sidebar.MenuItem title="Settings" icon={<Settings />} active={actions.isRouteActive(routes.settings)} render={<Link to={`/${routes.settings}`} />} />
-                            <Sidebar.MenuItem title="Report a bug" icon={<Bug />} onClick={actions.openReportBug} />
+                        <div className="flex w-full flex-col">
+                            <NavigationList.Root>
+                                <Sidebar.MenuItem title="Settings" icon={<Settings />} active={actions.isRouteActive(routes.settings)} render={<Link to={`/${routes.settings}`} />} />
+                                <Sidebar.MenuItem title="Report a bug" icon={<Bug />} onClick={actions.openReportBug} />
+                            </NavigationList.Root>
                             <Divider className="my-1" />
                             <AccountMenu onEditProfile={actions.openProfile} onSignOut={actions.signOut} isSigningOut={state.isSigningOut} />
                         </div>
