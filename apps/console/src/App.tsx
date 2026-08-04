@@ -63,19 +63,27 @@ function RequireAuth() {
 
     return (
         <WorkspaceProvider>
-            <BreadcrumbProvider>
-                <SidebarProvider>
-                    <TopBarProvider>
-                        <AppShell>
-                            <RouteErrorBoundary>
-                                <Suspense fallback={<FullScreenSpinner />}>
-                                    <Outlet />
-                                </Suspense>
-                            </RouteErrorBoundary>
-                        </AppShell>
-                    </TopBarProvider>
-                </SidebarProvider>
-            </BreadcrumbProvider>
+            <RequestsProvider>
+                <EquipmentProvider>
+                    <StreamsProvider>
+                        <ChecklistsProvider>
+                            <BreadcrumbProvider>
+                                <SidebarProvider>
+                                    <TopBarProvider>
+                                        <AppShell>
+                                            <RouteErrorBoundary>
+                                                <Suspense fallback={<FullScreenSpinner />}>
+                                                    <Outlet />
+                                                </Suspense>
+                                            </RouteErrorBoundary>
+                                        </AppShell>
+                                    </TopBarProvider>
+                                </SidebarProvider>
+                            </BreadcrumbProvider>
+                        </ChecklistsProvider>
+                    </StreamsProvider>
+                </EquipmentProvider>
+            </RequestsProvider>
         </WorkspaceProvider>
     )
 }
@@ -117,41 +125,21 @@ const router = createBrowserRouter([
         element: <RequireAuth />,
         children: [
             { index: true, element: <Navigate to={`/${routes.dashboard}`} replace /> },
-            { path: routes.dashboard, element: <RequestsProvider><EquipmentProvider><DashboardScreen /></EquipmentProvider></RequestsProvider> },
+            { path: routes.dashboard, element: <DashboardScreen /> },
             { path: routes.settings, element: <SettingsScreen /> },
             { path: routes.messageTemplateDetail, element: <MessageTemplateDetailScreen /> },
-            {
-                element: <RequestsProvider><Outlet /></RequestsProvider>,
-                children: [
-                    { path: routes.requests, element: <RequestsScreen /> },
-                    { path: routes.requestsDetail, element: <RequestDetailScreen /> },
-                ],
-            },
-            {
-                element: <EquipmentProvider><Outlet /></EquipmentProvider>,
-                children: [
-                    { path: routes.equipment, element: <EquipmentScreen /> },
-                    { path: routes.equipmentDetail, element: <EquipmentDetailScreen /> },
-                    { path: routes.bookings, element: <BookingsScreen /> },
-                    { path: routes.bookingDetail, element: <BookingDetailScreen /> },
-                ],
-            },
-            {
-                element: <StreamsProvider><Outlet /></StreamsProvider>,
-                children: [
-                    { path: routes.streams, element: <StreamsScreen /> },
-                    { path: routes.streamDetail, element: <StreamDetailScreen /> },
-                    { path: routes.meetingDetail, element: <MeetingDetailScreen /> },
-                ],
-            },
-            {
-                element: <ChecklistsProvider><Outlet /></ChecklistsProvider>,
-                children: [
-                    { path: routes.checklists, element: <ChecklistsScreen /> },
-                    { path: routes.checklistTemplates, element: <ChecklistTemplatesScreen /> },
-                    { path: routes.checklistDetail, element: <ChecklistDetailScreen /> },
-                ],
-            },
+            { path: routes.requests, element: <RequestsScreen /> },
+            { path: routes.requestsDetail, element: <RequestDetailScreen /> },
+            { path: routes.equipment, element: <EquipmentScreen /> },
+            { path: routes.equipmentDetail, element: <EquipmentDetailScreen /> },
+            { path: routes.bookings, element: <BookingsScreen /> },
+            { path: routes.bookingDetail, element: <BookingDetailScreen /> },
+            { path: routes.streams, element: <StreamsScreen /> },
+            { path: routes.streamDetail, element: <StreamDetailScreen /> },
+            { path: routes.meetingDetail, element: <MeetingDetailScreen /> },
+            { path: routes.checklists, element: <ChecklistsScreen /> },
+            { path: routes.checklistTemplates, element: <ChecklistTemplatesScreen /> },
+            { path: routes.checklistDetail, element: <ChecklistDetailScreen /> },
         ],
     },
     { path: '*', element: <Navigate to={`/${routes.login}`} replace /> },

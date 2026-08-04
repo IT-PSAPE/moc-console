@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { cn } from "@moc/utils/cn";
-import { Paragraph, Label as TextLabel } from "@moc/ui/components/display/text";
+import { Label as TextLabel } from "@moc/ui/components/display/text";
 
 type LabelProps = {
     label: string
+    htmlFor?: string
     required?: boolean
     optional?: boolean
     disabled?: boolean
@@ -15,21 +16,21 @@ type FormFieldProps = LabelProps & {
     fieldClassName?: string
 }
 
-export function FormField({ label, required, optional, disabled, className, fieldClassName, children }: FormFieldProps) {
+export function FormField({ label, htmlFor, required, optional, disabled, className, fieldClassName, children }: FormFieldProps) {
     return (
         <div className={cn("flex flex-col gap-1.5", fieldClassName)}>
-            <FormLabel label={label} required={required} optional={optional} disabled={disabled} className={className} />
+            <FormLabel label={label} htmlFor={htmlFor} required={required} optional={optional} disabled={disabled} className={className} />
             {children}
         </div>
     )
 }
 
-export function FormLabel({ label, required, optional, className }: LabelProps) {
+export function FormLabel({ label, htmlFor, required, optional, className }: LabelProps) {
     return (
-        <span className={cn("flex justify-start items-center gap-0.5", className)}>
+        <label htmlFor={htmlFor} className={cn("flex justify-start items-center gap-0.5", className)}>
             <TextLabel.xs className="text-primary">{label}</TextLabel.xs>
             {required && <TextLabel.xs  className="text-brand_secondary">*</TextLabel.xs>}
-            {optional && <Paragraph.xs className="text-quaternary">(Optional)</Paragraph.xs>}
-        </span>
+            {optional && <TextLabel.xs className="text-quaternary">(Optional)</TextLabel.xs>}
+        </label>
     )
 }

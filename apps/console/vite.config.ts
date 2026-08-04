@@ -57,21 +57,10 @@ export default defineConfig(() => {
       babel({ presets: [reactCompilerPreset()] }),
       tailwindcss(),
       VitePWA({
-        // autoUpdate: the new service worker activates silently in the
-        // background (skipWaiting + clientsClaim) and replaces the cache.
-        // The active tab keeps running the JS it loaded with — users get
-        // the new version on their next manual refresh, no prompt.
-        registerType: 'autoUpdate',
-        includeAssets: [
-          'favicon.svg',
-          'logo.svg',
-          'icons/apple-touch-icon.png',
-          'icons/icon-192.png',
-          'icons/icon-512.png',
-          'icons/icon-maskable-192.png',
-          'icons/icon-maskable-512.png',
-          'icons/splash/*.png',
-        ],
+        // Keep the current app running until the user accepts the in-app
+        // update notification. This avoids stale installed sessions while
+        // still allowing unsaved-change guards to protect active edits.
+        registerType: 'prompt',
         manifest: {
           name: 'MOC Console',
           short_name: 'MOC Console',
@@ -79,19 +68,6 @@ export default defineConfig(() => {
           start_url: '/',
           scope: '/',
           display: 'standalone',
-          // Android Chrome 128+ opts into "draw underneath the system bars"
-          // only via display_override. With just `display: standalone` the
-          // OS reserves the status bar + gesture-bar regions for itself and
-          // shows black behind them. Listing 'edge-to-edge' first asks for
-          // true edge-to-edge; 'standalone' is the fallback for older
-          // browsers that don't know the term. Note: changing display-mode
-          // fields requires users to remove + re-add the PWA for the new
-          // manifest to take effect.
-          // @ts-expect-error vite-plugin-pwa's manifest types don't include
-          // 'edge-to-edge' yet (newer than the bundled type defs); Chrome
-          // 128+ recognises the value at runtime.
-          display_override: ['edge-to-edge', 'standalone'],
-          orientation: 'portrait',
           theme_color: '#ffffff',
           background_color: '#ffffff',
           icons: [
@@ -104,6 +80,12 @@ export default defineConfig(() => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,svg,png,ico,webp,woff,woff2}'],
+          // iOS loads startup images directly from the link elements in
+          // index.html. Keeping 30 device-specific splash files out of the
+          // Workbox precache reduces install and update bandwidth.
+          // Manifest icons are injected by vite-plugin-pwa separately, so
+          // exclude those from the broad glob to avoid duplicate entries.
+          globIgnores: ['icons/splash/*.png', 'icons/icon-*.png', 'logo.svg'],
           // Don't precache source maps or dev artifacts; skip large preload chunks.
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           // Exclude API calls + Supabase + Zoom/YouTube endpoints from the SPA

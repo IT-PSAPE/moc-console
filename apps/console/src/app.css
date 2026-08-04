@@ -4,6 +4,8 @@
 
 html {
   font-size: 16px;
+  color-scheme: light;
+  background: var(--color-background-primary);
 }
 
 /* Native-feel adjustments for installed PWA / mobile.
@@ -20,4 +22,11 @@ body {
      pin it so rotation doesn't change typography. */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  min-height: 100dvh;
+  background: var(--color-background-primary);
+}
+
+#root {
+  min-height: 100dvh;
+  background: var(--color-background-primary);
 }

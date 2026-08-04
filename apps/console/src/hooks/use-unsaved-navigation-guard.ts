@@ -1,5 +1,5 @@
-import { useEffect } from "react"
 import { useBlocker } from "react-router-dom"
+import { useBeforeUnloadWarning } from "./use-before-unload-warning"
 
 type UnsavedNavigationGuardOptions = {
   isDirty: boolean
@@ -9,15 +9,7 @@ type UnsavedNavigationGuardOptions = {
 
 export function useUnsavedNavigationGuard({ isDirty, save, discard }: UnsavedNavigationGuardOptions) {
   const blocker = useBlocker(isDirty)
-
-  useEffect(() => {
-    if (!isDirty) return
-    function preventUnload(event: BeforeUnloadEvent) {
-      event.preventDefault()
-    }
-    window.addEventListener("beforeunload", preventUnload)
-    return () => window.removeEventListener("beforeunload", preventUnload)
-  }, [isDirty])
+  useBeforeUnloadWarning(isDirty)
 
   async function saveAndContinue() {
     if (await save() && blocker.state === "blocked") blocker.proceed()

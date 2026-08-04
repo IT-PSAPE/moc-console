@@ -51,7 +51,7 @@ export function TopBar({ children }: HTMLAttributes<HTMLDivElement>) {
 
     return (
         <header
-            className="area-topbar bg-primary border-b border-secondary flex items-center gap-2 px-4 pt-[env(safe-area-inset-top)]"
+            className="area-topbar flex items-center gap-2 border-b border-secondary bg-primary pt-[env(safe-area-inset-top)] pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))]"
         >
             <div className="flex items-center gap-2 w-full h-header">
                 <Button.Icon

@@ -23,7 +23,7 @@ function PageRoot({ children, className, ...props }: HTMLAttributes<HTMLElement>
 
 function PageContainer({ children, className, width = 'wide', ...props }: PageContainerProps) {
     return (
-        <div className={cn('mx-auto w-full px-page-gutter', widthClassName[width], className)} {...props}>
+        <div className={cn('mx-auto w-full pr-[max(var(--spacing-page-gutter),env(safe-area-inset-right))] pl-[max(var(--spacing-page-gutter),env(safe-area-inset-left))]', widthClassName[width], className)} {...props}>
             {children}
         </div>
     )
@@ -31,7 +31,7 @@ function PageContainer({ children, className, width = 'wide', ...props }: PageCo
 
 function PageHeader({ children, className, ...props }: HTMLAttributes<HTMLElement>) {
     return (
-        <header className={cn('mx-auto flex w-full max-w-content items-start gap-4 px-page-gutter pb-4 pt-6 md:pt-page-top', className)} {...props}>
+        <header className={cn('mx-auto flex w-full max-w-content items-start gap-4 pt-6 pr-[max(var(--spacing-page-gutter),env(safe-area-inset-right))] pb-4 pl-[max(var(--spacing-page-gutter),env(safe-area-inset-left))] md:pt-page-top', className)} {...props}>
             {children}
         </header>
     )
@@ -79,7 +79,7 @@ function PageToolbar({ children, className, ...props }: PageContainerProps) {
 
 function PageContent({ children, className, ...props }: PageContainerProps) {
     return (
-        <PageContainer className={cn('pb-6', className)} {...props}>
+        <PageContainer className={cn('pb-[max(1.5rem,env(safe-area-inset-bottom))]', className)} {...props}>
             {children}
         </PageContainer>
     )
@@ -87,7 +87,7 @@ function PageContent({ children, className, ...props }: PageContainerProps) {
 
 function PageCollectionContent({ children, className, ...props }: Omit<PageContainerProps, 'width'>) {
     return (
-        <PageContainer className={cn('max-w-none pb-6', className)} {...props}>
+        <PageContainer className={cn('max-w-none pb-[max(1.5rem,env(safe-area-inset-bottom))]', className)} {...props}>
             {children}
         </PageContainer>
     )

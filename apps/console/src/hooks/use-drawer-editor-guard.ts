@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
+import { useBeforeUnloadWarning } from "./use-before-unload-warning";
 
 type DrawerEditorGuardOptions = {
   close: () => void;
@@ -14,6 +15,7 @@ type DrawerEditorGuardOptions = {
 export function useDrawerEditorGuard({ close, discard, href, isDirty, isDirtyRef, requestCloseRef, save }: DrawerEditorGuardOptions) {
   const navigate = useNavigate();
   const [isPromptOpen, setPromptOpen] = useState(false);
+  useBeforeUnloadWarning(isDirty);
 
   useEffect(() => {
     if (isDirtyRef) isDirtyRef.current = isDirty;

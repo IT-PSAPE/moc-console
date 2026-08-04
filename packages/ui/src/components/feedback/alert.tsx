@@ -71,6 +71,7 @@ const colorMap: Record<FeedbackVariant, Record<FeedbackStyle, string>> = {
 type AlertProps = Omit<HTMLAttributes<HTMLDivElement>, 'style'> & {
     title: string
     description?: string
+    action?: ReactNode
     variant?: FeedbackVariant
     style?: FeedbackStyle
     dismissible?: boolean
@@ -78,7 +79,7 @@ type AlertProps = Omit<HTMLAttributes<HTMLDivElement>, 'style'> & {
     icon?: ReactNode
 }
 
-export function Alert({ title, description, variant = 'info', style = 'filled', dismissible = false, onDismiss, icon, className, ...props}: AlertProps) {
+export function Alert({ title, description, action, variant = 'info', style = 'filled', dismissible = false, onDismiss, icon, className, ...props}: AlertProps) {
     return (
         <div
             role="alert"
@@ -92,6 +93,7 @@ export function Alert({ title, description, variant = 'info', style = 'filled', 
                     <Paragraph.sm className="text-inherit/80 mt-0.5">{description}</Paragraph.sm>
                 )}
             </div>
+            {action && <span className="shrink-0">{action}</span>}
             {dismissible && onDismiss && (
                 <BaseButton
                     type="button"
