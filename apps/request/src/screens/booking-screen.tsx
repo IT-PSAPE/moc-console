@@ -12,6 +12,8 @@ import { routes } from '@/screens/console-routes'
 import { StepIndicatorBar } from '@/features/components/step-indicator-bar';
 import { FlowHeader } from '@/features/components/flow-header'
 import { PublicFlow } from '@/features/components/public-flow'
+import { StepErrorSummary } from '@/features/components/step-error-summary'
+import type { FormEvent } from 'react'
 
 const bookingStepLabels = BOOKING_STEPS.map((step) => step.label)
 
@@ -21,6 +23,8 @@ export function BookingScreen() {
   const isLastStep = state.step === 3
 
   async function handleNext() {
+    if (!actions.validateCurrentStep()) return
+
     if (isLastStep) {
       const result = await actions.submit()
       if (result) {
@@ -43,29 +47,37 @@ export function BookingScreen() {
     actions.setField('otherEquipment', text)
   }
 
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    void handleNext()
+  }
+
   return (
     <PublicLayout className="py-8 sm:py-12">
       <FlowHeader title="Book equipment" onBack={handleBack} />
 
-      <PublicFlow>
+      <PublicFlow as="form" noValidate onSubmit={handleSubmit}>
         <PublicFlow.Progress>
           <StepIndicatorBar currentStep={state.step} totalSteps={3} labels={bookingStepLabels} />
         </PublicFlow.Progress>
 
-        {state.step === 1 && <BookingDetails data={state.data} onChange={actions.setField} />}
+        <StepErrorSummary errors={state.validationErrors} />
+
+        {state.step === 1 && <BookingDetails data={state.data} onChange={actions.setField} errors={state.validationErrors} />}
         {state.step === 2 && (
           <BookingEquipmentPicker
             selected={state.data.requestedEquipment}
             onToggle={actions.toggleRequestedEquipment}
             otherEquipment={state.data.otherEquipment}
             onOtherChange={handleOtherEquipmentChange}
+            errors={state.validationErrors}
           />
         )}
         {state.step === 3 && <BookingReview data={state.data} />}
         {state.error && <Alert title="Submission failed" description={state.error} variant="error" style="filled" />}
 
         <PublicFlow.Actions>
-          <Button onClick={handleNext} disabled={!actions.canProceed() || state.submitting} className="rounded-full">
+          <Button type="submit" disabled={state.submitting} className="rounded-full">
             {state.submitting ? <Spinner size="sm" /> : isLastStep ? 'Submit' : 'Next'}
           </Button>
         </PublicFlow.Actions>

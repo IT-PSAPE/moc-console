@@ -1,8 +1,8 @@
 import { supabase } from '@moc/data/supabase'
 import { parseBrowserDateTimeInputToUtcIso } from '@moc/utils/browser-date-time'
+import { wakeRequestCreatedNotification } from '@/data/notify-event'
 import { workspaceId } from '@/lib/workspace'
 import type { RequestFormData, SubmitRequestResult } from '@/types/request'
-import { notifyRequestCreated } from './notify-event'
 
 export async function submitPublicRequest(data: RequestFormData): Promise<SubmitRequestResult> {
   const { data: result, error } = await supabase.rpc('public_submit_request', {
@@ -24,11 +24,7 @@ export async function submitPublicRequest(data: RequestFormData): Promise<Submit
 
   if (error) throw new Error(error.message)
 
-  notifyRequestCreated({
-    requestId: result.id,
-    title: data.title,
-    requesterName: data.requestedBy || null,
-  })
+  wakeRequestCreatedNotification(result.id, result.tracking_code)
 
   return {
     id: result.id,

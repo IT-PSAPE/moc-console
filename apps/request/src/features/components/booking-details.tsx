@@ -2,17 +2,21 @@ import { Input } from '@moc/ui/components/form/input'
 import { DateTimeFields } from '@moc/ui/components/form/date-time-fields'
 import { TextArea } from '@moc/ui/components/form/text-area'
 import { FormLabel } from '@moc/ui/components/form/form-label'
+import { FieldError } from '@/features/components/field-error'
+import type { StepValidationErrors } from '@/features/hooks/use-step-validation'
 import type { BookingFormData } from '@/types/booking'
-import { isReturnBeforeCheckout } from '../hooks/use-booking-form'
+import { isReturnBeforeCheckout } from '@/features/public-flow-validation'
 import type { ChangeEvent } from 'react'
 
 type BookingDetailsProps = {
   data: BookingFormData
   onChange: (field: keyof BookingFormData, value: string) => void
+  errors: StepValidationErrors
 }
 
-export function BookingDetails({ data, onChange }: BookingDetailsProps) {
+export function BookingDetails({ data, onChange, errors }: BookingDetailsProps) {
   const invalidRange = isReturnBeforeCheckout(data)
+  const expectedReturnError = errors['expected-return-date'] ?? (invalidRange ? 'Expected return must be after checkout.' : undefined)
 
   function handleCheckedOutAtChange(value: string) {
     onChange('checkedOutAt', value)
@@ -37,13 +41,15 @@ export function BookingDetails({ data, onChange }: BookingDetailsProps) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
-        <FormLabel label="Title" required />
-        <Input aria-label="Title" name="title" autoComplete="off" placeholder="e.g. Sunday service setup" maxLength={120} value={data.title} onChange={handleTitleChange} />
+        <FormLabel label="Title" htmlFor="title" required />
+        <Input id="title" aria-label="Title" aria-invalid={Boolean(errors.title) || undefined} aria-describedby={errors.title ? 'title-error' : undefined} name="title" autoComplete="off" placeholder="e.g. Sunday service setup" maxLength={120} value={data.title} onChange={handleTitleChange} required />
+        <FieldError id="title-error" message={errors.title} />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <FormLabel label="Requested by" required />
-        <Input aria-label="Requested by" name="booked-by" autoComplete="name" placeholder="Who is booking this equipment?" value={data.bookedBy} onChange={handleBookedByChange} />
+        <FormLabel label="Requested by" htmlFor="booked-by" required />
+        <Input id="booked-by" aria-label="Requested by" aria-invalid={Boolean(errors['booked-by']) || undefined} aria-describedby={errors['booked-by'] ? 'booked-by-error' : undefined} name="booked-by" autoComplete="name" placeholder="Who is booking this equipment?" value={data.bookedBy} onChange={handleBookedByChange} required />
+        <FieldError id="booked-by-error" message={errors['booked-by']} />
       </div>
 
       <DateTimeFields
@@ -52,6 +58,7 @@ export function BookingDetails({ data, onChange }: BookingDetailsProps) {
         required
         value={data.checkedOutAt}
         onChange={handleCheckedOutAtChange}
+        errorText={errors['checkout-date']}
       />
 
       <DateTimeFields
@@ -60,7 +67,7 @@ export function BookingDetails({ data, onChange }: BookingDetailsProps) {
         required
         value={data.expectedReturnAt}
         onChange={handleExpectedReturnAtChange}
-        errorText={invalidRange ? 'Expected return must be after checkout.' : undefined}
+        errorText={expectedReturnError}
       />
 
       <div className="flex flex-col gap-1.5">

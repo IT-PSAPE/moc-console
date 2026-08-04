@@ -35,14 +35,11 @@ The RPC signatures are defined in [docs/phases/phase-12-public-access.sql](docs/
 
 ## Outbound notifications
 
-After a successful submission, the client POSTs to `/api/notify/{request,booking}` on the **MOC API app** (`apps/api`), which dispatches Telegram notifications to the workspace's configured groups/topics.
-
-This app has no server-side code of its own. The handlers used to live here and HMAC-forward to moc-console; both sides now live in the API app, so the hop is gone.
-
-- Client helpers: [src/data/notify-event.ts](src/data/notify-event.ts)
-- Handlers: `apps/api/api/notify/request.ts`, `apps/api/api/notify/booking.ts`
-
-The API no-ops silently when `CONSOLE_BASE_URL` is unset there, so local development stays quiet.
+The database enqueues a durable Telegram notification in the same transaction as
+each public request or booking submission. After a successful RPC, this client
+best-effort wakes that pending event with only its returned record ID and tracking
+code; message content, workspace, and destinations remain server-derived. Failed
+wakes do not affect submission and are retried by the API cron job.
 
 ## Environment variables
 

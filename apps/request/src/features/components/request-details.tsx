@@ -1,42 +1,51 @@
 import { TextArea } from '@moc/ui/components/form/text-area'
 import { FormField } from '@moc/ui/components/form/form-label'
+import { FieldError } from '@/features/components/field-error'
+import type { StepValidationErrors } from '@/features/hooks/use-step-validation'
 import type { RequestFormData } from '@/types/request'
 import type { ChangeEvent } from 'react'
 
 type RequestDetailsProps = {
   data: RequestFormData
   onChange: (field: keyof RequestFormData, value: string) => void
+  errors: StepValidationErrors
 }
 
-export function RequestDetails({ data, onChange }: RequestDetailsProps) {
+export function RequestDetails({ data, onChange, errors }: RequestDetailsProps) {
   function handleChange(event: ChangeEvent<HTMLTextAreaElement>) {
     onChange(event.target.name as keyof RequestFormData, event.target.value)
   }
 
   return (
     <div className="flex flex-col gap-5">
-      <FormField label="Who" required>
-        <TextArea aria-label="Who" name="who" placeholder="Who is involved or responsible?" value={data.who} onChange={handleChange} rows={2} />
+      <FormField label="Who" htmlFor="who" required>
+        <TextArea id="who" aria-label="Who" aria-invalid={Boolean(errors.who) || undefined} aria-describedby={errors.who ? 'who-error' : undefined} name="who" placeholder="Who is involved or responsible?" value={data.who} onChange={handleChange} rows={2} required />
+        <FieldError id="who-error" message={errors.who} />
       </FormField>
 
-      <FormField label="What" required>
-        <TextArea aria-label="What" name="what" placeholder="What needs to be done?" value={data.what} onChange={handleChange} rows={2} />
+      <FormField label="What" htmlFor="what" required>
+        <TextArea id="what" aria-label="What" aria-invalid={Boolean(errors.what) || undefined} aria-describedby={errors.what ? 'what-error' : undefined} name="what" placeholder="What needs to be done?" value={data.what} onChange={handleChange} rows={2} required />
+        <FieldError id="what-error" message={errors.what} />
       </FormField>
 
-      <FormField label="When" required>
-        <TextArea aria-label="When" name="whenText" placeholder="When does this need to happen?" value={data.whenText} onChange={handleChange} rows={2} />
+      <FormField label="When" htmlFor="when-text" required>
+        <TextArea id="when-text" aria-label="When" aria-invalid={Boolean(errors['when-text']) || undefined} aria-describedby={errors['when-text'] ? 'when-text-error' : undefined} name="whenText" placeholder="When does this need to happen?" value={data.whenText} onChange={handleChange} rows={2} required />
+        <FieldError id="when-text-error" message={errors['when-text']} />
       </FormField>
 
-      <FormField label="Where" required>
-        <TextArea aria-label="Where" name="whereText" placeholder="Where will this take place?" value={data.whereText} onChange={handleChange} rows={2} />
+      <FormField label="Where" htmlFor="where-text" required>
+        <TextArea id="where-text" aria-label="Where" aria-invalid={Boolean(errors['where-text']) || undefined} aria-describedby={errors['where-text'] ? 'where-text-error' : undefined} name="whereText" placeholder="Where will this take place?" value={data.whereText} onChange={handleChange} rows={2} required />
+        <FieldError id="where-text-error" message={errors['where-text']} />
       </FormField>
 
-      <FormField label="Why" required>
-        <TextArea aria-label="Why" name="why" placeholder="Why is this needed?" value={data.why} onChange={handleChange} rows={2} />
+      <FormField label="Why" htmlFor="why" required>
+        <TextArea id="why" aria-label="Why" aria-invalid={Boolean(errors.why) || undefined} aria-describedby={errors.why ? 'why-error' : undefined} name="why" placeholder="Why is this needed?" value={data.why} onChange={handleChange} rows={2} required />
+        <FieldError id="why-error" message={errors.why} />
       </FormField>
 
-      <FormField label="How" required>
-        <TextArea aria-label="How" name="how" placeholder="How should this be executed?" value={data.how} onChange={handleChange} rows={2} />
+      <FormField label="How" htmlFor="how" required>
+        <TextArea id="how" aria-label="How" aria-invalid={Boolean(errors.how) || undefined} aria-describedby={errors.how ? 'how-error' : undefined} name="how" placeholder="How should this be executed?" value={data.how} onChange={handleChange} rows={2} required />
+        <FieldError id="how-error" message={errors.how} />
       </FormField>
 
       <FormField label="Notes" optional>
