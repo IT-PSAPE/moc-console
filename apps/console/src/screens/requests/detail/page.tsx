@@ -6,6 +6,7 @@ import { Spinner } from "@moc/ui/components/feedback/spinner"
 import { Page } from "@moc/ui/components/layout/page"
 import { Inbox } from "lucide-react"
 import { RequestDetailContent } from "./request-detail-content"
+import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 
 export function RequestDetailScreen() {
   const { id } = useParams<{ id: string }>()
@@ -14,6 +15,10 @@ export function RequestDetailScreen() {
 
   if (detail.state.isLoading) {
     return <Page><Page.Content width="readable" className="flex justify-center py-16"><Spinner size="lg" /></Page.Content></Page>
+  }
+
+  if (detail.state.error) {
+    return <Page><Page.Content width="standard" className="py-16"><ResourceLoadError title="Could not load request" error={detail.state.error} onRetry={detail.actions.retry} /></Page.Content></Page>
   }
 
   if (!detail.state.request) {

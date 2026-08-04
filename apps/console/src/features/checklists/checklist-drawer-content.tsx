@@ -1,4 +1,4 @@
-import { FolderPlus, Maximize2, Plus, SquarePlus, Trash2, X } from "lucide-react";
+import { CopyPlus, FolderPlus, Maximize2, Plus, SquarePlus, Trash2, X } from "lucide-react";
 import { Button } from "@moc/ui/components/controls/button";
 import { Divider } from "@moc/ui/components/display/divider";
 import { Paragraph, Title } from "@moc/ui/components/display/text";
@@ -7,10 +7,10 @@ import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dia
 import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 import { Dropdown } from "@moc/ui/components/overlays/dropdown";
 import type { Checklist } from "@moc/types/checklists";
-import { ChecklistContent } from "./checklist-content";
 import { useChecklistPanel } from "./use-checklist-panel";
-import { ChecklistAssignees } from "./checklist-assignees";
 import { ChecklistScheduleField } from "./checklist-schedule-field";
+import { ChecklistEditorContent } from "./checklist-editor-content";
+import { ChecklistRequestLink } from "./checklist-request-link";
 
 export function ChecklistPanelContent({ checklist, onClose }: { checklist: Checklist; onClose: () => void }) {
   const { state, actions, meta } = useChecklistPanel(checklist, onClose);
@@ -22,6 +22,7 @@ export function ChecklistPanelContent({ checklist, onClose }: { checklist: Check
         <Button.Icon aria-label="Open full page" variant="ghost" icon={<Maximize2 />} onClick={actions.openFullPage} />
         <div className="flex-1" />
         <Paragraph.sm className="mr-2 text-tertiary">{meta.checked}/{meta.total} done</Paragraph.sm>
+        {checklist.kind === "instance" && <Button.Icon aria-label="Save as checklist template" variant="ghost" icon={<CopyPlus />} onClick={actions.createTemplate} />}
         <Button.Icon aria-label="Delete checklist" variant="danger-secondary" icon={<Trash2 />} onClick={actions.openDelete} />
       </SplitPanel.Header>
 
@@ -43,13 +44,12 @@ export function ChecklistPanelContent({ checklist, onClose }: { checklist: Check
         {checklist.kind === "instance" && (
           <div className="px-4 pt-3">
             <ChecklistScheduleField value={meta.scheduledAtInput} onChange={actions.updateScheduledAt} />
+            <div className="pt-3"><ChecklistRequestLink linkedRequest={meta.requestLink.state.linkedRequest} requests={meta.requestLink.state.requestOptions} isLoading={meta.requestLink.state.isLoading} onLink={meta.requestLink.actions.link} onUnlink={meta.requestLink.actions.unlink} /></div>
           </div>
         )}
 
         <Divider className="my-3" />
-        <ChecklistAssignees.Root checklistId={checklist.id}>
-          <ChecklistContent checklist={checklist} onUpdate={actions.updateChecklist} addRequest={state.addRequest} onAddRequestDismiss={actions.dismissAdd} itemSlot={ChecklistAssignees.Item} />
-        </ChecklistAssignees.Root>
+        <ChecklistEditorContent checklist={checklist} onUpdate={actions.updateChecklist} addRequest={state.addRequest} onAddRequestDismiss={actions.dismissAdd} />
       </SplitPanel.Content>
 
       <ConfirmationDialog open={state.deleteOpen} onOpenChange={actions.setDeleteOpen} title="Delete checklist?" description="This permanently deletes the checklist and cannot be undone." confirmLabel="Delete checklist" onConfirm={actions.remove} />

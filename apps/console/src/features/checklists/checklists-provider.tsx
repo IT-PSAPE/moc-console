@@ -2,93 +2,86 @@ import { fetchChecklists } from "@/data/fetch-checklists";
 import {
   createBlankChecklist as createBlankChecklistRecord,
   createChecklistInstance as createChecklistInstanceRecord,
+  createChecklistTemplateFromRun as createChecklistTemplateFromRunRecord,
   deleteChecklist,
   saveChecklist,
   type CreateBlankChecklistInput,
   type CreateChecklistInstanceOverrides,
 } from "@/data/mutate-checklists";
+import { useWorkspaceResource } from "@/hooks/use-workspace-resource";
 import { useWorkspace } from "@/lib/workspace-context";
 import type { Checklist } from "@moc/types/checklists";
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 
 type ChecklistsContextValue = {
   state: {
     checklists: Checklist[];
     isLoadingChecklists: boolean;
+    checklistsError: Error | null;
   };
   actions: {
     loadChecklists: () => Promise<void>;
+    retryChecklists: () => Promise<void>;
     syncChecklist: (checklist: Checklist) => Promise<void>;
     createChecklistInstance: (template: Checklist, overrides?: CreateChecklistInstanceOverrides) => Promise<Checklist>;
     createBlankChecklist: (input: CreateBlankChecklistInput) => Promise<Checklist>;
+    createChecklistTemplateFromRun: (run: Checklist) => Promise<Checklist>;
     removeChecklist: (id: string) => Promise<void>;
   };
 };
 
 const ChecklistsContext = createContext<ChecklistsContextValue | null>(null);
+const emptyChecklists: Checklist[] = [];
 
 export function ChecklistsProvider({ children }: { children: ReactNode }) {
-  const [checklists, setChecklists] = useState<Checklist[]>([]);
-  const [isLoadingChecklists, setIsLoadingChecklists] = useState(false);
-  const loadedWorkspaceRef = useRef<string | null>(null);
-  const loadPromiseRef = useRef<Promise<void> | null>(null);
   const { currentWorkspaceId } = useWorkspace();
-  const [trackedWorkspaceId, setTrackedWorkspaceId] = useState(currentWorkspaceId);
-
-  if (trackedWorkspaceId !== currentWorkspaceId) {
-    setTrackedWorkspaceId(currentWorkspaceId);
-    setChecklists([]);
-  }
+  const { data: checklists, error: checklistsError, isLoading: isLoadingChecklists, load, updateData } = useWorkspaceResource({ emptyValue: emptyChecklists, fetcher: fetchChecklists, resource: "checklists", workspaceId: currentWorkspaceId });
 
   const loadChecklists = useCallback(async () => {
-    if (loadedWorkspaceRef.current === currentWorkspaceId) return;
-    if (loadPromiseRef.current) return loadPromiseRef.current;
+    await load();
+  }, [load]);
 
-    setIsLoadingChecklists(true);
-    loadPromiseRef.current = fetchChecklists()
-      .then((data) => {
-        setChecklists(data);
-        loadedWorkspaceRef.current = currentWorkspaceId;
-      })
-      .finally(() => {
-        loadPromiseRef.current = null;
-        setIsLoadingChecklists(false);
-      });
-
-    return loadPromiseRef.current;
-  }, [currentWorkspaceId]);
+  const retryChecklists = useCallback(async () => {
+    await load(true);
+  }, [load]);
 
   const syncChecklist = useCallback(async (checklist: Checklist) => {
     const savedChecklist = await saveChecklist(checklist);
-    setChecklists((current) => {
+    updateData((current) => {
       const exists = current.some((entry) => entry.id === savedChecklist.id);
       return exists
         ? current.map((entry) => entry.id === savedChecklist.id ? savedChecklist : entry)
         : [savedChecklist, ...current];
     });
-  }, []);
+  }, [updateData]);
 
   const createChecklistInstance = useCallback(async (template: Checklist, overrides?: CreateChecklistInstanceOverrides) => {
     const checklist = await createChecklistInstanceRecord(template, overrides);
-    setChecklists((current) => [checklist, ...current]);
+    updateData((current) => [checklist, ...current]);
     return checklist;
-  }, []);
+  }, [updateData]);
 
   const createBlankChecklist = useCallback(async (input: CreateBlankChecklistInput) => {
     const checklist = await createBlankChecklistRecord(input);
-    setChecklists((current) => [checklist, ...current]);
+    updateData((current) => [checklist, ...current]);
     return checklist;
-  }, []);
+  }, [updateData]);
+
+  const createChecklistTemplateFromRun = useCallback(async (run: Checklist) => {
+    const checklist = await createChecklistTemplateFromRunRecord(run);
+    updateData((current) => [checklist, ...current]);
+    return checklist;
+  }, [updateData]);
 
   const removeChecklist = useCallback(async (id: string) => {
     await deleteChecklist(id);
-    setChecklists((current) => current.filter((checklist) => checklist.id !== id));
-  }, []);
+    updateData((current) => current.filter((checklist) => checklist.id !== id));
+  }, [updateData]);
 
   const value = useMemo<ChecklistsContextValue>(() => ({
-    state: { checklists, isLoadingChecklists },
-    actions: { loadChecklists, syncChecklist, createChecklistInstance, createBlankChecklist, removeChecklist },
-  }), [checklists, isLoadingChecklists, loadChecklists, syncChecklist, createChecklistInstance, createBlankChecklist, removeChecklist]);
+    state: { checklists, isLoadingChecklists, checklistsError },
+    actions: { loadChecklists, retryChecklists, syncChecklist, createChecklistInstance, createBlankChecklist, createChecklistTemplateFromRun, removeChecklist },
+  }), [checklists, checklistsError, createBlankChecklist, createChecklistInstance, createChecklistTemplateFromRun, isLoadingChecklists, loadChecklists, removeChecklist, retryChecklists, syncChecklist]);
 
   return <ChecklistsContext.Provider value={value}>{children}</ChecklistsContext.Provider>;
 }

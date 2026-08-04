@@ -11,6 +11,8 @@ import { DraggableSectionHandle } from "./draggable-section-handle";
 import { DropIndicatorLine } from "./drop-indicator-line";
 import { DroppableZone } from "./droppable-zone";
 import { InlineItemInput } from "./inline-item-input";
+import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog";
+import { useState } from "react";
 
 type SectionRowProps = {
   section: ChecklistSection;
@@ -30,11 +32,13 @@ type SectionRowProps = {
 
 export function SectionRow({ section, onToggle, onAddItem, onRenameItem, onDeleteItem, onRenameSection, onDeleteSection, activeItemId, overItemId, isAddingItem, onRequestAddItem, onDismissAdd, itemSlot }: SectionRowProps) {
   const { setNodeRef } = useDroppable({ id: `section:${section.id}` });
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const checkedCount = section.items.filter((item) => item.checked).length;
   const activeIndex = activeItemId ? section.items.findIndex((item) => `item:${item.id}` === activeItemId) : -1;
   function renameSection(name: string) { onRenameSection(section.id, name); }
   function requestAdd(event: MouseEvent) { event.stopPropagation(); onRequestAddItem(section.id); }
-  function deleteSection(event: MouseEvent) { event.stopPropagation(); onDeleteSection(section.id); }
+  function openDeleteSection(event: MouseEvent) { event.stopPropagation(); setDeleteOpen(true); }
+  function deleteSection() { onDeleteSection(section.id); }
   function addItem(label: string) { onAddItem(section.id, label); }
 
   return (
@@ -48,7 +52,7 @@ export function SectionRow({ section, onToggle, onAddItem, onRenameItem, onDelet
             <Paragraph.xs className="shrink-0 text-tertiary">{checkedCount}/{section.items.length}</Paragraph.xs>
           </Accordion.Trigger>
           <Button.Icon aria-label="Add item" variant="ghost" icon={<Plus />} className="mr-2 shrink-0 !p-1 text-tertiary hover:text-secondary" onClick={requestAdd} />
-          <Button.Icon aria-label="Delete section" variant="ghost" icon={<Trash2 />} className="mr-2 shrink-0 !p-1 text-quaternary hover:text-secondary" onClick={deleteSection} />
+          <Button.Icon aria-label="Delete section" variant="ghost" icon={<Trash2 />} className="mr-2 shrink-0 !p-1 text-quaternary hover:text-secondary" onClick={openDeleteSection} />
         </div>
 
         <Accordion.Content>
@@ -70,6 +74,14 @@ export function SectionRow({ section, onToggle, onAddItem, onRenameItem, onDelet
           </DroppableZone>
         </Accordion.Content>
       </Accordion.Item>
+      <ConfirmationDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete section?"
+        description={`Items in “${section.name}” will be kept and moved to the top of this checklist.`}
+        confirmLabel="Delete section"
+        onConfirm={deleteSection}
+      />
     </div>
   );
 }

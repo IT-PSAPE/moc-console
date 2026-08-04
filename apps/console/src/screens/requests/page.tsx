@@ -84,6 +84,7 @@ export function RequestsScreen() {
       </CollectionContent>
       </Page>
       </SplitPanel.Primary>
+      <SplitPanel.ResizeHandle />
       <SplitPanel.Detail>
         {state.selectedRequest && <RequestPanelContent request={state.selectedRequest} open={state.detailOpen} onClose={actions.closeDetail} />}
       </SplitPanel.Detail>

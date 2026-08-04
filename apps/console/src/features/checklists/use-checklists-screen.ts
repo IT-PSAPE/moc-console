@@ -26,7 +26,7 @@ export function useChecklistsScreen() {
     const groups = useMemo(() => partitionChecklistRuns(filters.filtered), [filters.filtered])
     const showActive = filters.filters.completion !== 'complete'
     const showCompleted = filters.filters.completion !== 'open'
-    const detail = useListDetailSelection<Checklist>()
+    const detail = useListDetailSelection<Checklist>(runs)
     const { close: closeDetail, select: selectChecklist } = detail.actions
 
     useEffect(() => { void loadChecklists() }, [loadChecklists])

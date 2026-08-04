@@ -12,6 +12,7 @@ type ChecklistTemplateRow = {
 
 type ChecklistRunRow = ChecklistTemplateRow & {
   scheduled_at: string;
+  request_id: string | null;
 };
 
 type TemplateSectionRow = {
@@ -85,6 +86,7 @@ function mapChecklistRun(run: ChecklistRunRow, sections: ChecklistSectionRow[], 
     name: run.name,
     description: run.description,
     scheduledAt: run.scheduled_at,
+    requestId: run.request_id ?? undefined,
     items: itemRows
       .filter((item) => item.section_id === null)
       .sort((left, right) => left.sort_order - right.sort_order)
@@ -102,11 +104,11 @@ function mapChecklistRun(run: ChecklistRunRow, sections: ChecklistSectionRow[], 
   };
 }
 
-export async function fetchChecklists(): Promise<Checklist[]> {
-  const workspaceId = await getCurrentWorkspaceId();
+export async function fetchChecklists(workspaceId?: string): Promise<Checklist[]> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
   const [templateResult, runResult] = await Promise.all([
-    supabase.from("checklist_templates").select("id, name, description, created_at, updated_at").eq("workspace_id", workspaceId).order("created_at", { ascending: false }),
-    supabase.from("checklists").select("id, name, description, scheduled_at, created_at, updated_at").eq("workspace_id", workspaceId).order("scheduled_at", { ascending: true }),
+    supabase.from("checklist_templates").select("id, name, description, created_at, updated_at").eq("workspace_id", resolvedWorkspaceId).order("created_at", { ascending: false }),
+    supabase.from("checklists").select("id, name, description, scheduled_at, request_id, created_at, updated_at").eq("workspace_id", resolvedWorkspaceId).order("scheduled_at", { ascending: true }),
   ]);
 
   if (templateResult.error) throw new Error(templateResult.error.message);
@@ -133,7 +135,49 @@ export async function fetchChecklists(): Promise<Checklist[]> {
   ];
 }
 
-export async function fetchChecklistById(id: string): Promise<Checklist | undefined> {
-  const checklists = await fetchChecklists();
-  return checklists.find((checklist) => checklist.id === id);
+export async function fetchChecklistById(id: string, workspaceId?: string): Promise<Checklist | undefined> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
+  const [templateResult, runResult] = await Promise.all([
+    supabase
+      .from("checklist_templates")
+      .select("id, name, description, created_at, updated_at")
+      .eq("workspace_id", resolvedWorkspaceId)
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("checklists")
+      .select("id, name, description, scheduled_at, request_id, created_at, updated_at")
+      .eq("workspace_id", resolvedWorkspaceId)
+      .eq("id", id)
+      .maybeSingle(),
+  ]);
+
+  if (templateResult.error) throw new Error(templateResult.error.message);
+  if (runResult.error) throw new Error(runResult.error.message);
+
+  if (templateResult.data) {
+    const [sectionsResult, itemsResult] = await Promise.all([
+      supabase.from("template_sections").select("id, checklist_template_id, name, sort_order").eq("checklist_template_id", id),
+      supabase.from("template_items").select("id, checklist_template_id, template_section_id, label, sort_order").eq("checklist_template_id", id),
+    ]);
+
+    if (sectionsResult.error) throw new Error(sectionsResult.error.message);
+    if (itemsResult.error) throw new Error(itemsResult.error.message);
+
+    return mapTemplateChecklist(templateResult.data as ChecklistTemplateRow, sectionsResult.data as TemplateSectionRow[], itemsResult.data as TemplateItemRow[]);
+  }
+
+  if (runResult.data) {
+    const [sectionsResult, itemsResult] = await Promise.all([
+      supabase.from("checklist_sections").select("id, checklist_id, name, sort_order").eq("checklist_id", id),
+      supabase.from("checklist_items").select("id, checklist_id, section_id, label, checked, sort_order").eq("checklist_id", id),
+    ]);
+
+    if (sectionsResult.error) throw new Error(sectionsResult.error.message);
+    if (itemsResult.error) throw new Error(itemsResult.error.message);
+
+    return mapChecklistRun(runResult.data as ChecklistRunRow, sectionsResult.data as ChecklistSectionRow[], itemsResult.data as ChecklistItemRow[]);
+  }
+
+  return undefined;
 }

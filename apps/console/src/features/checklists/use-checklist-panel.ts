@@ -6,9 +6,10 @@ import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso 
 import { getChecklistCounts } from './checklist-content'
 import type { ChecklistAddRequest } from './checklist-types'
 import { useChecklists } from './checklists-provider'
+import { useChecklistRequestLink } from "./use-checklist-request-link";
 
 export function useChecklistPanel(checklist: Checklist, onClose: () => void) {
-  const { actions: { syncChecklist, removeChecklist } } = useChecklists()
+  const { actions: { createChecklistTemplateFromRun, syncChecklist, removeChecklist } } = useChecklists()
   const { toast } = useFeedback()
   const navigate = useNavigate()
   const [addRequest, setAddRequest] = useState<ChecklistAddRequest>(null)
@@ -23,6 +24,7 @@ export function useChecklistPanel(checklist: Checklist, onClose: () => void) {
       toast({ title: 'Failed to save checklist', description: error instanceof Error ? error.message : 'The checklist could not be saved.', variant: 'error' })
     }
   }, [syncChecklist, toast])
+  const requestLink = useChecklistRequestLink(checklist, update)
 
   function openFullPage() {
     onClose()
@@ -40,6 +42,16 @@ export function useChecklistPanel(checklist: Checklist, onClose: () => void) {
   function dismissAdd() { setAddRequest(null) }
   function openDelete() { setDeleteOpen(true) }
 
+  async function createTemplate() {
+    if (checklist.kind !== "instance") return;
+    try {
+      await createChecklistTemplateFromRun(checklist);
+      toast({ title: "Checklist template created", variant: "success" });
+    } catch (error) {
+      toast({ title: "Failed to create checklist template", description: error instanceof Error ? error.message : "The checklist template could not be created.", variant: "error" });
+    }
+  }
+
   async function remove() {
     try {
       await removeChecklist(checklist.id)
@@ -53,7 +65,7 @@ export function useChecklistPanel(checklist: Checklist, onClose: () => void) {
 
   return {
     state: { addRequest, deleteOpen },
-    actions: { addItem, addSection, close: onClose, dismissAdd, openDelete, openFullPage, remove, setDeleteOpen, updateDescription, updateChecklist, updateName, updateScheduledAt },
-    meta: { ...counts, scheduledAtInput },
+    actions: { addItem, addSection, close: onClose, createTemplate, dismissAdd, openDelete, openFullPage, remove, setDeleteOpen, updateDescription, updateChecklist, updateName, updateScheduledAt },
+    meta: { ...counts, requestLink, scheduledAtInput },
   }
 }

@@ -17,7 +17,7 @@ export function useRequestsScreen() {
     actions: { loadActiveRequests, loadArchivedRequests },
   } = useRequests()
   const filters = useRequestFilters(allRequests)
-  const detail = useListDetailSelection<Request>()
+  const detail = useListDetailSelection<Request>(allRequests)
   const { close: closeDetail, select: selectRequest } = detail.actions
   const { includesArchived } = filters
   const loadsArchived = includesArchived || activeView === "calendar"

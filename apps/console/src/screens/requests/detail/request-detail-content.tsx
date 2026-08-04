@@ -7,6 +7,9 @@ import { RequestFlow } from "@/features/requests/request-flow"
 import { RequestMetaFields } from "@/features/requests/request-meta-fields"
 import { RequestNotes } from "@/features/requests/request-notes"
 import { RequestShareActions } from "@/features/requests/request-share-actions"
+import { RequestDiscussion } from "@/features/requests/request-discussion"
+import { RequestRelatedChecklists } from "@/features/requests/request-related-checklists"
+import { RequestTitle } from "@/features/requests/request-title"
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal"
 import { useRequestDetail } from "@/features/requests/use-request-detail"
 import { TopBarActions } from "@/features/topbar"
@@ -27,8 +30,12 @@ type RequestDetailContentProps = {
 export function RequestDetailContent({ request, syncRequest }: RequestDetailContentProps) {
   const shareTargetRef = useRef<HTMLDivElement | null>(null)
   const detail = useRequestDetail({ request, syncRequest })
-  const { assignees, blockerState, isDeleting, showDeleteModal, store } = detail
+  const { assignees, blockerState, isDeleting, relatedChecklists, showDeleteModal, store } = detail
   const actions = detail.actions
+
+  function handleTitleChange(value: string) {
+    store.actions.updateField("title", value)
+  }
 
   return (
     <DetailPage>
@@ -55,7 +62,7 @@ export function RequestDetailContent({ request, syncRequest }: RequestDetailCont
           </TopBarActions>
 
           <div ref={shareTargetRef}>
-            <DetailPage.Header><Header.Lead className="gap-2"><Page.Title>{store.state.draft.title}</Page.Title></Header.Lead></DetailPage.Header>
+            <DetailPage.Header><Header.Lead className="gap-2"><Page.Title><RequestTitle value={store.state.draft.title} onChange={handleTitleChange} /></Page.Title></Header.Lead></DetailPage.Header>
             <DetailPage.Section><RequestMetaFields request={store.state.draft} editable onFieldChange={store.actions.updateField} /></DetailPage.Section>
             <DetailPage.Divider />
             <DetailPage.Section><RequestFiveW request={store.state.draft} /></DetailPage.Section>
@@ -64,10 +71,18 @@ export function RequestDetailContent({ request, syncRequest }: RequestDetailCont
             <DetailPage.Divider />
             <DetailPage.Section><RequestAssigneeList assignees={assignees} onAddMember={actions.handleAddMember} onRemoveMember={actions.handleRemoveMember} /></DetailPage.Section>
             <DetailPage.Divider />
+            <DetailPage.Section><RequestRelatedChecklists checklists={relatedChecklists.checklists} isLoading={relatedChecklists.isLoading} error={relatedChecklists.error} onRetry={actions.refreshRelatedChecklists} /></DetailPage.Section>
+            <DetailPage.Divider />
             <DetailPage.Section>
               <Label.md className="block pb-3">Content</Label.md>
               <DocEditor value={store.state.draft.content ?? ""} onChange={actions.handleContentChange} placeholder="Add notes, details, or additional context…" className="w-full" />
             </DetailPage.Section>
+            <DetailPage.Divider />
+            <RequestDiscussion.Root requestId={request.id} refreshKey={store.state.draft.updatedAt}>
+              <DetailPage.Section><RequestDiscussion.Activity /></DetailPage.Section>
+              <DetailPage.Divider />
+              <DetailPage.Section><RequestDiscussion.Comments /></DetailPage.Section>
+            </RequestDiscussion.Root>
           </div>
         </RequestShareActions.Root>
 

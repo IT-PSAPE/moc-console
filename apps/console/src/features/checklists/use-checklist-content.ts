@@ -1,12 +1,16 @@
 import { useCallback, useState } from "react";
-import { PointerSensor, useSensor, useSensors, type DragEndEvent, type DragOverEvent, type DragStartEvent } from "@dnd-kit/core";
+import { KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragOverEvent, type DragStartEvent } from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import type { Checklist, ChecklistItem, ChecklistSection } from "@moc/types/checklists";
 import { randomId } from "@moc/utils/random-id";
 import { findItem, findItemContainer, insertItemAt, removeItemFrom, reorder } from "./checklist-helpers";
 import type { ChecklistAddRequest } from "./checklist-types";
 
 export function useChecklistContent(checklist: Checklist, onUpdate: (checklist: Checklist) => void, addRequest: ChecklistAddRequest, onAddRequestDismiss?: () => void) {
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [localAdd, setLocalAdd] = useState<ChecklistAddRequest>(null);

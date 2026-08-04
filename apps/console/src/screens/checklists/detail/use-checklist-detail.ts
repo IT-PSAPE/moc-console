@@ -8,17 +8,24 @@ import type { ChecklistAddRequest } from "@/features/checklists/checklist-types"
 import { routes } from "@/screens/console-routes"
 import type { Checklist } from "@moc/types/checklists"
 import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time"
+import { useChecklistRequestLink } from "@/features/checklists/use-checklist-request-link";
+import { getCurrentWorkspaceGeneration } from "@/data/current-workspace";
+import { useWorkspace } from "@/lib/workspace-context";
 
 export function useChecklistDetail() {
   const { id } = useParams<{ id: string }>()
+  const { currentWorkspaceId } = useWorkspace()
+  const generation = getCurrentWorkspaceGeneration()
   const {
-    state: { checklists, isLoadingChecklists },
-    actions: { loadChecklists, syncChecklist, removeChecklist },
+    state: { checklists, checklistsError, isLoadingChecklists },
+    actions: { createChecklistTemplateFromRun, loadChecklists, retryChecklists, syncChecklist, removeChecklist },
   } = useChecklists()
   const { toast } = useFeedback()
   const navigate = useNavigate()
   const [addRequest, setAddRequest] = useState<ChecklistAddRequest>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [loadedKey, setLoadedKey] = useState<string | null>(null)
+  const currentKey = `${currentWorkspaceId ?? "none"}:${generation}:${id ?? "none"}`
   const checklist = checklists.find((item) => item.id === id) ?? null
   const counts = checklist ? getChecklistCounts(checklist) : { total: 0, checked: 0 }
   const scheduledAtInput = checklist?.kind === "instance" && checklist.scheduledAt ? formatUtcIsoForBrowserDateTimeInput(checklist.scheduledAt) : ""
@@ -26,8 +33,19 @@ export function useChecklistDetail() {
   useBreadcrumbOverride(id ?? "", checklist?.name)
 
   useEffect(() => {
-    void loadChecklists()
-  }, [loadChecklists])
+    if (!id || !currentWorkspaceId) return
+
+    let cancelled = false
+    const requestedKey = `${currentWorkspaceId}:${generation}:${id}`
+
+    void loadChecklists().then(() => {
+      if (!cancelled) setLoadedKey(requestedKey)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [currentWorkspaceId, generation, id, loadChecklists])
 
   const update = useCallback(async (nextChecklist: Checklist) => {
     try {
@@ -36,6 +54,7 @@ export function useChecklistDetail() {
       toast({ title: "Failed to save checklist", description: error instanceof Error ? error.message : "The checklist could not be saved.", variant: "error" })
     }
   }, [syncChecklist, toast])
+  const requestLink = useChecklistRequestLink(checklist, update)
 
   function updateName(name: string) {
     if (checklist) void update({ ...checklist, name })
@@ -64,6 +83,16 @@ export function useChecklistDetail() {
     setDeleteOpen(true)
   }
 
+  async function createTemplate() {
+    if (!checklist || checklist.kind !== "instance") return
+    try {
+      await createChecklistTemplateFromRun(checklist)
+      toast({ title: "Checklist template created", variant: "success" })
+    } catch (error) {
+      toast({ title: "Failed to create checklist template", description: error instanceof Error ? error.message : "The checklist template could not be created.", variant: "error" })
+    }
+  }
+
   function addItem() {
     setAddRequest({ type: "item", target: "top" })
   }
@@ -78,7 +107,15 @@ export function useChecklistDetail() {
 
   return {
     state: { addRequest, deleteOpen },
-    actions: { setDeleteOpen, openDelete, addItem, addSection, dismissAdd, update, updateName, updateDescription, updateScheduledAt, remove },
-    meta: { checklist, counts, scheduledAtInput, isLoading: isLoadingChecklists },
+    actions: { setDeleteOpen, openDelete, createTemplate, addItem, addSection, dismissAdd, update, updateName, updateDescription, updateScheduledAt, remove },
+    meta: {
+      checklist,
+      counts,
+      requestLink,
+      scheduledAtInput,
+      error: loadedKey === currentKey ? checklistsError : null,
+      isLoading: Boolean(!checklist && id && currentWorkspaceId && (isLoadingChecklists || loadedKey !== currentKey)),
+      retry: retryChecklists,
+    },
   }
 }

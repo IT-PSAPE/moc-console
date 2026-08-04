@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Checklist } from '@moc/types/checklists'
 import { getChecklistCounts } from './checklist-content'
+import { useQueryText } from '@/hooks/use-query-text'
 
 export type ChecklistRunCompletionFilter = 'all' | 'open' | 'complete'
 export type ChecklistRunSortField = 'scheduledAt' | 'name' | 'items' | 'completed'
@@ -37,7 +38,9 @@ function getScheduledTime(checklist: Checklist) {
 }
 
 export function useChecklistRunFilters(checklists: Checklist[]) {
-    const [filters, setFilters] = useState<ChecklistRunFilters>(defaultFilters)
+    const [filterState, setFilters] = useState<ChecklistRunFilters>(defaultFilters)
+    const [search, setSearchQuery] = useQueryText()
+    const filters = useMemo(() => ({ ...filterState, search }), [filterState, search])
     const [currentTime] = useState(() => Date.now())
 
     const results = useMemo(() => {
@@ -80,7 +83,7 @@ export function useChecklistRunFilters(checklists: Checklist[]) {
     }, [checklists, currentTime, filters])
 
     function setSearch(search: string) {
-        setFilters((current) => ({ ...current, search }))
+        setSearchQuery(search)
     }
 
     function setIncludePast(includePast: boolean) {
@@ -105,6 +108,7 @@ export function useChecklistRunFilters(checklists: Checklist[]) {
 
     function reset() {
         setFilters(defaultFilters)
+        setSearchQuery('')
     }
 
     const hasActiveFilters = filters.includePast !== defaultFilters.includePast ||

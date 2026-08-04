@@ -4,6 +4,7 @@ import type { Category } from "@moc/types/requests/category";
 import type { Priority } from "@moc/types/requests/priority";
 import type { Status } from "@moc/types/requests/status";
 import { areSetsEqual } from "@/utils/sets";
+import { useQueryText } from "@/hooks/use-query-text";
 
 // ─── Filter / Sort state ───────────────────────────────
 
@@ -33,7 +34,9 @@ const defaultFilters: RequestFilters = {
 // ─── Hook ──────────────────────────────────────────────
 
 export function useRequestFilters(requests: Request[]) {
-    const [filters, setFilters] = useState<RequestFilters>(defaultFilters);
+    const [filterState, setFilters] = useState<RequestFilters>(defaultFilters);
+    const [search, setSearchQuery] = useQueryText();
+    const filters = useMemo(() => ({ ...filterState, search }), [filterState, search]);
 
     const results = useMemo(() => {
         let result = requests;
@@ -96,7 +99,7 @@ export function useRequestFilters(requests: Request[]) {
     // ─── Actions ───────────────────────────────────────
 
     function setSearch(search: string) {
-        setFilters((f) => ({ ...f, search }));
+        setSearchQuery(search);
     }
 
     function toggleCategory(category: Category) {
@@ -136,6 +139,7 @@ export function useRequestFilters(requests: Request[]) {
 
     function reset() {
         setFilters(defaultFilters);
+        setSearchQuery("");
     }
 
     const hasActiveFilters =

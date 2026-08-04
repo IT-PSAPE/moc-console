@@ -1,7 +1,8 @@
 import { fetchArchivedRequests, fetchRequestById, fetchRequests } from '@/data/fetch-requests'
-import type { Request } from '@moc/types/requests'
+import { useWorkspaceResource } from '@/hooks/use-workspace-resource'
 import { useWorkspace } from '@/lib/workspace-context'
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import type { Request } from '@moc/types/requests'
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 
 type RequestsContextValue = {
     state: {
@@ -11,10 +12,14 @@ type RequestsContextValue = {
         requestsById: Record<string, Request>
         isLoadingActive: boolean
         isLoadingArchived: boolean
+        activeError: Error | null
+        archivedError: Error | null
     }
     actions: {
         loadActiveRequests: () => Promise<void>
         loadArchivedRequests: () => Promise<void>
+        retryActiveRequests: () => Promise<void>
+        retryArchivedRequests: () => Promise<void>
         loadRequest: (id: string) => Promise<void>
         syncRequest: (request: Request) => void
         removeRequest: (id: string) => void
@@ -22,6 +27,7 @@ type RequestsContextValue = {
 }
 
 const RequestsContext = createContext<RequestsContextValue | null>(null)
+const emptyRequests: Request[] = []
 
 function mergeRequests(previous: Record<string, Request>, requests: Request[]) {
     const next = { ...previous }
@@ -33,89 +39,82 @@ function mergeRequests(previous: Record<string, Request>, requests: Request[]) {
     return next
 }
 
+function removeFromRequests(requests: Request[], id: string) {
+    return requests.filter((request) => request.id !== id)
+}
+
+function syncIntoRequests(requests: Request[], request: Request, include: boolean) {
+    const exists = requests.some((entry) => entry.id === request.id)
+    if (!include) return removeFromRequests(requests, request.id)
+    if (!exists) return [request, ...requests]
+    return requests.map((entry) => entry.id === request.id ? request : entry)
+}
+
 export function RequestsProvider({ children }: { children: ReactNode }) {
-    const [requestsById, setRequestsById] = useState<Record<string, Request>>({})
-    const [isLoadingActive, setIsLoadingActive] = useState(false)
-    const [isLoadingArchived, setIsLoadingArchived] = useState(false)
-    const requestsByIdRef = useRef<Record<string, Request>>({})
-    const activeLoadedRef = useRef<string | null>(null)
-    const archivedLoadedRef = useRef<string | null>(null)
-    const activePromiseRef = useRef<Promise<void> | null>(null)
-    const archivedPromiseRef = useRef<Promise<void> | null>(null)
-
-    useEffect(() => {
-        requestsByIdRef.current = requestsById
-    }, [requestsById])
-
     const { currentWorkspaceId } = useWorkspace()
-    const [trackedWorkspaceId, setTrackedWorkspaceId] = useState(currentWorkspaceId)
-    if (trackedWorkspaceId !== currentWorkspaceId) {
-        setTrackedWorkspaceId(currentWorkspaceId)
-        setRequestsById({})
-    }
-
-    const syncRequest = useCallback((request: Request) => {
-        setRequestsById((previous) => ({ ...previous, [request.id]: request }))
-    }, [])
-
-    const removeRequest = useCallback((id: string) => {
-        setRequestsById((previous) => {
-            const next = { ...previous }
-            delete next[id]
-            return next
-        })
-    }, [])
+    const { data: activeData, error: activeError, isLoading: isLoadingActive, load: loadActiveResource, updateData: updateActive } = useWorkspaceResource({ emptyValue: emptyRequests, fetcher: fetchRequests, resource: 'requests:active', workspaceId: currentWorkspaceId })
+    const { data: archivedData, error: archivedError, isLoading: isLoadingArchived, load: loadArchivedResource, updateData: updateArchived } = useWorkspaceResource({ emptyValue: emptyRequests, fetcher: fetchArchivedRequests, resource: 'requests:archived', workspaceId: currentWorkspaceId })
+    const [detailRequestsByWorkspace, setDetailRequestsByWorkspace] = useState<Record<string, Record<string, Request>>>({})
+    const requestsById = useMemo(() => {
+        const detailRequests = currentWorkspaceId ? detailRequestsByWorkspace[currentWorkspaceId] ?? {} : {}
+        return { ...mergeRequests(mergeRequests({}, activeData), archivedData), ...detailRequests }
+    }, [activeData, archivedData, currentWorkspaceId, detailRequestsByWorkspace])
 
     const loadActiveRequests = useCallback(async () => {
-        if (activeLoadedRef.current === currentWorkspaceId) return
-        if (activePromiseRef.current) return activePromiseRef.current
-
-        setIsLoadingActive(true)
-        activePromiseRef.current = fetchRequests()
-            .then((requests) => {
-                setRequestsById((previous) => mergeRequests(previous, requests))
-                activeLoadedRef.current = currentWorkspaceId
-            })
-            .finally(() => {
-                activePromiseRef.current = null
-                setIsLoadingActive(false)
-            })
-
-        return activePromiseRef.current
-    }, [currentWorkspaceId])
+        await loadActiveResource()
+    }, [loadActiveResource])
 
     const loadArchivedRequests = useCallback(async () => {
-        if (archivedLoadedRef.current === currentWorkspaceId) return
-        if (archivedPromiseRef.current) return archivedPromiseRef.current
+        await loadArchivedResource()
+    }, [loadArchivedResource])
 
-        setIsLoadingArchived(true)
-        archivedPromiseRef.current = fetchArchivedRequests()
-            .then((requests) => {
-                setRequestsById((previous) => mergeRequests(previous, requests))
-                archivedLoadedRef.current = currentWorkspaceId
-            })
-            .finally(() => {
-                archivedPromiseRef.current = null
-                setIsLoadingArchived(false)
-            })
+    const retryActiveRequests = useCallback(async () => {
+        await loadActiveResource(true)
+    }, [loadActiveResource])
 
-        return archivedPromiseRef.current
-    }, [currentWorkspaceId])
+    const retryArchivedRequests = useCallback(async () => {
+        await loadArchivedResource(true)
+    }, [loadArchivedResource])
+
+    const syncRequest = useCallback((request: Request) => {
+        if (currentWorkspaceId) {
+            setDetailRequestsByWorkspace((previous) => ({
+                ...previous,
+                [currentWorkspaceId]: { ...(previous[currentWorkspaceId] ?? {}), [request.id]: request },
+            }))
+        }
+        updateActive((requests) => syncIntoRequests(requests, request, request.status !== 'archived'))
+        updateArchived((requests) => syncIntoRequests(requests, request, request.status === 'archived'))
+    }, [currentWorkspaceId, updateActive, updateArchived])
+
+    const removeRequest = useCallback((id: string) => {
+        if (currentWorkspaceId) {
+            setDetailRequestsByWorkspace((previous) => {
+                const nextWorkspaceRequests = { ...(previous[currentWorkspaceId] ?? {}) }
+                delete nextWorkspaceRequests[id]
+                return { ...previous, [currentWorkspaceId]: nextWorkspaceRequests }
+            })
+        }
+        updateActive((requests) => removeFromRequests(requests, id))
+        updateArchived((requests) => removeFromRequests(requests, id))
+    }, [currentWorkspaceId, updateActive, updateArchived])
 
     const loadRequest = useCallback(async (id: string) => {
-        if (requestsByIdRef.current[id]) return
+        if (!currentWorkspaceId || requestsById[id]) return
 
-        const request = await fetchRequestById(id)
+        const request = await fetchRequestById(id, currentWorkspaceId)
         if (!request) return
-
-        setRequestsById((previous) => ({ ...previous, [request.id]: request }))
-    }, [])
+        setDetailRequestsByWorkspace((previous) => ({
+            ...previous,
+            [currentWorkspaceId]: { ...(previous[currentWorkspaceId] ?? {}), [request.id]: request },
+        }))
+    }, [currentWorkspaceId, requestsById])
 
     const allRequests = useMemo(() => Object.values(requestsById), [requestsById])
     const activeRequests = useMemo(() => allRequests.filter((request) => request.status !== 'archived'), [allRequests])
     const archivedRequests = useMemo(() => allRequests.filter((request) => request.status === 'archived'), [allRequests])
 
-    const value = useMemo(() => ({
+    const value = useMemo<RequestsContextValue>(() => ({
         state: {
             allRequests,
             activeRequests,
@@ -123,15 +122,19 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
             requestsById,
             isLoadingActive,
             isLoadingArchived,
+            activeError,
+            archivedError,
         },
         actions: {
             loadActiveRequests,
             loadArchivedRequests,
+            retryActiveRequests,
+            retryArchivedRequests,
             loadRequest,
             syncRequest,
             removeRequest,
         },
-    }), [allRequests, activeRequests, archivedRequests, loadActiveRequests, loadArchivedRequests, loadRequest, requestsById, syncRequest, removeRequest, isLoadingActive, isLoadingArchived])
+    }), [activeError, activeRequests, allRequests, archivedError, archivedRequests, isLoadingActive, isLoadingArchived, loadActiveRequests, loadArchivedRequests, loadRequest, requestsById, retryActiveRequests, retryArchivedRequests, removeRequest, syncRequest])
 
     return <RequestsContext.Provider value={value}>{children}</RequestsContext.Provider>
 }

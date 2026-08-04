@@ -3,6 +3,8 @@ import {
     DndContext,
     DragOverlay,
     closestCenter,
+    type Announcements,
+    type ScreenReaderInstructions,
 } from '@dnd-kit/core'
 import { Accordion } from '@moc/ui/components/display/accordion'
 import type { Checklist, ChecklistItem } from '@moc/types/checklists'
@@ -19,6 +21,28 @@ import type { ChecklistAddRequest } from './checklist-types'
 import { useChecklistContent } from './use-checklist-content'
 
 export { getChecklistCounts } from './checklist-helpers'
+
+const screenReaderInstructions: ScreenReaderInstructions = {
+    draggable: 'To reorder a checklist item or section, press Space. Use the arrow keys to move it, press Space to drop it, or Escape to cancel.',
+}
+
+const announcements: Announcements = {
+    onDragStart({ active }) {
+        return `Picked up ${active.id.toString().startsWith('section:') ? 'checklist section' : 'checklist item'}.`
+    },
+    onDragOver({ over }) {
+        if (!over) return 'The item is not over a valid drop target.'
+        if (over.id.toString().startsWith('section:')) return 'Moving over a checklist section.'
+        if (over.id.toString().startsWith('container:')) return 'Moving to a checklist item group.'
+        return 'Moving over a checklist item.'
+    },
+    onDragEnd({ over }) {
+        return over ? 'Item moved.' : 'Item was not moved.'
+    },
+    onDragCancel() {
+        return 'Reordering cancelled.'
+    },
+}
 
 // ─── Main checklist content ─────────────────────────────────────────
 
@@ -42,6 +66,7 @@ export function ChecklistContent({ checklist, onUpdate, addRequest = null, onAdd
         <DndContext
             sensors={meta.sensors}
             collisionDetection={closestCenter}
+            accessibility={{ announcements, screenReaderInstructions }}
             onDragStart={actions.startDrag}
             onDragOver={actions.dragOver}
             onDragEnd={actions.endDrag}

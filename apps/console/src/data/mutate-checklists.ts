@@ -16,6 +16,24 @@ export type CreateBlankChecklistInput = {
   scheduledAt: string;
 };
 
+function copyTemplateStructure(run: Checklist): Checklist {
+  const now = new Date().toISOString();
+  return {
+    id: randomId(),
+    kind: "template",
+    name: `${run.name} Template`,
+    description: run.description,
+    items: run.items.map((item) => ({ id: randomId(), label: item.label, checked: false })),
+    sections: run.sections.map((section) => ({
+      id: randomId(),
+      name: section.name,
+      items: section.items.map((item) => ({ id: randomId(), label: item.label, checked: false })),
+    })),
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
 function toChecklistStructure(checklist: Checklist) {
   return {
     items: checklist.items.map((item, index) => ({
@@ -70,6 +88,7 @@ export async function saveChecklist(checklist: Checklist): Promise<Checklist> {
       name: checklist.name,
       description: checklist.description,
       scheduled_at: checklist.scheduledAt ?? now,
+      request_id: checklist.requestId ?? null,
       created_at: checklist.createdAt,
       updated_at: now,
     }, { onConflict: "id" });
@@ -121,4 +140,9 @@ export async function createBlankChecklist(input: CreateBlankChecklistInput): Pr
     createdAt: now,
     updatedAt: now,
   });
+}
+
+export async function createChecklistTemplateFromRun(run: Checklist): Promise<Checklist> {
+  if (run.kind !== "instance") throw new Error("Only checklist runs can be converted to templates");
+  return saveChecklist(copyTemplateStructure(run));
 }

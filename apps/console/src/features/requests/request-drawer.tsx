@@ -23,6 +23,9 @@ import { RequestFlow } from "./request-flow";
 import { RequestMetaFields } from "./request-meta-fields";
 import { RequestNotes } from "./request-notes";
 import { RequestShareActions } from "./request-share-actions";
+import { RequestDiscussion } from "./request-discussion";
+import { RequestRelatedChecklists } from "./request-related-checklists";
+import { RequestTitle } from "./request-title";
 import { useRequestDetail } from "./use-request-detail";
 import { useDrawerClose } from "@/hooks/use-drawer-close";
 import { useDrawerEditorGuard } from "@/hooks/use-drawer-editor-guard";
@@ -98,6 +101,10 @@ export function RequestPanelContent({
 
   const guard = useDrawerEditorGuard({ close: onClose, discard: store.actions.discard, href: `/requests/${request.id}`, isDirty: store.state.isDirty, isDirtyRef, requestCloseRef, save: detail.actions.handleSave });
 
+  function handleTitleChange(value: string) {
+    store.actions.updateField("title", value);
+  }
+
   return (
     <>
       {/* Toolbar */}
@@ -143,7 +150,7 @@ export function RequestPanelContent({
         <SplitPanel.Content className="py-4">
           <div ref={shareTargetRef}>
             <div className="px-4 pb-4">
-              <Title.h6>{store.state.draft.title}</Title.h6>
+              <Title.h6><RequestTitle value={store.state.draft.title} onChange={handleTitleChange} /></Title.h6>
             </div>
 
             <div className="px-4">
@@ -184,6 +191,14 @@ export function RequestPanelContent({
                 className="px-4"
               />
             )}
+            <Divider className="my-6" />
+            <RequestRelatedChecklists checklists={detail.relatedChecklists.checklists} isLoading={detail.relatedChecklists.isLoading} error={detail.relatedChecklists.error} onRetry={detail.actions.refreshRelatedChecklists} />
+            <Divider className="my-6" />
+            <RequestDiscussion.Root requestId={request.id} refreshKey={store.state.draft.updatedAt} enabled={open}>
+              <div className="px-4"><RequestDiscussion.Activity /></div>
+              <Divider className="my-6" />
+              <div className="px-4"><RequestDiscussion.Comments /></div>
+            </RequestDiscussion.Root>
           </div>
         </SplitPanel.Content>
       </RequestShareActions.Root>

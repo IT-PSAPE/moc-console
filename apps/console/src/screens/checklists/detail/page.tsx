@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom"
 import { routes } from "@/screens/console-routes"
-import { ChecklistContent } from "@/features/checklists/checklist-content"
 import { TopBarActions } from "@/features/topbar"
 import { Button } from "@moc/ui/components/controls/button"
 import { Badge } from "@moc/ui/components/display/badge"
@@ -14,10 +13,12 @@ import { Page } from "@moc/ui/components/layout/page"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
 import { Dropdown } from "@moc/ui/components/overlays/dropdown"
-import { FolderPlus, ListChecks, Plus, SquarePlus, Trash2 } from "lucide-react"
+import { CopyPlus, FolderPlus, ListChecks, Plus, SquarePlus, Trash2 } from "lucide-react"
 import { useChecklistDetail } from "./use-checklist-detail"
-import { ChecklistAssignees } from "@/features/checklists/checklist-assignees"
 import { ChecklistScheduleField } from "@/features/checklists/checklist-schedule-field"
+import { ChecklistEditorContent } from "@/features/checklists/checklist-editor-content"
+import { ChecklistRequestLink } from "@/features/checklists/checklist-request-link"
+import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 
 export function ChecklistDetailScreen() {
   const { state, actions, meta } = useChecklistDetail()
@@ -25,6 +26,10 @@ export function ChecklistDetailScreen() {
 
   if (meta.isLoading && !checklist) {
     return <Page><Page.Content width="readable" className="flex justify-center py-16"><Spinner size="lg" /></Page.Content></Page>
+  }
+
+  if (meta.error) {
+    return <Page><Page.Content width="readable"><ResourceLoadError title="Could not load checklist" error={meta.error} onRetry={meta.retry} /></Page.Content></Page>
   }
 
   if (!checklist) {
@@ -46,6 +51,7 @@ export function ChecklistDetailScreen() {
     <DetailPage>
         <TopBarActions>
           <Button.Icon aria-label="Delete checklist" variant="danger-secondary" icon={<Trash2 />} onClick={actions.openDelete} />
+          {checklist.kind === "instance" && <Button.Icon aria-label="Save as checklist template" variant="secondary" icon={<CopyPlus />} onClick={actions.createTemplate} />}
           <Dropdown placement="bottom">
             <Dropdown.Trigger>
               <Button.Icon aria-label="Add checklist content" variant="secondary" icon={<Plus />} />
@@ -73,6 +79,7 @@ export function ChecklistDetailScreen() {
         {checklist.kind === "instance" && (
           <DetailPage.Section className="pb-0 pt-4">
             <ChecklistScheduleField value={meta.scheduledAtInput} onChange={actions.updateScheduledAt} />
+            <div className="pt-4"><ChecklistRequestLink linkedRequest={meta.requestLink.state.linkedRequest} requests={meta.requestLink.state.requestOptions} isLoading={meta.requestLink.state.isLoading} onLink={meta.requestLink.actions.link} onUnlink={meta.requestLink.actions.unlink} /></div>
           </DetailPage.Section>
         )}
 
@@ -81,9 +88,7 @@ export function ChecklistDetailScreen() {
         <DetailPage.Section className="pb-8">
           <Label.md className="block pb-4">Items</Label.md>
           <Card.Content className="overflow-hidden">
-            <ChecklistAssignees.Root checklistId={checklist.id}>
-              <ChecklistContent checklist={checklist} onUpdate={actions.update} addRequest={state.addRequest} onAddRequestDismiss={actions.dismissAdd} itemSlot={ChecklistAssignees.Item} />
-            </ChecklistAssignees.Root>
+            <ChecklistEditorContent checklist={checklist} onUpdate={actions.update} addRequest={state.addRequest} onAddRequestDismiss={actions.dismissAdd} />
           </Card.Content>
         </DetailPage.Section>
 

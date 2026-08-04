@@ -141,6 +141,7 @@ export function ChecklistsScreen() {
             <CreateChecklistRunModal open={state.modalOpen} onOpenChange={actions.setModalOpen} template={state.modalTemplate} onSubmit={actions.submit} />
             </Page>
             </SplitPanel.Primary>
+            <SplitPanel.ResizeHandle />
             <SplitPanel.Detail>
                 {state.selectedChecklist && <ChecklistPanelContent checklist={state.selectedChecklist} onClose={actions.closeDetail} />}
             </SplitPanel.Detail>
