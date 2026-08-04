@@ -1,10 +1,11 @@
 import { proxyZoomApiRequest } from "../../../server/zoom-api.js"
 import { AuthError, requireAuthenticatedUser } from "../../../server/auth-guard.js"
 import { writeCorsHeaders } from "../../../server/cors.js"
-import { permissionForMethod, WorkspaceAccessError, requireWorkspacePermission } from "../../../server/workspace-access.js"
+import { WorkspaceAccessError, requireWorkspacePermission } from "../../../server/workspace-access.js"
+import { authorizeProviderRoute, prepareProviderBody, ProviderRouteError, type ProviderRouteRule } from "../../../server/provider-route-policy.js"
 
 type ApiRequest = {
-  body?: Buffer | string
+  body?: unknown
   headers?: Record<string, string | undefined>
   method?: string
   query?: {
@@ -18,38 +19,15 @@ type ApiResponse = {
   statusCode: number
 }
 
-const SEGMENT_PATTERN = /^[A-Za-z0-9_\-.~%@:]+$/
 const WORKSPACE_HEADER = "x-moc-workspace"
 
-function buildSafePath(query: ApiRequest["query"]): string | null {
-  const rawSegments = query?.path
-  const segments = Array.isArray(rawSegments)
-    ? rawSegments
-    : typeof rawSegments === "string" && rawSegments.length > 0
-      ? [rawSegments]
-      : []
-
-  for (const segment of segments) {
-    if (!segment || segment === "." || segment === ".." || !SEGMENT_PATTERN.test(segment)) {
-      return null
-    }
-  }
-
-  const pathname = segments.length > 0 ? `/${segments.join("/")}` : "/"
-
-  const searchParams = new URLSearchParams()
-  for (const [key, value] of Object.entries(query ?? {})) {
-    if (key === "path" || value == null) continue
-    if (Array.isArray(value)) {
-      for (const item of value) searchParams.append(key, item)
-    } else {
-      searchParams.append(key, value)
-    }
-  }
-
-  const queryString = searchParams.toString()
-  return queryString ? `${pathname}?${queryString}` : pathname
-}
+const JSON_BODY_LIMIT = 128 * 1024
+const ZOOM_ROUTES: readonly ProviderRouteRule[] = [
+  { method: "GET", path: /^\/users\/me\/meetings$/, query: ["type", "page_size", "next_page_token"], permission: "can_read", body: "none", maxBodyBytes: 0 },
+  { method: "POST", path: /^\/users\/me\/meetings$/, query: [], permission: "can_create", body: "json", maxBodyBytes: JSON_BODY_LIMIT },
+  { method: "PATCH", path: /^\/meetings\/[A-Za-z0-9_-]+$/, query: [], permission: "can_update", body: "json", maxBodyBytes: JSON_BODY_LIMIT },
+  { method: "DELETE", path: /^\/meetings\/[A-Za-z0-9_-]+$/, query: [], permission: "can_delete", body: "none", maxBodyBytes: 0 },
+]
 
 export default async function handler(request: ApiRequest, response: ApiResponse) {
   const isPreflight = request.method === "OPTIONS"
@@ -72,13 +50,6 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
-  const path = buildSafePath(request.query)
-  if (!path) {
-    response.statusCode = 400
-    response.end(JSON.stringify({ error: "Invalid request path" }))
-    return
-  }
-
   const workspaceId = request.headers?.[WORKSPACE_HEADER] ?? request.headers?.[WORKSPACE_HEADER.toUpperCase()]
   if (!workspaceId) {
     response.statusCode = 400
@@ -86,21 +57,23 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
+  let route
   try {
-    await requireWorkspacePermission(userId, workspaceId, permissionForMethod(request.method))
+    route = authorizeProviderRoute(request.method, request.query, ZOOM_ROUTES)
+    await requireWorkspacePermission(userId, workspaceId, route.permission)
   } catch (error) {
-    response.statusCode = error instanceof WorkspaceAccessError ? 403 : 500
-    response.end(JSON.stringify({ error: error instanceof WorkspaceAccessError ? error.message : "Workspace access check failed" }))
+    response.statusCode = error instanceof ProviderRouteError ? 400 : error instanceof WorkspaceAccessError ? 403 : 500
+    response.end(JSON.stringify({ error: error instanceof ProviderRouteError || error instanceof WorkspaceAccessError ? error.message : "Workspace access check failed" }))
     return
   }
 
   try {
-    const body = typeof request.body === "string" ? Buffer.from(request.body) : request.body
+    const body = prepareProviderBody(request.body, route.body, route.maxBodyBytes)
     const proxyResponse = await proxyZoomApiRequest({
       body,
       contentType: request.headers?.["content-type"] ?? null,
       method: request.method ?? "GET",
-      path,
+      path: route.path,
       workspaceId,
     })
 
@@ -113,6 +86,11 @@ export default async function handler(request: ApiRequest, response: ApiResponse
 
     response.end(Buffer.from(await proxyResponse.arrayBuffer()))
   } catch (error) {
+    if (error instanceof ProviderRouteError) {
+      response.statusCode = 400
+      response.end(JSON.stringify({ error: error.message }))
+      return
+    }
     console.error("Zoom proxy request failed:", error)
     response.statusCode = 502
     response.end(JSON.stringify({ error: "Zoom request failed" }))

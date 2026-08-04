@@ -1,10 +1,11 @@
 import { proxyYouTubeApiRequest } from "../../../server/youtube-api.js"
 import { AuthError, requireAuthenticatedUser } from "../../../server/auth-guard.js"
 import { writeCorsHeaders } from "../../../server/cors.js"
-import { permissionForMethod, WorkspaceAccessError, requireWorkspacePermission } from "../../../server/workspace-access.js"
+import { WorkspaceAccessError, requireWorkspacePermission } from "../../../server/workspace-access.js"
+import { authorizeProviderRoute, prepareProviderBody, ProviderRouteError, type ProviderRouteRule } from "../../../server/provider-route-policy.js"
 
 type ApiRequest = {
-  body?: Buffer | string
+  body?: unknown
   headers?: Record<string, string | undefined>
   method?: string
   query?: { path?: string | string[] }
@@ -16,28 +17,26 @@ type ApiResponse = {
   statusCode: number
 }
 
-const SEGMENT_PATTERN = /^[A-Za-z0-9_\-.~%@:]+$/
 const WORKSPACE_HEADER = "x-moc-workspace"
 
-function buildSafePath(query: ApiRequest["query"]): string | null {
-  const rawSegments = query?.path
-  const segments = Array.isArray(rawSegments)
-    ? rawSegments
-    : typeof rawSegments === "string" && rawSegments.length > 0 ? [rawSegments] : []
-
-  if (segments.length === 0 || segments.some((segment) => !segment || segment === "." || segment === ".." || !SEGMENT_PATTERN.test(segment))) {
-    return null
-  }
-
-  const params = new URLSearchParams()
-  for (const [key, value] of Object.entries(query ?? {})) {
-    if (key === "path" || value == null) continue
-    if (Array.isArray(value)) value.forEach((item) => params.append(key, item))
-    else params.append(key, value)
-  }
-  const search = params.toString()
-  return `/${segments.join("/")}${search ? `?${search}` : ""}`
-}
+const JSON_BODY_LIMIT = 256 * 1024
+const THUMBNAIL_BODY_LIMIT = 2 * 1024 * 1024
+const YOUTUBE_ROUTES: readonly ProviderRouteRule[] = [
+  { method: "GET", path: /^\/videoCategories$/, query: ["part", "regionCode"], permission: "can_read", body: "none", maxBodyBytes: 0 },
+  { method: "GET", path: /^\/playlists$/, query: ["part", "mine", "maxResults", "pageToken"], permission: "can_read", body: "none", maxBodyBytes: 0 },
+  { method: "GET", path: /^\/videos$/, query: ["part", "id"], permission: "can_read", body: "none", maxBodyBytes: 0 },
+  { method: "PUT", path: /^\/videos$/, query: ["part"], permission: "can_update", body: "json", maxBodyBytes: JSON_BODY_LIMIT },
+  { method: "GET", path: /^\/liveBroadcasts$/, query: ["part", "id", "broadcastStatus", "broadcastType", "maxResults", "pageToken"], permission: "can_read", body: "none", maxBodyBytes: 0 },
+  { method: "POST", path: /^\/liveBroadcasts$/, query: ["part"], permission: "can_create", body: "json", maxBodyBytes: JSON_BODY_LIMIT },
+  { method: "PUT", path: /^\/liveBroadcasts$/, query: ["part"], permission: "can_update", body: "json", maxBodyBytes: JSON_BODY_LIMIT },
+  { method: "DELETE", path: /^\/liveBroadcasts$/, query: ["id"], permission: "can_delete", body: "none", maxBodyBytes: 0 },
+  { method: "POST", path: /^\/liveBroadcasts\/bind$/, query: ["id", "part", "streamId"], permission: "can_update", body: "none", maxBodyBytes: 0 },
+  { method: "GET", path: /^\/liveStreams$/, query: ["part", "id", "mine", "maxResults", "pageToken"], permission: "can_read", body: "none", maxBodyBytes: 0 },
+  { method: "POST", path: /^\/liveStreams$/, query: ["part"], permission: "can_create", body: "json", maxBodyBytes: JSON_BODY_LIMIT },
+  { method: "DELETE", path: /^\/liveStreams$/, query: ["id"], permission: "can_delete", body: "none", maxBodyBytes: 0 },
+  { method: "POST", path: /^\/thumbnails\/set$/, query: ["videoId", "uploadType"], permission: "can_update", body: "binary", maxBodyBytes: THUMBNAIL_BODY_LIMIT },
+  { method: "POST", path: /^\/playlistItems$/, query: ["part"], permission: "can_update", body: "json", maxBodyBytes: JSON_BODY_LIMIT },
+]
 
 export default async function handler(request: ApiRequest, response: ApiResponse) {
   const isPreflight = request.method === "OPTIONS"
@@ -58,22 +57,22 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
-  const path = buildSafePath(request.query)
   const workspaceId = request.headers?.[WORKSPACE_HEADER] ?? request.headers?.[WORKSPACE_HEADER.toUpperCase()]
-  if (!path || !workspaceId) {
+  if (!workspaceId) {
     response.statusCode = 400
-    response.end(JSON.stringify({ error: !path ? "Invalid request path" : "Missing workspace context" }))
+    response.end(JSON.stringify({ error: "Missing workspace context" }))
     return
   }
 
   try {
-    await requireWorkspacePermission(userId, workspaceId, permissionForMethod(request.method))
-    const body = typeof request.body === "string" ? Buffer.from(request.body) : request.body
+    const route = authorizeProviderRoute(request.method, request.query, YOUTUBE_ROUTES)
+    await requireWorkspacePermission(userId, workspaceId, route.permission)
+    const body = prepareProviderBody(request.body, route.body, route.maxBodyBytes)
     const proxyResponse = await proxyYouTubeApiRequest({
       body,
       contentType: request.headers?.["content-type"] ?? null,
       method: request.method ?? "GET",
-      path,
+      path: route.path,
       workspaceId,
     })
     response.statusCode = proxyResponse.status
@@ -82,7 +81,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     response.end(Buffer.from(await proxyResponse.arrayBuffer()))
   } catch (error) {
     console.error("YouTube proxy request failed:", error)
-    response.statusCode = error instanceof WorkspaceAccessError ? 403 : 502
-    response.end(JSON.stringify({ error: error instanceof WorkspaceAccessError ? error.message : "YouTube request failed" }))
+    response.statusCode = error instanceof ProviderRouteError ? 400 : error instanceof WorkspaceAccessError ? 403 : 502
+    response.end(JSON.stringify({ error: error instanceof ProviderRouteError || error instanceof WorkspaceAccessError ? error.message : "YouTube request failed" }))
   }
 }

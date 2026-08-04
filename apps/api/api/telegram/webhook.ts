@@ -22,7 +22,7 @@ type TelegramMessage = {
   message_id?: number
   chat?: TelegramChat
   text?: string
-  from?: { username?: string }
+  from?: { id?: number | string; username?: string }
   message_thread_id?: number
   reply_to_message?: TelegramMessage
   forum_topic_created?: TelegramForumTopicCreated
@@ -99,6 +99,35 @@ async function resolveWorkspaceBySlug(slug: string): Promise<ResolvedWorkspace |
   return data ?? null
 }
 
+async function isLinkedWorkspaceMember(message: TelegramMessage, workspaceId: string): Promise<boolean> {
+  const telegramUserId = message.from?.id
+  if (telegramUserId === undefined) return false
+
+  const admin = getSupabaseAdmin()
+  const { data: user, error: userError } = await admin
+    .from("users")
+    .select("id")
+    .eq("telegram_chat_id", String(telegramUserId))
+    .maybeSingle()
+
+  if (userError || !user) return false
+
+  const { data: membership, error: membershipError } = await admin
+    .from("workspace_users")
+    .select("id")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", user.id)
+    .maybeSingle()
+
+  return !membershipError && membership !== null
+}
+
+async function rejectUnlinkedSender(message: TelegramMessage, workspaceId: string, chatId: number | string, threadId?: number): Promise<boolean> {
+  if (await isLinkedWorkspaceMember(message, workspaceId)) return false
+  await sendMessage(chatId, "Link your Telegram account in MOC Console and wait for workspace approval before registering groups or topics.", { threadId })
+  return true
+}
+
 function slugErrorText(providedSlug: string | null, command: string): string {
   if (!providedSlug) {
     return `Please run ${command} with a workspace slug, e.g. ${command} default-workspace`
@@ -134,6 +163,8 @@ async function handleRegisterGroupCommand(message: TelegramMessage): Promise<boo
     await sendMessage(chatId, slugErrorText(slug, "/register_group"), { threadId })
     return true
   }
+
+  if (await rejectUnlinkedSender(message, workspace.id, chatId, threadId)) return true
 
   const admin = getSupabaseAdmin()
   const { error } = await admin.from("telegram_groups").upsert(
@@ -271,6 +302,7 @@ async function handleRegisterTopicCommand(message: TelegramMessage): Promise<boo
 
   let workspaceId: string
   let workspaceSlug: string
+  let registerParentGroup = false
 
   if (existing) {
     workspaceId = existing.workspace_id
@@ -299,7 +331,12 @@ async function handleRegisterTopicCommand(message: TelegramMessage): Promise<boo
     }
     workspaceId = workspace.id
     workspaceSlug = workspace.slug
+    registerParentGroup = true
+  }
 
+  if (await rejectUnlinkedSender(message, workspaceId, chatId, threadId)) return true
+
+  if (registerParentGroup) {
     const { error: groupErr } = await admin.from("telegram_groups").insert({
       chat_id: groupChatId,
       title: chat.title ?? "",
