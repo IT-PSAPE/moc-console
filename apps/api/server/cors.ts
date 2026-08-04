@@ -1,9 +1,9 @@
 import { headerValue, type ApiRequest, type ApiResponse } from "./http.js"
 
 // The API is deployed on its own origin (api.psape.co.zw), so every browser
-// call from MOC Console and MOC Request is cross-origin. Both send custom
-// headers — `x-moc-session` for the console's Supabase session, `authorization`
-// for the Zoom proxy — which makes each one a preflighted request.
+// call from MOC Console and MOC Request is cross-origin. Console integration
+// calls carry a session header plus an explicit workspace context, which makes
+// them preflighted requests.
 //
 // Allowed origins come from ALLOWED_ORIGINS (comma-separated). We echo the
 // caller's origin rather than replying `*` because these requests carry
@@ -12,7 +12,7 @@ import { headerValue, type ApiRequest, type ApiResponse } from "./http.js"
 // callers like Telegram webhooks and Vercel Cron send no Origin and are
 // unaffected.
 
-const ALLOWED_HEADERS = "content-type, authorization, x-moc-session, x-signature"
+const ALLOWED_HEADERS = "content-type, authorization, x-moc-session, x-moc-workspace, x-signature"
 const ALLOWED_METHODS = "GET, POST, PATCH, PUT, DELETE, OPTIONS"
 
 function allowedOrigins(): string[] {

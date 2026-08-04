@@ -2,9 +2,12 @@ import { resolveZoomOAuthConfig, revokeZoomAccessToken } from "../../../server/z
 import { AuthError, requireAuthenticatedUser } from "../../../server/auth-guard.js"
 import { applyCors } from "../../../server/cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../server/http.js"
+import { deleteIntegrationTokens, getIntegrationTokens } from "../../../server/integration-oauth-store.js"
+import { getSupabaseAdmin } from "../../../server/supabase-admin.js"
+import { WorkspaceAccessError, requireWorkspacePermission } from "../../../server/workspace-access.js"
 
 type RequestBody = {
-  token?: unknown
+  workspaceId?: unknown
 }
 
 export default async function handler(request: ApiRequest, response: ApiResponse) {
@@ -17,30 +20,37 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   }
 
   try {
-    await requireAuthenticatedUser(normaliseHeaders(request.headers))
+    const user = await requireAuthenticatedUser(normaliseHeaders(request.headers))
+    const body = (request.body ?? {}) as RequestBody
+    const workspaceId = typeof body.workspaceId === "string" ? body.workspaceId : null
+    if (!workspaceId) {
+      response.status(400).json({ error: "Missing workspace context" })
+      return
+    }
+    await requireWorkspacePermission(user.userId, workspaceId, "can_manage_roles")
+
+    const tokens = await getIntegrationTokens("zoom", workspaceId)
+    if (tokens) {
+      await revokeZoomAccessToken(resolveZoomOAuthConfig(process.env), tokens.accessToken)
+    }
+    await deleteIntegrationTokens("zoom", workspaceId)
+    const { error: connectionError } = await getSupabaseAdmin()
+      .from("zoom_connections")
+      .delete()
+      .eq("workspace_id", workspaceId)
+    if (connectionError) throw new Error(connectionError.message)
+    response.status(200).json({ ok: true })
+    return
   } catch (error) {
     if (error instanceof AuthError) {
       response.status(401).json({ error: "Unauthorized" })
       return
     }
-    response.status(500).json({ error: "Authentication check failed" })
-    return
-  }
-
-  const body = (request.body ?? {}) as RequestBody
-  const token = typeof body.token === "string" ? body.token : null
-
-  if (!token) {
-    response.status(400).json({ error: "Missing access token" })
-    return
-  }
-
-  try {
-    const config = resolveZoomOAuthConfig(process.env)
-    await revokeZoomAccessToken(config, token)
-    response.status(200).json({ ok: true })
-  } catch (error) {
+    if (error instanceof WorkspaceAccessError) {
+      response.status(403).json({ error: error.message })
+      return
+    }
     console.error("Zoom token revoke failed:", error)
-    response.status(500).json({ error: "Zoom token revoke failed" })
+    response.status(502).json({ error: "Zoom token revoke failed" })
   }
 }

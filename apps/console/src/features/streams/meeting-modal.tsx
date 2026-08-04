@@ -13,7 +13,7 @@ type MeetingModalProps = {
 
 export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingModalProps) {
   return (
-    <Modal open={open} onOpenChange={onOpenChange}>
+    <Modal open={open} onOpenChange={onOpenChange} closeOnBackdropClick={false} closeOnEscape={false}>
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>

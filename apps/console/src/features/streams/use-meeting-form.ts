@@ -50,8 +50,10 @@ type UseMeetingFormOptions = {
 export function useMeetingForm({ meeting, open, onOpenChange, onSubmit }: UseMeetingFormOptions) {
   const [draft, setDraft] = useState(() => createDraft(meeting));
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [discardChangesOpen, setDiscardChangesOpen] = useState(false);
   const isEditing = Boolean(meeting);
   const canSubmit = Boolean(draft.topic.trim()) && Boolean(draft.startTime) && !isSubmitting;
+  const hasChanges = JSON.stringify(draft) !== JSON.stringify(createDraft(meeting));
 
   useEffect(() => {
     if (open) setDraft(createDraft(meeting));
@@ -61,9 +63,22 @@ export function useMeetingForm({ meeting, open, onOpenChange, onSubmit }: UseMee
     setDraft((current) => ({ ...current, [field]: value }));
   }
 
-  function changeOpen(nextOpen: boolean) {
-    onOpenChange(nextOpen);
-    if (!nextOpen) setDraft(createDraft(meeting));
+  function close() {
+    setDraft(createDraft(meeting));
+    setDiscardChangesOpen(false);
+    onOpenChange(false);
+  }
+
+  function requestClose() {
+    if (hasChanges) {
+      setDiscardChangesOpen(true);
+      return;
+    }
+    close();
+  }
+
+  function cancelDiscardChanges() {
+    setDiscardChangesOpen(false);
   }
 
   function changeTopic(event: ChangeEvent<HTMLInputElement>) { update("topic", event.target.value); }
@@ -94,16 +109,15 @@ export function useMeetingForm({ meeting, open, onOpenChange, onSubmit }: UseMee
         continuousChat: draft.continuousChat,
         notifyDestinations: draft.notifyDestinations,
       });
-      setDraft(createDraft(meeting));
-      onOpenChange(false);
+      close();
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return {
-    state: { ...draft, canSubmit, isSubmitting },
-    actions: { changeContinuousChat, changeDescription, changeDuration, changeMuteOnEntry, changeOpen, changeRecurrenceDays, changeRecurrenceType, changeTimezone, changeTopic, changeWaitingRoom, setNotifyDestinations: (value: NotifyDestination[]) => update("notifyDestinations", value), setStartTime: (value: string) => update("startTime", value), submit },
+    state: { ...draft, canSubmit, isSubmitting, discardChangesOpen },
+    actions: { cancelDiscardChanges, changeContinuousChat, changeDescription, changeDuration, changeMuteOnEntry, changeRecurrenceDays, changeRecurrenceType, changeTimezone, changeTopic, changeWaitingRoom, close, requestClose, setNotifyDestinations: (value: NotifyDestination[]) => update("notifyDestinations", value), setStartTime: (value: string) => update("startTime", value), submit },
     meta: { isEditing, title: isEditing ? "Edit meeting" : "Schedule meeting", submitLabel: isSubmitting ? (isEditing ? "Updating…" : "Scheduling…") : (isEditing ? "Update meeting" : "Schedule meeting") },
   };
 }

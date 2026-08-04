@@ -15,6 +15,7 @@ import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
 import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
 import { Page } from "@moc/ui/components/layout/page"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
+import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 import { Calendar, Check, Code, Copy, ExternalLink, Eye, Gauge, Key, ListVideo, Loader, Monitor, Pencil, Play, Radio, Shield, Square, Tag, Trash2} from "lucide-react"
 
 function formatDateTime(iso: string | null): string {
@@ -25,7 +26,7 @@ function formatDateTime(iso: string | null): string {
 export function StreamDetailScreen() {
   const { id } = useParams<{ id: string }>()
   const { state, actions, meta } = useStreamDetail(id)
-  const { stream, isLoading, editOpen, deleteOpen, isDeleting, copiedField } = state
+  const { stream, error, isLoading, editOpen, deleteOpen, isDeleting, localDeleteOpen, isRemovingLocal, copiedField, copyMessage } = state
 
   useBreadcrumbOverride(id ?? "", stream?.title)
   useBreadcrumbOverride("stream", "Stream")
@@ -38,10 +39,18 @@ export function StreamDetailScreen() {
     actions.setDeleteOpen(true)
   }
 
+  function handleOpenLocalDelete() {
+    actions.setLocalDeleteOpen(true)
+  }
+
   if (isLoading) {
     return (
       <Page><Page.Content width="readable" className="flex justify-center py-16"><Spinner size="lg" /></Page.Content></Page>
     )
+  }
+
+  if (error) {
+    return <Page><Page.Content width="standard"><ResourceLoadError title="Could not load stream" error={error} onRetry={actions.retry} /></Page.Content></Page>
   }
 
   if (!stream) {
@@ -54,12 +63,16 @@ export function StreamDetailScreen() {
 
   return (
     <DetailPage>
+      <Paragraph.xs role="status" aria-live="polite" className="sr-only">{copyMessage}</Paragraph.xs>
       <TopBarActions>
         {meta.canEdit && (
           <Button variant="secondary" icon={<Pencil />} onClick={handleOpenEdit}>Edit</Button>
         )}
         {meta.canDelete && (
           <Button.Icon aria-label="Delete stream" variant="danger-secondary" icon={<Trash2 />} onClick={handleOpenDelete} />
+        )}
+        {meta.canCleanupLocal && (
+          <Button variant="secondary" onClick={handleOpenLocalDelete}>Remove local record</Button>
         )}
       </TopBarActions>
 
@@ -240,6 +253,15 @@ export function StreamDetailScreen() {
         confirmLabel="Delete stream"
         isConfirming={isDeleting}
         onConfirm={actions.remove}
+      />
+      <ConfirmationDialog
+        open={localDeleteOpen}
+        onOpenChange={actions.setLocalDeleteOpen}
+        title="Remove local stream record?"
+        description="This removes only the MOC Console record. The YouTube broadcast will remain in YouTube."
+        confirmLabel="Remove local record"
+        isConfirming={isRemovingLocal}
+        onConfirm={actions.removeLocal}
       />
     </DetailPage>
   )

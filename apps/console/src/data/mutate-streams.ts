@@ -151,6 +151,30 @@ async function insertLocalStream(payload: LocalStreamInsertPayload): Promise<voi
   }
 }
 
+async function cleanupCreatedYouTubeResources(broadcastId: string | null, streamId: string | null): Promise<string | null> {
+  const failures: string[] = []
+
+  if (broadcastId) {
+    try {
+      const response = await youtubeApiFetch(`/liveBroadcasts?id=${encodeURIComponent(broadcastId)}`, { method: "DELETE" })
+      if (!response.ok && response.status !== 404) failures.push("broadcast")
+    } catch {
+      failures.push("broadcast")
+    }
+  }
+
+  if (streamId) {
+    try {
+      const response = await youtubeApiFetch(`/liveStreams?id=${encodeURIComponent(streamId)}`, { method: "DELETE" })
+      if (!response.ok && response.status !== 404) failures.push("ingestion stream")
+    } catch {
+      failures.push("ingestion stream")
+    }
+  }
+
+  return failures.length > 0 ? `Cleanup could not remove the ${failures.join(" and ")}.` : null
+}
+
 export async function createStream(params: CreateStreamParams): Promise<StreamMutationResult> {
   const workspaceId = await getCurrentWorkspaceId()
   const { data: { user } } = await supabase.auth.getUser()
@@ -159,176 +183,175 @@ export async function createStream(params: CreateStreamParams): Promise<StreamMu
     throw new Error("Not authenticated")
   }
 
-  // 1. Create the live broadcast on YouTube
-  const broadcastResponse = await youtubeApiFetch(
-    "/liveBroadcasts?part=snippet,status,contentDetails",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        snippet: {
-          title: params.title,
-          description: params.description || "",
-          scheduledStartTime: params.scheduledStartTime || new Date().toISOString(),
-        },
-        status: {
-          privacyStatus: params.privacyStatus || "unlisted",
-          selfDeclaredMadeForKids: params.isForKids || false,
-        },
-        contentDetails: {
-          enableAutoStart: params.enableAutoStart,
-          enableAutoStop: params.enableAutoStop,
-          enableDvr: params.enableDvr,
-          enableEmbed: params.enableEmbed,
-          latencyPreference: params.latencyPreference,
-        },
-      }),
-    },
-  )
-
-  if (!broadcastResponse.ok) {
-    const err = await broadcastResponse.text()
-    throw new Error(`Failed to create broadcast: ${err}`)
-  }
-
-  const broadcast = await broadcastResponse.json()
-
-  // 2. Create the live stream (ingestion endpoint)
-  const streamResponse = await youtubeApiFetch(
-    "/liveStreams?part=snippet,cdn",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        snippet: {
-          title: `${params.title} - Stream`,
-        },
-        cdn: {
-          frameRate: "variable",
-          ingestionType: "rtmp",
-          resolution: "variable",
-        },
-      }),
-    },
-  )
-
-  if (!streamResponse.ok) {
-    const err = await streamResponse.text()
-    throw new Error(`Failed to create stream: ${err}`)
-  }
-
-  const stream = await streamResponse.json()
-
-  // 3. Bind the stream to the broadcast
-  const bindResponse = await youtubeApiFetch(
-    `/liveBroadcasts/bind?id=${broadcast.id}&part=id,contentDetails&streamId=${stream.id}`,
-    { method: "POST" },
-  )
-
-  if (!bindResponse.ok) {
-    const err = await bindResponse.text()
-    throw new Error(`Failed to bind stream: ${err}`)
-  }
-
-  // 4. Set thumbnail (if provided). The bytes were already resolved and
-  //    validated in the modal — we never fetch a thumbnail URL here, so the
-  //    only failure left is YouTube itself rejecting the POST (Failure B).
-  let thumbnailUrl: string | null = broadcast.snippet?.thumbnails?.default?.url ?? null
-  let thumbnailError: string | null = null
-  if (params.thumbnail) {
-    try {
-      await uploadThumbnail(broadcast.id, params.thumbnail.blob)
-      // Re-fetch to get the new thumbnail URL from YouTube
-      const refreshed = await youtubeApiFetch(`/liveBroadcasts?part=snippet&id=${broadcast.id}`)
-      if (refreshed.ok) {
-        const refreshedData = await refreshed.json()
-        thumbnailUrl = refreshedData.items?.[0]?.snippet?.thumbnails?.medium?.url ?? thumbnailUrl
-      }
-    } catch (error) {
-      // Decision B2: the broadcast already exists and is usable — keep the
-      // stream, surface a precise reason instead of rolling back or silently
-      // swallowing (the original bug).
-      thumbnailError = describeThumbnailFailure(error)
-    }
-  }
-
-  // 5. Update video metadata (tags, category) if provided
-  if (params.categoryId || params.tags.length > 0) {
-    try {
-      await updateVideoMetadata(broadcast.id, {
-        categoryId: params.categoryId ?? undefined,
-        tags: params.tags.length > 0 ? params.tags : undefined,
-      })
-    } catch {
-      console.warn("Video metadata update failed, continuing without tags/category")
-    }
-  }
-
-  // 6. Add to playlist if specified
-  if (params.playlistId) {
-    try {
-      await addVideoToPlaylist(params.playlistId, broadcast.id)
-    } catch {
-      console.warn("Playlist assignment failed, continuing without playlist")
-    }
-  }
-
-  // 7. Store in local database
-  const payload = {
-    id: randomId(),
-    workspace_id: workspaceId,
-    youtube_broadcast_id: broadcast.id,
-    youtube_stream_id: stream.id,
-    title: params.title,
-    description: params.description,
-    thumbnail_url: thumbnailUrl,
-    privacy_status: params.privacyStatus,
-    is_for_kids: params.isForKids,
-    scheduled_start_time: params.scheduledStartTime,
-    stream_status: "created" as const,
-    stream_url: `https://www.youtube.com/watch?v=${broadcast.id}`,
-    stream_key: stream.cdn?.ingestionInfo?.streamName ?? null,
-    ingestion_url: stream.cdn?.ingestionInfo?.ingestionAddress ?? null,
-    category_id: params.categoryId,
-    tags: params.tags,
-    latency_preference: params.latencyPreference,
-    enable_dvr: params.enableDvr,
-    enable_embed: params.enableEmbed,
-    enable_auto_start: params.enableAutoStart,
-    enable_auto_stop: params.enableAutoStop,
-    playlist_id: params.playlistId,
-    created_by: user.id,
-  }
+  let broadcastId: string | null = null
+  let streamId: string | null = null
+  let localRecordSaved = false
 
   try {
-    await insertLocalStream(payload)
-  } catch (error) {
-    const rollbackResponse = await youtubeApiFetch(
-      `/liveBroadcasts?id=${broadcast.id}`,
-      { method: "DELETE" },
+    const broadcastResponse = await youtubeApiFetch(
+      "/liveBroadcasts?part=snippet,status,contentDetails",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          snippet: {
+            title: params.title,
+            description: params.description || "",
+            scheduledStartTime: params.scheduledStartTime || new Date().toISOString(),
+          },
+          status: {
+            privacyStatus: params.privacyStatus || "unlisted",
+            selfDeclaredMadeForKids: params.isForKids || false,
+          },
+          contentDetails: {
+            enableAutoStart: params.enableAutoStart,
+            enableAutoStop: params.enableAutoStop,
+            enableDvr: params.enableDvr,
+            enableEmbed: params.enableEmbed,
+            latencyPreference: params.latencyPreference,
+          },
+        }),
+      },
     )
 
-    if (!rollbackResponse.ok) {
-      const rollbackError = await rollbackResponse.text()
-      throw new Error(`Local stream save failed after YouTube creation, and rollback also failed: ${rollbackError}`)
+    if (!broadcastResponse.ok) {
+      const err = await broadcastResponse.text()
+      throw new Error(`Failed to create broadcast: ${err}`)
     }
 
-    throw error
+    const broadcast = await broadcastResponse.json()
+    broadcastId = broadcast.id
+
+    const streamResponse = await youtubeApiFetch(
+      "/liveStreams?part=snippet,cdn",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          snippet: { title: `${params.title} - Stream` },
+          cdn: {
+            frameRate: "variable",
+            ingestionType: "rtmp",
+            resolution: "variable",
+          },
+        }),
+      },
+    )
+
+    if (!streamResponse.ok) {
+      const err = await streamResponse.text()
+      throw new Error(`Failed to create stream: ${err}`)
+    }
+
+    const stream = await streamResponse.json()
+    streamId = stream.id
+
+    const bindResponse = await youtubeApiFetch(
+      `/liveBroadcasts/bind?id=${broadcast.id}&part=id,contentDetails&streamId=${stream.id}`,
+      { method: "POST" },
+    )
+
+    if (!bindResponse.ok) {
+      const err = await bindResponse.text()
+      throw new Error(`Failed to bind stream: ${err}`)
+    }
+
+    let thumbnailUrl: string | null = broadcast.snippet?.thumbnails?.default?.url ?? null
+    let thumbnailError: string | null = null
+    if (params.thumbnail) {
+      try {
+        await uploadThumbnail(broadcast.id, params.thumbnail.blob)
+        const refreshed = await youtubeApiFetch(`/liveBroadcasts?part=snippet&id=${broadcast.id}`)
+        if (refreshed.ok) {
+          const refreshedData = await refreshed.json()
+          thumbnailUrl = refreshedData.items?.[0]?.snippet?.thumbnails?.medium?.url ?? thumbnailUrl
+        }
+      } catch (error) {
+        thumbnailError = describeThumbnailFailure(error)
+      }
+    }
+
+    if (params.categoryId || params.tags.length > 0) {
+      try {
+        await updateVideoMetadata(broadcast.id, {
+          categoryId: params.categoryId ?? undefined,
+          tags: params.tags.length > 0 ? params.tags : undefined,
+        })
+      } catch {
+        console.warn("Video metadata update failed, continuing without tags/category")
+      }
+    }
+
+    if (params.playlistId) {
+      try {
+        await addVideoToPlaylist(params.playlistId, broadcast.id)
+      } catch {
+        console.warn("Playlist assignment failed, continuing without playlist")
+      }
+    }
+
+    const payload = {
+      id: randomId(),
+      workspace_id: workspaceId,
+      youtube_broadcast_id: broadcast.id,
+      youtube_stream_id: stream.id,
+      title: params.title,
+      description: params.description,
+      thumbnail_url: thumbnailUrl,
+      privacy_status: params.privacyStatus,
+      is_for_kids: params.isForKids,
+      scheduled_start_time: params.scheduledStartTime,
+      stream_status: "created" as const,
+      stream_url: `https://www.youtube.com/watch?v=${broadcast.id}`,
+      stream_key: stream.cdn?.ingestionInfo?.streamName ?? null,
+      ingestion_url: stream.cdn?.ingestionInfo?.ingestionAddress ?? null,
+      category_id: params.categoryId,
+      tags: params.tags,
+      latency_preference: params.latencyPreference,
+      enable_dvr: params.enableDvr,
+      enable_embed: params.enableEmbed,
+      enable_auto_start: params.enableAutoStart,
+      enable_auto_stop: params.enableAutoStop,
+      playlist_id: params.playlistId,
+      created_by: user.id,
+    }
+
+    await insertLocalStream(payload)
+    localRecordSaved = true
+
+    const saved = await fetchStreamById(payload.id)
+
+    if (!saved) {
+      throw new Error("Created stream could not be reloaded")
+    }
+
+    notifyStreamCreated(saved.id, params.notifyDestinations)
+
+    return { stream: saved, thumbnailError }
+  } catch (error) {
+    if (localRecordSaved) throw error
+    const cleanupError = await cleanupCreatedYouTubeResources(broadcastId, streamId).catch(() => "Cleanup could not be completed.")
+    const message = error instanceof Error ? error.message : "The stream could not be created."
+    throw new Error(cleanupError ? `${message} ${cleanupError}` : message)
   }
-
-  const saved = await fetchStreamById(payload.id)
-
-  if (!saved) {
-    throw new Error("Created stream could not be reloaded")
-  }
-
-  notifyStreamCreated(saved.id, params.notifyDestinations)
-
-  return { stream: saved, thumbnailError }
 }
 
 export async function updateStream(
   stream: Stream,
   thumbnail?: ThumbnailSource,
 ): Promise<StreamMutationResult> {
+  const existingResponse = await youtubeApiFetch(
+    `/liveBroadcasts?part=contentDetails&id=${stream.youtubeBroadcastId}`,
+  )
+
+  if (!existingResponse.ok) {
+    throw new Error(`Failed to load broadcast before update: ${await existingResponse.text()}`)
+  }
+
+  const existingData = await existingResponse.json() as { items?: Array<{ contentDetails?: { boundStreamId?: string } }> }
+  const boundStreamId = existingData.items?.[0]?.contentDetails?.boundStreamId
+  if (!boundStreamId) {
+    throw new Error("The broadcast is not bound to an ingestion stream and cannot be updated safely")
+  }
+
   // Update broadcast on YouTube (snippet, status, and contentDetails)
   const response = await youtubeApiFetch(
     "/liveBroadcasts?part=snippet,status,contentDetails",
@@ -346,6 +369,7 @@ export async function updateStream(
           selfDeclaredMadeForKids: stream.isForKids || false,
         },
         contentDetails: {
+          boundStreamId,
           enableAutoStart: stream.enableAutoStart,
           enableAutoStop: stream.enableAutoStop,
           enableDvr: stream.enableDvr,
@@ -452,6 +476,15 @@ export async function deleteStream(stream: Stream): Promise<void> {
   }
 }
 
+export async function deleteLocalStreamRecord(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("streams")
+    .delete()
+    .eq("id", id)
+
+  if (error) throw new Error(error.message)
+}
+
 export async function syncStreamsFromYouTube(): Promise<Stream[]> {
   const workspaceId = await getCurrentWorkspaceId()
   const { data: { user } } = await supabase.auth.getUser()
@@ -460,27 +493,25 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
     throw new Error("Not authenticated")
   }
 
-  // Fetch only upcoming (scheduled) and active (live) broadcasts. Completed
-  // broadcasts stay in our DB and are not re-fetched.
+  // Import upcoming broadcasts only. Sync never removes local records: older
+  // history stays local until an operator explicitly cleans it up.
   const broadcasts: YouTubeBroadcastSyncRow[] = []
-  for (const broadcastStatus of ["upcoming", "active"] as const) {
-    let pageToken: string | undefined = undefined
-    do {
-      const pageParam = pageToken ? `&pageToken=${pageToken}` : ""
-      const response = await youtubeApiFetch(
-        `/liveBroadcasts?part=snippet,status,contentDetails&broadcastStatus=${broadcastStatus}&broadcastType=all&maxResults=50${pageParam}`,
-      )
+  let pageToken: string | undefined
+  do {
+    const pageParam = pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ""
+    const response = await youtubeApiFetch(
+      `/liveBroadcasts?part=snippet,status,contentDetails&broadcastStatus=upcoming&broadcastType=all&maxResults=50${pageParam}`,
+    )
 
-      if (!response.ok) {
-        const err = await response.text()
-        throw new Error(`Failed to fetch broadcasts: ${err}`)
-      }
+    if (!response.ok) {
+      const err = await response.text()
+      throw new Error(`Failed to fetch broadcasts: ${err}`)
+    }
 
-      const data = await response.json() as { items?: YouTubeBroadcastSyncRow[]; nextPageToken?: string }
-      broadcasts.push(...(data.items ?? []))
-      pageToken = data.nextPageToken
-    } while (pageToken)
-  }
+    const data = await response.json() as { items?: YouTubeBroadcastSyncRow[]; nextPageToken?: string }
+    broadcasts.push(...(data.items ?? []))
+    pageToken = data.nextPageToken
+  } while (pageToken)
 
   // Map YouTube lifecycle status to our stream_status enum
   function mapLifecycleStatus(status: string): Stream["streamStatus"] {
@@ -499,10 +530,9 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
     }
   }
 
-  // Upsert each broadcast into local DB
-  for (const broadcast of broadcasts) {
+  const payloads = broadcasts.map((broadcast) => {
     const contentDetails = broadcast.contentDetails ?? {}
-    const payload = {
+    return {
       workspace_id: workspaceId,
       youtube_broadcast_id: broadcast.id,
       youtube_stream_id: contentDetails.boundStreamId ?? "",
@@ -523,37 +553,24 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
       latency_preference: contentDetails.latencyPreference ?? "normal",
       created_by: user.id,
     }
+  })
 
+  if (payloads.length > 0) {
     const { error } = await supabase
       .from("streams")
-      .upsert(payload, { onConflict: "workspace_id,youtube_broadcast_id" })
+      .upsert(payloads, { onConflict: "workspace_id,youtube_broadcast_id" })
 
     if (error) {
       throw new Error(error.message)
     }
   }
 
-  // Remove local non-complete streams that are no longer present remotely
-  // (cancelled before going live). Completed streams are preserved.
-  const remoteIds = broadcasts.map((b) => b.id).filter(Boolean)
-  let deleteQuery = supabase
-    .from("streams")
-    .delete()
-    .eq("workspace_id", workspaceId)
-    .neq("stream_status", "complete")
-  if (remoteIds.length > 0) {
-    const quoted = remoteIds.map((id) => `"${id}"`).join(",")
-    deleteQuery = deleteQuery.not("youtube_broadcast_id", "in", `(${quoted})`)
-  }
-  const { error: deleteError } = await deleteQuery
-  if (deleteError) {
-    throw new Error(deleteError.message)
-  }
-
   // Fetch all streams from local DB to return fresh data
   const { data: rows, error } = await supabase
     .from("streams")
-    .select("*")
+    .select(
+      "id, workspace_id, youtube_broadcast_id, youtube_stream_id, title, description, thumbnail_url, privacy_status, is_for_kids, scheduled_start_time, actual_start_time, actual_end_time, stream_status, stream_url, stream_key, ingestion_url, category_id, tags, latency_preference, enable_dvr, enable_embed, enable_auto_start, enable_auto_stop, playlist_id, created_by, created_at, updated_at, notified_at",
+    )
     .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false })
 
@@ -615,16 +632,17 @@ export async function saveStreamPreset(preset: StreamPreset): Promise<void> {
 export async function disconnectYouTube(): Promise<void> {
   const workspaceId = await getCurrentWorkspaceId()
 
-  // Get the connection to revoke its token
+  // Provider tokens are held server-side; the browser only removes metadata
+  // after the server has revoked the provider connection.
   const { data: connection } = await supabase
     .from("youtube_connections")
-    .select("id, access_token")
+    .select("id")
     .eq("workspace_id", workspaceId)
     .single()
 
   if (connection) {
     // Revoke the token on Google's side
-    await revokeToken(connection.access_token)
+    await revokeToken(workspaceId)
 
     // Delete the connection record
     await supabase

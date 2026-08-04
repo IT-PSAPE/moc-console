@@ -3,6 +3,7 @@ import { Paragraph } from "@moc/ui/components/display/text"
 import { Button } from "@moc/ui/components/controls/button"
 import { Checkbox } from "@moc/ui/components/form/checkbox"
 import { Modal } from "@moc/ui/components/overlays/modal"
+import { UnsavedChangesDialog } from "@moc/ui/components/overlays/unsaved-changes-dialog"
 import type { Stream, StreamPreset } from "@moc/types/streams/stream"
 import { NotifyDestinationField } from "./notify-destination-field"
 import { StreamAdvancedSection } from "./stream-advanced-section"
@@ -35,11 +36,11 @@ export function StreamForm({ open, onOpenChange, onSubmit, stream, preset }: Str
             scheduledStartTime={state.scheduledStartTime}
             privacyStatus={state.privacyStatus}
             isForKids={state.isForKids}
-            onTitleChange={actions.setTitle}
-            onDescriptionChange={actions.setDescription}
-            onScheduledStartChange={actions.setScheduledStartTime}
-            onPrivacyChange={actions.setPrivacyStatus}
-            onIsForKidsChange={actions.setIsForKids}
+            onTitleChange={actions.updateTitle}
+            onDescriptionChange={actions.updateDescription}
+            onScheduledStartChange={actions.updateScheduledStartTime}
+            onPrivacyChange={actions.updatePrivacyStatus}
+            onIsForKidsChange={actions.updateIsForKids}
           />
 
           <StreamThumbnailField
@@ -50,14 +51,14 @@ export function StreamForm({ open, onOpenChange, onSubmit, stream, preset }: Str
             errorMessage={state.thumbError}
             thumbnailUrlInput={state.thumbnailUrlInput}
             thumbnailMode={state.thumbnailMode}
-            onModeChange={actions.setThumbnailMode}
+            onModeChange={actions.updateThumbnailMode}
             onFileSelect={actions.handleFileSelect}
-            onUrlInputChange={actions.setThumbnailUrlInput}
+            onUrlInputChange={actions.updateThumbnailUrlInput}
             onUrlConfirm={actions.handleThumbnailUrlConfirm}
             onClear={actions.clearThumbnail}
           />
 
-          {!meta.isEditing ? <NotifyDestinationField value={state.notifyDestinations} onChange={actions.setNotifyDestinations} /> : null}
+          {!meta.isEditing ? <NotifyDestinationField value={state.notifyDestinations} onChange={actions.updateNotifyDestinations} /> : null}
 
           {!meta.isEditing ? (
             <Checkbox checked={state.savePreset} onChange={actions.handleSavePresetChange}>
@@ -76,12 +77,12 @@ export function StreamForm({ open, onOpenChange, onSubmit, stream, preset }: Str
               tagInput={state.tagInput}
               playlistId={state.playlistId}
               playlists={state.playlists}
-              onCategoryChange={actions.setCategoryId}
-              onTagInputChange={actions.setTagInput}
+              onCategoryChange={actions.updateCategoryId}
+              onTagInputChange={actions.updateTagInput}
               onTagKeyDown={actions.handleTagKeyDown}
               onTagBlur={actions.handleTagInputBlur}
               onRemoveTag={actions.handleRemoveTag}
-              onPlaylistChange={actions.setPlaylistId}
+              onPlaylistChange={actions.updatePlaylistId}
             />
             <StreamAdvancedSection
               latencyPreference={state.latencyPreference}
@@ -89,11 +90,11 @@ export function StreamForm({ open, onOpenChange, onSubmit, stream, preset }: Str
               enableEmbed={state.enableEmbed}
               enableAutoStart={state.enableAutoStart}
               enableAutoStop={state.enableAutoStop}
-              onLatencyChange={actions.setLatencyPreference}
-              onDvrChange={actions.setEnableDvr}
-              onEmbedChange={actions.setEnableEmbed}
-              onAutoStartChange={actions.setEnableAutoStart}
-              onAutoStopChange={actions.setEnableAutoStop}
+              onLatencyChange={actions.updateLatencyPreference}
+              onDvrChange={actions.updateEnableDvr}
+              onEmbedChange={actions.updateEnableEmbed}
+              onAutoStartChange={actions.updateEnableAutoStart}
+              onAutoStopChange={actions.updateEnableAutoStop}
             />
           </Accordion>
         </div>
@@ -101,8 +102,9 @@ export function StreamForm({ open, onOpenChange, onSubmit, stream, preset }: Str
 
       <Modal.Footer>
         <Button disabled={!meta.canSubmit} onClick={actions.handleSubmit}>{submitLabel}</Button>
-        <Modal.Close><Button variant="secondary">Cancel</Button></Modal.Close>
+        <Button variant="secondary" onClick={actions.requestClose}>Cancel</Button>
       </Modal.Footer>
+      <UnsavedChangesDialog open={state.discardChangesOpen} onSave={actions.handleSubmit} onDiscard={actions.discardChanges} onCancel={actions.cancelDiscardChanges} isSaving={state.isSubmitting} />
     </>
   )
 }

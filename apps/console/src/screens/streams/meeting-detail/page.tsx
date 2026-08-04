@@ -15,6 +15,7 @@ import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
 import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
 import { Page } from "@moc/ui/components/layout/page"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
+import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 import { Calendar, Check, Clock, Copy, ExternalLink, Globe, Key, MessageCircle, Mic, Pencil, Repeat, ShieldCheck, Trash2, Video} from "lucide-react"
 
 function formatDuration(minutes: number): string {
@@ -27,7 +28,7 @@ function formatDuration(minutes: number): string {
 export function MeetingDetailScreen() {
   const { id } = useParams<{ id: string }>()
   const { state, actions, meta } = useMeetingDetail(id)
-  const { meeting, isLoading, editOpen, deleteOpen, isDeleting, copiedField } = state
+  const { meeting, error, isLoading, editOpen, deleteOpen, isDeleting, localDeleteOpen, isRemovingLocal, copiedField, copyMessage } = state
 
   useBreadcrumbOverride(id ?? "", meeting?.topic)
   useBreadcrumbOverride("meeting", "Meeting")
@@ -40,10 +41,18 @@ export function MeetingDetailScreen() {
     actions.setDeleteOpen(true)
   }
 
+  function handleOpenLocalDelete() {
+    actions.setLocalDeleteOpen(true)
+  }
+
   if (isLoading) {
     return (
       <Page><Page.Content width="readable" className="flex justify-center py-16"><Spinner size="lg" /></Page.Content></Page>
     )
+  }
+
+  if (error) {
+    return <Page><Page.Content width="standard"><ResourceLoadError title="Could not load meeting" error={error} onRetry={actions.retry} /></Page.Content></Page>
   }
 
   if (!meeting) {
@@ -57,12 +66,16 @@ export function MeetingDetailScreen() {
   const isPast = meeting.startTime ? new Date(meeting.startTime) < new Date() : false
   return (
     <DetailPage>
+      <Paragraph.xs role="status" aria-live="polite" className="sr-only">{copyMessage}</Paragraph.xs>
       <TopBarActions>
         {meta.canEdit && (
           <Button variant="secondary" icon={<Pencil />} onClick={handleOpenEdit}>Edit</Button>
         )}
         {meta.canDelete && (
           <Button.Icon aria-label="Delete meeting" variant="danger-secondary" icon={<Trash2 />} onClick={handleOpenDelete} />
+        )}
+        {meta.canCleanupLocal && (
+          <Button variant="secondary" onClick={handleOpenLocalDelete}>Remove local record</Button>
         )}
       </TopBarActions>
 
@@ -172,6 +185,15 @@ export function MeetingDetailScreen() {
         confirmLabel="Delete meeting"
         isConfirming={isDeleting}
         onConfirm={actions.remove}
+      />
+      <ConfirmationDialog
+        open={localDeleteOpen}
+        onOpenChange={actions.setLocalDeleteOpen}
+        title="Remove local meeting record?"
+        description="This removes only the MOC Console record. The Zoom meeting will remain in Zoom."
+        confirmLabel="Remove local record"
+        isConfirming={isRemovingLocal}
+        onConfirm={actions.removeLocal}
       />
     </DetailPage>
   )

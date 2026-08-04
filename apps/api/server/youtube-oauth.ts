@@ -130,8 +130,11 @@ export async function refreshYouTubeToken(
 }
 
 export async function revokeYouTubeToken(token: string): Promise<void> {
-  await fetch(`${REVOKE_URL}?token=${encodeURIComponent(token)}`, {
+  const response = await fetch(`${REVOKE_URL}?token=${encodeURIComponent(token)}`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
   })
+  if (!response.ok) {
+    throw new Error(await getErrorMessage(response, "YouTube token revoke failed"))
+  }
 }

@@ -91,6 +91,7 @@ function StreamListDetailRoot({ children }: { children: ReactNode }) {
         <StreamListDetailContext.Provider value={value}>
             <SplitPanel open={selection !== null} onOpenChange={handleOpenChange} detailLabel={selection?.kind === 'meeting' ? 'Meeting details' : 'Stream details'}>
                 <SplitPanel.Primary>{children}</SplitPanel.Primary>
+                <SplitPanel.ResizeHandle />
                 <SplitPanel.Detail>
                     {selection?.kind === 'stream' && <StreamDetailPanel stream={selection.item} onClose={close} onEdit={handleEditStream} onDelete={handleDeleteStream} />}
                     {selection?.kind === 'meeting' && <MeetingDetailPanel meeting={selection.item} onClose={close} onEdit={handleEditMeeting} onDelete={handleDeleteMeeting} />}

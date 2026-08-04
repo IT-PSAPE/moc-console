@@ -1,7 +1,9 @@
-import { getIntegrationAccessToken, IntegrationNotConnectedError } from "../../../server/integration-access.js"
+import { revokeYouTubeToken } from "../../../server/youtube-oauth.js"
 import { AuthError, requireAuthenticatedUser } from "../../../server/auth-guard.js"
 import { applyCors } from "../../../server/cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../server/http.js"
+import { deleteIntegrationTokens, getIntegrationTokens } from "../../../server/integration-oauth-store.js"
+import { getSupabaseAdmin } from "../../../server/supabase-admin.js"
 import { WorkspaceAccessError, requireWorkspacePermission } from "../../../server/workspace-access.js"
 
 type RequestBody = {
@@ -25,10 +27,17 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       response.status(400).json({ error: "Missing workspace context" })
       return
     }
-    await requireWorkspacePermission(user.userId, workspaceId, "can_read")
-    await getIntegrationAccessToken("zoom", workspaceId)
+    await requireWorkspacePermission(user.userId, workspaceId, "can_manage_roles")
+
+    const tokens = await getIntegrationTokens("youtube", workspaceId)
+    if (tokens) await revokeYouTubeToken(tokens.accessToken)
+    await deleteIntegrationTokens("youtube", workspaceId)
+    const { error: connectionError } = await getSupabaseAdmin()
+      .from("youtube_connections")
+      .delete()
+      .eq("workspace_id", workspaceId)
+    if (connectionError) throw new Error(connectionError.message)
     response.status(200).json({ ok: true })
-    return
   } catch (error) {
     if (error instanceof AuthError) {
       response.status(401).json({ error: "Unauthorized" })
@@ -38,11 +47,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       response.status(403).json({ error: error.message })
       return
     }
-    if (error instanceof IntegrationNotConnectedError) {
-      response.status(404).json({ error: error.message })
-      return
-    }
-    console.error("Zoom token refresh failed:", error)
-    response.status(502).json({ error: "Zoom token refresh failed" })
+    console.error("YouTube token revoke failed:", error)
+    response.status(502).json({ error: "YouTube token revoke failed" })
   }
 }

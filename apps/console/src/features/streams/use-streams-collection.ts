@@ -2,9 +2,10 @@ import { useCallback, useMemo, useState } from "react"
 import { createStreamListEntries } from "./stream-list-entry"
 import { useYouTubeStreams } from "./use-youtube-streams"
 import { useZoomMeetings } from "./use-zoom-meetings"
+import { useQueryText } from "@/hooks/use-query-text"
 
 export function useStreamsCollection() {
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useQueryText()
   const [createOpen, setCreateOpen] = useState(false)
   const youtube = useYouTubeStreams(searchQuery)
   const zoom = useZoomMeetings(searchQuery)

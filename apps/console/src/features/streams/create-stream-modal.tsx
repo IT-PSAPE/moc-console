@@ -20,7 +20,7 @@ type CreateStreamModalProps = {
 
 export function CreateStreamModal({ open, onOpenChange, youtubeAvailable, zoomAvailable, youtubePreset, onCreateYouTube, onCreateZoom }: CreateStreamModalProps) {
   return (
-    <Modal open={open} onOpenChange={onOpenChange}>
+    <Modal open={open} onOpenChange={onOpenChange} closeOnBackdropClick={false} closeOnEscape={false}>
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>

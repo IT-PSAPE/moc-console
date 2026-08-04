@@ -1,10 +1,10 @@
 import { fetchStreams, fetchYouTubeConnection } from "@/data/fetch-streams"
 import { fetchZoomConnection, fetchZoomMeetings } from "@/data/fetch-zoom"
-import type { Stream } from "@moc/types/streams/stream"
-import type { YouTubeConnection } from "@moc/types/streams/stream"
-import type { ZoomConnection, ZoomMeeting } from "@moc/types/streams/zoom"
+import { useWorkspaceResource } from "@/hooks/use-workspace-resource"
 import { useWorkspace } from "@/lib/workspace-context"
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react"
+import type { Stream, YouTubeConnection } from "@moc/types/streams/stream"
+import type { ZoomConnection, ZoomMeeting } from "@moc/types/streams/zoom"
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react"
 
 type StreamsContextValue = {
   state: {
@@ -16,12 +16,20 @@ type StreamsContextValue = {
     isLoadingConnection: boolean
     isLoadingZoomConnection: boolean
     isLoadingZoomMeetings: boolean
+    streamsError: Error | null
+    youtubeConnectionError: Error | null
+    zoomConnectionError: Error | null
+    zoomMeetingsError: Error | null
   }
   actions: {
     loadStreams: () => Promise<void>
+    retryStreams: () => Promise<void>
     loadYouTubeConnection: () => Promise<void>
+    retryYouTubeConnection: () => Promise<void>
     loadZoomConnection: () => Promise<void>
+    retryZoomConnection: () => Promise<void>
     loadZoomMeetings: () => Promise<void>
+    retryZoomMeetings: () => Promise<void>
     syncStream: (stream: Stream) => void
     removeStream: (id: string) => void
     setStreams: (streams: Stream[]) => void
@@ -34,159 +42,106 @@ type StreamsContextValue = {
 }
 
 const StreamsContext = createContext<StreamsContextValue | null>(null)
+const emptyStreams: Stream[] = []
+const emptyMeetings: ZoomMeeting[] = []
 
 export function StreamsProvider({ children }: { children: ReactNode }) {
-  const [streams, setStreams] = useState<Stream[]>([])
-  const [youtubeConnection, setYouTubeConnection] = useState<YouTubeConnection | null>(null)
-  const [zoomConnection, setZoomConnectionState] = useState<ZoomConnection | null>(null)
-  const [zoomMeetings, setZoomMeetings] = useState<ZoomMeeting[]>([])
-  const [isLoadingStreams, setIsLoadingStreams] = useState(false)
-  const [isLoadingConnection, setIsLoadingConnection] = useState(false)
-  const [isLoadingZoomConnection, setIsLoadingZoomConnection] = useState(false)
-  const [isLoadingZoomMeetings, setIsLoadingZoomMeetings] = useState(false)
-
-  const streamsLoadedRef = useRef<string | null>(null)
-  const streamsPromiseRef = useRef<Promise<void> | null>(null)
-  const connectionLoadedRef = useRef<string | null>(null)
-  const connectionPromiseRef = useRef<Promise<void> | null>(null)
-  const zoomConnectionLoadedRef = useRef<string | null>(null)
-  const zoomConnectionPromiseRef = useRef<Promise<void> | null>(null)
-  const zoomMeetingsLoadedRef = useRef<string | null>(null)
-  const zoomMeetingsPromiseRef = useRef<Promise<void> | null>(null)
-
   const { currentWorkspaceId } = useWorkspace()
-  const [trackedWorkspaceId, setTrackedWorkspaceId] = useState(currentWorkspaceId)
-  if (trackedWorkspaceId !== currentWorkspaceId) {
-    setTrackedWorkspaceId(currentWorkspaceId)
-    setStreams([])
-    setYouTubeConnection(null)
-    setZoomConnectionState(null)
-    setZoomMeetings([])
-  }
-
-  // ─── YouTube actions ───────────────────────────────────
-
-  const handleSetYouTubeConnection = useCallback((conn: YouTubeConnection | null) => {
-    setYouTubeConnection(conn)
-    if (!conn) {
-      connectionLoadedRef.current = null
-    }
-  }, [])
+  const { data: streams, error: streamsError, isLoading: isLoadingStreams, load: loadStreamsResource, setData: setStreams, updateData: updateStreams } = useWorkspaceResource({ emptyValue: emptyStreams, fetcher: fetchStreams, resource: "streams", workspaceId: currentWorkspaceId })
+  const { data: youtubeConnection, error: youtubeConnectionError, isLoading: isLoadingConnection, load: loadYouTubeConnectionResource, setData: setYouTubeConnection } = useWorkspaceResource({ emptyValue: null, fetcher: fetchYouTubeConnection, resource: "youtube-connection", workspaceId: currentWorkspaceId })
+  const { data: zoomConnection, error: zoomConnectionError, isLoading: isLoadingZoomConnection, load: loadZoomConnectionResource, setData: setZoomConnection } = useWorkspaceResource({ emptyValue: null, fetcher: fetchZoomConnection, resource: "zoom-connection", workspaceId: currentWorkspaceId })
+  const { data: zoomMeetings, error: zoomMeetingsError, isLoading: isLoadingZoomMeetings, load: loadZoomMeetingsResource, setData: setZoomMeetings, updateData: updateZoomMeetings } = useWorkspaceResource({ emptyValue: emptyMeetings, fetcher: fetchZoomMeetings, resource: "zoom-meetings", workspaceId: currentWorkspaceId })
 
   const syncStream = useCallback((updated: Stream) => {
-    setStreams((prev) => {
-      const exists = prev.some((s) => s.id === updated.id)
-      if (exists) return prev.map((s) => (s.id === updated.id ? updated : s))
-      return [updated, ...prev]
+    updateStreams((current) => {
+      const exists = current.some((stream) => stream.id === updated.id)
+      if (exists) return current.map((stream) => stream.id === updated.id ? updated : stream)
+      return [updated, ...current]
     })
-  }, [])
+  }, [updateStreams])
 
   const removeStream = useCallback((id: string) => {
-    setStreams((prev) => prev.filter((s) => s.id !== id))
-  }, [])
-
-  // ─── Zoom actions ──────────────────────────────────────
-
-  const handleSetZoomConnection = useCallback((conn: ZoomConnection | null) => {
-    setZoomConnectionState(conn)
-    if (!conn) {
-      zoomConnectionLoadedRef.current = null
-    }
-  }, [])
+    updateStreams((current) => current.filter((stream) => stream.id !== id))
+  }, [updateStreams])
 
   const syncMeeting = useCallback((updated: ZoomMeeting) => {
-    setZoomMeetings((prev) => {
-      const exists = prev.some((m) => m.id === updated.id)
-      if (exists) return prev.map((m) => (m.id === updated.id ? updated : m))
-      return [updated, ...prev]
+    updateZoomMeetings((current) => {
+      const exists = current.some((meeting) => meeting.id === updated.id)
+      if (exists) return current.map((meeting) => meeting.id === updated.id ? updated : meeting)
+      return [updated, ...current]
     })
-  }, [])
+  }, [updateZoomMeetings])
 
   const removeMeeting = useCallback((id: string) => {
-    setZoomMeetings((prev) => prev.filter((m) => m.id !== id))
-  }, [])
-
-  // ─── Loaders ───────────────────────────────────────────
+    updateZoomMeetings((current) => current.filter((meeting) => meeting.id !== id))
+  }, [updateZoomMeetings])
 
   const loadStreams = useCallback(async () => {
-    if (streamsLoadedRef.current === currentWorkspaceId) return
-    if (streamsPromiseRef.current) return streamsPromiseRef.current
+    await loadStreamsResource()
+  }, [loadStreamsResource])
 
-    setIsLoadingStreams(true)
-    streamsPromiseRef.current = fetchStreams()
-      .then((data) => { setStreams(data); streamsLoadedRef.current = currentWorkspaceId })
-      .finally(() => { streamsPromiseRef.current = null; setIsLoadingStreams(false) })
-
-    return streamsPromiseRef.current
-  }, [currentWorkspaceId])
+  const retryStreams = useCallback(async () => {
+    await loadStreamsResource(true)
+  }, [loadStreamsResource])
 
   const loadYouTubeConnection = useCallback(async () => {
-    if (connectionLoadedRef.current === currentWorkspaceId) return
-    if (connectionPromiseRef.current) return connectionPromiseRef.current
+    await loadYouTubeConnectionResource()
+  }, [loadYouTubeConnectionResource])
 
-    setIsLoadingConnection(true)
-    connectionPromiseRef.current = fetchYouTubeConnection()
-      .then((data) => { setYouTubeConnection(data); connectionLoadedRef.current = currentWorkspaceId })
-      .finally(() => { connectionPromiseRef.current = null; setIsLoadingConnection(false) })
-
-    return connectionPromiseRef.current
-  }, [currentWorkspaceId])
+  const retryYouTubeConnection = useCallback(async () => {
+    await loadYouTubeConnectionResource(true)
+  }, [loadYouTubeConnectionResource])
 
   const loadZoomConnection = useCallback(async () => {
-    if (zoomConnectionLoadedRef.current === currentWorkspaceId) return
-    if (zoomConnectionPromiseRef.current) return zoomConnectionPromiseRef.current
+    await loadZoomConnectionResource()
+  }, [loadZoomConnectionResource])
 
-    setIsLoadingZoomConnection(true)
-    zoomConnectionPromiseRef.current = fetchZoomConnection()
-      .then((data) => { setZoomConnectionState(data); zoomConnectionLoadedRef.current = currentWorkspaceId })
-      .finally(() => { zoomConnectionPromiseRef.current = null; setIsLoadingZoomConnection(false) })
-
-    return zoomConnectionPromiseRef.current
-  }, [currentWorkspaceId])
+  const retryZoomConnection = useCallback(async () => {
+    await loadZoomConnectionResource(true)
+  }, [loadZoomConnectionResource])
 
   const loadZoomMeetings = useCallback(async () => {
-    if (zoomMeetingsLoadedRef.current === currentWorkspaceId) return
-    if (zoomMeetingsPromiseRef.current) return zoomMeetingsPromiseRef.current
+    await loadZoomMeetingsResource()
+  }, [loadZoomMeetingsResource])
 
-    setIsLoadingZoomMeetings(true)
-    zoomMeetingsPromiseRef.current = fetchZoomMeetings()
-      .then((data) => { setZoomMeetings(data); zoomMeetingsLoadedRef.current = currentWorkspaceId })
-      .finally(() => { zoomMeetingsPromiseRef.current = null; setIsLoadingZoomMeetings(false) })
+  const retryZoomMeetings = useCallback(async () => {
+    await loadZoomMeetingsResource(true)
+  }, [loadZoomMeetingsResource])
 
-    return zoomMeetingsPromiseRef.current
-  }, [currentWorkspaceId])
-
-  // ─── Context value ─────────────────────────────────────
-
-  const value = useMemo(
-    () => ({
-      state: {
-        streams, youtubeConnection,
-        zoomConnection, zoomMeetings,
-        isLoadingStreams, isLoadingConnection,
-        isLoadingZoomConnection, isLoadingZoomMeetings,
-      },
-      actions: {
-        loadStreams, loadYouTubeConnection,
-        loadZoomConnection, loadZoomMeetings,
-        syncStream, removeStream, setStreams,
-        setYouTubeConnection: handleSetYouTubeConnection,
-        syncMeeting, removeMeeting, setZoomMeetings,
-        setZoomConnection: handleSetZoomConnection,
-      },
-    }),
-    [
-      streams, youtubeConnection,
-      zoomConnection, zoomMeetings,
-      isLoadingStreams, isLoadingConnection,
-      isLoadingZoomConnection, isLoadingZoomMeetings,
-      loadStreams, loadYouTubeConnection,
-      loadZoomConnection, loadZoomMeetings,
-      syncStream, removeStream,
-      handleSetYouTubeConnection, handleSetZoomConnection,
-      syncMeeting, removeMeeting,
-    ],
-  )
+  const value = useMemo<StreamsContextValue>(() => ({
+    state: {
+      streams,
+      youtubeConnection,
+      zoomConnection,
+      zoomMeetings,
+      isLoadingStreams,
+      isLoadingConnection,
+      isLoadingZoomConnection,
+      isLoadingZoomMeetings,
+      streamsError,
+      youtubeConnectionError,
+      zoomConnectionError,
+      zoomMeetingsError,
+    },
+    actions: {
+      loadStreams,
+      retryStreams,
+      loadYouTubeConnection,
+      retryYouTubeConnection,
+      loadZoomConnection,
+      retryZoomConnection,
+      loadZoomMeetings,
+      retryZoomMeetings,
+      syncStream,
+      removeStream,
+      setStreams,
+      setYouTubeConnection,
+      syncMeeting,
+      removeMeeting,
+      setZoomMeetings,
+      setZoomConnection,
+    },
+  }), [isLoadingConnection, isLoadingStreams, isLoadingZoomConnection, isLoadingZoomMeetings, loadStreams, loadYouTubeConnection, loadZoomConnection, loadZoomMeetings, removeMeeting, removeStream, retryStreams, retryYouTubeConnection, retryZoomConnection, retryZoomMeetings, setStreams, setYouTubeConnection, setZoomConnection, setZoomMeetings, streams, streamsError, syncMeeting, syncStream, youtubeConnection, youtubeConnectionError, zoomConnection, zoomConnectionError, zoomMeetings, zoomMeetingsError])
 
   return <StreamsContext.Provider value={value}>{children}</StreamsContext.Provider>
 }

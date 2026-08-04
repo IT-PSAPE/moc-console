@@ -85,6 +85,8 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset }: 
   const [categories, setCategories] = useState<YouTubeCategory[]>([]);
   const [playlists, setPlaylists] = useState<YouTubePlaylist[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [discardChangesOpen, setDiscardChangesOpen] = useState(false);
   const resolveSeqRef = useRef(0);
   const thumbReady = !thumbSelection || (thumbStatus === "ready" && thumbBlob !== null);
   const canSubmit = Boolean(title.trim()) && !isSubmitting && thumbReady;
@@ -113,6 +115,7 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset }: 
     setEnableAutoStop(reset?.enableAutoStop ?? true);
     setSavePreset(false);
     setNotifyDestinations([]);
+    setIsDirty(false);
   }
 
   useEffect(() => {
@@ -193,10 +196,41 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset }: 
     };
   }, [thumbSelection]);
 
-  function handleModalOpenChange(nextOpen: boolean) {
-    onOpenChange(nextOpen);
-    if (!nextOpen) resetForm();
+  function requestClose() {
+    if (isDirty) {
+      setDiscardChangesOpen(true);
+      return;
+    }
+    resetForm();
+    onOpenChange(false);
   }
+
+  function discardChanges() {
+    resetForm();
+    setDiscardChangesOpen(false);
+    onOpenChange(false);
+  }
+
+  function cancelDiscardChanges() {
+    setDiscardChangesOpen(false);
+  }
+
+  function updateTitle(value: string) { setTitle(value); setIsDirty(true); }
+  function updateDescription(value: string) { setDescription(value); setIsDirty(true); }
+  function updatePrivacyStatus(value: StreamPrivacy) { setPrivacyStatus(value); setIsDirty(true); }
+  function updateIsForKids(value: boolean) { setIsForKids(value); setIsDirty(true); }
+  function updateScheduledStartTime(value: string) { setScheduledStartTime(value); setIsDirty(true); }
+  function updateNotifyDestinations(value: NotifyDestination[]) { setNotifyDestinations(value); setIsDirty(true); }
+  function updateThumbnailUrlInput(value: string) { setThumbnailUrlInput(value); setIsDirty(true); }
+  function updateThumbnailMode(value: "file" | "url") { setThumbnailMode(value); setIsDirty(true); }
+  function updateCategoryId(value: string | null) { setCategoryId(value); setIsDirty(true); }
+  function updateTagInput(value: string) { setTagInput(value); setIsDirty(true); }
+  function updatePlaylistId(value: string | null) { setPlaylistId(value); setIsDirty(true); }
+  function updateLatencyPreference(value: LatencyPreference) { setLatencyPreference(value); setIsDirty(true); }
+  function updateEnableDvr(value: boolean) { setEnableDvr(value); setIsDirty(true); }
+  function updateEnableEmbed(value: boolean) { setEnableEmbed(value); setIsDirty(true); }
+  function updateEnableAutoStart(value: boolean) { setEnableAutoStart(value); setIsDirty(true); }
+  function updateEnableAutoStop(value: boolean) { setEnableAutoStop(value); setIsDirty(true); }
 
   function handleFileSelect(file: File | null) {
     if (!file) {
@@ -205,6 +239,7 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset }: 
     }
     setThumbSelection({ kind: "file", file });
     setThumbName(file.name);
+    setIsDirty(true);
   }
 
   function handleThumbnailUrlConfirm() {
@@ -212,12 +247,14 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset }: 
     if (!url) return;
     setThumbSelection({ kind: "url", url });
     setThumbName(fileNameFromUrl(url, "Image from URL"));
+    setIsDirty(true);
   }
 
   function clearThumbnail() {
     setThumbSelection(null);
     setThumbName(undefined);
     setThumbnailUrlInput("");
+    setIsDirty(true);
   }
 
   function handleAddTag(value: string) {
@@ -225,10 +262,12 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset }: 
     if (!tag || tags.includes(tag)) return;
     setTags((current) => [...current, tag]);
     setTagInput("");
+    setIsDirty(true);
   }
 
   function handleRemoveTag(tag: string) {
     setTags((current) => current.filter((currentTag) => currentTag !== tag));
+    setIsDirty(true);
   }
 
   function handleTagInputBlur() {
@@ -241,11 +280,13 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset }: 
       handleAddTag(tagInput);
     } else if (event.key === "Backspace" && !tagInput && tags.length > 0) {
       setTags((current) => current.slice(0, -1));
+      setIsDirty(true);
     }
   }
 
   function handleSavePresetChange(event: ChangeEvent<HTMLInputElement>) {
     setSavePreset(event.target.checked);
+    setIsDirty(true);
   }
 
   async function handleSubmit() {
@@ -263,6 +304,7 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset }: 
         playlistId, savePreset, thumbnail, notifyDestinations,
       });
       resetForm();
+      setDiscardChangesOpen(false);
       onOpenChange(false);
     } finally {
       setIsSubmitting(false);
@@ -274,15 +316,15 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset }: 
       title, description, privacyStatus, isForKids, scheduledStartTime, savePreset, notifyDestinations,
       thumbSelection, thumbName, thumbStatus, thumbError, thumbPreviewUrl, thumbnailUrlInput, thumbnailMode,
       categoryId, tags, tagInput, playlistId, latencyPreference, enableDvr, enableEmbed, enableAutoStart,
-      enableAutoStop, categories, playlists, isSubmitting,
+      enableAutoStop, categories, playlists, isSubmitting, discardChangesOpen,
     },
     actions: {
-      setTitle, setDescription, setPrivacyStatus, setIsForKids, setScheduledStartTime, setNotifyDestinations,
-      setThumbnailUrlInput, setThumbnailMode, setCategoryId, setTagInput, setPlaylistId, setLatencyPreference,
-      setEnableDvr, setEnableEmbed, setEnableAutoStart, setEnableAutoStop, handleModalOpenChange, handleFileSelect,
+      updateTitle, updateDescription, updatePrivacyStatus, updateIsForKids, updateScheduledStartTime, updateNotifyDestinations,
+      updateThumbnailUrlInput, updateThumbnailMode, updateCategoryId, updateTagInput, updatePlaylistId, updateLatencyPreference,
+      updateEnableDvr, updateEnableEmbed, updateEnableAutoStart, updateEnableAutoStop, requestClose, discardChanges, cancelDiscardChanges, handleFileSelect,
       handleThumbnailUrlConfirm, clearThumbnail, handleRemoveTag, handleTagInputBlur, handleTagKeyDown,
       handleSavePresetChange, handleSubmit,
     },
-    meta: { isEditing, canSubmit, stream },
+    meta: { isEditing, canSubmit, isDirty, stream },
   };
 }

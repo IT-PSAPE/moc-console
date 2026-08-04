@@ -1,10 +1,11 @@
-import { refreshYouTubeToken, resolveYouTubeOAuthConfig, YouTubeReauthRequiredError } from "../../../server/youtube-oauth.js"
+import { getIntegrationAccessToken, IntegrationNotConnectedError, YouTubeReauthRequiredError } from "../../../server/integration-access.js"
 import { AuthError, requireAuthenticatedUser } from "../../../server/auth-guard.js"
 import { applyCors } from "../../../server/cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../server/http.js"
+import { WorkspaceAccessError, requireWorkspacePermission } from "../../../server/workspace-access.js"
 
 type RequestBody = {
-  refreshToken?: unknown
+  workspaceId?: unknown
 }
 
 export default async function handler(request: ApiRequest, response: ApiResponse) {
@@ -17,36 +18,34 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   }
 
   try {
-    await requireAuthenticatedUser(normaliseHeaders(request.headers))
+    const user = await requireAuthenticatedUser(normaliseHeaders(request.headers))
+    const body = (request.body ?? {}) as RequestBody
+    const workspaceId = typeof body.workspaceId === "string" ? body.workspaceId : null
+    if (!workspaceId) {
+      response.status(400).json({ error: "Missing workspace context" })
+      return
+    }
+    await requireWorkspacePermission(user.userId, workspaceId, "can_read")
+    await getIntegrationAccessToken("youtube", workspaceId)
+    response.status(200).json({ ok: true })
+    return
   } catch (error) {
     if (error instanceof AuthError) {
       response.status(401).json({ error: "Unauthorized" })
       return
     }
-    response.status(500).json({ error: "Authentication check failed" })
-    return
-  }
-
-  const body = (request.body ?? {}) as RequestBody
-  const refreshTokenValue = typeof body.refreshToken === "string" ? body.refreshToken : null
-
-  if (!refreshTokenValue) {
-    response.status(400).json({ error: "Missing refresh token" })
-    return
-  }
-
-  try {
-    const config = resolveYouTubeOAuthConfig(process.env)
-    const result = await refreshYouTubeToken(config, refreshTokenValue)
-    response.status(200).json(result)
-  } catch (error) {
     if (error instanceof YouTubeReauthRequiredError) {
-      // Refresh token is permanently dead — the client must persist
-      // reauth_required and prompt a reconnect. Not retryable.
       response.status(401).json({ error: error.message, code: "reauth_required" })
       return
     }
-    // Transient failure (network, Google 5xx). Safe to retry later.
+    if (error instanceof WorkspaceAccessError) {
+      response.status(403).json({ error: error.message })
+      return
+    }
+    if (error instanceof IntegrationNotConnectedError) {
+      response.status(404).json({ error: error.message })
+      return
+    }
     console.error("YouTube token refresh failed:", error)
     response.status(502).json({ error: "YouTube token refresh failed" })
   }

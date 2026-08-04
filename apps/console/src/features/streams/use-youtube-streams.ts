@@ -31,12 +31,22 @@ export function useYouTubeStreams(searchQuery: string) {
   const [editingStream, setEditingStream] = useState<Stream | null>(null)
   const [isSyncing, setIsSyncing] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [syncError, setSyncError] = useState<string | null>(null)
   const needsReauth = youtubeConnection?.status === "reauth_required"
 
+  const load = useCallback(async () => {
+    try {
+      await Promise.all([loadYouTubeConnection(), loadStreams()])
+      setLoadError(null)
+    } catch (error) {
+      setLoadError(getErrorMessage(error, "Streams could not be loaded."))
+    }
+  }, [loadStreams, loadYouTubeConnection])
+
   useEffect(() => {
-    void loadYouTubeConnection()
-    void loadStreams()
-  }, [loadYouTubeConnection, loadStreams])
+    void load()
+  }, [load])
 
   useEffect(() => {
     setSearch(searchQuery)
@@ -117,12 +127,15 @@ export function useYouTubeStreams(searchQuery: string) {
   const sync = useCallback(async () => {
     if (guardReauthentication()) return
     setIsSyncing(true)
+    setSyncError(null)
     try {
       const synced = await syncStreamsFromYouTube()
       setStreams(synced)
       toast({ title: "Streams synced from YouTube", variant: "success" })
     } catch (error) {
-      toast({ title: "Failed to sync streams", description: getErrorMessage(error, "Streams could not be synced from YouTube."), variant: "error" })
+      const message = getErrorMessage(error, "Streams could not be synced from YouTube.")
+      setSyncError(message)
+      toast({ title: "Failed to sync streams", description: message, variant: "error" })
     } finally {
       setIsSyncing(false)
     }
@@ -142,8 +155,8 @@ export function useYouTubeStreams(searchQuery: string) {
   }
 
   return {
-    state: { modalOpen, editingStream, isSyncing, filterOpen },
-    actions: { setModalOpen, setFilterOpen, openFilters, edit, create, update, remove, sync, openSettings },
+    state: { modalOpen, editingStream, isSyncing, filterOpen, loadError, syncError },
+    actions: { setModalOpen, setFilterOpen, openFilters, edit, create, update, remove, sync, retryLoad: load, openSettings },
     meta: {
       connection: youtubeConnection,
       filters,

@@ -35,6 +35,22 @@ export function StreamsCollection() {
     void actions.syncConnected()
   }
 
+  function handleRetryYouTubeLoad() {
+    void youtube.actions.retryLoad()
+  }
+
+  function handleRetryZoomLoad() {
+    void zoom.actions.retryLoad()
+  }
+
+  function handleRetryYouTubeSync() {
+    void youtube.actions.sync()
+  }
+
+  function handleRetryZoomSync() {
+    void zoom.actions.sync()
+  }
+
   function handleSelectStream(stream: Stream) {
     detail.actions.selectStream(stream, youtube.actions.edit, youtube.actions.remove)
   }
@@ -52,7 +68,7 @@ export function StreamsCollection() {
       </Page.Header>
 
       <CollectionToolbar>
-        <CollectionToolbar.Actions className="flex-wrap">
+        <CollectionToolbar.Actions>
           <Input
             aria-label="Search streams and meetings"
             name="stream-search"
@@ -82,13 +98,25 @@ export function StreamsCollection() {
         </CollectionToolbar.Actions>
       </CollectionToolbar>
 
-      <Page.CollectionContent className="flex flex-col gap-4">
+      <Page.Content className="flex flex-col gap-4">
         {youtube.meta.isConnected && youtube.meta.needsReauth ? (
           <Alert
             variant="error"
             title="YouTube disconnected"
             description="Reconnect YouTube in Settings to resume syncing, creating, and editing streams."
           />
+        ) : null}
+        {youtube.state.loadError ? (
+          <Alert variant="error" title="Could not load YouTube streams" description={youtube.state.loadError} action={<Button variant="secondary" onClick={handleRetryYouTubeLoad}>Retry</Button>} />
+        ) : null}
+        {zoom.state.loadError ? (
+          <Alert variant="error" title="Could not load Zoom meetings" description={zoom.state.loadError} action={<Button variant="secondary" onClick={handleRetryZoomLoad}>Retry</Button>} />
+        ) : null}
+        {youtube.state.syncError ? (
+          <Alert variant="error" title="YouTube sync failed" description={youtube.state.syncError} action={<Button variant="secondary" onClick={handleRetryYouTubeSync}>Retry sync</Button>} />
+        ) : null}
+        {zoom.state.syncError ? (
+          <Alert variant="error" title="Zoom sync failed" description={zoom.state.syncError} action={<Button variant="secondary" onClick={handleRetryZoomSync}>Retry sync</Button>} />
         ) : null}
         <Decision value={meta.isConnected ? meta.entries : null} loading={meta.isLoading}>
           <Decision.Loading>
@@ -114,7 +142,7 @@ export function StreamsCollection() {
             <StreamsList entries={meta.entries} onSelectStream={handleSelectStream} onSelectMeeting={handleSelectMeeting} />
           </Decision.Data>
         </Decision>
-      </Page.CollectionContent>
+      </Page.Content>
 
       <Drawer mobileSide="bottom" open={youtube.state.filterOpen} onOpenChange={youtube.actions.setFilterOpen}>
         <StreamFilterDrawer filters={youtube.meta.filters} />

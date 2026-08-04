@@ -14,7 +14,7 @@ type StreamModalProps = {
 
 export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: StreamModalProps) {
   return (
-    <Modal open={open} onOpenChange={onOpenChange}>
+    <Modal open={open} onOpenChange={onOpenChange} closeOnBackdropClick={false} closeOnEscape={false}>
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>

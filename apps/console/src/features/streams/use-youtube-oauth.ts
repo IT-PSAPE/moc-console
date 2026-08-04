@@ -1,5 +1,4 @@
 import { useCallback } from "react"
-import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "@/data/current-workspace"
 import { exchangeCodeForTokens } from "@/lib/youtube-client"
 import { generateOAuthState } from "@/lib/oauth-state"
@@ -36,7 +35,7 @@ export function useYouTubeOAuth() {
 
   /**
    * Check if we just returned from OAuth with a ?code= param.
-   * If so, exchange the code for tokens and store the connection.
+   * If so, exchange the code and let the server store the connection tokens.
    * Returns { connected, error } indicating the result.
    */
   const handleOAuthCallback = useCallback(async (): Promise<{ connected: boolean; error: string | null }> => {
@@ -57,32 +56,8 @@ export function useYouTubeOAuth() {
     sessionStorage.removeItem(YOUTUBE_OAUTH_CODE_KEY)
 
     try {
-      const { channel, ...tokens } = await exchangeCodeForTokens(code, REDIRECT_URI)
-
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error("Not authenticated")
-
       const workspaceId = await getCurrentWorkspaceId()
-
-      const { error: dbError } = await supabase
-        .from("youtube_connections")
-        .upsert(
-          {
-            workspace_id: workspaceId,
-            channel_id: channel.channelId,
-            channel_title: channel.channelTitle,
-            access_token: tokens.access_token,
-            refresh_token: tokens.refresh_token,
-            token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-            status: "active",
-            connected_by: user.id,
-          },
-          { onConflict: "workspace_id" },
-        )
-
-      if (dbError) {
-        throw new Error(dbError.message)
-      }
+      await exchangeCodeForTokens(code, REDIRECT_URI, workspaceId)
 
       return { connected: true, error: null }
     } catch (err) {

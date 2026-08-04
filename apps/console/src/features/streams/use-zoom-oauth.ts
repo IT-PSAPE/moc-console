@@ -1,5 +1,4 @@
 import { useCallback } from "react"
-import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "@/data/current-workspace"
 import { exchangeZoomCodeForTokens } from "@/lib/zoom-client"
 import { generateOAuthState } from "@/lib/oauth-state"
@@ -53,32 +52,8 @@ export function useZoomOAuth() {
     sessionStorage.removeItem(ZOOM_OAUTH_CODE_KEY)
 
     try {
-      const connection = await exchangeZoomCodeForTokens(code, REDIRECT_URI)
-
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error("Not authenticated")
-
       const workspaceId = await getCurrentWorkspaceId()
-
-      const { error: dbError } = await supabase
-        .from("zoom_connections")
-        .upsert(
-          {
-            workspace_id: workspaceId,
-            zoom_user_id: connection.userInfo.zoomUserId,
-            email: connection.userInfo.email,
-            display_name: connection.userInfo.displayName,
-            access_token: connection.access_token,
-            refresh_token: connection.refresh_token,
-            token_expires_at: new Date(Date.now() + connection.expires_in * 1000).toISOString(),
-            connected_by: user.id,
-          },
-          { onConflict: "workspace_id" },
-        )
-
-      if (dbError) {
-        throw new Error(dbError.message)
-      }
+      await exchangeZoomCodeForTokens(code, REDIRECT_URI, workspaceId)
 
       return { connected: true, error: null }
     } catch (err) {

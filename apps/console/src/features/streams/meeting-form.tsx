@@ -8,6 +8,7 @@ import { Input } from "@moc/ui/components/form/input"
 import { Select } from "@moc/ui/components/form/select"
 import { TextArea } from "@moc/ui/components/form/text-area"
 import { Modal } from "@moc/ui/components/overlays/modal"
+import { UnsavedChangesDialog } from "@moc/ui/components/overlays/unsaved-changes-dialog"
 import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/streams/zoom"
 import { zoomRecurrenceLabel } from "@moc/types/streams/zoom-constants"
 import type { CreateMeetingParams } from "@/data/mutate-zoom"
@@ -41,20 +42,20 @@ export function MeetingForm({ open, onOpenChange, onSubmit, meeting }: MeetingFo
       <Modal.Content>
         <div className="flex flex-col gap-4 p-4">
           <div className="flex flex-col gap-1.5">
-            <FormLabel label="Topic" required />
-            <Input aria-label="Meeting topic" name="meeting-topic" autoComplete="off" value={state.topic} onChange={actions.changeTopic} placeholder="Meeting topic" />
+            <FormLabel label="Topic" htmlFor="meeting-topic" required />
+            <Input id="meeting-topic" aria-label="Meeting topic" name="meeting-topic" autoComplete="off" value={state.topic} onChange={actions.changeTopic} placeholder="Meeting topic" />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <FormLabel label="Description" />
-            <TextArea aria-label="Meeting description" name="meeting-description" value={state.description} onChange={actions.changeDescription} placeholder="Meeting agenda…" rows={3} />
+            <FormLabel label="Description" htmlFor="meeting-description" />
+            <TextArea id="meeting-description" aria-label="Meeting description" name="meeting-description" value={state.description} onChange={actions.changeDescription} placeholder="Meeting agenda…" rows={3} />
           </div>
 
           <DateTimeFields label="Start" name="meeting-start" required value={state.startTime} onChange={actions.setStartTime} />
 
           <div className="flex flex-col gap-1.5">
-            <FormLabel label="Duration (minutes)" />
-            <Input aria-label="Meeting duration in minutes" name="meeting-duration" type="number" value={String(state.duration)} onChange={actions.changeDuration} min="1" />
+            <FormLabel label="Duration (minutes)" htmlFor="meeting-duration" />
+            <Input id="meeting-duration" aria-label="Meeting duration in minutes" name="meeting-duration" type="number" value={String(state.duration)} onChange={actions.changeDuration} min="1" />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -74,15 +75,15 @@ export function MeetingForm({ open, onOpenChange, onSubmit, meeting }: MeetingFo
 
           {state.recurrenceType === "weekly" ? (
             <div className="flex flex-col gap-1.5">
-              <FormLabel label="Day of week (1=Sun, 2=Mon, …, 7=Sat)" />
-              <Input aria-label="Weekly recurrence day" name="weekly-recurrence-day" value={state.recurrenceDays} onChange={actions.changeRecurrenceDays} placeholder="e.g. 4 for Wednesday" />
+              <FormLabel label="Day of week (1=Sun, 2=Mon, …, 7=Sat)" htmlFor="weekly-recurrence-day" />
+              <Input id="weekly-recurrence-day" aria-label="Weekly recurrence day" name="weekly-recurrence-day" value={state.recurrenceDays} onChange={actions.changeRecurrenceDays} placeholder="e.g. 4 for Wednesday" />
             </div>
           ) : null}
 
           {state.recurrenceType === "monthly" ? (
             <div className="flex flex-col gap-1.5">
-              <FormLabel label="Day of month" />
-              <Input aria-label="Monthly recurrence day" name="monthly-recurrence-day" type="number" value={state.recurrenceDays} onChange={actions.changeRecurrenceDays} placeholder="e.g. 15" min="1" max="31" />
+              <FormLabel label="Day of month" htmlFor="monthly-recurrence-day" />
+              <Input id="monthly-recurrence-day" aria-label="Monthly recurrence day" name="monthly-recurrence-day" type="number" value={state.recurrenceDays} onChange={actions.changeRecurrenceDays} placeholder="e.g. 15" min="1" max="31" />
             </div>
           ) : null}
 
@@ -99,8 +100,9 @@ export function MeetingForm({ open, onOpenChange, onSubmit, meeting }: MeetingFo
 
       <Modal.Footer>
         <Button variant="primary" disabled={!state.canSubmit} onClick={actions.submit}>{meta.submitLabel}</Button>
-        <Modal.Close><Button variant="secondary">Cancel</Button></Modal.Close>
+        <Button variant="secondary" onClick={actions.requestClose}>Cancel</Button>
       </Modal.Footer>
+      <UnsavedChangesDialog open={state.discardChangesOpen} onSave={actions.submit} onDiscard={actions.close} onCancel={actions.cancelDiscardChanges} isSaving={state.isSubmitting} />
     </>
   )
 }

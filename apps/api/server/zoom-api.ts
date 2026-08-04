@@ -1,20 +1,19 @@
+import { getIntegrationAccessToken } from "./integration-access.js"
+
 const ZOOM_API = "https://api.zoom.us/v2"
 
 type ProxyZoomApiParams = {
-  authorization: string | null
   body?: Buffer
   contentType?: string | null
   method: string
   path: string
+  workspaceId: string
 }
 
-export async function proxyZoomApiRequest({ authorization, body, contentType, method, path }: ProxyZoomApiParams): Promise<Response> {
-  if (!authorization) {
-    throw new Error("Missing Zoom authorization header")
-  }
-
+export async function proxyZoomApiRequest({ body, contentType, method, path, workspaceId }: ProxyZoomApiParams): Promise<Response> {
+  const accessToken = await getIntegrationAccessToken("zoom", workspaceId)
   const headers: Record<string, string> = {
-    Authorization: authorization,
+    Authorization: `Bearer ${accessToken}`,
   }
 
   if (contentType) {

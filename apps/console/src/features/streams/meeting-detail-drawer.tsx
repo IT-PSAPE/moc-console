@@ -47,6 +47,7 @@ export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: Meeti
 
   return (
     <>
+          <Paragraph.xs role="status" aria-live="polite" className="sr-only">{drawer.state.copyMessage}</Paragraph.xs>
           <SplitPanel.Header className="flex items-center gap-1">
             <Button.Icon aria-label="Close meeting" variant="ghost" icon={<X />} onClick={drawer.actions.close} />
             <Button.Icon aria-label="Open full page" variant="ghost" icon={<Maximize2 />} onClick={drawer.actions.openFullPage} />

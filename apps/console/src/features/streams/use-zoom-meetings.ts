@@ -20,11 +20,21 @@ export function useZoomMeetings(searchQuery: string) {
   const [editingMeeting, setEditingMeeting] = useState<ZoomMeeting | null>(null)
   const [isSyncing, setIsSyncing] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [syncError, setSyncError] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    try {
+      await Promise.all([loadZoomConnection(), loadZoomMeetings()])
+      setLoadError(null)
+    } catch (error) {
+      setLoadError(getErrorMessage(error, "Meetings could not be loaded."))
+    }
+  }, [loadZoomConnection, loadZoomMeetings])
 
   useEffect(() => {
-    void loadZoomConnection()
-    void loadZoomMeetings()
-  }, [loadZoomConnection, loadZoomMeetings])
+    void load()
+  }, [load])
 
   useEffect(() => {
     setSearch(searchQuery)
@@ -68,12 +78,15 @@ export function useZoomMeetings(searchQuery: string) {
 
   const sync = useCallback(async () => {
     setIsSyncing(true)
+    setSyncError(null)
     try {
       const meetings = await syncZoomMeetings()
       setZoomMeetings(meetings)
       toast({ title: "Meetings synced from Zoom", variant: "success" })
     } catch (error) {
-      toast({ title: "Failed to sync meetings", description: getErrorMessage(error, "Meetings could not be synced from Zoom."), variant: "error" })
+      const message = getErrorMessage(error, "Meetings could not be synced from Zoom.")
+      setSyncError(message)
+      toast({ title: "Failed to sync meetings", description: message, variant: "error" })
     } finally {
       setIsSyncing(false)
     }
@@ -89,8 +102,8 @@ export function useZoomMeetings(searchQuery: string) {
   }
 
   return {
-    state: { modalOpen, editingMeeting, isSyncing, filterOpen },
-    actions: { setModalOpen, setFilterOpen, openFilters, edit, create, update, remove, sync },
+    state: { modalOpen, editingMeeting, isSyncing, filterOpen, loadError, syncError },
+    actions: { setModalOpen, setFilterOpen, openFilters, edit, create, update, remove, sync, retryLoad: load },
     meta: {
       filters,
       isConnected: Boolean(zoomConnection),
