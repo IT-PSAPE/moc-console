@@ -73,7 +73,10 @@ export async function getCurrentWorkspaceId(): Promise<string> {
       }
 
       const membership = data as WorkspaceMembershipRow | null;
-      const workspaceId = membership?.workspace_id ?? await resolveFallbackWorkspaceId();
+      if (!membership?.workspace_id) {
+        throw new Error("Workspace access is pending approval");
+      }
+      const workspaceId = membership.workspace_id;
       cachedUserId = user.id;
       cachedWorkspaceId = workspaceId;
       return workspaceId;

@@ -1,26 +1,20 @@
-import { useCallback, useEffect, useMemo } from "react"
+import { useCallback, useEffect } from "react"
 import { useUsers } from "@/features/users/users-provider"
 import { useAuth } from "@/lib/auth-context"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 
 export function useUsersSettings() {
-  const { role, profile } = useAuth()
+  const { profile } = useAuth()
   const {
-    state: { users, roles, isLoading },
-    actions: { loadUsers, changeRole },
+    state: { users, pendingUsers, roles, isLoading },
+    actions: { loadUsers, changeRole, approveUser },
   } = useUsers()
-  const { currentWorkspaceId } = useWorkspace()
+  const { role } = useWorkspace()
   const { toast } = useFeedback()
   useEffect(() => {
     void loadUsers()
   }, [loadUsers])
-
-  const workspaceUsers = useMemo(() => {
-    return currentWorkspaceId
-      ? users.filter((user) => user.workspaceIds.includes(currentWorkspaceId))
-      : users
-  }, [currentWorkspaceId, users])
 
   const updateRole = useCallback(async (userId: string, roleId: string) => {
     try {
@@ -35,8 +29,21 @@ export function useUsersSettings() {
     }
   }, [changeRole, toast])
 
+  const approve = useCallback(async (requestId: string) => {
+    try {
+      await approveUser(requestId)
+      toast({ title: "Member approved", variant: "success" })
+    } catch (error) {
+      toast({
+        title: "Could not approve member",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "error",
+      })
+    }
+  }, [approveUser, toast])
+
   return {
-    actions: { updateRole },
-    meta: { users: workspaceUsers, roles, isLoading, canManage: role?.can_manage_roles === true, currentUserId: profile?.id },
+    actions: { approve, updateRole },
+    meta: { users, pendingUsers, roles, isLoading, canManage: role?.can_manage_roles === true, currentUserId: profile?.id },
   }
 }

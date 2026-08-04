@@ -1,13 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { useCopyFeedback } from "@/hooks/use-copy-feedback";
-import { useAuth } from "@/lib/auth-context";
+import { useWorkspace } from "@/lib/workspace-context";
 import { routes } from "@/screens/console-routes";
 import type { Stream } from "@moc/types/streams/stream";
 
 type DrawerField = "url" | "key" | "ingestion";
 
 export function useStreamDetailDrawer(stream: Stream | null, onClose: () => void, onEdit?: (stream: Stream) => void, onDelete?: (stream: Stream) => void) {
-  const { role } = useAuth();
+  const { role } = useWorkspace();
   const navigate = useNavigate();
   const copied = useCopyFeedback<DrawerField>();
 

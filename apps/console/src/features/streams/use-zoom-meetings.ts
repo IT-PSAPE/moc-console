@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { createZoomMeeting, deleteZoomMeeting, syncZoomMeetings, updateZoomMeeting, type CreateMeetingParams } from "@/data/mutate-zoom"
-import { useAuth } from "@/lib/auth-context"
+import { useWorkspace } from "@/lib/workspace-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { getErrorMessage } from "@moc/utils/get-error-message"
 import type { ZoomMeeting } from "@moc/types/streams/zoom"
@@ -8,7 +8,7 @@ import { useStreams } from "./streams-provider"
 import { useZoomMeetingFilters } from "./use-zoom-meeting-filters"
 
 export function useZoomMeetings(searchQuery: string) {
-  const { role } = useAuth()
+  const { role } = useWorkspace()
   const { toast } = useFeedback()
   const {
     state: { zoomConnection, zoomMeetings, isLoadingZoomConnection, isLoadingZoomMeetings },

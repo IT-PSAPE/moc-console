@@ -1,13 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { useCopyFeedback } from "@/hooks/use-copy-feedback";
-import { useAuth } from "@/lib/auth-context";
+import { useWorkspace } from "@/lib/workspace-context";
 import { routes } from "@/screens/console-routes";
 import type { ZoomMeeting } from "@moc/types/streams/zoom";
 
 type DrawerField = "join" | "pass";
 
 export function useMeetingDetailDrawer(meeting: ZoomMeeting | null, onClose: () => void, onEdit?: (meeting: ZoomMeeting) => void, onDelete?: (meeting: ZoomMeeting) => void) {
-  const { role } = useAuth();
+  const { role } = useWorkspace();
   const navigate = useNavigate();
   const copied = useCopyFeedback<DrawerField>();
 

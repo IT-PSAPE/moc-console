@@ -1,13 +1,13 @@
 import { useCallback, useState } from "react"
 import { disconnectYouTube } from "@/data/mutate-streams"
-import { useAuth } from "@/lib/auth-context"
+import { useWorkspace } from "@/lib/workspace-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { getErrorMessage } from "@moc/utils/get-error-message"
 import { useStreams } from "./streams-provider"
 import { useYouTubeOAuth } from "./use-youtube-oauth"
 
 export function useYouTubeConnection() {
-  const { role } = useAuth()
+  const { role } = useWorkspace()
   const { toast } = useFeedback()
   const {
     state: { youtubeConnection, isLoadingConnection },

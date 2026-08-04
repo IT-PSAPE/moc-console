@@ -9,6 +9,7 @@ import { Select } from "@moc/ui/components/form/select"
 import type { Workspace } from "@moc/types/workspace"
 import { AuthLayout } from "./auth-layout"
 import { useSignup } from "./use-signup"
+import { MIN_PASSWORD_LENGTH } from "./password-strength-meter"
 
 export function SignupScreen() {
   const { state, actions, meta } = useSignup()
@@ -43,6 +44,7 @@ export function SignupScreen() {
         <div className="space-y-4 text-center">
           <h2 className="title-h6">Check your email</h2>
           <p className="paragraph-sm text-tertiary">We sent a confirmation link to <span className="font-medium text-primary">{state.email}</span>.</p>
+          <p className="paragraph-sm text-tertiary">After confirming your email, your workspace administrator will review your access request.</p>
           <Button.Link render={<Link to="/login" />} variant="secondary" className="mt-2 w-full">Back to sign in</Button.Link>
         </div>
       </AuthLayout>
@@ -127,7 +129,8 @@ export function SignupScreen() {
             autoComplete="new-password"
             name="password"
             type="password"
-            placeholder="At least 6 characters"
+            placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
+            minLength={MIN_PASSWORD_LENGTH}
             icon={<Lock />}
             value={state.password}
             onChange={handlePasswordChange}

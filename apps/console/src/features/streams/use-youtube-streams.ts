@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { createStream, deleteStream, saveStreamPreset, syncStreamsFromYouTube, updateStream, uploadStreamThumbnail } from "@/data/mutate-streams"
-import { useAuth } from "@/lib/auth-context"
+import { useWorkspace } from "@/lib/workspace-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { getErrorMessage } from "@moc/utils/get-error-message"
 import type { Stream } from "@moc/types/streams/stream"
@@ -19,7 +19,7 @@ async function getPresetThumbnailUrl(thumbnail: StreamFormData["thumbnail"]): Pr
 
 export function useYouTubeStreams(searchQuery: string) {
   const navigate = useNavigate()
-  const { role } = useAuth()
+  const { role } = useWorkspace()
   const { toast } = useFeedback()
   const {
     state: { streams, youtubeConnection, isLoadingStreams, isLoadingConnection },

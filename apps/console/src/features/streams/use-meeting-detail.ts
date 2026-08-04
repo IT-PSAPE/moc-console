@@ -4,7 +4,6 @@ import { fetchZoomMeetingById } from "@/data/fetch-zoom";
 import { deleteLocalZoomMeetingRecord, deleteZoomMeeting, updateZoomMeeting, type CreateMeetingParams } from "@/data/mutate-zoom";
 import { useCopyFeedback } from "@/hooks/use-copy-feedback";
 import { useWorkspaceDetail } from "@/hooks/use-workspace-detail";
-import { useAuth } from "@/lib/auth-context";
 import { useWorkspace } from "@/lib/workspace-context";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import { getErrorMessage } from "@moc/utils/get-error-message";
@@ -13,8 +12,7 @@ import { useStreams } from "./streams-provider";
 export function useMeetingDetail(id: string | undefined) {
   const navigate = useNavigate();
   const { toast } = useFeedback();
-  const { role } = useAuth();
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, role } = useWorkspace();
   const { state: { zoomMeetings }, actions: { syncMeeting, removeMeeting } } = useStreams();
   const detail = useWorkspaceDetail({ fetcher: fetchZoomMeetingById, id, workspaceId: currentWorkspaceId });
   const [editOpen, setEditOpen] = useState(false);

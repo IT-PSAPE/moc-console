@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { createBrowserRouter, Navigate, Outlet, RouterProvider, useLocation } from 'react-router-dom'
 import { routes } from './screens/console-routes'
 import { Spinner } from '@moc/ui/components/feedback/spinner'
@@ -13,6 +13,8 @@ import { BreadcrumbProvider } from '@moc/ui/components/navigation/breadcrumb'
 import { SidebarProvider } from '@moc/ui/components/navigation/sidebar'
 import { TopBarProvider } from './features/topbar'
 import { WorkspaceProvider } from './lib/workspace-context'
+import { useWorkspace } from './lib/workspace-context'
+import { PendingAccessScreen } from './screens/auth/pending-access'
 
 const StreamsScreen = lazy(() => import('@/screens/streams/page').then((m) => ({ default: m.StreamsScreen })))
 const StreamDetailScreen = lazy(() => import('@/screens/streams/stream-detail/page').then((m) => ({ default: m.StreamDetailScreen })))
@@ -63,6 +65,39 @@ function RequireAuth() {
 
     return (
         <WorkspaceProvider>
+            <WorkspaceAccessGate />
+        </WorkspaceProvider>
+    )
+}
+
+function WorkspaceAccessGate() {
+    const { currentWorkspaceId, loading, refresh } = useWorkspace()
+    const { signOut } = useAuth()
+    const [checking, setChecking] = useState(false)
+
+    async function checkAgain() {
+        setChecking(true)
+        try {
+            await refresh()
+        } finally {
+            setChecking(false)
+        }
+    }
+
+    function signOutUser() {
+        void signOut()
+    }
+
+    if (loading) {
+        return <FullScreenSpinner />
+    }
+
+    if (!currentWorkspaceId) {
+        return <PendingAccessScreen checking={checking} onCheckAgain={checkAgain} onSignOut={signOutUser} />
+    }
+
+    return (
+        <>
             <RequestsProvider>
                 <EquipmentProvider>
                     <StreamsProvider>
@@ -84,7 +119,7 @@ function RequireAuth() {
                     </StreamsProvider>
                 </EquipmentProvider>
             </RequestsProvider>
-        </WorkspaceProvider>
+        </>
     )
 }
 

@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from "react"
 import { updateWorkspace } from "@/data/mutate-workspace"
-import { useAuth } from "@/lib/auth-context"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 
 export function useWorkspaceSettings() {
-  const { role } = useAuth()
-  const { workspaces, currentWorkspaceId, refresh } = useWorkspace()
+  const { workspaces, currentWorkspaceId, refresh, role } = useWorkspace()
   const { toast } = useFeedback()
   const workspace = useMemo(
     () => workspaces.find((item) => item.id === currentWorkspaceId) ?? null,

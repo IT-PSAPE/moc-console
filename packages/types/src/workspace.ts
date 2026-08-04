@@ -1,3 +1,5 @@
+import type { Role } from "./requests/assignee";
+
 export type Workspace = {
   id: string;
   name: string;
@@ -8,4 +10,5 @@ export type Workspace = {
 export type WorkspaceMembership = {
   workspaceId: string;
   userId: string;
+  role: Role | null;
 };

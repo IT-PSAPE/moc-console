@@ -7,7 +7,7 @@ import { Button } from "@moc/ui/components/controls/button";
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
 import { Spinner } from "@moc/ui/components/feedback/spinner";
 import { ArrowLeft } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
+import { useWorkspace } from "@/lib/workspace-context";
 import { routes } from "@/screens/console-routes";
 import {
     TEMPLATE_TOKENS,
@@ -23,7 +23,7 @@ const SETTINGS_TELEGRAM = `/${routes.settings}?tab=telegram`;
 
 export function MessageTemplateDetailScreen() {
     const { messageType: raw } = useParams<{ messageType: string }>();
-    const { role } = useAuth();
+    const { role } = useWorkspace();
     const canManage = role?.can_manage_roles === true;
 
     if (!raw || !isMessageType(raw) || !canManage) {

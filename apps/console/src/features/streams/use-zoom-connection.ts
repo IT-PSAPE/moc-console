@@ -1,13 +1,13 @@
 import { useCallback, useState } from "react"
 import { disconnectZoom } from "@/data/mutate-zoom"
-import { useAuth } from "@/lib/auth-context"
+import { useWorkspace } from "@/lib/workspace-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { getErrorMessage } from "@moc/utils/get-error-message"
 import { useStreams } from "./streams-provider"
 import { useZoomOAuth } from "./use-zoom-oauth"
 
 export function useZoomConnection() {
-  const { role } = useAuth()
+  const { role } = useWorkspace()
   const { toast } = useFeedback()
   const {
     state: { zoomConnection, isLoadingZoomConnection },

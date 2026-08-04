@@ -4,7 +4,6 @@ import { deleteLocalStreamRecord, deleteStream, updateStream } from "@/data/muta
 import { fetchStreamById } from "@/data/fetch-streams";
 import { useWorkspaceDetail } from "@/hooks/use-workspace-detail";
 import { useCopyFeedback } from "@/hooks/use-copy-feedback";
-import { useAuth } from "@/lib/auth-context";
 import { useWorkspace } from "@/lib/workspace-context";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import { getErrorMessage } from "@moc/utils/get-error-message";
@@ -14,8 +13,7 @@ import { useStreams } from "./streams-provider";
 export function useStreamDetail(id: string | undefined) {
   const navigate = useNavigate();
   const { toast } = useFeedback();
-  const { role } = useAuth();
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, role } = useWorkspace();
   const { state: { streams }, actions: { syncStream, removeStream } } = useStreams();
   const detail = useWorkspaceDetail({ fetcher: fetchStreamById, id, workspaceId: currentWorkspaceId });
   const [editOpen, setEditOpen] = useState(false);

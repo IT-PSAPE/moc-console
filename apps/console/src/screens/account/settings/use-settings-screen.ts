@@ -1,5 +1,5 @@
 import { useSearchParams } from "react-router-dom"
-import { useAuth } from "@/lib/auth-context"
+import { useWorkspace } from "@/lib/workspace-context"
 import { useIsMobile } from "@moc/ui/hooks/use-is-mobile"
 
 export type SettingsTab = "general" | "members" | "telegram" | "streams" | "automation"
@@ -17,7 +17,7 @@ export function getSettingsHref(tab: SettingsTab): string {
 }
 
 export function useSettingsScreen() {
-  const { role } = useAuth()
+  const { role } = useWorkspace()
   const [searchParams] = useSearchParams()
   const isMobile = useIsMobile()
   const canManage = role?.can_manage_roles === true

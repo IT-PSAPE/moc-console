@@ -2,7 +2,7 @@ import { cn } from "@moc/utils/cn"
 
 export type PasswordStrength = "weak" | "medium" | "strong"
 
-export const MIN_PASSWORD_LENGTH = 8
+export const MIN_PASSWORD_LENGTH = 12
 
 export function evaluatePasswordStrength(password: string): PasswordStrength {
     if (password.length < MIN_PASSWORD_LENGTH) return "weak"

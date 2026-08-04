@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react"
 import { fetchSignupWorkspaces } from "@/data/fetch-workspaces"
 import { useAuth } from "@/lib/auth-context"
 import type { Workspace } from "@moc/types/workspace"
+import { MIN_PASSWORD_LENGTH } from "./password-strength-meter"
 
 export function useSignup() {
   const { signUp } = useAuth()
@@ -46,8 +47,8 @@ export function useSignup() {
       setError("Passwords do not match.")
       return
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.")
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`)
       return
     }
 

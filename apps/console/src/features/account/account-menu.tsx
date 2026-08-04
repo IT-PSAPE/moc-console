@@ -7,6 +7,7 @@ import { Dropdown } from '@moc/ui/components/overlays/dropdown'
 import { useSidebar } from '@moc/ui/components/navigation/sidebar'
 import { cn } from '@moc/utils/cn'
 import { useAuth } from '@/lib/auth-context'
+import { useWorkspace } from '@/lib/workspace-context'
 
 type AccountMenuProps = {
     isSigningOut: boolean
@@ -16,7 +17,8 @@ type AccountMenuProps = {
 
 export function AccountMenu({ isSigningOut, onEditProfile, onSignOut }: AccountMenuProps) {
     const { state: sidebarState } = useSidebar()
-    const { profile, role } = useAuth()
+    const { profile } = useAuth()
+    const { role } = useWorkspace()
     const userInitials = profile ? `${profile.name[0] ?? ''}${profile.surname[0] ?? ''}` : 'MC'
     const userDisplayName = profile ? `${profile.name} ${profile.surname}` : 'MOC Member'
     const roleName = role?.name ?? 'No role'
