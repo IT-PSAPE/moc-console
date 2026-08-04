@@ -10,24 +10,27 @@ See [ADR-0008](../../docs/adr/0008-extract-moc-api-app.md) for why this exists.
 
 | Path | Caller | Auth |
 | --- | --- | --- |
-| `POST /api/notify/request` | MOC Request (browser) | none — public submission surface |
-| `POST /api/notify/booking` | MOC Request (browser) | none — public submission surface |
+| `POST /api/notify/request` | MOC Request (browser) | stored request ID + tracking code |
+| `POST /api/notify/booking` | MOC Request (browser) | stored booking ID + tracking code |
 | `POST /api/notifications/requests` | external senders | HMAC `X-Signature` |
 | `POST /api/notifications/bookings` | external senders | HMAC `X-Signature` |
 | `POST /api/notifications/assignment` | MOC Console (browser) | Supabase session (`x-moc-session`) |
 | `POST /api/notifications/internal/stream-created` | MOC Console (browser) | Supabase session |
 | `POST /api/notifications/internal/meeting-created` | MOC Console (browser) | Supabase session |
-| `POST /api/youtube/oauth/{exchange,refresh}` | MOC Console (browser) | Supabase session |
+| `POST /api/youtube/oauth/{exchange,refresh,revoke}` | MOC Console (browser) | Supabase session + workspace permission |
+| `* /api/youtube/v3/*` | MOC Console (browser) | Supabase session + workspace permission |
 | `POST /api/zoom/oauth/{exchange,refresh,revoke}` | MOC Console (browser) | Supabase session |
-| `* /api/zoom/v2/*` | MOC Console (browser) | Supabase session + Zoom bearer |
+| `* /api/zoom/v2/*` | MOC Console (browser) | Supabase session + workspace permission |
 | `POST /api/telegram/webhook` | Telegram | webhook secret |
 | `GET /api/cron/weekly-archive` | Vercel Cron, Mondays 00:00 | `CRON_SECRET` |
 | `GET /api/cron/stale-items` | Vercel Cron, daily 00:00 | `CRON_SECRET` |
+| `GET /api/cron/notification-deliveries` | Vercel Cron, every 15 minutes | `CRON_SECRET` |
 
-`/api/notify/*` and `/api/notifications/*` reach the same dispatcher. The
-difference is trust: the notify pair is the public, unauthenticated surface the
-request PWA posts to; the notifications pair is the signed surface for senders
-outside this repo.
+Request and booking database triggers create durable notification-outbox rows in
+the same transaction as the source write. The Request PWA can best-effort wake
+the pending created event by presenting the returned record ID and tracking code;
+it cannot inject a workspace, destination, or message payload. Signed external
+endpoints have the same record-derived boundary.
 
 ## Destination overrides
 
@@ -49,8 +52,8 @@ template and token rendering are identical either way.
 
 ## CORS
 
-Browser calls arrive cross-origin and carry credentials in headers
-(`x-moc-session`, `authorization`), so `ALLOWED_ORIGINS` is an exact allow-list
+Browser calls arrive cross-origin and carry a session plus workspace context in
+headers (`x-moc-session`, `x-moc-workspace`), so `ALLOWED_ORIGINS` is an exact allow-list
 and the API echoes the caller's origin — never `*`. Unset means no browser
 origin is allowed. Telegram and Vercel Cron send no `Origin` and are unaffected.
 

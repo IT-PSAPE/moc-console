@@ -1,6 +1,7 @@
 # Schema Reference
 
-This document defines the intended relational schema for the project.
+This document describes the current relational schema after the checked-in
+migration ledger has been applied.
 
 It is the database view only:
 
@@ -18,7 +19,12 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 - Storage target: Supabase Postgres
 - Naming convention: `snake_case`
 - ID strategy: `uuid` in storage, string in JSON/API responses
-- Current runtime status: auth, workspaces, requests, equipment, bookings and stream flows read and write Supabase directly; the remaining gap is mostly between normalized storage and denormalized runtime objects
+- Source of truth: apply `phase-01-schema.sql`, followed by every file in
+  `phases/patches/` in chronological order. `phase-01-schema.sql` is a
+  historical baseline, not a replacement for later patches.
+- Credential boundary: `private.integration_oauth_tokens` is server-only
+  storage. It is intentionally excluded from client schema generation and
+  must never be queried by browser code.
 
 ## Table Overview
 
@@ -28,13 +34,18 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 | `workspaces` | Workspace containers for operational data | `id` | Referenced by `workspace_users.workspace_id` and workspace-scoped domain tables |
 | `workspace_users` | Membership join between users and workspaces | `id` | `workspace_id -> workspaces.id`, `user_id -> users.id` |
 | `roles` | Role definitions and permissions | `id` | Referenced by `user_roles.role_id` |
-| `user_roles` | Role assignment per user | `user_id` | `user_id -> users.id`, `role_id -> roles.id` |
+| `user_roles` | Global role assignment per user | `user_id` | `user_id -> users.id`, `role_id -> roles.id` |
 | `requests` | Work requests | `id` | `workspace_id -> workspaces.id`; referenced by `request_assignees.request_id` |
 | `request_assignees` | Request-to-user assignments | `id` | `request_id -> requests.id`, `user_id -> users.id` |
-| `equipment` | Inventory records | `id` | `workspace_id -> workspaces.id`; referenced by `bookings.equipment_id` |
-| `bookings` | Equipment reservations and checkout rows | `id` | `workspace_id -> workspaces.id`, `equipment_id -> equipment.id` |
-| `youtube_connections` | Workspace-level YouTube OAuth credentials | `id` | `workspace_id -> workspaces.id`, `connected_by -> users.id` |
+| `equipment` | Inventory records | `id` | `workspace_id -> workspaces.id`; referenced by `booking_items.equipment_id` |
+| `bookings` | Booking header and lifecycle | `id` | `workspace_id -> workspaces.id`; referenced by `booking_items.booking_id` |
+| `booking_items` | Equipment assigned to a booking | `id` | `booking_id -> bookings.id`, `equipment_id -> equipment.id` |
+| `checklist_templates` | Reusable checklist definitions | `id` | `workspace_id -> workspaces.id` |
+| `checklists` | Scheduled checklist runs | `id` | `workspace_id -> workspaces.id`, optional `request_id -> requests.id` |
+| `youtube_connections` | Workspace-level YouTube connection metadata | `id` | `workspace_id -> workspaces.id`, `connected_by -> users.id` |
 | `streams` | YouTube live stream records | `id` | `workspace_id -> workspaces.id`, `created_by -> users.id` |
+| `zoom_connections` | Workspace-level Zoom connection metadata | `id` | `workspace_id -> workspaces.id`, `connected_by -> users.id` |
+| `zoom_meetings` | Zoom meeting records | `id` | `workspace_id -> workspaces.id`, `created_by -> users.id` |
 | `colors` | Stable semantic color keys shared across domains | `id` | Referenced by workspace-scoped domain tables |
 
 ## Enum Domains
@@ -108,6 +119,16 @@ Additional constraint:
 | `user_id` | `uuid` | None | No | Yes | Primary key and foreign key to `users.id`. |
 | `role_id` | `uuid` | None | No | No | Foreign key to `roles.id`. |
 
+Scope rule:
+
+- A role is currently global to the user, despite `workspace_users` being
+  workspace-scoped. It is not valid to describe a role change as applying to
+  one workspace only.
+- The data-boundary migration blocks changes to a global role once that user
+  belongs to more than one workspace. Add a dedicated `workspace_user_roles`
+  migration and review every permission policy before supporting per-workspace
+  roles.
+
 ## Requests
 
 ### `requests`
@@ -146,6 +167,8 @@ Additional constraint:
 Additional constraint:
 
 - Add `unique (request_id, user_id, duty)`.
+- Assignees must be members of the request's workspace; a database trigger
+  enforces this for direct writes and RPCs.
 
 Important note:
 
@@ -179,21 +202,56 @@ Important normalization rule:
 | --- | --- | --- | --- | --- | --- |
 | `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
 | `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
-| `equipment_id` | `uuid` | None | No | No | Foreign key to `equipment.id`. |
+| `tracking_code` | `text` | None | No | Yes | Public-facing booking tracking identifier. |
+| `title` | `text` | None | No | No | Booking title, 1–120 characters. |
 | `booked_by` | `text` | None | No | No | Free-text name of the person the booking is for. Not necessarily a logged-in user. |
 | `checked_out_at` | `timestamptz` | None | No | No | Start/checkout timestamp. |
 | `expected_return_at` | `timestamptz` | None | No | No | Due-back timestamp. |
 | `returned_at` | `timestamptz` | `null` | Yes | No | Null until the item is returned. |
 | `notes` | `text` | `null` | Yes | No | Booking notes. |
-| `status` | `booking_status` | `booked` | No | No | Booking lifecycle state. |
+| `status` | `booking_status` | `booked` | No | No | Booking lifecycle state for the whole batch. |
+| `created_at` | `timestamptz` | `now()` | No | No | Booking creation time. |
+
+### `booking_items`
+
+| Column | Postgres type | Default | Nullable | Unique | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
+| `booking_id` | `uuid` | None | No | No | Foreign key to `bookings.id`. |
+| `equipment_id` | `uuid` | None | No | No | Foreign key to `equipment.id`. |
 
 Important normalization rules:
 
-- `bookings` stores `equipment_id`, not `equipment_name`.
+- A booking is a batch; `booking_items` stores its equipment assignments.
+- A booking item must reference equipment in the booking's workspace; a
+  database trigger enforces this.
 - `bookings` stores `booked_by` as text, not a user id.
 - The human-readable duration shown in the UI should be derived, not stored.
 
-## Streams
+## Checklists
+
+### `checklists`
+
+| Column | Postgres type | Default | Nullable | Unique | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
+| `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
+| `request_id` | `uuid` | `null` | Yes | No | Optional foreign key to `requests.id`. |
+| `name` | `text` | None | No | No | Run name. |
+| `description` | `text` | `''` | No | No | Run description. |
+| `scheduled_at` | `timestamptz` | None | No | No | Scheduled execution date. |
+| `created_at` | `timestamptz` | `now()` | No | No | Creation time. |
+| `updated_at` | `timestamptz` | `now()` | No | No | Last update time. |
+
+Scope rules:
+
+- `checklist_sections` and `checklist_items` inherit the run's workspace.
+- A checklist item section must belong to the same checklist, and a template
+  item section must belong to the same template; triggers enforce both joins.
+- Checklist assignees must be workspace members. An optional linked request
+  must be in the checklist workspace. Both checks run in the database.
+
+## Integrations
 
 ### `youtube_connections`
 
@@ -203,9 +261,9 @@ Important normalization rules:
 | `workspace_id` | `uuid` | None | No | Yes | Foreign key to `workspaces.id`. One connection per workspace. |
 | `channel_id` | `text` | None | No | No | YouTube channel ID. |
 | `channel_title` | `text` | None | No | No | YouTube channel display name. |
-| `access_token` | `text` | None | No | No | Google OAuth access token. |
-| `refresh_token` | `text` | None | No | No | Google OAuth refresh token. |
 | `token_expires_at` | `timestamptz` | None | No | No | Access token expiry timestamp. |
+| `status` | `youtube_connection_status` | `'active'` | No | No | Connection health, including `reauth_required`. |
+| `presets` | `jsonb` | `null` | Yes | No | Workspace stream preset metadata. |
 | `connected_by` | `uuid` | None | No | No | Foreign key to `users.id`. Admin who connected the account. |
 | `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
 | `updated_at` | `timestamptz` | `now()` | No | No | Last update timestamp. |
@@ -213,8 +271,45 @@ Important normalization rules:
 Important notes:
 
 - One YouTube connection per workspace, enforced by `unique (workspace_id)`.
-- Tokens are managed server-side via Supabase Edge Functions. The client never sees the raw tokens.
-- Only admins (`can_manage_roles`) can insert, update, or delete connections.
+- OAuth access and refresh tokens are in `private.integration_oauth_tokens`,
+  never in this public metadata table. Only the API service role can execute
+  the private-storage RPCs.
+- Browser clients call the authenticated `/api/youtube/v3/*` proxy with an
+  explicit workspace context; the API refreshes credentials server-side.
+
+### `private.integration_oauth_tokens`
+
+This private-schema table is not exposed through the client data API.
+
+| Column | Postgres type | Default | Nullable | Unique | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `provider` | `text` | None | No | Composite | Restricted to `youtube` or `zoom`. |
+| `workspace_id` | `uuid` | None | No | Composite | Foreign key to `workspaces.id`. |
+| `access_token` | `text` | None | No | No | Server-only provider credential. |
+| `refresh_token` | `text` | None | No | No | Server-only provider credential. |
+| `token_expires_at` | `timestamptz` | None | No | No | Provider access-token expiry. |
+| `updated_at` | `timestamptz` | `now()` | No | No | Last credential update. |
+
+### `zoom_connections`
+
+| Column | Postgres type | Default | Nullable | Unique | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
+| `workspace_id` | `uuid` | None | No | Yes | One connection per workspace. |
+| `zoom_user_id` | `text` | None | No | No | Connected Zoom account identifier. |
+| `email` | `text` | None | No | No | Connected account email. |
+| `display_name` | `text` | None | No | No | Connected account name. |
+| `token_expires_at` | `timestamptz` | None | No | No | Access-token expiry metadata. |
+| `connected_by` | `uuid` | None | No | No | User who connected the account. |
+| `created_at` | `timestamptz` | `now()` | No | No | Creation time. |
+| `updated_at` | `timestamptz` | `now()` | No | No | Last update time. |
+
+### `zoom_meetings`
+
+`zoom_meetings` stores workspace-scoped provider meeting metadata, keyed by
+`unique (workspace_id, zoom_meeting_id)`. Its credential source is the same
+private integration-token table; browser code must call the authenticated
+`/api/zoom/v2/*` proxy rather than Zoom directly.
 
 ### `streams`
 
@@ -267,13 +362,20 @@ Use `workspace_id` on top-level operational tables that need direct scoping, wor
 - `requests`
 - `equipment`
 - `bookings`
+- `checklist_templates`
+- `checklists`
 - `streams`
 - `youtube_connections`
+- `zoom_connections`
+- `zoom_meetings`
 
 Do not add `workspace_id` to subordinate rows that already inherit scope from their parent:
 
 - `request_assignees`
 - `booking_items`
+- `checklist_sections`
+- `checklist_items`
+- `checklist_item_assignees`
 
 Keep these tables global rather than workspace-scoped:
 

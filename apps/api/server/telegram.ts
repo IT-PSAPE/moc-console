@@ -16,7 +16,7 @@ export type SendMessageOptions = {
 
 export type TelegramSendDetailed =
   | { ok: true; result: TelegramSendResult | null }
-  | { ok: false; errorCode: number | null; description: string }
+  | { ok: false; errorCode: number | null; description: string; retryAfterSeconds: number | null }
 
 // Variant that surfaces the API error so callers (e.g. the routing
 // dispatcher) can log meaningful failure context. The simpler
@@ -27,7 +27,7 @@ export async function sendTelegramMessageDetailed(
   options: SendMessageOptions = {},
 ): Promise<TelegramSendDetailed> {
   const token = process.env.TELEGRAM_BOT_TOKEN
-  if (!token) return { ok: false, errorCode: null, description: "TELEGRAM_BOT_TOKEN not configured" }
+  if (!token) return { ok: false, errorCode: null, description: "TELEGRAM_BOT_TOKEN not configured", retryAfterSeconds: null }
   try {
     const body: Record<string, unknown> = { chat_id: chatId, text }
     if (typeof options.threadId === "number") body.message_thread_id = options.threadId
@@ -51,18 +51,21 @@ export async function sendTelegramMessageDetailed(
       result?: TelegramSendResult
       error_code?: number
       description?: string
+      parameters?: { retry_after?: number }
     }
     if (json.ok) return { ok: true, result: json.result ?? null }
     return {
       ok: false,
       errorCode: typeof json.error_code === "number" ? json.error_code : null,
       description: json.description ?? `HTTP ${res.status}`,
+      retryAfterSeconds: typeof json.parameters?.retry_after === "number" ? json.parameters.retry_after : null,
     }
   } catch (error) {
     return {
       ok: false,
       errorCode: null,
       description: error instanceof Error ? error.message : String(error),
+      retryAfterSeconds: null,
     }
   }
 }

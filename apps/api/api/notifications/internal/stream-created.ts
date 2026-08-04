@@ -1,5 +1,6 @@
+import { enqueueOutboxEvent, processOutboxEvent } from "../../../server/notifications/outbox.js"
+import { requireWorkspaceMembership } from "../../../server/notifications/authorization.js"
 import { getSupabaseAdmin } from "../../../server/supabase-admin.js"
-import { dispatchEvent, type NotifyDestination } from "../../../server/notifications/dispatch.js"
 import { requireAuthenticatedUser, AuthError } from "../../../server/auth-guard.js"
 import { applyCors } from "../../../server/cors.js"
 import { normaliseHeaders } from "../../../server/http.js"
@@ -7,13 +8,9 @@ import type { ApiRequest, ApiResponse } from "../../../server/http.js"
 
 type Body = { streamId?: string; destinations?: unknown }
 
-// Destinations arrive from the browser. Shape-check here; dispatchEvent
-// re-validates each one against the workspace's registered groups before
-// sending, so an unknown or spoofed chat id simply never receives anything.
-function parseDestinations(value: unknown): NotifyDestination[] | undefined {
+function parseDestinations(value: unknown): { groupChatId: string; threadId: number | null }[] | undefined {
   if (!Array.isArray(value)) return undefined
-
-  const parsed: NotifyDestination[] = []
+  const parsed: { groupChatId: string; threadId: number | null }[] = []
   for (const entry of value) {
     if (typeof entry !== "object" || entry === null) continue
     const { groupChatId, threadId } = entry as Record<string, unknown>
@@ -21,28 +18,22 @@ function parseDestinations(value: unknown): NotifyDestination[] | undefined {
     if (threadId !== null && typeof threadId !== "number") continue
     parsed.push({ groupChatId, threadId: threadId as number | null })
   }
-
   return parsed.length > 0 ? parsed : undefined
 }
-
 
 export default async function handler(request: ApiRequest, response: ApiResponse) {
   if (applyCors(request, response)) return
   response.setHeader("Content-Type", "application/json")
-
   if (request.method !== "POST") {
     response.status(405).json({ error: "Method not allowed" })
     return
   }
 
+  let userId: string
   try {
-    await requireAuthenticatedUser(normaliseHeaders(request.headers))
+    userId = (await requireAuthenticatedUser(normaliseHeaders(request.headers))).userId
   } catch (error) {
-    if (error instanceof AuthError) {
-      response.status(401).json({ error: error.message })
-      return
-    }
-    response.status(401).json({ error: "Unauthorized" })
+    response.status(401).json({ error: error instanceof AuthError ? error.message : "Unauthorized" })
     return
   }
 
@@ -52,38 +43,52 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
-  const destinations = parseDestinations(body.destinations)
-
-  // Atomic claim: only the first call where notified_at IS NULL gets a row back.
   const admin = getSupabaseAdmin()
-  const { data: claimed } = await admin
+  const { data, error } = await admin
     .from("streams")
-    .update({ notified_at: new Date().toISOString() })
-    .eq("id", body.streamId)
-    .is("notified_at", null)
     .select("id, workspace_id, title, scheduled_start_time, stream_url")
+    .eq("id", body.streamId)
     .maybeSingle()
-
-  if (!claimed) {
-    response.status(200).json({ ok: true, skipped: "already_notified_or_missing" })
+  if (error) {
+    response.status(500).json({ error: error.message })
+    return
+  }
+  if (!data) {
+    response.status(404).json({ error: "Stream not found" })
     return
   }
 
-  type StreamRow = {
-    id: string
-    workspace_id: string
-    title: string
-    scheduled_start_time: string | null
-    stream_url: string | null
+  try {
+    await requireWorkspaceMembership(userId, data.workspace_id)
+  } catch (error) {
+    response.status(403).json({ error: error instanceof Error ? error.message : "Forbidden" })
+    return
   }
-  const row = claimed as StreamRow
 
-  const result = await dispatchEvent(row.workspace_id, "stream.created", {
-    title: row.title,
-    scheduledStartTime: row.scheduled_start_time,
-    streamUrl: row.stream_url,
-    streamId: row.id,
-  }, { destinations })
-
+  const eventKey = `stream.created:${data.id}`
+  const destinations = parseDestinations(body.destinations)
+  await enqueueOutboxEvent({
+    workspaceId: data.workspace_id,
+    eventType: "stream.created",
+    entityType: "stream",
+    entityId: data.id,
+    eventKey,
+    payload: {
+      title: data.title,
+      scheduledStartTime: data.scheduled_start_time,
+      streamUrl: data.stream_url,
+      ...(destinations ? { destinations } : {}),
+    },
+  })
+  const { error: markError } = await admin
+    .from("streams")
+    .update({ notified_at: new Date().toISOString() })
+    .eq("id", data.id)
+    .is("notified_at", null)
+  if (markError) {
+    response.status(500).json({ error: markError.message })
+    return
+  }
+  const result = await processOutboxEvent(eventKey)
   response.status(200).json({ ok: true, ...result })
 }

@@ -1,5 +1,4 @@
 import { getSupabaseAdmin } from "../supabase-admin.js"
-import { sendTelegramMessageDetailed } from "../telegram.js"
 import {
   formatDateTokens,
   isNotificationEventKey,
@@ -16,6 +15,7 @@ import {
   enrichStream,
   enrichMeeting,
 } from "./enrich.js"
+import { enqueueDelivery, processDeliveriesForEvent } from "./delivery-store.js"
 
 // The optional *Id / trackingCode fields drive DB enrichment (rich
 // composable tokens). They're optional so older/external senders that
@@ -346,6 +346,15 @@ export type DispatchOptions = {
    * routes, including the "no routes, send nothing" case.
    */
   destinations?: readonly NotifyDestination[]
+  /** A durable source-event identity. Repeated dispatches reuse its deliveries. */
+  eventKey?: string
+}
+
+function fallbackEventKey<K extends NotificationEventKey>(eventType: K, payload: EventPayloadMap[K]): string {
+  const p = payload as Record<string, string | null | undefined>
+  const source = p.streamId ?? p.meetingId ?? p.requestId ?? p.trackingCode ?? p.linkUrl ?? p.title
+  const status = p.status ?? ""
+  return `${eventType}:${source ?? "unknown"}:${status}`
 }
 
 export async function dispatchEvent<K extends NotificationEventKey>(
@@ -353,9 +362,9 @@ export async function dispatchEvent<K extends NotificationEventKey>(
   eventType: K,
   payload: EventPayloadMap[K],
   options: DispatchOptions = {},
-): Promise<{ attempted: number; succeeded: number }> {
+): Promise<{ attempted: number; succeeded: number; failed: number }> {
   if (!isNotificationEventKey(eventType)) {
-    return { attempted: 0, succeeded: 0 }
+    return { attempted: 0, succeeded: 0, failed: 0 }
   }
 
   let targets: Target[]
@@ -378,7 +387,7 @@ export async function dispatchEvent<K extends NotificationEventKey>(
           "Notification destination override matched no active registered group or open topic in this workspace; nothing was sent.",
         payload,
       })
-      return { attempted: 0, succeeded: 0 }
+      return { attempted: 0, succeeded: 0, failed: 0 }
     }
   } else {
     const admin = getSupabaseAdmin()
@@ -400,7 +409,7 @@ export async function dispatchEvent<K extends NotificationEventKey>(
         description: `Route lookup failed: ${error.message}`,
         payload,
       })
-      return { attempted: 0, succeeded: 0 }
+      throw new Error(`Route lookup failed: ${error.message}`)
     }
 
     targets = ((data ?? []) as unknown as RouteRow[])
@@ -411,38 +420,28 @@ export async function dispatchEvent<K extends NotificationEventKey>(
       .map((r) => ({ routeId: r.id, groupChatId: r.group_chat_id, threadId: r.thread_id }))
   }
 
-  if (targets.length === 0) return { attempted: 0, succeeded: 0 }
+  if (targets.length === 0) return { attempted: 0, succeeded: 0, failed: 0 }
 
   // One template lookup per dispatch (shared across all targets), then
   // fall back to the hardcoded default when no custom row is set. An
   // override changes where a notification goes, never what it says.
   const text = await renderEventText(workspaceId, "group", eventType, payload)
-  let succeeded = 0
+  const eventKey = options.eventKey ?? fallbackEventKey(eventType, payload)
 
   for (const route of targets) {
-    const send = await sendTelegramMessageDetailed(route.groupChatId, text, {
-      parseMode: "HTML",
-      // Link preview left enabled: the action link lives inside an <a>
-      // tag, and Telegram previews the first link in the message so the
-      // recipient sees a rich preview of where it goes.
-      ...(route.threadId !== null ? { threadId: route.threadId } : {}),
+    await enqueueDelivery({
+      workspaceId,
+      eventKey,
+      eventType,
+      scope: "group",
+      routeId: route.routeId || null,
+      chatId: route.groupChatId,
+      threadId: route.threadId,
+      text,
+      payload,
     })
-
-    if (send.ok) {
-      succeeded += 1
-    } else {
-      await logDeliveryFailure({
-        workspaceId,
-        eventType,
-        routeId: route.routeId,
-        groupChatId: route.groupChatId,
-        threadId: route.threadId,
-        errorCode: send.errorCode,
-        description: send.description,
-        payload,
-      })
-    }
   }
 
-  return { attempted: targets.length, succeeded }
+  const result = await processDeliveriesForEvent(eventKey)
+  return { attempted: result.attempted, succeeded: result.sent, failed: result.failed }
 }

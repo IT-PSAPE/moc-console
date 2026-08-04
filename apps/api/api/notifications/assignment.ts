@@ -1,5 +1,4 @@
 import { getSupabaseAdmin } from "../../server/supabase-admin.js"
-import { sendTelegramMessage } from "../../server/telegram.js"
 import { requireAuthenticatedUser, AuthError } from "../../server/auth-guard.js"
 import { resolveBaseUrl } from "../../server/base-url.js"
 import { resolveTemplate } from "../../server/notifications/templates.js"
@@ -7,6 +6,8 @@ import { fetchFormatSettings } from "../../server/notifications/format-settings.
 import { enrichRequest } from "../../server/notifications/enrich.js"
 import { applyCors } from "../../server/cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../server/http.js"
+import { requireWorkspaceMembership } from "../../server/notifications/authorization.js"
+import { enqueueDelivery, processDeliveriesForEvent } from "../../server/notifications/delivery-store.js"
 import {
   formatDateTokens,
   renderTemplate,
@@ -133,6 +134,25 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
+  try {
+    await requireWorkspaceMembership(actorId, resolved.workspaceId)
+  } catch (error) {
+    response.status(403).json({ error: error instanceof Error ? error.message : "Forbidden" })
+    return
+  }
+
+  const { data: assignment } = await admin
+    .from("request_assignees")
+    .select("id")
+    .eq("request_id", parentId)
+    .eq("user_id", userId)
+    .eq("duty", duty)
+    .maybeSingle()
+  if (!assignment) {
+    response.status(403).json({ error: "The request assignment was not found" })
+    return
+  }
+
   const [template, format] = await Promise.all([
     resolveTemplate(resolved.workspaceId, "dm", resolved.messageType),
     fetchFormatSettings(resolved.workspaceId),
@@ -142,10 +162,17 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     formatDateTokens(resolved.tokens, format.timezone, format.dateFormat),
   )
 
-  await sendTelegramMessage(user.telegram_chat_id, text, {
-    parseMode: "HTML",
-    // Link preview left enabled so the assignee gets a rich preview of
-    // the link, even though its URL is hidden inside the <a> tag.
+  const eventKey = `assignment.request:${parentId}:${userId}:${duty}`
+  await enqueueDelivery({
+    workspaceId: resolved.workspaceId,
+    eventKey,
+    eventType: null,
+    scope: "dm",
+    recipientUserId: userId,
+    chatId: user.telegram_chat_id,
+    text,
+    payload: { kind, parentId, userId, duty },
   })
-  response.status(200).json({ ok: true })
+  const delivery = await processDeliveriesForEvent(eventKey)
+  response.status(200).json({ ok: true, ...delivery })
 }
