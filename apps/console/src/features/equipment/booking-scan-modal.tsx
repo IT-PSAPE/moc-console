@@ -3,9 +3,10 @@ import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { Paragraph, Title } from "@moc/ui/components/display/text";
 import { Badge } from "@moc/ui/components/display/badge";
 import { Alert } from "@moc/ui/components/feedback/alert";
+import { Input } from "@moc/ui/components/form/input";
 import { Modal } from "@moc/ui/components/overlays/modal";
-import { Camera, ScanLine, Smartphone } from "lucide-react";
-import type { RefObject } from "react";
+import { Camera, Keyboard, ScanLine, Smartphone } from "lucide-react";
+import type { ChangeEvent, KeyboardEvent, RefObject } from "react";
 
 type BookingScanModalProps = {
   open: boolean;
@@ -14,7 +15,10 @@ type BookingScanModalProps = {
   error: string | null;
   scannedCount: number;
   totalCount: number;
+  manualCode: string;
   onClose: () => void;
+  onManualCodeChange: (value: string) => void;
+  onManualCodeSubmit: () => void;
   videoRef: RefObject<HTMLVideoElement | null>;
 };
 
@@ -25,13 +29,26 @@ export function BookingScanModal({
   error,
   scannedCount,
   totalCount,
+  manualCode,
   onClose,
+  onManualCodeChange,
+  onManualCodeSubmit,
   videoRef,
 }: BookingScanModalProps) {
   function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
       onClose();
     }
+  }
+
+  function handleManualCodeChange(event: ChangeEvent<HTMLInputElement>) {
+    onManualCodeChange(event.target.value);
+  }
+
+  function handleManualCodeKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    onManualCodeSubmit();
   }
 
   return (
@@ -62,7 +79,7 @@ export function BookingScanModal({
                   className="rounded-lg border border-dashed border-secondary py-10"
                   icon={<Smartphone />}
                   title="QR scanning is unavailable here"
-                  description="Use a browser with camera barcode support."
+                  description="Enter the equipment code below or use a supported camera scanner."
                 />
               )}
 
@@ -75,6 +92,22 @@ export function BookingScanModal({
               )}
 
               {error ? <Alert title="Scanner error" description={error} variant="error" /> : null}
+
+              <div className="flex items-center gap-2">
+                <Input
+                  aria-label="Equipment code"
+                  autoComplete="off"
+                  icon={<Keyboard />}
+                  name="equipment-code"
+                  placeholder="Enter equipment code…"
+                  value={manualCode}
+                  onChange={handleManualCodeChange}
+                  onKeyDown={handleManualCodeKeyDown}
+                />
+                <Button variant="secondary" onClick={onManualCodeSubmit} disabled={!manualCode.trim()}>
+                  Add
+                </Button>
+              </div>
             </Modal.Content>
 
             <Modal.Footer className="justify-end">

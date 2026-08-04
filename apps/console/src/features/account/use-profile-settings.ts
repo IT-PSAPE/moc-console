@@ -21,6 +21,7 @@ export function useProfileSettings({ open, onOpenChange }: UseProfileSettingsPro
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [removeAvatarOpen, setRemoveAvatarOpen] = useState(false)
+  const [discardChangesOpen, setDiscardChangesOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -60,7 +61,20 @@ export function useProfileSettings({ open, onOpenChange }: UseProfileSettingsPro
 
   function close() {
     reset()
+    setDiscardChangesOpen(false)
     onOpenChange(false)
+  }
+
+  function requestClose() {
+    if (hasChanges) {
+      setDiscardChangesOpen(true)
+      return
+    }
+    close()
+  }
+
+  function cancelDiscardChanges() {
+    setDiscardChangesOpen(false)
   }
 
   async function save() {
@@ -75,6 +89,7 @@ export function useProfileSettings({ open, onOpenChange }: UseProfileSettingsPro
       })
       await refreshProfile()
       toast({ title: "Profile updated", variant: "success" })
+      setDiscardChangesOpen(false)
       onOpenChange(false)
     } catch (error) {
       toast({
@@ -153,8 +168,8 @@ export function useProfileSettings({ open, onOpenChange }: UseProfileSettingsPro
   }
 
   return {
-    state: { name, surname, duty, status, isSaving, pendingAvatarFile, isUploadingAvatar, removeAvatarOpen },
-    actions: { setName, setSurname, setDuty, setStatus, close, save, pickAvatar, selectAvatar, uploadAvatar, removeAvatar, openRemoveAvatar, closeRemoveAvatar, cancelAvatarCrop },
+    state: { name, surname, duty, status, isSaving, pendingAvatarFile, isUploadingAvatar, removeAvatarOpen, discardChangesOpen },
+    actions: { setName, setSurname, setDuty, setStatus, close, requestClose, cancelDiscardChanges, save, pickAvatar, selectAvatar, uploadAvatar, removeAvatar, openRemoveAvatar, closeRemoveAvatar, cancelAvatarCrop },
     fileInputRef,
     meta: {
       profile,

@@ -1,15 +1,20 @@
 import type { MouseEvent } from "react"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useSidebar } from "@moc/ui/components/navigation/sidebar"
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 
 export function useWorkspaceSwitcher() {
   const { state: sidebarState } = useSidebar()
-  const { workspaces, currentWorkspaceId, setCurrentWorkspaceId } = useWorkspace()
-  const currentWorkspace = workspaces.find((workspace) => workspace.id === currentWorkspaceId)
+  const { workspaces, currentWorkspace, currentWorkspaceId, setCurrentWorkspaceId } = useWorkspace()
+  const { toast } = useFeedback()
 
   function selectWorkspace(event: MouseEvent<HTMLDivElement>) {
     const workspaceId = event.currentTarget.dataset.workspaceId
-    if (workspaceId && workspaceId !== currentWorkspaceId) setCurrentWorkspaceId(workspaceId)
+    const workspace = workspaces.find((item) => item.id === workspaceId)
+    if (!workspace || workspace.id === currentWorkspaceId) return
+
+    setCurrentWorkspaceId(workspace.id)
+    toast({ title: "Workspace switched", description: `Now viewing ${workspace.name}.`, variant: "success" })
   }
 
   return {

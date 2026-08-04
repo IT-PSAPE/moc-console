@@ -1,16 +1,18 @@
 import { fetchAllUsers } from "@/data/fetch-assignees";
+import { useWorkspaceResource } from "@/hooks/use-workspace-resource";
+import { useWorkspace } from "@/lib/workspace-context";
 import type { User } from "@moc/types/requests";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+
+const emptyMembers: User[] = [];
 
 export function useMembers() {
-  const [members, setMembers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { currentWorkspaceId } = useWorkspace();
+  const { data: members, error, isLoading, load } = useWorkspaceResource({ emptyValue: emptyMembers, fetcher: fetchAllUsers, resource: "members", workspaceId: currentWorkspaceId });
 
   useEffect(() => {
-    fetchAllUsers()
-      .then(setMembers)
-      .finally(() => setIsLoading(false));
-  }, []);
+    void load();
+  }, [load]);
 
-  return { members, isLoading };
+  return { members, isLoading, error, retry: load };
 }

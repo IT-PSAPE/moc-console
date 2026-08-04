@@ -29,19 +29,22 @@ export function AvatarCropperModal({ open, file, onCancel, onConfirm }: AvatarCr
                             <div className="flex flex-col gap-0.5">
                                 <Label.md>Adjust your photo</Label.md>
                                 <Paragraph.xs className="text-tertiary">
-                                    Drag to reposition. Use the slider to zoom.
+                                    Drag to reposition, or use the arrow keys when the photo is focused. Use the slider to zoom.
                                 </Paragraph.xs>
                             </div>
                         </Modal.Header>
                         <Modal.Content>
                             <div className="flex flex-col items-center gap-4 p-4">
-                                <div
-                                    className="relative overflow-hidden rounded-full bg-secondary touch-none cursor-grab active:cursor-grabbing select-none"
+                                <Button.Unstyled
+                                    type="button"
+                                    aria-label="Position photo. Use arrow keys to move it; hold Shift for larger movements."
+                                    className="relative overflow-hidden rounded-full bg-secondary touch-none cursor-grab select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:cursor-grabbing"
                                     style={{ width: AVATAR_CROP_VIEWPORT, height: AVATAR_CROP_VIEWPORT }}
                                     onPointerDown={cropper.actions.startDrag}
                                     onPointerMove={cropper.actions.drag}
                                     onPointerUp={cropper.actions.stopDrag}
                                     onPointerCancel={cropper.actions.stopDrag}
+                                    onKeyDown={cropper.actions.handlePositionKeyDown}
                                 >
                                     {objectUrl && (
                                         <img
@@ -60,7 +63,7 @@ export function AvatarCropperModal({ open, file, onCancel, onConfirm }: AvatarCr
                                             } : undefined}
                                         />
                                     )}
-                                </div>
+                                </Button.Unstyled>
                                 <Input
                                     name="avatar-zoom"
                                     type="range"

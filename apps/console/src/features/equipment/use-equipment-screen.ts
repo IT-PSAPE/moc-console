@@ -28,7 +28,7 @@ export function useEquipmentScreen() {
   const [createOpen, setCreateOpen] = useState(false)
   const filters = useEquipmentFilters(equipmentState.equipment)
   const activeView = isMobile && view === 'kanban' ? 'list' : view
-  const detail = useListDetailSelection<Equipment>()
+  const detail = useListDetailSelection<Equipment>(equipmentState.equipment)
   const { close: closeDetail, select: selectEquipment } = detail.actions
 
   useEffect(() => { void loadEquipment() }, [loadEquipment])

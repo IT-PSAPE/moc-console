@@ -82,7 +82,10 @@ export function BookingDetailContent({ booking }: { booking: Booking }) {
           error={collection.state.error}
           scannedCount={collection.state.scannedCount}
           totalCount={collection.state.totalCount}
+          manualCode={collection.state.manualCode}
           onClose={collection.actions.closeScanner}
+          onManualCodeChange={collection.actions.setManualCode}
+          onManualCodeSubmit={collection.actions.submitManualCode}
           videoRef={collection.meta.videoRef}
         />
     </DetailPage>

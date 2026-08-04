@@ -41,18 +41,18 @@ function mapEquipmentRow(
   };
 }
 
-export async function fetchEquipment(): Promise<Equipment[]> {
-  const workspaceId = await getCurrentWorkspaceId();
+export async function fetchEquipment(workspaceId?: string): Promise<Equipment[]> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
   const [equipmentResult, bookingResult] = await Promise.all([
     supabase
       .from("equipment")
       .select("id, name, serial_number, category, status, location, notes, last_active_on, thumbnail_url")
-      .eq("workspace_id", workspaceId)
+      .eq("workspace_id", resolvedWorkspaceId)
       .order("name", { ascending: true }),
     supabase
       .from("bookings")
       .select(BOOKING_SELECT)
-      .eq("workspace_id", workspaceId)
+      .eq("workspace_id", resolvedWorkspaceId)
       .neq("status", "returned"),
   ]);
 
@@ -83,17 +83,56 @@ export async function fetchEquipment(): Promise<Equipment[]> {
   return ((equipmentResult.data ?? []) as EquipmentRow[]).map((row) => mapEquipmentRow(row, activeBookingByEquipmentId));
 }
 
-export async function fetchEquipmentById(id: string): Promise<Equipment | undefined> {
-  const equipment = await fetchEquipment();
-  return equipment.find((item) => item.id === id);
+export async function fetchEquipmentById(id: string, workspaceId?: string): Promise<Equipment | undefined> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
+  const [equipmentResult, bookingResult] = await Promise.all([
+    supabase
+      .from("equipment")
+      .select("id, name, serial_number, category, status, location, notes, last_active_on, thumbnail_url")
+      .eq("workspace_id", resolvedWorkspaceId)
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("bookings")
+      .select("checked_out_at, booked_by, items:booking_items!inner(equipment_id)")
+      .eq("workspace_id", resolvedWorkspaceId)
+      .eq("items.equipment_id", id)
+      .neq("status", "returned")
+      .order("checked_out_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  if (equipmentResult.error) {
+    throw new Error(equipmentResult.error.message);
+  }
+
+  if (bookingResult.error) {
+    throw new Error(bookingResult.error.message);
+  }
+
+  if (!equipmentResult.data) {
+    return undefined;
+  }
+
+  const activeBookingByEquipmentId = new Map<string, ActiveBookingForEquipment>();
+
+  if (bookingResult.data) {
+    activeBookingByEquipmentId.set(id, {
+      checkedOutAt: bookingResult.data.checked_out_at,
+      bookedBy: bookingResult.data.booked_by,
+    });
+  }
+
+  return mapEquipmentRow(equipmentResult.data as EquipmentRow, activeBookingByEquipmentId);
 }
 
-export async function fetchBookings(): Promise<Booking[]> {
-  const workspaceId = await getCurrentWorkspaceId();
+export async function fetchBookings(workspaceId?: string): Promise<Booking[]> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
   const { data, error } = await supabase
     .from("bookings")
     .select(BOOKING_SELECT)
-    .eq("workspace_id", workspaceId)
+    .eq("workspace_id", resolvedWorkspaceId)
     .order("checked_out_at", { ascending: false });
 
   if (error) {
@@ -103,12 +142,12 @@ export async function fetchBookings(): Promise<Booking[]> {
   return ((data ?? []) as unknown as BookingRow[]).map(mapBookingRow);
 }
 
-export async function fetchBookingById(id: string): Promise<Booking | undefined> {
-  const workspaceId = await getCurrentWorkspaceId();
+export async function fetchBookingById(id: string, workspaceId?: string): Promise<Booking | undefined> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
   const { data, error } = await supabase
     .from("bookings")
     .select(BOOKING_SELECT)
-    .eq("workspace_id", workspaceId)
+    .eq("workspace_id", resolvedWorkspaceId)
     .eq("id", id)
     .maybeSingle();
 

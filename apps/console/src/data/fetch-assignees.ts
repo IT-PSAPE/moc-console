@@ -79,12 +79,12 @@ export async function fetchAssigneesByChecklistId(checklistId: string): Promise<
   return assigneesByItemId;
 }
 
-export async function fetchAllUsers(): Promise<User[]> {
-  const workspaceId = await getCurrentWorkspaceId();
+export async function fetchAllUsers(workspaceId?: string): Promise<User[]> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
   const { data, error } = await supabase
     .from("workspace_users")
     .select(`users(${USER_COLUMNS})`)
-    .eq("workspace_id", workspaceId);
+    .eq("workspace_id", resolvedWorkspaceId);
 
   if (error) {
     throw new Error(error.message);

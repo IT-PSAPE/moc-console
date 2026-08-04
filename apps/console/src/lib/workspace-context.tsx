@@ -10,6 +10,7 @@ const STORAGE_KEY = "currentWorkspaceId"
 
 type WorkspaceContextValue = {
     workspaces: Workspace[]
+    currentWorkspace: Workspace | null
     currentWorkspaceId: string | null
     loading: boolean
     setCurrentWorkspaceId: (id: string) => void
@@ -123,7 +124,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     )
 
     const value = useMemo(
-        () => ({ workspaces, currentWorkspaceId, loading, setCurrentWorkspaceId, refresh }),
+        () => ({
+            workspaces,
+            currentWorkspace: workspaces.find((workspace) => workspace.id === currentWorkspaceId) ?? null,
+            currentWorkspaceId,
+            loading,
+            setCurrentWorkspaceId,
+            refresh,
+        }),
         [workspaces, currentWorkspaceId, loading, setCurrentWorkspaceId, refresh],
     )
 

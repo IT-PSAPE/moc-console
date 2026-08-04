@@ -51,7 +51,7 @@ export function EquipmentScreen() {
             <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={state.isMobile}>Kanban</CollectionToolbar.ViewItem>
           </SegmentedControl>
         </CollectionToolbar.Views>
-        <CollectionToolbar.Actions className="flex-wrap">
+        <CollectionToolbar.Actions>
           <Input
             aria-label="Search equipment"
             name="equipment-search"
@@ -103,6 +103,7 @@ export function EquipmentScreen() {
       />
       </Page>
       </SplitPanel.Primary>
+      <SplitPanel.ResizeHandle />
       <SplitPanel.Detail>
         {state.selectedEquipment && <EquipmentPanelContent equipment={state.selectedEquipment} open={state.detailOpen} onClose={actions.closeDetail} />}
       </SplitPanel.Detail>

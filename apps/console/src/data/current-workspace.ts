@@ -14,6 +14,7 @@ let cachedUserId: string | null = null;
 let cachedWorkspaceId: string | null = null;
 let pendingWorkspaceIdPromise: Promise<string> | null = null;
 let currentWorkspaceIdMirror: string | null = null;
+let currentWorkspaceGeneration = 0;
 
 async function resolveFallbackWorkspaceId(): Promise<string> {
   const { data, error } = await supabase
@@ -85,15 +86,23 @@ export async function getCurrentWorkspaceId(): Promise<string> {
 }
 
 export function setCurrentWorkspaceIdMirror(id: string | null) {
+  if (currentWorkspaceIdMirror !== id) {
+    currentWorkspaceGeneration += 1;
+  }
+
   currentWorkspaceIdMirror = id;
   if (id) {
     cachedWorkspaceId = id;
   }
 }
 
+export function getCurrentWorkspaceGeneration() {
+  return currentWorkspaceGeneration;
+}
+
 export function clearCurrentWorkspaceCache() {
   cachedUserId = null;
   cachedWorkspaceId = null;
   pendingWorkspaceIdPromise = null;
-  currentWorkspaceIdMirror = null;
+  setCurrentWorkspaceIdMirror(null);
 }

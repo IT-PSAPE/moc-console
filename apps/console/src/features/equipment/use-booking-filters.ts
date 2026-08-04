@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Booking, BookingStatus } from "@moc/types/equipment";
 import { areSetsEqual } from "@/utils/sets";
+import { useQueryText } from "@/hooks/use-query-text";
 
 // ─── Filter / Sort state ───────────────────────────────
 
@@ -24,7 +25,9 @@ const defaultFilters: BookingFilters = {
 // ─── Hook ──────────────────────────────────────────────
 
 export function useBookingFilters(bookings: Booking[]) {
-  const [filters, setFilters] = useState<BookingFilters>(defaultFilters);
+  const [filterState, setFilters] = useState<BookingFilters>(defaultFilters);
+  const [search, setSearchQuery] = useQueryText();
+  const filters = useMemo(() => ({ ...filterState, search }), [filterState, search]);
 
   const results = useMemo(() => {
     let result = bookings;
@@ -65,7 +68,7 @@ export function useBookingFilters(bookings: Booking[]) {
   // ─── Actions ─────────────────────────────────────────
 
   function setSearch(search: string) {
-    setFilters((f) => ({ ...f, search }));
+    setSearchQuery(search);
   }
 
   function toggleStatus(status: BookingStatus) {
@@ -83,6 +86,7 @@ export function useBookingFilters(bookings: Booking[]) {
 
   function reset() {
     setFilters(defaultFilters);
+    setSearchQuery("");
   }
 
   const hasActiveFilters = !areSetsEqual(filters.statuses, defaultFilters.statuses);

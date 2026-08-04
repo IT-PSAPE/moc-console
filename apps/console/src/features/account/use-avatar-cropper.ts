@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ChangeEvent, type PointerEvent, type SyntheticEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent, type PointerEvent, type SyntheticEvent } from "react";
 
 export const AVATAR_CROP_VIEWPORT = 288;
 const AVATAR_CROP_OUTPUT = 512;
@@ -41,19 +41,19 @@ export function useAvatarCropper(file: File | null, onConfirm: (blob: Blob) => v
     setOffset({ x: (AVATAR_CROP_VIEWPORT - w * fit) / 2, y: (AVATAR_CROP_VIEWPORT - h * fit) / 2 });
   }, []);
 
-  function startDrag(event: PointerEvent<HTMLDivElement>) {
+  function startDrag(event: PointerEvent<HTMLButtonElement>) {
     event.currentTarget.setPointerCapture(event.pointerId);
     dragRef.current = { startX: event.clientX, startY: event.clientY, originX: offset.x, originY: offset.y };
   }
 
-  function drag(event: PointerEvent<HTMLDivElement>) {
+  function drag(event: PointerEvent<HTMLButtonElement>) {
     if (!dragRef.current || !natural) return;
     const x = dragRef.current.originX + event.clientX - dragRef.current.startX;
     const y = dragRef.current.originY + event.clientY - dragRef.current.startY;
     setOffset(clampOffset(x, y, scale, natural));
   }
 
-  function stopDrag(event: PointerEvent<HTMLDivElement>) {
+  function stopDrag(event: PointerEvent<HTMLButtonElement>) {
     event.currentTarget.releasePointerCapture(event.pointerId);
     dragRef.current = null;
   }
@@ -65,6 +65,28 @@ export function useAvatarCropper(file: File | null, onConfirm: (blob: Blob) => v
     const ratio = nextScale / scale;
     setScale(nextScale);
     setOffset(clampOffset(center - (center - offset.x) * ratio, center - (center - offset.y) * ratio, nextScale, natural));
+  }
+
+  function movePosition(x: number, y: number) {
+    if (!natural) return;
+    setOffset((current) => clampOffset(current.x + x, current.y + y, scale, natural));
+  }
+
+  function handlePositionKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    const increment = event.shiftKey ? 16 : 4;
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      movePosition(0, -increment);
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      movePosition(0, increment);
+    } else if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      movePosition(-increment, 0);
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      movePosition(increment, 0);
+    }
   }
 
   async function confirm() {
@@ -97,7 +119,7 @@ export function useAvatarCropper(file: File | null, onConfirm: (blob: Blob) => v
 
   return {
     state: { isExporting, natural, objectUrl, offset, scale },
-    actions: { changeZoom, confirm, drag, loadImage, startDrag, stopDrag },
+    actions: { changeZoom, confirm, drag, handlePositionKeyDown, loadImage, startDrag, stopDrag },
     meta: { maxScale: fitScale * MAX_ZOOM_MULTIPLIER, minScale: fitScale },
   };
 }

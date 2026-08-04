@@ -16,7 +16,7 @@ export function useBookingsScreen() {
   const [view, setView] = useViewQuery(bookingViews, "list")
   const isMobile = useIsMobile()
   const filters = useBookingFilters(bookings)
-  const detail = useListDetailSelection<Booking>()
+  const detail = useListDetailSelection<Booking>(bookings)
   const { close: closeDetail, select: selectBooking } = detail.actions
   const activeView = isMobile && view === "kanban" ? "list" : view
 

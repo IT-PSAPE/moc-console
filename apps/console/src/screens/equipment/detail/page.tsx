@@ -6,14 +6,19 @@ import { Spinner } from "@moc/ui/components/feedback/spinner"
 import { Page } from "@moc/ui/components/layout/page"
 import { Package } from "lucide-react"
 import { EquipmentDetailContent } from "./equipment-detail-content"
+import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 
 export function EquipmentDetailScreen() {
   const { id } = useParams<{ id: string }>()
-  const { state } = useEquipmentDetail(id)
+  const { state, actions } = useEquipmentDetail(id)
   useBreadcrumbOverride(id ?? "", state.equipment?.name)
 
   if (state.isLoading) {
     return <Page><Page.Content width="readable" className="flex justify-center py-16"><Spinner size="lg" /></Page.Content></Page>
+  }
+
+  if (state.error) {
+    return <Page><Page.Content width="standard" className="py-16"><ResourceLoadError title="Could not load equipment" error={state.error} onRetry={actions.retry} /></Page.Content></Page>
   }
 
   if (!state.equipment) {

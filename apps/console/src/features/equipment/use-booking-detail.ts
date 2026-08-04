@@ -1,21 +1,13 @@
-import { useEffect, useState } from 'react'
-import { fetchBookingById } from '@/data/fetch-equipment'
-import type { Booking } from '@moc/types/equipment'
+import { fetchBookingById } from "@/data/fetch-equipment";
+import { useWorkspaceDetail } from "@/hooks/use-workspace-detail";
+import { useWorkspace } from "@/lib/workspace-context";
 
 export function useBookingDetail(id: string | undefined) {
-  const [booking, setBooking] = useState<Booking | null>(null)
-  const [loadedId, setLoadedId] = useState<string | null>(null)
+  const { currentWorkspaceId } = useWorkspace();
+  const detail = useWorkspaceDetail({ fetcher: fetchBookingById, id, workspaceId: currentWorkspaceId });
 
-  useEffect(() => {
-    let cancelled = false
-    fetchBookingById(id ?? '').then((result) => {
-      if (!cancelled) {
-        setBooking(result ?? null)
-        setLoadedId(id ?? null)
-      }
-    })
-    return () => { cancelled = true }
-  }, [id])
-
-  return { state: { booking, isLoading: loadedId !== (id ?? null) } }
+  return {
+    state: { booking: detail.data, error: detail.error, isLoading: detail.isLoading },
+    actions: { retry: detail.retry },
+  };
 }

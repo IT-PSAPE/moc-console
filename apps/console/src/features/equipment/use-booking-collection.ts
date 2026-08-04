@@ -28,6 +28,7 @@ export function useBookingCollection({
     bookingId: booking.id,
     scannedItemIds: new Set(),
   }));
+  const [manualCode, setManualCode] = useState("");
   let scannedItemIds = scanProgress.scannedItemIds;
 
   if (scanProgress.bookingId !== booking.id) {
@@ -97,6 +98,13 @@ export function useBookingCollection({
     openScannerBase();
   }, [canScan, openScannerBase]);
 
+  const submitManualCode = useCallback(() => {
+    const value = manualCode.trim();
+    if (!value) return;
+    handleDetected(value);
+    setManualCode("");
+  }, [handleDetected, manualCode]);
+
   return {
     state: {
       canScan,
@@ -104,11 +112,14 @@ export function useBookingCollection({
       isComplete,
       totalCount,
       scannedItemIds,
+      manualCode,
       ...scannerState,
     },
     actions: {
       closeScanner,
       openScanner,
+      setManualCode,
+      submitManualCode,
     },
     meta: scannerMeta,
   };

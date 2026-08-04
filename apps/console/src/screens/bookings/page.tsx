@@ -77,6 +77,7 @@ export function BookingsScreen() {
       </CollectionContent>
       </Page>
       </SplitPanel.Primary>
+      <SplitPanel.ResizeHandle />
       <SplitPanel.Detail>
         {state.selectedBooking && <BookingPanelContent booking={state.selectedBooking} onClose={actions.closeDetail} />}
       </SplitPanel.Detail>
