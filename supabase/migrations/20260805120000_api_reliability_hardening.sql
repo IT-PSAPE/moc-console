@@ -117,27 +117,28 @@ BEGIN
     RAISE EXCEPTION 'A connection owner is required' USING ERRCODE = 'not_null_violation';
   END IF;
 
-  INSERT INTO private.integration_oauth_tokens (
-    provider, workspace_id, access_token, refresh_token, token_expires_at,
-    refresh_lock_id, refresh_lock_expires_at
-  ) VALUES (
-    p_provider, p_workspace_id, p_access_token, p_refresh_token, p_token_expires_at,
-    NULL, NULL
-  )
-  ON CONFLICT (provider, workspace_id) DO UPDATE
-  SET access_token = EXCLUDED.access_token,
-      refresh_token = EXCLUDED.refresh_token,
-      token_expires_at = EXCLUDED.token_expires_at,
-      refresh_lock_id = NULL,
-      refresh_lock_expires_at = NULL,
-      updated_at = now();
-
   IF p_provider = 'youtube' THEN
     v_channel_id := nullif(btrim(p_connection ->> 'channel_id'), '');
     v_channel_title := nullif(btrim(p_connection ->> 'channel_title'), '');
     IF v_channel_id IS NULL OR v_channel_title IS NULL THEN
       RAISE EXCEPTION 'YouTube channel metadata is required' USING ERRCODE = 'not_null_violation';
     END IF;
+
+    -- Preserve the existing YouTube write order.
+    INSERT INTO private.integration_oauth_tokens (
+      provider, workspace_id, access_token, refresh_token, token_expires_at,
+      refresh_lock_id, refresh_lock_expires_at
+    ) VALUES (
+      p_provider, p_workspace_id, p_access_token, p_refresh_token, p_token_expires_at,
+      NULL, NULL
+    )
+    ON CONFLICT (provider, workspace_id) DO UPDATE
+    SET access_token = EXCLUDED.access_token,
+        refresh_token = EXCLUDED.refresh_token,
+        token_expires_at = EXCLUDED.token_expires_at,
+        refresh_lock_id = NULL,
+        refresh_lock_expires_at = NULL,
+        updated_at = now();
 
     INSERT INTO public.youtube_connections (
       workspace_id, channel_id, channel_title, token_expires_at, status, connected_by
@@ -160,9 +161,9 @@ BEGIN
     RAISE EXCEPTION 'Zoom account metadata is required' USING ERRCODE = 'not_null_violation';
   END IF;
 
-  -- A workspace can belong to only one Zoom user at a time. Retain meetings
-  -- only when that same user reconnects; otherwise purge the old owner's
-  -- meetings and every notification sourced from those local meeting IDs.
+  -- A workspace can belong to only one Zoom user at a time. A same-user
+  -- reconnect retains the row identity; replacing the account deletes the
+  -- parent so its meeting FK cascade prevents old-sync resurrection.
   SELECT zoom_user_id INTO v_existing_zoom_user_id
   FROM public.zoom_connections
   WHERE workspace_id = p_workspace_id
@@ -171,21 +172,26 @@ BEGIN
   IF v_existing_zoom_user_id IS NOT NULL
     AND v_existing_zoom_user_id IS DISTINCT FROM v_zoom_user_id
   THEN
-    DELETE FROM public.notification_deliveries AS delivery
-    USING public.zoom_meetings AS meeting
-    WHERE meeting.workspace_id = p_workspace_id
-      AND delivery.event_key = format('meeting.created:%s', meeting.id);
-
-    DELETE FROM public.notification_outbox AS outbox_row
-    USING public.zoom_meetings AS meeting
-    WHERE meeting.workspace_id = p_workspace_id
-      AND outbox_row.event_type = 'meeting.created'
-      AND outbox_row.entity_type = 'meeting'
-      AND outbox_row.entity_id = meeting.id
-      AND outbox_row.event_key = format('meeting.created:%s', meeting.id);
-
-    DELETE FROM public.zoom_meetings WHERE workspace_id = p_workspace_id;
+    DELETE FROM public.zoom_connections
+    WHERE workspace_id = p_workspace_id;
   END IF;
+
+  -- Zoom disconnect/deauthorization lock the public connection before private
+  -- tokens. Maintain that same order here to avoid a cross-table deadlock.
+  INSERT INTO private.integration_oauth_tokens (
+    provider, workspace_id, access_token, refresh_token, token_expires_at,
+    refresh_lock_id, refresh_lock_expires_at
+  ) VALUES (
+    p_provider, p_workspace_id, p_access_token, p_refresh_token, p_token_expires_at,
+    NULL, NULL
+  )
+  ON CONFLICT (provider, workspace_id) DO UPDATE
+  SET access_token = EXCLUDED.access_token,
+      refresh_token = EXCLUDED.refresh_token,
+      token_expires_at = EXCLUDED.token_expires_at,
+      refresh_lock_id = NULL,
+      refresh_lock_expires_at = NULL,
+      updated_at = now();
 
   INSERT INTO public.zoom_connections (
     workspace_id, zoom_user_id, email, display_name, token_expires_at, status, connected_by
@@ -285,6 +291,70 @@ AS $$
     AND refresh_lock_id = p_lock_id;
 $$;
 
+-- Compare the private rotating refresh token and mark the public connection
+-- stale while holding the same database transaction. A read-then-update in
+-- the API can race another worker that has already stored a replacement.
+-- Zoom takes the public connection lock first, matching its save/disconnect
+-- operations; YouTube retains its established private-to-public order.
+CREATE OR REPLACE FUNCTION public.mark_integration_oauth_reauth_required_if_refresh_token_matches(
+  p_provider text,
+  p_workspace_id uuid,
+  p_expected_refresh_token text
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, private
+AS $$
+BEGIN
+  IF p_provider NOT IN ('youtube', 'zoom')
+    OR nullif(btrim(p_expected_refresh_token), '') IS NULL
+  THEN
+    RAISE EXCEPTION 'Invalid integration OAuth reauthentication state' USING ERRCODE = 'check_violation';
+  END IF;
+
+  IF p_provider = 'youtube' THEN
+    PERFORM 1
+    FROM private.integration_oauth_tokens
+    WHERE provider = p_provider
+      AND workspace_id = p_workspace_id
+      AND refresh_token = p_expected_refresh_token
+    FOR UPDATE;
+    IF NOT FOUND THEN
+      RETURN false;
+    END IF;
+
+    UPDATE public.youtube_connections
+    SET status = 'reauth_required'
+    WHERE workspace_id = p_workspace_id;
+    RETURN FOUND;
+  END IF;
+
+  PERFORM 1
+  FROM public.zoom_connections
+  WHERE workspace_id = p_workspace_id
+  FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN false;
+  END IF;
+
+  PERFORM 1
+  FROM private.integration_oauth_tokens
+  WHERE provider = p_provider
+    AND workspace_id = p_workspace_id
+    AND refresh_token = p_expected_refresh_token
+  FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN false;
+  END IF;
+
+  UPDATE public.zoom_connections
+  SET status = 'reauth_required'
+  WHERE workspace_id = p_workspace_id;
+  RETURN true;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.delete_integration_oauth_connection(
   p_provider text,
   p_workspace_id uuid
@@ -332,6 +402,77 @@ BEGIN
   END IF;
 END;
 $$;
+
+-- A meeting may also be deleted directly by an authenticated client. Keep the
+-- notification boundary at the database layer so no deletion path can leave a
+-- pending meeting-created message containing its former join URL or topic.
+CREATE OR REPLACE FUNCTION public.cleanup_zoom_meeting_notifications()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+  DELETE FROM public.notification_deliveries
+  WHERE event_key = format('meeting.created:%s', OLD.id);
+
+  DELETE FROM public.notification_outbox
+  WHERE event_type = 'meeting.created'
+    AND entity_type = 'meeting'
+    AND entity_id = OLD.id
+    AND workspace_id = OLD.workspace_id
+    AND event_key = format('meeting.created:%s', OLD.id);
+
+  RETURN OLD;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS zoom_meetings_cleanup_notifications ON public.zoom_meetings;
+CREATE TRIGGER zoom_meetings_cleanup_notifications
+  AFTER DELETE ON public.zoom_meetings
+  FOR EACH ROW EXECUTE FUNCTION public.cleanup_zoom_meeting_notifications();
+
+REVOKE ALL ON FUNCTION public.cleanup_zoom_meeting_notifications()
+  FROM PUBLIC, anon, authenticated, service_role;
+
+-- A meeting cannot outlive its workspace's Zoom connection. Deleting a
+-- connection therefore serializes with in-flight meeting inserts and cascades
+-- to the meeting rows; the AFTER DELETE trigger above removes their pending
+-- notifications for both explicit and cascaded deletes.
+ALTER TABLE public.zoom_meetings
+  ADD COLUMN IF NOT EXISTS zoom_connection_id uuid NULL;
+
+UPDATE public.zoom_meetings AS meeting
+SET zoom_connection_id = connection.id
+FROM public.zoom_connections AS connection
+WHERE connection.workspace_id = meeting.workspace_id
+  AND meeting.zoom_connection_id IS DISTINCT FROM connection.id;
+
+DELETE FROM public.zoom_meetings AS meeting
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM public.zoom_connections AS connection
+  WHERE connection.id = meeting.zoom_connection_id
+    AND connection.workspace_id = meeting.workspace_id
+);
+
+ALTER TABLE public.zoom_meetings
+  DROP CONSTRAINT IF EXISTS zoom_meetings_workspace_connection_fkey;
+ALTER TABLE public.zoom_meetings
+  DROP CONSTRAINT IF EXISTS zoom_meetings_connection_workspace_fkey;
+ALTER TABLE public.zoom_connections
+  DROP CONSTRAINT IF EXISTS zoom_connections_id_workspace_id_key;
+ALTER TABLE public.zoom_connections
+  ADD CONSTRAINT zoom_connections_id_workspace_id_key UNIQUE (id, workspace_id);
+ALTER TABLE public.zoom_meetings
+  ADD CONSTRAINT zoom_meetings_connection_workspace_fkey
+  FOREIGN KEY (zoom_connection_id, workspace_id)
+  REFERENCES public.zoom_connections(id, workspace_id)
+  ON DELETE CASCADE;
+ALTER TABLE public.zoom_meetings
+  ALTER COLUMN zoom_connection_id SET NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_zoom_meetings_zoom_connection_workspace_id
+  ON public.zoom_meetings (zoom_connection_id, workspace_id);
 
 -- Superseded service-role RPCs allowed token-only writes/deletes that could
 -- leave public connection metadata and private credentials out of sync.
@@ -807,6 +948,7 @@ BEGIN
     to_regprocedure('public.try_acquire_integration_oauth_refresh_lock(text,uuid,text,uuid,timestamptz)'),
     to_regprocedure('public.complete_integration_oauth_token_refresh(text,uuid,text,uuid,text,text,timestamptz)'),
     to_regprocedure('public.release_integration_oauth_refresh_lock(text,uuid,uuid)'),
+    to_regprocedure('public.mark_integration_oauth_reauth_required_if_refresh_token_matches(text,uuid,text)'),
     to_regprocedure('public.delete_integration_oauth_connection(text,uuid)'),
     to_regprocedure('public.claim_stale_requests()'),
     to_regprocedure('public.claim_stale_bookings()'),

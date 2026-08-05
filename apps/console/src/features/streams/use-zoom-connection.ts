@@ -11,7 +11,7 @@ export function useZoomConnection() {
   const { toast } = useFeedback()
   const {
     state: { zoomConnection, isLoadingZoomConnection },
-    actions: { setZoomConnection },
+    actions: { setZoomConnection, setZoomMeetings },
   } = useStreams()
   const { startOAuthFlow } = useZoomOAuth()
   const [isDisconnecting, setIsDisconnecting] = useState(false)
@@ -21,13 +21,14 @@ export function useZoomConnection() {
     try {
       await disconnectZoom()
       setZoomConnection(null)
+      setZoomMeetings([])
       toast({ title: "Zoom disconnected", variant: "success" })
     } catch (error) {
       toast({ title: "Failed to disconnect Zoom", description: getErrorMessage(error, "The Zoom connection could not be removed."), variant: "error" })
     } finally {
       setIsDisconnecting(false)
     }
-  }, [setZoomConnection, toast])
+  }, [setZoomConnection, setZoomMeetings, toast])
 
   return {
     state: { isDisconnecting },

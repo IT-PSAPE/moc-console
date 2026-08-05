@@ -32,7 +32,7 @@ export function useStreamsCollection() {
   const youtubeAvailable = youtube.meta.isConnected && youtube.meta.canCreate
   const zoomAvailable = zoom.meta.isConnected && zoom.meta.canCreate
   const canSync = (youtube.meta.isConnected && !youtube.meta.needsReauth)
-    || (zoom.meta.isConnected && !zoom.meta.needsReauth)
+    || (zoom.meta.isConnected && zoom.meta.canSync)
   const isConnected = youtube.meta.isConnected || zoom.meta.isConnected
   const isLoading = youtube.meta.isLoading || zoom.meta.isLoading
   const hasActiveFilters = youtube.meta.filters.hasActiveFilters || zoom.meta.filters.hasActiveFilters
@@ -50,9 +50,9 @@ export function useStreamsCollection() {
   const syncConnected = useCallback(async () => {
     const tasks: Promise<void>[] = []
     if (youtube.meta.isConnected) tasks.push(syncYouTube())
-    if (zoom.meta.isConnected) tasks.push(syncZoom())
+    if (zoom.meta.isConnected && zoom.meta.canSync) tasks.push(syncZoom())
     await Promise.all(tasks)
-  }, [syncYouTube, syncZoom, youtube.meta.isConnected, zoom.meta.isConnected])
+  }, [syncYouTube, syncZoom, youtube.meta.isConnected, zoom.meta.canSync, zoom.meta.isConnected])
 
   const selectStream = useCallback((stream: Stream) => {
     openStreamDetail(stream, youtube.actions.edit, youtube.actions.remove)

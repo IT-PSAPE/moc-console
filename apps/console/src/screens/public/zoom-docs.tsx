@@ -63,8 +63,9 @@ export function ZoomDocsScreen() {
         </SubSection>
         <SubSection title="Syncing meetings">
           <Paragraph.md>
-            The Streams screen initially shows meetings saved in your workspace. To pull in changes made elsewhere
-            (Zoom client, web portal, or other tools), click <strong>Refresh</strong> in the Streams toolbar.
+            The Streams screen initially shows meetings saved in your workspace. To reconcile current and upcoming
+            meetings with changes made elsewhere (Zoom client, web portal, or other tools), click <strong>Refresh</strong>
+            in the Streams toolbar. Past one-time meetings remain available when you enable <strong>Show past one-time meetings</strong>.
           </Paragraph.md>
         </SubSection>
         <SubSection title="Editing a meeting">

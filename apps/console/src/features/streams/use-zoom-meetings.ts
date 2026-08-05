@@ -8,6 +8,7 @@ import type { ZoomMeeting } from "@moc/types/streams/zoom"
 import { useStreams } from "./streams-provider"
 import { useProviderFailure } from "./use-provider-failure"
 import { useZoomMeetingFilters } from "./use-zoom-meeting-filters"
+import { canCreateZoomMeetings, canReconcileZoomMeetings } from "@/data/zoom-meeting-reconciliation"
 
 export function useZoomMeetings(searchQuery: string) {
   const navigate = useNavigate()
@@ -28,6 +29,8 @@ export function useZoomMeetings(searchQuery: string) {
   const providerFailure = useProviderFailure(zoomConnection, setZoomConnection)
   const connectionNeedsReauth = zoomConnection?.status === "reauth_required"
   const needsReauth = connectionNeedsReauth || providerFailure.meta.needsConnection
+  const canCreate = canCreateZoomMeetings(role) && !needsReauth
+  const canSync = canReconcileZoomMeetings(role) && !needsReauth
 
   const actionableErrorMessage = useCallback((error: unknown, fallback: string): string => {
     return providerFailure.actions.record(error)?.message ?? getErrorMessage(error, fallback)
@@ -62,6 +65,14 @@ export function useZoomMeetings(searchQuery: string) {
 
   const create = useCallback(async (params: CreateMeetingParams) => {
     if (guardReauthentication()) return
+    if (!canCreate) {
+      toast({
+        title: "Additional permission required",
+        description: "Creating a Zoom meeting requires read and create permission for this workspace.",
+        variant: "error",
+      })
+      return
+    }
     try {
       const meeting = await createZoomMeeting(params)
       syncMeeting(meeting)
@@ -72,7 +83,7 @@ export function useZoomMeetings(searchQuery: string) {
       toast({ title: "Failed to schedule meeting", description: message, variant: "error" })
       throw new Error(message)
     }
-  }, [actionableErrorMessage, guardReauthentication, providerFailure.actions, syncMeeting, toast])
+  }, [actionableErrorMessage, canCreate, guardReauthentication, providerFailure.actions, syncMeeting, toast])
 
   const update = useCallback(async (params: CreateMeetingParams) => {
     if (!editingMeeting || guardReauthentication()) return
@@ -107,6 +118,14 @@ export function useZoomMeetings(searchQuery: string) {
 
   const sync = useCallback(async () => {
     if (guardReauthentication()) return
+    if (!canSync) {
+      toast({
+        title: "Additional permission required",
+        description: "Syncing Zoom meetings requires read, create, update, and delete permission for this workspace.",
+        variant: "error",
+      })
+      return
+    }
     setIsSyncing(true)
     setSyncError(null)
     try {
@@ -121,7 +140,7 @@ export function useZoomMeetings(searchQuery: string) {
     } finally {
       setIsSyncing(false)
     }
-  }, [actionableErrorMessage, guardReauthentication, providerFailure.actions, setZoomMeetings, toast])
+  }, [actionableErrorMessage, canSync, guardReauthentication, providerFailure.actions, setZoomMeetings, toast])
 
   function openFilters() {
     setFilterOpen(true)
@@ -144,7 +163,8 @@ export function useZoomMeetings(searchQuery: string) {
       isConnected: Boolean(zoomConnection),
       needsReauth,
       providerFailure: providerFailure.state.failure,
-      canCreate: role?.can_create === true && !needsReauth,
+      canCreate,
+      canSync,
       isLoading: isLoadingZoomMeetings || isLoadingZoomConnection,
     },
   }

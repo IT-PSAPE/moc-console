@@ -1,5 +1,5 @@
 import { getCurrentWorkspaceGeneration } from "@/data/current-workspace";
-import { getWorkspaceResourceState, loadWorkspaceResource, setWorkspaceResourceData, updateWorkspaceResourceData } from "@/data/workspace-resource-cache";
+import { getWorkspaceResourceState, getWorkspaceResourceVersion, loadWorkspaceResource, setWorkspaceResourceData, updateWorkspaceResourceData } from "@/data/workspace-resource-cache";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type WorkspaceResourceOptions<T> = {
@@ -49,24 +49,25 @@ export function useWorkspaceResource<T>({ emptyValue, fetcher, resource, workspa
 
     const requestedSnapshot = { id: workspaceId, generation };
     const cached = getWorkspaceResourceState<T>(workspaceId, resource);
+    const requestedVersion = getWorkspaceResourceVersion(workspaceId, resource);
     setIsLoading(cached.isLoading || !cached.isLoaded || force);
     setError(null);
 
     try {
       const next = await loadWorkspaceResource(workspaceId, resource, fetcher, force);
-      if (isSameWorkspace(currentSnapshotRef.current, requestedSnapshot)) {
+      if (isSameWorkspace(currentSnapshotRef.current, requestedSnapshot) && getWorkspaceResourceVersion(workspaceId, resource) === requestedVersion) {
         setDataState(next);
         setError(null);
         setStateSnapshotKey(getSnapshotKey(requestedSnapshot, resource));
       }
     } catch (reason: unknown) {
       const nextError = reason instanceof Error ? reason : new Error("Failed to load workspace data");
-      if (isSameWorkspace(currentSnapshotRef.current, requestedSnapshot)) {
+      if (isSameWorkspace(currentSnapshotRef.current, requestedSnapshot) && getWorkspaceResourceVersion(workspaceId, resource) === requestedVersion) {
         setError(nextError);
         setStateSnapshotKey(getSnapshotKey(requestedSnapshot, resource));
       }
     } finally {
-      if (isSameWorkspace(currentSnapshotRef.current, requestedSnapshot)) {
+      if (isSameWorkspace(currentSnapshotRef.current, requestedSnapshot) && getWorkspaceResourceVersion(workspaceId, resource) === requestedVersion) {
         setIsLoading(false);
       }
     }
@@ -78,6 +79,7 @@ export function useWorkspaceResource<T>({ emptyValue, fetcher, resource, workspa
     setWorkspaceResourceData(workspaceId, resource, next);
     setDataState(next);
     setError(null);
+    setIsLoading(false);
     setStateSnapshotKey(snapshotKey);
   }, [resource, snapshotKey, workspaceId]);
 
@@ -91,6 +93,7 @@ export function useWorkspaceResource<T>({ emptyValue, fetcher, resource, workspa
     });
     setDataState(next);
     setError(null);
+    setIsLoading(false);
     setStateSnapshotKey(snapshotKey);
   }, [resource, snapshotKey, workspaceId]);
 

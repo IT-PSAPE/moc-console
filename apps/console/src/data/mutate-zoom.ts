@@ -2,13 +2,14 @@ import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/streams/zoom"
 import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 import { zoomApiFetch, revokeZoomToken } from "@/lib/zoom-client"
-import { fetchZoomMeetingById } from "./fetch-zoom"
+import { fetchZoomConnectionId, fetchZoomMeetingById } from "./fetch-zoom"
 import { formatUtcIsoForZoomApi } from "@moc/utils/zoned-date-time"
 import { randomId } from "@moc/utils/random-id"
 import { notifyMeetingCreated } from "./notify-event"
 import type { NotifyDestination } from "@moc/types/streams"
 import { providerRequestError } from "@/lib/provider-request-error"
-import { syncZoomMeetings as syncMeetings } from "./zoom-meeting-sync"
+import { syncZoomMeetingsWithinOperation } from "./zoom-meeting-sync"
+import { queueZoomMeetingOperation } from "./zoom-meeting-operation-queue"
 
 export { syncZoomMeetings } from "./zoom-meeting-sync"
 
@@ -36,6 +37,7 @@ export type ZoomMeetingMutationResult = {
 type LocalZoomMeetingInsertPayload = {
   id?: string
   workspace_id: string
+  zoom_connection_id: string
   zoom_meeting_id: number
   topic: string
   description: string
@@ -140,6 +142,11 @@ function getMeetingType(recurrenceType: ZoomRecurrenceType): number {
 
 export async function createZoomMeeting(params: CreateMeetingParams): Promise<ZoomMeeting> {
   const workspaceId = await getCurrentWorkspaceId()
+  return queueZoomMeetingOperation(workspaceId, () => createZoomMeetingWithinOperation(params, workspaceId))
+}
+
+async function createZoomMeetingWithinOperation(params: CreateMeetingParams, workspaceId: string): Promise<ZoomMeeting> {
+  const zoomConnectionId = await fetchZoomConnectionId(workspaceId)
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -184,6 +191,7 @@ export async function createZoomMeeting(params: CreateMeetingParams): Promise<Zo
   const payload: LocalZoomMeetingInsertPayload = {
     id: localMeetingId,
     workspace_id: workspaceId,
+    zoom_connection_id: zoomConnectionId,
     zoom_meeting_id: meeting.id,
     topic: params.topic,
     description: params.description,
@@ -235,6 +243,10 @@ export async function createZoomMeeting(params: CreateMeetingParams): Promise<Zo
 }
 
 export async function updateZoomMeeting(meeting: ZoomMeeting): Promise<ZoomMeetingMutationResult> {
+  return queueZoomMeetingOperation(meeting.workspaceId, () => updateZoomMeetingWithinOperation(meeting))
+}
+
+async function updateZoomMeetingWithinOperation(meeting: ZoomMeeting): Promise<ZoomMeetingMutationResult> {
   const recurrence = mapRecurrenceToZoomApi({
     topic: meeting.topic,
     description: meeting.description,
@@ -283,7 +295,7 @@ export async function updateZoomMeeting(meeting: ZoomMeeting): Promise<ZoomMeeti
     // Zoom has already accepted the update. Re-sync its canonical meeting and
     // retry local persistence once before asking the user to reconcile later.
     try {
-      await syncMeetings()
+      await syncZoomMeetingsWithinOperation(meeting.workspaceId)
       await persistLocalZoomMeetingUpdate(meeting.id, localValues)
     } catch {
       return {
@@ -299,6 +311,10 @@ export async function updateZoomMeeting(meeting: ZoomMeeting): Promise<ZoomMeeti
 }
 
 export async function deleteZoomMeeting(meeting: ZoomMeeting): Promise<void> {
+  return queueZoomMeetingOperation(meeting.workspaceId, () => deleteZoomMeetingWithinOperation(meeting))
+}
+
+async function deleteZoomMeetingWithinOperation(meeting: ZoomMeeting): Promise<void> {
   // Delete remote first: a failure here just throws, leaving the local row
   // intact. If we deleted locally first and the remote call failed, a rollback
   // could itself fail and leave the two systems permanently out of sync.
@@ -321,6 +337,11 @@ export async function deleteZoomMeeting(meeting: ZoomMeeting): Promise<void> {
 }
 
 export async function deleteLocalZoomMeetingRecord(id: string): Promise<void> {
+  const workspaceId = await getCurrentWorkspaceId()
+  return queueZoomMeetingOperation(workspaceId, () => deleteLocalZoomMeetingRecordWithinOperation(id))
+}
+
+async function deleteLocalZoomMeetingRecordWithinOperation(id: string): Promise<void> {
   const { error } = await supabase
     .from("zoom_meetings")
     .delete()
@@ -331,5 +352,5 @@ export async function deleteLocalZoomMeetingRecord(id: string): Promise<void> {
 
 export async function disconnectZoom(): Promise<void> {
   const workspaceId = await getCurrentWorkspaceId()
-  await revokeZoomToken(workspaceId)
+  await queueZoomMeetingOperation(workspaceId, () => revokeZoomToken(workspaceId))
 }

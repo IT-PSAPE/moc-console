@@ -92,6 +92,24 @@ export async function fetchZoomConnection(workspaceId?: string): Promise<ZoomCon
   return data ? mapConnectionRow(data as ZoomConnectionRow) : null
 }
 
+export async function fetchZoomConnectionId(workspaceId?: string): Promise<string> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId()
+  const { data, error } = await supabase
+    .from("zoom_connections")
+    .select("id")
+    .eq("workspace_id", resolvedWorkspaceId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  if (!data) {
+    throw new Error("Zoom is not connected for this workspace")
+  }
+
+  return (data as { id: string }).id
+}
+
 export async function fetchZoomMeetings(workspaceId?: string): Promise<ZoomMeeting[]> {
   const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId()
   const { data, error } = await supabase

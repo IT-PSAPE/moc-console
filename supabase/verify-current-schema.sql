@@ -37,6 +37,7 @@ expected_columns(table_schema, table_name, column_name, data_type, is_nullable) 
     ('private', 'integration_oauth_tokens', 'refresh_lock_expires_at', 'timestamp with time zone', true),
     ('public', 'youtube_connections', 'status', 'USER-DEFINED', false),
     ('public', 'zoom_connections', 'status', 'USER-DEFINED', false),
+    ('public', 'zoom_meetings', 'zoom_connection_id', 'uuid', false),
     ('public', 'requests', 'stale_notification_claimed_at', 'timestamp with time zone', true),
     ('public', 'requests', 'stale_notification_event_key', 'text', true),
     ('public', 'bookings', 'stale_notification_claimed_at', 'timestamp with time zone', true),
@@ -66,6 +67,7 @@ expected_indexes(schema_name, table_name, index_name) AS (
     ('public', 'streams', 'idx_streams_created_by'),
     ('public', 'zoom_connections', 'idx_zoom_connections_connected_by'),
     ('public', 'zoom_meetings', 'idx_zoom_meetings_created_by'),
+    ('public', 'zoom_meetings', 'idx_zoom_meetings_zoom_connection_workspace_id'),
     ('private', 'integration_oauth_tokens', 'idx_integration_oauth_tokens_workspace_id'),
     ('public', 'telegram_webhook_updates', 'idx_telegram_webhook_updates_retry'),
     ('public', 'notification_ingest_replays', 'idx_notification_ingest_replays_expires_at'),
@@ -79,6 +81,75 @@ actual_indexes AS (
   JOIN pg_class AS index_relation ON index_relation.oid = index_definition.indexrelid
   JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
 ),
+required_foreign_keys(
+  schema_name, table_name, constraint_name, referenced_schema_name,
+  referenced_table_name, child_columns, parent_columns, delete_action
+) AS (
+  VALUES (
+    'public', 'zoom_meetings', 'zoom_meetings_connection_workspace_fkey',
+    'public', 'zoom_connections', ARRAY['zoom_connection_id', 'workspace_id']::text[],
+    ARRAY['id', 'workspace_id']::text[], 'cascade'
+  )
+),
+actual_foreign_keys AS (
+  SELECT source_namespace.nspname AS schema_name,
+         source_relation.relname AS table_name,
+         constraint_row.conname AS constraint_name,
+         target_namespace.nspname AS referenced_schema_name,
+         target_relation.relname AS referenced_table_name,
+         ARRAY(
+           SELECT source_attribute.attname
+           FROM unnest(constraint_row.conkey) WITH ORDINALITY AS key_column(attnum, position)
+           JOIN pg_attribute AS source_attribute
+             ON source_attribute.attrelid = source_relation.oid
+            AND source_attribute.attnum = key_column.attnum
+           ORDER BY key_column.position
+         ) AS child_columns,
+         ARRAY(
+           SELECT target_attribute.attname
+           FROM unnest(constraint_row.confkey) WITH ORDINALITY AS key_column(attnum, position)
+           JOIN pg_attribute AS target_attribute
+             ON target_attribute.attrelid = target_relation.oid
+            AND target_attribute.attnum = key_column.attnum
+           ORDER BY key_column.position
+         ) AS parent_columns,
+         CASE constraint_row.confdeltype
+           WHEN 'c' THEN 'cascade'
+           WHEN 'n' THEN 'set null'
+           WHEN 'd' THEN 'set default'
+           WHEN 'r' THEN 'restrict'
+           ELSE 'no action'
+         END AS delete_action
+  FROM pg_constraint AS constraint_row
+  JOIN pg_class AS source_relation ON source_relation.oid = constraint_row.conrelid
+  JOIN pg_namespace AS source_namespace ON source_namespace.oid = source_relation.relnamespace
+  JOIN pg_class AS target_relation ON target_relation.oid = constraint_row.confrelid
+  JOIN pg_namespace AS target_namespace ON target_namespace.oid = target_relation.relnamespace
+  WHERE constraint_row.contype = 'f'
+),
+required_unique_constraints(schema_name, table_name, constraint_name, columns) AS (
+  VALUES (
+    'public', 'zoom_connections', 'zoom_connections_id_workspace_id_key',
+    ARRAY['id', 'workspace_id']::text[]
+  )
+),
+actual_unique_constraints AS (
+  SELECT namespace.nspname AS schema_name,
+         relation.relname AS table_name,
+         constraint_row.conname AS constraint_name,
+         ARRAY(
+           SELECT attribute.attname
+           FROM unnest(constraint_row.conkey) WITH ORDINALITY AS key_column(attnum, position)
+           JOIN pg_attribute AS attribute
+             ON attribute.attrelid = relation.oid
+            AND attribute.attnum = key_column.attnum
+           ORDER BY key_column.position
+         ) AS columns
+  FROM pg_constraint AS constraint_row
+  JOIN pg_class AS relation ON relation.oid = constraint_row.conrelid
+  JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+  WHERE constraint_row.contype = 'u'
+),
 expected_functions(signature) AS (
   VALUES
     ('public.get_integration_oauth_tokens(text,uuid)'),
@@ -86,6 +157,7 @@ expected_functions(signature) AS (
     ('public.try_acquire_integration_oauth_refresh_lock(text,uuid,text,uuid,timestamptz)'),
     ('public.complete_integration_oauth_token_refresh(text,uuid,text,uuid,text,text,timestamptz)'),
     ('public.release_integration_oauth_refresh_lock(text,uuid,uuid)'),
+    ('public.mark_integration_oauth_reauth_required_if_refresh_token_matches(text,uuid,text)'),
     ('public.delete_integration_oauth_connection(text,uuid)'),
     ('public.delete_zoom_integrations_for_user(text)'),
     ('public.claim_stale_requests()'),
@@ -118,11 +190,15 @@ service_only_tables(table_name) AS (
 service_only_functions(signature) AS (
   SELECT signature FROM expected_functions
 ),
+required_trigger_functions(signature) AS (
+  VALUES ('public.cleanup_zoom_meeting_notifications()')
+),
 required_triggers(table_name, trigger_name) AS (
   VALUES
     ('requests', 'set_updated_at'), ('bookings', 'set_bookings_updated_at'),
     ('streams', 'streams_enqueue_created_notification'),
     ('zoom_meetings', 'zoom_meetings_enqueue_created_notification'),
+    ('zoom_meetings', 'zoom_meetings_cleanup_notifications'),
     ('notification_outbox', 'set_notification_outbox_updated_at'),
     ('notification_deliveries', 'set_notification_deliveries_updated_at')
 ),
@@ -183,6 +259,36 @@ SELECT jsonb_build_object(
         )
     )
   ), '[]'::jsonb),
+  'missing_required_foreign_keys', coalesce((
+    SELECT jsonb_agg(
+      format('%I.%I.%I', expected.schema_name, expected.table_name, expected.constraint_name)
+      ORDER BY expected.schema_name, expected.table_name, expected.constraint_name
+    )
+    FROM required_foreign_keys AS expected
+    LEFT JOIN actual_foreign_keys AS actual
+      ON actual.schema_name = expected.schema_name
+     AND actual.table_name = expected.table_name
+     AND actual.constraint_name = expected.constraint_name
+     AND actual.referenced_schema_name = expected.referenced_schema_name
+     AND actual.referenced_table_name = expected.referenced_table_name
+     AND actual.child_columns = expected.child_columns
+     AND actual.parent_columns = expected.parent_columns
+     AND actual.delete_action = expected.delete_action
+    WHERE actual.constraint_name IS NULL
+  ), '[]'::jsonb),
+  'missing_required_unique_constraints', coalesce((
+    SELECT jsonb_agg(
+      format('%I.%I.%I', expected.schema_name, expected.table_name, expected.constraint_name)
+      ORDER BY expected.schema_name, expected.table_name, expected.constraint_name
+    )
+    FROM required_unique_constraints AS expected
+    LEFT JOIN actual_unique_constraints AS actual
+      ON actual.schema_name = expected.schema_name
+     AND actual.table_name = expected.table_name
+     AND actual.constraint_name = expected.constraint_name
+     AND actual.columns = expected.columns
+    WHERE actual.constraint_name IS NULL
+  ), '[]'::jsonb),
   'missing_required_indexes', coalesce((
     SELECT jsonb_agg(format('%I.%I.%I', expected.schema_name, expected.table_name, expected.index_name)
                      ORDER BY expected.schema_name, expected.table_name, expected.index_name)
@@ -206,7 +312,11 @@ SELECT jsonb_build_object(
   ), '[]'::jsonb),
   'missing_required_functions', coalesce((
     SELECT jsonb_agg(expected.signature ORDER BY expected.signature)
-    FROM expected_functions AS expected
+    FROM (
+      SELECT signature FROM expected_functions
+      UNION ALL
+      SELECT signature FROM required_trigger_functions
+    ) AS expected
     WHERE to_regprocedure(expected.signature) IS NULL
   ), '[]'::jsonb),
   'security_definer_functions_with_mutable_search_path', coalesce((
@@ -224,6 +334,15 @@ SELECT jsonb_build_object(
     JOIN public_functions AS function_row ON function_row.signature = expected.signature
     WHERE has_function_privilege('anon', function_row.oid, 'EXECUTE')
        OR has_function_privilege('authenticated', function_row.oid, 'EXECUTE')
+  ), '[]'::jsonb),
+  'trigger_functions_exposed_as_rpcs', coalesce((
+    SELECT jsonb_agg(signature ORDER BY signature)
+    FROM public_functions
+    WHERE prorettype = 'trigger'::regtype
+      AND (
+        has_function_privilege('anon', oid, 'EXECUTE')
+        OR has_function_privilege('authenticated', oid, 'EXECUTE')
+      )
   ), '[]'::jsonb),
   'service_only_tables_with_client_grants', coalesce((
     SELECT jsonb_agg(DISTINCT format('%I:%s:%s', grants.table_name, grants.grantee, grants.privilege_type)

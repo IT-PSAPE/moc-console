@@ -5,6 +5,9 @@ import { zoomApiFetch } from "@/lib/zoom-client"
 import { parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time"
 import { providerRequestError } from "@/lib/provider-request-error"
 import { notifyMeetingCreated } from "./notify-event"
+import { getAbsentActiveZoomMeetingIds, type ZoomMeetingReconciliationRow } from "./zoom-meeting-reconciliation"
+import { queueZoomMeetingOperation } from "./zoom-meeting-operation-queue"
+import { fetchZoomConnectionId } from "./fetch-zoom"
 
 type ZoomMeetingSyncRow = {
   id: number
@@ -25,6 +28,11 @@ function normalizeZoomStartTime(startTime: string | null, timezone: string): str
 
 export async function syncZoomMeetings(): Promise<ZoomMeeting[]> {
   const workspaceId = await getCurrentWorkspaceId()
+  return queueZoomMeetingOperation(workspaceId, () => syncZoomMeetingsWithinOperation(workspaceId))
+}
+
+export async function syncZoomMeetingsWithinOperation(workspaceId: string): Promise<ZoomMeeting[]> {
+  const zoomConnectionId = await fetchZoomConnectionId(workspaceId)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
@@ -41,12 +49,15 @@ export async function syncZoomMeetings(): Promise<ZoomMeeting[]> {
 
   const { data: existingRows, error: existingRowsError } = await supabase
     .from("zoom_meetings")
-    .select("zoom_meeting_id, created_by")
+    .select("id, zoom_meeting_id, recurrence_type, start_time, created_by")
     .eq("workspace_id", workspaceId)
   if (existingRowsError) throw new Error(existingRowsError.message)
-  const existingCreators = new Map((existingRows ?? []).map((row) => [row.zoom_meeting_id, row.created_by]))
+  const localMeetings = (existingRows ?? []) as Array<ZoomMeetingReconciliationRow & { created_by: string }>
+  const existingCreators = new Map(localMeetings.map((row) => [row.zoom_meeting_id, row.created_by]))
+  const absentActiveMeetingIds = getAbsentActiveZoomMeetingIds(localMeetings, meetings.map((meeting) => meeting.id))
   const payloads = meetings.map((meeting) => ({
     workspace_id: workspaceId,
+    zoom_connection_id: zoomConnectionId,
     zoom_meeting_id: meeting.id,
     topic: meeting.topic ?? "Untitled",
     description: meeting.agenda ?? "",
@@ -59,6 +70,14 @@ export async function syncZoomMeetings(): Promise<ZoomMeeting[]> {
   }))
   if (payloads.length > 0) {
     const { error } = await supabase.from("zoom_meetings").upsert(payloads, { onConflict: "workspace_id,zoom_meeting_id" })
+    if (error) throw new Error(error.message)
+  }
+  if (absentActiveMeetingIds.length > 0) {
+    const { error } = await supabase
+      .from("zoom_meetings")
+      .delete()
+      .eq("workspace_id", workspaceId)
+      .in("id", absentActiveMeetingIds)
     if (error) throw new Error(error.message)
   }
 

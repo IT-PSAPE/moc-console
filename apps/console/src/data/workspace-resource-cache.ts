@@ -9,6 +9,7 @@ type WorkspaceResourceRecord<T> = {
   data: T | undefined;
   error: Error | null;
   promise: Promise<T> | null;
+  version: number;
 };
 
 const resources = new Map<string, WorkspaceResourceRecord<unknown>>();
@@ -25,7 +26,7 @@ function getRecord<T>(workspaceId: string, resource: string): WorkspaceResourceR
     return existing;
   }
 
-  const record: WorkspaceResourceRecord<T> = { data: undefined, error: null, promise: null };
+  const record: WorkspaceResourceRecord<T> = { data: undefined, error: null, promise: null, version: 0 };
   resources.set(key, record);
   return record;
 }
@@ -37,6 +38,10 @@ export function getWorkspaceResourceState<T>(workspaceId: string | null, resourc
 
   const record = getRecord<T>(workspaceId, resource);
   return { data: record.data, error: record.error, isLoading: record.promise !== null, isLoaded: record.data !== undefined };
+}
+
+export function getWorkspaceResourceVersion(workspaceId: string, resource: string): number {
+  return getRecord(workspaceId, resource).version;
 }
 
 export async function loadWorkspaceResource<T>(workspaceId: string, resource: string, fetcher: (workspaceId: string) => Promise<T>, force = false): Promise<T> {
@@ -51,36 +56,51 @@ export async function loadWorkspaceResource<T>(workspaceId: string, resource: st
   }
 
   record.error = null;
-  record.promise = fetcher(workspaceId)
+  const version = record.version;
+  const promise = fetcher(workspaceId)
     .then((data) => {
-      record.data = data;
+      if (record.version === version) {
+        record.data = data;
+      }
       return data;
     })
     .catch((error: unknown) => {
       const resourceError = error instanceof Error ? error : new Error("Failed to load workspace data");
-      record.error = resourceError;
+      if (record.version === version) {
+        record.error = resourceError;
+      }
       throw resourceError;
     })
     .finally(() => {
-      record.promise = null;
+      if (record.version === version) {
+        record.promise = null;
+      }
     });
+  record.promise = promise;
 
-  return record.promise;
+  return promise;
 }
 
 export function setWorkspaceResourceData<T>(workspaceId: string, resource: string, data: T) {
   const record = getRecord<T>(workspaceId, resource);
+  record.version += 1;
   record.data = data;
   record.error = null;
+  record.promise = null;
 }
 
 export function updateWorkspaceResourceData<T>(workspaceId: string, resource: string, updater: (current: T | undefined) => T | undefined) {
   const record = getRecord<T>(workspaceId, resource);
+  record.version += 1;
   record.data = updater(record.data);
   record.error = null;
+  record.promise = null;
 }
 
 export function invalidateWorkspaceResource(workspaceId: string, resource: string) {
   const record = getRecord(workspaceId, resource);
+  record.version += 1;
   record.data = undefined;
+  record.error = null;
+  record.promise = null;
 }

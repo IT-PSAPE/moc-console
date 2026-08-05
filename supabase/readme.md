@@ -61,8 +61,10 @@ The first tracked reliability migration is:
 4. `20260805130000_zoom_marketplace_deauthorization` — source:
    [`migrations/20260805130000_zoom_marketplace_deauthorization.sql`](migrations/20260805130000_zoom_marketplace_deauthorization.sql).
    It removes Zoom host start URLs, handles verified Marketplace deauthorization,
-   and keeps Zoom reconnection/deauthorization from leaving meeting-derived
-   notification rows behind.
+   and keeps direct meeting deletion, reconnection, and deauthorization from
+   leaving meeting-derived notification rows behind. Zoom meeting rows are
+   anchored to the specific connection identity, so an old-account sync cannot
+   recreate meetings after a disconnect or account replacement.
 
 ## Script history
 

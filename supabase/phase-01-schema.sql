@@ -468,7 +468,8 @@ CREATE TABLE IF NOT EXISTS public.youtube_connections (
   connected_by     uuid        NOT NULL REFERENCES public.users(id),
   created_at       timestamptz NOT NULL DEFAULT now(),
   updated_at       timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (workspace_id)
+  UNIQUE (workspace_id),
+  CONSTRAINT zoom_connections_id_workspace_id_key UNIQUE (id, workspace_id)
 );
 
 -- streams (phase-13; phase-14 advanced columns + phase-28 notified_at folded in)
@@ -524,6 +525,7 @@ CREATE TABLE IF NOT EXISTS public.zoom_connections (
 CREATE TABLE IF NOT EXISTS public.zoom_meetings (
   id                  uuid                        PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id        uuid                        NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
+  zoom_connection_id  uuid                        NOT NULL,
   zoom_meeting_id     bigint                      NOT NULL,
   topic               text                        NOT NULL,
   description         text                        NOT NULL DEFAULT '',
@@ -543,6 +545,10 @@ CREATE TABLE IF NOT EXISTS public.zoom_meetings (
   created_by          uuid                        NOT NULL REFERENCES public.users(id),
   created_at          timestamptz                 NOT NULL DEFAULT now(),
   updated_at          timestamptz                 NOT NULL DEFAULT now(),
+  CONSTRAINT zoom_meetings_connection_workspace_fkey
+    FOREIGN KEY (zoom_connection_id, workspace_id)
+    REFERENCES public.zoom_connections(id, workspace_id)
+    ON DELETE CASCADE,
   UNIQUE (workspace_id, zoom_meeting_id)
 );
 
@@ -776,6 +782,8 @@ CREATE INDEX IF NOT EXISTS idx_streams_status       ON public.streams (stream_st
 -- zoom_connections / zoom_meetings (phase-13)
 CREATE INDEX IF NOT EXISTS idx_zoom_connections_workspace_id ON public.zoom_connections (workspace_id);
 CREATE INDEX IF NOT EXISTS idx_zoom_meetings_workspace_id    ON public.zoom_meetings (workspace_id);
+CREATE INDEX IF NOT EXISTS idx_zoom_meetings_zoom_connection_workspace_id
+  ON public.zoom_meetings (zoom_connection_id, workspace_id);
 CREATE INDEX IF NOT EXISTS idx_zoom_meetings_start_time      ON public.zoom_meetings (start_time);
 
 -- bug_reports (phase-17 + phase-19)
