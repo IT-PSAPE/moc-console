@@ -7,7 +7,19 @@ import {
   zoomValidationPlainToken,
 } from "../../../zoom-webhook.js"
 
-async function handleZoomWebhook(request: ApiRequest, response: ApiResponse): Promise<void> {
+export type ZoomWebhookDependencies = {
+  deleteIntegrationsForUser: (zoomUserId: string) => Promise<void>
+}
+
+const productionDependencies: ZoomWebhookDependencies = {
+  deleteIntegrationsForUser: deleteZoomIntegrationsForUser,
+}
+
+export async function handleZoomWebhook(
+  request: ApiRequest,
+  response: ApiResponse,
+  dependencies: ZoomWebhookDependencies = productionDependencies,
+): Promise<void> {
   response.setHeader("Content-Type", "application/json")
   if (request.method !== "POST") {
     response.status(405).json({ error: "Method not allowed" })
@@ -28,7 +40,7 @@ async function handleZoomWebhook(request: ApiRequest, response: ApiResponse): Pr
 
   const zoomUserId = zoomDeauthorizedUserId(request.body)
   if (zoomUserId) {
-    await deleteZoomIntegrationsForUser(zoomUserId)
+    await dependencies.deleteIntegrationsForUser(zoomUserId)
     response.status(200).json({ ok: true })
     return
   }
@@ -37,10 +49,5 @@ async function handleZoomWebhook(request: ApiRequest, response: ApiResponse): Pr
 }
 
 export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
-  try {
-    await handleZoomWebhook(request, response)
-  } catch {
-    // Do not emit the webhook payload, signature, or provider identifiers.
-    response.status(500).json({ error: "Zoom webhook processing failed" })
-  }
+  await handleZoomWebhook(request, response)
 }

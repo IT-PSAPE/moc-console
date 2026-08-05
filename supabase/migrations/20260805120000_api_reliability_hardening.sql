@@ -101,6 +101,7 @@ DECLARE
   v_zoom_user_id text;
   v_email text;
   v_display_name text;
+  v_existing_zoom_user_id text;
 BEGIN
   IF p_provider NOT IN ('youtube', 'zoom')
     OR nullif(btrim(p_access_token), '') IS NULL
@@ -157,6 +158,33 @@ BEGIN
   v_display_name := nullif(btrim(p_connection ->> 'display_name'), '');
   IF v_zoom_user_id IS NULL OR v_email IS NULL OR v_display_name IS NULL THEN
     RAISE EXCEPTION 'Zoom account metadata is required' USING ERRCODE = 'not_null_violation';
+  END IF;
+
+  -- A workspace can belong to only one Zoom user at a time. Retain meetings
+  -- only when that same user reconnects; otherwise purge the old owner's
+  -- meetings and every notification sourced from those local meeting IDs.
+  SELECT zoom_user_id INTO v_existing_zoom_user_id
+  FROM public.zoom_connections
+  WHERE workspace_id = p_workspace_id
+  FOR UPDATE;
+
+  IF v_existing_zoom_user_id IS NOT NULL
+    AND v_existing_zoom_user_id IS DISTINCT FROM v_zoom_user_id
+  THEN
+    DELETE FROM public.notification_deliveries AS delivery
+    USING public.zoom_meetings AS meeting
+    WHERE meeting.workspace_id = p_workspace_id
+      AND delivery.event_key = format('meeting.created:%s', meeting.id);
+
+    DELETE FROM public.notification_outbox AS outbox_row
+    USING public.zoom_meetings AS meeting
+    WHERE meeting.workspace_id = p_workspace_id
+      AND outbox_row.event_type = 'meeting.created'
+      AND outbox_row.entity_type = 'meeting'
+      AND outbox_row.entity_id = meeting.id
+      AND outbox_row.event_key = format('meeting.created:%s', meeting.id);
+
+    DELETE FROM public.zoom_meetings WHERE workspace_id = p_workspace_id;
   END IF;
 
   INSERT INTO public.zoom_connections (
@@ -271,12 +299,35 @@ BEGIN
     RAISE EXCEPTION 'Unknown integration provider' USING ERRCODE = 'check_violation';
   END IF;
 
-  DELETE FROM private.integration_oauth_tokens
-  WHERE provider = p_provider AND workspace_id = p_workspace_id;
-
   IF p_provider = 'youtube' THEN
+    DELETE FROM private.integration_oauth_tokens
+    WHERE provider = p_provider AND workspace_id = p_workspace_id;
     DELETE FROM public.youtube_connections WHERE workspace_id = p_workspace_id;
   ELSE
+    -- Delete delivery/outbox rows before their source meetings. Meeting-created
+    -- rows include join URLs and topics, so allowing a pending row to survive
+    -- deauthorization would leak a revoked integration after disconnect.
+    PERFORM 1
+    FROM public.zoom_connections
+    WHERE workspace_id = p_workspace_id
+    FOR UPDATE;
+
+    DELETE FROM public.notification_deliveries AS delivery
+    USING public.zoom_meetings AS meeting
+    WHERE meeting.workspace_id = p_workspace_id
+      AND delivery.event_key = format('meeting.created:%s', meeting.id);
+
+    DELETE FROM public.notification_outbox AS outbox_row
+    USING public.zoom_meetings AS meeting
+    WHERE meeting.workspace_id = p_workspace_id
+      AND outbox_row.event_type = 'meeting.created'
+      AND outbox_row.entity_type = 'meeting'
+      AND outbox_row.entity_id = meeting.id
+      AND outbox_row.event_key = format('meeting.created:%s', meeting.id);
+
+    DELETE FROM public.zoom_meetings WHERE workspace_id = p_workspace_id;
+    DELETE FROM private.integration_oauth_tokens
+    WHERE provider = p_provider AND workspace_id = p_workspace_id;
     DELETE FROM public.zoom_connections WHERE workspace_id = p_workspace_id;
   END IF;
 END;

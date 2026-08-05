@@ -4,6 +4,7 @@ import { applyCors } from "../../../cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../http.js"
 import { saveIntegrationConnection } from "../../../integration-oauth-store.js"
 import { allowOAuthMutation } from "../../../oauth-rate-limit.js"
+import { providerFailure } from "../../../provider-failure.js"
 import { WorkspaceAccessError, requireWorkspacePermission } from "../../../workspace-access.js"
 
 type RequestBody = {
@@ -69,6 +70,11 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     }
     if (error instanceof WorkspaceAccessError) {
       response.status(403).json({ error: error.message })
+      return
+    }
+    const failure = providerFailure("Zoom", error)
+    if (failure.body.code === "misconfigured") {
+      response.status(failure.status).json(failure.body)
       return
     }
     console.error("Zoom connection failed:", error)

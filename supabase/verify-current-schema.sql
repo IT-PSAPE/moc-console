@@ -295,6 +295,31 @@ SELECT jsonb_build_object(
     ) AS legacy(signature)
     WHERE to_regprocedure(signature) IS NOT NULL
   ), '[]'::jsonb),
+  'orphaned_zoom_meeting_notification_rows', coalesce((
+    SELECT jsonb_agg(source ORDER BY source)
+    FROM (
+      SELECT format('delivery:%s', delivery.id) AS source
+      FROM public.notification_deliveries AS delivery
+      WHERE delivery.event_key LIKE 'meeting.created:%'
+        AND NOT EXISTS (
+          SELECT 1
+          FROM public.zoom_meetings AS meeting
+          WHERE delivery.event_key = format('meeting.created:%s', meeting.id)
+        )
+      UNION ALL
+      SELECT format('outbox:%s', outbox_row.id) AS source
+      FROM public.notification_outbox AS outbox_row
+      WHERE outbox_row.event_type = 'meeting.created'
+        AND outbox_row.entity_type = 'meeting'
+        AND NOT EXISTS (
+          SELECT 1
+          FROM public.zoom_meetings AS meeting
+          WHERE meeting.id = outbox_row.entity_id
+            AND meeting.workspace_id = outbox_row.workspace_id
+            AND outbox_row.event_key = format('meeting.created:%s', meeting.id)
+        )
+    ) AS orphaned_notification_row
+  ), '[]'::jsonb),
   'anonymous_table_grants', coalesce((
     SELECT jsonb_agg(DISTINCT format('%I:%s', table_name, privilege_type)
                      ORDER BY format('%I:%s', table_name, privilege_type))

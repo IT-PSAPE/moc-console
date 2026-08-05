@@ -88,9 +88,9 @@ export function ZoomReviewTestPlanScreen() {
             same reviewer account again.
           </Paragraph.md>
           <Paragraph.md className="mt-2 text-tertiary">
-            Expected result: disconnect revokes MOC Console's Zoom access and removes stored OAuth credentials and
-            connection data. Existing meeting metadata remains in the workspace until it is deleted; reconnecting
-            restores access for future actions.
+            Expected result: disconnect revokes MOC Console's Zoom access and deletes stored OAuth credentials,
+            connection data, synced Zoom meeting metadata, and pending meeting notifications. Reconnecting restores
+            access for future actions.
           </Paragraph.md>
         </Step>
 

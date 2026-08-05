@@ -100,7 +100,7 @@ export function ZoomDocsScreen() {
             <Paragraph.md>In the Zoom connection card, click <strong>Disconnect</strong> and confirm.</Paragraph.md>
           </Step>
           <Step number={3} title="What happens">
-            <Paragraph.md>MOC Console revokes the OAuth token with Zoom, deletes the stored access and refresh tokens from our database, and removes the connection row. Synced meeting metadata stored in your workspace is retained until you delete it — Zoom is not re-contacted for any future action unless you reconnect.</Paragraph.md>
+            <Paragraph.md>MOC Console revokes the OAuth token with Zoom and deletes the stored access and refresh tokens, connection data, synced Zoom meeting metadata, and pending meeting notifications. Zoom is not contacted again unless you reconnect.</Paragraph.md>
           </Step>
         </SubSection>
 
@@ -126,7 +126,7 @@ export function ZoomDocsScreen() {
           <li><Paragraph.md><strong>Not stored or accessed:</strong> recordings, transcripts, cloud recording files, chat messages, participant lists, account or admin-level data.</Paragraph.md></li>
           <li><Paragraph.md><strong>At rest:</strong> all Zoom data is stored in a managed PostgreSQL database on Supabase, encrypted with AES-256 and protected by Row-Level Security policies scoped to your workspace.</Paragraph.md></li>
           <li><Paragraph.md><strong>In transit:</strong> all traffic is TLS 1.2+.</Paragraph.md></li>
-          <li><Paragraph.md><strong>Retention:</strong> An in-app disconnect deletes OAuth tokens and connection data but retains meeting metadata until you delete it. A Marketplace removal deletes OAuth tokens, connection data, and Zoom meeting metadata when its removal notification is received. Account data is deleted within 30 days of account deletion.</Paragraph.md></li>
+          <li><Paragraph.md><strong>Retention:</strong> An in-app disconnect or verified Marketplace removal deletes OAuth tokens, connection data, synced Zoom meeting metadata, and pending meeting notifications. Account data is deleted within 30 days of account deletion.</Paragraph.md></li>
         </ul>
         <Paragraph.md className="mt-4">
           Full details are in the <Link to={`/${routes.privacy}`} className="text-brand hover:underline">Privacy Policy</Link>.

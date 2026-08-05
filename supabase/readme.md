@@ -58,6 +58,11 @@ The first tracked reliability migration is:
    atomic OAuth connection/token RPCs, rotating-refresh leases, durable
    notification and Telegram boundaries, fixed-window API rate limits, stale
    notification completion semantics, and missing foreign-key indexes.
+4. `20260805130000_zoom_marketplace_deauthorization` — source:
+   [`migrations/20260805130000_zoom_marketplace_deauthorization.sql`](migrations/20260805130000_zoom_marketplace_deauthorization.sql).
+   It removes Zoom host start URLs, handles verified Marketplace deauthorization,
+   and keeps Zoom reconnection/deauthorization from leaving meeting-derived
+   notification rows behind.
 
 ## Script history
 

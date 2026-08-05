@@ -1,7 +1,8 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import handler from "../../../../api/zoom/oauth/[action].js"
+import { createZoomOAuthHandler } from "../../../../api/zoom/oauth/[action].js"
+import { handleZoomWebhook } from "./webhook.js"
 import { zoomValidationEncryptedToken, zoomWebhookSignature } from "../../../zoom-webhook.js"
 
 type CapturedResponse = {
@@ -42,7 +43,7 @@ describe("Zoom OAuth webhook endpoint", () => {
     process.env.ZOOM_SECRET_TOKEN = secret
 
     try {
-      await handler({
+      await createZoomOAuthHandler()({
         method: "POST",
         body,
         headers: {
@@ -65,12 +66,71 @@ describe("Zoom OAuth webhook endpoint", () => {
 
   it("rejects unsigned requests without processing their payload", async () => {
     const response = createResponse()
-    await handler({
+    await createZoomOAuthHandler()({
       method: "POST",
       body: { event: "app_deauthorized", payload: { user_id: "zoom-user" } },
       query: { action: "webhook" },
     }, response)
     assert.equal(response.statusCode, 401)
     assert.deepEqual(response.body, { error: "Unauthorized" })
+  })
+
+  it("invokes the cleanup RPC only after verifying app_deauthorized", async () => {
+    const secret = "zoom-test-secret"
+    const body = { event: "app_deauthorized", payload: { user_id: "zoom-user" } }
+    const timestamp = String(Math.floor(Date.now() / 1000))
+    const response = createResponse()
+    const deletedUsers: string[] = []
+    const previous = process.env.ZOOM_SECRET_TOKEN
+    process.env.ZOOM_SECRET_TOKEN = secret
+
+    try {
+      await handleZoomWebhook({
+        method: "POST",
+        body,
+        headers: {
+          "x-zm-request-timestamp": timestamp,
+          "x-zm-signature": zoomWebhookSignature(secret, timestamp, body),
+        },
+      }, response, {
+        async deleteIntegrationsForUser(zoomUserId) {
+          deletedUsers.push(zoomUserId)
+        },
+      })
+    } finally {
+      if (previous === undefined) delete process.env.ZOOM_SECRET_TOKEN
+      else process.env.ZOOM_SECRET_TOKEN = previous
+    }
+
+    assert.deepEqual(deletedUsers, ["zoom-user"])
+    assert.equal(response.statusCode, 200)
+    assert.deepEqual(response.body, { ok: true })
+  })
+
+  it("records cleanup failures as failed while returning a safe response", async () => {
+    const response = createResponse()
+    const completionLogs: string[] = []
+    const originalInfo = console.info
+    const originalError = console.error
+    console.info = (...values: unknown[]) => completionLogs.push(values.map(String).join(" "))
+    console.error = () => undefined
+
+    try {
+      await createZoomOAuthHandler(async () => {
+        throw new Error("cleanup unavailable")
+      })({ method: "POST", query: { action: "webhook" } }, response)
+    } finally {
+      console.info = originalInfo
+      console.error = originalError
+    }
+
+    const completion = completionLogs
+      .map((entry) => JSON.parse(entry) as { event?: string; failed?: boolean; route?: string })
+      .find((entry) => entry.event === "api.request.completed")
+    assert.equal(completion?.event, "api.request.completed")
+    assert.equal(completion?.failed, true)
+    assert.equal(completion?.route, "zoom.webhook")
+    assert.equal(response.statusCode, 500)
+    assert.deepEqual(response.body, { error: "Zoom webhook processing failed" })
   })
 })

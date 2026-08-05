@@ -8,9 +8,24 @@ import { observeApiRequest } from "../../../server/observability.js"
 
 const routes: Readonly<Record<string, ApiHandler>> = { exchange, refresh, revoke, webhook }
 
-export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
-  const route = routeParameterValue(request, "action") === "webhook" ? "zoom.webhook" : "zoom.oauth"
-  await observeApiRequest(route, request, response, async () => {
-    await dispatchNamedRoute(request, response, "action", routes)
-  })
+export function createZoomOAuthHandler(webhookHandler: ApiHandler = webhook): ApiHandler {
+  const routeHandlers = { ...routes, webhook: webhookHandler }
+
+  return async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
+    const isWebhook = routeParameterValue(request, "action") === "webhook"
+    const route = isWebhook ? "zoom.webhook" : "zoom.oauth"
+
+    try {
+      await observeApiRequest(route, request, response, async () => {
+        await dispatchNamedRoute(request, response, "action", routeHandlers)
+      })
+    } catch (error) {
+      if (!isWebhook) throw error
+      // The observer has recorded the internal failure; never expose a signed
+      // webhook payload, signature, or provider identifier to the caller.
+      response.status(500).json({ error: "Zoom webhook processing failed" })
+    }
+  }
 }
+
+export default createZoomOAuthHandler()
