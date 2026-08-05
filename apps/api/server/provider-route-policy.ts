@@ -80,9 +80,19 @@ export function authorizeProviderRoute(method: string | undefined, requestUrl: s
   }
 }
 
+function isEmptyProviderBody(body: unknown): boolean {
+  if (body === undefined || body === null || body === "") return true
+  if (Buffer.isBuffer(body)) return body.byteLength === 0
+  // A request that declares `Content-Type: application/json` but carries no
+  // payload is parsed by the runtime into an empty object, so bodyless methods
+  // arrive here as `{}` rather than as nothing at all.
+  if (typeof body === "object") return Object.keys(body).length === 0
+  return false
+}
+
 export function prepareProviderBody(body: unknown, bodyKind: ProviderBodyKind, maxBodyBytes: number): Buffer | undefined {
   if (bodyKind === "none") {
-    if (body !== undefined && body !== null && body !== "") throw new ProviderRouteError("This provider operation does not accept a body")
+    if (!isEmptyProviderBody(body)) throw new ProviderRouteError("This provider operation does not accept a body")
     return undefined
   }
 

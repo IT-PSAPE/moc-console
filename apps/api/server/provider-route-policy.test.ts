@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { authorizeProviderRoute, ProviderRouteError, type ProviderRouteRule } from "./provider-route-policy.js"
+import { authorizeProviderRoute, prepareProviderBody, ProviderRouteError, type ProviderRouteRule } from "./provider-route-policy.js"
 
 const ROUTE_PREFIX = "/api/provider/v3"
 const ROUTES: readonly ProviderRouteRule[] = [
@@ -59,6 +59,33 @@ describe("authorizeProviderRoute", () => {
     assert.throws(
       () => authorizeProviderRoute("GET", "/api/provider/v3/categories?part=snippet&part=id", ROUTE_PREFIX, ROUTES),
       new ProviderRouteError("Provider query is not allowed"),
+    )
+  })
+})
+
+describe("prepareProviderBody", () => {
+  it("accepts an empty payload on a bodyless route", () => {
+    for (const body of [undefined, null, "", {}, Buffer.alloc(0)]) {
+      assert.equal(prepareProviderBody(body, "none", 0), undefined)
+    }
+  })
+
+  it("rejects a payload on a bodyless route", () => {
+    assert.throws(
+      () => prepareProviderBody({ part: "snippet" }, "none", 0),
+      new ProviderRouteError("This provider operation does not accept a body"),
+    )
+  })
+
+  it("serializes and bounds a json payload", () => {
+    assert.equal(prepareProviderBody({ id: "video_1" }, "json", 1024)?.toString(), '{"id":"video_1"}')
+    assert.throws(
+      () => prepareProviderBody({ id: "video_1" }, "json", 4),
+      new ProviderRouteError("Provider request body is too large"),
+    )
+    assert.throws(
+      () => prepareProviderBody(undefined, "json", 1024),
+      new ProviderRouteError("Provider request body is required"),
     )
   })
 })

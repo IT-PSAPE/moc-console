@@ -11,7 +11,10 @@ export async function youtubeApiFetch(
   return fetch(apiUrl(`/api/youtube/v3${path}`), {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      // Only declare a payload type when there is a payload: the proxy rejects a
+      // body on read routes, and a bodyless JSON request is parsed server-side
+      // into an empty object that reads as one.
+      ...(options.body === undefined || options.body === null ? {} : { "Content-Type": "application/json" }),
       "X-MOC-Workspace": workspaceId,
       ...sessionHeaders,
       ...options.headers,
