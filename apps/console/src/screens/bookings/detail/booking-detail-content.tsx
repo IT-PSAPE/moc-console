@@ -1,5 +1,5 @@
 import { useCallback } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { BookingDeleteModal } from "@/features/equipment/booking-delete-modal"
 import { BookingItemsSection } from "@/features/equipment/booking-items-section"
 import { BookingScanModal } from "@/features/equipment/booking-scan-modal"
@@ -8,6 +8,7 @@ import { useBookingEditor } from "@/features/equipment/use-booking-editor"
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal"
 import { TopBarActions } from "@/features/topbar"
 import { useUnsavedNavigationGuard } from "@/hooks/use-unsaved-navigation-guard"
+import { routes } from "@/screens/console-routes"
 import { Button } from "@moc/ui/components/controls/button"
 import { Header } from "@moc/ui/components/display/header"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
@@ -35,6 +36,7 @@ export function BookingDetailContent({ booking }: { booking: Booking }) {
 
   return (
     <DetailPage>
+        <DetailPage.Back render={<Link to={`/${routes.bookings}`} />}>Back to bookings</DetailPage.Back>
         <TopBarActions>
           <Button variant="secondary" icon={<ScanLine />} onClick={collection.actions.openScanner} disabled={!collection.state.canScan}>
             {collection.state.isComplete ? "All scanned" : "Scan"}

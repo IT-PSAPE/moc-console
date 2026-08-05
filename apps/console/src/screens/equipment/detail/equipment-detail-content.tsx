@@ -1,5 +1,5 @@
 import { useCallback } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { BookingHistorySection } from "@/features/equipment/booking-history-section"
 import { DeleteEquipmentModal } from "@/features/equipment/delete-equipment-modal"
 import { EquipmentNotesSection } from "@/features/equipment/equipment-notes-section"
@@ -9,6 +9,7 @@ import { useEquipmentEditor } from "@/features/equipment/use-equipment-editor"
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal"
 import { TopBarActions } from "@/features/topbar"
 import { useUnsavedNavigationGuard } from "@/hooks/use-unsaved-navigation-guard"
+import { routes } from "@/screens/console-routes"
 import { Button } from "@moc/ui/components/controls/button"
 import { Header } from "@moc/ui/components/display/header"
 import { Paragraph } from "@moc/ui/components/display/text"
@@ -35,6 +36,7 @@ export function EquipmentDetailContent({ equipment }: { equipment: Equipment }) 
 
   return (
     <DetailPage>
+        <DetailPage.Back render={<Link to={`/${routes.equipment}`} />}>Back to equipment</DetailPage.Back>
         <TopBarActions>
           {store.state.isDirty && (
             <>

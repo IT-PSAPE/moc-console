@@ -38,9 +38,9 @@ export function AppNavigation({ isRouteActive, isSigningOut, onCloseMobileNaviga
                     <Sidebar.GroupContent>
                         <Sidebar.MenuItem title="Requests" icon={<FileText />} active={isRouteActive(routes.requests)} render={<Link to={`/${routes.requests}`} />} />
                         <Sidebar.MenuItem title="Bookings" icon={<CalendarCheck />} active={isRouteActive(routes.bookings)} render={<Link to={`/${routes.bookings}`} />} />
-                        <Sidebar.MenuItem title="Equipment" icon={<Package />} active={isRouteActive(routes.equipment)} render={<Link to={`/${routes.equipment}`} />} />
-                        <Sidebar.MenuItem title="Checklists" icon={<ListChecks />} active={isRouteActive(routes.checklists)} render={<Link to={`/${routes.checklists}`} />} />
                         <Sidebar.MenuItem title="Streams" icon={<Radio />} active={isRouteActive(routes.streams)} render={<Link to={`/${routes.streams}`} />} />
+                        <Sidebar.MenuItem title="Checklists" icon={<ListChecks />} active={isRouteActive(routes.checklists)} render={<Link to={`/${routes.checklists}`} />} />
+                        <Sidebar.MenuItem title="Equipment" icon={<Package />} active={isRouteActive(routes.equipment)} render={<Link to={`/${routes.equipment}`} />} />
                     </Sidebar.GroupContent>
                 </Sidebar.Group>
             </Sidebar.Content>

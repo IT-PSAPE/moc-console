@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 import { Header } from "@moc/ui/components/display/header"
 import { Badge } from "@moc/ui/components/display/badge"
 import { Button } from "@moc/ui/components/controls/button"
@@ -16,6 +16,7 @@ import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dia
 import { Page } from "@moc/ui/components/layout/page"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
+import { routes } from "@/screens/console-routes"
 import { Calendar, Check, Code, Copy, ExternalLink, Eye, Gauge, Key, ListVideo, Loader, Monitor, Pencil, Play, Radio, Shield, Square, Tag, Trash2} from "lucide-react"
 
 function formatDateTime(iso: string | null): string {
@@ -63,6 +64,7 @@ export function StreamDetailScreen() {
 
   return (
     <DetailPage>
+      <DetailPage.Back render={<Link to={`/${routes.streams}`} />}>Back to streams</DetailPage.Back>
       <Paragraph.xs role="status" aria-live="polite" className="sr-only">{copyMessage}</Paragraph.xs>
       <TopBarActions>
         {meta.canEdit && (

@@ -1,4 +1,5 @@
 import { useRef } from "react"
+import { Link } from "react-router-dom"
 import { Archive, ArchiveRestore, EllipsisVertical, Save, Trash2, Undo2 } from "lucide-react"
 import { DeleteRequestModal } from "@/features/requests/delete-request-modal"
 import { RequestAssigneeList } from "@/features/requests/request-assignee-list"
@@ -13,6 +14,7 @@ import { RequestTitle } from "@/features/requests/request-title"
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal"
 import { useRequestDetail } from "@/features/requests/use-request-detail"
 import { TopBarActions } from "@/features/topbar"
+import { routes } from "@/screens/console-routes"
 import { Button } from "@moc/ui/components/controls/button"
 import { DocEditor } from "@moc/ui/components/display/doc-editor/doc-editor"
 import { Header } from "@moc/ui/components/display/header"
@@ -39,6 +41,7 @@ export function RequestDetailContent({ request, syncRequest }: RequestDetailCont
 
   return (
     <DetailPage>
+        <DetailPage.Back render={<Link to={`/${routes.requests}`} />}>Back to requests</DetailPage.Back>
         <RequestShareActions.Root request={store.state.draft} targetRef={shareTargetRef}>
           <TopBarActions>
             {store.state.isDirty && (
