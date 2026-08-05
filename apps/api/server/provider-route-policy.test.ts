@@ -13,7 +13,7 @@ describe("authorizeProviderRoute", () => {
   it("authorizes a provider path from the request URL", () => {
     const route = authorizeProviderRoute(
       "GET",
-      "/api/provider/v3/categories?part=snippet&region=US&path=categories",
+      "/api/provider/v3/categories?part=snippet&region=US&path=categories&nxtPpath=categories",
       ROUTE_PREFIX,
       ROUTES,
     )
@@ -44,11 +44,18 @@ describe("authorizeProviderRoute", () => {
     )
   })
 
-  it("rejects disallowed or repeated query parameters", () => {
-    assert.throws(
-      () => authorizeProviderRoute("GET", "/api/provider/v3/categories?unexpected=true", ROUTE_PREFIX, ROUTES),
-      new ProviderRouteError("Provider query is not allowed"),
+  it("drops query parameters outside the rule allow-list", () => {
+    const route = authorizeProviderRoute(
+      "GET",
+      "/api/provider/v3/categories?part=snippet&unexpected=true",
+      ROUTE_PREFIX,
+      ROUTES,
     )
+
+    assert.equal(route.path, "/categories?part=snippet")
+  })
+
+  it("rejects repeated query parameters", () => {
     assert.throws(
       () => authorizeProviderRoute("GET", "/api/provider/v3/categories?part=snippet&part=id", ROUTE_PREFIX, ROUTES),
       new ProviderRouteError("Provider query is not allowed"),
