@@ -13,7 +13,7 @@ describe("authorizeProviderRoute", () => {
   it("authorizes a provider path from the request URL", () => {
     const route = authorizeProviderRoute(
       "GET",
-      "/api/provider/v3/categories?part=snippet&region=US",
+      "/api/provider/v3/categories?part=snippet&region=US&path=categories",
       ROUTE_PREFIX,
       ROUTES,
     )

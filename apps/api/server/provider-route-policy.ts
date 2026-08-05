@@ -60,6 +60,10 @@ export function authorizeProviderRoute(method: string | undefined, requestUrl: s
   const searchParams = new URLSearchParams()
   const seenQuery = new Set<string>()
   for (const [key, value] of requestSearchParams) {
+    // Vercel adds the `[...path]` catch-all value to the runtime URL as query
+    // metadata. The pathname above is authoritative; never forward this
+    // synthetic parameter to the provider.
+    if (key === "path") continue
     if (!allowedQuery.has(key) || seenQuery.has(key)) {
       throw new ProviderRouteError("Provider query is not allowed")
     }
