@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto"
 import {
   completeIntegrationTokenRefresh,
   getIntegrationTokens,
+  markIntegrationReauthRequiredIfRefreshTokenMatches,
   releaseIntegrationRefreshLock,
   tryAcquireIntegrationRefreshLock,
   type IntegrationProvider,
@@ -46,12 +47,46 @@ async function syncPublicConnection(provider: IntegrationProvider, workspaceId: 
   if (error) console.error(`Unable to update ${provider} connection metadata:`, error)
 }
 
-export async function markIntegrationReauthRequired(provider: IntegrationProvider, workspaceId: string): Promise<void> {
-  const { error } = await getSupabaseAdmin()
-    .from(connectionTable(provider))
-    .update({ status: "reauth_required" })
-    .eq("workspace_id", workspaceId)
-  if (error) console.error(`Unable to record ${provider} reauth state:`, error)
+export type IntegrationReauthDependencies = {
+  getIntegrationTokens: (provider: IntegrationProvider, workspaceId: string) => Promise<StoredIntegrationTokens | null>
+  markIntegrationReauthRequiredIfRefreshTokenMatches: (
+    provider: IntegrationProvider,
+    workspaceId: string,
+    expectedRefreshToken: string,
+  ) => Promise<boolean>
+}
+
+const productionReauthDependencies: IntegrationReauthDependencies = {
+  getIntegrationTokens,
+  markIntegrationReauthRequiredIfRefreshTokenMatches,
+}
+
+/**
+ * The store performs the private-token comparison and public status update in
+ * one database transaction, closing the refresh-token TOCTOU window.
+ */
+export async function markIntegrationReauthRequiredIfRefreshTokenCurrent(
+  provider: IntegrationProvider,
+  workspaceId: string,
+  rejectedRefreshToken: string,
+  dependencies: IntegrationReauthDependencies = productionReauthDependencies,
+): Promise<boolean> {
+  return dependencies.markIntegrationReauthRequiredIfRefreshTokenMatches(provider, workspaceId, rejectedRefreshToken)
+}
+
+/**
+ * Records reauthentication only when the credentials used by the caller are
+ * still the stored credentials at the database boundary.
+ */
+export async function markIntegrationReauthRequiredForStoredToken(
+  provider: IntegrationProvider,
+  workspaceId: string,
+  failedAccessToken: string,
+  dependencies: IntegrationReauthDependencies = productionReauthDependencies,
+): Promise<boolean> {
+  const current = await dependencies.getIntegrationTokens(provider, workspaceId)
+  if (!current || current.accessToken !== failedAccessToken) return false
+  return markIntegrationReauthRequiredIfRefreshTokenCurrent(provider, workspaceId, current.refreshToken, dependencies)
 }
 
 async function refreshProviderToken(provider: IntegrationProvider, refreshToken: string): Promise<StoredIntegrationTokens> {
@@ -134,7 +169,18 @@ async function refreshIntegrationAccessToken(
       return next.accessToken
     } catch (error) {
       if (error instanceof YouTubeReauthRequiredError || error instanceof ZoomReauthRequiredError) {
-        await markIntegrationReauthRequired(provider, workspaceId)
+        const reauthMarked = await markIntegrationReauthRequiredIfRefreshTokenCurrent(
+          provider,
+          workspaceId,
+          current.refreshToken,
+        )
+        // An expired lease let another worker rotate the token first. Restart
+        // from storage so this request can use that worker's valid credentials
+        // instead of surfacing a false reconnect requirement.
+        if (!reauthMarked) {
+          forceRefresh = false
+          continue
+        }
       }
       throw error
     } finally {

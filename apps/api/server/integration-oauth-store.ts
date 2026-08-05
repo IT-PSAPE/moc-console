@@ -157,6 +157,26 @@ export async function completeIntegrationTokenRefresh(
   return data === true
 }
 
+/**
+ * Atomically compares the private refresh token and records a durable public
+ * reconnect state. Keeping both operations in one RPC prevents a concurrent
+ * token rotation from incorrectly staling an active connection.
+ */
+export async function markIntegrationReauthRequiredIfRefreshTokenMatches(
+  provider: IntegrationProvider,
+  workspaceId: string,
+  expectedRefreshToken: string,
+): Promise<boolean> {
+  const { data, error } = await getSupabaseAdmin().rpc("mark_integration_oauth_reauth_required_if_refresh_token_matches", {
+    p_provider: provider,
+    p_workspace_id: workspaceId,
+    p_expected_refresh_token: expectedRefreshToken,
+  })
+
+  if (error) throw new IntegrationStoreError()
+  return data === true
+}
+
 export async function releaseIntegrationRefreshLock(
   provider: IntegrationProvider,
   workspaceId: string,

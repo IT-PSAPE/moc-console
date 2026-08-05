@@ -1,4 +1,4 @@
-import { getIntegrationAccessToken, markIntegrationReauthRequired } from "./integration-access.js"
+import { getIntegrationAccessToken, markIntegrationReauthRequiredForStoredToken } from "./integration-access.js"
 import { fetchProvider, type ProviderResponse } from "./provider-config.js"
 import { ProviderUpstreamError, type ProviderUpstreamFailureKind } from "./provider-failure.js"
 
@@ -52,7 +52,7 @@ export async function proxyYouTubeApiRequest({ body, contentType, method, path, 
   if (providerResponse.status === 401) {
     accessToken = await getIntegrationAccessToken("youtube", workspaceId, { forceRefresh: true })
     providerResponse = await fetchProvider(requestUrl, buildRequestInit(body, contentType, method, accessToken))
-    if (providerResponse.status === 401) await markIntegrationReauthRequired("youtube", workspaceId)
+    if (providerResponse.status === 401) await markIntegrationReauthRequiredForStoredToken("youtube", workspaceId, accessToken)
   }
 
   if (!providerResponse.ok) throw await classifyYouTubeFailure(providerResponse)
