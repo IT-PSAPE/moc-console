@@ -87,6 +87,7 @@ Requests, equipment and bookings go straight to Supabase from the browser.
 
 ```
 api/         one file per route, Vercel's file-system routing
+public/      minimal static output required by Vercel's Other preset
 server/      shared library: supabase-admin, auth-guard, cors, http,
              telegram, zoom/youtube oauth, notifications/{dispatch,enrich,…}
 ```
