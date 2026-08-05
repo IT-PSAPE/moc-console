@@ -29,7 +29,7 @@ export function StreamListItem({ stream, onSelect }: StreamListItemProps) {
     >
       <ListItemCard.Root>
         <ListItemCard.Leading>
-          <StreamProviderIcon provider="youtube" className="size-5" />
+          <StreamProviderIcon provider="youtube" />
         </ListItemCard.Leading>
         <ListItemCard.Content>
           <ListItemCard.Title>{stream.title}</ListItemCard.Title>
