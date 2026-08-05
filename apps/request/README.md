@@ -50,7 +50,7 @@ Client (`VITE_*` — exposed to the browser):
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
 - `VITE_WORKSPACE_ID` — UUID of the workspace this deployment submits into.
-- `VITE_API_BASE_URL` — origin of the MOC API app, e.g. `https://api.psape.co.zw`. Blank keeps `/api/*` calls relative to this app's own origin.
+- `VITE_API_BASE_URL` — origin of the MOC API app, e.g. `https://api.psape.co.za`. Blank keeps `/api/*` calls relative to this app's own origin.
 
 There are no server-side variables: this app ships no serverless functions. Server secrets live in `apps/api/.env.example`.
 

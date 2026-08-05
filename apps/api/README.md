@@ -1,7 +1,7 @@
 # MOC API
 
 Every server-side function on the MOC platform. Deployed as its own Vercel
-project at `api.psape.co.zw`; MOC Console and MOC Request ship no server code
+project at `api.psape.co.za`; MOC Console and MOC Request ship no server code
 and hold no server secrets.
 
 See [ADR-0008](../../docs/adr/0008-extract-moc-api-app.md) for why this exists.

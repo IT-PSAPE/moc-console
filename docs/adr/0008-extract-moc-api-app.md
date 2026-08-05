@@ -1,6 +1,6 @@
 # Extract every server-side function into a dedicated MOC API app
 
-Server-side code was split across two frontends. MOC Console carried `api/` (14 Vercel functions: Telegram webhook, YouTube and Zoom OAuth, a Zoom REST proxy, notification ingest, two cron jobs) plus a `server/` library, and MOC Request carried two more functions whose only job was to HMAC-sign a payload and forward it to the console. Neither app's `tsconfig` included those folders, so none of it was ever typechecked. We are moving all of it into a third Vercel project, `apps/api` (**MOC API**), deployed at `api.psape.co.zw`.
+Server-side code was split across two frontends. MOC Console carried `api/` (14 Vercel functions: Telegram webhook, YouTube and Zoom OAuth, a Zoom REST proxy, notification ingest, two cron jobs) plus a `server/` library, and MOC Request carried two more functions whose only job was to HMAC-sign a payload and forward it to the console. Neither app's `tsconfig` included those folders, so none of it was ever typechecked. We are moving all of it into a third Vercel project, `apps/api` (**MOC API**), deployed at `api.psape.co.za`.
 
 ## Considered options
 
@@ -12,7 +12,7 @@ Server-side code was split across two frontends. MOC Console carried `api/` (14 
 ## Decision
 
 - **`apps/api` owns every serverless function and the `server/` library.** MOC Console and MOC Request ship no server code at all. Their `.env` files contain only `VITE_*` values, so a leaked frontend env leaks nothing.
-- **Browsers call the API by absolute URL.** `VITE_API_BASE_URL` (e.g. `https://api.psape.co.zw`) is joined to each path by `apiUrl()` in `@moc/utils`. Unset, it falls back to a relative path and the pre-split same-origin behaviour — so a missing env var degrades instead of producing `undefined/api/…`.
+- **Browsers call the API by absolute URL.** `VITE_API_BASE_URL` (e.g. `https://api.psape.co.za`) is joined to each path by `apiUrl()` in `@moc/utils`. Unset, it falls back to a relative path and the pre-split same-origin behaviour — so a missing env var degrades instead of producing `undefined/api/…`.
 - **CORS is an explicit allow-list.** `ALLOWED_ORIGINS` names the exact console and request origins; the API echoes the caller's origin rather than replying `*`, because these requests carry credentials in headers (`x-moc-session`, `authorization`). Unset allows no browser origin. Server-to-server callers (Telegram, Vercel Cron) send no `Origin` and are unaffected. Every browser-facing handler answers `OPTIONS`.
 - **The notify hop collapses.** `/api/notify/{request,booking}` now call `dispatchEvent` directly instead of HMAC-signing and re-entering the same deployment over HTTP. Those endpoints were always public and unauthenticated — that has not changed. `/api/notifications/{requests,bookings}` keep their HMAC check for genuinely external senders.
 - **`@moc/notifications` is a new shared package** holding the template engine and event catalogue, imported by the API (to render and send) and by the console's settings UI (to preview and edit).
@@ -24,5 +24,5 @@ Server-side code was split across two frontends. MOC Console carried `api/` (14 
 - **Three Vercel projects.** The API project needs `rootDirectory = apps/api`, no build step, and the env vars in `apps/api/.env.example`. Cron schedules moved to its `vercel.json` — delete them from the console project or the jobs fire twice.
 - **Local dev needs the API running** for anything that touches Zoom, YouTube or notifications: `bun run dev:api` (port 3001) plus `VITE_API_BASE_URL=http://localhost:3001` in the frontend's `.env.local`. The console's dev-only Zoom middleware is gone — it duplicated the real handlers. Pure Supabase work (requests, equipment, bookings) needs no API at all.
 - **Ordering matters at deploy.** The frontends must not be pointed at the API domain before `ALLOWED_ORIGINS` includes them, or every call fails preflight. Deploy the API first with both origins listed, then the frontends.
-- The console's CSP `connect-src` now includes `https://api.psape.co.zw`.
+- The console's CSP `connect-src` now includes `https://api.psape.co.za`.
 - Both frontends keep working with `VITE_API_BASE_URL` blank as long as something serves `/api/*` on their origin — which is how the relative-path fallback earns its keep during the cutover.

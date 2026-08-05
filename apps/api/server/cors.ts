@@ -1,6 +1,6 @@
 import { headerValue, type ApiRequest, type ApiResponse } from "./http.js"
 
-// The API is deployed on its own origin (api.psape.co.zw), so every browser
+// The API is deployed on its own origin (api.psape.co.za), so every browser
 // call from MOC Console and MOC Request is cross-origin. Console integration
 // calls carry a session header plus an explicit workspace context, which makes
 // them preflighted requests.

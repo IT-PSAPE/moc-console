@@ -13,7 +13,7 @@ The public, anonymous PWA where end users submit booking and culture requests an
 _Avoid_: "the request portal", "the public site"
 
 **MOC API**:
-The headless third deployment (`apps/api`, api.psape.co.zw). It owns every serverless function on the platform — Telegram webhook and dispatch, YouTube and Zoom OAuth, the Zoom REST proxy, notification ingest, and the scheduled jobs — plus the `server/` library behind them. Neither frontend ships server code, and no server secret is configured on a frontend project.
+The headless third deployment (`apps/api`, api.psape.co.za). It owns every serverless function on the platform — Telegram webhook and dispatch, YouTube and Zoom OAuth, the Zoom REST proxy, notification ingest, and the scheduled jobs — plus the `server/` library behind them. Neither frontend ships server code, and no server secret is configured on a frontend project.
 _Avoid_: "the backend" (Supabase is also a backend); "the notification service" (it is not only notifications).
 
 **Requests portal**:

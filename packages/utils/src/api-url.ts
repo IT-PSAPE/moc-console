@@ -1,5 +1,5 @@
 // Every server-side endpoint lives in the MOC API app, deployed on its own
-// origin. `VITE_API_BASE_URL` points at it (e.g. https://api.psape.co.zw).
+// origin. `VITE_API_BASE_URL` points at it (e.g. https://api.psape.co.za).
 //
 // When unset, paths stay relative and resolve against the current origin.
 // That keeps `vercel dev` and any same-origin proxy working unchanged, and
