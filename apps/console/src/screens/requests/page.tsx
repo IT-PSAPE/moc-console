@@ -28,7 +28,7 @@ export function RequestsScreen() {
   const { filters, activeView, isMobile } = meta;
   const CollectionContent = activeView === "kanban" ? Page.CollectionContent : Page.Content;
   const visibleRequests = activeView === "calendar" ? filters.calendarFiltered : filters.filtered;
-  const collectionState = activeView === "kanban" ? activeView : visibleRequests;
+  const collectionState = activeView === "list" ? visibleRequests : activeView;
 
   function handleSearch(event: ChangeEvent<HTMLInputElement>) {
     filters.setSearch(event.target.value)

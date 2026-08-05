@@ -21,7 +21,7 @@ export function BookingsScreen() {
   const { filters, activeView, isMobile } = meta;
   const CollectionContent = activeView === "kanban" ? Page.CollectionContent : Page.Content;
   const visibleBookings = activeView === "calendar" ? filters.calendarFiltered : filters.filtered;
-  const collectionState = activeView === "kanban" ? activeView : visibleBookings;
+  const collectionState = activeView === "list" ? visibleBookings : activeView;
 
   function handleSearch(event: ChangeEvent<HTMLInputElement>) {
     filters.setSearch(event.target.value);

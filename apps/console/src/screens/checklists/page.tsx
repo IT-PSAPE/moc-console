@@ -88,17 +88,10 @@ export function ChecklistsScreen() {
 
             <Page.Content>
                 {state.activeView === 'calendar' ? (
-                    <Decision value={meta.calendarFiltered} loading={state.isLoading}>
+                    <Decision value={state.activeView} loading={state.isLoading}>
                         <Decision.Loading>
                             <LoadingSpinner className="py-6" />
                         </Decision.Loading>
-                        <Decision.Empty>
-                            <EmptyState
-                                icon={<CalendarDays />}
-                                title={state.search.trim() ? "No scheduled checklist runs match your search" : "No scheduled checklist runs"}
-                                description={state.search.trim() ? "Try a different search term or clear filters." : "Create a checklist run to see it on the calendar."}
-                            />
-                        </Decision.Empty>
                         <Decision.Data>
                             <ChecklistCalendarView checklists={meta.calendarFiltered} />
                         </Decision.Data>
