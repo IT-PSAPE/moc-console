@@ -14,10 +14,10 @@ It separates:
 | --- | --- | --- | --- |
 | Requests | Supabase | `src/data/fetch-requests.ts`, `src/data/mutate-requests.ts`, `src/data/fetch-assignees.ts`, `src/data/map-request.ts` | Duty presets now come from code constants, not a table. |
 | Auth | Supabase Auth + Supabase | `src/lib/auth-context.tsx`, `src/screens/auth/reset-password.tsx`, `src/screens/auth/password-recovery.tsx` | `users` reads now include `telegram_chat_id`, and password recovery completes through the dedicated recovery route. |
-| Workspace | Supabase with default-workspace fallback | `src/data/current-workspace.ts`, `src/data/fetch-workspaces.ts`, `src/features/users/users-provider.tsx` | Runtime can fall back to the seeded `default-workspace` slug when memberships are missing. |
+| Workspace | Supabase membership + approval queue | `apps/console/src/data/current-workspace.ts`, `apps/console/src/data/fetch-workspaces.ts` | Pending accounts cannot resolve an accepted workspace until an owner or admin approves them. |
 | Equipment | Supabase | `src/data/fetch-equipment.ts`, `src/data/mutate-equipment.ts` | Equipment rows remain normalized; booking-derived display fields are added in the mapper. |
-| Streams | Supabase + Edge Functions | `src/data/fetch-streams.ts`, `src/data/mutate-streams.ts`, `src/data/youtube-api.ts` | YouTube API calls go through Supabase Edge Functions (`supabase/functions/youtube-api/`). OAuth handled by `supabase/functions/youtube-oauth-callback/`. Local `streams` table is a cache of YouTube state. |
-| Seed data | Checked-in SQL | `docs/phases/phase-11-seed-data.sql` | Replaces the deleted mock JSON and normalization scripts. |
+| Streams | Supabase + MoC API | `apps/console/src/data/fetch-streams.ts`, `apps/console/src/data/mutate-streams.ts`, `apps/api/api/youtube/` | Provider calls and OAuth secrets stay behind the dedicated API app. Local `streams` is a cache of provider state. |
+| Structural seed | Checked-in SQL | `supabase/phase-01-schema.sql` | Seeds only the roles and default workspace required for bootstrap. |
 
 ## Current Live Code Changes
 
@@ -166,15 +166,14 @@ Current rollout rule:
 1. top-level operational rows should eventually store `workspace_id`
 2. user membership should come from `workspace_users`
 3. screens should filter by workspace membership or parent record `workspaceId`
-4. when membership rows are missing during bootstrap, the app can fall back to the seeded default workspace instead of blocking the UI
+4. when membership is pending, the app blocks member activity until an owner or admin approves the join request
 
 ## Seed Data Guidance
 
-The operational sample data now lives in checked-in SQL rather than JSON:
-
-- run `docs/phases/phase-11-seed-data.sql` after the schema phases
-- keep ids and datetimes serialized as strings in the SQL literals
-- keep the `default-workspace` row seeded so workspace-scoped queries have a safe fallback
-- keep the mapping layer responsible for joins, aliases, and convenience fields instead of denormalizing the schema
+There is no operational sample-data migration. Structural bootstrap data lives
+in `supabase/phase-01-schema.sql`; the current authorization and approval shape
+is converged by the target-schema cleanup linked from `supabase/readme.md`.
+Keep the mapping layer responsible for joins, aliases, and convenience fields
+instead of denormalizing the schema.
 
 That is why the schema doc and the value guide stay separate even though the app now reads directly from Supabase.

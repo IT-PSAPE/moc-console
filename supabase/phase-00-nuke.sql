@@ -1,4 +1,4 @@
--- nuke-everything.sql
+-- phase-00-nuke.sql
 --
 -- DEV-ONLY. Wipes a Supabase project to a near-empty state regardless of what's
 -- in it. Idempotent. Safe to re-run.
@@ -6,10 +6,8 @@
 -- ⚠️  DESTRUCTIVE. THIS DELETES ALL USER DATA, AUTH USERS, STORAGE OBJECTS,
 --     CRON JOBS, AND EVERY USER-CREATED SCHEMA. THERE IS NO UNDO.
 --
--- This is different from phase-00-nuke.sql:
---   • phase-00-nuke.sql drops only the named objects this app creates.
---   • nuke-everything.sql discovers and drops EVERYTHING the app could have
---     created — including objects added later, by other tooling, or by hand.
+-- This discovers and drops everything the app could have created, including
+-- objects added later by other tooling or by hand. It is not a targeted reset.
 --
 -- WHAT THIS REMOVES (via SQL):
 --   • Every table, view, materialized view, sequence, function, procedure,
@@ -240,6 +238,6 @@ end $$;
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 7. Restore the standard Supabase grants on the now-empty public schema.
 --    (Without this, anon/authenticated/service_role lose USAGE on public if
---    you previously revoked it — e.g. via phase-12-public-access.sql.)
+--    you previously revoked it.)
 -- ─────────────────────────────────────────────────────────────────────────────
 grant usage on schema public to anon, authenticated, service_role;

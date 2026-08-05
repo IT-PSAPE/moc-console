@@ -98,42 +98,26 @@ npm run preview
 
 ## Database setup
 
-The full Postgres/Supabase schema is shipped as three consolidated SQL
-scripts in [`docs/phases/`](docs/phases/). They replace what used to be a
-long incremental migration ledger — every historical patch is already
-folded into its final state, so a fresh project only ever runs three
-files.
+The SQL source of truth now lives at [`supabase/`](supabase/). See its
+[`readme.md`](supabase/readme.md) before running anything; the patch directory
+is a historical ledger and must not be applied wholesale.
 
-1. **Create a new Supabase project** (or use an empty one).
-2. Open the project's **SQL editor** and run, **in order**:
-   1. `docs/phases/01-schema.sql` — extensions, enums, every table,
-      indexes, and the only seed (3 roles, 12 colors, 1 default
-      workspace).
-   2. `docs/phases/02-logic.sql` — functions, triggers, RBAC helpers,
-      and all RPCs.
-   3. `docs/phases/03-security.sql` — row-level security policies,
-      storage buckets, and grants.
-3. **Configure the apps.** For each app (`apps/console`, `apps/request`,
-   `apps/api`) copy `.env.example` to `.env.local`. The two frontends need
-   only the Supabase URL + publishable key and `VITE_API_BASE_URL`; every
-   server secret lives in `apps/api`.
+For a blank project, run `phase-01-schema.sql`, `phase-02-logic.sql`, and
+`phase-03-security.sql`, followed by the current target-schema convergence
+script. For the existing MoC Console project, run
+[`verify-current-schema.sql`](supabase/verify-current-schema.sql) first and
+apply no SQL when the drift report is clean.
 
-That's it — the database is fully provisioned. Sign-up works
-immediately: the first user is auto-joined to the default workspace
-with the `viewer` role. Promote an admin from the SQL editor with
-`select private.promote_user_to_role('you@example.com', 'admin');`.
+New signups create a pending workspace access request. An owner or admin must
+approve that request before the account gains normal member access. Roles are
+stored per workspace in `workspace_users.role_id`.
 
-**No demo data is included.** The seed block at the end of
-`01-schema.sql` is the *only* data inserted, and it is purely the
-structural bootstrap the app needs to function (RBAC roles, the color
-palette, and the default workspace that new sign-ups join). Delete or
-edit that block if you want to bootstrap differently.
+`supabase/phase-00-nuke.sql` is development-only, destructive, and has no undo.
+Never use it as an upgrade script.
 
-**Resetting.** `docs/phases/00-nuke.sql` wipes a Supabase project back
-to empty so you can re-run `01`→`02`→`03`. It is **destructive and has
-no undo**, and it removes `storage.objects`/`buckets` *metadata* only —
-to reclaim S3 space, delete buckets from the Supabase dashboard first.
-You never need it on a brand-new project.
+Configure each app (`apps/console`, `apps/request`, `apps/api`) from its
+`.env.example`. The frontends use the Supabase URL, publishable key, and
+`VITE_API_BASE_URL`; server secrets live only in `apps/api`.
 
 **External integrations.** The schema is complete on its own. Optional
 features — Telegram bot linking/notifications, YouTube and Zoom

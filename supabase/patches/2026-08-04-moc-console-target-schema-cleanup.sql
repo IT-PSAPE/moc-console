@@ -1,77 +1,93 @@
--- 2026-08-04 — Consolidated live schema update for the cleanup branch.
+-- 2026-08-04 — MoC Console target-schema cleanup.
 --
--- Paste this entire file into the Supabase SQL editor and run it once.
--- Baseline verified against project jypshhgfuvwmtbbcxmhs on 2026-08-04.
+-- TARGET: Supabase project jypshhgfuvwmtbbcxmhs (MoC Console).
+-- BASELINE: live schema re-inspected on 2026-08-05.
 --
--- This patch intentionally DOES NOT run the destructive 2026-07-28 table
--- removal. The current live database still contains legacy playlist/media/
--- cue-sheet data, while standalone checklists were restored and are active.
--- Legacy feature tables are quarantined from client roles below so their rows
--- remain recoverable. The storage "media" bucket and its objects are preserved.
+-- THIS MIGRATION IS DESTRUCTIVE. It permanently removes retired database
+-- tables and their rows. Take a database backup before running it.
 --
--- Existing accepted users are retained: workspace_users.role_id is backfilled
--- from user_roles.role_id before it becomes required.
+-- Retained data includes users, workspace memberships, requests, equipment,
+-- current bookings, standalone checklists, streams/meetings, notification
+-- configuration, Telegram configuration, avatars, and media-bucket objects.
+--
+-- Removed data includes the old bookings backup, Broadcast playlists/library,
+-- Cue Sheet events/tracks/cues/templates/shares/playback, colors, and the
+-- legacy global user_roles table after its values are copied into
+-- workspace_users.role_id.
+--
+-- Paste and run this entire file as a convergence migration. It accepts both
+-- the legacy pre-cleanup schema and the already-clean target schema, and all
+-- work is atomic.
 
 BEGIN;
 
--- Quarantine retired feature tables without deleting their existing rows.
+-- Preflight: fail before deleting anything when the inspected baseline has
+-- drifted in a way that would make the role or OAuth migrations unsafe.
 DO $$
-DECLARE
-  v_table text;
 BEGIN
-  FOREACH v_table IN ARRAY ARRAY[
-    'cue_assignees',
-    'cues',
-    'tracks',
-    'event_playback_state',
-    'event_shares',
-    'events',
-    'template_cues',
-    'template_tracks',
-    'event_templates',
-    'queue',
-    'playlist_lanes',
-    'playlists',
-    'media'
-  ]
-  LOOP
-    IF to_regclass(format('public.%I', v_table)) IS NOT NULL THEN
-      EXECUTE format(
-        'REVOKE ALL ON TABLE public.%I FROM PUBLIC, anon, authenticated',
-        v_table
-      );
-    END IF;
-  END LOOP;
+  IF to_regclass('public.workspace_users') IS NULL
+    OR to_regclass('public.roles') IS NULL
+    OR to_regclass('public.checklists') IS NULL
+    OR to_regclass('public.youtube_connections') IS NULL
+    OR to_regclass('public.zoom_connections') IS NULL
+  THEN
+    RAISE EXCEPTION 'Required MoC Console baseline tables are missing';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM public.roles WHERE name = 'viewer') THEN
+    RAISE EXCEPTION 'The viewer role required for safe membership backfill is missing';
+  END IF;
 END;
 $$;
 
--- Retired RPCs remain unavailable even though their source data is preserved.
-DO $$
-DECLARE
-  v_function record;
-BEGIN
-  FOR v_function IN
-    SELECT procedure.oid::regprocedure AS signature
-    FROM pg_proc AS procedure
-    JOIN pg_namespace AS namespace ON namespace.oid = procedure.pronamespace
-    WHERE namespace.nspname = 'public'
-      AND procedure.proname IN (
-        'create_event_from_template',
-        'save_template_tracks',
-        'save_event_tracks',
-        'get_shared_event_view',
-        'upsert_event_playback_state',
-        'set_event_shares_updated_at',
-        'save_playlist_lanes'
-      )
-  LOOP
-    EXECUTE format(
-      'REVOKE ALL ON FUNCTION %s FROM PUBLIC, anon, authenticated',
-      v_function.signature
-    );
-  END LOOP;
-END;
-$$;
+-- Retired RPCs and trigger helpers.
+DROP FUNCTION IF EXISTS public.create_event_from_template(uuid, timestamptz, text, text);
+DROP FUNCTION IF EXISTS public.save_template_tracks(uuid, jsonb);
+DROP FUNCTION IF EXISTS public.save_event_tracks(uuid, jsonb);
+DROP FUNCTION IF EXISTS public.get_shared_event_view(text);
+DROP FUNCTION IF EXISTS public.upsert_event_playback_state(uuid, numeric, boolean, numeric);
+DROP FUNCTION IF EXISTS public.set_event_shares_updated_at() CASCADE;
+DROP FUNCTION IF EXISTS public.save_playlist_lanes(uuid, jsonb);
+DROP FUNCTION IF EXISTS public.save_playlist_queue(uuid, jsonb);
+
+-- Obsolete public endpoint overloads. Only the workspace-bound signatures
+-- explicitly granted later remain.
+DROP FUNCTION IF EXISTS public.public_browse_equipment(text, public.equipment_category);
+DROP FUNCTION IF EXISTS public.public_browse_equipment(uuid, text, public.equipment_category);
+DROP FUNCTION IF EXISTS public.public_submit_booking(uuid, text, timestamptz, timestamptz, text);
+DROP FUNCTION IF EXISTS public.public_submit_booking(uuid, uuid, text, timestamptz, timestamptz, text);
+DROP FUNCTION IF EXISTS public.public_submit_request(
+  text,
+  public.request_priority,
+  public.request_category,
+  timestamptz,
+  text, text, text, text, text, text, text, text, text, text
+);
+
+-- Retired feature tables, child-first. The storage.media bucket is not a
+-- public.media table and is deliberately untouched.
+DROP TABLE IF EXISTS public.bookings_old CASCADE;
+DROP TABLE IF EXISTS public.cue_assignees CASCADE;
+DROP TABLE IF EXISTS public.cues CASCADE;
+DROP TABLE IF EXISTS public.tracks CASCADE;
+DROP TABLE IF EXISTS public.event_playback_state CASCADE;
+DROP TABLE IF EXISTS public.event_shares CASCADE;
+DROP TABLE IF EXISTS public.events CASCADE;
+DROP TABLE IF EXISTS public.template_cues CASCADE;
+DROP TABLE IF EXISTS public.template_tracks CASCADE;
+DROP TABLE IF EXISTS public.event_templates CASCADE;
+DROP TABLE IF EXISTS public.colors CASCADE;
+DROP TABLE IF EXISTS public.queue CASCADE;
+DROP TABLE IF EXISTS public.playlist_lanes CASCADE;
+DROP TABLE IF EXISTS public.playlists CASCADE;
+DROP TABLE IF EXISTS public.media CASCADE;
+
+DROP TYPE IF EXISTS public.media_type;
+DROP TYPE IF EXISTS public.playlist_status;
+DROP TYPE IF EXISTS public.cue_type;
+
+DELETE FROM public.notification_message_templates
+WHERE message_type IN ('assignment.cue', 'assignment.checklist_item');
 
 -- Link standalone checklist runs to the request that prompted the work.
 
@@ -103,32 +119,46 @@ CREATE TABLE IF NOT EXISTS private.integration_oauth_tokens (
 
 REVOKE ALL ON TABLE private.integration_oauth_tokens FROM PUBLIC, anon, authenticated;
 
-INSERT INTO private.integration_oauth_tokens (
-  provider, workspace_id, access_token, refresh_token, token_expires_at
-)
-SELECT 'youtube', workspace_id, access_token, refresh_token, token_expires_at
-FROM public.youtube_connections
-ON CONFLICT (provider, workspace_id) DO UPDATE
-SET access_token = EXCLUDED.access_token,
-    refresh_token = EXCLUDED.refresh_token,
-    token_expires_at = EXCLUDED.token_expires_at,
-    updated_at = now();
+DO $$
+DECLARE
+  v_provider text;
+BEGIN
+  FOREACH v_provider IN ARRAY ARRAY['youtube', 'zoom']
+  LOOP
+    IF EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = v_provider || '_connections'
+        AND column_name = 'access_token'
+    ) AND EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = v_provider || '_connections'
+        AND column_name = 'refresh_token'
+    ) THEN
+      EXECUTE format($sql$
+        INSERT INTO private.integration_oauth_tokens (
+          provider, workspace_id, access_token, refresh_token, token_expires_at
+        )
+        SELECT %L, workspace_id, access_token, refresh_token, token_expires_at
+        FROM public.%I
+        ON CONFLICT (provider, workspace_id) DO UPDATE
+        SET access_token = EXCLUDED.access_token,
+            refresh_token = EXCLUDED.refresh_token,
+            token_expires_at = EXCLUDED.token_expires_at,
+            updated_at = now()
+      $sql$, v_provider, v_provider || '_connections');
+    END IF;
+  END LOOP;
+END;
+$$;
 
-INSERT INTO private.integration_oauth_tokens (
-  provider, workspace_id, access_token, refresh_token, token_expires_at
-)
-SELECT 'zoom', workspace_id, access_token, refresh_token, token_expires_at
-FROM public.zoom_connections
-ON CONFLICT (provider, workspace_id) DO UPDATE
-SET access_token = EXCLUDED.access_token,
-    refresh_token = EXCLUDED.refresh_token,
-    token_expires_at = EXCLUDED.token_expires_at,
-    updated_at = now();
-
-ALTER TABLE public.youtube_connections DROP COLUMN access_token;
-ALTER TABLE public.youtube_connections DROP COLUMN refresh_token;
-ALTER TABLE public.zoom_connections DROP COLUMN access_token;
-ALTER TABLE public.zoom_connections DROP COLUMN refresh_token;
+ALTER TABLE public.youtube_connections DROP COLUMN IF EXISTS access_token;
+ALTER TABLE public.youtube_connections DROP COLUMN IF EXISTS refresh_token;
+ALTER TABLE public.zoom_connections DROP COLUMN IF EXISTS access_token;
+ALTER TABLE public.zoom_connections DROP COLUMN IF EXISTS refresh_token;
 
 -- Service-role-only RPCs are the bridge between the API app and private storage.
 CREATE OR REPLACE FUNCTION public.get_integration_oauth_tokens(
@@ -345,128 +375,6 @@ DROP TRIGGER IF EXISTS booking_items_enforce_workspace ON public.booking_items;
 CREATE TRIGGER booking_items_enforce_workspace
   BEFORE INSERT OR UPDATE OF booking_id, equipment_id ON public.booking_items
   FOR EACH ROW EXECUTE FUNCTION public.enforce_booking_item_workspace();
-
--- `user_roles` has a global primary key by design today. A role change can
--- therefore affect every workspace a person belongs to. Do not allow an
--- apparently workspace-local management action to silently do that for a
--- multi-workspace member; introduce `workspace_user_roles` in a dedicated
--- authorization migration before supporting that operation.
-CREATE OR REPLACE FUNCTION public.prevent_ambiguous_global_role_mutation()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  target_user_id uuid;
-BEGIN
-  IF TG_OP = 'DELETE' THEN
-    target_user_id := OLD.user_id;
-  ELSE
-    target_user_id := NEW.user_id;
-  END IF;
-
-  IF (
-    SELECT count(*)
-    FROM public.workspace_users
-    WHERE user_id = target_user_id
-  ) > 1 THEN
-    RAISE EXCEPTION
-      'Cannot change a global role for a user in multiple workspaces; use workspace-scoped roles';
-  END IF;
-  IF TG_OP = 'DELETE' THEN
-    RETURN OLD;
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS user_roles_prevent_ambiguous_global_mutation ON public.user_roles;
-CREATE TRIGGER user_roles_prevent_ambiguous_global_mutation
-  BEFORE INSERT OR UPDATE OR DELETE ON public.user_roles
-  FOR EACH ROW EXECUTE FUNCTION public.prevent_ambiguous_global_role_mutation();
-
--- The existing role is intentionally global. Guard membership writes so a
--- global role manager can administer only workspaces they actually belong to.
-DROP POLICY IF EXISTS "user_roles_select" ON public.user_roles;
-CREATE POLICY "user_roles_select" ON public.user_roles
-  FOR SELECT TO authenticated
-  USING (
-    user_id = auth.uid()
-    OR (
-      private.current_user_can('can_manage_roles')
-      AND EXISTS (
-        SELECT 1
-        FROM public.workspace_users target_membership
-        WHERE target_membership.user_id = user_roles.user_id
-          AND private.is_workspace_member(target_membership.workspace_id)
-      )
-    )
-  );
-
-DROP POLICY IF EXISTS "user_roles_insert" ON public.user_roles;
-CREATE POLICY "user_roles_insert" ON public.user_roles
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    private.current_user_can('can_manage_roles')
-    AND EXISTS (
-      SELECT 1
-      FROM public.workspace_users target_membership
-      WHERE target_membership.user_id = user_roles.user_id
-        AND private.is_workspace_member(target_membership.workspace_id)
-    )
-  );
-
-DROP POLICY IF EXISTS "user_roles_update" ON public.user_roles;
-CREATE POLICY "user_roles_update" ON public.user_roles
-  FOR UPDATE TO authenticated
-  USING (
-    private.current_user_can('can_manage_roles')
-    AND EXISTS (
-      SELECT 1
-      FROM public.workspace_users target_membership
-      WHERE target_membership.user_id = user_roles.user_id
-        AND private.is_workspace_member(target_membership.workspace_id)
-    )
-  )
-  WITH CHECK (
-    private.current_user_can('can_manage_roles')
-    AND EXISTS (
-      SELECT 1
-      FROM public.workspace_users target_membership
-      WHERE target_membership.user_id = user_roles.user_id
-        AND private.is_workspace_member(target_membership.workspace_id)
-    )
-  );
-
-DROP POLICY IF EXISTS "user_roles_delete" ON public.user_roles;
-CREATE POLICY "user_roles_delete" ON public.user_roles
-  FOR DELETE TO authenticated
-  USING (
-    private.current_user_can('can_manage_roles')
-    AND EXISTS (
-      SELECT 1
-      FROM public.workspace_users target_membership
-      WHERE target_membership.user_id = user_roles.user_id
-        AND private.is_workspace_member(target_membership.workspace_id)
-    )
-  );
-
-DROP POLICY IF EXISTS "workspace_users_insert" ON public.workspace_users;
-CREATE POLICY "workspace_users_insert" ON public.workspace_users
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    private.is_workspace_member(workspace_id)
-    AND private.current_user_can('can_manage_roles')
-  );
-
-DROP POLICY IF EXISTS "workspace_users_delete" ON public.workspace_users;
-CREATE POLICY "workspace_users_delete" ON public.workspace_users
-  FOR DELETE TO authenticated
-  USING (
-    private.is_workspace_member(workspace_id)
-    AND private.current_user_can('can_manage_roles')
-  );
 
 -- Durable Telegram delivery queue.
 --
@@ -755,6 +663,7 @@ CREATE TRIGGER record_request_activity
 ALTER TABLE public.request_activity ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.request_comments ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "request_activity_select" ON public.request_activity;
 CREATE POLICY "request_activity_select" ON public.request_activity
   FOR SELECT TO authenticated
   USING (
@@ -762,10 +671,11 @@ CREATE POLICY "request_activity_select" ON public.request_activity
       SELECT 1 FROM public.requests
       WHERE requests.id = request_activity.request_id
         AND private.is_workspace_member(requests.workspace_id)
+        AND private.current_user_can(requests.workspace_id, 'can_read')
     )
-    AND private.current_user_can('can_read')
   );
 
+DROP POLICY IF EXISTS "request_comments_select" ON public.request_comments;
 CREATE POLICY "request_comments_select" ON public.request_comments
   FOR SELECT TO authenticated
   USING (
@@ -773,10 +683,11 @@ CREATE POLICY "request_comments_select" ON public.request_comments
       SELECT 1 FROM public.requests
       WHERE requests.id = request_comments.request_id
         AND private.is_workspace_member(requests.workspace_id)
+        AND private.current_user_can(requests.workspace_id, 'can_read')
     )
-    AND private.current_user_can('can_read')
   );
 
+DROP POLICY IF EXISTS "request_comments_insert" ON public.request_comments;
 CREATE POLICY "request_comments_insert" ON public.request_comments
   FOR INSERT TO authenticated
   WITH CHECK (
@@ -785,15 +696,13 @@ CREATE POLICY "request_comments_insert" ON public.request_comments
       SELECT 1 FROM public.requests
       WHERE requests.id = request_comments.request_id
         AND private.is_workspace_member(requests.workspace_id)
+        AND private.current_user_can(requests.workspace_id, 'can_update')
     )
-    AND private.current_user_can('can_update')
   );
 
--- 2026-08-04 — Workspace-scoped authorization and approval-only signup.
---
--- Run after every earlier phase and patch. This migration intentionally keeps
--- public.user_roles as a read-only legacy table during rollout; authorization
--- is sourced exclusively from workspace_users.role_id after this patch.
+-- Workspace-scoped authorization and approval-only signup. The legacy
+-- user_roles table remains only long enough to backfill workspace roles and is
+-- dropped by the final normalization block.
 
 
 -- Every accepted membership owns its role. Existing global roles are copied
@@ -802,11 +711,17 @@ CREATE POLICY "request_comments_insert" ON public.request_comments
 ALTER TABLE public.workspace_users
   ADD COLUMN IF NOT EXISTS role_id uuid REFERENCES public.roles(id) ON DELETE RESTRICT;
 
-UPDATE public.workspace_users AS membership
-SET role_id = legacy.role_id
-FROM public.user_roles AS legacy
-WHERE legacy.user_id = membership.user_id
-  AND membership.role_id IS NULL;
+DO $$
+BEGIN
+  IF to_regclass('public.user_roles') IS NOT NULL THEN
+    UPDATE public.workspace_users AS membership
+    SET role_id = legacy.role_id
+    FROM public.user_roles AS legacy
+    WHERE legacy.user_id = membership.user_id
+      AND membership.role_id IS NULL;
+  END IF;
+END;
+$$;
 
 UPDATE public.workspace_users AS membership
 SET role_id = viewer.id
@@ -1096,14 +1011,6 @@ REVOKE ALL ON FUNCTION public.set_workspace_member_role(uuid, uuid, uuid) FROM P
 REVOKE ALL ON FUNCTION public.protect_last_workspace_manager() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.approve_workspace_join_request(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.set_workspace_member_role(uuid, uuid, uuid) TO authenticated;
-
--- Legacy global assignments are no longer an authorization source.
-DROP TRIGGER IF EXISTS user_roles_prevent_ambiguous_global_mutation ON public.user_roles;
-DROP POLICY IF EXISTS "user_roles_select" ON public.user_roles;
-DROP POLICY IF EXISTS "user_roles_insert" ON public.user_roles;
-DROP POLICY IF EXISTS "user_roles_update" ON public.user_roles;
-DROP POLICY IF EXISTS "user_roles_delete" ON public.user_roles;
-REVOKE ALL ON public.user_roles FROM anon, authenticated;
 
 -- Membership, profile and pending-request policies.
 DROP POLICY IF EXISTS "workspace_join_requests_select" ON public.workspace_join_requests;
@@ -1421,8 +1328,8 @@ CREATE POLICY "media_bucket_workspace_manager_delete" ON storage.objects
     AND private.current_user_can(private.storage_object_workspace_id(name), 'can_manage_roles')
   );
 
--- 2026-08-04 — Fix mutable function paths and remove obsolete RPC exposure.
--- Applied to production as Supabase migration: harden_function_execution.
+-- Pin function paths and remove obsolete RPC exposure after creating the new
+-- target-schema functions above.
 
 
 -- Pin every public function that still inherits a caller-controlled search
@@ -1514,8 +1421,7 @@ BEGIN
 END;
 $$;
 
--- 2026-08-04 — Emergency lock for privileged maintenance automation.
--- Applied to production as Supabase migration: lock_privileged_maintenance_rpcs.
+-- Lock privileged maintenance automation to the service role.
 
 
 -- Revoke every overload so an obsolete signature cannot remain callable by an
@@ -1548,30 +1454,256 @@ BEGIN
 END;
 $$;
 
--- Explicit Data API grants for tables introduced by this patch. RLS remains
--- the row-level authorization boundary.
-GRANT SELECT ON public.request_activity TO authenticated;
-GRANT SELECT, INSERT ON public.request_comments TO authenticated;
-GRANT ALL ON public.request_activity, public.request_comments TO service_role;
+-- The per-workspace role backfill and all dependent policy rewrites are now
+-- complete, so the legacy global assignment table can be removed.
+DROP TABLE IF EXISTS public.user_roles;
+DROP FUNCTION IF EXISTS public.prevent_ambiguous_global_role_mutation();
+DROP FUNCTION IF EXISTS private.current_user_role_name(uuid);
+DROP FUNCTION IF EXISTS private.current_user_can(text);
 
-REVOKE ALL ON public.notification_outbox, public.notification_deliveries
-  FROM PUBLIC, anon, authenticated;
-GRANT ALL ON public.notification_outbox, public.notification_deliveries
-  TO service_role;
-
-GRANT ALL ON public.workspace_join_requests TO service_role;
-
--- Abort rather than commit a partial authorization rollout.
+-- Enable RLS on every retained public table, including tables created above.
 DO $$
 DECLARE
+  v_table record;
+BEGIN
+  FOR v_table IN
+    SELECT format('%I.%I', namespace.nspname, relation.relname) AS qualified_name
+    FROM pg_class AS relation
+    JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+    WHERE namespace.nspname = 'public'
+      AND relation.relkind IN ('r', 'p')
+  LOOP
+    EXECUTE format('ALTER TABLE %s ENABLE ROW LEVEL SECURITY', v_table.qualified_name);
+  END LOOP;
+END;
+$$;
+
+ALTER TABLE private.integration_oauth_tokens ENABLE ROW LEVEL SECURITY;
+
+-- Remove leftover rollout policies and policies for operations that now exist
+-- only behind checked RPCs or the service-role API.
+DROP POLICY IF EXISTS "Authenticated users can read roles" ON public.roles;
+DROP POLICY IF EXISTS "roles_select" ON public.roles;
+CREATE POLICY "roles_select" ON public.roles
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.workspace_users
+      WHERE user_id = (SELECT auth.uid())
+    )
+  );
+
+DROP POLICY IF EXISTS "workspace_users_delete" ON public.workspace_users;
+DROP POLICY IF EXISTS "bookings_insert" ON public.bookings;
+DROP POLICY IF EXISTS "booking_items_insert" ON public.booking_items;
+DROP POLICY IF EXISTS "booking_items_update" ON public.booking_items;
+DROP POLICY IF EXISTS "booking_items_delete" ON public.booking_items;
+DROP POLICY IF EXISTS "youtube_connections_insert" ON public.youtube_connections;
+DROP POLICY IF EXISTS "youtube_connections_delete" ON public.youtube_connections;
+DROP POLICY IF EXISTS "zoom_connections_insert" ON public.zoom_connections;
+DROP POLICY IF EXISTS "zoom_connections_update" ON public.zoom_connections;
+DROP POLICY IF EXISTS "zoom_connections_delete" ON public.zoom_connections;
+
+-- Adopt explicit, deny-by-default Data API grants.
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE SELECT, INSERT, UPDATE, DELETE ON TABLES FROM anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE USAGE, SELECT ON SEQUENCES FROM anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC, anon, authenticated, service_role;
+
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC, anon, authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
+
+-- Accepted-member directory and workspace selection.
+GRANT SELECT ON
+  public.roles,
+  public.workspaces,
+  public.workspace_users,
+  public.workspace_join_requests
+TO authenticated;
+GRANT UPDATE ON public.workspaces TO authenticated;
+GRANT SELECT, UPDATE ON public.users TO authenticated;
+
+-- Core operational data.
+GRANT SELECT, INSERT, UPDATE, DELETE ON
+  public.requests,
+  public.request_assignees,
+  public.equipment,
+  public.checklist_templates,
+  public.template_sections,
+  public.template_items,
+  public.checklists,
+  public.checklist_sections,
+  public.checklist_items,
+  public.checklist_item_assignees,
+  public.streams,
+  public.zoom_meetings,
+  public.notification_settings,
+  public.notification_recipients,
+  public.notification_routes,
+  public.notification_message_templates
+TO authenticated;
+
+GRANT SELECT, UPDATE, DELETE ON public.bookings TO authenticated;
+GRANT SELECT ON public.booking_items TO authenticated;
+GRANT SELECT ON public.request_activity TO authenticated;
+GRANT SELECT, INSERT ON public.request_comments TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.bug_reports TO authenticated;
+
+-- Integrations: credentials and provider lifecycle writes stay server-side.
+GRANT SELECT, UPDATE ON public.youtube_connections TO authenticated;
+GRANT SELECT ON public.zoom_connections TO authenticated;
+GRANT SELECT, UPDATE ON public.telegram_groups TO authenticated;
+GRANT SELECT ON public.telegram_group_topics TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.telegram_link_tokens TO authenticated;
+
+-- Queue payloads and OAuth secrets are service-role only.
+REVOKE ALL ON
+  public.notification_outbox,
+  public.notification_deliveries
+FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON ALL TABLES IN SCHEMA private FROM PUBLIC, anon, authenticated;
+GRANT ALL ON private.integration_oauth_tokens TO service_role;
+
+-- No function is callable merely because it exists in an exposed schema.
+REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public
+  FROM PUBLIC, anon, authenticated, service_role;
+REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA private
+  FROM PUBLIC, anon, authenticated, service_role;
+
+-- Deliberately public, workspace-bound request application endpoints.
+GRANT EXECUTE ON FUNCTION public.list_signup_workspaces()
+  TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.public_browse_equipment(
+  uuid, timestamptz, timestamptz, text, public.equipment_category
+) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.public_lookup_tracking(text)
+  TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.public_submit_booking_batch(
+  uuid, text, uuid[], text, timestamptz, timestamptz, text
+) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.public_submit_request(
+  uuid,
+  text,
+  public.request_priority,
+  public.request_category,
+  timestamptz,
+  text, text, text, text, text, text, text, text, text, text
+) TO anon, authenticated;
+
+-- Accepted-member application RPCs.
+GRANT EXECUTE ON FUNCTION public.create_checklist_from_template(
+  uuid, timestamptz, text, text
+) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.save_checklist_structure(uuid, jsonb)
+  TO authenticated;
+GRANT EXECUTE ON FUNCTION public.save_template_checklist_structure(uuid, jsonb)
+  TO authenticated;
+GRANT EXECUTE ON FUNCTION public.approve_workspace_join_request(uuid)
+  TO authenticated;
+GRANT EXECUTE ON FUNCTION public.set_workspace_member_role(uuid, uuid, uuid)
+  TO authenticated;
+
+-- Service-only automation and OAuth secret storage.
+GRANT EXECUTE ON FUNCTION public.archive_completed_requests()
+  TO service_role;
+GRANT EXECUTE ON FUNCTION public.archive_returned_bookings()
+  TO service_role;
+GRANT EXECUTE ON FUNCTION public.claim_stale_bookings()
+  TO service_role;
+GRANT EXECUTE ON FUNCTION public.claim_stale_requests()
+  TO service_role;
+GRANT EXECUTE ON FUNCTION public.get_integration_oauth_tokens(text, uuid)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION public.save_integration_oauth_tokens(
+  text, uuid, text, text, timestamptz
+) TO service_role;
+GRANT EXECUTE ON FUNCTION public.delete_integration_oauth_tokens(text, uuid)
+  TO service_role;
+
+-- Private RLS helpers are callable only by accepted authenticated sessions;
+-- their bodies still make the membership/permission decision.
+GRANT USAGE ON SCHEMA private TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION private.current_user_can(uuid, text)
+  TO authenticated;
+GRANT EXECUTE ON FUNCTION private.is_workspace_member(uuid)
+  TO authenticated;
+GRANT EXECUTE ON FUNCTION private.storage_object_workspace_id(text)
+  TO authenticated;
+
+-- Final target-state assertions. Any failure rolls back the whole migration.
+DO $$
+DECLARE
+  v_unexpected_tables text;
   v_function record;
 BEGIN
+  SELECT string_agg(relation.relname, ', ' ORDER BY relation.relname)
+  INTO v_unexpected_tables
+  FROM pg_class AS relation
+  JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+  WHERE namespace.nspname = 'public'
+    AND relation.relkind IN ('r', 'p')
+    AND relation.relname <> ALL (ARRAY[
+      'booking_items',
+      'bookings',
+      'bug_reports',
+      'checklist_item_assignees',
+      'checklist_items',
+      'checklist_sections',
+      'checklist_templates',
+      'checklists',
+      'equipment',
+      'notification_deliveries',
+      'notification_message_templates',
+      'notification_outbox',
+      'notification_recipients',
+      'notification_routes',
+      'notification_settings',
+      'request_activity',
+      'request_assignees',
+      'request_comments',
+      'requests',
+      'roles',
+      'streams',
+      'telegram_group_topics',
+      'telegram_groups',
+      'telegram_link_tokens',
+      'template_items',
+      'template_sections',
+      'users',
+      'workspace_join_requests',
+      'workspace_users',
+      'workspaces',
+      'youtube_connections',
+      'zoom_connections',
+      'zoom_meetings'
+    ]);
+
+  IF v_unexpected_tables IS NOT NULL THEN
+    RAISE EXCEPTION 'Unexpected public tables remain: %', v_unexpected_tables;
+  END IF;
+
   IF EXISTS (
     SELECT 1
-    FROM public.workspace_users
-    WHERE role_id IS NULL
+    FROM pg_class AS relation
+    JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+    WHERE namespace.nspname = 'public'
+      AND relation.relkind IN ('r', 'p')
+      AND NOT relation.relrowsecurity
   ) THEN
+    RAISE EXCEPTION 'A retained public table does not have RLS enabled';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.workspace_users WHERE role_id IS NULL) THEN
     RAISE EXCEPTION 'workspace_users.role_id backfill is incomplete';
+  END IF;
+
+  IF to_regclass('public.user_roles') IS NOT NULL THEN
+    RAISE EXCEPTION 'Legacy global role table still exists';
   END IF;
 
   IF EXISTS (
@@ -1581,17 +1713,7 @@ BEGIN
       AND table_name IN ('youtube_connections', 'zoom_connections')
       AND column_name IN ('access_token', 'refresh_token')
   ) THEN
-    RAISE EXCEPTION 'OAuth credential columns remain in an exposed table';
-  END IF;
-
-  IF to_regclass('public.workspace_join_requests') IS NULL
-    OR to_regclass('public.request_activity') IS NULL
-    OR to_regclass('public.request_comments') IS NULL
-    OR to_regclass('public.notification_outbox') IS NULL
-    OR to_regclass('public.notification_deliveries') IS NULL
-    OR to_regclass('private.integration_oauth_tokens') IS NULL
-  THEN
-    RAISE EXCEPTION 'One or more required schema objects were not created';
+    RAISE EXCEPTION 'OAuth secrets remain in exposed tables';
   END IF;
 
   IF EXISTS (
@@ -1603,7 +1725,30 @@ BEGIN
         OR coalesce(with_check, '') ~ 'private\.current_user_can\(''(can_[a-z_]+)''::text\)'
       )
   ) THEN
-    RAISE EXCEPTION 'A public RLS policy still uses the global permission helper';
+    RAISE EXCEPTION 'A public RLS policy still uses a global permission check';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.role_table_grants
+    WHERE table_schema = 'public'
+      AND grantee = 'anon'
+  ) THEN
+    RAISE EXCEPTION 'anon still has a direct public-table grant';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM pg_proc AS procedure
+    JOIN pg_namespace AS namespace ON namespace.oid = procedure.pronamespace
+    WHERE namespace.nspname = 'public'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM unnest(coalesce(procedure.proconfig, ARRAY[]::text[])) AS setting
+        WHERE setting LIKE 'search_path=%'
+      )
+  ) THEN
+    RAISE EXCEPTION 'A public function has a mutable search_path';
   END IF;
 
   FOR v_function IN
@@ -1611,17 +1756,16 @@ BEGIN
     FROM pg_proc AS procedure
     JOIN pg_namespace AS namespace ON namespace.oid = procedure.pronamespace
     WHERE namespace.nspname = 'public'
-      AND procedure.proname IN (
-        'archive_completed_requests',
-        'archive_returned_bookings',
-        'claim_stale_bookings',
-        'claim_stale_requests'
+      AND procedure.proname NOT IN (
+        'list_signup_workspaces',
+        'public_browse_equipment',
+        'public_lookup_tracking',
+        'public_submit_booking_batch',
+        'public_submit_request'
       )
   LOOP
-    IF has_function_privilege('anon', v_function.oid, 'EXECUTE')
-      OR has_function_privilege('authenticated', v_function.oid, 'EXECUTE')
-    THEN
-      RAISE EXCEPTION 'Privileged maintenance RPC remains exposed: %', v_function.signature;
+    IF has_function_privilege('anon', v_function.oid, 'EXECUTE') THEN
+      RAISE EXCEPTION 'Unexpected anonymous RPC exposure: %', v_function.signature;
     END IF;
   END LOOP;
 END;
