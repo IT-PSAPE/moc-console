@@ -1,10 +1,10 @@
-import { enqueueOutboxEvent, processOutboxEvent } from "../../../server/notifications/outbox.js"
-import { requireWorkspaceMembership } from "../../../server/notifications/authorization.js"
-import { getSupabaseAdmin } from "../../../server/supabase-admin.js"
-import { requireAuthenticatedUser, AuthError } from "../../../server/auth-guard.js"
-import { applyCors } from "../../../server/cors.js"
-import { normaliseHeaders } from "../../../server/http.js"
-import type { ApiRequest, ApiResponse } from "../../../server/http.js"
+import { enqueueOutboxEvent, processOutboxEvent } from "../../../notifications/outbox.js"
+import { requireWorkspaceMembership } from "../../../notifications/authorization.js"
+import { getSupabaseAdmin } from "../../../supabase-admin.js"
+import { requireAuthenticatedUser, AuthError } from "../../../auth-guard.js"
+import { applyCors } from "../../../cors.js"
+import { normaliseHeaders } from "../../../http.js"
+import type { ApiRequest, ApiResponse } from "../../../http.js"
 
 type Body = { streamId?: string; destinations?: unknown }
 

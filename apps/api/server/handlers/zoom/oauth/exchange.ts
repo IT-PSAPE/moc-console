@@ -1,10 +1,10 @@
-import { exchangeZoomCode, resolveZoomOAuthConfig } from "../../../server/zoom-oauth.js"
-import { AuthError, requireAuthenticatedUser } from "../../../server/auth-guard.js"
-import { applyCors } from "../../../server/cors.js"
-import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../server/http.js"
-import { saveIntegrationTokens } from "../../../server/integration-oauth-store.js"
-import { getSupabaseAdmin } from "../../../server/supabase-admin.js"
-import { WorkspaceAccessError, requireWorkspacePermission } from "../../../server/workspace-access.js"
+import { exchangeZoomCode, resolveZoomOAuthConfig } from "../../../zoom-oauth.js"
+import { AuthError, requireAuthenticatedUser } from "../../../auth-guard.js"
+import { applyCors } from "../../../cors.js"
+import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../http.js"
+import { saveIntegrationTokens } from "../../../integration-oauth-store.js"
+import { getSupabaseAdmin } from "../../../supabase-admin.js"
+import { WorkspaceAccessError, requireWorkspacePermission } from "../../../workspace-access.js"
 
 type RequestBody = {
   code?: unknown

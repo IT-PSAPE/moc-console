@@ -1,5 +1,5 @@
-import { getSupabaseAdmin } from "../../server/supabase-admin.js"
-import { isAuthorizedCron } from "../../server/cron-auth.js"
+import { getSupabaseAdmin } from "../../supabase-admin.js"
+import { isAuthorizedCron } from "../../cron-auth.js"
 
 // Weekly archive sweep. Flips finished work to 'archived' after each
 // workspace's configured delay so it drops out of active views without

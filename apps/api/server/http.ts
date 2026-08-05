@@ -7,6 +7,7 @@ export type ApiRequest = {
   method?: string
   body?: unknown
   url?: string
+  query?: Record<string, string | string[] | undefined>
   headers?: Record<string, string | string[] | undefined>
 }
 

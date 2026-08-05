@@ -1,10 +1,10 @@
-import { revokeYouTubeToken } from "../../../server/youtube-oauth.js"
-import { AuthError, requireAuthenticatedUser } from "../../../server/auth-guard.js"
-import { applyCors } from "../../../server/cors.js"
-import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../server/http.js"
-import { deleteIntegrationTokens, getIntegrationTokens } from "../../../server/integration-oauth-store.js"
-import { getSupabaseAdmin } from "../../../server/supabase-admin.js"
-import { WorkspaceAccessError, requireWorkspacePermission } from "../../../server/workspace-access.js"
+import { resolveZoomOAuthConfig, revokeZoomAccessToken } from "../../../zoom-oauth.js"
+import { AuthError, requireAuthenticatedUser } from "../../../auth-guard.js"
+import { applyCors } from "../../../cors.js"
+import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../http.js"
+import { deleteIntegrationTokens, getIntegrationTokens } from "../../../integration-oauth-store.js"
+import { getSupabaseAdmin } from "../../../supabase-admin.js"
+import { WorkspaceAccessError, requireWorkspacePermission } from "../../../workspace-access.js"
 
 type RequestBody = {
   workspaceId?: unknown
@@ -29,15 +29,18 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     }
     await requireWorkspacePermission(user.userId, workspaceId, "can_manage_roles")
 
-    const tokens = await getIntegrationTokens("youtube", workspaceId)
-    if (tokens) await revokeYouTubeToken(tokens.accessToken)
-    await deleteIntegrationTokens("youtube", workspaceId)
+    const tokens = await getIntegrationTokens("zoom", workspaceId)
+    if (tokens) {
+      await revokeZoomAccessToken(resolveZoomOAuthConfig(process.env), tokens.accessToken)
+    }
+    await deleteIntegrationTokens("zoom", workspaceId)
     const { error: connectionError } = await getSupabaseAdmin()
-      .from("youtube_connections")
+      .from("zoom_connections")
       .delete()
       .eq("workspace_id", workspaceId)
     if (connectionError) throw new Error(connectionError.message)
     response.status(200).json({ ok: true })
+    return
   } catch (error) {
     if (error instanceof AuthError) {
       response.status(401).json({ error: "Unauthorized" })
@@ -47,7 +50,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       response.status(403).json({ error: error.message })
       return
     }
-    console.error("YouTube token revoke failed:", error)
-    response.status(502).json({ error: "YouTube token revoke failed" })
+    console.error("Zoom token revoke failed:", error)
+    response.status(502).json({ error: "Zoom token revoke failed" })
   }
 }

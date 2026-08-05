@@ -1,13 +1,13 @@
-import { getSupabaseAdmin } from "../../server/supabase-admin.js"
-import { isAuthorizedCron } from "../../server/cron-auth.js"
-import { resolveBaseUrl } from "../../server/base-url.js"
+import { getSupabaseAdmin } from "../../supabase-admin.js"
+import { isAuthorizedCron } from "../../cron-auth.js"
+import { resolveBaseUrl } from "../../base-url.js"
 import {
   dispatchEvent,
   renderEventText,
   type RequestStalePayload,
   type BookingStalePayload,
-} from "../../server/notifications/dispatch.js"
-import { enqueueDelivery, processDeliveriesForEvent, type DeliveryRunResult } from "../../server/notifications/delivery-store.js"
+} from "../../notifications/dispatch.js"
+import { enqueueDelivery, processDeliveriesForEvent, type DeliveryRunResult } from "../../notifications/delivery-store.js"
 
 // Daily stale-item sweep — wired to a Vercel Cron (00:00 UTC, see
 // vercel.json). Finds requests/bookings that have gone past their

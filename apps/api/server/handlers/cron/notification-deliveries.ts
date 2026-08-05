@@ -1,6 +1,6 @@
-import { isAuthorizedCron } from "../../server/cron-auth.js"
-import { processPendingDeliveries } from "../../server/notifications/delivery-store.js"
-import { processPendingOutbox } from "../../server/notifications/outbox.js"
+import { isAuthorizedCron } from "../../cron-auth.js"
+import { processPendingDeliveries } from "../../notifications/delivery-store.js"
+import { processPendingOutbox } from "../../notifications/outbox.js"
 
 type ApiRequest = {
   method?: string
