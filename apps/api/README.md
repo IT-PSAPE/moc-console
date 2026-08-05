@@ -24,7 +24,7 @@ See [ADR-0008](../../docs/adr/0008-extract-moc-api-app.md) for why this exists.
 | `POST /api/telegram/webhook` | Telegram | webhook secret |
 | `GET /api/cron/weekly-archive` | Vercel Cron, Mondays 00:00 | `CRON_SECRET` |
 | `GET /api/cron/stale-items` | Vercel Cron, daily 00:00 | `CRON_SECRET` |
-| `GET /api/cron/notification-deliveries` | Vercel Cron, every 15 minutes | `CRON_SECRET` |
+| `GET /api/cron/notification-deliveries` | Vercel Cron, daily 01:00 fallback retry | `CRON_SECRET` |
 
 Request and booking database triggers create durable notification-outbox rows in
 the same transaction as the source write. The Request PWA can best-effort wake
