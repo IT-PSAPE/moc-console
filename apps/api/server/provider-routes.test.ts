@@ -18,6 +18,9 @@ const YOUTUBE_CALLS: Array<[string, string, string]> = [
   // Nested, and therefore collapsed by the console before it is sent.
   ["POST", "/api/youtube/v3/_proxy?id=abc&part=id%2CcontentDetails&streamId=xyz&providerPath=liveBroadcasts%2Fbind", "/liveBroadcasts/bind?id=abc&part=id%2CcontentDetails&streamId=xyz"],
   ["POST", "/api/youtube/v3/_proxy?videoId=abc&uploadType=media&providerPath=thumbnails%2Fset", "/thumbnails/set?videoId=abc&uploadType=media"],
+  // Verbatim shape from a stream bind in production, including the parameter a
+  // rewrite adds when it re-matches the already-collapsed URL.
+  ["POST", "/api/youtube/v3/_proxy?id=qBQph9gAhGo&part=id%2CcontentDetails&streamId=fOSLhHZ22W1xxca6TviXTg1785940728306294&providerPath=liveBroadcasts%2Fbind&rewrittenPath=_proxy", "/liveBroadcasts/bind?id=qBQph9gAhGo&part=id%2CcontentDetails&streamId=fOSLhHZ22W1xxca6TviXTg1785940728306294"],
 ]
 
 const ZOOM_CALLS: Array<[string, string, string]> = [

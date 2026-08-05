@@ -37,11 +37,47 @@ type ProviderRequestDetails = {
  */
 export const PROVIDER_PROXY_SEGMENT = "/_proxy"
 
-/** Query parameter those rewrites carry the real provider path in. */
+/**
+ * Parameter the *caller* puts the provider path in when it collapses a nested
+ * path itself.
+ */
 export const PROVIDER_PATH_PARAM = "providerPath"
+
+/**
+ * Parameter the *deployment's* rewrites use for the same job. Deliberately a
+ * different name: a rewrite still matches a URL the caller already collapsed,
+ * and a shared name would leave two values on one parameter — the rewrite's
+ * being the useless `_proxy` — with only luck deciding which one was read.
+ */
+export const REWRITTEN_PATH_PARAM = "rewrittenPath"
 
 /** Matches a routing placeholder (`/[...path]`) left in a rewritten pathname. */
 const PLACEHOLDER_SEGMENT = /^\/\[.+\]$/
+
+/**
+ * First usable provider path across both parameters, preferring the caller's.
+ * Values naming the proxy segment itself are what a rewrite produces when it
+ * re-matches an already-collapsed URL, and are ignored.
+ */
+function providerPathParam(searchParams: URLSearchParams): string | null {
+  const sentinel = PROVIDER_PROXY_SEGMENT.slice(1)
+  for (const name of [PROVIDER_PATH_PARAM, REWRITTEN_PATH_PARAM]) {
+    for (const raw of searchParams.getAll(name)) {
+      // A path that travelled through a rewrite can arrive still encoded.
+      const value = (raw.includes("%") ? safeDecode(raw) : raw).trim()
+      if (value && value !== sentinel) return value
+    }
+  }
+  return null
+}
+
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
 
 function providerRequestDetails(requestUrl: string | undefined, routePrefix: string): ProviderRequestDetails {
   let parsedUrl: URL
@@ -64,7 +100,7 @@ function providerRequestDetails(requestUrl: string | undefined, routePrefix: str
   // trusting it safe: it can only reach an operation the caller could already
   // have called directly.
   if (remainder === PROVIDER_PROXY_SEGMENT || PLACEHOLDER_SEGMENT.test(remainder)) {
-    const provided = parsedUrl.searchParams.get(PROVIDER_PATH_PARAM)?.trim()
+    const provided = providerPathParam(parsedUrl.searchParams)
     if (!provided) throw new ProviderRouteError("Provider operation is not allowed")
     return {
       pathname: provided.startsWith("/") ? provided : `/${provided}`,

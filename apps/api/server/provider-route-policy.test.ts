@@ -72,6 +72,37 @@ describe("authorizeProviderRoute", () => {
     assert.equal(route.path, "/categories?part=snippet")
   })
 
+  it("survives a rewrite re-matching an already-collapsed URL", () => {
+    // The caller collapsed the path, then the deployment's rewrite matched that
+    // URL too and appended its own parameter naming the proxy segment. Reading
+    // the wrong one turns a valid call into "operation is not allowed".
+    const route = authorizeProviderRoute(
+      "POST",
+      "/api/provider/v3/_proxy?id=abc&providerPath=resources/bind&rewrittenPath=_proxy",
+      ROUTE_PREFIX,
+      ROUTES,
+    )
+
+    assert.equal(route.path, "/resources/bind?id=abc")
+  })
+
+  it("accepts the path from the rewrite alone, still encoded", () => {
+    for (const url of [
+      "/api/provider/v3/_proxy?rewrittenPath=resources/bind",
+      "/api/provider/v3/_proxy?rewrittenPath=resources%2Fbind",
+      "/api/provider/v3/_proxy?providerPath=resources%2Fbind",
+    ]) {
+      assert.equal(authorizeProviderRoute("POST", url, ROUTE_PREFIX, ROUTES).path, "/resources/bind", url)
+    }
+  })
+
+  it("ignores a parameter that only names the proxy segment", () => {
+    assert.throws(
+      () => authorizeProviderRoute("POST", "/api/provider/v3/_proxy?providerPath=_proxy", ROUTE_PREFIX, ROUTES),
+      new ProviderRouteError("Provider operation is not allowed"),
+    )
+  })
+
   it("rejects a rewritten request with no provider path", () => {
     assert.throws(
       () => authorizeProviderRoute("POST", "/api/provider/v3/_proxy?id=abc", ROUTE_PREFIX, ROUTES),
