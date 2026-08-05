@@ -50,6 +50,27 @@ vanished.
 An override changes *where* a notification goes, never *what it says*: the
 template and token rendering are identical either way.
 
+## Provider proxy routing
+
+`/api/youtube/v3/*` and `/api/zoom/v2/*` are one `[...path]` function each, but
+this deployment hands such a function **only a single path segment** — a request
+for a nested provider route (`liveBroadcasts/bind`, `meetings/{id}`,
+`users/me/meetings`) 404s at the platform before any code runs, and a 404 has no
+CORS headers, so the browser reports it as a preflight failure rather than a
+missing route.
+
+The `rewrites` in [vercel.json](vercel.json) therefore point every provider path
+at a single-segment URL (`_proxy`) and carry the real path in a `providerPath`
+query parameter. `authorizeProviderRoute` accepts the provider path from either
+source — the pathname when the request reached the function directly, the
+parameter when it was rewritten — and applies the same method, path and
+permission rules to both, so the parameter grants nothing a direct call would
+not. It is never forwarded upstream.
+
+Adding a real file per nested route would also work, but the deployment sits at
+its function-count ceiling, which is why the entrypoints were consolidated in
+the first place.
+
 ## CORS
 
 Browser calls arrive cross-origin and carry a session plus workspace context in

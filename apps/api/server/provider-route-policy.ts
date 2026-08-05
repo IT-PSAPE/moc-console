@@ -30,6 +30,19 @@ type ProviderRequestDetails = {
   searchParams: URLSearchParams
 }
 
+/**
+ * Single-segment URL the deployment's rewrites aim nested provider paths at,
+ * because a `[...path]` function here only receives one path segment. See the
+ * rewrite note in vercel.json.
+ */
+export const PROVIDER_PROXY_SEGMENT = "/_proxy"
+
+/** Query parameter those rewrites carry the real provider path in. */
+export const PROVIDER_PATH_PARAM = "providerPath"
+
+/** Matches a routing placeholder (`/[...path]`) left in a rewritten pathname. */
+const PLACEHOLDER_SEGMENT = /^\/\[.+\]$/
+
 function providerRequestDetails(requestUrl: string | undefined, routePrefix: string): ProviderRequestDetails {
   let parsedUrl: URL
   try {
@@ -43,8 +56,24 @@ function providerRequestDetails(requestUrl: string | undefined, routePrefix: str
     throw new ProviderRouteError("Provider operation is not allowed")
   }
 
+  const remainder = parsedUrl.pathname.slice(normalizedPrefix.length)
+
+  // A rewritten request has no provider path left in the URL — the pathname is
+  // the rewrite target — so the parameter is the only source. It stays subject
+  // to the same method, path and permission rules below, which is what makes
+  // trusting it safe: it can only reach an operation the caller could already
+  // have called directly.
+  if (remainder === PROVIDER_PROXY_SEGMENT || PLACEHOLDER_SEGMENT.test(remainder)) {
+    const provided = parsedUrl.searchParams.get(PROVIDER_PATH_PARAM)?.trim()
+    if (!provided) throw new ProviderRouteError("Provider operation is not allowed")
+    return {
+      pathname: provided.startsWith("/") ? provided : `/${provided}`,
+      searchParams: parsedUrl.searchParams,
+    }
+  }
+
   return {
-    pathname: parsedUrl.pathname.slice(normalizedPrefix.length),
+    pathname: remainder,
     searchParams: parsedUrl.searchParams,
   }
 }

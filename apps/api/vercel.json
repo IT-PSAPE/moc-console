@@ -5,6 +5,10 @@
     { "path": "/api/cron/stale-items", "schedule": "0 0 * * *" },
     { "path": "/api/cron/notification-deliveries", "schedule": "0 1 * * *" }
   ],
+  "rewrites": [
+    { "source": "/api/youtube/v3/(.*)", "destination": "/api/youtube/v3/_proxy?providerPath=$1" },
+    { "source": "/api/zoom/v2/(.*)", "destination": "/api/zoom/v2/_proxy?providerPath=$1" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
