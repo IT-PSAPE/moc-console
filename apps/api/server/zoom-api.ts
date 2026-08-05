@@ -37,6 +37,32 @@ function buildRequestInit(body: Buffer | undefined, contentType: string | null |
   }
 }
 
+function removeHostStartUrls(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(removeHostStartUrls)
+  if (!value || typeof value !== "object") return value
+
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([key, nestedValue]) =>
+      key === "start_url" ? [] : [[key, removeHostStartUrls(nestedValue)]],
+    ),
+  )
+}
+
+/**
+ * Zoom returns a host-only `start_url` from meeting create, update, and list
+ * endpoints. The proxy is the browser boundary, so remove it recursively from
+ * every successful JSON response before the Console can receive it.
+ */
+export function sanitizeZoomProxyResponseBody(body: Uint8Array): Buffer {
+  if (body.byteLength === 0) return Buffer.from(body)
+
+  try {
+    return Buffer.from(JSON.stringify(removeHostStartUrls(JSON.parse(Buffer.from(body).toString("utf8")))))
+  } catch {
+    throw new ProviderUpstreamError("failed")
+  }
+}
+
 export async function proxyZoomApiRequest({ body, contentType, method, path, workspaceId }: ProxyZoomApiParams): Promise<ProviderResponse> {
   const requestUrl = `${ZOOM_API}${path}`
   let accessToken = await getIntegrationAccessToken("zoom", workspaceId)

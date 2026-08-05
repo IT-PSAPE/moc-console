@@ -24,7 +24,6 @@ type ZoomMeetingRow = {
   duration: number
   timezone: string
   join_url: string | null
-  start_url: string | null
   password: string | null
   recurrence_type: ZoomMeeting["recurrenceType"]
   recurrence_interval: number | null
@@ -62,7 +61,6 @@ function mapMeetingRow(row: ZoomMeetingRow): ZoomMeeting {
     duration: row.duration,
     timezone: row.timezone,
     joinUrl: row.join_url,
-    startUrl: row.start_url,
     password: row.password,
     recurrenceType: row.recurrence_type,
     recurrenceInterval: row.recurrence_interval,
@@ -77,7 +75,7 @@ function mapMeetingRow(row: ZoomMeetingRow): ZoomMeeting {
 }
 
 const MEETING_COLUMNS =
-  "id, workspace_id, zoom_meeting_id, topic, description, meeting_type, start_time, duration, timezone, join_url, start_url, password, recurrence_type, recurrence_interval, recurrence_days, waiting_room, mute_on_entry, continuous_chat, created_by, created_at, updated_at"
+  "id, workspace_id, zoom_meeting_id, topic, description, meeting_type, start_time, duration, timezone, join_url, password, recurrence_type, recurrence_interval, recurrence_days, waiting_room, mute_on_entry, continuous_chat, created_by, created_at, updated_at"
 
 export async function fetchZoomConnection(workspaceId?: string): Promise<ZoomConnection | null> {
   const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId()

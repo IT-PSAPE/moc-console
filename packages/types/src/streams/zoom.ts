@@ -24,7 +24,6 @@ export type ZoomMeeting = {
   duration: number
   timezone: string
   joinUrl: string | null
-  startUrl: string | null
   password: string | null
   recurrenceType: ZoomRecurrenceType
   recurrenceInterval: number | null

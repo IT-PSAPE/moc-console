@@ -4,7 +4,7 @@ import { ProviderConfigError, ProviderRequestTimeoutError } from "./provider-con
 import { ProviderRouteError } from "./provider-route-policy.js"
 import { WorkspaceAccessError } from "./workspace-access.js"
 import { YouTubeReauthRequiredError } from "./youtube-oauth.js"
-import { ZoomReauthRequiredError } from "./zoom-oauth.js"
+import { ZoomReauthRequiredError, ZoomRedirectUriError } from "./zoom-oauth.js"
 
 export type ProviderFailure = {
   status: number
@@ -66,7 +66,7 @@ export function providerFailure(providerLabel: string, error: unknown): Provider
     return { status: 401, body: { error: error.message, code: "reauth_required" } }
   }
 
-  if (error instanceof ProviderConfigError) {
+  if (error instanceof ProviderConfigError || error instanceof ZoomRedirectUriError) {
     return { status: 500, body: { error: error.message, code: "misconfigured" } }
   }
 

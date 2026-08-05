@@ -2,7 +2,7 @@
 --
 -- Run this before deployment and after every migration. Every issue array
 -- should be empty, memberships_without_roles should be 0, legacy_role_table
--- should be null, and missing_tracked_reliability_migration should be false.
+-- should be null, and both missing_tracked_*_migration flags should be false.
 -- recorded_migrations and checked_at are informational.
 
 WITH expected_tables(name) AS (
@@ -87,6 +87,7 @@ expected_functions(signature) AS (
     ('public.complete_integration_oauth_token_refresh(text,uuid,text,uuid,text,text,timestamptz)'),
     ('public.release_integration_oauth_refresh_lock(text,uuid,uuid)'),
     ('public.delete_integration_oauth_connection(text,uuid)'),
+    ('public.delete_zoom_integrations_for_user(text)'),
     ('public.claim_stale_requests()'),
     ('public.claim_stale_bookings()'),
     ('public.complete_stale_request_notification(uuid,text)'),
@@ -277,6 +278,13 @@ SELECT jsonb_build_object(
       AND table_name IN ('youtube_connections', 'zoom_connections')
       AND column_name IN ('access_token', 'refresh_token')
   ), '[]'::jsonb),
+  'exposed_zoom_host_start_url_column', coalesce((
+    SELECT jsonb_agg(format('%I.%I', table_name, column_name) ORDER BY table_name, column_name)
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'zoom_meetings'
+      AND column_name = 'start_url'
+  ), '[]'::jsonb),
   'legacy_oauth_token_mutation_functions', coalesce((
     SELECT jsonb_agg(signature ORDER BY signature)
     FROM (
@@ -296,6 +304,10 @@ SELECT jsonb_build_object(
   'missing_tracked_reliability_migration', NOT EXISTS (
     SELECT 1 FROM supabase_migrations.schema_migrations
     WHERE version = '20260805120000' AND name = 'api_reliability_hardening'
+  ),
+  'missing_tracked_zoom_marketplace_deauthorization_migration', NOT EXISTS (
+    SELECT 1 FROM supabase_migrations.schema_migrations
+    WHERE version = '20260805130000' AND name = 'zoom_marketplace_deauthorization'
   ),
   'recorded_migrations', coalesce((
     SELECT jsonb_agg(version || '_' || name ORDER BY version)

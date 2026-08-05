@@ -25,7 +25,6 @@ export function useZoomOAuth() {
       redirect_uri: REDIRECT_URI,
       state,
       scope: [
-        "meeting:read:meeting",
         "meeting:read:list_meetings",
         "meeting:write:meeting",
         "meeting:delete:meeting",

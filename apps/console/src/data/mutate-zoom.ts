@@ -44,7 +44,6 @@ type LocalZoomMeetingInsertPayload = {
   duration: number
   timezone: string
   join_url: string | null
-  start_url?: string | null
   password?: string | null
   recurrence_type: ZoomRecurrenceType
   recurrence_interval: number | null
@@ -77,7 +76,6 @@ function mapLocalZoomMeetingPayload(payload: LocalZoomMeetingInsertPayload): Zoo
     duration: payload.duration,
     timezone: payload.timezone,
     joinUrl: payload.join_url,
-    startUrl: payload.start_url ?? null,
     password: payload.password ?? null,
     recurrenceType: payload.recurrence_type,
     recurrenceInterval: payload.recurrence_interval,
@@ -194,7 +192,6 @@ export async function createZoomMeeting(params: CreateMeetingParams): Promise<Zo
     duration: params.duration,
     timezone: params.timezone,
     join_url: meeting.join_url ?? null,
-    start_url: meeting.start_url ?? null,
     password: meeting.password ?? null,
     recurrence_type: params.recurrenceType,
     recurrence_interval: params.recurrenceInterval,

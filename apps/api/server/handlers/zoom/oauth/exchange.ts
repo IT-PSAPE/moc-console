@@ -1,4 +1,4 @@
-import { exchangeZoomCode, resolveZoomOAuthConfig } from "../../../zoom-oauth.js"
+import { exchangeZoomCode, resolveZoomOAuthConfig, resolveZoomRedirectUri } from "../../../zoom-oauth.js"
 import { AuthError, requireAuthenticatedUser } from "../../../auth-guard.js"
 import { applyCors } from "../../../cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../http.js"
@@ -40,7 +40,12 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     }
 
     const config = resolveZoomOAuthConfig(process.env)
-    const result = await exchangeZoomCode(config, code, redirectUri)
+    const configuredRedirectUri = resolveZoomRedirectUri(process.env)
+    if (redirectUri !== configuredRedirectUri) {
+      response.status(400).json({ error: "Invalid Zoom redirect URI" })
+      return
+    }
+    const result = await exchangeZoomCode(config, code, configuredRedirectUri)
     const tokenExpiresAt = new Date(Date.now() + result.expires_in * 1000).toISOString()
     await saveIntegrationConnection(workspaceId, {
       provider: "zoom",

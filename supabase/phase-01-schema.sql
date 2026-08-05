@@ -532,7 +532,6 @@ CREATE TABLE IF NOT EXISTS public.zoom_meetings (
   duration            integer                     NOT NULL DEFAULT 60,
   timezone            text                        NOT NULL DEFAULT 'UTC',
   join_url            text                        NULL,
-  start_url           text                        NULL,
   password            text                        NULL,
   recurrence_type     public.zoom_recurrence_type NOT NULL DEFAULT 'none',
   recurrence_interval integer                     NULL,

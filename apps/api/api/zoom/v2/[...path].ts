@@ -1,4 +1,4 @@
-import { proxyZoomApiRequest } from "../../../server/zoom-api.js"
+import { proxyZoomApiRequest, sanitizeZoomProxyResponseBody } from "../../../server/zoom-api.js"
 import { AuthError, requireAuthenticatedUser } from "../../../server/auth-guard.js"
 import { writeCorsHeaders } from "../../../server/cors.js"
 import { requireWorkspacePermission } from "../../../server/workspace-access.js"
@@ -89,7 +89,7 @@ async function handleZoomProxy(request: ApiRequest, response: ApiResponse): Prom
       response.setHeader("Content-Type", contentType)
     }
 
-    response.end(Buffer.from(await proxyResponse.arrayBuffer()))
+    response.end(sanitizeZoomProxyResponseBody(new Uint8Array(await proxyResponse.arrayBuffer())))
   } catch (error) {
     console.error("Zoom proxy request failed:", error)
     const failure = providerFailure("Zoom", error)

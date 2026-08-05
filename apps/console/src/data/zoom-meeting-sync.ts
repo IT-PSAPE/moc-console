@@ -64,7 +64,7 @@ export async function syncZoomMeetings(): Promise<ZoomMeeting[]> {
 
   const { data: rows, error } = await supabase
     .from("zoom_meetings")
-    .select("id, workspace_id, zoom_meeting_id, topic, description, meeting_type, start_time, duration, timezone, join_url, start_url, password, recurrence_type, recurrence_interval, recurrence_days, waiting_room, mute_on_entry, continuous_chat, created_by, created_at, updated_at, notified_at")
+    .select("id, workspace_id, zoom_meeting_id, topic, description, meeting_type, start_time, duration, timezone, join_url, password, recurrence_type, recurrence_interval, recurrence_days, waiting_room, mute_on_entry, continuous_chat, created_by, created_at, updated_at, notified_at")
     .eq("workspace_id", workspaceId)
     .order("start_time", { ascending: true, nullsFirst: false })
   if (error) throw new Error(error.message)
@@ -72,7 +72,7 @@ export async function syncZoomMeetings(): Promise<ZoomMeeting[]> {
   return (rows ?? []).map((row) => ({
     id: row.id, workspaceId: row.workspace_id, zoomMeetingId: row.zoom_meeting_id, topic: row.topic, description: row.description,
     meetingType: row.meeting_type, startTime: row.start_time, duration: row.duration, timezone: row.timezone, joinUrl: row.join_url,
-    startUrl: row.start_url, password: row.password, recurrenceType: row.recurrence_type, recurrenceInterval: row.recurrence_interval,
+    password: row.password, recurrenceType: row.recurrence_type, recurrenceInterval: row.recurrence_interval,
     recurrenceDays: row.recurrence_days, waitingRoom: row.waiting_room, muteOnEntry: row.mute_on_entry, continuousChat: row.continuous_chat,
     createdBy: row.created_by, createdAt: row.created_at, updatedAt: row.updated_at,
   }))

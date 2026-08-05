@@ -50,8 +50,8 @@ export function PrivacyPolicyScreen() {
 
       <Section title="4. Data Retention">
         <ul className="list-disc pl-6 space-y-2">
-          <li><Paragraph.md><strong>Zoom tokens and connection data</strong> are retained only while the connection is active. Disconnecting Zoom inside the Service (or revoking the app from the Zoom Marketplace) triggers revocation of the tokens with Zoom and deletion of the connection row in our database.</Paragraph.md></li>
-          <li><Paragraph.md><strong>Synced meeting metadata</strong> is retained while your workspace is active so you can view historical schedules. You can delete individual meetings at any time.</Paragraph.md></li>
+          <li><Paragraph.md><strong>Zoom tokens and connection data</strong> are retained only while the connection is active. Disconnecting Zoom inside the Service revokes the tokens with Zoom and deletes the stored OAuth tokens and connection data, while retaining existing meeting metadata in the workspace.</Paragraph.md></li>
+          <li><Paragraph.md><strong>Synced meeting metadata</strong> is retained while your workspace is active so you can view historical schedules. You can delete individual meetings at any time. When Zoom sends a Marketplace removal notification, we delete the OAuth tokens, connection data, and Zoom meeting metadata associated with the removed account.</Paragraph.md></li>
           <li><Paragraph.md><strong>Account data</strong> is retained for the life of your account. If you delete your account, we remove your personal information within 30 days, except where longer retention is required by law (e.g., tax, audit, or legal-hold obligations).</Paragraph.md></li>
           <li><Paragraph.md><strong>Server logs</strong> are retained for up to 90 days.</Paragraph.md></li>
           <li><Paragraph.md><strong>Bug reports</strong> are retained for up to 12 months after a report is marked resolved, after which we delete them. You can request earlier deletion of your own reports at any time.</Paragraph.md></li>
@@ -92,7 +92,7 @@ export function PrivacyPolicyScreen() {
           the email address associated with your account. We will respond within the timeframe required by
           applicable law (typically 30 days). We may need to verify your identity before fulfilling the request.
           You can also exercise many of these rights directly in the Service: disconnect Zoom at any time from
-          the Streams screen, delete meetings you created, or request account deletion from your profile.
+          Settings → Streaming connections, delete meetings you created, or request account deletion from your profile.
         </Paragraph.md>
       </Section>
 

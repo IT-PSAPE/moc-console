@@ -68,6 +68,19 @@ export async function deleteIntegrationConnection(provider: IntegrationProvider,
 }
 
 /**
+ * Processes Zoom's Marketplace deauthorization event. The RPC deletes every
+ * workspace connection for the deauthorized Zoom user, its private tokens,
+ * and the meeting metadata fetched through that connection.
+ */
+export async function deleteZoomIntegrationsForUser(zoomUserId: string): Promise<void> {
+  const { error } = await getSupabaseAdmin().rpc("delete_zoom_integrations_for_user", {
+    p_zoom_user_id: zoomUserId,
+  })
+
+  if (error) throw new IntegrationStoreError()
+}
+
+/**
  * Saves the provider-facing connection metadata and private OAuth credentials
  * in one database transaction. The RPC deliberately owns both writes: doing
  * them from separate API calls can leave a workspace looking connected without

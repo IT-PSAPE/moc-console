@@ -32,8 +32,8 @@ export function ZoomDocsScreen() {
       </Section>
 
       <Section title="Adding the app (connecting Zoom)">
-        <Step number={1} title="Open the Streams screen">
-          <Paragraph.md>Sign in to MOC Console and navigate to <em>Broadcast → Streams</em> from the sidebar.</Paragraph.md>
+        <Step number={1} title="Open Settings">
+          <Paragraph.md>Sign in to MOC Console and navigate to <em>Settings → Streaming connections</em>.</Paragraph.md>
         </Step>
         <Step number={2} title="Click Connect Zoom">
           <Paragraph.md>In the <strong>Zoom</strong> connection card, click <strong>Connect Zoom</strong>. You'll be redirected to Zoom's authorization page.</Paragraph.md>
@@ -42,21 +42,20 @@ export function ZoomDocsScreen() {
           <Paragraph.md className="mb-3">Zoom will display the scopes MOC Console is requesting. Approve to continue. The requested scopes and why we need each one:</Paragraph.md>
           <Card.Content className="bg-secondary_alt">
             <ScopeRow scope="user:read:user" reason="Identify the Zoom host (user ID, email, display name) after you authorize the app." />
-            <ScopeRow scope="meeting:read:meeting" reason="Read the details of an individual meeting when viewed or edited in MOC Console." />
             <ScopeRow scope="meeting:read:list_meetings" reason="List your scheduled meetings when you refresh the Streams screen." />
             <ScopeRow scope="meeting:write:meeting" reason="Create a new meeting or update an existing one when you schedule or edit it in MOC Console." />
             <ScopeRow scope="meeting:delete:meeting" reason="Delete a meeting when you remove it from the MOC Console schedule." last />
           </Card.Content>
         </Step>
         <Step number={4} title="You're connected">
-          <Paragraph.md>Zoom redirects you back to MOC Console. Your meetings begin syncing automatically. The Zoom card now shows your connected account.</Paragraph.md>
+          <Paragraph.md>Zoom redirects you to <em>Settings → Streaming connections</em>, where the Zoom card shows your connected account.</Paragraph.md>
         </Step>
       </Section>
 
       <Section title="Using the app">
         <SubSection title="Creating a meeting">
           <Paragraph.md className="mb-3">
-            From the Streams screen, click the <strong>+</strong> button in the <em>Zoom Meetings</em> card. Fill in the
+            From the Streams screen, click the <strong>+</strong> button and choose <em>Zoom Meeting</em>. Fill in the
             topic, description, start time, duration, timezone, and recurrence. Toggle host settings (waiting room,
             mute on entry, continuous chat) as needed and click <strong>Create</strong>. The meeting is created on
             Zoom via the API and appears immediately in your workspace.
@@ -64,8 +63,8 @@ export function ZoomDocsScreen() {
         </SubSection>
         <SubSection title="Syncing meetings">
           <Paragraph.md>
-            MOC Console syncs Zoom meetings automatically when the Streams screen loads. To pull in changes made
-            elsewhere (Zoom client, web portal, other tools), click the refresh icon in the <em>Zoom Meetings</em> card header.
+            The Streams screen initially shows meetings saved in your workspace. To pull in changes made elsewhere
+            (Zoom client, web portal, or other tools), click <strong>Refresh</strong> in the Streams toolbar.
           </Paragraph.md>
         </SubSection>
         <SubSection title="Editing a meeting">
@@ -91,11 +90,11 @@ export function ZoomDocsScreen() {
       </Section>
 
       <Section title="Removing the app (disconnecting Zoom)">
-        <Paragraph.md className="mb-4">There are two ways to disconnect — both fully revoke MOC Console's access to your Zoom account.</Paragraph.md>
+        <Paragraph.md className="mb-4">There are two ways to revoke MOC Console's access to your Zoom account. The resulting meeting-metadata retention differs as described below.</Paragraph.md>
 
         <SubSection title="Option 1: Disconnect from MOC Console">
-          <Step number={1} title="Open the Streams screen">
-            <Paragraph.md>Navigate to <em>Broadcast → Streams</em>.</Paragraph.md>
+          <Step number={1} title="Open Settings">
+            <Paragraph.md>Navigate to <em>Settings → Streaming connections</em>.</Paragraph.md>
           </Step>
           <Step number={2} title="Click Disconnect">
             <Paragraph.md>In the Zoom connection card, click <strong>Disconnect</strong> and confirm.</Paragraph.md>
@@ -116,7 +115,7 @@ export function ZoomDocsScreen() {
             <Paragraph.md>Locate MOC Console in your added apps and click <strong>Remove</strong>. Confirm when prompted.</Paragraph.md>
           </Step>
           <Step number={4} title="What happens">
-            <Paragraph.md>Zoom immediately invalidates all tokens issued to MOC Console for your account. Any subsequent API call MOC Console attempts will fail. The next time you open the Streams screen, MOC Console will detect the revoked connection and prompt you to reconnect.</Paragraph.md>
+            <Paragraph.md>When Zoom sends its Marketplace removal notification, MOC Console deletes the stored OAuth tokens, connection data, and Zoom meeting metadata associated with the removed account. Reconnect Zoom if you choose to use it again.</Paragraph.md>
           </Step>
         </SubSection>
       </Section>
@@ -127,7 +126,7 @@ export function ZoomDocsScreen() {
           <li><Paragraph.md><strong>Not stored or accessed:</strong> recordings, transcripts, cloud recording files, chat messages, participant lists, account or admin-level data.</Paragraph.md></li>
           <li><Paragraph.md><strong>At rest:</strong> all Zoom data is stored in a managed PostgreSQL database on Supabase, encrypted with AES-256 and protected by Row-Level Security policies scoped to your workspace.</Paragraph.md></li>
           <li><Paragraph.md><strong>In transit:</strong> all traffic is TLS 1.2+.</Paragraph.md></li>
-          <li><Paragraph.md><strong>Retention:</strong> OAuth tokens and connection data are deleted when you disconnect. Meeting metadata is retained until you delete it. Account data is deleted within 30 days of account deletion.</Paragraph.md></li>
+          <li><Paragraph.md><strong>Retention:</strong> An in-app disconnect deletes OAuth tokens and connection data but retains meeting metadata until you delete it. A Marketplace removal deletes OAuth tokens, connection data, and Zoom meeting metadata when its removal notification is received. Account data is deleted within 30 days of account deletion.</Paragraph.md></li>
         </ul>
         <Paragraph.md className="mt-4">
           Full details are in the <Link to={`/${routes.privacy}`} className="text-brand hover:underline">Privacy Policy</Link>.
@@ -141,11 +140,11 @@ export function ZoomDocsScreen() {
         />
         <Troubleshoot
           problem="Meetings created in Zoom's web portal don't appear"
-          fix="Click the refresh icon in the Zoom Meetings card header to trigger a manual sync. If they still don't appear, disconnect and reconnect Zoom."
+          fix="Click Refresh in the Streams toolbar to trigger a manual sync. If they still don't appear, disconnect and reconnect Zoom."
         />
         <Troubleshoot
           problem="“Zoom is not connected for this workspace” error"
-          fix="Your token may have been revoked externally (e.g., from the Zoom Marketplace). Reconnect Zoom from the Streams screen."
+          fix="Your token may have been revoked externally (for example, from the Zoom Marketplace). Reconnect Zoom from Settings → Streaming connections."
         />
         <Troubleshoot
           problem="Deleting a meeting fails"

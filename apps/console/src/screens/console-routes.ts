@@ -22,4 +22,5 @@ export const routes = {
     terms: 'legal/terms',
     support: 'support',
     zoomDocs: 'docs/zoom',
+    zoomReviewTestPlan: 'docs/zoom-review-test-plan',
 } as const

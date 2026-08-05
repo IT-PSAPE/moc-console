@@ -9,6 +9,13 @@ export type ZoomOAuthConfig = {
   clientSecret: string
 }
 
+export class ZoomRedirectUriError extends Error {
+  constructor() {
+    super("Zoom OAuth redirect URI is not configured correctly")
+    this.name = "ZoomRedirectUriError"
+  }
+}
+
 /**
  * Thrown when Zoom rejects a refresh token with `invalid_grant` — the token is
  * permanently dead (revoked, or already spent, since Zoom rotates the refresh
@@ -81,6 +88,24 @@ async function fetchZoomUserInfo(accessToken: string): Promise<ZoomUserInfo> {
 
 export function resolveZoomOAuthConfig(env: Record<string, string | undefined>): ZoomOAuthConfig {
   return resolveOAuthConfig("Zoom OAuth", env, ["ZOOM_CLIENT_ID", "VITE_ZOOM_CLIENT_ID"], ["ZOOM_CLIENT_SECRET"])
+}
+
+/**
+ * The token exchange must use the exact callback registered in Marketplace.
+ * Keeping it server-owned prevents a browser caller from choosing a different
+ * redirect URI when redeeming a one-time authorization code.
+ */
+export function resolveZoomRedirectUri(env: Record<string, string | undefined>): string {
+  const redirectUri = env.ZOOM_REDIRECT_URI?.trim()
+  if (!redirectUri) throw new ZoomRedirectUriError()
+  try {
+    const url = new URL(redirectUri)
+    if (url.protocol !== "https:") throw new ZoomRedirectUriError()
+  } catch (error) {
+    if (error instanceof ZoomRedirectUriError) throw error
+    throw new ZoomRedirectUriError()
+  }
+  return redirectUri
 }
 
 export async function exchangeZoomCode(config: ZoomOAuthConfig, code: string, redirectUri: string): Promise<ZoomExchangeResponse> {

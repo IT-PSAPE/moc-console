@@ -37,6 +37,7 @@ const PrivacyPolicyScreen = lazy(() => import('./screens/public/privacy').then((
 const TermsOfUseScreen = lazy(() => import('./screens/public/terms').then((m) => ({ default: m.TermsOfUseScreen })))
 const SupportScreen = lazy(() => import('./screens/public/support').then((m) => ({ default: m.SupportScreen })))
 const ZoomDocsScreen = lazy(() => import('./screens/public/zoom-docs').then((m) => ({ default: m.ZoomDocsScreen })))
+const ZoomReviewTestPlanScreen = lazy(() => import('./screens/public/zoom-review-test-plan').then((m) => ({ default: m.ZoomReviewTestPlanScreen })))
 const SettingsScreen = lazy(() => import('./screens/account/settings/page').then((m) => ({ default: m.SettingsScreen })))
 const MessageTemplateDetailScreen = lazy(() => import('./screens/account/settings/message-templates/detail/page').then((m) => ({ default: m.MessageTemplateDetailScreen })))
 
@@ -154,6 +155,7 @@ const router = createBrowserRouter([
     { path: routes.terms, element: <SuspenseRoute><TermsOfUseScreen /></SuspenseRoute> },
     { path: routes.support, element: <SuspenseRoute><SupportScreen /></SuspenseRoute> },
     { path: routes.zoomDocs, element: <SuspenseRoute><ZoomDocsScreen /></SuspenseRoute> },
+    { path: routes.zoomReviewTestPlan, element: <SuspenseRoute><ZoomReviewTestPlanScreen /></SuspenseRoute> },
 
     // Protected app routes
     {
