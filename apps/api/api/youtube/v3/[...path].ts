@@ -23,7 +23,7 @@ const ROUTE_PREFIX = "/api/youtube/v3"
 
 const JSON_BODY_LIMIT = 256 * 1024
 const THUMBNAIL_BODY_LIMIT = 2 * 1024 * 1024
-const YOUTUBE_ROUTES: readonly ProviderRouteRule[] = [
+export const YOUTUBE_ROUTES: readonly ProviderRouteRule[] = [
   { method: "GET", path: /^\/videoCategories$/, query: ["part", "regionCode"], permission: "can_read", body: "none", maxBodyBytes: 0 },
   { method: "GET", path: /^\/playlists$/, query: ["part", "mine", "maxResults", "pageToken"], permission: "can_read", body: "none", maxBodyBytes: 0 },
   { method: "GET", path: /^\/videos$/, query: ["part", "id"], permission: "can_read", body: "none", maxBodyBytes: 0 },
