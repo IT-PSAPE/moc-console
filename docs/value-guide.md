@@ -15,8 +15,6 @@ Use it with:
 | Auth | Profile plus role | Supabase Auth + Supabase | User profiles now include `telegramChatId`, and password recovery completes on a dedicated route. |
 | Workspace | Membership-filtered directory views | Supabase with runtime fallback | Users can belong to multiple workspaces; runtime can fall back to the seeded default workspace for unresolved scope. |
 | Equipment | Denormalized inventory and booking objects | Supabase | `bookedBy` stays a runtime convenience field. |
-| Broadcast | Playlists with nested queue entries | Supabase | Queue rows are normalized in storage and re-expanded into cue objects after fetch. |
-| Cue Sheet | Events, checklists, tracks, and cues as nested objects | Supabase | Storage is split into templates and runs even though the runtime API still exposes a combined `kind` model. |
 | Streams | YouTube live streams with workspace-level OAuth | Supabase + Edge Functions | Local `streams` table caches YouTube broadcast data. All YouTube API calls are proxied through Supabase Edge Functions to keep OAuth secrets server-side. |
 
 ## Global Rules
@@ -171,68 +169,6 @@ Important rules:
 - `bookedBy` is free text in storage and the runtime model.
 - `duration` is derived in the app.
 
-## Broadcast
-
-### Media entity
-
-Current runtime shape still includes a `duration` field in some app flows.
-
-Schema direction:
-
-- storage should not treat media duration as a required table column
-- runtime duration can still exist when extracted from uploaded media metadata
-
-### Playlist entity
-
-Runtime expectations:
-
-- `musicId` should be the stored relation when background music exists
-- `defaultImageDuration` should remain a positive number
-- queue item duration can override the playlist default
-
-### Queue item entity
-
-Runtime expectations:
-
-- `mediaId` is the stored relation
-- `duration` is nullable and acts as the item-level override
-- `disabled` defaults to `false`
-
-Denormalized runtime fields such as media name or type are acceptable after fetch, but they should not become storage columns.
-
-## Cue Sheet
-
-### Event templates vs events
-
-- template data and live event data are now conceptually separate
-- the combined `kind` and `templateId` shape is no longer the target schema
-- the current runtime still uses combined objects, but the schema now treats templates and event runs as separate tables
-
-### Checklist templates vs checklists
-
-- the same separation applies to checklist templates and checklist runs
-- template duplication should copy sections and items into live checklist rows
-
-### Track colors
-
-Runtime rule:
-
-- tracks should carry a stable `colorKey`
-- UI code should map `colorKey` to the actual CSS value
-- the underlying storage lookup is now conceptually a shared `colors` table, not a track-only table
-
-Current code update:
-
-- cue-sheet track data now uses color keys instead of raw CSS values
-
-### Cue timing
-
-Runtime expectations:
-
-- use `start` and `duration` conceptually in schema
-- the current app still exposes `startMin` and `durationMin` in its runtime types
-- that is a runtime naming detail, not the target storage naming
-
 ## Streams
 
 ### YouTube connection entity
@@ -303,9 +239,6 @@ Environment secrets (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIREC
 
 ## Current Implementation Gaps
 
-- Cue-sheet events and checklists still use combined template/instance app objects even though the target schema now separates them.
-- Playlist `videoSettings` remain frontend-only runtime data; they are not persisted in the current schema.
-- Media `duration` still exists as a runtime field in some flows even though storage does not require it.
 - Workspace membership is only surfaced explicitly in the users screen today. Other domains resolve one active workspace at fetch time rather than exposing a workspace switcher everywhere.
 
 That gap is acceptable for now as long as the schema doc remains the source of truth for storage and the runtime layer keeps the conversions explicit.

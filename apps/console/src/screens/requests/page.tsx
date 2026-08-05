@@ -1,161 +1,93 @@
-import { Card } from '@moc/ui/components/display/card'
-import { Button } from '@moc/ui/components/controls/button'
-import { Input } from '@moc/ui/components/form/input'
-import { Header } from '@moc/ui/components/display/header'
-import { Drawer } from '@moc/ui/components/overlays/drawer'
-import { RequestItem } from '@/features/requests/request-item'
-import { Label, Paragraph, TextBlock, Title } from '@moc/ui/components/display/text'
-import { Activity, CalendarClock, CircleAlert, CircleCheck, FileWarning, Search, Settings2 } from 'lucide-react'
-import { Indicator } from '@moc/ui/components/display/indicator'
-import { useEffect } from 'react'
-import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
-import { RequestFilterDrawer } from '@/features/requests/request-filter-drawer'
-import { useRequestFilters } from '@/features/requests/use-request-filters'
-import { useRequests } from '@/features/requests/request-provider'
-import { ScrollArea } from '@moc/ui/components/display/scroll-area';
-import { Decision } from '@moc/ui/components/display/decision';
-import { EmptyState } from '@moc/ui/components/feedback/empty-state';
+import { RequestCalendarView } from "@/features/requests/request-calendar";
+import { RequestKanbanView } from "@/features/requests/request-kanban";
+import { RequestListView } from "@/features/requests/request-list";
+import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
+import { Page } from "@moc/ui/components/layout/page";
+import { Input } from "@moc/ui/components/form/input";
+import {
+  CalendarDays,
+  Columns3,
+  Inbox,
+  List,
+  Search,
+  Settings2,
+} from "lucide-react";
+import type { ChangeEvent } from "react";
+import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
+import { EmptyState } from "@moc/ui/components/feedback/empty-state";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { RequestFilterDrawer } from "@/features/requests/request-filter-drawer";
+import { Decision } from "@moc/ui/components/display/decision";
+import { useRequestsScreen } from "./use-requests-screen";
+import { SplitPanel } from "@moc/ui/components/layout/split-panel";
+import { RequestPanelContent } from "@/features/requests/request-drawer";
+import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar";
 
+export function RequestsScreen() {
+  const { state, actions, meta } = useRequestsScreen();
+  const { filters, activeView, isMobile } = meta;
+  const CollectionContent = activeView === "kanban" ? Page.CollectionContent : Page.Content;
+  const visibleRequests = activeView === "calendar" ? filters.calendarFiltered : filters.filtered;
+  const collectionState = activeView === "list" ? visibleRequests : activeView;
 
-export function RequestsOverviewScreen() {
-    const { state: { activeRequests: requests, isLoadingActive }, actions: { loadActiveRequests } } = useRequests()
+  function handleSearch(event: ChangeEvent<HTMLInputElement>) {
+    filters.setSearch(event.target.value)
+  }
 
-    useEffect(() => {
-        loadActiveRequests()
-    }, [loadActiveRequests])
+  return (
+    <SplitPanel open={state.detailOpen} onOpenChange={actions.closeDetail} detailLabel="Request details">
+      <SplitPanel.Primary>
+      <Page>
+      <Page.Header>
+        <Page.Heading>
+          <Page.Title>Requests</Page.Title>
+        </Page.Heading>
+      </Page.Header>
 
-    const requestFilters = useRequestFilters(requests);
-    const { filtered, setSearch, filters: state } = requestFilters;
+      <CollectionToolbar>
+        <CollectionToolbar.Views>
+          <SegmentedControl value={activeView} onValueChange={actions.changeView} fill={isMobile} >
+            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={isMobile}>Kanban</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="calendar" icon={<CalendarDays />}>Calendar</CollectionToolbar.ViewItem>
+          </SegmentedControl>
+        </CollectionToolbar.Views>
+        <CollectionToolbar.Actions>
+          <Input aria-label="Search requests" name="request-search" autoComplete="off" icon={<Search />} placeholder="Search requests…" className="w-full max-w-md" value={filters.filters.search} onChange={handleSearch} />
+          <Drawer mobileSide="bottom">
+            <Drawer.Trigger>
+              <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter requests">Filter</CollectionToolbar.ActionButton>
+            </Drawer.Trigger>
+            <RequestFilterDrawer filters={filters} />
+          </Drawer>
+        </CollectionToolbar.Actions>
+      </CollectionToolbar>
 
-    // Stats — always derived from the full unfiltered dataset
-    const now = new Date();
-    const activeCount = requests.filter((r) => r.status === 'in_progress' || r.status === 'not_started').length;
-    const upcomingCount = requests.filter((r) => r.status !== 'archived' && r.status !== 'completed' && new Date(r.dueDate) > now).length;
-    const overdueCount = requests.filter((r) => r.status !== 'archived' && r.status !== 'completed' && new Date(r.dueDate) < now).length;
-    const completedCount = requests.filter((r) => r.status === 'completed').length;
-
-    // Dashboard lists — derived from filtered results
-    const overdue = filtered.filter((r) => r.status !== 'archived' && r.status !== 'completed' && new Date(r.dueDate) < now);
-    const upcoming = filtered.filter((r) => r.status !== 'archived' && r.status !== 'completed' && new Date(r.dueDate) > now);
-
-    function onSearch(e: React.ChangeEvent<HTMLInputElement, HTMLInputElement>) {
-        setSearch(e.target.value)
-    }
-
-    return (
-        <section>
-            <Header className='p-4 pt-8 mx-auto max-w-content'>
-                <Header.Lead className='gap-2'>
-                    <Title.h6>Requests</Title.h6>
-                    <Paragraph.sm className="text-tertiary max-w-2xl">Track and manage incoming requests. View active, upcoming, and overdue items at a glance.</Paragraph.sm>
-                </Header.Lead>
-            </Header>
-
-            <ScrollArea className='mx-auto w-full max-w-content'>
-                <ScrollArea.Viewport className='p-4 pt-8'>
-                    <ScrollArea.Content className='flex gap-4 max-mobile:gap-2'>
-                        <Card className="flex-1 min-w-56">
-                            <Card.Header tight className='gap-1.5'>
-                                <Activity className='size-4' />
-                                <Label.sm>Active</Label.sm>
-                            </Card.Header>
-                            <Card.Content className='p-4'>
-                                <TextBlock className='title-h4'>{activeCount}</TextBlock>
-                            </Card.Content>
-                        </Card>
-                        <Card className="flex-1 min-w-56">
-                            <Card.Header tight className='gap-1.5'>
-                                <CalendarClock className='size-4' />
-                                <Label.sm>Upcoming</Label.sm>
-                            </Card.Header>
-                            <Card.Content className='p-4'>
-                                <TextBlock className='title-h4'>{upcomingCount}</TextBlock>
-                            </Card.Content>
-                        </Card>
-                        <Card className="flex-1 min-w-56">
-                            <Card.Header tight className='gap-1.5'>
-                                <CircleAlert className='size-4' />
-                                <Label.sm>Overdue</Label.sm>
-                            </Card.Header>
-                            <Card.Content className='p-4'>
-                                <TextBlock className='title-h4'>{overdueCount}</TextBlock>
-                            </Card.Content>
-                        </Card>
-                        <Card className="flex-1 min-w-56">
-                            <Card.Header tight className='gap-1.5'>
-                                <CircleCheck className='size-4' />
-                                <Label.sm>Completed</Label.sm>
-                            </Card.Header>
-                            <Card.Content className='p-4'>
-                                <TextBlock className='title-h4'>{completedCount}</TextBlock>
-                            </Card.Content>
-                        </Card>
-                    </ScrollArea.Content>
-                </ScrollArea.Viewport>
-            </ScrollArea>
-
-            <div className='flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content'>
-                <Header className='gap-2 max-mobile:flex-col *:max-mobile:w-full'>
-                    <Header.Lead className='gap-2'>
-                        <Label.md>Schedule</Label.md>
-                    </Header.Lead>
-                    <Header.Trail className='gap-2 flex-1 justify-end '>
-                        <Input icon={<Search />} placeholder='Search requests...' className='w-full max-w-md' value={state.search} onChange={onSearch} />
-                        <Drawer>
-                            <Drawer.Trigger>
-                                <Button icon={<Settings2 />} variant='secondary'>Filter</Button>
-                            </Drawer.Trigger>
-                            <RequestFilterDrawer filters={requestFilters} />
-                        </Drawer>
-                    </Header.Trail>
-                </Header>
-
-                <Card>
-                    <Card.Header tight>
-                        <Indicator color='red' className='size-6' />
-                        <Label.sm>Overdue Requests</Label.sm>
-                    </Card.Header>
-                    <Card.Content ghost className='flex flex-col gap-1.5'>
-                        <Decision value={overdue} loading={isLoadingActive}>
-                            <Decision.Loading>
-                                <LoadingSpinner className="py-6" />
-                            </Decision.Loading>
-                            <Decision.Empty>
-                                <EmptyState
-                                    icon={<FileWarning />}
-                                    title={'No overdue requests'}
-                                />
-                            </Decision.Empty>
-                            <Decision.Data>
-                                {overdue.map((r) => (<RequestItem key={r.id} request={r} />))}
-                            </Decision.Data>
-                        </Decision>
-                    </Card.Content>
-                </Card>
-
-                <Card>
-                    <Card.Header tight>
-                        <Indicator className='size-6' />
-                        <Label.sm>Upcoming Requests</Label.sm>
-                    </Card.Header>
-                    <Card.Content ghost className='flex flex-col gap-1.5'>
-                        <Decision value={upcoming} loading={isLoadingActive}>
-                            <Decision.Loading>
-                                <LoadingSpinner className="py-6" />
-                            </Decision.Loading>
-                            <Decision.Empty>
-                                <EmptyState
-                                    icon={<FileWarning />}
-                                    title={'No upcoming requests'}
-                                />
-                            </Decision.Empty>
-                            <Decision.Data>
-                                {upcoming.map((r) => (<RequestItem key={r.id} request={r} />))}
-                            </Decision.Data>
-                        </Decision>
-                    </Card.Content>
-                </Card>
-            </div>
-        </section>
-    )
+      <CollectionContent>
+      <Decision value={collectionState} loading={meta.isLoading}>
+        <Decision.Loading>
+          <LoadingSpinner className="py-6" />
+        </Decision.Loading>
+        <Decision.Empty>
+          <EmptyState
+            icon={<Inbox />}
+            title="No requests found"
+            description="No requests match your current filters, or none have been created yet."
+          />
+        </Decision.Empty>
+        <Decision.Data>
+          {activeView === "list" && <RequestListView requests={visibleRequests} onSelect={actions.selectRequest} />}
+          {activeView === "kanban" && <RequestKanbanView requests={visibleRequests} />}
+          {activeView === "calendar" && <RequestCalendarView requests={visibleRequests} />}
+        </Decision.Data>
+      </Decision>
+      </CollectionContent>
+      </Page>
+      </SplitPanel.Primary>
+      <SplitPanel.ResizeHandle />
+      <SplitPanel.Detail>
+        {state.selectedRequest && <RequestPanelContent request={state.selectedRequest} open={state.detailOpen} onClose={actions.closeDetail} />}
+      </SplitPanel.Detail>
+    </SplitPanel>
+  );
 }

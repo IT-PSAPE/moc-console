@@ -1,207 +1,112 @@
-import { Card } from "@moc/ui/components/display/card";
+// import { Card } from "@moc/ui/components/display/card";
 import { Button } from "@moc/ui/components/controls/button";
 import { Input } from "@moc/ui/components/form/input";
-import { Header } from "@moc/ui/components/display/header";
+import { Page } from "@moc/ui/components/layout/page";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
-import { Label, Paragraph, TextBlock, Title } from "@moc/ui/components/display/text";
-import { ArrowUpRight, CalendarX2Icon, CircleCheck, FileWarning, Package, Search, Settings2 } from "lucide-react";
-import { useEffect, useMemo } from "react";
-import { useEquipment } from "@/features/equipment/equipment-provider";
-import { useEquipmentFilters } from "@/features/equipment/use-equipment-filters";
-import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
-import { EquipmentItem } from "@/features/equipment/equipment-item";
-import type { Equipment } from "@moc/types/equipment";
-import { Indicator } from "@moc/ui/components/display/indicator";
+import {
+  Columns3,
+  List,
+  Package,
+  Plus,
+  Search,
+  Settings2,
+} from "lucide-react";
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
-import { ScrollArea } from "@moc/ui/components/display/scroll-area";
 import { Decision } from "@moc/ui/components/display/decision";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
+import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
+import { CreateEquipmentModal } from "@/features/equipment/create-equipment-modal";
+import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
+import { InventoryListView } from "@/features/equipment/inventory-list";
+import { InventoryKanbanView } from "@/features/equipment/inventory-kanban";
+import { useEquipmentScreen } from "@/features/equipment/use-equipment-screen";
+import type { ChangeEvent } from "react";
+import { SplitPanel } from "@moc/ui/components/layout/split-panel";
+import { EquipmentPanelContent } from "@/features/equipment/equipment-drawer";
+import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar";
 
-export function EquipmentOverviewScreen() {
-  const {
-    state: { equipment, bookings, isLoadingEquipment, isLoadingBookings },
-    actions: { loadEquipment, loadBookings },
-  } = useEquipment();
+export function EquipmentScreen() {
+  const { state, actions, meta } = useEquipmentScreen();
+  const CollectionContent = state.activeView === "kanban" ? Page.CollectionContent : Page.Content;
+  const collectionState = state.activeView === "kanban" ? state.activeView : state.filtered;
 
-  useEffect(() => {
-    loadEquipment();
-    loadBookings();
-  }, [loadEquipment, loadBookings]);
-
-  const equipmentFilters = useEquipmentFilters(equipment);
-  const { filtered, setSearch, filters: state } = equipmentFilters;
-
-  // Stats — always from unfiltered data
-  const totalCount = equipment.length;
-  const availableCount = equipment.filter((e) => e.status === "available").length;
-  const bookedOutCount = equipment.filter((e) => e.status === "booked_out").length;
-
-  const equipmentMap = useMemo(() => {
-    const map = new Map<string, Equipment>();
-    for (const item of equipment) map.set(item.id, item);
-    return map;
-  }, [equipment]);
-
-  const filteredEquipmentIds = useMemo(() => new Set(filtered.map((item) => item.id)), [filtered]);
-
-  const overdueEquipment = useMemo<Equipment[]>(() => {
-    const now = new Date();
-    const seen = new Set<string>();
-    const overdue: Equipment[] = [];
-
-    const sorted = bookings
-      .filter((booking) =>
-        booking.status !== "returned" &&
-        !booking.returnedDate &&
-        new Date(booking.expectedReturnAt) < now &&
-        booking.items.some((item) => filteredEquipmentIds.has(item.equipmentId)),
-      )
-      .sort((a, b) => new Date(a.expectedReturnAt).getTime() - new Date(b.expectedReturnAt).getTime());
-
-    for (const booking of sorted) {
-      for (const item of booking.items) {
-        if (seen.has(item.equipmentId)) continue;
-        if (!filteredEquipmentIds.has(item.equipmentId)) continue;
-        const equipmentRecord = equipmentMap.get(item.equipmentId);
-        if (equipmentRecord) {
-          seen.add(item.equipmentId);
-          overdue.push(equipmentRecord);
-          if (overdue.length >= 10) return overdue;
-        }
-      }
-    }
-
-    return overdue;
-  }, [bookings, filteredEquipmentIds, equipmentMap]);
-
-  const faultyEquipment = useMemo<Equipment[]>(() => (
-    filtered
-      .filter((item) => item.status === "maintenance")
-      .sort((a, b) => new Date(a.lastActiveDate).getTime() - new Date(b.lastActiveDate).getTime())
-  ), [filtered]);
-
-  const overdueCount = overdueEquipment.length;
+  function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
+    actions.setSearch(event.target.value);
+  }
 
   return (
-    <section>
-      <Header className="p-4 pt-8 mx-auto max-w-content">
-        <Header.Lead className="gap-2">
-          <Title.h6>Equipment</Title.h6>
-          <Paragraph.sm className="text-tertiary max-w-2xl">
-            Manage and track all equipment. View availability, bookings, and maintenance at a glance.
-          </Paragraph.sm>
-        </Header.Lead>
-      </Header>
+    <SplitPanel open={state.detailOpen} onOpenChange={actions.closeDetail} detailLabel="Equipment details">
+      <SplitPanel.Primary>
+      <Page>
+      <Page.Header>
+        <Page.Heading>
+          <Page.Title>Equipment</Page.Title>
+        </Page.Heading>
+      </Page.Header>
 
-      <ScrollArea className='mx-auto w-full max-w-content'>
-        <ScrollArea.Viewport className='p-4 pt-8'>
-          <ScrollArea.Content className='flex gap-4 max-mobile:gap-2'>
-            <Card className="flex-1 min-w-56">
-              <Card.Header tight className="gap-1.5">
-                <Package className="size-4" />
-                <Label.sm>Total Equipment</Label.sm>
-              </Card.Header>
-              <Card.Content className="p-4">
-                <TextBlock className="title-h4">{totalCount}</TextBlock>
-              </Card.Content>
-            </Card>
-            <Card className="flex-1 min-w-56">
-              <Card.Header tight className="gap-1.5">
-                <CircleCheck className="size-4" />
-                <Label.sm>Available</Label.sm>
-              </Card.Header>
-              <Card.Content className="p-4">
-                <TextBlock className="title-h4">{availableCount}</TextBlock>
-              </Card.Content>
-            </Card>
-            <Card className="flex-1 min-w-56">
-              <Card.Header tight className="gap-1.5">
-                <ArrowUpRight className="size-4" />
-                <Label.sm>Booked Out</Label.sm>
-              </Card.Header>
-              <Card.Content className="p-4">
-                <TextBlock className="title-h4">{bookedOutCount}</TextBlock>
-              </Card.Content>
-            </Card>
-            <Card className="flex-1 min-w-56">
-              <Card.Header tight className="gap-1.5">
-                <CalendarX2Icon className="size-4" />
-                <Label.sm>Overdue</Label.sm>
-              </Card.Header>
-              <Card.Content className="p-4">
-                <TextBlock className="title-h4">{overdueCount}</TextBlock>
-              </Card.Content>
-            </Card>
-          </ScrollArea.Content>
-        </ScrollArea.Viewport>
-      </ScrollArea>
+      <CollectionToolbar>
+        <CollectionToolbar.Views>
+          <SegmentedControl value={state.activeView} onValueChange={actions.changeView} fill={state.isMobile} >
+            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={state.isMobile}>Kanban</CollectionToolbar.ViewItem>
+          </SegmentedControl>
+        </CollectionToolbar.Views>
+        <CollectionToolbar.Actions>
+          <Input
+            aria-label="Search equipment"
+            name="equipment-search"
+            autoComplete="off"
+            icon={<Search />}
+            placeholder="Search equipment…"
+            className="w-full max-w-md max-mobile:flex-[1_1_100%]"
+            value={state.filterState.search}
+            onChange={handleSearchChange}
+          />
+          <Drawer mobileSide="bottom">
+            <Drawer.Trigger>
+              <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter equipment">Filter</CollectionToolbar.ActionButton>
+            </Drawer.Trigger>
+            <EquipmentFilterDrawer filters={meta.filters} />
+          </Drawer>
+          <Button.Icon
+            aria-label="Add equipment"
+            variant="secondary"
+            icon={<Plus />}
+            onClick={actions.openCreate}
+          />
+        </CollectionToolbar.Actions>
+      </CollectionToolbar>
 
-      <div className="flex flex-col gap-4 p-4 pt-8 mx-auto w-full max-w-content">
-        <Header className="gap-2 max-mobile:flex-col *:max-mobile:w-full">
-          <Header.Lead className="gap-2">
-            <Label.md>Schedule</Label.md>
-          </Header.Lead>
-          <Header.Trail className="gap-2 flex-1 justify-end">
-            <Input icon={<Search />} placeholder="Search equipment..." className="w-full max-w-md" value={state.search} onChange={(e) => setSearch(e.target.value)} />
-            <Drawer>
-              <Drawer.Trigger>
-                <Button icon={<Settings2 />} variant="secondary">Filter</Button>
-              </Drawer.Trigger>
-              <EquipmentFilterDrawer filters={equipmentFilters} />
-            </Drawer>
-          </Header.Trail>
-        </Header>
+      <CollectionContent>
+      <Decision value={collectionState} loading={state.isLoading}>
+        <Decision.Loading>
+          <LoadingSpinner className="py-6" />
+        </Decision.Loading>
+        <Decision.Empty>
+          <EmptyState
+            icon={<Package />}
+            title={state.filterState.search.trim() ? "No equipment matches your search" : "No equipment yet"}
+            description={state.filterState.search.trim() ? "Try a different search term or clear filters." : "Add equipment to start tracking inventory."}
+          />
+        </Decision.Empty>
+        <Decision.Data>
+          {state.activeView === "list" && <InventoryListView equipment={state.filtered} onSelect={actions.selectEquipment} />}
+          {state.activeView === "kanban" && <InventoryKanbanView equipment={state.filtered} />}
+        </Decision.Data>
+      </Decision>
+      </CollectionContent>
 
-        <Card>
-          <Card.Header tight>
-            <Indicator color="red" className="size-6" />
-            <Label.sm>Overdue Equipment</Label.sm>
-          </Card.Header>
-          <Card.Content ghost className="flex flex-col gap-1.5">
-            <Decision value={overdueEquipment} loading={(isLoadingEquipment || isLoadingBookings)}>
-              <Decision.Loading>
-                <LoadingSpinner className="py-6" />
-              </Decision.Loading>
-              <Decision.Empty>
-                <EmptyState
-                  icon={<FileWarning />}
-                  title={'No overdue equipment'}
-                />
-              </Decision.Empty>
-              <Decision.Data>
-                {overdueEquipment.map((item) => (
-                  <EquipmentItem key={item.id} equipment={item} />
-                ))}
-              </Decision.Data>
-            </Decision>
-          </Card.Content>
-        </Card>
-
-        <Card>
-          <Card.Header tight>
-            <Indicator className="size-6" />
-            <Label.sm>Faulty Equipment</Label.sm>
-          </Card.Header>
-          <Card.Content ghost className="flex flex-col gap-1.5">
-            <Decision value={faultyEquipment} loading={(isLoadingEquipment || isLoadingBookings)}>
-              <Decision.Loading>
-                <LoadingSpinner className="py-6" />
-              </Decision.Loading>
-              <Decision.Empty>
-                <EmptyState
-                  icon={<FileWarning />}
-                  title={'No faulty equipment'}
-                />
-              </Decision.Empty>
-              <Decision.Data>
-                {faultyEquipment.map((item) => (
-                  <EquipmentItem key={item.id} equipment={item} />
-                ))}
-              </Decision.Data>
-            </Decision>
-          </Card.Content>
-        </Card>
-      </div>
-    </section>
+      <CreateEquipmentModal
+        open={state.createOpen}
+        onOpenChange={actions.setCreateOpen}
+        onCreate={actions.create}
+      />
+      </Page>
+      </SplitPanel.Primary>
+      <SplitPanel.ResizeHandle />
+      <SplitPanel.Detail>
+        {state.selectedEquipment && <EquipmentPanelContent equipment={state.selectedEquipment} open={state.detailOpen} onClose={actions.closeDetail} />}
+      </SplitPanel.Detail>
+    </SplitPanel>
   );
 }

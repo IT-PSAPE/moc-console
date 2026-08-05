@@ -1,8 +1,10 @@
-import { Dialog } from '@base-ui/react/dialog'
+import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
 import { cn } from '@moc/utils/cn'
-import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type ReactElement, type ReactNode } from 'react'
+import { useIsMobile } from '../../hooks/use-is-mobile'
+import { MobileSheetHandle, mobileDrawerStackContentClassName, mobileDrawerStackPopupClassName } from './mobile-sheet'
 import { useOverlayStack } from './overlay-provider'
-import { OverlayContent, OverlayFooter, OverlayHeader } from './overlay-primitives'
+import { overlayHeaderClassName, OverlayContent, OverlayFooter } from './overlay-primitives'
 
 // ─── Context ─────────────────────────────────────────────────────────
 //
@@ -53,7 +55,6 @@ function ModalRoot({ children, closeOnBackdropClick = true, closeOnEscape = true
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
     const isOpen = isControlled ? open : uncontrolledOpen
-
     const setOpen = useCallback((nextOpen: boolean) => {
         if (!isControlled) {
             setUncontrolledOpen(nextOpen)
@@ -71,41 +72,48 @@ function ModalRoot({ children, closeOnBackdropClick = true, closeOnEscape = true
         meta: { closeOnBackdropClick },
     }), [closeOnBackdropClick, isOpen, setOpen])
 
+    function handleOpenChange(nextOpen: boolean, eventDetails: BaseDrawer.Root.ChangeEventDetails) {
+        if (!nextOpen) {
+            if (!closeOnEscape && eventDetails.reason === 'escape-key') return
+            if (!closeOnBackdropClick && eventDetails.reason === 'outside-press') return
+        }
+
+        setOpen(nextOpen)
+    }
+
     return (
         <ModalContext.Provider value={value}>
-            <Dialog.Root
+            <BaseDrawer.Root
                 open={isOpen}
-                onOpenChange={(nextOpen, eventDetails) => {
-                    if (!nextOpen) {
-                        if (!closeOnEscape && eventDetails.reason === 'escape-key') return
-                        if (!closeOnBackdropClick && eventDetails.reason === 'outside-press') return
-                    }
-                    setOpen(nextOpen)
-                }}
+                disablePointerDismissal={!closeOnBackdropClick}
+                swipeDirection="down"
+                onOpenChange={handleOpenChange}
             >
                 {children}
-            </Dialog.Root>
+            </BaseDrawer.Root>
         </ModalContext.Provider>
     )
 }
 
 // ─── Trigger ─────────────────────────────────────────────────────────
 
-function ModalTrigger({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
+type ModalControlProps = Omit<HTMLAttributes<HTMLElement>, 'children'> & {
+    children: ReactElement
+}
+
+function ModalTrigger({ children, className, ...props }: ModalControlProps) {
+    const nativeButton = typeof children.type !== 'string' || children.type === 'button'
+
     return (
-        <Dialog.Trigger nativeButton={false} render={<span />} className={cn('contents', className)} {...props}>
-            {children}
-        </Dialog.Trigger>
+        <BaseDrawer.Trigger nativeButton={nativeButton} render={children} className={className} {...props} />
     )
 }
 
 // ─── Close ───────────────────────────────────────────────────────────
 
-function ModalClose({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
+function ModalClose({ children, className, ...props }: ModalControlProps) {
     return (
-        <Dialog.Close nativeButton={false} render={<span />} className={cn('contents', className)} {...props}>
-            {children}
-        </Dialog.Close>
+        <BaseDrawer.Close render={children} className={className} {...props} />
     )
 }
 
@@ -113,17 +121,21 @@ function ModalClose({ children, className, ...props }: HTMLAttributes<HTMLSpanEl
 
 function ModalPortal({ children }: { children: ReactNode }) {
     const { state: overlayState } = useOverlayStack()
-    return <Dialog.Portal container={overlayState.rootElement ?? undefined}>{children}</Dialog.Portal>
+    return (
+        <BaseDrawer.VirtualKeyboardProvider>
+            <BaseDrawer.Portal container={overlayState.rootElement ?? undefined}>{children}</BaseDrawer.Portal>
+        </BaseDrawer.VirtualKeyboardProvider>
+    )
 }
 
 // ─── Backdrop ────────────────────────────────────────────────────────
 
 function ModalBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <Dialog.Backdrop
+        <BaseDrawer.Backdrop
             className={cn(
-                'pointer-events-auto fixed inset-0 bg-linear-to-t from-black/30 to-black/3 backdrop-blur-xs',
-                'transition-opacity duration-200 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
+                'pointer-events-auto fixed inset-0 z-0 bg-black/40 md:bg-black/30',
+                'transition-opacity duration-200 motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
                 className,
             )}
             {...props}
@@ -134,49 +146,66 @@ function ModalBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>) 
 // ─── Positioner ──────────────────────────────────────────────────────
 
 function ModalPositioner({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    // Outer padding is max(0.5rem, env(safe-area-inset-*)) so the panel keeps
-    // its baseline 8px gap on desktop but never overlaps the status bar or
-    // gesture indicator on PWA mobile installs (edge-to-edge mode).
+    const isMobile = useIsMobile()
+
     return (
-        <div
+        <BaseDrawer.Viewport
             className={cn(
-                'pointer-events-none fixed inset-0 flex items-center justify-center',
-                'pt-[max(0.5rem,env(safe-area-inset-top))]',
-                'pr-[max(0.5rem,env(safe-area-inset-right))]',
-                'pb-[max(0.5rem,env(safe-area-inset-bottom))]',
-                'pl-[max(0.5rem,env(safe-area-inset-left))]',
+                'pointer-events-none fixed inset-0 z-10 flex justify-center',
+                isMobile
+                    ? 'items-end'
+                    : 'items-center pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))]',
                 className,
             )}
             {...props}
         >
             {children}
-        </div>
+        </BaseDrawer.Viewport>
     )
 }
 
 // ─── Panel ───────────────────────────────────────────────────────────
 
-function ModalPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+type ModalPanelMode = 'compact' | 'full-screen'
+
+function ModalPanelSurface({ children, className, mode, ...props }: HTMLAttributes<HTMLDivElement> & { mode: ModalPanelMode }) {
+    const isMobile = useIsMobile()
     return (
-        <Dialog.Popup
+        <BaseDrawer.Popup
+            data-base-ui-swipe-ignore={isMobile ? undefined : ''}
             className={cn(
-                'pointer-events-auto flex w-full max-w-md flex-col rounded-xl border border-secondary bg-primary',
-                'origin-center transition-[opacity,transform] duration-200',
-                'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
-                'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
+                'pointer-events-auto flex w-full flex-col border border-secondary bg-primary outline-none',
+                isMobile
+                    ? cn(
+                        mobileDrawerStackPopupClassName,
+                        '!max-w-none rounded-t-3xl border-b-0 shadow-xl',
+                        mode === 'full-screen'
+                            ? 'h-[calc(100dvh-max(0.5rem,env(safe-area-inset-top)))]'
+                            : 'min-h-[40dvh] max-h-[90dvh]',
+                    )
+                    : 'max-h-[calc(100dvh-1rem)] max-w-md origin-center rounded-xl transition-[opacity,transform] duration-200 motion-reduce:transition-none data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
                 className,
             )}
             {...props}
         >
-            {children}
-        </Dialog.Popup>
+            {isMobile ? <MobileSheetHandle /> : null}
+            <div className={isMobile ? mobileDrawerStackContentClassName : 'flex min-h-0 flex-1 flex-col'}>{children}</div>
+        </BaseDrawer.Popup>
     )
+}
+
+function ModalPanel(props: HTMLAttributes<HTMLDivElement>) {
+    return <ModalPanelSurface mode="compact" {...props} />
+}
+
+function ModalFullScreenPanel(props: HTMLAttributes<HTMLDivElement>) {
+    return <ModalPanelSurface mode="full-screen" {...props} />
 }
 
 // ─── Header / Content / Footer ───────────────────────────────────────
 
-function ModalHeader(props: HTMLAttributes<HTMLDivElement>) {
-    return <OverlayHeader {...props} />
+function ModalHeader({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    return <BaseDrawer.Title render={<div />} className={cn(overlayHeaderClassName, className)} {...props}>{children}</BaseDrawer.Title>
 }
 
 function ModalContent(props: HTMLAttributes<HTMLDivElement>) {
@@ -195,6 +224,7 @@ export const Modal = Object.assign(ModalRoot, {
     Backdrop: ModalBackdrop,
     Positioner: ModalPositioner,
     Panel: ModalPanel,
+    FullScreenPanel: ModalFullScreenPanel,
     Header: ModalHeader,
     Content: ModalContent,
     Footer: ModalFooter,

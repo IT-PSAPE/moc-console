@@ -1,13 +1,18 @@
-import { Title, Paragraph, Label } from "@moc/ui/components/display/text"
-import { Divider } from "@moc/ui/components/display/divider"
+import { Title, Paragraph } from "@moc/ui/components/display/text"
+import { Card } from "@moc/ui/components/display/card"
 import { Link } from "react-router-dom"
 import { routes } from "@/screens/console-routes"
 import { PublicLayout } from "./layout"
+import { PublicDocumentSection as Section } from "./public-document-section"
+import { PublicDocumentSubsection as SubSection } from "./public-document-subsection"
+import { PublicDocumentStep as Step } from "./public-document-step"
+import { PublicDocumentScopeRow as ScopeRow } from "./public-document-scope-row"
+import { PublicDocumentTroubleshoot as Troubleshoot } from "./public-document-troubleshoot"
 
 export function ZoomDocsScreen() {
   return (
     <PublicLayout>
-      <Title.h3 className="mb-2">Zoom integration guide</Title.h3>
+      <Title.h1 className="mb-2 title-h3">Zoom integration guide</Title.h1>
       <Paragraph.sm className="text-tertiary mb-8">
         How to add, use, and remove the MOC Console Zoom app. Applies to all MOC Console workspaces.
       </Paragraph.sm>
@@ -35,13 +40,13 @@ export function ZoomDocsScreen() {
         </Step>
         <Step number={3} title="Review and approve the requested scopes">
           <Paragraph.md className="mb-3">Zoom will display the scopes MOC Console is requesting. Approve to continue. The requested scopes and why we need each one:</Paragraph.md>
-          <div className="rounded-lg border border-tertiary bg-secondary_alt">
+          <Card.Content className="bg-secondary_alt">
             <ScopeRow scope="user:read:user" reason="Identify the Zoom host (user ID, email, display name) after you authorize the app." />
             <ScopeRow scope="meeting:read:meeting" reason="Read the details of an individual meeting when viewed or edited in MOC Console." />
             <ScopeRow scope="meeting:read:list_meetings" reason="List your scheduled meetings when you refresh the Streams screen." />
             <ScopeRow scope="meeting:write:meeting" reason="Create a new meeting or update an existing one when you schedule or edit it in MOC Console." />
             <ScopeRow scope="meeting:delete:meeting" reason="Delete a meeting when you remove it from the MOC Console schedule." last />
-          </div>
+          </Card.Content>
         </Step>
         <Step number={4} title="You're connected">
           <Paragraph.md>Zoom redirects you back to MOC Console. Your meetings begin syncing automatically. The Zoom card now shows your connected account.</Paragraph.md>
@@ -155,54 +160,5 @@ export function ZoomDocsScreen() {
         </Paragraph.md>
       </Section>
     </PublicLayout>
-  )
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="mb-10">
-      <Divider className="mb-6" />
-      <Label.lg className="block mb-4">{title}</Label.lg>
-      {children}
-    </section>
-  )
-}
-
-function SubSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-6">
-      <Label.md className="block mb-2">{title}</Label.md>
-      {children}
-    </div>
-  )
-}
-
-function Step({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
-  return (
-    <div className="flex gap-4 mb-5">
-      <div className="size-7 shrink-0 rounded-full bg-brand_secondary text-brand flex items-center justify-center label-sm">{number}</div>
-      <div className="flex-1">
-        <Label.md className="block mb-1">{title}</Label.md>
-        {children}
-      </div>
-    </div>
-  )
-}
-
-function ScopeRow({ scope, reason, last }: { scope: string; reason: string; last?: boolean }) {
-  return (
-    <div className={`flex flex-col gap-1 px-4 py-3 ${!last ? "border-b border-tertiary" : ""}`}>
-      <code className="font-mono text-sm text-primary">{scope}</code>
-      <Paragraph.sm className="text-tertiary">{reason}</Paragraph.sm>
-    </div>
-  )
-}
-
-function Troubleshoot({ problem, fix }: { problem: string; fix: string }) {
-  return (
-    <div className="mb-4">
-      <Label.md className="block mb-1">{problem}</Label.md>
-      <Paragraph.md className="text-tertiary">{fix}</Paragraph.md>
-    </div>
   )
 }

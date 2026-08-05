@@ -1,4 +1,4 @@
-import { Drawer, useDrawer } from "@moc/ui/components/overlays/drawer";
+import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { Button } from "@moc/ui/components/controls/button";
 import { Paragraph, Title } from "@moc/ui/components/display/text";
 import { MetaRow } from "@moc/ui/components/display/meta-row";
@@ -6,21 +6,18 @@ import { Input } from "@moc/ui/components/form/input";
 import { DateTimeFields } from "@moc/ui/components/form/date-time-fields";
 import { TextArea } from "@moc/ui/components/form/text-area";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
-import { useBookingStore } from "./use-booking-store";
-import { useEquipment } from "./equipment-provider";
+import { useBookingEditor } from "./use-booking-editor";
 import { BookingItemsSection } from "./booking-items-section";
 import { BookingDeleteModal } from "./booking-delete-modal";
 import { BookingScanModal } from "./booking-scan-modal";
-import { BookingStatusDropdown } from "./booking-status-dropdown";
-import { useBookingCollection } from "./use-booking-collection";
-import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
-import { deleteBooking } from "@/data/mutate-booking";
-import type { Booking, BookingStatus } from "@moc/types/equipment";
+import { BookingStatusSelect } from "./booking-status-select";
+import type { Booking } from "@moc/types/equipment";
 import { Calendar, Clock, Loader, Maximize2, Package, ScanLine, StickyNote, Trash2, User, X } from "lucide-react";
-import { useCallback, useEffect, useState, type ChangeEvent, type RefObject } from "react";
-import { useNavigate } from "react-router-dom";
-import { getErrorMessage } from "@moc/utils/get-error-message";
-import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time";
+import type { RefObject } from "react";
+import { formatUtcIsoForBrowserDateTimeInput } from "@moc/utils/browser-date-time";
+import { useDrawerClose } from "@/hooks/use-drawer-close";
+import { useDrawerEditorGuard } from "@/hooks/use-drawer-editor-guard";
+import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 
 export type BookingDrawerProps = {
   booking: Booking;
@@ -46,181 +43,32 @@ export function BookingDrawer({ booking, onBookingClose, isDirtyRef, requestClos
 }
 
 function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestCloseRef }: BookingDrawerProps) {
-    const { actions: drawerActions } = useDrawer();
-    const navigate = useNavigate();
-    const { toast } = useFeedback();
-    const { actions: { syncBooking, refreshEquipment, removeBooking } } = useEquipment();
+  const closeDrawer = useDrawerClose(onBookingClose);
 
-    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
-    const [deleteOpen, setDeleteOpen] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
+  return <BookingPanelContent booking={booking} onClose={closeDrawer} isDirtyRef={isDirtyRef} requestCloseRef={requestCloseRef} />;
+}
 
-  const store = useBookingStore(booking, { syncBooking });
+type BookingPanelContentProps = Omit<BookingDrawerProps, "onBookingClose"> & {
+  onClose: () => void;
+};
 
-  useEffect(() => {
-    if (isDirtyRef) isDirtyRef.current = store.state.isDirty;
-  }, [isDirtyRef, store.state.isDirty]);
+export function BookingPanelContent({ booking, onClose, isDirtyRef, requestCloseRef }: BookingPanelContentProps) {
 
-  useEffect(() => {
-    if (requestCloseRef) {
-      requestCloseRef.current = () => setShowUnsavedModal(true);
-    }
-    return () => {
-      if (requestCloseRef) requestCloseRef.current = null;
-    };
-  }, [requestCloseRef]);
+  const editor = useBookingEditor(booking, onClose);
+  const { store, collection } = editor;
 
-  const closeDrawer = useCallback(() => {
-    if (onBookingClose) {
-      onBookingClose();
-      return;
-    }
-    drawerActions.close();
-  }, [onBookingClose, drawerActions]);
-
-  const handleClose = useCallback(() => {
-    if (store.state.isDirty) {
-      setShowUnsavedModal(true);
-      return;
-    }
-    closeDrawer();
-  }, [store.state.isDirty, closeDrawer]);
-
-  function handleOpenFullPage() {
-    if (store.state.isDirty) {
-      setShowUnsavedModal(true);
-      return;
-    }
-    closeDrawer();
-    navigate(`/equipment/bookings/${booking.id}`);
-  }
-
-  const persistBooking = useCallback(async () => {
-    try {
-      await store.actions.save();
-      // A booking can hold multiple items, so a per-equipment-id sync
-      // can't refresh them all in one call. Refetch the whole inventory.
-      await refreshEquipment();
-      toast({ title: "Booking saved", variant: "success" });
-    } catch (error) {
-      toast({ title: "Failed to save booking", description: getErrorMessage(error, "The booking could not be saved."), variant: "error" });
-    }
-  }, [store.actions, refreshEquipment, toast]);
-
-  const collection = useBookingCollection({
-    booking: store.state.draft,
-    onItemCollected: (item) => {
-      toast({ title: "Item collected", description: item.equipmentName, variant: "success" });
-    },
-    onItemAlreadyCollected: (item) => {
-      toast({ title: "Already collected", description: `${item.equipmentName} was already scanned.`, variant: "error" });
-    },
-    onUnknownCode: () => {
-      toast({ title: "Item not in booking", description: "That QR code does not match any equipment in this booking.", variant: "error" });
-    },
-  });
-
-  const handleSave = useCallback(async () => {
-    await persistBooking();
-  }, [persistBooking]);
-
-  async function handleModalSave() {
-    try {
-      await store.actions.save();
-      await refreshEquipment();
-      toast({ title: "Booking saved", variant: "success" });
-      setShowUnsavedModal(false);
-      closeDrawer();
-    } catch (error) {
-      toast({ title: "Failed to save booking", description: getErrorMessage(error, "The booking could not be saved."), variant: "error" });
-    }
-  }
-
-  function handleModalDiscard() {
-    store.actions.discard();
-    setShowUnsavedModal(false);
-    closeDrawer();
-  }
-
-  function handleModalCancel() {
-    setShowUnsavedModal(false);
-  }
-
-  const handleDelete = useCallback(async () => {
-    setIsDeleting(true);
-    try {
-      await deleteBooking(booking.id);
-      removeBooking(booking.id);
-      await refreshEquipment();
-      toast({ title: "Booking deleted", variant: "success" });
-      setDeleteOpen(false);
-      closeDrawer();
-    } catch (error) {
-      toast({ title: "Failed to delete booking", description: getErrorMessage(error, "The booking could not be deleted."), variant: "error" });
-    } finally {
-      setIsDeleting(false);
-    }
-  }, [booking.id, closeDrawer, refreshEquipment, removeBooking, toast]);
-
-  function handleSelectStatus(status: BookingStatus) {
-    const previousStatus = store.state.draft.status;
-    store.actions.updateField("status", status);
-    // Setting the booking to checked_out is the act of collection, so stamp the
-    // actual handover moment onto checked_out_at — mirrors how returned fills
-    // returnedDate. Guarded on the transition so re-saving doesn't move it.
-    if (status === "checked_out" && previousStatus !== "checked_out") {
-      store.actions.updateField("checkedOutDate", new Date().toISOString());
-    }
-    if (status === "returned" && !store.state.draft.returnedDate) {
-      store.actions.updateField("returnedDate", new Date().toISOString());
-    }
-  }
-
-  function handleBookedByChange(event: ChangeEvent<HTMLInputElement>) {
-    store.actions.updateField("bookedBy", event.target.value);
-  }
-
-  function handleCheckedOutDateChange(value: string) {
-    store.actions.updateField(
-      "checkedOutDate",
-      value ? parseBrowserDateTimeInputToUtcIso(value) : "",
-    );
-  }
-
-  function handleExpectedReturnChange(value: string) {
-    store.actions.updateField(
-      "expectedReturnAt",
-      value ? parseBrowserDateTimeInputToUtcIso(value) : "",
-    );
-  }
-
-  function handleReturnedDateChange(value: string) {
-    store.actions.updateField(
-      "returnedDate",
-      value
-        ? parseBrowserDateTimeInputToUtcIso(value)
-        : null,
-    );
-  }
-
-  function handleNotesChange(event: ChangeEvent<HTMLTextAreaElement>) {
-    store.actions.updateField("notes", event.target.value);
-  }
+  const guard = useDrawerEditorGuard({ close: onClose, discard: store.actions.discard, href: `/bookings/${booking.id}`, isDirty: store.state.isDirty, isDirtyRef, requestCloseRef, save: editor.actions.save });
 
   function handleDeleteRequest() {
-    setDeleteOpen(true);
-  }
-
-  function handleDeleteOpenChange(open: boolean) {
-    setDeleteOpen(open);
+    editor.actions.setDeleteOpen(true);
   }
 
   const draft = store.state.draft;
 
   return (
     <>
-      <Drawer.Header className="flex items-center gap-1">
-        <Button.Icon variant="ghost" icon={<X />} onClick={handleClose} />
+      <SplitPanel.Header className="flex items-center gap-1">
+        <Button.Icon aria-label="Close booking" variant="ghost" icon={<X />} onClick={guard.actions.requestClose} />
         <div className="flex-1" />
         <Button.Icon
           variant="secondary"
@@ -229,11 +77,11 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
           icon={<ScanLine />}
           onClick={collection.actions.openScanner}
         />
-        <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={handleOpenFullPage} aria-label="Open full page" />
-        <Button.Icon variant="danger-secondary" icon={<Trash2 />} onClick={handleDeleteRequest} />
-      </Drawer.Header>
+        <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={guard.actions.openFullPage} aria-label="Open full page" />
+        <Button.Icon aria-label="Delete booking" variant="danger-secondary" icon={<Trash2 />} onClick={handleDeleteRequest} />
+      </SplitPanel.Header>
 
-      <Drawer.Content className="py-4">
+      <SplitPanel.Content className="py-4">
         {/* Header — title is owned by the requester, so display only. */}
         <div className="flex items-center gap-3 px-4 pb-4">
           <span className="flex size-12 items-center justify-center rounded-lg bg-secondary text-quaternary">
@@ -249,37 +97,46 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         <div className="px-4 space-y-3">
           {/* Status */}
           <MetaRow icon={<Loader />} label="Status">
-            <BookingStatusDropdown status={draft.status} onSelectStatus={handleSelectStatus} />
+            <BookingStatusSelect status={draft.status} onSelectStatus={editor.actions.selectStatus} />
           </MetaRow>
 
           {/* Booked By */}
-          <MetaRow icon={<User />} label="Booked By">
+          <MetaRow icon={<User />} label="Booked by">
             <Input
+              aria-label="Booked by"
+              name="booked-by"
+              autoComplete="name"
               type="text"
               value={draft.bookedBy}
-              onChange={handleBookedByChange}
+              onChange={editor.actions.changeBookedBy}
               placeholder="Enter name"
               style="ghost"
             />
           </MetaRow>
 
           {/* Checked Out */}
-          <MetaRow icon={<Calendar />} label="Checked Out">
+          <MetaRow icon={<Calendar />} label="Checked out">
             <DateTimeFields
+              ariaLabel="Checked out"
+              name="checked-out"
               value={formatUtcIsoForBrowserDateTimeInput(draft.checkedOutDate)}
-              onChange={handleCheckedOutDateChange}
+              onChange={editor.actions.changeCheckedOutDate}
               style="ghost"
+              fieldLabels="hidden"
               required
               fieldsClassName="sm:grid-cols-2"
             />
           </MetaRow>
 
           {/* Expected Return */}
-          <MetaRow icon={<Clock />} label="Expected Return">
+          <MetaRow icon={<Clock />} label="Expected return">
             <DateTimeFields
+              ariaLabel="Expected return"
+              name="expected-return"
               value={formatUtcIsoForBrowserDateTimeInput(draft.expectedReturnAt)}
-              onChange={handleExpectedReturnChange}
+              onChange={editor.actions.changeExpectedReturn}
               style="ghost"
+              fieldLabels="hidden"
               required
               fieldsClassName="sm:grid-cols-2"
             />
@@ -288,9 +145,12 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
           {/* Returned */}
           <MetaRow icon={<Calendar />} label="Returned">
             <DateTimeFields
+              ariaLabel="Returned"
+              name="returned"
               value={draft.returnedDate ? formatUtcIsoForBrowserDateTimeInput(draft.returnedDate) : ""}
-              onChange={handleReturnedDateChange}
+              onChange={editor.actions.changeReturnedDate}
               style="ghost"
+              fieldLabels="hidden"
               fieldsClassName="sm:grid-cols-2"
             />
           </MetaRow>
@@ -303,11 +163,12 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
           {/* Notes */}
           <MetaRow icon={<StickyNote />} label="Notes">
             <TextArea
+              aria-label="Booking notes"
+              name="booking-notes"
               value={draft.notes}
-              onChange={handleNotesChange}
-              placeholder="Add notes..."
+              onChange={editor.actions.changeNotes}
+              placeholder="Add notes…"
               style="ghost"
-              resize="vertical"
               rows={5}
               className="w-full whitespace-pre-wrap"
             />
@@ -315,27 +176,27 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         </div>
 
         {/* Items */}
-        <BookingItemsSection items={draft.items} scannedItemIds={collection.state.scannedItemIds} onNavigate={closeDrawer} />
-      </Drawer.Content>
+        <BookingItemsSection items={draft.items} scannedItemIds={collection.state.scannedItemIds} onNavigate={onClose} />
+      </SplitPanel.Content>
 
       {store.state.isDirty && (
-        <Drawer.Footer className="justify-end">
+        <SplitPanel.Footer className="justify-end">
           <Button variant="ghost" onClick={store.actions.discard}>Discard</Button>
-          <Button onClick={handleSave} disabled={store.state.isSaving}>
-            {store.state.isSaving ? "Saving..." : "Save"}
+          <Button onClick={editor.actions.save} disabled={store.state.isSaving}>
+            {store.state.isSaving ? "Saving…" : "Save"}
           </Button>
-        </Drawer.Footer>
+        </SplitPanel.Footer>
       )}
 
       <UnsavedChangesModal
-        open={showUnsavedModal}
-        onSave={handleModalSave}
-        onDiscard={handleModalDiscard}
-        onCancel={handleModalCancel}
+        open={guard.state.isPromptOpen}
+        onSave={guard.actions.saveAndClose}
+        onDiscard={guard.actions.discardAndClose}
+        onCancel={guard.actions.cancel}
         isSaving={store.state.isSaving}
       />
 
-      <BookingDeleteModal open={deleteOpen} isDeleting={isDeleting} onConfirm={handleDelete} onOpenChange={handleDeleteOpenChange} />
+      <BookingDeleteModal open={editor.state.deleteOpen} isDeleting={editor.state.isDeleting} onConfirm={editor.actions.remove} onOpenChange={editor.actions.setDeleteOpen} />
       <BookingScanModal
         open={collection.state.isOpen}
         isStarting={collection.state.isStarting}
@@ -343,7 +204,10 @@ function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestClos
         error={collection.state.error}
         scannedCount={collection.state.scannedCount}
         totalCount={collection.state.totalCount}
+        manualCode={collection.state.manualCode}
         onClose={collection.actions.closeScanner}
+        onManualCodeChange={collection.actions.setManualCode}
+        onManualCodeSubmit={collection.actions.submitManualCode}
         videoRef={collection.meta.videoRef}
       />
     </>

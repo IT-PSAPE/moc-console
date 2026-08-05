@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom'
-import { Title, Paragraph } from '@moc/ui/components/display/text'
 import { Button } from '@moc/ui/components/controls/button'
 import { Alert } from '@moc/ui/components/feedback/alert'
 import { Spinner } from '@moc/ui/components/feedback/spinner'
@@ -11,16 +10,22 @@ import { RequestReview } from '@/features/components/request-review'
 import { useRequestForm } from '@/features/hooks/use-request-form'
 import { REQUEST_STEPS } from '@/features/constants'
 import { routes } from '@/screens/console-routes'
-import { ArrowLeft } from 'lucide-react'
 import { StepIndicatorBar } from '@/features/components/step-indicator-bar';
+import { FlowHeader } from '@/features/components/flow-header'
+import { PublicFlow } from '@/features/components/public-flow'
+import { StepErrorSummary } from '@/features/components/step-error-summary'
+import type { FormEvent } from 'react'
+
+const requestStepLabels = REQUEST_STEPS.map((step) => step.label)
 
 export function RequestScreen() {
   const navigate = useNavigate()
   const { state, actions } = useRequestForm()
-  const stepLabels = REQUEST_STEPS.map((s) => s.label)
   const isLastStep = state.step === 4
 
   async function handleNext() {
+    if (!actions.validateCurrentStep()) return
+
     if (isLastStep) {
       const result = await actions.submit()
       if (result) {
@@ -39,39 +44,35 @@ export function RequestScreen() {
     }
   }
 
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    void handleNext()
+  }
+
   return (
-    <PublicLayout className="py-16">
-      <div className="flex max-mobile:flex-col">
-        <div className="shrink-0 w-full max-w-40 mb-8">
-          <Button variant="ghost" icon={<ArrowLeft />} onClick={handleBack} className="self-start">Back</Button>
-        </div>
-        <div className="flex flex-col gap-1 flex-1 text-center">
-          <Title.h3>New Request</Title.h3>
-          <Paragraph.sm className="text-secondary">Fill in the details for your production request.</Paragraph.sm>
-        </div>
-        <div className="shrink-0 w-full max-w-40"/>
-      </div>
+    <PublicLayout className="py-8 sm:py-12">
+      <FlowHeader title="New request" onBack={handleBack} />
 
-      <div className="w-full max-w-content-sm mx-auto">
-        <div className="mt-20 mb-20">
-          <StepIndicatorBar currentStep={state.step} totalSteps={4} labels={stepLabels} />
-        </div>
+      <PublicFlow as="form" noValidate onSubmit={handleSubmit}>
+        <PublicFlow.Progress>
+          <StepIndicatorBar currentStep={state.step} totalSteps={4} labels={requestStepLabels} />
+        </PublicFlow.Progress>
 
-        {state.step === 1 && <RequestBasicInfo data={state.data} onChange={actions.setField} />}
-        {state.step === 2 && <RequestDetails data={state.data} onChange={actions.setField} />}
+        <StepErrorSummary errors={state.validationErrors} />
+
+        {state.step === 1 && <RequestBasicInfo data={state.data} onChange={actions.setField} errors={state.validationErrors} />}
+        {state.step === 2 && <RequestDetails data={state.data} onChange={actions.setField} errors={state.validationErrors} />}
         {state.step === 3 && <RequestFlow data={state.data} onChange={actions.setField} />}
         {state.step === 4 && <RequestReview data={state.data} />}
 
         {state.error && <Alert title="Submission failed" description={state.error} variant="error" style="filled" />}
 
-        <Button
-          onClick={handleNext}
-          disabled={!actions.canProceed() || state.submitting}
-          className="w-full rounded-full px-6 py-3 mt-10"
-        >
-          {state.submitting ? <Spinner size="sm" /> : isLastStep ? 'Submit' : 'Next'}
-        </Button>
-      </div>
+        <PublicFlow.Actions>
+          <Button type="submit" disabled={state.submitting} className="rounded-full">
+            {state.submitting ? <Spinner size="sm" /> : isLastStep ? 'Submit' : 'Next'}
+          </Button>
+        </PublicFlow.Actions>
+      </PublicFlow>
     </PublicLayout>
   )
 }

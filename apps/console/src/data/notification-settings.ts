@@ -3,7 +3,7 @@ import {
   DEFAULT_DATE_FORMAT,
   DEFAULT_TIMEZONE,
   type DateFormatPreset,
-} from "./notification-templates-core";
+} from "@moc/notifications";
 
 // Per-workspace stale-item config. The threshold is both the "flag after
 // N days idle" window and the re-nag cadence (the daily sweep re-alerts

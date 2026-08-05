@@ -1,6 +1,6 @@
 import { Menu } from '@base-ui/react/menu'
 import { cn } from '@moc/utils/cn'
-import { createContext, useContext, type HTMLAttributes, type ReactNode } from 'react'
+import { createContext, useContext, useState, type ComponentProps, type HTMLAttributes, type ReactElement, type ReactNode } from 'react'
 import { useOverlayStack } from './overlay-provider'
 
 // ─── Placement ───────────────────────────────────────────────────────
@@ -24,6 +24,11 @@ function toSideAlign(placement: Placement): { side: 'top' | 'bottom' | 'left' | 
 
 const PlacementContext = createContext<Placement>('bottom')
 
+const dropdownItemClassName = [
+    'flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm text-secondary outline-none md:min-h-0 md:rounded-sm md:px-2 md:py-1',
+    'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
+].join(' ')
+
 // ─── Root ────────────────────────────────────────────────────────────
 
 type DropdownRootProps = {
@@ -36,36 +41,41 @@ type DropdownRootProps = {
 }
 
 function DropdownRoot({ children, closeOnEscape = true, defaultOpen, onOpenChange, open, placement = 'bottom' }: DropdownRootProps) {
+    const isControlled = open !== undefined
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false)
+    const isOpen = isControlled ? open : uncontrolledOpen
+    function handleOpenChange(nextOpen: boolean, eventDetails: Menu.Root.ChangeEventDetails) {
+        if (!closeOnEscape && eventDetails.reason === 'escape-key') return
+
+        if (!isControlled) {
+            setUncontrolledOpen(nextOpen)
+        }
+        onOpenChange?.(nextOpen)
+    }
+
     return (
-        <Menu.Root
-            open={open}
-            defaultOpen={defaultOpen}
-            onOpenChange={(nextOpen, eventDetails) => {
-                if (!closeOnEscape && eventDetails.reason === 'escape-key') {
-                    return
-                }
-                onOpenChange?.(nextOpen)
-            }}
-        >
-            <PlacementContext.Provider value={placement}>
-                <span className="relative inline-flex">{children}</span>
-            </PlacementContext.Provider>
-        </Menu.Root>
+        <PlacementContext.Provider value={placement}>
+            <Menu.Root open={isOpen} onOpenChange={handleOpenChange}>
+                {children}
+            </Menu.Root>
+        </PlacementContext.Provider>
     )
 }
 
 // ─── Trigger ─────────────────────────────────────────────────────────
 //
-// Rendered as a <span> (not Base UI's default <button>) so it can wrap an
-// existing <Button>/<Badge> without nesting interactive elements, matching the
-// previous `<span role="button">` DOM. `nativeButton={false}` lets Base UI add
-// the button role, tabindex and keyboard handling to the span.
+// Reuses the supplied interactive element as Base UI's trigger, avoiding
+// wrapper elements and nested buttons.
 
-function DropdownTrigger({ children, className, ...props }: HTMLAttributes<HTMLSpanElement>) {
+type DropdownTriggerProps = Omit<HTMLAttributes<HTMLElement>, 'children'> & {
+    children: ReactElement
+}
+
+function DropdownTrigger({ children, className, ...props }: DropdownTriggerProps) {
+    const nativeButton = typeof children.type !== 'string' || children.type === 'button'
+
     return (
-        <Menu.Trigger nativeButton={false} render={<span />} className={className} {...props}>
-            {children}
-        </Menu.Trigger>
+        <Menu.Trigger nativeButton={nativeButton} render={children} className={className} {...props} />
     )
 }
 
@@ -81,7 +91,7 @@ function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDiv
                 <Menu.Popup
                     className={cn(
                         'pointer-events-auto flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none',
-                        'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150',
+                        'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150 motion-reduce:transition-none',
                         'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
                         'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
                         className,
@@ -97,24 +107,39 @@ function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDiv
 
 // ─── Item ────────────────────────────────────────────────────────────
 
-type DropdownItemProps = HTMLAttributes<HTMLDivElement> & {
+type DropdownItemProps = Omit<ComponentProps<typeof Menu.Item>, 'children' | 'className' | 'onClick'> & {
+    children: ReactNode
+    className?: string
+    onClick?: ComponentProps<typeof Menu.Item>['onClick']
     onSelect?: () => void
 }
 
 function DropdownItem({ children, className, onClick, onSelect, ...props }: DropdownItemProps) {
+    function handleClick(event: Parameters<NonNullable<ComponentProps<typeof Menu.Item>['onClick']>>[0]) {
+        onClick?.(event)
+        onSelect?.()
+    }
+
     return (
         <Menu.Item
-            className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 text-sm text-secondary outline-none',
-                'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
-                className,
-            )}
-            onClick={(event) => {
-                onClick?.(event)
-                onSelect?.()
-            }}
+            className={cn(dropdownItemClassName, className)}
+            onClick={handleClick}
             {...props}
         >
+            {children}
+        </Menu.Item>
+    )
+}
+
+type DropdownLinkProps = {
+    children: ReactNode
+    className?: string
+    render: ReactElement
+}
+
+function DropdownLink({ children, className, render }: DropdownLinkProps) {
+    return (
+        <Menu.Item nativeButton={false} render={render} className={cn(dropdownItemClassName, className)}>
             {children}
         </Menu.Item>
     )
@@ -126,25 +151,12 @@ function DropdownSeparator({ className, ...props }: HTMLAttributes<HTMLDivElemen
     return <Menu.Separator className={cn('my-1 h-px bg-secondary', className)} {...props} />
 }
 
-// ─── Close ───────────────────────────────────────────────────────────
-//
-// Base UI menus close automatically when an item is selected, so an explicit
-// Close is rarely needed; kept for API compatibility as a passthrough.
-
-function DropdownClose({ children, ...props }: HTMLAttributes<HTMLSpanElement>) {
-    return (
-        <span role="button" {...props}>
-            {children}
-        </span>
-    )
-}
-
 // ─── Compound Export ─────────────────────────────────────────────────
 
 export const Dropdown = Object.assign(DropdownRoot, {
     Trigger: DropdownTrigger,
     Panel: DropdownPanel,
     Item: DropdownItem,
+    Link: DropdownLink,
     Separator: DropdownSeparator,
-    Close: DropdownClose,
 })

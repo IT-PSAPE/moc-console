@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import type { Equipment } from "@moc/types/equipment/equipment";
 import type { EquipmentCategory } from "@moc/types/equipment/category";
 import type { EquipmentStatus } from "@moc/types/equipment/status";
+import { areSetsEqual } from "@/utils/sets";
+import { useQueryText } from "@/hooks/use-query-text";
 
 // ─── Filter / Sort state ───────────────────────────────
 
@@ -19,7 +21,7 @@ export type EquipmentFilters = {
 const defaultFilters: EquipmentFilters = {
   search: "",
   categories: new Set(),
-  statuses: new Set(),
+  statuses: new Set<EquipmentStatus>(["available", "booked"]),
   sortField: "lastActiveDate",
   sortDirection: "desc",
 };
@@ -27,7 +29,9 @@ const defaultFilters: EquipmentFilters = {
 // ─── Hook ──────────────────────────────────────────────
 
 export function useEquipmentFilters(equipment: Equipment[]) {
-  const [filters, setFilters] = useState<EquipmentFilters>(defaultFilters);
+  const [filterState, setFilters] = useState<EquipmentFilters>(defaultFilters);
+  const [search, setSearchQuery] = useQueryText();
+  const filters = useMemo(() => ({ ...filterState, search }), [filterState, search]);
 
   const filtered = useMemo(() => {
     let result = equipment;
@@ -49,9 +53,7 @@ export function useEquipmentFilters(equipment: Equipment[]) {
     }
 
     // Status filter
-    if (filters.statuses.size > 0) {
-      result = result.filter((e) => filters.statuses.has(e.status));
-    }
+    result = result.filter((e) => filters.statuses.has(e.status));
 
     // Sort
     const dir = filters.sortDirection === "asc" ? 1 : -1;
@@ -72,7 +74,7 @@ export function useEquipmentFilters(equipment: Equipment[]) {
   // ─── Actions ─────────────────────────────────────────
 
   function setSearch(search: string) {
-    setFilters((f) => ({ ...f, search }));
+    setSearchQuery(search);
   }
 
   function toggleCategory(category: EquipmentCategory) {
@@ -99,9 +101,10 @@ export function useEquipmentFilters(equipment: Equipment[]) {
 
   function reset() {
     setFilters(defaultFilters);
+    setSearchQuery("");
   }
 
-  const hasActiveFilters = filters.categories.size > 0 || filters.statuses.size > 0;
+  const hasActiveFilters = filters.categories.size > 0 || !areSetsEqual(filters.statuses, defaultFilters.statuses);
 
   return {
     filters,

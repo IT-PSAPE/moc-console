@@ -30,6 +30,7 @@ export function ErrorScreen() {
       <div className="flex flex-col gap-6">
         <EmptyState
           icon={<TriangleAlert />}
+          headingLevel="h1"
           title={isNotFound ? 'Page not found' : 'Something went wrong'}
           description={isNotFound
             ? "The page you're looking for doesn't exist or has been moved."
@@ -37,8 +38,8 @@ export function ErrorScreen() {
           }
           action={
             <div className="flex items-center gap-3">
-              <Button variant="secondary" onClick={handleHome}>Back to Home</Button>
-              {!isNotFound && <Button variant="ghost" onClick={handleRetry}>Try Again</Button>}
+              <Button variant="secondary" onClick={handleHome}>Back to home</Button>
+              {!isNotFound && <Button variant="ghost" onClick={handleRetry}>Try again</Button>}
             </div>
           }
         />

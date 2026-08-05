@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useId, useState, type ChangeEvent } from "react";
 import { cn } from "@moc/utils/cn";
 import { Paragraph } from "@moc/ui/components/display/text";
 import { FormLabel } from "./form-label";
@@ -8,6 +8,8 @@ type DateTimeFieldsProps = {
     value: string
     onChange: (value: string) => void
     label?: string
+    ariaLabel?: string
+    name?: string
     dateLabel?: string
     timeLabel?: string
     required?: boolean
@@ -17,6 +19,7 @@ type DateTimeFieldsProps = {
     errorText?: string
     incompleteText?: string
     style?: "outline" | "ghost"
+    fieldLabels?: "visible" | "hidden"
     className?: string
     fieldsClassName?: string
 }
@@ -30,11 +33,20 @@ function combineDateTime(date: string, time: string): string {
     return date && time ? `${date}T${time}` : "";
 }
 
-export function DateTimeFields({ value, onChange, label, dateLabel = "Date", timeLabel = "Time", required, optional, disabled, helperText, errorText, incompleteText, style = "outline", className, fieldsClassName }: DateTimeFieldsProps) {
+export function DateTimeFields({ value, onChange, label, ariaLabel, name, dateLabel = "Date", timeLabel = "Time", required, optional, disabled, helperText, errorText, incompleteText, style = "outline", fieldLabels = "visible", className, fieldsClassName }: DateTimeFieldsProps) {
     const [date, setDate] = useState(splitDateTime(value).date);
     const [time, setTime] = useState(splitDateTime(value).time);
     const isIncomplete = Boolean(date || time) && !(date && time);
     const resolvedIncompleteText = incompleteText ?? (required ? "Date and time are both required." : "Choose both date and time, or clear both.");
+    const accessibleLabel = ariaLabel ?? label;
+    const fieldLabelClassName = fieldLabels === "hidden" ? "sr-only" : undefined;
+    const generatedId = useId();
+    const fieldIdBase = name ?? generatedId;
+    const dateId = `${fieldIdBase}-date`;
+    const timeId = `${fieldIdBase}-time`;
+    const feedbackId = `${fieldIdBase}-feedback`;
+    const feedbackText = errorText ?? (isIncomplete ? resolvedIncompleteText : helperText);
+    const hasError = Boolean(errorText || isIncomplete);
 
     useEffect(() => {
         const next = splitDateTime(value);
@@ -55,21 +67,19 @@ export function DateTimeFields({ value, onChange, label, dateLabel = "Date", tim
     }
 
     return (
-        <div className={cn("flex flex-col gap-1.5", className)}>
+        <div className={cn("flex w-full min-w-0 flex-col gap-1.5", className)}>
             {label && <FormLabel label={label} required={required} optional={optional} />}
-            <div className={cn("grid grid-cols-1 gap-3 sm:grid-cols-2", fieldsClassName)}>
-                <div className="flex flex-col gap-1.5">
-                    <FormLabel label={dateLabel} />
-                    <Input type="date" value={date} onChange={handleDateChange} required={required} disabled={disabled} style={style} />
+            <div className={cn("grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2", fieldsClassName)}>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                    <FormLabel label={dateLabel} htmlFor={dateId} className={fieldLabelClassName} />
+                    <Input id={dateId} aria-label={accessibleLabel ? `${accessibleLabel} date` : dateLabel} aria-describedby={feedbackText ? feedbackId : undefined} aria-invalid={hasError || undefined} name={name ? `${name}-date` : undefined} type="date" value={date} onChange={handleDateChange} required={required} disabled={disabled} style={style} />
                 </div>
-                <div className="flex flex-col gap-1.5">
-                    <FormLabel label={timeLabel} />
-                    <Input type="time" value={time} onChange={handleTimeChange} required={required} disabled={disabled} style={style} />
+                <div className="flex min-w-0 flex-col gap-1.5">
+                    <FormLabel label={timeLabel} htmlFor={timeId} className={fieldLabelClassName} />
+                    <Input id={timeId} aria-label={accessibleLabel ? `${accessibleLabel} time` : timeLabel} aria-describedby={feedbackText ? feedbackId : undefined} aria-invalid={hasError || undefined} name={name ? `${name}-time` : undefined} type="time" value={time} onChange={handleTimeChange} required={required} disabled={disabled} style={style} />
                 </div>
             </div>
-            {errorText && <Paragraph.xs className="text-error">{errorText}</Paragraph.xs>}
-            {!errorText && isIncomplete && <Paragraph.xs className="text-error">{resolvedIncompleteText}</Paragraph.xs>}
-            {!errorText && !isIncomplete && helperText && <Paragraph.xs className="text-quaternary">{helperText}</Paragraph.xs>}
+            {feedbackText && <Paragraph.xs id={feedbackId} role={hasError ? "alert" : undefined} aria-live="polite" className={hasError ? "text-error" : "text-quaternary"}>{feedbackText}</Paragraph.xs>}
         </div>
     );
 }

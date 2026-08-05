@@ -1,15 +1,15 @@
 // Label + description + scope for every editable message type, shared
 // by the list and the detail page so the two never drift.
 
-import { NOTIFICATION_EVENTS } from "@/data/notification-events";
 import {
+    NOTIFICATION_EVENTS,
     DM_MESSAGE_LABELS,
     DM_MESSAGE_TYPES,
     scopeForMessageType,
     type DmMessageType,
     type MessageType,
     type TemplateScope,
-} from "@/data/notification-templates-core";
+} from "@moc/notifications";
 
 const GROUP_META = new Map(
     NOTIFICATION_EVENTS.map((e) => [e.key as MessageType, { label: e.label, description: e.description }]),
@@ -17,8 +17,6 @@ const GROUP_META = new Map(
 
 const DM_DESCRIPTIONS: Record<DmMessageType, string> = {
     "assignment.request": "Direct message sent when someone is assigned to a request.",
-    "assignment.cue": "Direct message sent when someone is assigned to a cue.",
-    "assignment.checklist_item": "Direct message sent when someone is assigned to a checklist item.",
 };
 
 export type MessageTypeMeta = {

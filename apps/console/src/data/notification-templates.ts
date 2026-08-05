@@ -1,5 +1,5 @@
 import { supabase } from "@moc/data/supabase";
-import type { MessageType, TemplateScope } from "./notification-templates-core";
+import type { MessageType, TemplateScope } from "@moc/notifications";
 
 export type NotificationTemplate = {
   id: string;

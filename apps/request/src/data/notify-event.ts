@@ -1,51 +1,28 @@
-import { workspaceId } from '@/lib/workspace'
+import { apiUrl } from "@moc/utils/api-url"
 
-// Fire-and-forget notify calls to this app's serverless functions, which
-// HMAC-sign and forward to moc-console. Notification failures must never
-// break the public submission UI.
-
-function fire(path: string, body: Record<string, unknown>): void {
-  void (async () => {
-    try {
-      await fetch(path, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-    } catch {
-      // swallow
-    }
-  })()
+type NotificationWake = {
+  endpoint: string
+  body: Record<string, string>
 }
 
-export function notifyRequestCreated(args: {
-  requestId: string
-  title: string
-  requesterName: string | null
-}): void {
-  fire('/api/notify/request', {
-    event_type: 'request.created',
-    workspace_id: workspaceId,
-    request_id: args.requestId,
-    title: args.title,
-    requester_name: args.requesterName,
-    status: 'not_started',
+function wakeNotification({ endpoint, body }: NotificationWake): void {
+  void fetch(apiUrl(endpoint), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }).catch(() => undefined)
+}
+
+export function wakeRequestCreatedNotification(requestId: string, trackingCode: string): void {
+  wakeNotification({
+    endpoint: "/api/notify/request",
+    body: { request_id: requestId, tracking_code: trackingCode },
   })
 }
 
-export function notifyBookingCreated(args: {
-  bookingId: string
-  trackingCode: string
-  title: string
-  requesterName: string | null
-}): void {
-  fire('/api/notify/booking', {
-    event_type: 'booking.created',
-    workspace_id: workspaceId,
-    booking_id: args.bookingId,
-    tracking_code: args.trackingCode,
-    title: args.title,
-    requester_name: args.requesterName,
-    status: 'booked',
+export function wakeBookingCreatedNotification(bookingId: string, trackingCode: string): void {
+  wakeNotification({
+    endpoint: "/api/notify/booking",
+    body: { booking_id: bookingId, tracking_code: trackingCode },
   })
 }

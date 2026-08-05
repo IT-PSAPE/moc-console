@@ -1,4 +1,4 @@
-import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/broadcast/zoom"
+import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/streams/zoom"
 import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 import { zoomApiFetch, revokeZoomToken } from "@/lib/zoom-client"
@@ -6,6 +6,7 @@ import { fetchZoomMeetingById } from "./fetch-zoom"
 import { formatUtcIsoForZoomApi, parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time"
 import { randomId } from "@moc/utils/random-id"
 import { notifyMeetingCreated } from "./notify-event"
+import type { NotifyDestination } from "@moc/types/streams"
 
 export type CreateMeetingParams = {
   topic: string
@@ -19,6 +20,8 @@ export type CreateMeetingParams = {
   waitingRoom: boolean
   muteOnEntry: boolean
   continuousChat: boolean
+  // Optional per-meeting override of the Telegram notification destination.
+  notifyDestinations?: NotifyDestination[]
 }
 
 type ZoomMeetingSyncRow = {
@@ -30,6 +33,11 @@ type ZoomMeetingSyncRow = {
   duration?: number
   timezone?: string
   join_url?: string | null
+}
+
+type ZoomMeetingListResponse = {
+  meetings?: ZoomMeetingSyncRow[]
+  next_page_token?: string
 }
 
 type LocalZoomMeetingInsertPayload = {
@@ -187,7 +195,7 @@ export async function createZoomMeeting(params: CreateMeetingParams): Promise<Zo
     throw new Error("Created meeting could not be reloaded")
   }
 
-  notifyMeetingCreated(saved.id)
+  notifyMeetingCreated(saved.id, params.notifyDestinations)
 
   return saved
 }
@@ -286,6 +294,15 @@ export async function deleteZoomMeeting(meeting: ZoomMeeting): Promise<void> {
   }
 }
 
+export async function deleteLocalZoomMeetingRecord(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("zoom_meetings")
+    .delete()
+    .eq("id", id)
+
+  if (error) throw new Error(error.message)
+}
+
 export async function syncZoomMeetings(): Promise<ZoomMeeting[]> {
   const workspaceId = await getCurrentWorkspaceId()
   const { data: { user } } = await supabase.auth.getUser()
@@ -294,64 +311,50 @@ export async function syncZoomMeetings(): Promise<ZoomMeeting[]> {
     throw new Error("Not authenticated")
   }
 
-  const [upcomingRes, previousRes] = await Promise.all([
-    zoomApiFetch("/users/me/meetings?type=upcoming&page_size=300"),
-    zoomApiFetch("/users/me/meetings?type=previous_meetings&page_size=300"),
-  ])
+  const meetings: ZoomMeetingSyncRow[] = []
+  let pageToken: string | undefined
 
-  if (!upcomingRes.ok) {
-    throw new Error(`Failed to fetch Zoom meetings: ${await upcomingRes.text()}`)
-  }
-  if (!previousRes.ok) {
-    throw new Error(`Failed to fetch Zoom meetings: ${await previousRes.text()}`)
-  }
+  do {
+    const pageTokenParam = pageToken ? `&next_page_token=${encodeURIComponent(pageToken)}` : ""
+    const response = await zoomApiFetch(`/users/me/meetings?type=upcoming&page_size=300${pageTokenParam}`)
 
-  const upcomingData = await upcomingRes.json() as { meetings?: ZoomMeetingSyncRow[] }
-  const previousData = await previousRes.json() as { meetings?: ZoomMeetingSyncRow[] }
-  const byId = new Map<number, ZoomMeetingSyncRow>()
-  for (const m of upcomingData.meetings ?? []) byId.set(m.id, m)
-  for (const m of previousData.meetings ?? []) if (!byId.has(m.id)) byId.set(m.id, m)
-  const meetings = Array.from(byId.values())
-
-  for (const m of meetings) {
-    const payload = {
-      workspace_id: workspaceId,
-      zoom_meeting_id: m.id,
-      topic: m.topic ?? "Untitled",
-      description: m.agenda ?? "",
-      meeting_type: m.type === 8 ? "recurring_fixed" : "scheduled",
-      start_time: normalizeZoomStartTime(m.start_time ?? null, m.timezone ?? "UTC"),
-      duration: m.duration ?? 60,
-      timezone: m.timezone ?? "UTC",
-      join_url: m.join_url ?? null,
-      created_by: user.id,
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Zoom meetings: ${await response.text()}`)
     }
 
+    const data = await response.json() as ZoomMeetingListResponse
+    meetings.push(...(data.meetings ?? []))
+    pageToken = data.next_page_token
+  } while (pageToken)
+
+  const payloads = meetings.map((meeting) => ({
+      workspace_id: workspaceId,
+      zoom_meeting_id: meeting.id,
+      topic: meeting.topic ?? "Untitled",
+      description: meeting.agenda ?? "",
+      meeting_type: meeting.type === 8 ? "recurring_fixed" : "scheduled",
+      start_time: normalizeZoomStartTime(meeting.start_time ?? null, meeting.timezone ?? "UTC"),
+      duration: meeting.duration ?? 60,
+      timezone: meeting.timezone ?? "UTC",
+      join_url: meeting.join_url ?? null,
+      created_by: user.id,
+    }))
+
+  if (payloads.length > 0) {
     const { error } = await supabase
       .from("zoom_meetings")
-      .upsert(payload, { onConflict: "workspace_id,zoom_meeting_id" })
+      .upsert(payloads, { onConflict: "workspace_id,zoom_meeting_id" })
 
     if (error) {
       throw new Error(error.message)
     }
   }
 
-  const remoteIds = Array.from(byId.keys())
-  let deleteQuery = supabase
-    .from("zoom_meetings")
-    .delete()
-    .eq("workspace_id", workspaceId)
-  if (remoteIds.length > 0) {
-    deleteQuery = deleteQuery.not("zoom_meeting_id", "in", `(${remoteIds.join(",")})`)
-  }
-  const { error: deleteError } = await deleteQuery
-  if (deleteError) {
-    throw new Error(deleteError.message)
-  }
-
   const { data: rows, error } = await supabase
     .from("zoom_meetings")
-    .select("*")
+    .select(
+      "id, workspace_id, zoom_meeting_id, topic, description, meeting_type, start_time, duration, timezone, join_url, start_url, password, recurrence_type, recurrence_interval, recurrence_days, waiting_room, mute_on_entry, continuous_chat, created_by, created_at, updated_at, notified_at",
+    )
     .eq("workspace_id", workspaceId)
     .order("start_time", { ascending: true, nullsFirst: false })
 
@@ -395,12 +398,12 @@ export async function disconnectZoom(): Promise<void> {
 
   const { data: connection } = await supabase
     .from("zoom_connections")
-    .select("id, access_token")
+    .select("id")
     .eq("workspace_id", workspaceId)
     .single()
 
   if (connection) {
-    await revokeZoomToken(connection.access_token)
+    await revokeZoomToken(workspaceId)
 
     await supabase
       .from("zoom_connections")

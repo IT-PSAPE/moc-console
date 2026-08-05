@@ -1,25 +1,29 @@
 import { Input } from '@moc/ui/components/form/input'
 import { DateTimeFields } from '@moc/ui/components/form/date-time-fields'
 import { FormLabel } from '@moc/ui/components/form/form-label'
-import { Dropdown } from '@moc/ui/components/overlays/dropdown'
-import { Label, Paragraph } from '@moc/ui/components/display/text'
-import { cn } from '@moc/utils/cn'
-import { ChevronDown } from 'lucide-react'
+import { FieldError } from '@/features/components/field-error'
+import type { StepValidationErrors } from '@/features/hooks/use-step-validation'
+import { SelectField } from '@moc/ui/components/form/select-field'
 import { PRIORITIES, PRIORITY_LABELS, CATEGORIES, CATEGORY_LABELS } from '../constants'
 import type { RequestFormData } from '@/types/request'
+import type { ChangeEvent } from 'react'
+
+const priorityItems = PRIORITIES.map((priority) => ({ label: PRIORITY_LABELS[priority], value: priority }))
+const categoryItems = CATEGORIES.map((category) => ({ label: CATEGORY_LABELS[category], value: category }))
 
 type RequestBasicInfoProps = {
   data: RequestFormData
   onChange: (field: keyof RequestFormData, value: string) => void
+  errors: StepValidationErrors
 }
 
-export function RequestBasicInfo({ data, onChange }: RequestBasicInfoProps) {
-  function handleTitleChange(value: string) {
-    onChange('title', value)
+export function RequestBasicInfo({ data, onChange, errors }: RequestBasicInfoProps) {
+  function handleTitleChange(event: ChangeEvent<HTMLInputElement>) {
+    onChange('title', event.target.value)
   }
 
-  function handleRequestedByChange(value: string) {
-    onChange('requestedBy', value)
+  function handleRequestedByChange(event: ChangeEvent<HTMLInputElement>) {
+    onChange('requestedBy', event.target.value)
   }
 
   function handlePriorityChange(value: string) {
@@ -37,67 +41,49 @@ export function RequestBasicInfo({ data, onChange }: RequestBasicInfoProps) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
-        <FormLabel label="Title" required />
-        <Input placeholder="e.g. Easter service recap video" value={data.title} onChange={(e) => handleTitleChange(e.target.value)} />
+        <FormLabel label="Title" htmlFor="title" required />
+        <Input id="title" aria-label="Title" aria-invalid={Boolean(errors.title) || undefined} aria-describedby={errors.title ? 'title-error' : undefined} name="title" autoComplete="off" placeholder="e.g. Easter service recap video" value={data.title} onChange={handleTitleChange} required />
+        <FieldError id="title-error" message={errors.title} />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <FormLabel label="Requested by" required />
-        <Input placeholder="e.g. Lead Pastor" value={data.requestedBy} onChange={(e) => handleRequestedByChange(e.target.value)} />
+        <FormLabel label="Requested by" htmlFor="requested-by" required />
+        <Input id="requested-by" aria-label="Requested by" aria-invalid={Boolean(errors['requested-by']) || undefined} aria-describedby={errors['requested-by'] ? 'requested-by-error' : undefined} name="requested-by" autoComplete="name" placeholder="e.g. Lead pastor" value={data.requestedBy} onChange={handleRequestedByChange} required />
+        <FieldError id="requested-by-error" message={errors['requested-by']} />
       </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5 w-full">
           <FormLabel label="Priority" required />
           <SelectField
+            label="Priority"
+            name="priority"
             value={data.priority}
-            options={PRIORITIES}
-            labels={PRIORITY_LABELS}
-            onSelect={handlePriorityChange}
+            items={priorityItems}
+            onValueChange={handlePriorityChange}
           />
         </div>
 
         <div className="flex flex-col gap-1.5 w-full">
           <FormLabel label="Category" required />
           <SelectField
+            label="Category"
+            name="category"
             value={data.category}
-            options={CATEGORIES}
-            labels={CATEGORY_LABELS}
-            onSelect={handleCategoryChange}
+            items={categoryItems}
+            onValueChange={handleCategoryChange}
           />
         </div>
       </div>
 
       <DateTimeFields
         label="Due date"
+        name="due-date"
         required
         value={data.dueDate}
         onChange={handleDueDateChange}
+        errorText={errors['due-date-date']}
       />
     </div>
-  )
-}
-
-function SelectField<T extends string>({ value, options, labels, onSelect }: { value: T; options: T[]; labels: Record<T, string>; onSelect: (value: T) => void }) {
-  return (
-    <Dropdown>
-      <Dropdown.Trigger className='w-full'>
-        <div className={cn(
-          'h-10 flex w-full items-center justify-between gap-2',
-          'rounded-lg border border-secondary bg-primary px-3 py-2',
-          'cursor-pointer hover:border-brand transition-colors'
-        )}>
-          <Paragraph.sm>{labels[value]}</Paragraph.sm>
-          <ChevronDown className="size-4 text-tertiary" />
-        </div>
-      </Dropdown.Trigger>
-      <Dropdown.Panel>
-        {options.map((option) => (
-          <Dropdown.Item key={option} onSelect={() => onSelect(option)}>
-            <Label.sm className={cn(option === value && 'text-brand')}>{labels[option]}</Label.sm>
-          </Dropdown.Item>
-        ))}
-      </Dropdown.Panel>
-    </Dropdown>
   )
 }

@@ -5,12 +5,15 @@ import { setCurrentWorkspaceIdMirror } from "@/data/current-workspace"
 import { useAuth } from "@/lib/auth-context"
 import { routes } from "@/screens/console-routes"
 import type { Workspace } from "@moc/types/workspace"
+import type { Role } from "@moc/types/requests/assignee"
 
 const STORAGE_KEY = "currentWorkspaceId"
 
 type WorkspaceContextValue = {
     workspaces: Workspace[]
+    currentWorkspace: Workspace | null
     currentWorkspaceId: string | null
+    role: Role | null
     loading: boolean
     setCurrentWorkspaceId: (id: string) => void
     refresh: () => Promise<void>
@@ -45,6 +48,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     const navigate = useNavigate()
     const [workspaces, setWorkspaces] = useState<Workspace[]>([])
     const [currentWorkspaceId, setCurrentWorkspaceIdState] = useState<string | null>(null)
+    const [roleByWorkspaceId, setRoleByWorkspaceId] = useState<Map<string, Role>>(new Map())
     const [loading, setLoading] = useState(true)
 
     const userId = profile?.id ?? null
@@ -60,6 +64,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
                     directory.memberships.filter((m) => m.userId === uid).map((m) => m.workspaceId),
                 )
                 const myWorkspaces = directory.workspaces.filter((w) => memberWorkspaceIds.has(w.id))
+                setRoleByWorkspaceId(new Map(
+                    directory.memberships
+                        .filter((membership) => membership.userId === uid && membership.role)
+                        .map((membership) => [membership.workspaceId, membership.role as Role]),
+                ))
 
                 setWorkspaces(myWorkspaces)
 
@@ -85,6 +94,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         if (!userId) {
             setWorkspaces([])
             setCurrentWorkspaceIdState(null)
+            setRoleByWorkspaceId(new Map())
             setCurrentWorkspaceIdMirror(null)
             setLoading(false)
             return
@@ -123,8 +133,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     )
 
     const value = useMemo(
-        () => ({ workspaces, currentWorkspaceId, loading, setCurrentWorkspaceId, refresh }),
-        [workspaces, currentWorkspaceId, loading, setCurrentWorkspaceId, refresh],
+        () => ({
+            workspaces,
+            currentWorkspace: workspaces.find((workspace) => workspace.id === currentWorkspaceId) ?? null,
+            currentWorkspaceId,
+            role: currentWorkspaceId ? roleByWorkspaceId.get(currentWorkspaceId) ?? null : null,
+            loading,
+            setCurrentWorkspaceId,
+            refresh,
+        }),
+        [workspaces, currentWorkspaceId, roleByWorkspaceId, loading, setCurrentWorkspaceId, refresh],
     )
 
     return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>

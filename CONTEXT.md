@@ -1,42 +1,48 @@
 # MOC Platform
 
-The MOC platform is split across three user-facing apps that share a Supabase backend: an authenticated admin console for staff, a public PWA for end users to submit and track requests, and a public player that broadcasts published playlists.
+The MOC platform is three deployments sharing one Supabase backend: an authenticated admin console for staff, a public PWA for end users to submit and track requests, and a headless API that owns every server-side function for both.
 
 ## Language
 
 **MOC Console**:
-The authenticated, workspace-scoped admin app used by staff to manage requests, broadcasts, cue sheets, equipment, streams, and integrations (Zoom, YouTube, Telegram).
+The authenticated, workspace-scoped admin app used by staff to manage requests, equipment, bookings, streams, and integrations (Zoom, YouTube, Telegram).
 _Avoid_: "admin app", "the dashboard", "the platform"
 
 **MOC Request**:
 The public, anonymous PWA where end users submit booking and culture requests and look up the status of an existing request by tracking code.
 _Avoid_: "the request portal", "the public site"
 
+**MOC API**:
+The headless third deployment (`apps/api`, api.psape.co.zw). It owns every serverless function on the platform — Telegram webhook and dispatch, YouTube and Zoom OAuth, the Zoom REST proxy, notification ingest, and the scheduled jobs — plus the `server/` library behind them. Neither frontend ships server code, and no server secret is configured on a frontend project.
+_Avoid_: "the backend" (Supabase is also a backend); "the notification service" (it is not only notifications).
+
 **Requests portal**:
 A feature *inside* MOC Console for staff to view and act on requests submitted via MOC Request. Distinct from the MOC Request app itself.
 
-**MOC Broadcast**:
-The public, anonymous app where a viewer chooses a workspace and plays one of its *published* playlists (continuous loop; foyer/auditorium display). Workspace is chosen at runtime (no login, no baked workspace) and its id is carried in the URL path.
-_Avoid_: "the broadcast app" as a synonym for the Console section below; "the player".
+**Archive**:
+Not a feature — a *filter*. Archived requests are hidden from the Requests page by default and appear when "Archived" is ticked in its status filter. There is no archive route, screen or sidebar item.
+_Avoid_: "the archive page"; treating archived bookings as part of it — a Booking's `archived` status belongs to the Bookings feature.
 
-**Broadcasts section**:
-The playlist *authoring* area *inside* MOC Console (playlist editor, media library, stream integrations). Despite the name it does not play anything — playback happens in MOC Broadcast. Distinct from the MOC Broadcast app.
+**Streams**:
+The MOC Console feature for YouTube live streams and Zoom meetings — creating them, syncing their state from the provider, and holding the workspace-level OAuth connections. The only broadcast-adjacent feature that remains.
+_Avoid_: "Broadcast" / "Broadcasts section" — that area was removed (see Removed features).
 
-**Published playlist**:
-A playlist with `status = 'published'`. This is the sole gate that makes a playlist publicly playable via MOC Broadcast. A `draft` playlist is invisible to MOC Broadcast.
+**Notification route**:
+A workspace-level rule in Settings binding one notification event to one Telegram destination. An event with no route sends nothing. Many routes per event are allowed.
 
-**Broadcasting**:
-The act of making a playlist publicly playable (i.e. publishing it so MOC Broadcast can play it). A verb, not an entity — there is no `Broadcast` record; the thing played is a `Playlist`.
+**Destination override**:
+A per-creation choice of Telegram destinations, made in the stream or meeting modal. A non-empty override **replaces** the event's **Notification routes** for that one notification — it does not add to them — and works even when the event has no route at all. An empty override means the routes decide, including deciding to send nothing.
+_Avoid_: "notification settings override" (it overrides routing, not templates or format); treating it as an extra recipient list.
 
 **Workspace**:
 A tenancy boundary inside MOC Console. Every authenticated console operation is scoped to a workspace; users belong to one or more workspaces.
 _Avoid_: "tenant", "org", "account"
 
 **Public flow**:
-An anonymous operation against Supabase from a public app. From MOC Request: submit a booking, submit a request, look up a request by tracking code, fetch the public equipment catalogue, send a notification event. From MOC Broadcast: list workspaces (anon RPC), read published playlists and their media.
+An anonymous operation from MOC Request: against Supabase — submit a booking, submit a request, look up a request by tracking code, fetch the public equipment catalogue — or against **MOC API**'s unauthenticated `/api/notify/*`, to announce a submission.
 
 **Authenticated flow**:
-A workspace-scoped operation from MOC Console requiring a signed-in user: managing assignees, broadcasts, streams, telegram routes, zoom credentials, workspace members, etc. **MOC Console does not create Requests or Bookings** — those are created exclusively by end users via MOC Request. The console can only view, edit, and act on what was submitted.
+A workspace-scoped operation from MOC Console requiring a signed-in user: managing assignees, streams, telegram routes, zoom credentials, workspace members, etc. **MOC Console does not create Requests or Bookings** — those are created exclusively by end users via MOC Request. The console can only view, edit, and act on what was submitted.
 
 **Tracking code**:
 The opaque identifier given to an end user after submitting a request, used in MOC Request's lookup flow to retrieve status.
@@ -49,51 +55,52 @@ _Avoid_: calling a per-equipment row a "booking" — that is a [[booking-item]].
 The link between a **Booking** and one piece of **Equipment** it reserves. Carries no lifecycle of its own — status and returned-at live on the parent [[booking]]. A Booking with N equipment ids has N booking items.
 _Avoid_: "booking row"; treating an item as separately returnable.
 
-### Timeline
-
-**Timeline**:
-The shared, domain-agnostic time-axis surface used to author and play back time-positioned content. Used by both the Cue sheet (events) and the Broadcasts section (playlists).
-
-**Lane**:
-A horizontal row within a **Timeline**. The neutral, primitive-level term. A Cue-sheet **Track** is a Lane; a playlist's media row is a Lane. A Lane carries a domain-defined *type* that the Timeline stores but never interprets; the composer decides how Blocks look per type.
-_Avoid_: "track" or "row" when referring to the primitive concept.
-
-**Transport**:
-The domain-supplied time source that drives a **Timeline**'s **Playhead**. A Cue sheet supplies a clock transport (ticker + controller/follower sync); a playlist supplies an *authoritative master clock* that all media subscribe to and follow — the clock never follows the media.
-
-**Program**:
-The single composited visual output of a playlist at the **Playhead** — every **Lane**'s active **Block** alpha-composited front-to-back by Lane order, **Lane 01 frontmost**. What a MOC Broadcast viewer sees, and what the Console preview mirrors.
-_Avoid_: "scene", "the stage", "the screen"
-
-**Block**:
-A single time-positioned item (a start + a duration) inside a **Lane**. The neutral, primitive-level term. A Cue-sheet **Cue** is a Block; a playlist media item is a Block.
-_Avoid_: "cue" when referring to the primitive concept.
-
-**Playhead**:
-The current-time indicator on a **Timeline**; can be scrubbed. Its motion is driven by a domain-supplied transport, not by the Timeline itself.
-
-**Track** (Cue sheet):
-A named lane in a Cue sheet (e.g. Stage, AV) that groups **Cues** for one event. A domain mapping of **Lane**.
-
-**Cue** (overloaded — see Flagged ambiguities):
-In the Cue sheet: a time-boxed event segment (`startMin`, `durationMin`, type). In the Broadcasts section: a media item in a playlist. Both are domain mappings of **Block**.
+**Maintenance**:
+An **Equipment** status (`maintenance`), surfaced as a filter on the Equipment page. Not a feature, screen, or route of its own.
+_Avoid_: "the maintenance page"
 
 ## Relationships
 
-- A **Workspace** owns many **Requests**, **Bookings**, **Broadcasts**, **Cue sheets**, and **Equipment**.
-- A **Request** is created via a **Public flow** (MOC Request) and managed via the **Requests portal** (MOC Console).
-- A **Workspace**'s **Published playlists** are playable by anyone via **MOC Broadcast**; `draft` playlists are not.
-- **MOC Console**, **MOC Request**, and **MOC Broadcast** share the same Supabase project; RLS distinguishes **Public flow** access from **Authenticated flow** access.
-- A playlist's **Lanes** composite into the **Program** front-to-back by Lane order: **Lane 01** is frontmost (highest priority); opaque pixels occlude lanes behind, transparent pixels and gaps let them show through. Audio lanes only mix sound — they never contribute to the **Program**.
-- The **MOC Broadcast** player and the Console **Broadcasts section** preview render the same **Program** from one shared playback engine, so authoring and playback look identical.
+- A **Workspace** owns many **Requests**, **Bookings**, **Equipment**, **Checklists**, and **Streams**.
+- A **Request** is created via a **Public flow** (MOC Request) and managed via the **Requests portal** (MOC Console); once archived it stays on the same page, behind the status filter.
+- **MOC Console** and **MOC Request** share the same Supabase project; RLS distinguishes **Public flow** access from **Authenticated flow** access.
+- Both frontends reach **MOC API** by absolute URL (`VITE_API_BASE_URL`), so every browser call to it is cross-origin and gated by that app's `ALLOWED_ORIGINS` allow-list.
+
+## Console navigation
+
+The sidebar is flat — one item, one destination, no expand/collapse and no section landing pages:
+
+| Item | Route | Content |
+| --- | --- | --- |
+| Dashboard | `/dashboard` | Requests + equipment summary |
+| Requests | `/requests` | All submitted requests; archived ones behind the status filter |
+| Equipment | `/equipment` | Full inventory, filterable by status incl. maintenance |
+| Bookings | `/bookings` | Equipment bookings |
+| Checklists | `/checklists` | Active and completed checklist runs; reusable templates at `/checklists/templates` |
+| Streams | `/streams` | YouTube streams and Zoom meetings |
+
+Two things that read like features but are filters: **Archive** (a request status) and **Maintenance** (an equipment status).
+
+## Removed features
+
+Removed 2026-07-28. Kept here so the terms are recognised as *gone*, not merely undocumented — do not reintroduce them without a new ADR.
+
+- **Broadcasts section** — the Console playlist authoring area (playlist editor, media library). Removed with its `playlists`, `playlist_lanes`, `queue` and `media` tables.
+- **MOC Broadcast** — the public player app (`apps/broadcast`) and the shared playback engine (`@moc/player`). Nothing plays playlists any more.
+- **Cue Sheet (QSheets)** — events, tracks, cues, public event shares and playhead sync. Checklists were restored as a standalone feature on 2026-07-31; see [ADR-0009](./docs/adr/0009-restore-checklists-as-standalone-feature.md).
+- **Timeline** — the shared domain-agnostic time-axis primitive, along with **Lane**, **Block**, **Transport**, **Program** and **Playhead**. It existed only to serve the two domains above.
+- **Media library** — the `media` table. The `media` *storage bucket* is retained: stream thumbnails still upload to it under `<workspace_id>/stream-thumbnails/`.
+- **Maintenance page** — folded into the Equipment page's status filter.
+- **Archive page** — folded into the Requests page's status filter (removed 2026-07-28, after briefly existing as its own route).
+- Section **overview pages** for Requests, Equipment, Broadcast and Cue Sheet — the flat sidebar has no section landings.
+- **Per-frontend server code** — `apps/console/api`, `apps/console/server` and `apps/request/api` all moved to **MOC API**. See [ADR-0008](./docs/adr/0008-extract-moc-api-app.md).
+
+See [ADR-0007](./docs/adr/0007-simplify-console-to-five-features.md) and `docs/phases/patches/2026-07-28-remove-playlists-media-and-cue-sheet.sql`.
 
 ## Flagged ambiguities
 
 - "MOC Request" used to refer to both the standalone public app *and* the Requests feature inside Console. Resolved: **MOC Request** = the public PWA; **Requests portal** = the feature in MOC Console.
 - Design primitives (button, input, base CSS tokens) drifted between the two apps after the original split. Resolved (2026-05-15): **MOC Console**'s primitives are canonical; MOC Request adopts them via shared `@moc/ui`. See [ADR-0001](./docs/adr/0001-reunify-moc-request-as-monorepo.md).
-- "Broadcast" was overloaded: the Console authoring section, the act of publishing, and the new public app. Resolved (2026-05-16): **MOC Broadcast** = the public player app; **Broadcasts section** = the Console authoring area; **Broadcasting** = the verb; no `Broadcast` entity. See [ADR-0002](./docs/adr/0002-moc-broadcast-public-player.md).
-- Audio is still a queueable cue type, but the long-term intent is audio-as-background-music only. Deferred, not yet resolved — the MOC Broadcast player tolerates audio cues with a minimal visual. See [ADR-0002](./docs/adr/0002-moc-broadcast-public-player.md). Multi-track playlists (audio as a parallel background **Lane**) are the intended resolution path.
-- "Cue" and "Track" are used in two unrelated domains (Cue sheet vs Broadcasts/playlist) with different data shapes. Resolved (2026-05-16) at the primitive level: the shared **Timeline** speaks only **Lane** and **Block**; each domain maps its own `Track`/`Cue` onto them. The domain `Cue` types are *not* unified.
-- **Transport** for a playlist was defined as "the playing media is the clock" (per ADR-0003). Resolved (2026-05-16): a playlist uses an **authoritative master clock**; media are reconciling *subscribers* that follow it (soft catch-up), the clock never follows media. Supersedes that part of ADR-0003 for the playlist domain — see [ADR-0005](./docs/adr/0005-unified-playlist-playback-engine.md).
-- **Lane** z-order was modelled base-lane-at-the-back (ADR-0004: lane order = bottom-up z-stack). Resolved (2026-05-16): **Lane 01 is frontmost**; the **Program** is an alpha composite front-to-back by lane number. Amends ADR-0004 — see [ADR-0005](./docs/adr/0005-unified-playlist-playback-engine.md).
-- "Booking" was overloaded: the user-level submission (1 tracking code, N equipment) vs. a per-equipment DB row. The original schema (`public.bookings`) stored one row per equipment instance and shared `tracking_code` across the batch. Resolved (2026-05-27): **Booking** is the submission (header); **Booking item** is the per-equipment row. Schema split into header + items table. See [ADR-0006](./docs/adr/0006-booking-as-batch.md).
+- "Broadcast" was overloaded across the Console authoring section, the act of publishing, and the public player app. Resolved (2026-07-28) by deletion: none of those exist. The word now only appears where YouTube's own API uses it (`liveBroadcasts`, `youtube_broadcast_id`) — that is a vendor term, not a domain one. See [ADR-0007](./docs/adr/0007-simplify-console-to-five-features.md).
+- "Cue" and "Track" were used in two unrelated domains (Cue sheet vs playlists). Resolved (2026-07-28) by deletion: both domains are gone, and so is the shared Timeline primitive that reconciled them.
+- "Booking" was overloaded: the user-level submission (1 tracking code, N equipment) vs. a per-equipment DB row. Resolved (2026-05-27): **Booking** is the submission (header); **Booking item** is the per-equipment row. Schema split into header + items table. See [ADR-0006](./docs/adr/0006-booking-as-batch.md).

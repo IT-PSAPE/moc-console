@@ -1,15 +1,14 @@
-import { Button } from "@moc/ui/components/controls/button";
-import { Divider } from "@moc/ui/components/display/divider";
-import { Label, Paragraph } from "@moc/ui/components/display/text";
+import { Label } from "@moc/ui/components/display/text";
 import { Checkbox } from "@moc/ui/components/form/checkbox";
 import { FormLabel } from "@moc/ui/components/form/form-label";
 import { Radio, RadioGroup } from "@moc/ui/components/form/radio";
 import { Tabs } from "@moc/ui/components/layout/tabs";
-import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { FilterDrawer } from "@moc/ui/components/overlays/filter-drawer";
 import { bookingStatusLabel } from "@moc/types/equipment";
 import type { BookingStatus } from "@moc/types/equipment";
-import { RotateCcw, X } from "lucide-react";
+import type { ChangeEvent } from "react";
 import type { useBookingFilters } from "./use-booking-filters";
+import { parseSortValue } from "@/utils/parse-sort-value";
 
 type BookingFilterDrawerProps = {
   filters: ReturnType<typeof useBookingFilters>;
@@ -20,21 +19,17 @@ export function BookingFilterDrawer({ filters }: BookingFilterDrawerProps) {
 
   const sortValue = `${state.sortField}-${state.sortDirection}`;
 
-  return (
-    <Drawer.Portal>
-      <Drawer.Backdrop />
-      <Drawer.Panel>
-        <Drawer.Header>
-          <div className="flex-1">
-            <Label.md>Filter & Sort</Label.md>
-            <Paragraph.xs className="text-tertiary">Narrow down and order your bookings</Paragraph.xs>
-          </div>
-          <Drawer.Close>
-            <Button.Icon variant="ghost" icon={<X />} />
-          </Drawer.Close>
-        </Drawer.Header>
+  function handleSortChange(value: string) {
+    const [field, direction] = parseSortValue(value);
+    setSort(field as Parameters<typeof setSort>[0], direction as Parameters<typeof setSort>[1]);
+  }
 
-        <Drawer.Content>
+  function handleStatusChange(event: ChangeEvent<HTMLInputElement>) {
+    toggleStatus(event.target.value as BookingStatus);
+  }
+
+  return (
+    <FilterDrawer hasActiveFilters={hasActiveFilters} onReset={reset}>
           <Tabs defaultTab="filters">
             <Tabs.List>
               <Tabs.Tab value="filters">
@@ -47,95 +42,72 @@ export function BookingFilterDrawer({ filters }: BookingFilterDrawerProps) {
             <Tabs.Panels>
               {/* ── Filters ── */}
               <Tabs.Panel value="filters">
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Status</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                <FilterDrawer.Group label="Status">
+                  <FilterDrawer.Options>
                     {(Object.entries(bookingStatusLabel) as [BookingStatus, string][]).map(([key, label]) => (
                       <Checkbox
                         key={key}
                         checked={state.statuses.has(key)}
-                        onChange={() => toggleStatus(key)}
+                        value={key}
+                        onChange={handleStatusChange}
                       >
                         <FormLabel label={label} />
                       </Checkbox>
                     ))}
-                  </div>
-                </div>
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
               </Tabs.Panel>
 
               {/* ── Sort ── */}
               <Tabs.Panel value="sort">
                 <RadioGroup
                   value={sortValue}
-                  onValueChange={(value) => {
-                    const i = value.lastIndexOf("-");
-                    setSort(value.slice(0, i) as Parameters<typeof setSort>[0], value.slice(i + 1) as Parameters<typeof setSort>[1]);
-                  }}
+                  onValueChange={handleSortChange}
                 >
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Checked Out Date</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                <FilterDrawer.Group label="Checked Out Date">
+                  <FilterDrawer.Options>
                     <Radio value="checkedOutDate-desc">
                       <FormLabel label="Newest first" />
                     </Radio>
                     <Radio value="checkedOutDate-asc">
                       <FormLabel label="Oldest first" />
                     </Radio>
-                  </div>
-                </div>
-                <Divider className="px-4" />
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Expected Return</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
+                <FilterDrawer.Group label="Expected Return">
+                  <FilterDrawer.Options>
                     <Radio value="expectedReturnAt-asc">
                       <FormLabel label="Due soon" />
                     </Radio>
                     <Radio value="expectedReturnAt-desc">
                       <FormLabel label="Due later" />
                     </Radio>
-                  </div>
-                </div>
-                <Divider className="px-4" />
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Title</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
+                <FilterDrawer.Group label="Title">
+                  <FilterDrawer.Options>
                     <Radio value="title-asc">
                       <FormLabel label="A-Z" />
                     </Radio>
                     <Radio value="title-desc">
                       <FormLabel label="Z-A" />
                     </Radio>
-                  </div>
-                </div>
-                <Divider className="px-4" />
-                <div className="py-2">
-                  <Paragraph.sm className="px-3 py-1.5 text-quaternary">Booked By</Paragraph.sm>
-                  <div className="grid grid-cols-2 gap-2 px-3">
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
+                <FilterDrawer.Group label="Booked By">
+                  <FilterDrawer.Options>
                     <Radio value="bookedBy-asc">
                       <FormLabel label="A-Z" />
                     </Radio>
                     <Radio value="bookedBy-desc">
                       <FormLabel label="Z-A" />
                     </Radio>
-                  </div>
-                </div>
+                  </FilterDrawer.Options>
+                </FilterDrawer.Group>
                 </RadioGroup>
               </Tabs.Panel>
             </Tabs.Panels>
           </Tabs>
-        </Drawer.Content>
-
-        <Drawer.Footer className="*:w-full">
-          {hasActiveFilters && (
-            <Button variant="secondary" icon={<RotateCcw />} className="w-full" onClick={reset}>
-              Reset
-            </Button>
-          )}
-          <Drawer.Close>
-            <Button className="w-full">Done</Button>
-          </Drawer.Close>
-        </Drawer.Footer>
-      </Drawer.Panel>
-    </Drawer.Portal>
+    </FilterDrawer>
   );
 }

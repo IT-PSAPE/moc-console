@@ -1,32 +1,28 @@
-import { getValidAccessToken } from "./youtube-auth"
-
-const YOUTUBE_API = "https://www.googleapis.com/youtube/v3"
+import { buildSessionHeaders } from "./api-auth"
+import { getCurrentWorkspaceId } from "@/data/current-workspace"
+import { apiUrl } from "@moc/utils/api-url"
 
 export async function youtubeApiFetch(
   path: string,
   options: RequestInit = {},
 ): Promise<Response> {
-  const accessToken = await getValidAccessToken()
-  const url = path.startsWith("http") ? path : `${YOUTUBE_API}${path}`
+  const [sessionHeaders, workspaceId] = await Promise.all([buildSessionHeaders(), getCurrentWorkspaceId()])
 
-  return fetch(url, {
+  return fetch(apiUrl(`/api/youtube/v3${path}`), {
     ...options,
     headers: {
-      Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
+      "X-MOC-Workspace": workspaceId,
+      ...sessionHeaders,
       ...options.headers,
     },
   })
 }
 
 export async function uploadThumbnail(videoId: string, file: Blob): Promise<void> {
-  const accessToken = await getValidAccessToken()
-  const url = `https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${videoId}&uploadType=media`
-
-  const response = await fetch(url, {
+  const response = await youtubeApiFetch(`/thumbnails/set?videoId=${encodeURIComponent(videoId)}&uploadType=media`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${accessToken}`,
       "Content-Type": file.type || "image/jpeg",
     },
     body: file,

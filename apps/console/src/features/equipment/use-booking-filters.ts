@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Booking, BookingStatus } from "@moc/types/equipment";
+import { areSetsEqual } from "@/utils/sets";
+import { useQueryText } from "@/hooks/use-query-text";
 
 // ─── Filter / Sort state ───────────────────────────────
 
@@ -23,9 +25,11 @@ const defaultFilters: BookingFilters = {
 // ─── Hook ──────────────────────────────────────────────
 
 export function useBookingFilters(bookings: Booking[]) {
-  const [filters, setFilters] = useState<BookingFilters>(defaultFilters);
+  const [filterState, setFilters] = useState<BookingFilters>(defaultFilters);
+  const [search, setSearchQuery] = useQueryText();
+  const filters = useMemo(() => ({ ...filterState, search }), [filterState, search]);
 
-  const filtered = useMemo(() => {
+  const results = useMemo(() => {
     let result = bookings;
 
     // Search — title, bookedBy, notes, and any item's equipment name.
@@ -38,11 +42,6 @@ export function useBookingFilters(bookings: Booking[]) {
           b.notes.toLowerCase().includes(q) ||
           b.items.some((item) => item.equipmentName.toLowerCase().includes(q)),
       );
-    }
-
-    // Status filter
-    if (filters.statuses.size > 0) {
-      result = result.filter((b) => filters.statuses.has(b.status));
     }
 
     // Sort
@@ -60,13 +59,16 @@ export function useBookingFilters(bookings: Booking[]) {
       }
     });
 
-    return result;
+    return {
+      calendarFiltered: result,
+      filtered: result.filter((booking) => filters.statuses.has(booking.status)),
+    };
   }, [bookings, filters]);
 
   // ─── Actions ─────────────────────────────────────────
 
   function setSearch(search: string) {
-    setFilters((f) => ({ ...f, search }));
+    setSearchQuery(search);
   }
 
   function toggleStatus(status: BookingStatus) {
@@ -84,15 +86,15 @@ export function useBookingFilters(bookings: Booking[]) {
 
   function reset() {
     setFilters(defaultFilters);
+    setSearchQuery("");
   }
 
-  const hasActiveFilters =
-    filters.statuses.size !== defaultFilters.statuses.size ||
-    [...filters.statuses].some((s) => !defaultFilters.statuses.has(s));
+  const hasActiveFilters = !areSetsEqual(filters.statuses, defaultFilters.statuses);
 
   return {
     filters,
-    filtered,
+    filtered: results.filtered,
+    calendarFiltered: results.calendarFiltered,
     hasActiveFilters,
     setSearch,
     toggleStatus,

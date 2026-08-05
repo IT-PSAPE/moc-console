@@ -1,88 +1,85 @@
-import { Header } from '@moc/ui/components/display/header'
-import { ScrollArea } from '@moc/ui/components/display/scroll-area'
-import { Title } from '@moc/ui/components/display/text'
-import { Tabs } from '@moc/ui/components/layout/tabs'
-import { useAuth } from '@/lib/auth-context'
-import { useCallback, useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { ProfileTab } from './profile-tab'
-import { SupportTab } from './support-tab'
+import { Button } from '@moc/ui/components/controls/button'
+import { Page } from '@moc/ui/components/layout/page'
+import { NavigationList } from '@moc/ui/components/navigation/navigation-list'
+import { Link } from 'react-router-dom'
 import { TelegramTab } from './telegram-tab'
 import { StreamsTab } from './streams-tab'
 import { WorkspaceTab } from './workspace-tab'
 import { AutomationTab } from './automation-tab'
-
-type TabKey = 'profile' | 'workspace' | 'telegram' | 'streams' | 'automation' | 'support'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { getSettingsHref, settingsTabLabel, useSettingsScreen, type SettingsTab } from './use-settings-screen'
+import { UsersTab } from './users-tab'
 
 export function SettingsScreen() {
-    const { role } = useAuth()
-    const [searchParams, setSearchParams] = useSearchParams()
+    const { meta } = useSettingsScreen()
 
-    const canManage = role?.can_manage_roles === true
+    function renderMobileTab(tab: SettingsTab) {
+        return (
+            <Button.Link key={tab} render={<Link to={getSettingsHref(tab)} />} variant="secondary" aria-current={meta.activeTab === tab ? 'page' : undefined} className="justify-between px-3 py-3">
+                {settingsTabLabel[tab]}
+                <ChevronRight className="size-4 text-quaternary" aria-hidden="true" />
+            </Button.Link>
+        )
+    }
 
-    const availableTabs = useMemo<TabKey[]>(() => {
-        const tabs: TabKey[] = ['profile']
-        if (canManage) {
-            tabs.push('workspace', 'telegram', 'streams', 'automation')
-        }
-        tabs.push('support')
-        return tabs
-    }, [canManage])
+    function renderDesktopTab(tab: SettingsTab) {
+        return (
+            <NavigationList.Item
+                key={tab}
+                active={meta.activeTab === tab}
+                nativeButton={false}
+                render={<Link to={getSettingsHref(tab)} />}
+                aria-current={meta.activeTab === tab ? 'page' : undefined}
+            >
+                {settingsTabLabel[tab]}
+            </NavigationList.Item>
+        )
+    }
 
-    const requestedTab = searchParams.get('tab') as TabKey | null
-    const activeTab: TabKey = requestedTab && availableTabs.includes(requestedTab) ? requestedTab : 'profile'
-
-    const handleTabChange = useCallback(
-        (next: string) => {
-            setSearchParams(
-                (prev) => {
-                    const nextParams = new URLSearchParams(prev)
-                    if (next === 'profile') {
-                        nextParams.delete('tab')
-                    } else {
-                        nextParams.set('tab', next)
-                    }
-                    return nextParams
-                },
-                { replace: true },
-            )
-        },
-        [setSearchParams],
-    )
+    function renderTabContent() {
+        if (meta.activeTab === 'general') return <WorkspaceTab />
+        if (meta.activeTab === 'members') return <UsersTab />
+        if (meta.activeTab === 'telegram' && meta.canManage) return <TelegramTab />
+        if (meta.activeTab === 'streams' && meta.canManage) return <StreamsTab />
+        if (meta.activeTab === 'automation' && meta.canManage) return <AutomationTab />
+        return null
+    }
 
     return (
-        <section className="mx-auto max-w-content-md">
-            <Header className="p-4 pt-8">
-                <Header.Lead className="gap-2">
-                    <Title.h6>Settings</Title.h6>
-                </Header.Lead>
-            </Header>
+        <Page>
+            <Page.Header>
+                <Page.Heading>
+                    <Page.Title>{meta.isMobile && meta.requestedTabIsAvailable ? settingsTabLabel[meta.activeTab] : 'Settings'}</Page.Title>
+                    {!meta.isMobile && <Page.Description>{meta.canManage ? 'Manage your workspace, integrations, and automations.' : 'View your workspace details.'}</Page.Description>}
+                </Page.Heading>
+            </Page.Header>
 
-            <Tabs variant="pill" value={activeTab} onValueChange={handleTabChange}>
-                <ScrollArea>
-                    <ScrollArea.Viewport className="px-4 pt-2">
-                        <ScrollArea.Content>
-                            <Tabs.List className="w-max">
-                                <Tabs.Tab value={'profile'}>Profile</Tabs.Tab>
-                                {canManage && <Tabs.Tab value={'workspace'}>Workspace</Tabs.Tab>}
-                                {canManage && <Tabs.Tab value={'telegram'}>Telegram</Tabs.Tab>}
-                                {canManage && <Tabs.Tab value={'streams'}>Streams</Tabs.Tab>}
-                                {canManage && <Tabs.Tab value={'automation'}>Automation</Tabs.Tab>}
-                                <Tabs.Tab value={'support'}>Support</Tabs.Tab>
-                            </Tabs.List>
-                        </ScrollArea.Content>
-                    </ScrollArea.Viewport>
-                </ScrollArea>
-            </Tabs>
+            <Page.Content>
+                {meta.showMobileIndex ? (
+                    <nav aria-label="Settings">
+                        <NavigationList.Root>
+                            {meta.tabs.map(renderMobileTab)}
+                        </NavigationList.Root>
+                    </nav>
+                ) : (
+                    <div className="grid gap-6 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-10">
+                        <nav aria-label="Settings" className="hidden self-start md:sticky md:top-4 md:block">
+                            <NavigationList.Root>
+                                {meta.tabs.map(renderDesktopTab)}
+                            </NavigationList.Root>
+                        </nav>
 
-            <div className="p-4">
-                {activeTab === 'support' && <SupportTab />}
-                {activeTab === 'profile' && <ProfileTab />}
-                {activeTab === 'workspace' && canManage && <WorkspaceTab />}
-                {activeTab === 'telegram' && canManage && <TelegramTab />}
-                {activeTab === 'streams' && canManage && <StreamsTab />}
-                {activeTab === 'automation' && canManage && <AutomationTab />}
-            </div>
-        </section>
+                        <div className="flex min-w-0 flex-col gap-4">
+                            {meta.isMobile ? (
+                                <Button.Link render={<Link to="/account/settings" />} variant="ghost" icon={<ChevronLeft />} className="w-fit px-0">
+                                    Back to settings
+                                </Button.Link>
+                            ) : null}
+                            {renderTabContent()}
+                        </div>
+                    </div>
+                )}
+            </Page.Content>
+        </Page>
     )
 }

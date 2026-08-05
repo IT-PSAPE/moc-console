@@ -1,6 +1,6 @@
 import { Avatar } from './avatar'
 
-type AvatarSize = '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+type AvatarSize = '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 
 type UserAvatarProps = {
     user: { name: string; surname: string; avatarUrl: string | null }

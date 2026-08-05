@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import type { ReactNode } from "react"
 import type { Session, User } from "@supabase/supabase-js"
-import type { User as Profile, Role } from "@moc/types/requests/assignee"
+import type { User as Profile } from "@moc/types/requests/assignee"
 import { routes } from "@/screens/console-routes"
 import { clearCurrentWorkspaceCache } from "@/data/current-workspace"
 import { supabase } from "@moc/data/supabase"
@@ -10,7 +10,6 @@ type AuthState = {
     session: Session | null
     user: User | null
     profile: Profile | null
-    role: Role | null
     isPasswordRecovery: boolean
     loading: boolean
     signUp: (email: string, password: string, name: string, surname: string, workspaceSlug?: string) => Promise<{ error: Error | null }>
@@ -174,7 +173,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [session, setSession] = useState<Session | null>(null)
     const [user, setUser] = useState<User | null>(null)
     const [profile, setProfile] = useState<Profile | null>(null)
-    const [role, setRole] = useState<Role | null>(null)
     const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
     const [loading, setLoading] = useState(true)
 
@@ -198,7 +196,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             if (!session?.user) {
                 setProfile(null)
-                setRole(null)
             }
 
             setLoading(false)
@@ -213,7 +210,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             if (!nextSession?.user) {
                 setProfile(null)
-                setRole(null)
                 setIsPasswordRecovery(false)
                 return
             }
@@ -257,23 +253,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .catch((error) => {
                 if (import.meta.env.DEV) {
                     console.error("Failed to fetch user profile:", error)
-                }
-            })
-
-        supabase
-            .from("user_roles")
-            .select("roles(id, name, can_create, can_read, can_update, can_delete, can_manage_roles)")
-            .eq("user_id", user.id)
-            .maybeSingle()
-            .then(({ data, error }) => {
-
-                if (error && import.meta.env.DEV) {
-                    console.error("Failed to fetch user role:", error.message)
-                }
-
-                const userRole = Array.isArray(data?.roles) ? data.roles[0] : data?.roles
-                if (isActive) {
-                    setRole((userRole as Role | null) ?? null)
                 }
             })
 
@@ -328,7 +307,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null)
         setUser(null)
         setProfile(null)
-        setRole(null)
         return { error }
     }
 
@@ -352,7 +330,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return (
-        <AuthContext value={{ session, user, profile, role, isPasswordRecovery, loading, signUp, signIn, signOut, resetPassword, updatePassword, refreshProfile }}>
+        <AuthContext value={{ session, user, profile, isPasswordRecovery, loading, signUp, signIn, signOut, resetPassword, updatePassword, refreshProfile }}>
             {children}
         </AuthContext>
     )

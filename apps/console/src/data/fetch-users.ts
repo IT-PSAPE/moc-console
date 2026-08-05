@@ -14,6 +14,11 @@ export type UserWithRole = {
   role: Role | null;
 };
 
+export type PendingWorkspaceUser = Omit<UserWithRole, "role" | "workspaceIds"> & {
+  requestId: string;
+  requestedAt: string;
+};
+
 type UserRow = {
   id: string;
   name: string;
@@ -25,40 +30,73 @@ type UserRow = {
   status_message: string | null;
 };
 
-/** Fetch all users with their assigned role */
-export async function fetchUsersWithRoles(): Promise<UserWithRole[]> {
-  const { data: users, error: usersError } = await supabase
-    .from("users")
-    .select("id, name, surname, email, telegram_chat_id, avatar_url, current_duty, status_message");
+type WorkspaceUserRow = {
+  users: UserRow | UserRow[] | null;
+  roles: Role | Role[] | null;
+};
 
-  if (usersError) throw new Error(usersError.message);
+type PendingWorkspaceUserRow = {
+  id: string;
+  requested_at: string;
+  users: UserRow | UserRow[] | null;
+};
 
-  const { data: userRoles, error: rolesError } = await supabase
-    .from("user_roles")
-    .select("user_id, roles(id, name, can_create, can_read, can_update, can_delete, can_manage_roles)");
+function first<T>(value: T | T[] | null): T | null {
+  return Array.isArray(value) ? value[0] ?? null : value;
+}
 
-  if (rolesError) throw new Error(rolesError.message);
+/** Fetch accepted members and their role in one workspace. */
+export async function fetchUsersWithRoles(workspaceId: string): Promise<UserWithRole[]> {
+  const { data, error } = await supabase
+    .from("workspace_users")
+    .select("users(id, name, surname, email, telegram_chat_id, avatar_url, current_duty, status_message), roles(id, name, can_create, can_read, can_update, can_delete, can_manage_roles)")
+    .eq("workspace_id", workspaceId);
 
-  const roleByUserId = new Map<string, Role>();
-  for (const ur of userRoles ?? []) {
-    const role = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
-    if (role) {
-      roleByUserId.set(ur.user_id, role as Role);
-    }
-  }
+  if (error) throw new Error(error.message);
 
-  return ((users ?? []) as UserRow[]).map((u) => ({
-    id: u.id,
-    name: u.name,
-    surname: u.surname,
-    email: u.email,
-    telegramChatId: u.telegram_chat_id,
-    avatarUrl: u.avatar_url,
-    currentDuty: u.current_duty,
-    statusMessage: u.status_message,
-    workspaceIds: [],
-    role: roleByUserId.get(u.id) ?? null,
-  }));
+  return ((data ?? []) as WorkspaceUserRow[]).flatMap((membership) => {
+    const user = first(membership.users);
+    if (!user) return [];
+    return [{
+      id: user.id,
+      name: user.name,
+      surname: user.surname,
+      email: user.email,
+      telegramChatId: user.telegram_chat_id,
+      avatarUrl: user.avatar_url,
+      currentDuty: user.current_duty,
+      statusMessage: user.status_message,
+      workspaceIds: [workspaceId],
+      role: first(membership.roles),
+    }];
+  });
+}
+
+export async function fetchPendingWorkspaceUsers(workspaceId: string): Promise<PendingWorkspaceUser[]> {
+  const { data, error } = await supabase
+    .from("workspace_join_requests")
+    .select("id, requested_at, users(id, name, surname, email, telegram_chat_id, avatar_url, current_duty, status_message)")
+    .eq("workspace_id", workspaceId)
+    .order("requested_at");
+
+  if (error) throw new Error(error.message);
+
+  return ((data ?? []) as PendingWorkspaceUserRow[]).flatMap((request) => {
+    const user = first(request.users);
+    if (!user) return [];
+    return [{
+      id: user.id,
+      name: user.name,
+      surname: user.surname,
+      email: user.email,
+      telegramChatId: user.telegram_chat_id,
+      avatarUrl: user.avatar_url,
+      currentDuty: user.current_duty,
+      statusMessage: user.status_message,
+      requestId: request.id,
+      requestedAt: request.requested_at,
+    }];
+  });
 }
 
 /** Fetch all available roles */
@@ -120,12 +158,19 @@ export async function removeUserAvatar(userId: string) {
   await updateUserProfile(userId, { avatar_url: null });
 }
 
-/** Assign a role to a user (upserts into user_roles) */
-export async function assignUserRole(userId: string, roleId: string) {
-  const { error } = await supabase
-    .from("user_roles")
-    .upsert({ user_id: userId, role_id: roleId }, { onConflict: "user_id" });
+/** Assign a role inside one workspace. */
+export async function assignUserRole(workspaceId: string, userId: string, roleId: string) {
+  const { error } = await supabase.rpc("set_workspace_member_role", {
+    p_workspace_id: workspaceId,
+    p_user_id: userId,
+    p_role_id: roleId,
+  });
 
+  if (error) throw new Error(error.message);
+}
+
+export async function approveWorkspaceJoinRequest(requestId: string): Promise<void> {
+  const { error } = await supabase.rpc("approve_workspace_join_request", { p_request_id: requestId });
   if (error) throw new Error(error.message);
 }
 

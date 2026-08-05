@@ -1,22 +1,21 @@
-import { fetchUsersWithRoles, fetchAvailableRoles, updateUserProfile, assignUserRole } from "@/data/fetch-users";
-import { fetchWorkspaceDirectory } from "@/data/fetch-workspaces";
-import type { UserWithRole } from "@/data/fetch-users";
+import { approveWorkspaceJoinRequest, fetchPendingWorkspaceUsers, fetchUsersWithRoles, fetchAvailableRoles, updateUserProfile, assignUserRole } from "@/data/fetch-users";
+import type { PendingWorkspaceUser, UserWithRole } from "@/data/fetch-users";
 import type { Role } from "@moc/types/requests/assignee";
-import type { Workspace } from "@moc/types/workspace";
 import { useWorkspace } from "@/lib/workspace-context";
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 
 type UsersContextValue = {
   state: {
     users: UserWithRole[];
+    pendingUsers: PendingWorkspaceUser[];
     roles: Role[];
-    workspaces: Workspace[];
     isLoading: boolean;
   };
   actions: {
     loadUsers: () => Promise<void>;
     updateProfile: (userId: string, fields: { name?: string; surname?: string }) => Promise<void>;
     changeRole: (userId: string, roleId: string) => Promise<void>;
+    approveUser: (requestId: string) => Promise<void>;
   };
 };
 
@@ -24,42 +23,33 @@ const UsersContext = createContext<UsersContextValue | null>(null);
 
 export function UsersProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<UserWithRole[]>([]);
+  const [pendingUsers, setPendingUsers] = useState<PendingWorkspaceUser[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const loadedWorkspaceRef = useRef<string | null>(null);
   const promiseRef = useRef<Promise<void> | null>(null);
 
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, refresh } = useWorkspace();
   const [trackedWorkspaceId, setTrackedWorkspaceId] = useState(currentWorkspaceId);
   if (trackedWorkspaceId !== currentWorkspaceId) {
     setTrackedWorkspaceId(currentWorkspaceId);
     setUsers([]);
+    setPendingUsers([]);
   }
 
   const loadUsers = useCallback(async () => {
     if (loadedWorkspaceRef.current === currentWorkspaceId) return;
     if (promiseRef.current) return promiseRef.current;
+    if (!currentWorkspaceId) return;
 
     setIsLoading(true);
-    promiseRef.current = Promise.all([fetchUsersWithRoles(), fetchAvailableRoles()])
-      .then(async ([usersData, rolesData]) => {
-        const workspaceDirectory = await fetchWorkspaceDirectory(usersData.map((user) => user.id));
-        const workspaceIdsByUserId = new Map<string, string[]>();
 
-        for (const membership of workspaceDirectory.memberships) {
-          const currentWorkspaceIds = workspaceIdsByUserId.get(membership.userId) ?? [];
-          currentWorkspaceIds.push(membership.workspaceId);
-          workspaceIdsByUserId.set(membership.userId, currentWorkspaceIds);
-        }
-
-        setUsers(usersData.map((user) => ({
-          ...user,
-          workspaceIds: workspaceIdsByUserId.get(user.id) ?? [],
-        })));
+    promiseRef.current = Promise.all([fetchUsersWithRoles(currentWorkspaceId), fetchPendingWorkspaceUsers(currentWorkspaceId), fetchAvailableRoles()])
+      .then(([usersData, pendingUsersData, rolesData]) => {
+        setUsers(usersData);
+        setPendingUsers(pendingUsersData);
         setRoles(rolesData);
-        setWorkspaces(workspaceDirectory.workspaces);
         loadedWorkspaceRef.current = currentWorkspaceId;
       })
       .finally(() => {
@@ -78,7 +68,9 @@ export function UsersProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const changeRole = useCallback(async (userId: string, roleId: string) => {
-    await assignUserRole(userId, roleId);
+    if (!currentWorkspaceId) throw new Error("No workspace selected");
+    await assignUserRole(currentWorkspaceId, userId, roleId);
+    await refresh();
     setUsers((prev) =>
       prev.map((u) => {
         if (u.id !== userId) return u;
@@ -86,14 +78,36 @@ export function UsersProvider({ children }: { children: ReactNode }) {
         return { ...u, role: newRole };
       }),
     );
-  }, [roles]);
+  }, [currentWorkspaceId, refresh, roles]);
+
+  const approveUser = useCallback(async (requestId: string) => {
+    if (!currentWorkspaceId) throw new Error("No workspace selected");
+    await approveWorkspaceJoinRequest(requestId);
+    const pendingUser = pendingUsers.find((user) => user.requestId === requestId);
+    const viewerRole = roles.find((role) => role.name.toLowerCase() === "viewer") ?? null;
+    setPendingUsers((current) => current.filter((user) => user.requestId !== requestId));
+    if (pendingUser) {
+      setUsers((current) => [...current, {
+        id: pendingUser.id,
+        name: pendingUser.name,
+        surname: pendingUser.surname,
+        email: pendingUser.email,
+        telegramChatId: pendingUser.telegramChatId,
+        avatarUrl: pendingUser.avatarUrl,
+        currentDuty: pendingUser.currentDuty,
+        statusMessage: pendingUser.statusMessage,
+        workspaceIds: [currentWorkspaceId],
+        role: viewerRole,
+      }]);
+    }
+  }, [currentWorkspaceId, pendingUsers, roles]);
 
   const value = useMemo(
     () => ({
-      state: { users, roles, workspaces, isLoading },
-      actions: { loadUsers, updateProfile, changeRole },
+      state: { users, pendingUsers, roles, isLoading },
+      actions: { loadUsers, updateProfile, changeRole, approveUser },
     }),
-    [users, roles, workspaces, isLoading, loadUsers, updateProfile, changeRole],
+    [users, pendingUsers, roles, isLoading, loadUsers, updateProfile, changeRole, approveUser],
   );
 
   return <UsersContext.Provider value={value}>{children}</UsersContext.Provider>;

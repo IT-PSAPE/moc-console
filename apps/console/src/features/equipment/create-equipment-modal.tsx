@@ -2,12 +2,11 @@ import { Modal } from "@moc/ui/components/overlays/modal"
 import { Button } from "@moc/ui/components/controls/button"
 import { Input } from "@moc/ui/components/form/input"
 import { FormLabel } from "@moc/ui/components/form/form-label"
+import { Select } from "@moc/ui/components/form/select"
 import { Label } from "@moc/ui/components/display/text"
-import { Dropdown } from "@moc/ui/components/overlays/dropdown"
-import { Check, ChevronDown } from "lucide-react"
-import { useCallback, useState } from "react"
 import type { EquipmentCategory } from "@moc/types/equipment"
 import { equipmentCategoryLabel } from "@moc/types/equipment"
+import { useCreateEquipmentForm } from "./use-create-equipment-form"
 
 type CreateEquipmentModalProps = {
   open: boolean
@@ -16,79 +15,61 @@ type CreateEquipmentModalProps = {
 }
 
 const allCategories: EquipmentCategory[] = ["camera", "lens", "lighting", "audio", "support", "monitor", "cable", "accessory"]
-
-const initialState = { name: "", serialNumber: "", category: "camera" as EquipmentCategory, location: "" }
+const categoryItems = allCategories.map((category) => ({ label: equipmentCategoryLabel[category], value: category }))
 
 export function CreateEquipmentModal({ open, onOpenChange, onCreate }: CreateEquipmentModalProps) {
-  const [form, setForm] = useState(initialState)
-
-  const resetForm = useCallback(() => setForm(initialState), [])
-
-  const canSubmit = form.name.trim().length > 0 && form.serialNumber.trim().length > 0
-
-  const handleSubmit = useCallback(() => {
-    if (!canSubmit) return
-    onCreate({
-      name: form.name.trim(),
-      serialNumber: form.serialNumber.trim(),
-      category: form.category,
-      location: form.location.trim(),
-    })
-    resetForm()
-  }, [canSubmit, form, onCreate, resetForm])
+  const { state, actions } = useCreateEquipmentForm(onCreate, onOpenChange)
+  const { form } = state
 
   return (
-    <Modal open={open} onOpenChange={(next) => { onOpenChange(next); if (!next) resetForm() }}>
+    <Modal open={open} onOpenChange={actions.changeOpen}>
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
-          <Modal.Panel className="w-full max-w-md">
+          <Modal.FullScreenPanel className="w-full md:max-w-md">
             <Modal.Header>
-              <Label.md>New Equipment</Label.md>
+              <Label.md>New equipment</Label.md>
             </Modal.Header>
             <Modal.Content>
               <div className="flex flex-col gap-4 p-4">
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Name" required />
                   <Input
+                    aria-label="Equipment name"
+                    name="equipment-name"
+                    autoComplete="off"
                     placeholder="Equipment name"
                     value={form.name}
-                    onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                    onChange={actions.changeName}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <FormLabel label="Serial Number" required />
+                  <FormLabel label="Serial number" required />
                   <Input
+                    aria-label="Serial number"
+                    name="serial-number"
+                    autoComplete="off"
                     placeholder="Serial number"
                     value={form.serialNumber}
-                    onChange={(e) => setForm((prev) => ({ ...prev, serialNumber: e.target.value }))}
+                    onChange={actions.changeSerialNumber}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Category" required />
-                  <Dropdown placement="bottom">
-                    <Dropdown.Trigger className="w-full flex items-center justify-between gap-1.5 py-2 px-3 rounded-lg border border-secondary bg-primary cursor-pointer paragraph-sm">
-                      <span>{equipmentCategoryLabel[form.category]}</span>
-                      <ChevronDown className="size-4 text-tertiary" />
-                    </Dropdown.Trigger>
-                    <Dropdown.Panel>
-                      {allCategories.map((c) => (
-                        <Dropdown.Item key={c} onSelect={() => setForm((prev) => ({ ...prev, category: c }))}>
-                          <span className="size-4 shrink-0 flex items-center justify-center">
-                            {c === form.category && <Check className="size-3.5 text-brand_secondary" />}
-                          </span>
-                          {equipmentCategoryLabel[c]}
-                        </Dropdown.Item>
-                      ))}
-                    </Dropdown.Panel>
-                  </Dropdown>
+                  <Select.Root name="equipment-category" items={categoryItems} value={form.category} onValueChange={actions.changeCategory}>
+                    <Select.Trigger aria-label="Equipment category" />
+                    <Select.Content>{allCategories.map((category) => <Select.Item key={category} value={category}>{equipmentCategoryLabel[category]}</Select.Item>)}</Select.Content>
+                  </Select.Root>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <FormLabel label="Location" optional />
                   <Input
+                    aria-label="Equipment location"
+                    name="equipment-location"
+                    autoComplete="off"
                     placeholder="Storage location"
                     value={form.location}
-                    onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
+                    onChange={actions.changeLocation}
                   />
                 </div>
               </div>
@@ -97,9 +78,9 @@ export function CreateEquipmentModal({ open, onOpenChange, onCreate }: CreateEqu
               <Modal.Close>
                 <Button variant="secondary">Cancel</Button>
               </Modal.Close>
-              <Button onClick={handleSubmit} disabled={!canSubmit}>Create</Button>
+              <Button onClick={actions.submit} disabled={!state.canSubmit}>Create</Button>
             </Modal.Footer>
-          </Modal.Panel>
+          </Modal.FullScreenPanel>
         </Modal.Positioner>
       </Modal.Portal>
     </Modal>

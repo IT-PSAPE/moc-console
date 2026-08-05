@@ -1,3 +1,5 @@
+import { Button as BaseButton } from "@base-ui/react/button"
+import { Input as BaseInput } from "@base-ui/react/input"
 import { useRef, useState } from "react"
 import type { ChangeEvent, DragEvent } from "react"
 import { Check, Upload } from "lucide-react"
@@ -56,8 +58,8 @@ export function FileDropzone({ accept, className, fileName, onFileSelect, placeh
 
   return (
     <>
-      <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={handleInputChange} />
-      <button
+      <BaseInput ref={inputRef} type="file" accept={accept} className="hidden" onChange={handleInputChange} />
+      <BaseButton
         type="button"
         className={cn(
           "flex flex-col min-h-24 w-full items-center gap-3 rounded-lg border border-dashed bg-primary px-4 py-3 text-left transition-colors",
@@ -83,7 +85,7 @@ export function FileDropzone({ accept, className, fileName, onFileSelect, placeh
             {fileName ? selectedHint : "Supports image, audio, and video files."}
           </Paragraph.xs>
         </span>
-      </button>
+      </BaseButton>
     </>
   )
 }

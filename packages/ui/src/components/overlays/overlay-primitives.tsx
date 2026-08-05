@@ -1,120 +1,14 @@
 import { cn } from '@moc/utils/cn'
-import { createPortal } from 'react-dom'
-import { type HTMLAttributes, type MouseEvent, type ReactNode } from 'react'
-import { useOverlayStack } from './overlay-provider'
-
-// Positioning math and click-outside detection live in dedicated modules to
-// keep this file within the component size limit. Re-exported here so existing
-// consumers can keep importing from './overlay-primitives'.
-export { useAnchorPosition, type Placement } from './overlay-positioning'
-export { useClickOutside } from './use-click-outside'
-
-// ─── Portal ──────────────────────────────────────────────────────────
-
-type OverlayPortalProps = {
-    children: ReactNode
-    isOpen: boolean
-    zIndex: number
-}
-
-export function OverlayPortal({ children, isOpen, zIndex }: OverlayPortalProps) {
-    const { state: overlayState } = useOverlayStack()
-
-    if (!isOpen || !overlayState.rootElement) {
-        return null
-    }
-
-    return createPortal(
-        <div className="pointer-events-none fixed inset-0" style={{ zIndex }}>
-            {children}
-        </div>,
-        overlayState.rootElement,
-    )
-}
-
-// ─── Backdrop ────────────────────────────────────────────────────────
-
-type OverlayBackdropProps = HTMLAttributes<HTMLDivElement> & {
-    closeOnClick?: boolean
-    onClose: () => void
-}
-
-export function OverlayBackdrop({ className, closeOnClick = true, onClick, onClose, ...props }: OverlayBackdropProps) {
-    function handleClick(event: MouseEvent<HTMLDivElement>) {
-        onClick?.(event)
-
-        if (event.defaultPrevented || !closeOnClick) {
-            return
-        }
-
-        onClose()
-    }
-
-    return (
-        <div
-            aria-hidden="true"
-            className={cn('pointer-events-auto fixed inset-0 bg-linear-to-t from-black/30 to-black/3 backdrop-blur-xs', className)}
-            onClick={handleClick}
-            {...props}
-        />
-    )
-}
-
-// ─── Trigger ─────────────────────────────────────────────────────────
-
-type OverlayTriggerProps = HTMLAttributes<HTMLSpanElement> & {
-    onOpen: () => void
-}
-
-export function OverlayTrigger({ children, onClick, onOpen, ...props }: OverlayTriggerProps) {
-    function handleClick(event: MouseEvent<HTMLSpanElement>) {
-        onClick?.(event)
-
-        if (event.defaultPrevented) {
-            return
-        }
-
-        onOpen()
-    }
-
-    return (
-        <span onClick={handleClick} {...props} className={cn('contents', props.className)} role="button">
-            {children}
-        </span>
-    )
-}
-
-// ─── Close ───────────────────────────────────────────────────────────
-
-type OverlayCloseProps = HTMLAttributes<HTMLSpanElement> & {
-    onClose: () => void
-}
-
-export function OverlayClose({ children, onClick, onClose, ...props }: OverlayCloseProps) {
-    function handleClick(event: MouseEvent<HTMLSpanElement>) {
-        onClick?.(event)
-
-        if (event.defaultPrevented) {
-            return
-        }
-
-        onClose()
-    }
-
-    return (
-        <span onClick={handleClick} {...props} role="button">
-            {children}
-        </span>
-    )
-}
+import { type HTMLAttributes } from 'react'
 
 // ─── Header ──────────────────────────────────────────────────────────
 
 type OverlayHeaderProps = HTMLAttributes<HTMLDivElement>
+export const overlayHeaderClassName = 'flex min-h-14 shrink-0 items-center gap-2 border-b border-secondary px-3 py-2'
 
 export function OverlayHeader({ children, className, ...props }: OverlayHeaderProps) {
     return (
-        <div className={cn('flex items-center gap-2 border-b border-secondary p-3', className)} {...props}>
+        <div className={cn(overlayHeaderClassName, className)} {...props}>
             {children}
         </div>
     )
@@ -126,7 +20,7 @@ type OverlayContentProps = HTMLAttributes<HTMLDivElement>
 
 export function OverlayContent({ children, className, ...props }: OverlayContentProps) {
     return (
-        <div className={cn('min-h-0 flex flex-1 flex-col overflow-y-auto', className)} {...props}>
+        <div className={cn('min-h-0 flex flex-1 flex-col overflow-y-auto overscroll-contain', className)} {...props}>
             {children}
         </div>
     )
@@ -138,7 +32,7 @@ type OverlayFooterProps = HTMLAttributes<HTMLDivElement>
 
 export function OverlayFooter({ children, className, ...props }: OverlayFooterProps) {
     return (
-        <div className={cn('flex items-center gap-2 border-t border-secondary p-3', className)} {...props}>
+        <div className={cn('flex shrink-0 flex-col items-center gap-2 border-t border-secondary px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] *:w-full [&_button]:w-full md:flex-row md:p-3 md:*:w-auto md:[&_button]:w-auto', className)} {...props}>
             {children}
         </div>
     )

@@ -1,135 +1,70 @@
-import { useEffect } from 'react'
-import { routes } from '@/screens/console-routes'
 import { Sidebar } from '@moc/ui/components/navigation/sidebar'
 import { Breadcrumb } from '@moc/ui/components/navigation/breadcrumb'
-import { Cast, Drama, FileText, LayoutGrid, Package } from 'lucide-react'
 import { TopBar } from './topbar'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { useSidebar } from '@moc/ui/components/navigation/sidebar'
-import { useAuth } from '../lib/auth-context'
-import { Divider } from '@moc/ui/components/display/divider'
-import { CommandMenu } from '@moc/ui/components/overlays/command-menu'
-import { SearchCommandMenuContent, SearchMenuItem } from './search/search-command-menu'
-import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
-import { useCallback, useState } from 'react'
-import { ProfilePopover } from './account/profile-popover'
+import { ReportBugModal } from './account/report-bug-modal'
+import { SkipLink } from '@moc/ui/components/navigation/skip-link'
+import { useAppShell } from './use-app-shell'
+import { EditProfileModal } from './account/edit-profile-modal'
+import { Label } from '@moc/ui/components/display/text'
+import { useWorkspace } from '@/lib/workspace-context'
+import { Drawer } from '@moc/ui/components/overlays/drawer'
+import { useIsMobile } from '@moc/ui/hooks/use-is-mobile'
+import { AppNavigation } from './app-navigation'
 
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-    const navigate = useNavigate()
-    const { pathname } = useLocation()
-
-    const { state, actions } = useSidebar()
-    const { signOut } = useAuth()
-    const { toast } = useFeedback()
-    const [isSigningOut, setIsSigningOut] = useState(false)
-
-    // Close mobile sidebar on route change
-    useEffect(() => {
-        actions.closeMobile()
-    }, [pathname, actions])
-
-    function navigateToRoute(route: string) {
-        navigate(`/${route}`)
-    }
-
-    function isActive(route: string) {
-        return pathname === `/${route}`
-    }
-
-    const handleSignOut = useCallback(async () => {
-        if (isSigningOut) return
-        setIsSigningOut(true)
-        try {
-            const { error } = await signOut()
-            actions.closeMobile()
-            if (error) {
-                toast({ title: 'Logged out locally', description: error.message, variant: 'info' })
-            }
-        } finally {
-            window.location.replace(`/${routes.login}`)
-        }
-    }, [actions, isSigningOut, signOut, toast])
+    const { state, actions } = useAppShell()
+    const { currentWorkspace } = useWorkspace()
+    const isMobile = useIsMobile()
 
     return (
-        <CommandMenu>
+        <>
+            <SkipLink />
             <div className="app-grid md:app-grid-desktop bg-primary text-primary">
-                <Sidebar.Panel>
-                    <Sidebar.Header>
-                        <div className="size-8 shrink-0 rounded-xl bg-brand_solid" >
-                            <img src="/logo.svg" alt="" className='w-full h-full' />
-                        </div>
-                        {!state.isCollapsed && (
-                            <div className="flex flex-col">
-                                <span className="label-sm truncate leading-none">MOC Console</span>
-                                <span className="paragraph-xs text-quaternary truncate leading-none">Admin Platform</span>
-                            </div>
-                        )}
-                    </Sidebar.Header>
-
-                    <Sidebar.Content>
-                        <Sidebar.Group>
-                            <Sidebar.GroupContent>
-                                <Sidebar.MenuItem title={"Dashboard"} icon={<LayoutGrid />} active={isActive(routes.dashboard)} onClick={() => navigateToRoute(routes.dashboard)} />
-                                <SearchMenuItem />
-                            </Sidebar.GroupContent>
-                        </Sidebar.Group>
-
-                        <Divider className='px-2' />
-
-                        <Sidebar.Group>
-                            <Sidebar.GroupContent>
-                                <Sidebar.MenuItem title={"Requests"} icon={<FileText />}>
-                                    <Sidebar.MenuItem title={"Overview"} active={isActive(routes.requestsOverview)} onClick={() => navigateToRoute(routes.requestsOverview)} />
-                                    <Sidebar.MenuItem title={"All requests"} active={isActive(routes.requestsAllRequests)} onClick={() => navigateToRoute(routes.requestsAllRequests)} />
-                                    <Sidebar.MenuItem title={"Archived"} active={isActive(routes.requestsArchived)} onClick={() => navigateToRoute(routes.requestsArchived)} />
-                                </Sidebar.MenuItem>
-                                <Sidebar.MenuItem title={"Equipment"} icon={<Package />}>
-                                    <Sidebar.MenuItem title={"Overview"} active={isActive(routes.equipmentOverview)} onClick={() => navigateToRoute(routes.equipmentOverview)} />
-                                    <Sidebar.MenuItem title={"Inventory"} active={isActive(routes.equipmentInventory)} onClick={() => navigateToRoute(routes.equipmentInventory)} />
-                                    <Sidebar.MenuItem title={"Bookings"} active={isActive(routes.equipmentBookings)} onClick={() => navigateToRoute(routes.equipmentBookings)} />
-                                    <Sidebar.MenuItem title={"Maintenance"} active={isActive(routes.equipmentMaintenance)} onClick={() => navigateToRoute(routes.equipmentMaintenance)} />
-                                </Sidebar.MenuItem>
-                                <Sidebar.MenuItem title={"Broadcast"} icon={<Cast />}>
-                                    <Sidebar.MenuItem title={"Overview"} active={isActive(routes.broadcastOverview)} onClick={() => navigateToRoute(routes.broadcastOverview)} />
-                                    <Sidebar.MenuItem title={"Media"} active={isActive(routes.broadcastMedia)} onClick={() => navigateToRoute(routes.broadcastMedia)} />
-                                    <Sidebar.MenuItem title={"Playlists"} active={isActive(routes.broadcastPlaylists)} onClick={() => navigateToRoute(routes.broadcastPlaylists)} />
-                                    <Sidebar.MenuItem title={"Streams"} active={isActive(routes.broadcastStreams)} onClick={() => navigateToRoute(routes.broadcastStreams)} />
-                                </Sidebar.MenuItem>
-                                <Sidebar.MenuItem title={"Cue Sheet"} icon={<Drama />}>
-                                    <Sidebar.MenuItem title={"Overview"} active={isActive(routes.cueSheetOverview)} onClick={() => navigateToRoute(routes.cueSheetOverview)} />
-                                    <Sidebar.MenuItem title={"Events"} active={isActive(routes.cueSheetEvents)} onClick={() => navigateToRoute(routes.cueSheetEvents)} />
-                                    <Sidebar.MenuItem title={"Checklists"} active={isActive(routes.cueSheetChecklists)} onClick={() => navigateToRoute(routes.cueSheetChecklists)} />
-                                    <Sidebar.MenuItem title={"Templates"} active={isActive(routes.cueSheetTemplates)} onClick={() => navigateToRoute(routes.cueSheetTemplates)} />
-                                </Sidebar.MenuItem>
-                            </Sidebar.GroupContent>
-                        </Sidebar.Group>
-                    </Sidebar.Content>
-
-                    <Sidebar.Footer>
-                        <ProfilePopover onSignOut={handleSignOut} isSigningOut={isSigningOut} />
-                    </Sidebar.Footer>
-                </Sidebar.Panel>
-
-                {/* Mobile backdrop overlay */}
-                {state.isMobileOpen && (
-                    <div
-                        className="fixed inset-0 z-40 bg-black/50 md:hidden"
-                        onClick={actions.closeMobile}
-                        aria-hidden="true"
-                    />
+                {isMobile ? (
+                    <Drawer open={state.mobileSidebarOpen} onOpenChange={actions.setMobileSidebarOpen} side="left">
+                        <Drawer.Portal>
+                            <Drawer.Backdrop />
+                            <Drawer.Panel aria-label="Navigation" className="!w-[min(88%,24rem)] !max-w-none !p-0 [&>div]:rounded-none">
+                                <AppNavigation
+                                    isRouteActive={actions.isRouteActive}
+                                    isSigningOut={state.isSigningOut}
+                                    onCloseMobileNavigation={actions.closeMobileSidebar}
+                                    onEditProfile={actions.openProfile}
+                                    onReportBug={actions.openReportBug}
+                                    onSignOut={actions.signOut}
+                                />
+                            </Drawer.Panel>
+                        </Drawer.Portal>
+                    </Drawer>
+                ) : (
+                    <Sidebar.Panel>
+                        <AppNavigation
+                            isRouteActive={actions.isRouteActive}
+                            isSigningOut={state.isSigningOut}
+                            onCloseMobileNavigation={actions.closeMobileSidebar}
+                            onEditProfile={actions.openProfile}
+                            onReportBug={actions.openReportBug}
+                            onSignOut={actions.signOut}
+                        />
+                    </Sidebar.Panel>
                 )}
 
                 <TopBar>
                     <Breadcrumb />
+                    <span className="min-w-0 truncate md:ml-2" aria-live="polite">
+                        <Label.xs className="sr-only">Current workspace: </Label.xs>
+                        <Label.sm className="text-tertiary">{currentWorkspace?.name ?? 'No workspace selected'}</Label.sm>
+                    </span>
                 </TopBar>
 
-                <main className="area-content min-h-0 overflow-y-auto bg-[var(--background-color-primary)]">
+                <main id="main-content" tabIndex={-1} className="area-content min-h-0 overflow-y-auto overscroll-contain bg-[var(--background-color-primary)] focus-visible:outline-2 focus-visible:outline-brand">
                     {children}
                 </main>
             </div>
 
-            <SearchCommandMenuContent />
-        </CommandMenu>
+            <EditProfileModal open={state.profileOpen} onOpenChange={actions.setProfileOpen} />
+            <ReportBugModal open={state.reportBugOpen} onOpenChange={actions.setReportBugOpen} />
+        </>
     )
 }

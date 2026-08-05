@@ -19,8 +19,8 @@ export function EquipmentNotesSection({
 
   const placeholder =
     draft.status === "maintenance"
-      ? "Describe the issue or maintenance required..."
-      : "Add notes about this equipment...";
+      ? "Describe the issue or maintenance required…"
+      : "Add notes about this equipment…";
 
   return (
     <div className="px-4">
@@ -29,6 +29,8 @@ export function EquipmentNotesSection({
         <Label.md>Notes</Label.md>
       </div>
       <TextArea
+        aria-label="Equipment notes"
+        name="equipment-notes"
         rows={4}
         value={draft.notes}
         onChange={handleNotesChange}

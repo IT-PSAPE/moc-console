@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Geist+Mono:wght@100..900&display=swap');
 @import "tailwindcss";
 
 /* Tailwind v4 auto-detects sources from the Vite project root (the consuming
@@ -8,14 +8,14 @@
 @source "./**/*.{ts,tsx}";
 
 @theme {
-  --breakpoint-mobile: 480px;
+  --breakpoint-mobile: 48rem;
 }
 
 @theme {
   /* FONT FAMILY */
   --font-body: "DM Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --font-display: "DM Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  --font-mono: ui-monospace, "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --font-title: "DM Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --font-subheading: "DM Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --font-label: "DM Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
@@ -519,6 +519,14 @@
   --spacing-content: 80rem;
   --spacing-content-sm: 45rem;
   --spacing-content-md: 64rem;
+  --spacing-page-gutter: 1rem;
+  --spacing-page-top: 2rem;
+}
+
+@media (min-width: 40rem) {
+  :root {
+    --spacing-page-gutter: 1.5rem;
+  }
 }
 
 @layer components {
@@ -668,11 +676,15 @@
 }
 
 @utility app-grid {
+  position: fixed;
+  inset: 0;
   display: grid;
   grid-template-areas: "topbar" "content";
   grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
   height: 100dvh;
+  overflow: hidden;
 }
 
 @utility app-grid-desktop {
@@ -725,11 +737,22 @@ body {
   position: relative;
 }
 
+body:has(.app-grid) {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 #overlay-root {
   position: fixed;
   inset: 0;
   z-index: 9000;
+  isolation: isolate;
   pointer-events: none;
+}
+
+#root {
+  position: relative;
+  z-index: 0;
 }
 
 /* SCROLLBAR */
@@ -778,6 +801,7 @@ select:focus-visible {
 /* DARK MODE OVERRIDES */
 @layer base {
   [data-theme="dark"] {
+    color-scheme: dark;
     --color-text-primary: var(--color-gray-50);
     --color-text-primary_on-brand: var(--color-gray-50);
     --color-text-secondary: var(--color-gray-300);

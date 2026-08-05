@@ -11,8 +11,12 @@ type UnlinkTelegramModalProps = {
 }
 
 export function UnlinkTelegramModal({ open, onConfirm, onCancel, isUnlinking = false }: UnlinkTelegramModalProps) {
+    function handleOpenChange(nextOpen: boolean) {
+        if (!nextOpen) onCancel()
+    }
+
     return (
-        <Modal open={open} onOpenChange={(o) => { if (!o) onCancel() }}>
+        <Modal open={open} onOpenChange={handleOpenChange}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>

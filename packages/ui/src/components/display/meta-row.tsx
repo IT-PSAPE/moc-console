@@ -7,7 +7,7 @@ export function MetaRow({ icon, label, children }: { icon: React.ReactNode; labe
         <span className="*:size-4">{icon}</span>
         <Label.xs className="text-tertiary truncate w-full">{label}</Label.xs>
       </div>
-      <div className="min-h-6 flex-2 flex items-center flex-1">{children}</div>
+      <div className="min-h-6 min-w-0 flex-2 flex flex-1 items-center break-words">{children}</div>
     </div>
   )
 }

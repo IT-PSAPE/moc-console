@@ -1,11 +1,8 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
+import { Toast as BaseToast } from '@base-ui/react/toast'
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react'
 import { useOverlayStack } from '../overlays/overlay-provider'
 import { Toast, type ToastData } from './toast'
-import { Notification, type NotificationData } from './notification'
 import type { FeedbackVariant, FeedbackStyle } from './alert'
-
-// ─── Types ──────────────────────────────────────────────────────────
 
 type ToastOptions = {
     title: string
@@ -31,9 +28,8 @@ type FeedbackContextValue = {
     dismissNotification: (id: string) => void
 }
 
-// ─── Context ────────────────────────────────────────────────────────
-
 const FeedbackContext = createContext<FeedbackContextValue | null>(null)
+const toastManager = BaseToast.createToastManager<ToastData>()
 
 export function useFeedback() {
     const context = useContext(FeedbackContext)
@@ -43,68 +39,66 @@ export function useFeedback() {
     return context
 }
 
-// ─── Provider ───────────────────────────────────────────────────────
+function ToastViewport({ container, zIndex }: { container: HTMLElement | null; zIndex: number }) {
+    const { toasts } = BaseToast.useToastManager<ToastData>()
+    if (!container) return null
 
-let nextId = 0
-function generateId() {
-    return `feedback-${++nextId}`
+    function renderToast(toast: BaseToast.Root.ToastObject<ToastData>) {
+        return <Toast key={toast.id} toast={toast} />
+    }
+
+    return (
+        <BaseToast.Portal container={container}>
+            <BaseToast.Viewport
+                className="pointer-events-none fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] w-[min(calc(100vw-2rem),24rem)] outline-none sm:right-[max(1.5rem,env(safe-area-inset-right))] sm:bottom-[max(1.5rem,env(safe-area-inset-bottom))]"
+                style={{ zIndex }}
+            >
+                {toasts.map(renderToast)}
+            </BaseToast.Viewport>
+        </BaseToast.Portal>
+    )
 }
 
 export function FeedbackProvider({ children }: { children: ReactNode }) {
-    const [toasts, setToasts] = useState<ToastData[]>([])
-    const [notifications, setNotifications] = useState<NotificationData[]>([])
     const { state: overlayState, meta: overlayMeta } = useOverlayStack()
-    const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
     const dismissToast = useCallback((id: string) => {
-        setToasts(prev => prev.filter(t => t.id !== id))
-        const timer = timersRef.current.get(id)
-        if (timer) {
-            clearTimeout(timer)
-            timersRef.current.delete(id)
-        }
+        toastManager.close(id)
     }, [])
 
     const dismissNotification = useCallback((id: string) => {
-        setNotifications(prev => prev.filter(n => n.id !== id))
+        toastManager.close(id)
     }, [])
 
     const toast = useCallback((options: ToastOptions) => {
-        const id = generateId()
-        const duration = options.duration ?? 4000
-        const data: ToastData = {
-            id,
+        return toastManager.add({
             title: options.title,
             description: options.description,
-            variant: options.variant ?? 'info',
-            style: options.style ?? 'filled',
-            duration,
-        }
-
-        setToasts(prev => [...prev, data])
-
-        const timer = setTimeout(() => {
-            dismissToast(id)
-        }, duration)
-        timersRef.current.set(id, timer)
-
-        return id
-    }, [dismissToast])
+            timeout: options.duration ?? 4000,
+            data: {
+                dismissible: true,
+                variant: options.variant ?? 'info',
+                style: options.style ?? 'filled',
+            },
+        })
+    }, [])
 
     const notify = useCallback((options: NotificationOptions) => {
-        const id = generateId()
-        const data: NotificationData = {
-            id,
+        return toastManager.add({
             title: options.title,
             description: options.description,
-            variant: options.variant ?? 'info',
-            style: options.style ?? 'filled',
-            dismissible: options.dismissible ?? true,
-            action: options.action,
-        }
-
-        setNotifications(prev => [...prev, data])
-        return id
+            timeout: 0,
+            priority: 'high',
+            actionProps: options.action ? {
+                children: options.action.label,
+                onClick: options.action.onClick,
+            } : undefined,
+            data: {
+                dismissible: options.dismissible ?? true,
+                style: options.style ?? 'filled',
+                variant: options.variant ?? 'info',
+            },
+        })
     }, [])
 
     const value = useMemo<FeedbackContextValue>(() => ({
@@ -119,36 +113,9 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     return (
         <FeedbackContext.Provider value={value}>
             {children}
-
-            {/* Toast container — bottom center. Bottom offset is
-                max(1.5rem, safe-area-inset-bottom) so toasts don't sit on
-                top of the Android gesture indicator in edge-to-edge PWA
-                installs. */}
-            {overlayState.rootElement && toasts.length > 0 && createPortal(
-                <div
-                    className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 flex flex-col-reverse items-center gap-2 pointer-events-auto"
-                    style={{ zIndex }}
-                >
-                    {toasts.map(t => (
-                        <Toast key={t.id} toast={t} onDismiss={dismissToast} />
-                    ))}
-                </div>,
-                overlayState.rootElement,
-            )}
-
-            {/* Notification container — bottom right. Same safe-area treatment
-                as toasts, plus right inset for landscape on notched devices. */}
-            {overlayState.rootElement && notifications.length > 0 && createPortal(
-                <div
-                    className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-[max(1.5rem,env(safe-area-inset-right))] flex flex-col-reverse items-end gap-2 pointer-events-auto"
-                    style={{ zIndex }}
-                >
-                    {notifications.map(n => (
-                        <Notification key={n.id} notification={n} onDismiss={dismissNotification} />
-                    ))}
-                </div>,
-                overlayState.rootElement,
-            )}
+            <BaseToast.Provider toastManager={toastManager} timeout={4000}>
+                <ToastViewport container={overlayState.rootElement} zIndex={zIndex} />
+            </BaseToast.Provider>
         </FeedbackContext.Provider>
     )
 }

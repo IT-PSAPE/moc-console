@@ -1,11 +1,11 @@
-import { Title, Paragraph, Label } from "@moc/ui/components/display/text"
-import { Divider } from "@moc/ui/components/display/divider"
+import { Title, Paragraph } from "@moc/ui/components/display/text"
 import { PublicLayout } from "./layout"
+import { PublicDocumentSection as Section } from "./public-document-section"
 
 export function PrivacyPolicyScreen() {
   return (
     <PublicLayout>
-      <Title.h3 className="mb-2">Privacy Policy</Title.h3>
+      <Title.h1 className="mb-2 title-h3">Privacy policy</Title.h1>
       <Paragraph.sm className="text-tertiary mb-8">Last updated: 3 May 2026</Paragraph.sm>
 
       <Paragraph.md className="mb-8">
@@ -130,15 +130,5 @@ export function PrivacyPolicyScreen() {
         </ul>
       </Section>
     </PublicLayout>
-  )
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="mb-8">
-      <Divider className="mb-6" />
-      <Label.lg className="block mb-3">{title}</Label.lg>
-      {children}
-    </section>
   )
 }

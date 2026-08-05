@@ -51,11 +51,9 @@ If repo files are available to you, read these first and treat them as authorita
 - `src/screens/auth/reset-password.tsx`
 - `src/screens/auth/password-recovery.tsx`
 - `src/features/users/users-provider.tsx`
-- `src/features/cue-sheet/cue-sheet-provider.tsx`
-- `src/types/cue-sheet/timeline.ts`
 - `src/types/requests/constants.ts`
 - `src/types/equipment/constants.ts`
-- `src/types/broadcast/constants.ts`
+- `src/types/streams/stream-constants.ts`
 
 Use those files to align names, data shapes, and behavioral expectations.
 
@@ -89,10 +87,7 @@ Create enums for:
 - `request_category`: `video_production`, `video_shooting`, `graphic_design`, `event`, `education`
 - `equipment_category`: `camera`, `lens`, `lighting`, `audio`, `support`, `monitor`, `cable`, `accessory`
 - `equipment_status`: `available`, `booked`, `booked_out`, `maintenance`
-- `booking_status`: `booked`, `checked_out`, `returned`
-- `media_type`: `image`, `audio`, `video`
-- `playlist_status`: `draft`, `published`
-- `cue_type`: `performance`, `technical`, `equipment`, `announcement`, `transition`
+- `booking_status`: `booked`, `checked_out`, `returned`, `archived`
 
 Do not use enums for:
 - roles
@@ -252,171 +247,16 @@ Important:
 - `booked_by` is free text, not a user id
 - the UI derives booking duration; do not store a human-readable duration string
 
-### Broadcast
-
-#### `media`
-- `id uuid primary key default gen_random_uuid()`
-- `workspace_id uuid not null references public.workspaces(id) on delete cascade`
-- `name text not null`
-- `type public.media_type not null`
-- `url text not null`
-- `thumbnail_url text null`
-- `created_at timestamptz not null default now()`
-
-Do not store `duration` as a required column in `media`.
-
-#### `playlists`
-- `id uuid primary key default gen_random_uuid()`
-- `workspace_id uuid not null references public.workspaces(id) on delete cascade`
-- `name text not null`
-- `description text not null default ''`
-- `status public.playlist_status not null default 'draft'`
-- `created_at timestamptz not null default now()`
-- `music_id uuid null references public.media(id) on delete set null`
-- `default_image_duration integer not null default 10`
-
-#### `queue`
-- `id uuid primary key default gen_random_uuid()`
-- `playlist_id uuid not null references public.playlists(id) on delete cascade`
-- `media_id uuid not null references public.media(id) on delete cascade`
-- `sort_order integer not null`
-- `duration integer null`
-- `disabled boolean not null default false`
-- unique `(playlist_id, sort_order)`
-
-### Cue sheet templates and runs
-
-#### `event_templates`
-- `id uuid primary key default gen_random_uuid()`
-- `workspace_id uuid not null references public.workspaces(id) on delete cascade`
-- `title text not null`
-- `description text not null default ''`
-- `duration integer not null`
-- `created_at timestamptz not null default now()`
-- `updated_at timestamptz not null default now()`
-
-#### `template_tracks`
-- `id uuid primary key default gen_random_uuid()`
-- `event_template_id uuid not null references public.event_templates(id) on delete cascade`
-- `name text not null`
-- `color_id uuid not null references public.colors(id) on delete restrict`
-- `sort_order integer not null`
-
-#### `template_cues`
-- `id uuid primary key default gen_random_uuid()`
-- `template_track_id uuid not null references public.template_tracks(id) on delete cascade`
-- `label text not null`
-- `start integer not null`
-- `duration integer not null`
-- `type public.cue_type not null`
-- `assignee text null`
-- `notes text null`
-
-#### `events`
-- `id uuid primary key default gen_random_uuid()`
-- `workspace_id uuid not null references public.workspaces(id) on delete cascade`
-- `title text not null`
-- `description text not null default ''`
-- `scheduled_at timestamptz not null`
-- `duration integer not null`
-- `created_at timestamptz not null default now()`
-- `updated_at timestamptz not null default now()`
-
-#### `colors`
-- `id uuid primary key default gen_random_uuid()`
-- `key text not null unique`
-- `name text not null`
-
-Do not store raw CSS values in the database.
-The app maps `colors.key` to CSS tokens.
-
-#### `tracks`
-- `id uuid primary key default gen_random_uuid()`
-- `event_id uuid not null references public.events(id) on delete cascade`
-- `name text not null`
-- `color_id uuid not null references public.colors(id) on delete restrict`
-- `sort_order integer not null`
-
-#### `cues`
-- `id uuid primary key default gen_random_uuid()`
-- `track_id uuid not null references public.tracks(id) on delete cascade`
-- `label text not null`
-- `start integer not null`
-- `duration integer not null`
-- `type public.cue_type not null`
-- `assignee text null`
-- `notes text null`
-
-### Checklist templates and runs
-
-#### `checklist_templates`
-- `id uuid primary key default gen_random_uuid()`
-- `workspace_id uuid not null references public.workspaces(id) on delete cascade`
-- `name text not null`
-- `description text not null default ''`
-- `created_at timestamptz not null default now()`
-- `updated_at timestamptz not null default now()`
-
-#### `template_sections`
-- `id uuid primary key default gen_random_uuid()`
-- `checklist_template_id uuid not null references public.checklist_templates(id) on delete cascade`
-- `name text not null`
-- `sort_order integer not null`
-
-#### `template_items`
-- `id uuid primary key default gen_random_uuid()`
-- `checklist_template_id uuid not null references public.checklist_templates(id) on delete cascade`
-- `template_section_id uuid null references public.template_sections(id) on delete cascade`
-- `label text not null`
-- `sort_order integer not null`
-
-#### `checklists`
-- `id uuid primary key default gen_random_uuid()`
-- `workspace_id uuid not null references public.workspaces(id) on delete cascade`
-- `name text not null`
-- `description text not null default ''`
-- `scheduled_at timestamptz not null`
-- `created_at timestamptz not null default now()`
-- `updated_at timestamptz not null default now()`
-
-#### `checklist_sections`
-- `id uuid primary key default gen_random_uuid()`
-- `checklist_id uuid not null references public.checklists(id) on delete cascade`
-- `name text not null`
-- `sort_order integer not null`
-
-#### `checklist_items`
-- `id uuid primary key default gen_random_uuid()`
-- `checklist_id uuid not null references public.checklists(id) on delete cascade`
-- `section_id uuid null references public.checklist_sections(id) on delete cascade`
-- `label text not null`
-- `checked boolean not null default false`
-- `sort_order integer not null`
-
 ## Workspace Scoping Rule
 
 Put `workspace_id` only on top-level operational tables:
 - `requests`
 - `equipment`
 - `bookings`
-- `media`
-- `playlists`
-- `event_templates`
-- `events`
-- `checklist_templates`
-- `checklists`
 
 Do not add `workspace_id` to subordinate tables:
 - `request_assignees`
-- `queue`
-- `template_tracks`
-- `template_cues`
-- `tracks`
-- `cues`
-- `template_sections`
-- `template_items`
-- `checklist_sections`
-- `checklist_items`
+- `booking_items`
 
 Subordinate access must be derived from the parent row in RLS policies.
 
@@ -487,10 +327,7 @@ Create a reusable trigger function like `public.set_updated_at()` and apply it t
 Apply to:
 - `workspaces`
 - `requests`
-- `event_templates`
-- `events`
-- `checklist_templates`
-- `checklists`
+- `bookings`
 
 ### 2. Auth signup bootstrap trigger
 
@@ -525,43 +362,7 @@ Create a trigger-driven sync so booking changes keep `equipment.status` aligned,
 
 The trigger must run after insert, update, and delete on `bookings`.
 
-### 5. Template duplication RPC: event template -> event run
-
-Create a database function/RPC named something short and clear, for example:
-- `public.create_event_from_template`
-
-It must:
-- accept the template id
-- accept a scheduled datetime for the new run
-- optionally accept title/description overrides
-- create a row in `public.events`
-- copy all template tracks into `public.tracks`
-- copy all template cues into `public.cues`
-- preserve sort order
-- return the created event row or created event id
-- run transactionally
-
-Use this because template duplication is currently happening in frontend mock code and must move into the database.
-
-### 6. Template duplication RPC: checklist template -> checklist run
-
-Create a database function/RPC named something short and clear, for example:
-- `public.create_checklist_from_template`
-
-It must:
-- accept the checklist template id
-- accept a scheduled datetime for the new run
-- optionally accept name/description overrides
-- create a row in `public.checklists`
-- copy top-level template items into `public.checklist_items`
-- copy template sections into `public.checklist_sections`
-- copy section-linked template items into `public.checklist_items`
-- preserve sort order
-- initialize all run items with `checked = false`
-- return the created checklist row or created checklist id
-- run transactionally
-
-### 7. Role bootstrap helper
+### 5. Role bootstrap helper
 
 Because every normal signup becomes `viewer`, the system still needs a safe path to make someone an `admin`.
 
@@ -577,7 +378,7 @@ Requirements:
 
 Without this, a blank project would deadlock role management because no one could become admin.
 
-### 8. RLS helper functions
+### 6. RLS helper functions
 
 Create helper functions in `private` for policy reuse, such as:
 - `private.current_user_role_name()`
@@ -637,12 +438,6 @@ For these top-level tables:
 - `requests`
 - `equipment`
 - `bookings`
-- `media`
-- `playlists`
-- `event_templates`
-- `events`
-- `checklist_templates`
-- `checklists`
 
 Policies must require both:
 - workspace membership
@@ -658,31 +453,21 @@ Use this model:
 
 For these subordinate tables:
 - `request_assignees`
-- `queue`
-- `template_tracks`
-- `template_cues`
-- `tracks`
-- `cues`
-- `template_sections`
-- `template_items`
-- `checklist_sections`
-- `checklist_items`
+- `booking_items`
 
 Do not add `workspace_id`.
 
 Instead, policies must derive access through the parent record.
 Examples:
-- `tracks` access derives from parent `events.workspace_id`
-- `cues` access derives from parent track -> event -> workspace
-- `template_cues` access derives from template_track -> event_template -> workspace
+- `request_assignees` access derives from parent `requests.workspace_id`
+- `booking_items` access derives from parent `bookings.workspace_id`
 
 ### RPC policy expectations
 
-The template duplication RPCs must respect the same authorization model:
+RPCs must respect the same authorization model:
 - the caller must be authenticated
-- the caller must be a member of the template's workspace
-- the caller must have `can_create = true`
-- the function must not let a user clone data into a workspace they cannot access
+- the caller must be a member of the target workspace
+- write RPCs require the matching permission flag on the caller's role
 
 Prefer `security invoker` for these RPCs unless there is a strong reason otherwise.
 Do not bypass RLS casually.
@@ -704,24 +489,8 @@ At minimum include indexes on:
 - `request_assignees(user_id)`
 - `equipment(workspace_id)`
 - `bookings(workspace_id)`
-- `bookings(equipment_id)`
-- `media(workspace_id)`
-- `playlists(workspace_id)`
-- `queue(playlist_id, sort_order)`
-- `event_templates(workspace_id)`
-- `template_tracks(event_template_id, sort_order)`
-- `template_cues(template_track_id, start)`
-- `events(workspace_id)`
-- `tracks(event_id, sort_order)`
-- `cues(track_id, start)`
-- `checklist_templates(workspace_id)`
-- `template_sections(checklist_template_id, sort_order)`
-- `template_items(checklist_template_id, sort_order)`
-- `template_items(template_section_id, sort_order)`
-- `checklists(workspace_id)`
-- `checklist_sections(checklist_id, sort_order)`
-- `checklist_items(checklist_id, sort_order)`
-- `checklist_items(section_id, sort_order)`
+- `booking_items(booking_id)`
+- `booking_items(equipment_id)`
 
 If you add additional helpful indexes, keep them justified and minimal.
 
@@ -729,16 +498,10 @@ If you add additional helpful indexes, keep them justified and minimal.
 
 1. `users.id` matches `auth.users.id`.
 2. `colors` is a lookup table. Do not replace it with an enum.
-3. Do not store raw CSS values in the DB for track colors.
-4. Do not store `booked_by` on `equipment`.
-5. Do not store `duration` as required media data.
-6. Do not create `request_roles` or `request_duties` tables.
-7. Template tables and live run tables are separate. Do not collapse them into one table with a `kind` column.
-8. The app currently uses combined template/instance objects in memory, but the DB must use separate normalized tables.
-9. Top-level operational rows carry workspace scope. Subordinate rows inherit it.
-10. The backend must support both:
-   - creating templates from scratch
-   - creating live runs from templates
+3. Do not store `booked_by` on `equipment`.
+4. Do not create `request_roles` or `request_duties` tables.
+5. A **Booking** is the batch (one tracking code, one lifecycle); `booking_items` is a pure join to equipment and carries no lifecycle of its own.
+6. Top-level operational rows carry workspace scope. Subordinate rows inherit it.
 
 ## Output Requirements
 
@@ -770,8 +533,6 @@ Before finishing, verify all of these are true:
 - new signup creates `public.users`, `public.user_roles`, and `public.workspace_users`
 - default signup role is `viewer`
 - there is a safe manual path to create an `admin`
-- template duplication works server-side for events
-- template duplication works server-side for checklists
 - equipment status can stay in `maintenance` without booking triggers overriding it
 - subordinate tables do not duplicate `workspace_id`
 - there are no unnecessary extra tables
@@ -784,7 +545,7 @@ This prompt intentionally pushes the agent toward:
 - database functions for relational workflows
 - RLS-centered authorization
 - seed-backed bootstrapping for roles, colors, and workspace setup
-- separate template/run tables for cue-sheet and checklist flows
+- batch-shaped bookings with a pure `booking_items` join
 
 That matches the current repo direction and avoids building a backend that fights the frontend model later.
 

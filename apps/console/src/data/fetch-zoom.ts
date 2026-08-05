@@ -1,4 +1,4 @@
-import type { ZoomConnection, ZoomMeeting } from "@moc/types/broadcast/zoom"
+import type { ZoomConnection, ZoomMeeting } from "@moc/types/streams/zoom"
 import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 
@@ -77,12 +77,12 @@ function mapMeetingRow(row: ZoomMeetingRow): ZoomMeeting {
 const MEETING_COLUMNS =
   "id, workspace_id, zoom_meeting_id, topic, description, meeting_type, start_time, duration, timezone, join_url, start_url, password, recurrence_type, recurrence_interval, recurrence_days, waiting_room, mute_on_entry, continuous_chat, created_by, created_at, updated_at"
 
-export async function fetchZoomConnection(): Promise<ZoomConnection | null> {
-  const workspaceId = await getCurrentWorkspaceId()
+export async function fetchZoomConnection(workspaceId?: string): Promise<ZoomConnection | null> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId()
   const { data, error } = await supabase
     .from("zoom_connections")
     .select("id, workspace_id, zoom_user_id, email, display_name, connected_by, created_at")
-    .eq("workspace_id", workspaceId)
+    .eq("workspace_id", resolvedWorkspaceId)
     .maybeSingle()
 
   if (error) {
@@ -92,12 +92,12 @@ export async function fetchZoomConnection(): Promise<ZoomConnection | null> {
   return data ? mapConnectionRow(data as ZoomConnectionRow) : null
 }
 
-export async function fetchZoomMeetings(): Promise<ZoomMeeting[]> {
-  const workspaceId = await getCurrentWorkspaceId()
+export async function fetchZoomMeetings(workspaceId?: string): Promise<ZoomMeeting[]> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId()
   const { data, error } = await supabase
     .from("zoom_meetings")
     .select(MEETING_COLUMNS)
-    .eq("workspace_id", workspaceId)
+    .eq("workspace_id", resolvedWorkspaceId)
     .order("start_time", { ascending: true, nullsFirst: false })
 
   if (error) {
@@ -107,13 +107,13 @@ export async function fetchZoomMeetings(): Promise<ZoomMeeting[]> {
   return ((data ?? []) as ZoomMeetingRow[]).map(mapMeetingRow)
 }
 
-export async function fetchZoomMeetingById(id: string): Promise<ZoomMeeting | undefined> {
-  const workspaceId = await getCurrentWorkspaceId()
+export async function fetchZoomMeetingById(id: string, workspaceId?: string): Promise<ZoomMeeting | undefined> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId()
   const { data, error } = await supabase
     .from("zoom_meetings")
     .select(MEETING_COLUMNS)
     .eq("id", id)
-    .eq("workspace_id", workspaceId)
+    .eq("workspace_id", resolvedWorkspaceId)
     .maybeSingle()
 
   if (error) {
