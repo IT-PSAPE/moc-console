@@ -70,10 +70,10 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   }
 
   try {
-    const body = prepareProviderBody(request.body, route.body, route.maxBodyBytes)
+    const prepared = prepareProviderBody(request.body, route.body, route.maxBodyBytes)
     const proxyResponse = await proxyZoomApiRequest({
-      body,
-      contentType: request.headers?.["content-type"] ?? null,
+      body: prepared.body,
+      contentType: prepared.contentType ?? request.headers?.["content-type"] ?? null,
       method: request.method ?? "GET",
       path: route.path,
       workspaceId,

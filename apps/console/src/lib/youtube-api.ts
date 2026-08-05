@@ -24,13 +24,33 @@ export async function youtubeApiFetch(
   })
 }
 
+/** Reads a blob as base64, without the `data:…;base64,` prefix. */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error("The thumbnail image could not be read"))
+    reader.onload = () => {
+      const result = String(reader.result)
+      const comma = result.indexOf(",")
+      if (comma === -1) reject(new Error("The thumbnail image could not be read"))
+      else resolve(result.slice(comma + 1))
+    }
+    reader.readAsDataURL(blob)
+  })
+}
+
+/**
+ * Sends the image inside a JSON envelope rather than as a raw binary body: the
+ * proxy re-encodes it to bytes and forwards it to YouTube with the real image
+ * content type. A raw body depends on the serverless runtime passing binary
+ * through untouched, and a body it treats as text arrives corrupt — which
+ * YouTube rejects as an invalid image.
+ */
 export async function uploadThumbnail(videoId: string, file: Blob): Promise<void> {
+  const image = await blobToBase64(file)
   const response = await youtubeApiFetch(`/thumbnails/set?videoId=${encodeURIComponent(videoId)}&uploadType=media`, {
     method: "POST",
-    headers: {
-      "Content-Type": file.type || "image/jpeg",
-    },
-    body: file,
+    body: JSON.stringify({ image, contentType: file.type || "image/jpeg" }),
   })
 
   if (!response.ok) {

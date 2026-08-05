@@ -36,7 +36,7 @@ export const YOUTUBE_ROUTES: readonly ProviderRouteRule[] = [
   { method: "GET", path: /^\/liveStreams$/, query: ["part", "id", "mine", "maxResults", "pageToken"], permission: "can_read", body: "none", maxBodyBytes: 0 },
   { method: "POST", path: /^\/liveStreams$/, query: ["part"], permission: "can_create", body: "json", maxBodyBytes: JSON_BODY_LIMIT },
   { method: "DELETE", path: /^\/liveStreams$/, query: ["id"], permission: "can_delete", body: "none", maxBodyBytes: 0 },
-  { method: "POST", path: /^\/thumbnails\/set$/, query: ["videoId", "uploadType"], permission: "can_update", body: "binary", maxBodyBytes: THUMBNAIL_BODY_LIMIT },
+  { method: "POST", path: /^\/thumbnails\/set$/, query: ["videoId", "uploadType"], permission: "can_update", body: "image", maxBodyBytes: THUMBNAIL_BODY_LIMIT },
   { method: "POST", path: /^\/playlistItems$/, query: ["part"], permission: "can_update", body: "json", maxBodyBytes: JSON_BODY_LIMIT },
 ]
 
@@ -69,10 +69,10 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   try {
     const route = authorizeProviderRoute(request.method, request.url, ROUTE_PREFIX, YOUTUBE_ROUTES)
     await requireWorkspacePermission(userId, workspaceId, route.permission)
-    const body = prepareProviderBody(request.body, route.body, route.maxBodyBytes)
+    const prepared = prepareProviderBody(request.body, route.body, route.maxBodyBytes)
     const proxyResponse = await proxyYouTubeApiRequest({
-      body,
-      contentType: request.headers?.["content-type"] ?? null,
+      body: prepared.body,
+      contentType: prepared.contentType ?? request.headers?.["content-type"] ?? null,
       method: request.method ?? "GET",
       path: route.path,
       workspaceId,

@@ -150,7 +150,7 @@ describe("authorizeProviderRoute", () => {
 describe("prepareProviderBody", () => {
   it("accepts an empty payload on a bodyless route", () => {
     for (const body of [undefined, null, "", {}, Buffer.alloc(0)]) {
-      assert.equal(prepareProviderBody(body, "none", 0), undefined)
+      assert.deepEqual(prepareProviderBody(body, "none", 0), { body: undefined, contentType: null })
     }
   })
 
@@ -162,7 +162,7 @@ describe("prepareProviderBody", () => {
   })
 
   it("serializes and bounds a json payload", () => {
-    assert.equal(prepareProviderBody({ id: "video_1" }, "json", 1024)?.toString(), '{"id":"video_1"}')
+    assert.equal(prepareProviderBody({ id: "video_1" }, "json", 1024).body?.toString(), '{"id":"video_1"}')
     assert.throws(
       () => prepareProviderBody({ id: "video_1" }, "json", 4),
       new ProviderRouteError("Provider request body is too large"),
@@ -171,5 +171,56 @@ describe("prepareProviderBody", () => {
       () => prepareProviderBody(undefined, "json", 1024),
       new ProviderRouteError("Provider request body is required"),
     )
+  })
+
+  it("decodes an image envelope back to the exact bytes sent", () => {
+    // A JPEG's magic number: proof the bytes survive the round trip, which is
+    // the whole point of encoding them instead of posting a raw binary body.
+    const bytes = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46])
+    const prepared = prepareProviderBody(
+      { image: bytes.toString("base64"), contentType: "image/png" },
+      "image",
+      1024,
+    )
+
+    assert.deepEqual(prepared.body, bytes)
+    // The provider must see the image type, never the envelope's own.
+    assert.equal(prepared.contentType, "image/png")
+  })
+
+  it("accepts a stringified envelope and raw bytes alike", () => {
+    const bytes = Buffer.from([0xff, 0xd8, 0xff])
+    assert.deepEqual(
+      prepareProviderBody(JSON.stringify({ image: bytes.toString("base64") }), "image", 1024).body,
+      bytes,
+    )
+    const raw = prepareProviderBody(bytes, "image", 1024)
+    assert.deepEqual(raw.body, bytes)
+    assert.equal(raw.contentType, null, "raw bytes keep the caller's content type")
+  })
+
+  it("refuses an image the provider would reject anyway", () => {
+    const image = Buffer.from([0xff, 0xd8, 0xff]).toString("base64")
+    assert.throws(
+      () => prepareProviderBody({ image, contentType: "image/gif" }, "image", 1024),
+      new ProviderRouteError("Thumbnail must be a JPEG or PNG image (received image/gif)"),
+    )
+    assert.throws(
+      () => prepareProviderBody({ contentType: "image/jpeg" }, "image", 1024),
+      new ProviderRouteError("Thumbnail image is required"),
+    )
+    assert.throws(
+      () => prepareProviderBody({ image }, "image", 2),
+      new ProviderRouteError("Provider request body is too large"),
+    )
+  })
+
+  it("bounds the decoded image, not the encoded envelope", () => {
+    // Base64 inflates by a third; limiting the encoded form would reject images
+    // YouTube's own 2 MB limit accepts.
+    const bytes = Buffer.alloc(1000, 0xab)
+    const encoded = bytes.toString("base64")
+    assert.ok(encoded.length > bytes.byteLength)
+    assert.equal(prepareProviderBody({ image: encoded }, "image", 1000).body?.byteLength, 1000)
   })
 })
