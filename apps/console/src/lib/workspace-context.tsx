@@ -44,14 +44,14 @@ function writeStoredWorkspaceId(id: string | null) {
 }
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
-    const { profile } = useAuth()
+    const { user } = useAuth()
     const navigate = useNavigate()
     const [workspaces, setWorkspaces] = useState<Workspace[]>([])
     const [currentWorkspaceId, setCurrentWorkspaceIdState] = useState<string | null>(null)
     const [roleByWorkspaceId, setRoleByWorkspaceId] = useState<Map<string, Role>>(new Map())
     const [loading, setLoading] = useState(true)
 
-    const userId = profile?.id ?? null
+    const userId = user?.id ?? null
 
     const loadWorkspaces = useCallback(
         async (uid: string, options: { setLoadingState?: boolean } = {}) => {
