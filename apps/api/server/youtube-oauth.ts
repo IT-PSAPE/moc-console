@@ -1,3 +1,5 @@
+import { resolveOAuthConfig } from "./provider-config.js"
+
 const TOKEN_URL = "https://oauth2.googleapis.com/token"
 const REVOKE_URL = "https://oauth2.googleapis.com/revoke"
 const CHANNELS_URL = "https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true"
@@ -63,14 +65,7 @@ async function fetchYouTubeChannel(accessToken: string): Promise<ChannelInfo> {
 }
 
 export function resolveYouTubeOAuthConfig(env: Record<string, string | undefined>): YouTubeOAuthConfig {
-  const clientId = env.GOOGLE_CLIENT_ID ?? env.VITE_GOOGLE_CLIENT_ID
-  const clientSecret = env.GOOGLE_CLIENT_SECRET
-
-  if (!clientId || !clientSecret) {
-    throw new Error("Missing Google OAuth environment variables")
-  }
-
-  return { clientId, clientSecret }
+  return resolveOAuthConfig("Google OAuth", env, ["GOOGLE_CLIENT_ID", "VITE_GOOGLE_CLIENT_ID"], ["GOOGLE_CLIENT_SECRET"])
 }
 
 export async function exchangeYouTubeCode(

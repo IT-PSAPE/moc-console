@@ -1,4 +1,5 @@
 import { buildSessionHeaders } from "./api-auth"
+import { providerRequestError } from "./provider-request-error"
 import { getCurrentWorkspaceId } from "@/data/current-workspace"
 import { apiUrl } from "@moc/utils/api-url"
 
@@ -32,8 +33,7 @@ export async function uploadThumbnail(videoId: string, file: Blob): Promise<void
   })
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to upload thumbnail: ${err}`)
+    throw await providerRequestError(response, "Failed to upload thumbnail")
   }
 }
 
@@ -43,8 +43,7 @@ export async function fetchVideoCategories(regionCode = "US") {
   )
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to fetch video categories: ${err}`)
+    throw await providerRequestError(response, "Failed to fetch video categories")
   }
 
   const data = await response.json()
@@ -62,8 +61,7 @@ export async function fetchChannelPlaylists() {
   )
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to fetch playlists: ${err}`)
+    throw await providerRequestError(response, "Failed to fetch playlists")
   }
 
   const data = await response.json()
@@ -91,8 +89,7 @@ export async function addVideoToPlaylist(playlistId: string, videoId: string): P
   })
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to add video to playlist: ${err}`)
+    throw await providerRequestError(response, "Failed to add video to playlist")
   }
 }
 
@@ -105,8 +102,7 @@ export async function updateVideoMetadata(
   )
 
   if (!getResponse.ok) {
-    const err = await getResponse.text()
-    throw new Error(`Failed to fetch video for metadata update: ${err}`)
+    throw await providerRequestError(getResponse, "Failed to fetch video for metadata update")
   }
 
   const getData = await getResponse.json()
@@ -123,7 +119,6 @@ export async function updateVideoMetadata(
   })
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to update video metadata: ${err}`)
+    throw await providerRequestError(response, "Failed to update video metadata")
   }
 }

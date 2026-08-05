@@ -1,8 +1,9 @@
 import { proxyZoomApiRequest } from "../../../server/zoom-api.js"
 import { AuthError, requireAuthenticatedUser } from "../../../server/auth-guard.js"
 import { writeCorsHeaders } from "../../../server/cors.js"
-import { WorkspaceAccessError, requireWorkspacePermission } from "../../../server/workspace-access.js"
-import { authorizeProviderRoute, prepareProviderBody, ProviderRouteError, type ProviderRouteRule } from "../../../server/provider-route-policy.js"
+import { requireWorkspacePermission } from "../../../server/workspace-access.js"
+import { authorizeProviderRoute, prepareProviderBody, type ProviderRouteRule } from "../../../server/provider-route-policy.js"
+import { providerFailure } from "../../../server/provider-failure.js"
 
 type ApiRequest = {
   body?: unknown
@@ -61,8 +62,10 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     route = authorizeProviderRoute(request.method, request.url, ROUTE_PREFIX, ZOOM_ROUTES)
     await requireWorkspacePermission(userId, workspaceId, route.permission)
   } catch (error) {
-    response.statusCode = error instanceof ProviderRouteError ? 400 : error instanceof WorkspaceAccessError ? 403 : 500
-    response.end(JSON.stringify({ error: error instanceof ProviderRouteError || error instanceof WorkspaceAccessError ? error.message : "Workspace access check failed" }))
+    console.error("Zoom proxy authorization failed:", error)
+    const failure = providerFailure("Zoom", error)
+    response.statusCode = failure.status
+    response.end(JSON.stringify(failure.body))
     return
   }
 
@@ -85,13 +88,9 @@ export default async function handler(request: ApiRequest, response: ApiResponse
 
     response.end(Buffer.from(await proxyResponse.arrayBuffer()))
   } catch (error) {
-    if (error instanceof ProviderRouteError) {
-      response.statusCode = 400
-      response.end(JSON.stringify({ error: error.message }))
-      return
-    }
     console.error("Zoom proxy request failed:", error)
-    response.statusCode = 502
-    response.end(JSON.stringify({ error: "Zoom request failed" }))
+    const failure = providerFailure("Zoom", error)
+    response.statusCode = failure.status
+    response.end(JSON.stringify(failure.body))
   }
 }

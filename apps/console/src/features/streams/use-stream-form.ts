@@ -3,6 +3,7 @@ import type { ThumbnailSource } from "@/data/mutate-streams";
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import type { NotifyDestination } from "@moc/types/streams";
 import type { LatencyPreference, Stream, StreamPreset, StreamPrivacy, YouTubeCategory, YouTubePlaylist } from "@moc/types/streams/stream";
+import { ProviderRequestError } from "@/lib/provider-request-error";
 import { fetchImageBlob, UNFETCHABLE_THUMBNAIL_MESSAGE } from "@moc/utils/blob-fetch";
 import { formatUtcIsoForDateTimeInput, parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time";
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
@@ -31,6 +32,31 @@ type ThumbSelection =
   | { kind: "file"; file: File }
   | { kind: "url"; url: string }
   | null;
+
+/**
+ * A failed options load is worth different words depending on why: a connection
+ * the user has to restore, a deployment an admin has to configure, or YouTube
+ * being briefly unavailable — where retrying is genuinely the right advice.
+ */
+function streamOptionsFailureToast(failures: string[], errors: unknown[]): { title: string; description: string } {
+  const provider = errors.find((error): error is ProviderRequestError => error instanceof ProviderRequestError);
+
+  if (provider?.needsConnection) {
+    return {
+      title: "YouTube needs reconnecting",
+      description: `${provider.message} Reconnect the channel from the Streams page, then reopen this form.`,
+    };
+  }
+
+  if (provider?.code === "misconfigured") {
+    return { title: "YouTube is not configured", description: provider.message };
+  }
+
+  return {
+    title: "Some options could not be loaded",
+    description: `Failed to load ${failures.join(", ")}. Try reopening the modal.`,
+  };
+}
 
 type UseStreamFormOptions = {
   open: boolean;
@@ -121,22 +147,21 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset }: 
   useEffect(() => {
     if (!open) return;
     const failures: string[] = [];
+    const errors: unknown[] = [];
     void Promise.all([
       fetchCategories().then(setCategories).catch((error: unknown) => {
         console.error("Failed to load YouTube categories", error);
         failures.push("categories");
+        errors.push(error);
       }),
       fetchPlaylists().then(setPlaylists).catch((error: unknown) => {
         console.error("Failed to load YouTube playlists", error);
         failures.push("playlists");
+        errors.push(error);
       }),
     ]).then(() => {
       if (failures.length === 0) return;
-      toast({
-        title: "Some options could not be loaded",
-        description: `Failed to load ${failures.join(", ")}. Try reopening the modal.`,
-        variant: "error",
-      });
+      toast({ ...streamOptionsFailureToast(failures, errors), variant: "error" });
     });
   }, [open, toast]);
 

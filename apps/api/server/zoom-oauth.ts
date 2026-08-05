@@ -1,3 +1,5 @@
+import { resolveOAuthConfig } from "./provider-config.js"
+
 const TOKEN_URL = "https://zoom.us/oauth/token"
 const REVOKE_URL = "https://zoom.us/oauth/revoke"
 const USER_INFO_URL = "https://api.zoom.us/v2/users/me"
@@ -5,6 +7,19 @@ const USER_INFO_URL = "https://api.zoom.us/v2/users/me"
 export type ZoomOAuthConfig = {
   clientId: string
   clientSecret: string
+}
+
+/**
+ * Thrown when Zoom rejects a refresh token with `invalid_grant` — the token is
+ * permanently dead (revoked, or already spent, since Zoom rotates the refresh
+ * token on every use). Mirrors YouTubeReauthRequiredError so the caller can
+ * prompt a reconnect instead of retrying a request that can never succeed.
+ */
+export class ZoomReauthRequiredError extends Error {
+  constructor(message = "Zoom refresh token is no longer valid; reconnect required") {
+    super(message)
+    this.name = "ZoomReauthRequiredError"
+  }
 }
 
 type ZoomTokenResponse = {
@@ -65,14 +80,7 @@ async function fetchZoomUserInfo(accessToken: string): Promise<ZoomUserInfo> {
 }
 
 export function resolveZoomOAuthConfig(env: Record<string, string | undefined>): ZoomOAuthConfig {
-  const clientId = env.ZOOM_CLIENT_ID ?? env.VITE_ZOOM_CLIENT_ID
-  const clientSecret = env.ZOOM_CLIENT_SECRET
-
-  if (!clientId || !clientSecret) {
-    throw new Error("Missing Zoom OAuth environment variables")
-  }
-
-  return { clientId, clientSecret }
+  return resolveOAuthConfig("Zoom OAuth", env, ["ZOOM_CLIENT_ID", "VITE_ZOOM_CLIENT_ID"], ["ZOOM_CLIENT_SECRET"])
 }
 
 export async function exchangeZoomCode(config: ZoomOAuthConfig, code: string, redirectUri: string): Promise<ZoomExchangeResponse> {
@@ -112,6 +120,13 @@ export async function refreshZoomToken(config: ZoomOAuthConfig, refreshToken: st
   })
 
   if (!response.ok) {
+    const contentType = response.headers.get("content-type") ?? ""
+    if (contentType.includes("application/json")) {
+      const data = await response.json() as { error?: string; reason?: string; message?: string }
+      const detail = data.reason ?? data.message ?? data.error
+      if (data.error === "invalid_grant") throw new ZoomReauthRequiredError(detail)
+      throw new Error(detail ?? "Zoom token refresh failed")
+    }
     throw new Error(await getErrorMessage(response, "Zoom token refresh failed"))
   }
 

@@ -1,8 +1,9 @@
 import { proxyYouTubeApiRequest } from "../../../server/youtube-api.js"
 import { AuthError, requireAuthenticatedUser } from "../../../server/auth-guard.js"
 import { writeCorsHeaders } from "../../../server/cors.js"
-import { WorkspaceAccessError, requireWorkspacePermission } from "../../../server/workspace-access.js"
-import { authorizeProviderRoute, prepareProviderBody, ProviderRouteError, type ProviderRouteRule } from "../../../server/provider-route-policy.js"
+import { requireWorkspacePermission } from "../../../server/workspace-access.js"
+import { authorizeProviderRoute, prepareProviderBody, type ProviderRouteRule } from "../../../server/provider-route-policy.js"
+import { providerFailure } from "../../../server/provider-failure.js"
 
 type ApiRequest = {
   body?: unknown
@@ -82,7 +83,8 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     response.end(Buffer.from(await proxyResponse.arrayBuffer()))
   } catch (error) {
     console.error("YouTube proxy request failed:", error)
-    response.statusCode = error instanceof ProviderRouteError ? 400 : error instanceof WorkspaceAccessError ? 403 : 502
-    response.end(JSON.stringify({ error: error instanceof ProviderRouteError || error instanceof WorkspaceAccessError ? error.message : "YouTube request failed" }))
+    const failure = providerFailure("YouTube", error)
+    response.statusCode = failure.status
+    response.end(JSON.stringify(failure.body))
   }
 }
