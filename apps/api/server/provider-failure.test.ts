@@ -3,7 +3,7 @@ import { describe, it } from "node:test"
 
 import { IntegrationNotConnectedError } from "./integration-access.js"
 import { ProviderConfigError } from "./provider-config.js"
-import { providerFailure } from "./provider-failure.js"
+import { ProviderUpstreamError, providerFailure } from "./provider-failure.js"
 import { ProviderRouteError } from "./provider-route-policy.js"
 import { WorkspaceAccessError } from "./workspace-access.js"
 import { YouTubeReauthRequiredError } from "./youtube-oauth.js"
@@ -18,7 +18,9 @@ describe("providerFailure", () => {
       [new YouTubeReauthRequiredError(), 401, "reauth_required"],
       [new ZoomReauthRequiredError(), 401, "reauth_required"],
       [new ProviderConfigError("Google OAuth", ["GOOGLE_CLIENT_ID"]), 500, "misconfigured"],
-      [new Error("quotaExceeded"), 502, "upstream_failed"],
+      [new ProviderUpstreamError("rate_limited"), 429, "rate_limited"],
+      [new ProviderUpstreamError("forbidden"), 403, "provider_forbidden"],
+      [new Error("database connection string leaked"), 502, "upstream_failed"],
     ]
 
     for (const [error, status, code] of cases) {
@@ -29,11 +31,8 @@ describe("providerFailure", () => {
     }
   })
 
-  it("passes the upstream reason through so an operator can tell causes apart", () => {
-    assert.equal(
-      providerFailure("YouTube", new Error("quotaExceeded")).body.error,
-      "YouTube request failed: quotaExceeded",
-    )
+  it("does not expose internal failure details to API callers", () => {
+    assert.equal(providerFailure("YouTube", new Error("database connection string leaked")).body.error, "YouTube request failed")
     assert.equal(providerFailure("Zoom", "not an error").body.error, "Zoom request failed")
   })
 

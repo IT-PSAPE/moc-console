@@ -1,5 +1,6 @@
 export type ZoomMeetingType = "instant" | "scheduled" | "recurring_no_fixed" | "recurring_fixed"
 export type ZoomRecurrenceType = "none" | "daily" | "weekly" | "monthly"
+export type ZoomConnectionStatus = "active" | "reauth_required"
 
 export type ZoomConnection = {
   id: string
@@ -9,6 +10,7 @@ export type ZoomConnection = {
   displayName: string
   connectedBy: string
   createdAt: string
+  status: ZoomConnectionStatus
 }
 
 export type ZoomMeeting = {

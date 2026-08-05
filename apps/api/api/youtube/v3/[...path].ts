@@ -4,6 +4,8 @@ import { writeCorsHeaders } from "../../../server/cors.js"
 import { requireWorkspacePermission } from "../../../server/workspace-access.js"
 import { authorizeProviderRoute, prepareProviderBody, type ProviderRouteRule } from "../../../server/provider-route-policy.js"
 import { providerFailure } from "../../../server/provider-failure.js"
+import { allowProviderProxyRequest } from "../../../server/provider-rate-limit.js"
+import { observeApiRequest } from "../../../server/observability.js"
 
 type ApiRequest = {
   body?: unknown
@@ -40,7 +42,7 @@ export const YOUTUBE_ROUTES: readonly ProviderRouteRule[] = [
   { method: "POST", path: /^\/playlistItems$/, query: ["part"], permission: "can_update", body: "json", maxBodyBytes: JSON_BODY_LIMIT },
 ]
 
-export default async function handler(request: ApiRequest, response: ApiResponse) {
+async function handleYouTubeProxy(request: ApiRequest, response: ApiResponse): Promise<void> {
   const isPreflight = request.method === "OPTIONS"
   writeCorsHeaders(request.headers, response, { preflight: isPreflight })
   if (isPreflight) {
@@ -69,6 +71,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   try {
     const route = authorizeProviderRoute(request.method, request.url, ROUTE_PREFIX, YOUTUBE_ROUTES)
     await requireWorkspacePermission(userId, workspaceId, route.permission)
+    if (!await allowProviderProxyRequest(response, userId, workspaceId, "youtube", request.method)) return
     const prepared = prepareProviderBody(request.body, route.body, route.maxBodyBytes)
     const proxyResponse = await proxyYouTubeApiRequest({
       body: prepared.body,
@@ -87,4 +90,10 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     response.statusCode = failure.status
     response.end(JSON.stringify(failure.body))
   }
+}
+
+export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
+  await observeApiRequest("youtube.proxy", request, response, async () => {
+    await handleYouTubeProxy(request, response)
+  })
 }

@@ -6,6 +6,7 @@ import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { getErrorMessage } from "@moc/utils/get-error-message"
 import type { Stream } from "@moc/types/streams/stream"
 import type { StreamFormData } from "./use-stream-form"
+import { useProviderFailure } from "./use-provider-failure"
 import { useStreamFilters } from "./use-stream-filters"
 import { useStreams } from "./streams-provider"
 
@@ -23,7 +24,7 @@ export function useYouTubeStreams(searchQuery: string) {
   const { toast } = useFeedback()
   const {
     state: { streams, youtubeConnection, isLoadingStreams, isLoadingConnection },
-    actions: { loadStreams, loadYouTubeConnection, syncStream, removeStream, setStreams },
+    actions: { loadStreams, loadYouTubeConnection, syncStream, removeStream, setStreams, setYouTubeConnection },
   } = useStreams()
   const filters = useStreamFilters(streams)
   const { setSearch } = filters
@@ -33,7 +34,13 @@ export function useYouTubeStreams(searchQuery: string) {
   const [filterOpen, setFilterOpen] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [syncError, setSyncError] = useState<string | null>(null)
-  const needsReauth = youtubeConnection?.status === "reauth_required"
+  const providerFailure = useProviderFailure(youtubeConnection, setYouTubeConnection)
+  const connectionNeedsReauth = youtubeConnection?.status === "reauth_required"
+  const needsReauth = connectionNeedsReauth || providerFailure.meta.needsConnection
+
+  const actionableErrorMessage = useCallback((error: unknown, fallback: string): string => {
+    return providerFailure.actions.record(error)?.message ?? getErrorMessage(error, fallback)
+  }, [providerFailure.actions])
 
   const load = useCallback(async () => {
     try {
@@ -67,6 +74,7 @@ export function useYouTubeStreams(searchQuery: string) {
     try {
       const { stream, thumbnailError } = await createStream(params)
       syncStream(stream)
+      providerFailure.actions.clear()
       if (params.savePreset) {
         const thumbnailUrl = await getPresetThumbnailUrl(params.thumbnail)
         void saveStreamPreset({
@@ -90,39 +98,45 @@ export function useYouTubeStreams(searchQuery: string) {
         ? { title: "Stream created, but the thumbnail wasn't applied", description: thumbnailError, variant: "warning" }
         : { title: "Stream created", variant: "success" })
     } catch (error) {
-      const message = getErrorMessage(error, "The stream could not be created.")
+      const message = actionableErrorMessage(error, "The stream could not be created.")
       toast({ title: "Failed to create stream", description: message, variant: "error" })
       throw new Error(message)
     }
-  }, [guardReauthentication, syncStream, toast])
+  }, [actionableErrorMessage, guardReauthentication, providerFailure.actions, syncStream, toast])
 
   const update = useCallback(async (params: StreamFormData) => {
     if (!editingStream || guardReauthentication()) return
     try {
       const { thumbnail, ...fields } = params
-      const { stream, thumbnailError } = await updateStream({ ...editingStream, ...fields }, thumbnail)
+      const { stream, thumbnailError, reconciliationWarning } = await updateStream({ ...editingStream, ...fields }, thumbnail)
       syncStream(stream)
+      providerFailure.actions.clear()
       setEditingStream(null)
-      toast(thumbnailError
-        ? { title: "Stream updated, but the thumbnail wasn't applied", description: thumbnailError, variant: "warning" }
-        : { title: "Stream updated", variant: "success" })
+      if (reconciliationWarning) {
+        toast({ title: "Stream updated on YouTube", description: reconciliationWarning, variant: "warning" })
+      } else {
+        toast(thumbnailError
+          ? { title: "Stream updated, but the thumbnail wasn't applied", description: thumbnailError, variant: "warning" }
+          : { title: "Stream updated", variant: "success" })
+      }
     } catch (error) {
-      const message = getErrorMessage(error, "The stream could not be updated.")
+      const message = actionableErrorMessage(error, "The stream could not be updated.")
       toast({ title: "Failed to update stream", description: message, variant: "error" })
       throw new Error(message)
     }
-  }, [editingStream, guardReauthentication, syncStream, toast])
+  }, [actionableErrorMessage, editingStream, guardReauthentication, providerFailure.actions, syncStream, toast])
 
   const remove = useCallback(async (stream: Stream) => {
     if (guardReauthentication()) return
     try {
       await deleteStream(stream)
       removeStream(stream.id)
+      providerFailure.actions.clear()
       toast({ title: "Stream deleted", variant: "success" })
     } catch (error) {
-      toast({ title: "Failed to delete stream", description: getErrorMessage(error, "The stream could not be deleted."), variant: "error" })
+      toast({ title: "Failed to delete stream", description: actionableErrorMessage(error, "The stream could not be deleted."), variant: "error" })
     }
-  }, [guardReauthentication, removeStream, toast])
+  }, [actionableErrorMessage, guardReauthentication, providerFailure.actions, removeStream, toast])
 
   const sync = useCallback(async () => {
     if (guardReauthentication()) return
@@ -131,15 +145,16 @@ export function useYouTubeStreams(searchQuery: string) {
     try {
       const synced = await syncStreamsFromYouTube()
       setStreams(synced)
+      providerFailure.actions.clear()
       toast({ title: "Streams synced from YouTube", variant: "success" })
     } catch (error) {
-      const message = getErrorMessage(error, "Streams could not be synced from YouTube.")
+      const message = actionableErrorMessage(error, "Streams could not be synced from YouTube.")
       setSyncError(message)
       toast({ title: "Failed to sync streams", description: message, variant: "error" })
     } finally {
       setIsSyncing(false)
     }
-  }, [guardReauthentication, setStreams, toast])
+  }, [actionableErrorMessage, guardReauthentication, providerFailure.actions, setStreams, toast])
 
   function openFilters() {
     setFilterOpen(true)
@@ -162,6 +177,7 @@ export function useYouTubeStreams(searchQuery: string) {
       filters,
       isConnected: Boolean(youtubeConnection),
       needsReauth,
+      providerFailure: providerFailure.state.failure,
       canCreate: role?.can_create === true && !needsReauth,
       isLoading: isLoadingStreams || isLoadingConnection,
     },

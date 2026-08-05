@@ -2,8 +2,8 @@ import { resolveZoomOAuthConfig, revokeZoomAccessToken } from "../../../zoom-oau
 import { AuthError, requireAuthenticatedUser } from "../../../auth-guard.js"
 import { applyCors } from "../../../cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../http.js"
-import { deleteIntegrationTokens, getIntegrationTokens } from "../../../integration-oauth-store.js"
-import { getSupabaseAdmin } from "../../../supabase-admin.js"
+import { deleteIntegrationConnection, getIntegrationTokens } from "../../../integration-oauth-store.js"
+import { allowOAuthMutation } from "../../../oauth-rate-limit.js"
 import { WorkspaceAccessError, requireWorkspacePermission } from "../../../workspace-access.js"
 
 type RequestBody = {
@@ -28,18 +28,20 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       return
     }
     await requireWorkspacePermission(user.userId, workspaceId, "can_manage_roles")
+    if (!await allowOAuthMutation(response, user.userId, workspaceId, "zoom", "revoke")) return
 
     const tokens = await getIntegrationTokens("zoom", workspaceId)
+    let providerRevocationFailed = false
     if (tokens) {
-      await revokeZoomAccessToken(resolveZoomOAuthConfig(process.env), tokens.accessToken)
+      try {
+        await revokeZoomAccessToken(resolveZoomOAuthConfig(process.env), tokens.accessToken)
+      } catch (error) {
+        providerRevocationFailed = true
+        console.warn("Zoom remote token revoke failed; disconnecting locally:", error)
+      }
     }
-    await deleteIntegrationTokens("zoom", workspaceId)
-    const { error: connectionError } = await getSupabaseAdmin()
-      .from("zoom_connections")
-      .delete()
-      .eq("workspace_id", workspaceId)
-    if (connectionError) throw new Error(connectionError.message)
-    response.status(200).json({ ok: true })
+    await deleteIntegrationConnection("zoom", workspaceId)
+    response.status(200).json({ ok: true, providerRevocationFailed })
     return
   } catch (error) {
     if (error instanceof AuthError) {

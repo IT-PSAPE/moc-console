@@ -22,6 +22,7 @@ See [ADR-0008](../../docs/adr/0008-extract-moc-api-app.md) for why this exists.
 | `POST /api/zoom/oauth/{exchange,refresh,revoke}` | MOC Console (browser) | Supabase session |
 | `* /api/zoom/v2/*` | MOC Console (browser) | Supabase session + workspace permission |
 | `POST /api/telegram/webhook` | Telegram | webhook secret |
+| `GET /api/health` | deployment monitor | none |
 | `GET /api/cron/weekly-archive` | Vercel Cron, Mondays 00:00 | `CRON_SECRET` |
 | `GET /api/cron/stale-items` | Vercel Cron, daily 00:00 | `CRON_SECRET` |
 | `GET /api/cron/notification-deliveries` | Vercel Cron, daily 01:00 fallback retry | `CRON_SECRET` |
@@ -50,6 +51,30 @@ vanished.
 An override changes *where* a notification goes, never *what it says*: the
 template and token rendering are identical either way.
 
+## Signed notification ingest
+
+External senders may `POST` to `/api/notifications/requests` or
+`/api/notifications/bookings`. The JSON body may contain only `event_type`,
+the matching UUID (`request_id` or `booking_id`), and an optional `status`
+(maximum 64 characters); its canonical form must be no larger than 8 KiB.
+
+Every request requires these headers:
+
+- `X-Notification-Timestamp`: a 10-digit Unix timestamp in seconds, accepted
+  only within five minutes of the API clock.
+- `X-Notification-Nonce`: a UUID (v1–v5), used once and retained for ten
+  minutes to prevent replay.
+- `X-Signature`: a 64-hex-character HMAC-SHA256 digest. Case is ignored.
+
+Sign the UTF-8 bytes of
+`${timestamp}.${nonce}.${canonicalJson(body)}` with `NOTIFICATIONS_INGEST_SECRET`.
+`canonicalJson` recursively sorts object keys lexicographically, uses compact
+JSON without whitespace, preserves array order, escapes strings with
+`JSON.stringify`, and rejects non-JSON values. A replay returns `409`; a
+malformed, missing, or expired signing value returns `401`. If the nonce store
+is unavailable, the API returns `503` rather than accepting a request it cannot
+replay-protect.
+
 ## Provider proxy routing
 
 `/api/youtube/v3/*` and `/api/zoom/v2/*` are one `[...path]` function each, but
@@ -60,16 +85,14 @@ CORS headers, so the browser reports it as a preflight failure rather than a
 missing route.
 
 The `rewrites` in [vercel.json](vercel.json) therefore point every provider path
-at a single-segment URL (`_proxy`) and carry the real path in a `providerPath`
-query parameter. `authorizeProviderRoute` accepts the provider path from either
-source — the pathname when the request reached the function directly, the
-parameter when it was rewritten — and applies the same method, path and
-permission rules to both, so the parameter grants nothing a direct call would
-not. It is never forwarded upstream.
+at a single-segment URL (`_proxy`) and carry the real path in a `rewrittenPath`
+query parameter. Callers which already use the collapsed path send
+`providerPath` instead. `authorizeProviderRoute` accepts either parameter and
+applies the same method, path and permission rules to both, so the parameter
+grants nothing a direct call would not. It is never forwarded upstream.
 
-Adding a real file per nested route would also work, but the deployment sits at
-its function-count ceiling, which is why the entrypoints were consolidated in
-the first place.
+Adding a real file per nested route would also work, but the entrypoints are
+consolidated to keep routing and authorization policy in one place.
 
 ## CORS
 
@@ -83,8 +106,9 @@ frontends at it**, or every call fails preflight.
 
 ## Environment
 
-See [.env.example](.env.example). Nothing here is `VITE_`-prefixed; no value in
-this app is ever shipped to a browser.
+See [.env.example](.env.example). The Supabase URL retains its historical
+`VITE_`-prefixed name, but the API app does not bundle it; no server secret is
+shipped to a browser.
 
 One trap worth knowing: `resolveBaseUrl()` does **not** fall back to
 `VERCEL_URL`. On this project that is the API's own host, and a "View request"
@@ -101,8 +125,37 @@ Runs `vercel dev` on port 3001. Point a frontend at it by setting
 `VITE_API_BASE_URL=http://localhost:3001` in that app's `.env.local`, and add
 `http://localhost:5173` to `ALLOWED_ORIGINS` here.
 
+Vercel CLI reads `.env` in local-only mode, while this repository keeps local
+configuration in the ignored `.env.local`. The launcher creates a temporary
+symlink for the dev process and removes it on shutdown; it never copies or
+prints the values.
+
 Only work that touches Zoom, YouTube or notifications needs the API running.
 Requests, equipment and bookings go straight to Supabase from the browser.
+
+The root command pins the Vercel CLI version and deliberately avoids an
+API-local `dev` script: Vercel treats that script as its application
+development command, which would recursively invoke itself.
+
+## Health and request correlation
+
+`GET /api/health` is a cache-disabled liveness/readiness probe. It returns
+`200` only when the API's core server configuration is present and `503` when
+it is not; it never reveals environment values. Responses include
+`X-Request-Id`, and the function emits one structured request log with that ID,
+route, method, status, duration, and deployment identifier. Set a monitor to
+probe this endpoint after each deployment.
+
+## Edge abuse protection
+
+Rate limiting must be enforced by the deployed edge/WAF as well as any API
+guard. Configure Vercel WAF rate rules for the public notification wake,
+signed-ingest, Telegram webhook, OAuth mutation, and provider-proxy routes.
+Use separate rules for read and write proxy methods, begin with the limits in
+the API's `RATE_LIMIT_POLICIES`, and alert on blocks or sustained `429`s. This
+cannot be configured safely in this repository because the production Vercel
+project is not linked here; apply and verify the rules in that project's
+dashboard before production rollout.
 
 ## Layout
 

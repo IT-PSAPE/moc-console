@@ -1,4 +1,4 @@
-import { resolveOAuthConfig } from "./provider-config.js"
+import { fetchProvider, resolveOAuthConfig } from "./provider-config.js"
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token"
 const REVOKE_URL = "https://oauth2.googleapis.com/revoke"
@@ -48,7 +48,7 @@ async function getErrorMessage(response: Response, fallback: string): Promise<st
 }
 
 async function fetchYouTubeChannel(accessToken: string): Promise<ChannelInfo> {
-  const response = await fetch(CHANNELS_URL, {
+  const response = await fetchProvider(CHANNELS_URL, {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
   if (!response.ok) {
@@ -73,7 +73,7 @@ export async function exchangeYouTubeCode(
   code: string,
   redirectUri: string,
 ): Promise<ExchangeResponse> {
-  const response = await fetch(TOKEN_URL, {
+  const response = await fetchProvider(TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -98,7 +98,7 @@ export async function refreshYouTubeToken(
   config: YouTubeOAuthConfig,
   refreshToken: string,
 ): Promise<TokenResponse> {
-  const response = await fetch(TOKEN_URL, {
+  const response = await fetchProvider(TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -125,7 +125,7 @@ export async function refreshYouTubeToken(
 }
 
 export async function revokeYouTubeToken(token: string): Promise<void> {
-  const response = await fetch(`${REVOKE_URL}?token=${encodeURIComponent(token)}`, {
+  const response = await fetchProvider(`${REVOKE_URL}?token=${encodeURIComponent(token)}`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
   })

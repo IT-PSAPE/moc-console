@@ -2,8 +2,8 @@ import { exchangeYouTubeCode, resolveYouTubeOAuthConfig } from "../../../youtube
 import { AuthError, requireAuthenticatedUser } from "../../../auth-guard.js"
 import { applyCors } from "../../../cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../http.js"
-import { saveIntegrationTokens } from "../../../integration-oauth-store.js"
-import { getSupabaseAdmin } from "../../../supabase-admin.js"
+import { saveIntegrationConnection } from "../../../integration-oauth-store.js"
+import { allowOAuthMutation } from "../../../oauth-rate-limit.js"
 import { WorkspaceAccessError, requireWorkspacePermission } from "../../../workspace-access.js"
 
 type RequestBody = {
@@ -30,6 +30,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       return
     }
     await requireWorkspacePermission(user.userId, workspaceId, "can_manage_roles")
+    if (!await allowOAuthMutation(response, user.userId, workspaceId, "youtube", "exchange")) return
 
     const code = typeof body.code === "string" ? body.code : null
     const redirectUri = typeof body.redirectUri === "string" ? body.redirectUri : null
@@ -45,20 +46,14 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     }
 
     const tokenExpiresAt = new Date(Date.now() + result.expires_in * 1000).toISOString()
-    const admin = getSupabaseAdmin()
-    const { error: connectionError } = await admin
-      .from("youtube_connections")
-      .upsert({
-        workspace_id: workspaceId,
-        channel_id: result.channel.channelId,
-        channel_title: result.channel.channelTitle,
-        token_expires_at: tokenExpiresAt,
-        status: "active",
-        connected_by: user.userId,
-      }, { onConflict: "workspace_id" })
-
-    if (connectionError) throw new Error(connectionError.message)
-    await saveIntegrationTokens("youtube", workspaceId, {
+    await saveIntegrationConnection(workspaceId, {
+      provider: "youtube",
+      connection: {
+        channelId: result.channel.channelId,
+        channelTitle: result.channel.channelTitle,
+        connectedBy: user.userId,
+      },
+    }, {
       accessToken: result.access_token,
       refreshToken: result.refresh_token,
       tokenExpiresAt,

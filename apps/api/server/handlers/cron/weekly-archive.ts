@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from "../../supabase-admin.js"
-import { isAuthorizedCron } from "../../cron-auth.js"
+import { requireAuthorizedCronGet } from "../../cron-auth.js"
 
 // Weekly archive sweep. Flips finished work to 'archived' after each
 // workspace's configured delay so it drops out of active views without
@@ -28,10 +28,7 @@ type ArchivedRow = {
 export default async function handler(request: ApiRequest, response: ApiResponse) {
   response.setHeader("Content-Type", "application/json")
 
-  if (!isAuthorizedCron(request)) {
-    response.status(401).json({ error: "Unauthorized" })
-    return
-  }
+  if (!requireAuthorizedCronGet(request, response)) return
 
   const admin = getSupabaseAdmin()
 

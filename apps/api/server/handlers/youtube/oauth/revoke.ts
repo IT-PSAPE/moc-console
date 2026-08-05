@@ -2,8 +2,8 @@ import { revokeYouTubeToken } from "../../../youtube-oauth.js"
 import { AuthError, requireAuthenticatedUser } from "../../../auth-guard.js"
 import { applyCors } from "../../../cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../http.js"
-import { deleteIntegrationTokens, getIntegrationTokens } from "../../../integration-oauth-store.js"
-import { getSupabaseAdmin } from "../../../supabase-admin.js"
+import { deleteIntegrationConnection, getIntegrationTokens } from "../../../integration-oauth-store.js"
+import { allowOAuthMutation } from "../../../oauth-rate-limit.js"
 import { WorkspaceAccessError, requireWorkspacePermission } from "../../../workspace-access.js"
 
 type RequestBody = {
@@ -28,16 +28,20 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       return
     }
     await requireWorkspacePermission(user.userId, workspaceId, "can_manage_roles")
+    if (!await allowOAuthMutation(response, user.userId, workspaceId, "youtube", "revoke")) return
 
     const tokens = await getIntegrationTokens("youtube", workspaceId)
-    if (tokens) await revokeYouTubeToken(tokens.accessToken)
-    await deleteIntegrationTokens("youtube", workspaceId)
-    const { error: connectionError } = await getSupabaseAdmin()
-      .from("youtube_connections")
-      .delete()
-      .eq("workspace_id", workspaceId)
-    if (connectionError) throw new Error(connectionError.message)
-    response.status(200).json({ ok: true })
+    let providerRevocationFailed = false
+    if (tokens) {
+      try {
+        await revokeYouTubeToken(tokens.accessToken)
+      } catch (error) {
+        providerRevocationFailed = true
+        console.warn("YouTube remote token revoke failed; disconnecting locally:", error)
+      }
+    }
+    await deleteIntegrationConnection("youtube", workspaceId)
+    response.status(200).json({ ok: true, providerRevocationFailed })
   } catch (error) {
     if (error instanceof AuthError) {
       response.status(401).json({ error: "Unauthorized" })

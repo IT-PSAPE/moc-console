@@ -2,8 +2,8 @@ import { exchangeZoomCode, resolveZoomOAuthConfig } from "../../../zoom-oauth.js
 import { AuthError, requireAuthenticatedUser } from "../../../auth-guard.js"
 import { applyCors } from "../../../cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../http.js"
-import { saveIntegrationTokens } from "../../../integration-oauth-store.js"
-import { getSupabaseAdmin } from "../../../supabase-admin.js"
+import { saveIntegrationConnection } from "../../../integration-oauth-store.js"
+import { allowOAuthMutation } from "../../../oauth-rate-limit.js"
 import { WorkspaceAccessError, requireWorkspacePermission } from "../../../workspace-access.js"
 
 type RequestBody = {
@@ -30,6 +30,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       return
     }
     await requireWorkspacePermission(user.userId, workspaceId, "can_manage_roles")
+    if (!await allowOAuthMutation(response, user.userId, workspaceId, "zoom", "exchange")) return
 
     const code = typeof body.code === "string" ? body.code : null
     const redirectUri = typeof body.redirectUri === "string" ? body.redirectUri : null
@@ -41,20 +42,15 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     const config = resolveZoomOAuthConfig(process.env)
     const result = await exchangeZoomCode(config, code, redirectUri)
     const tokenExpiresAt = new Date(Date.now() + result.expires_in * 1000).toISOString()
-    const admin = getSupabaseAdmin()
-    const { error: connectionError } = await admin
-      .from("zoom_connections")
-      .upsert({
-        workspace_id: workspaceId,
-        zoom_user_id: result.userInfo.zoomUserId,
+    await saveIntegrationConnection(workspaceId, {
+      provider: "zoom",
+      connection: {
+        zoomUserId: result.userInfo.zoomUserId,
         email: result.userInfo.email,
-        display_name: result.userInfo.displayName,
-        token_expires_at: tokenExpiresAt,
-        connected_by: user.userId,
-      }, { onConflict: "workspace_id" })
-
-    if (connectionError) throw new Error(connectionError.message)
-    await saveIntegrationTokens("zoom", workspaceId, {
+        displayName: result.userInfo.displayName,
+        connectedBy: user.userId,
+      },
+    }, {
       accessToken: result.access_token,
       refreshToken: result.refresh_token,
       tokenExpiresAt,

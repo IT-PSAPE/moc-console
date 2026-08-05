@@ -31,6 +31,8 @@ export function useStreamsCollection() {
 
   const youtubeAvailable = youtube.meta.isConnected && youtube.meta.canCreate
   const zoomAvailable = zoom.meta.isConnected && zoom.meta.canCreate
+  const canSync = (youtube.meta.isConnected && !youtube.meta.needsReauth)
+    || (zoom.meta.isConnected && !zoom.meta.needsReauth)
   const isConnected = youtube.meta.isConnected || zoom.meta.isConnected
   const isLoading = youtube.meta.isLoading || zoom.meta.isLoading
   const hasActiveFilters = youtube.meta.filters.hasActiveFilters || zoom.meta.filters.hasActiveFilters
@@ -76,6 +78,7 @@ export function useStreamsCollection() {
       youtubeAvailable,
       zoomAvailable,
       canCreate: youtubeAvailable || zoomAvailable,
+      canSync,
       isConnected,
       isLoading,
       isSyncing: youtube.state.isSyncing || zoom.state.isSyncing,

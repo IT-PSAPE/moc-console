@@ -3,6 +3,7 @@ import staleItems from "../../server/handlers/cron/stale-items.js"
 import weeklyArchive from "../../server/handlers/cron/weekly-archive.js"
 import { dispatchNamedRoute, type ApiHandler } from "../../server/route-dispatch.js"
 import type { ApiRequest, ApiResponse } from "../../server/http.js"
+import { observeApiRequest } from "../../server/observability.js"
 
 const routes: Readonly<Record<string, ApiHandler>> = {
   "notification-deliveries": notificationDeliveries,
@@ -11,5 +12,7 @@ const routes: Readonly<Record<string, ApiHandler>> = {
 }
 
 export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
-  await dispatchNamedRoute(request, response, "task", routes)
+  await observeApiRequest("cron", request, response, async () => {
+    await dispatchNamedRoute(request, response, "task", routes)
+  })
 }

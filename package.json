@@ -10,11 +10,12 @@
   "scripts": {
     "dev:console": "bun --filter moc-console dev",
     "dev:request": "bun --filter moc-request dev",
-    "dev:api": "bun --filter moc-api dev",
+    "dev:api": "bun apps/api/scripts/dev.ts",
     "build:console": "bun --filter moc-console build",
     "build:request": "bun --filter moc-request build",
     "build:api": "bun --filter moc-api build",
     "build": "bun --filter '*' build",
-    "lint": "bun --filter '*' lint"
+    "lint": "bun --filter '*' lint",
+    "test:api": "bun --filter moc-api test"
   }
 }

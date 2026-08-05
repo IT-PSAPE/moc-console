@@ -12,8 +12,9 @@ import { headerValue, type ApiRequest, type ApiResponse } from "./http.js"
 // callers like Telegram webhooks and Vercel Cron send no Origin and are
 // unaffected.
 
-const ALLOWED_HEADERS = "content-type, authorization, x-moc-session, x-moc-workspace, x-signature"
+const ALLOWED_HEADERS = "content-type, authorization, x-moc-session, x-moc-workspace, x-request-id, x-signature"
 const ALLOWED_METHODS = "GET, POST, PATCH, PUT, DELETE, OPTIONS"
+const EXPOSED_HEADERS = "X-Request-Id, Retry-After"
 
 function allowedOrigins(): string[] {
   return (process.env.ALLOWED_ORIGINS ?? "")
@@ -44,6 +45,7 @@ export function writeCorsHeaders(
   if (isAllowedOrigin(origin)) {
     response.setHeader("Access-Control-Allow-Origin", origin as string)
     response.setHeader("Access-Control-Allow-Credentials", "true")
+    response.setHeader("Access-Control-Expose-Headers", EXPOSED_HEADERS)
     // Caches keyed on the URL alone would serve one origin's ACAO header to
     // another; Vary makes the origin part of the cache key.
     response.setHeader("Vary", "Origin")

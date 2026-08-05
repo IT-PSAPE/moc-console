@@ -148,7 +148,9 @@ async function resolveOverrideTargets(
     .eq("workspace_id", workspaceId)
     .in("chat_id", chatIds)
 
-  if (error) return []
+  if (error) {
+    throw new Error(`Notification destination lookup failed: ${error.message}`)
+  }
 
   type GroupRow = {
     chat_id: string

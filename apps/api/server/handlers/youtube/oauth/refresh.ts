@@ -2,6 +2,7 @@ import { getIntegrationAccessToken, IntegrationNotConnectedError, YouTubeReauthR
 import { AuthError, requireAuthenticatedUser } from "../../../auth-guard.js"
 import { applyCors } from "../../../cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../http.js"
+import { allowOAuthMutation } from "../../../oauth-rate-limit.js"
 import { WorkspaceAccessError, requireWorkspacePermission } from "../../../workspace-access.js"
 
 type RequestBody = {
@@ -26,6 +27,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       return
     }
     await requireWorkspacePermission(user.userId, workspaceId, "can_read")
+    if (!await allowOAuthMutation(response, user.userId, workspaceId, "youtube", "refresh")) return
     await getIntegrationAccessToken("youtube", workspaceId)
     response.status(200).json({ ok: true })
     return

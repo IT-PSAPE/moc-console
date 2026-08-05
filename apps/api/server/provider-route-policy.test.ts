@@ -215,6 +215,15 @@ describe("prepareProviderBody", () => {
     )
   })
 
+  it("refuses malformed or non-canonical image base64", () => {
+    for (const image of ["%%%", "YQ", "YR==", "YWJj\n"]) {
+      assert.throws(
+        () => prepareProviderBody({ image, contentType: "image/jpeg" }, "image", 1024),
+        new ProviderRouteError("Thumbnail image could not be read"),
+      )
+    }
+  })
+
   it("bounds the decoded image, not the encoded envelope", () => {
     // Base64 inflates by a third; limiting the encoded form would reject images
     // YouTube's own 2 MB limit accepts.

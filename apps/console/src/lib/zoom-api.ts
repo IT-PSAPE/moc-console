@@ -1,5 +1,6 @@
 import { buildSessionHeaders } from "./api-auth"
 import { providerProxyPath } from "./provider-proxy-path"
+import { providerRequestError } from "./provider-request-error"
 import { apiUrl } from "@moc/utils/api-url"
 import { getCurrentWorkspaceId } from "@/data/current-workspace"
 
@@ -37,8 +38,6 @@ export async function revokeZoomToken(workspaceId: string): Promise<void> {
   })
 
   if (!response.ok) {
-    const contentType = response.headers.get("content-type") ?? ""
-    const data = contentType.includes("application/json") ? await response.json() as { error?: string } : null
-    throw new Error(data?.error ?? "Zoom token revoke failed")
+    throw await providerRequestError(response, "Zoom could not be disconnected")
   }
 }

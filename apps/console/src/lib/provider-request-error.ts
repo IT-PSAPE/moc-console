@@ -1,11 +1,18 @@
 /** Failure codes the API's provider proxies return alongside a human message. */
-export type ProviderFailureCode =
-  | "invalid_request"
-  | "forbidden"
-  | "not_connected"
-  | "reauth_required"
-  | "misconfigured"
-  | "upstream_failed"
+export const providerFailureCodes = [
+  "invalid_request",
+  "forbidden",
+  "not_connected",
+  "reauth_required",
+  "misconfigured",
+  "provider_forbidden",
+  "rate_limited",
+  "service_unavailable",
+  "upstream_timed_out",
+  "upstream_failed",
+] as const
+
+export type ProviderFailureCode = (typeof providerFailureCodes)[number]
 
 /**
  * A failed provider proxy call, carrying the API's failure code so callers can
@@ -28,29 +35,60 @@ export class ProviderRequestError extends Error {
   get needsConnection(): boolean {
     return this.code === "not_connected" || this.code === "reauth_required"
   }
+
+  /** True when retrying without a deployment change cannot help the user. */
+  get needsConfiguration(): boolean {
+    return this.code === "misconfigured"
+  }
+
+  /** True when retrying later is more useful than reconnecting. */
+  get isTransient(): boolean {
+    return this.code === "rate_limited"
+      || this.code === "service_unavailable"
+      || this.code === "upstream_timed_out"
+      || this.code === "upstream_failed"
+  }
 }
 
-const FAILURE_CODES: readonly string[] = [
-  "invalid_request",
-  "forbidden",
-  "not_connected",
-  "reauth_required",
-  "misconfigured",
-  "upstream_failed",
-]
+type ProviderFailureResponse = {
+  code?: unknown
+  error?: unknown
+}
+
+/** Returns true only for an API code that the Console deliberately supports. */
+export function isProviderFailureCode(value: unknown): value is ProviderFailureCode {
+  return typeof value === "string" && providerFailureCodes.includes(value as ProviderFailureCode)
+}
+
+/** Narrows an unknown thrown value without exposing arbitrary response bodies. */
+export function isProviderRequestError(error: unknown): error is ProviderRequestError {
+  return error instanceof ProviderRequestError
+}
+
+/** Concise UI title for a stable provider failure, without echoing raw bodies. */
+export function providerFailureTitle(provider: string, failure: ProviderRequestError | null, fallback: string): string {
+  if (!failure) return fallback
+  if (failure.needsConnection) return `${provider} needs reconnecting`
+  if (failure.needsConfiguration) return `${provider} is not configured`
+  if (failure.isTransient) return `${provider} is temporarily unavailable`
+  if (failure.code === "forbidden" || failure.code === "provider_forbidden") return `${provider} rejected this request`
+  return fallback
+}
 
 /** Builds a typed error from a failed proxy response, reading it only once. */
 export async function providerRequestError(response: Response, fallback: string): Promise<ProviderRequestError> {
   const raw = await response.text()
-  let message = raw ? `${fallback}: ${raw}` : fallback
+  let message = fallback
   let code: ProviderFailureCode | null = null
 
   try {
-    const parsed = JSON.parse(raw) as { error?: string; code?: string }
-    if (parsed.error) message = parsed.error
-    if (parsed.code && FAILURE_CODES.includes(parsed.code)) code = parsed.code as ProviderFailureCode
+    const parsed = JSON.parse(raw) as ProviderFailureResponse
+    if (isProviderFailureCode(parsed.code)) {
+      code = parsed.code
+      if (typeof parsed.error === "string" && parsed.error.trim()) message = parsed.error
+    }
   } catch {
-    // A non-JSON body (a gateway's HTML error page, say) keeps the raw text.
+    // Keep stable caller copy for non-JSON gateway and provider error bodies.
   }
 
   return new ProviderRequestError(message, code, response.status)

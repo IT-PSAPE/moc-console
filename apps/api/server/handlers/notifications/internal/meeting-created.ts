@@ -1,25 +1,15 @@
 import { enqueueOutboxEvent, processOutboxEvent } from "../../../notifications/outbox.js"
-import { requireWorkspaceMembership } from "../../../notifications/authorization.js"
+import { requireWorkspaceCreateOrEntityOwnership } from "../../../notifications/authorization.js"
+import { DestinationInputError, parseNotificationDestinations } from "../../../notifications/destination-input.js"
+import { allowAuthenticatedNotificationMutation } from "../../../notifications/mutation-rate-limit.js"
 import { getSupabaseAdmin } from "../../../supabase-admin.js"
-import { requireAuthenticatedUser, AuthError } from "../../../auth-guard.js"
+import { requireAuthenticatedUser } from "../../../auth-guard.js"
 import { applyCors } from "../../../cors.js"
 import { normaliseHeaders } from "../../../http.js"
 import type { ApiRequest, ApiResponse } from "../../../http.js"
+import { WorkspaceAccessError } from "../../../workspace-access.js"
 
 type Body = { meetingId?: string; destinations?: unknown }
-
-function parseDestinations(value: unknown): { groupChatId: string; threadId: number | null }[] | undefined {
-  if (!Array.isArray(value)) return undefined
-  const parsed: { groupChatId: string; threadId: number | null }[] = []
-  for (const entry of value) {
-    if (typeof entry !== "object" || entry === null) continue
-    const { groupChatId, threadId } = entry as Record<string, unknown>
-    if (typeof groupChatId !== "string" || !groupChatId) continue
-    if (threadId !== null && typeof threadId !== "number") continue
-    parsed.push({ groupChatId, threadId: threadId as number | null })
-  }
-  return parsed.length > 0 ? parsed : undefined
-}
 
 export default async function handler(request: ApiRequest, response: ApiResponse) {
   if (applyCors(request, response)) return
@@ -32,8 +22,8 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   let userId: string
   try {
     userId = (await requireAuthenticatedUser(normaliseHeaders(request.headers))).userId
-  } catch (error) {
-    response.status(401).json({ error: error instanceof AuthError ? error.message : "Unauthorized" })
+  } catch {
+    response.status(401).json({ error: "Unauthorized" })
     return
   }
 
@@ -46,11 +36,12 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   const admin = getSupabaseAdmin()
   const { data, error } = await admin
     .from("zoom_meetings")
-    .select("id, workspace_id, topic, start_time, join_url")
+    .select("id, workspace_id, topic, start_time, join_url, created_by")
     .eq("id", body.meetingId)
     .maybeSingle()
   if (error) {
-    response.status(500).json({ error: error.message })
+    console.error("Meeting notification lookup failed:", error)
+    response.status(503).json({ error: "Meeting lookup is temporarily unavailable" })
     return
   }
   if (!data) {
@@ -59,14 +50,28 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   }
 
   try {
-    await requireWorkspaceMembership(userId, data.workspace_id)
+    await requireWorkspaceCreateOrEntityOwnership(userId, data.workspace_id, data.created_by)
   } catch (error) {
-    response.status(403).json({ error: error instanceof Error ? error.message : "Forbidden" })
+    if (error instanceof WorkspaceAccessError) {
+      response.status(403).json({ error: error.message })
+      return
+    }
+    console.error("Meeting notification authorization failed:", error)
+    response.status(503).json({ error: "Workspace access check is temporarily unavailable" })
+    return
+  }
+
+  if (!await allowAuthenticatedNotificationMutation(response, userId, data.workspace_id)) return
+
+  let destinations
+  try {
+    destinations = parseNotificationDestinations(body.destinations)
+  } catch (error) {
+    response.status(400).json({ error: error instanceof DestinationInputError ? error.message : "Invalid destinations" })
     return
   }
 
   const eventKey = `meeting.created:${data.id}`
-  const destinations = parseDestinations(body.destinations)
   await enqueueOutboxEvent({
     workspaceId: data.workspace_id,
     eventType: "meeting.created",
@@ -86,7 +91,8 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     .eq("id", data.id)
     .is("notified_at", null)
   if (markError) {
-    response.status(500).json({ error: markError.message })
+    console.error("Meeting notification state update failed:", markError)
+    response.status(503).json({ error: "Meeting notification state is temporarily unavailable" })
     return
   }
   const result = await processOutboxEvent(eventKey)

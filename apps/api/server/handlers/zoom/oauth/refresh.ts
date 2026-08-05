@@ -1,7 +1,8 @@
-import { getIntegrationAccessToken, IntegrationNotConnectedError } from "../../../integration-access.js"
+import { getIntegrationAccessToken, IntegrationNotConnectedError, ZoomReauthRequiredError } from "../../../integration-access.js"
 import { AuthError, requireAuthenticatedUser } from "../../../auth-guard.js"
 import { applyCors } from "../../../cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../../http.js"
+import { allowOAuthMutation } from "../../../oauth-rate-limit.js"
 import { WorkspaceAccessError, requireWorkspacePermission } from "../../../workspace-access.js"
 
 type RequestBody = {
@@ -26,12 +27,17 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       return
     }
     await requireWorkspacePermission(user.userId, workspaceId, "can_read")
+    if (!await allowOAuthMutation(response, user.userId, workspaceId, "zoom", "refresh")) return
     await getIntegrationAccessToken("zoom", workspaceId)
     response.status(200).json({ ok: true })
     return
   } catch (error) {
     if (error instanceof AuthError) {
       response.status(401).json({ error: "Unauthorized" })
+      return
+    }
+    if (error instanceof ZoomReauthRequiredError) {
+      response.status(401).json({ error: error.message, code: "reauth_required" })
       return
     }
     if (error instanceof WorkspaceAccessError) {

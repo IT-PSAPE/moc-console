@@ -4,6 +4,8 @@ import { writeCorsHeaders } from "../../../server/cors.js"
 import { requireWorkspacePermission } from "../../../server/workspace-access.js"
 import { authorizeProviderRoute, prepareProviderBody, type ProviderRouteRule } from "../../../server/provider-route-policy.js"
 import { providerFailure } from "../../../server/provider-failure.js"
+import { allowProviderProxyRequest } from "../../../server/provider-rate-limit.js"
+import { observeApiRequest } from "../../../server/observability.js"
 
 type ApiRequest = {
   body?: unknown
@@ -29,7 +31,7 @@ export const ZOOM_ROUTES: readonly ProviderRouteRule[] = [
   { method: "DELETE", path: /^\/meetings\/[A-Za-z0-9_-]+$/, query: [], permission: "can_delete", body: "none", maxBodyBytes: 0 },
 ]
 
-export default async function handler(request: ApiRequest, response: ApiResponse) {
+async function handleZoomProxy(request: ApiRequest, response: ApiResponse): Promise<void> {
   const isPreflight = request.method === "OPTIONS"
   writeCorsHeaders(request.headers, response, { preflight: isPreflight })
   if (isPreflight) {
@@ -61,6 +63,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   try {
     route = authorizeProviderRoute(request.method, request.url, ROUTE_PREFIX, ZOOM_ROUTES)
     await requireWorkspacePermission(userId, workspaceId, route.permission)
+    if (!await allowProviderProxyRequest(response, userId, workspaceId, "zoom", request.method)) return
   } catch (error) {
     console.error("Zoom proxy authorization failed:", error)
     const failure = providerFailure("Zoom", error)
@@ -93,4 +96,10 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     response.statusCode = failure.status
     response.end(JSON.stringify(failure.body))
   }
+}
+
+export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
+  await observeApiRequest("zoom.proxy", request, response, async () => {
+    await handleZoomProxy(request, response)
+  })
 }

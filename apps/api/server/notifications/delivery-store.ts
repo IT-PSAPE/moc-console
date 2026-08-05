@@ -3,6 +3,7 @@ import { sendTelegramMessageDetailed } from "../telegram.js"
 
 const MAX_ATTEMPTS = 5
 const CLAIM_TIMEOUT_MS = 5 * 60_000
+const DAILY_RETRY_DELAY_MS = 24 * 60 * 60_000
 
 type DeliveryRow = {
   id: string
@@ -48,9 +49,12 @@ function destinationKey(scope: "group" | "dm", chatId: string, threadId: number 
   return `${scope}:${chatId}:${threadId ?? "main"}`
 }
 
-function retryAt(attempt: number, retryAfterSeconds: number | null): string {
-  const seconds = retryAfterSeconds ?? Math.min(60 * 30, 2 ** Math.min(attempt, 10))
-  return new Date(Date.now() + seconds * 1_000).toISOString()
+export function deliveryRetryAt(retryAfterSeconds: number | null, now = new Date()): string {
+  const providerDelayMs = retryAfterSeconds !== null && Number.isFinite(retryAfterSeconds)
+    ? Math.max(0, retryAfterSeconds * 1_000)
+    : 0
+  const delayMs = Math.max(DAILY_RETRY_DELAY_MS, providerDelayMs)
+  return new Date(now.getTime() + delayMs).toISOString()
 }
 
 export async function enqueueDelivery(input: DeliveryInput): Promise<void> {
@@ -130,7 +134,10 @@ async function sendClaimedDelivery(row: DeliveryRow): Promise<DeliveryRunResult>
     .update({
       status: terminal ? "failed" : "pending",
       attempt_count: nextAttempt,
-      next_attempt_at: terminal ? new Date().toISOString() : retryAt(nextAttempt, send.retryAfterSeconds),
+      // The only guaranteed worker is Vercel's daily cron. A sub-day timestamp
+      // would promise a retry no worker will perform; event-triggered sends are
+      // still attempted immediately when their delivery is first enqueued.
+      next_attempt_at: terminal ? new Date().toISOString() : deliveryRetryAt(send.retryAfterSeconds),
       last_error: send.description.slice(0, 2_000),
     })
     .eq("id", row.id)

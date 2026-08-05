@@ -1,4 +1,5 @@
 const TELEGRAM_API = "https://api.telegram.org"
+const TELEGRAM_REQUEST_TIMEOUT_MS = 10_000
 
 export type TelegramSendResult = {
   message_id?: number
@@ -17,6 +18,25 @@ export type SendMessageOptions = {
 export type TelegramSendDetailed =
   | { ok: true; result: TelegramSendResult | null }
   | { ok: false; errorCode: number | null; description: string; retryAfterSeconds: number | null }
+
+async function callTelegramApi(method: "sendMessage" | "editMessageText", body: Record<string, unknown>): Promise<Response> {
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  if (!token) throw new Error("TELEGRAM_BOT_TOKEN not configured")
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), TELEGRAM_REQUEST_TIMEOUT_MS)
+
+  try {
+    return await fetch(`${TELEGRAM_API}/bot${token}/${method}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timeout)
+  }
+}
 
 // Variant that surfaces the API error so callers (e.g. the routing
 // dispatcher) can log meaningful failure context. The simpler
@@ -41,11 +61,7 @@ export async function sendTelegramMessageDetailed(
         allow_sending_without_reply: true,
       }
     }
-    const res = await fetch(`${TELEGRAM_API}/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    })
+    const res = await callTelegramApi("sendMessage", body)
     const json = (await res.json()) as {
       ok?: boolean
       result?: TelegramSendResult
@@ -87,11 +103,7 @@ export async function editTelegramMessageText(
   const token = process.env.TELEGRAM_BOT_TOKEN
   if (!token) return
   try {
-    await fetch(`${TELEGRAM_API}/bot${token}/editMessageText`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, message_id: messageId, text }),
-    })
+    await callTelegramApi("editMessageText", { chat_id: chatId, message_id: messageId, text })
   } catch {
     // non-fatal
   }

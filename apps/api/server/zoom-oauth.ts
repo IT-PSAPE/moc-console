@@ -1,4 +1,4 @@
-import { resolveOAuthConfig } from "./provider-config.js"
+import { fetchProvider, resolveOAuthConfig } from "./provider-config.js"
 
 const TOKEN_URL = "https://zoom.us/oauth/token"
 const REVOKE_URL = "https://zoom.us/oauth/revoke"
@@ -56,7 +56,7 @@ async function getErrorMessage(response: Response, fallback: string): Promise<st
 }
 
 async function fetchZoomUserInfo(accessToken: string): Promise<ZoomUserInfo> {
-  const response = await fetch(USER_INFO_URL, {
+  const response = await fetchProvider(USER_INFO_URL, {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
 
@@ -84,7 +84,7 @@ export function resolveZoomOAuthConfig(env: Record<string, string | undefined>):
 }
 
 export async function exchangeZoomCode(config: ZoomOAuthConfig, code: string, redirectUri: string): Promise<ZoomExchangeResponse> {
-  const response = await fetch(TOKEN_URL, {
+  const response = await fetchProvider(TOKEN_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -107,7 +107,7 @@ export async function exchangeZoomCode(config: ZoomOAuthConfig, code: string, re
 }
 
 export async function refreshZoomToken(config: ZoomOAuthConfig, refreshToken: string): Promise<ZoomTokenResponse> {
-  const response = await fetch(TOKEN_URL, {
+  const response = await fetchProvider(TOKEN_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -134,7 +134,7 @@ export async function refreshZoomToken(config: ZoomOAuthConfig, refreshToken: st
 }
 
 export async function revokeZoomAccessToken(config: ZoomOAuthConfig, token: string): Promise<void> {
-  const response = await fetch(REVOKE_URL, {
+  const response = await fetchProvider(REVOKE_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",

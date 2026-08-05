@@ -37,9 +37,13 @@ export function useMeetingDetail(id: string | undefined) {
   const update = useCallback(async (params: CreateMeetingParams) => {
     if (!meeting) return;
     try {
-      const updated = await updateZoomMeeting({ ...meeting, ...params });
+      const { meeting: updated, reconciliationWarning } = await updateZoomMeeting({ ...meeting, ...params });
       syncMeeting(updated);
-      toast({ title: "Meeting updated", variant: "success" });
+      if (reconciliationWarning) {
+        toast({ title: "Meeting updated on Zoom", description: reconciliationWarning, variant: "warning" });
+      } else {
+        toast({ title: "Meeting updated", variant: "success" });
+      }
     } catch (error) {
       const message = getErrorMessage(error, "The meeting could not be updated.");
       toast({ title: "Failed to update meeting", description: message, variant: "error" });

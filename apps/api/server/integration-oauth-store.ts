@@ -14,6 +14,30 @@ export type StoredIntegrationTokens = {
   tokenExpiresAt: string
 }
 
+type YouTubeConnectionMetadata = {
+  channelId: string
+  channelTitle: string
+  connectedBy: string
+}
+
+type ZoomConnectionMetadata = {
+  zoomUserId: string
+  email: string
+  displayName: string
+  connectedBy: string
+}
+
+export type IntegrationConnectionMetadata =
+  | { provider: "youtube"; connection: YouTubeConnectionMetadata }
+  | { provider: "zoom"; connection: ZoomConnectionMetadata }
+
+export class IntegrationStoreError extends Error {
+  constructor() {
+    super("Integration credentials are temporarily unavailable")
+    this.name = "IntegrationStoreError"
+  }
+}
+
 function mapTokenRow(row: TokenRow): StoredIntegrationTokens {
   return {
     accessToken: row.access_token,
@@ -29,34 +53,107 @@ export async function getIntegrationTokens(provider: IntegrationProvider, worksp
     p_workspace_id: workspaceId,
   })
 
-  if (error) throw new Error(error.message)
+  if (error) throw new IntegrationStoreError()
   const row = (data ?? [])[0] as TokenRow | undefined
   return row ? mapTokenRow(row) : null
 }
 
-export async function saveIntegrationTokens(
-  provider: IntegrationProvider,
+export async function deleteIntegrationConnection(provider: IntegrationProvider, workspaceId: string): Promise<void> {
+  const { error } = await getSupabaseAdmin().rpc("delete_integration_oauth_connection", {
+    p_provider: provider,
+    p_workspace_id: workspaceId,
+  })
+
+  if (error) throw new IntegrationStoreError()
+}
+
+/**
+ * Saves the provider-facing connection metadata and private OAuth credentials
+ * in one database transaction. The RPC deliberately owns both writes: doing
+ * them from separate API calls can leave a workspace looking connected without
+ * usable credentials.
+ */
+export async function saveIntegrationConnection(
   workspaceId: string,
+  metadata: IntegrationConnectionMetadata,
   tokens: StoredIntegrationTokens,
 ): Promise<void> {
-  const admin = getSupabaseAdmin()
-  const { error } = await admin.rpc("save_integration_oauth_tokens", {
+  const { provider, connection } = metadata
+  const { error } = await getSupabaseAdmin().rpc("save_integration_oauth_connection", {
     p_provider: provider,
     p_workspace_id: workspaceId,
     p_access_token: tokens.accessToken,
     p_refresh_token: tokens.refreshToken,
     p_token_expires_at: tokens.tokenExpiresAt,
+    p_connection: provider === "youtube"
+      ? {
+          channel_id: connection.channelId,
+          channel_title: connection.channelTitle,
+          status: "active",
+          connected_by: connection.connectedBy,
+        }
+      : {
+          zoom_user_id: connection.zoomUserId,
+          email: connection.email,
+          display_name: connection.displayName,
+          status: "active",
+          connected_by: connection.connectedBy,
+        },
   })
 
-  if (error) throw new Error(error.message)
+  if (error) throw new IntegrationStoreError()
 }
 
-export async function deleteIntegrationTokens(provider: IntegrationProvider, workspaceId: string): Promise<void> {
-  const admin = getSupabaseAdmin()
-  const { error } = await admin.rpc("delete_integration_oauth_tokens", {
+export async function tryAcquireIntegrationRefreshLock(
+  provider: IntegrationProvider,
+  workspaceId: string,
+  expectedRefreshToken: string,
+  lockId: string,
+  lockExpiresAt: string,
+): Promise<boolean> {
+  const { data, error } = await getSupabaseAdmin().rpc("try_acquire_integration_oauth_refresh_lock", {
     p_provider: provider,
     p_workspace_id: workspaceId,
+    p_expected_refresh_token: expectedRefreshToken,
+    p_lock_id: lockId,
+    p_lock_expires_at: lockExpiresAt,
   })
 
-  if (error) throw new Error(error.message)
+  if (error) throw new IntegrationStoreError()
+  return data === true
+}
+
+export async function completeIntegrationTokenRefresh(
+  provider: IntegrationProvider,
+  workspaceId: string,
+  expectedRefreshToken: string,
+  lockId: string,
+  tokens: StoredIntegrationTokens,
+): Promise<boolean> {
+  const { data, error } = await getSupabaseAdmin().rpc("complete_integration_oauth_token_refresh", {
+    p_provider: provider,
+    p_workspace_id: workspaceId,
+    p_expected_refresh_token: expectedRefreshToken,
+    p_lock_id: lockId,
+    p_access_token: tokens.accessToken,
+    p_refresh_token: tokens.refreshToken,
+    p_token_expires_at: tokens.tokenExpiresAt,
+  })
+
+  if (error) throw new IntegrationStoreError()
+  return data === true
+}
+
+export async function releaseIntegrationRefreshLock(
+  provider: IntegrationProvider,
+  workspaceId: string,
+  lockId: string,
+): Promise<void> {
+  const { error } = await getSupabaseAdmin().rpc("release_integration_oauth_refresh_lock", {
+    p_provider: provider,
+    p_workspace_id: workspaceId,
+    p_lock_id: lockId,
+  })
+
+  if (error) throw new IntegrationStoreError()
 }

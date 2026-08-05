@@ -4,7 +4,6 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vercel dev --listen 3001",
     "build": "tsc -b",
     "lint": "eslint .",
     "test": "bun test"

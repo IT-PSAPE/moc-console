@@ -20,6 +20,7 @@ import { StreamsCalendar } from "./streams-calendar"
 import { StreamsList } from "./streams-list"
 import { useStreamsCollection } from "./use-streams-collection"
 import { ZoomMeetingFilterDrawer } from "./zoom-meeting-filter-drawer"
+import { providerFailureTitle } from "@/lib/provider-request-error"
 
 export function StreamsCollection() {
   const { state, actions, meta } = useStreamsCollection()
@@ -88,7 +89,7 @@ export function StreamsCollection() {
             </CollectionToolbar.ActionButton>
           ) : null}
           {meta.isConnected ? (
-            <Button.Icon aria-label="Sync streams" variant="secondary" icon={<RefreshCw />} onClick={handleSync} disabled={meta.isSyncing || (youtube.meta.needsReauth && !zoom.meta.isConnected)} />
+            <Button.Icon aria-label="Sync streams" variant="secondary" icon={<RefreshCw />} onClick={handleSync} disabled={meta.isSyncing || !meta.canSync} />
           ) : null}
           {meta.canCreate ? (
             <Button.Icon aria-label="Create stream" variant="secondary" icon={<Plus />} onClick={actions.openCreate} />
@@ -102,6 +103,15 @@ export function StreamsCollection() {
             variant="error"
             title="YouTube disconnected"
             description="Reconnect YouTube in Settings to resume syncing, creating, and editing streams."
+            action={<Button variant="secondary" onClick={youtube.actions.openSettings}>Open settings</Button>}
+          />
+        ) : null}
+        {zoom.meta.isConnected && zoom.meta.needsReauth ? (
+          <Alert
+            variant="error"
+            title="Zoom disconnected"
+            description="Reconnect Zoom in Settings to resume syncing, scheduling, and editing meetings."
+            action={<Button variant="secondary" onClick={zoom.actions.openSettings}>Open settings</Button>}
           />
         ) : null}
         {youtube.state.loadError ? (
@@ -110,11 +120,11 @@ export function StreamsCollection() {
         {zoom.state.loadError ? (
           <Alert variant="error" title="Could not load Zoom meetings" description={zoom.state.loadError} action={<Button variant="secondary" onClick={handleRetryZoomLoad}>Retry</Button>} />
         ) : null}
-        {youtube.state.syncError ? (
-          <Alert variant="error" title="YouTube sync failed" description={youtube.state.syncError} action={<Button variant="secondary" onClick={handleRetryYouTubeSync}>Retry sync</Button>} />
+        {youtube.state.syncError && !youtube.meta.needsReauth ? (
+          <Alert variant="error" title={providerFailureTitle("YouTube", youtube.meta.providerFailure, "YouTube sync failed")} description={youtube.state.syncError} action={<Button variant="secondary" onClick={handleRetryYouTubeSync}>Retry sync</Button>} />
         ) : null}
-        {zoom.state.syncError ? (
-          <Alert variant="error" title="Zoom sync failed" description={zoom.state.syncError} action={<Button variant="secondary" onClick={handleRetryZoomSync}>Retry sync</Button>} />
+        {zoom.state.syncError && !zoom.meta.needsReauth ? (
+          <Alert variant="error" title={providerFailureTitle("Zoom", zoom.meta.providerFailure, "Zoom sync failed")} description={zoom.state.syncError} action={<Button variant="secondary" onClick={handleRetryZoomSync}>Retry sync</Button>} />
         ) : null}
         <Decision value={meta.isConnected ? collectionState : null} loading={meta.isLoading}>
           <Decision.Loading>

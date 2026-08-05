@@ -1,5 +1,6 @@
 import { IntegrationNotConnectedError } from "./integration-access.js"
-import { ProviderConfigError } from "./provider-config.js"
+import { IntegrationStoreError } from "./integration-oauth-store.js"
+import { ProviderConfigError, ProviderRequestTimeoutError } from "./provider-config.js"
 import { ProviderRouteError } from "./provider-route-policy.js"
 import { WorkspaceAccessError } from "./workspace-access.js"
 import { YouTubeReauthRequiredError } from "./youtube-oauth.js"
@@ -19,7 +20,24 @@ export type ProviderFailureCode =
   | "not_connected"
   | "reauth_required"
   | "misconfigured"
+  | "provider_forbidden"
+  | "rate_limited"
+  | "service_unavailable"
+  | "upstream_timed_out"
   | "upstream_failed"
+
+export type ProviderUpstreamFailureKind = "unauthorized" | "forbidden" | "rate_limited" | "failed"
+
+/** A sanitised third-party failure that is safe to map onto the public API. */
+export class ProviderUpstreamError extends Error {
+  readonly kind: ProviderUpstreamFailureKind
+
+  constructor(kind: ProviderUpstreamFailureKind) {
+    super("Provider request failed")
+    this.name = "ProviderUpstreamError"
+    this.kind = kind
+  }
+}
 
 /**
  * Maps a thrown proxy error onto the response the console can act on.
@@ -52,14 +70,31 @@ export function providerFailure(providerLabel: string, error: unknown): Provider
     return { status: 500, body: { error: error.message, code: "misconfigured" } }
   }
 
-  // Anything left is the provider or the network failing on us. Pass the reason
-  // through rather than a fixed string: an operator reading it in the console
-  // needs to tell a quota rejection from a stale scope from a Supabase error.
-  const detail = error instanceof Error ? error.message : null
+  if (error instanceof IntegrationStoreError) {
+    return { status: 503, body: { error: "Integration credentials are temporarily unavailable", code: "service_unavailable" } }
+  }
+
+  if (error instanceof ProviderRequestTimeoutError) {
+    return { status: 504, body: { error: `${providerLabel} did not respond in time`, code: "upstream_timed_out" } }
+  }
+
+  if (error instanceof ProviderUpstreamError) {
+    if (error.kind === "unauthorized") {
+      return { status: 401, body: { error: `${providerLabel} authorization was rejected; reconnect required`, code: "reauth_required" } }
+    }
+    if (error.kind === "forbidden") {
+      return { status: 403, body: { error: `${providerLabel} rejected this request`, code: "provider_forbidden" } }
+    }
+    if (error.kind === "rate_limited") {
+      return { status: 429, body: { error: `${providerLabel} is temporarily rate limited`, code: "rate_limited" } }
+    }
+    return { status: 502, body: { error: `${providerLabel} is temporarily unavailable`, code: "upstream_failed" } }
+  }
+
   return {
     status: 502,
     body: {
-      error: detail ? `${providerLabel} request failed: ${detail}` : `${providerLabel} request failed`,
+      error: `${providerLabel} request failed`,
       code: "upstream_failed",
     },
   }

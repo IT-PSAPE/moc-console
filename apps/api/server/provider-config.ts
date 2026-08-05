@@ -3,6 +3,8 @@ export type ProviderOAuthConfig = {
   clientSecret: string
 }
 
+const PROVIDER_REQUEST_TIMEOUT_MS = 12_000
+
 /**
  * Thrown when this deployment is missing the environment variables a provider
  * needs. Kept distinct from route, permission and upstream failures because
@@ -16,6 +18,13 @@ export class ProviderConfigError extends Error {
     super(`${label} is not configured on this deployment. Set ${missing.join(" and ")}.`)
     this.name = "ProviderConfigError"
     this.missing = missing
+  }
+}
+
+export class ProviderRequestTimeoutError extends Error {
+  constructor() {
+    super("The provider did not respond before the request timed out")
+    this.name = "ProviderRequestTimeoutError"
   }
 }
 
@@ -49,4 +58,26 @@ export function resolveOAuthConfig(
   if (!clientId || !clientSecret) throw new ProviderConfigError(label, missing)
 
   return { clientId, clientSecret }
+}
+
+/**
+ * Keeps third-party calls below the function timeout so one slow provider does
+ * not consume the entire invocation. Provider clients intentionally use this
+ * instead of calling fetch directly.
+ */
+export async function fetchProvider(
+  input: Parameters<typeof fetch>[0],
+  init: Parameters<typeof fetch>[1] = {},
+  timeoutMs = PROVIDER_REQUEST_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(input, { ...init, signal: controller.signal })
+  } catch (error) {
+    if (controller.signal.aborted) throw new ProviderRequestTimeoutError()
+    throw error
+  } finally {
+    clearTimeout(timer)
+  }
 }

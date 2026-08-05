@@ -42,14 +42,14 @@ export async function enqueueOutboxEvent(args: {
   payload: Record<string, unknown>
 }): Promise<void> {
   const admin = getSupabaseAdmin()
-  const { error } = await admin.from("notification_outbox").upsert({
-    workspace_id: args.workspaceId,
-    event_type: args.eventType,
-    entity_type: args.entityType,
-    entity_id: args.entityId,
-    event_key: args.eventKey,
-    payload: args.payload,
-  }, { onConflict: "event_key", ignoreDuplicates: true })
+  const { error } = await admin.rpc("enqueue_notification_outbox_event", {
+    p_workspace_id: args.workspaceId,
+    p_event_type: args.eventType,
+    p_entity_type: args.entityType,
+    p_entity_id: args.entityId,
+    p_event_key: args.eventKey,
+    p_payload: args.payload,
+  })
   if (error) throw new Error(error.message)
 }
 

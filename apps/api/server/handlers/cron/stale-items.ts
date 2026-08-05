@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from "../../supabase-admin.js"
-import { isAuthorizedCron } from "../../cron-auth.js"
+import { requireAuthorizedCronGet } from "../../cron-auth.js"
 import { resolveBaseUrl } from "../../base-url.js"
 import {
   dispatchEvent,
@@ -17,9 +17,10 @@ import { enqueueDelivery, processDeliveriesForEvent, type DeliveryRunResult } fr
 //   • DM:    every enabled notification_recipients user with a linked
 //            telegram_chat_id, in that item's workspace
 //
-// Detection + claim happens in SQL (claim_stale_* RPCs) which atomically
-// stamps stale_notified_at = now(), so each item only re-alerts once per
-// threshold window even though this runs daily. Runs as the service role.
+// Detection + claim happens in SQL. A claim has a durable event key but does
+// not stamp stale_notified_at until all delivery rows are persisted. If this
+// function stops midway through a run, the claim expires and the same key is
+// used again, so queue inserts stay idempotent.
 
 type ApiRequest = {
   method?: string
@@ -38,7 +39,7 @@ type StaleRequestRow = {
   title: string
   status: string
   updated_at: string
-  stale_notified_at: string
+  stale_notification_event_key: string | null
 }
 
 type StaleBookingRow = {
@@ -50,7 +51,7 @@ type StaleBookingRow = {
   updated_at: string
   expected_return_at: string | null
   returned_at: string | null
-  stale_notified_at: string
+  stale_notification_event_key: string | null
 }
 
 type RecipientRow = {
@@ -103,6 +104,28 @@ function emptyDeliveryResult(): DeliveryRunResult {
   return { attempted: 0, sent: 0, failed: 0, pendingRetry: 0 }
 }
 
+function staleEventKey(eventKey: string | null, itemType: "request" | "booking", itemId: string): string {
+  if (eventKey) return eventKey
+  throw new Error(`Stale ${itemType} ${itemId} was claimed without an event key`)
+}
+
+async function completeStaleNotification(
+  itemType: "request" | "booking",
+  itemId: string,
+  eventKey: string,
+): Promise<void> {
+  const admin = getSupabaseAdmin()
+  const functionName = itemType === "request"
+    ? "complete_stale_request_notification"
+    : "complete_stale_booking_notification"
+  const idParameter = itemType === "request" ? "p_request_id" : "p_booking_id"
+  const { error } = await admin.rpc(functionName, {
+    [idParameter]: itemId,
+    p_event_key: eventKey,
+  })
+  if (error) throw new Error(error.message)
+}
+
 async function queueDms(
   workspaceId: string,
   recipients: Map<string, Recipient[]>,
@@ -129,10 +152,7 @@ async function queueDms(
 export default async function handler(request: ApiRequest, response: ApiResponse) {
   response.setHeader("Content-Type", "application/json")
 
-  if (!isAuthorizedCron(request)) {
-    response.status(401).json({ error: "Unauthorized" })
-    return
-  }
+  if (!requireAuthorizedCronGet(request, response)) return
 
   const admin = getSupabaseAdmin()
   const baseUrl = resolveBaseUrl()
@@ -162,7 +182,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       requestId: req.id,
       staleDays: String(daysSince(req.updated_at)),
     }
-    const eventKey = `request.stale:${req.id}:${req.stale_notified_at}`
+    const eventKey = staleEventKey(req.stale_notification_event_key, "request", req.id)
     const group = await dispatchEvent(req.workspace_id, "request.stale", payload, { eventKey })
     mergeDeliveryResult(requestDelivery, {
       attempted: group.attempted,
@@ -172,6 +192,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     })
     const text = await renderEventText(req.workspace_id, "dm", "request.stale", payload)
     mergeDeliveryResult(requestDelivery, await queueDms(req.workspace_id, recipients, eventKey, "request.stale", text, payload))
+    await completeStaleNotification("request", req.id, eventKey)
   }
 
   for (const bk of (staleBookings ?? []) as StaleBookingRow[]) {
@@ -187,7 +208,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       staleReason: overdue ? "Overdue for return" : "Not updated recently",
       staleDays: String(daysSince(overdue ? bk.expected_return_at : bk.updated_at)),
     }
-    const eventKey = `booking.stale:${bk.id}:${bk.stale_notified_at}`
+    const eventKey = staleEventKey(bk.stale_notification_event_key, "booking", bk.id)
     const group = await dispatchEvent(bk.workspace_id, "booking.stale", payload, { eventKey })
     mergeDeliveryResult(bookingDelivery, {
       attempted: group.attempted,
@@ -197,6 +218,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     })
     const text = await renderEventText(bk.workspace_id, "dm", "booking.stale", payload)
     mergeDeliveryResult(bookingDelivery, await queueDms(bk.workspace_id, recipients, eventKey, "booking.stale", text, payload))
+    await completeStaleNotification("booking", bk.id, eventKey)
   }
 
   response.status(200).json({

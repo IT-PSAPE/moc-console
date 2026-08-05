@@ -1,14 +1,17 @@
 # Supabase database scripts
 
 This directory is the database source of truth for the MoC Console Supabase
-project (`jypshhgfuvwmtbbcxmhs`). The live project was reconciled against these
-files on 2026-08-05.
+project (`jypshhgfuvwmtbbcxmhs`). Historical schema reconciliation completed on
+2026-08-05; subsequent changes are tracked as normal Supabase migrations.
 
 ## Which script to use
 
 - For the existing MoC Console project, run
-  [`verify-current-schema.sql`](verify-current-schema.sql) first. No migration
-  is required when every returned drift array is empty.
+  [`verify-current-schema.sql`](verify-current-schema.sql) first. Apply every
+  unapplied file in [`migrations/`](migrations/) through the normal Supabase
+  migration workflow, then run the verification report again. Do not apply a
+  migration directly to production from this repository without a reviewed
+  backup and deployment plan.
 - To converge an older or partially migrated MoC Console database, back it up
   and run
   [`patches/2026-08-04-moc-console-target-schema-cleanup.sql`](patches/2026-08-04-moc-console-target-schema-cleanup.sql).
@@ -25,14 +28,17 @@ Do not run every file in `patches/` against a fresh or current database. The
 directory is a chronological audit ledger: several early patches create media,
 playlist, or cue-sheet objects that later patches intentionally remove.
 
-## Current live target
+## Post-migration target
 
-The connected project currently has 33 public application tables, all with RLS
-enabled. Authorization is workspace-scoped through
+After the reliability migration, the target has 36 public application tables,
+all with RLS enabled. Authorization is workspace-scoped through
 `workspace_users.role_id`; new accounts create `workspace_join_requests` and
 remain pending until approved. OAuth secrets live only in
-`private.integration_oauth_tokens`. The legacy `user_roles`, playlist, media
-library, and cue-sheet tables are absent. The `media` Storage bucket remains.
+`private.integration_oauth_tokens`, where provider-token refreshes use a short
+lease to protect rotating refresh tokens. The API-owned outbox, Telegram inbox,
+signed-ingest replay store, and rate-limit window store are service-role-only.
+The legacy `user_roles`, playlist, media library, and cue-sheet tables are
+absent. The `media` Storage bucket remains.
 
 The only entries currently recorded in Supabase migration history are:
 
@@ -43,6 +49,15 @@ The only entries currently recorded in Supabase migration history are:
 
 Other historical changes were applied through the SQL editor or direct SQL and
 therefore do not appear in `supabase_migrations.schema_migrations`.
+
+The first tracked reliability migration is:
+
+3. `20260805120000_api_reliability_hardening` — source:
+   [`migrations/20260805120000_api_reliability_hardening.sql`](migrations/20260805120000_api_reliability_hardening.sql).
+   It must be applied after the two historical migration entries above. It adds
+   atomic OAuth connection/token RPCs, rotating-refresh leases, durable
+   notification and Telegram boundaries, fixed-window API rate limits, stale
+   notification completion semantics, and missing foreign-key indexes.
 
 ## Script history
 
@@ -78,7 +93,14 @@ The patch ledger records how that baseline evolved:
 The target-schema cleanup was executed against the live schema inside a
 transaction ending in `ROLLBACK` on 2026-08-05. Its preflight, migration body,
 explicit grants, RLS checks, and final assertions all passed, and production
-was left unchanged.
+was left unchanged. That historical check does not apply the reliability
+migration above.
+
+`verify-current-schema.sql` now checks the public table set, RLS, critical
+column shapes, primary-key presence, required indexes, triggers, service-only
+RPC signatures and grants, OAuth-token privacy, and direct `auth.uid()` calls
+in policies. It is a drift report rather than a replacement for migration
+history: any non-empty report must be investigated before deployment.
 
 Supabase Security Advisor may still report the deliberately anonymous public
 submission/tracking RPCs because they are `SECURITY DEFINER`. They are the

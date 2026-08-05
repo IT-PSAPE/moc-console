@@ -23,7 +23,9 @@ export function headerValue(
   name: string,
 ): string | null {
   if (!headers) return null
-  const raw = headers[name] ?? headers[name.toLowerCase()]
+  const requestedName = name.toLowerCase()
+  const entry = Object.entries(headers).find(([headerName]) => headerName.toLowerCase() === requestedName)
+  const raw = entry?.[1]
   if (!raw) return null
   return Array.isArray(raw) ? raw[0] ?? null : raw
 }

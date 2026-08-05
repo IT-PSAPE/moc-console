@@ -23,16 +23,17 @@ function yesNo(v: boolean | null | undefined): string {
   return v ? "Yes" : "No";
 }
 
-export async function enrichRequest(requestId: string): Promise<TokenValues> {
+export async function enrichRequest(requestId: string, options?: { throwOnError?: boolean }): Promise<TokenValues> {
   try {
     const admin = getSupabaseAdmin();
-    const { data } = await admin
+    const { data, error } = await admin
       .from("requests")
       .select(
         "title, status, priority, category, requested_by, due_date, created_at, updated_at, tracking_code, who, what, when_text, where_text, why, how, notes, flow",
       )
       .eq("id", requestId)
       .maybeSingle();
+    if (error) throw new Error("Request enrichment failed");
     if (!data) return {};
     return {
       title: data.title,
@@ -54,7 +55,8 @@ export async function enrichRequest(requestId: string): Promise<TokenValues> {
       notes: data.notes,
       flow: data.flow,
     };
-  } catch {
+  } catch (error) {
+    if (options?.throwOnError) throw error;
     return {};
   }
 }

@@ -1,6 +1,8 @@
 import type { WorkspacePermission } from "./workspace-access.js"
+import { ProviderRouteError, type ProviderBodyKind } from "./provider-request-body.js"
 
-export type ProviderBodyKind = "none" | "json" | "binary" | "image"
+export { prepareProviderBody, ProviderRouteError } from "./provider-request-body.js"
+export type { PreparedProviderBody, ProviderBodyKind } from "./provider-request-body.js"
 
 export type ProviderRouteRule = {
   body: ProviderBodyKind
@@ -16,13 +18,6 @@ export type AuthorizedProviderRoute = {
   maxBodyBytes: number
   path: string
   permission: WorkspacePermission
-}
-
-export class ProviderRouteError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = "ProviderRouteError"
-  }
 }
 
 type ProviderRequestDetails = {
@@ -143,88 +138,4 @@ export function authorizeProviderRoute(method: string | undefined, requestUrl: s
     path: `${pathname}${search ? `?${search}` : ""}`,
     permission: rule.permission,
   }
-}
-
-function isEmptyProviderBody(body: unknown): boolean {
-  if (body === undefined || body === null || body === "") return true
-  if (Buffer.isBuffer(body)) return body.byteLength === 0
-  // A request that declares `Content-Type: application/json` but carries no
-  // payload is parsed by the runtime into an empty object, so bodyless methods
-  // arrive here as `{}` rather than as nothing at all.
-  if (typeof body === "object") return Object.keys(body).length === 0
-  return false
-}
-
-export type PreparedProviderBody = {
-  body: Buffer | undefined
-  /**
-   * Content type to send upstream when the route decides it rather than the
-   * caller — an image arriving inside a JSON envelope, for instance, must not
-   * reach the provider labelled `application/json`.
-   */
-  contentType: string | null
-}
-
-/** What YouTube documents thumbnails.set as accepting. */
-const ACCEPTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "application/octet-stream"])
-
-function withinLimit(body: Buffer, maxBodyBytes: number): Buffer {
-  if (body.byteLength === 0) throw new ProviderRouteError("Provider request body is required")
-  if (body.byteLength > maxBodyBytes) throw new ProviderRouteError("Provider request body is too large")
-  return body
-}
-
-/**
- * Reads an image out of a `{ image, contentType }` JSON envelope.
- *
- * The bytes travel base64-encoded because the runtime's handling of a raw
- * binary request body is not something this app can rely on — a body it decides
- * to treat as text comes back re-encoded, and the provider then rejects the
- * image as corrupt. A JSON body is parsed predictably, so the encoded form is
- * the one path known to deliver the bytes intact. Raw bytes are still accepted
- * when the runtime does hand them over.
- */
-function prepareImageBody(body: unknown, maxBodyBytes: number): PreparedProviderBody {
-  if (Buffer.isBuffer(body)) {
-    return { body: withinLimit(body, maxBodyBytes), contentType: null }
-  }
-
-  let envelope: unknown = body
-  if (typeof body === "string") {
-    try {
-      envelope = JSON.parse(body)
-    } catch {
-      throw new ProviderRouteError("Thumbnail image could not be read")
-    }
-  }
-
-  if (!envelope || typeof envelope !== "object") throw new ProviderRouteError("Thumbnail image is required")
-  const { image, contentType } = envelope as { image?: unknown; contentType?: unknown }
-  if (typeof image !== "string" || !image) throw new ProviderRouteError("Thumbnail image is required")
-
-  const type = typeof contentType === "string" && contentType ? contentType : "image/jpeg"
-  if (!ACCEPTED_IMAGE_TYPES.has(type)) {
-    throw new ProviderRouteError(`Thumbnail must be a JPEG or PNG image (received ${type})`)
-  }
-
-  return { body: withinLimit(Buffer.from(image, "base64"), maxBodyBytes), contentType: type }
-}
-
-export function prepareProviderBody(body: unknown, bodyKind: ProviderBodyKind, maxBodyBytes: number): PreparedProviderBody {
-  if (bodyKind === "none") {
-    if (!isEmptyProviderBody(body)) throw new ProviderRouteError("This provider operation does not accept a body")
-    return { body: undefined, contentType: null }
-  }
-
-  if (bodyKind === "image") return prepareImageBody(body, maxBodyBytes)
-
-  const prepared = Buffer.isBuffer(body)
-    ? body
-    : typeof body === "string"
-      ? Buffer.from(body)
-      : body === undefined || body === null
-        ? Buffer.alloc(0)
-        : Buffer.from(JSON.stringify(body))
-
-  return { body: withinLimit(prepared, maxBodyBytes), contentType: null }
 }

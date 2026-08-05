@@ -1,5 +1,7 @@
 import { timingSafeEqual } from "node:crypto"
 
+import type { ApiResponse } from "./http.js"
+
 // Shared auth for Vercel Cron endpoints. When CRON_SECRET is set, Vercel
 // includes `Authorization: Bearer <CRON_SECRET>` on every scheduled
 // invocation; we reject anything that doesn't match. Without the env var
@@ -9,6 +11,8 @@ export type CronRequest = {
   method?: string
   headers?: Record<string, string | string[] | undefined>
 }
+
+type CronResponse = Pick<ApiResponse, "status" | "json" | "setHeader">
 
 function headerValue(
   headers: Record<string, string | string[] | undefined> | undefined,
@@ -33,4 +37,19 @@ export function isAuthorizedCron(request: CronRequest): boolean {
   const provided = headerValue(request.headers, "authorization")
   if (!provided) return false
   return safeEqual(provided, `Bearer ${secret}`)
+}
+
+export function requireAuthorizedCronGet(request: CronRequest, response: CronResponse): boolean {
+  if (request.method !== "GET") {
+    response.setHeader("Allow", "GET")
+    response.status(405).json({ error: "Method not allowed" })
+    return false
+  }
+
+  if (!isAuthorizedCron(request)) {
+    response.status(401).json({ error: "Unauthorized" })
+    return false
+  }
+
+  return true
 }

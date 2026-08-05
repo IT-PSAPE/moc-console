@@ -1,4 +1,4 @@
-import type { ZoomConnection, ZoomMeeting } from "@moc/types/streams/zoom"
+import type { ZoomConnection, ZoomConnectionStatus, ZoomMeeting } from "@moc/types/streams/zoom"
 import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 
@@ -10,6 +10,7 @@ type ZoomConnectionRow = {
   display_name: string
   connected_by: string
   created_at: string
+  status: ZoomConnectionStatus
 }
 
 type ZoomMeetingRow = {
@@ -45,6 +46,7 @@ function mapConnectionRow(row: ZoomConnectionRow): ZoomConnection {
     displayName: row.display_name,
     connectedBy: row.connected_by,
     createdAt: row.created_at,
+    status: row.status,
   }
 }
 
@@ -81,7 +83,7 @@ export async function fetchZoomConnection(workspaceId?: string): Promise<ZoomCon
   const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId()
   const { data, error } = await supabase
     .from("zoom_connections")
-    .select("id, workspace_id, zoom_user_id, email, display_name, connected_by, created_at")
+    .select("id, workspace_id, zoom_user_id, email, display_name, connected_by, created_at, status")
     .eq("workspace_id", resolvedWorkspaceId)
     .maybeSingle()
 

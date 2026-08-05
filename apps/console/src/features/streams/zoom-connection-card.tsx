@@ -10,6 +10,7 @@ export function ZoomConnectionCard() {
       name="Zoom"
       isLoading={meta.isLoading}
       isConnected={Boolean(meta.connection)}
+      needsReauth={meta.connection?.status === "reauth_required"}
       accountLabel={meta.connection?.displayName ?? null}
       canManage={meta.canManage}
       onConnect={actions.connect}
