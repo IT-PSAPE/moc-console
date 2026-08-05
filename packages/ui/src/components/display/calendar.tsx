@@ -1,8 +1,12 @@
 import { cn } from '@moc/utils/cn'
 import { useCallback, useMemo, useState, type HTMLAttributes, type ReactNode } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Button } from '../controls/button'
 import { ButtonGroup } from '../controls/button-group'
+import { InteractiveSurface } from '../controls/interactive-surface'
+import { useIsMobile } from '../../hooks/use-is-mobile'
+import { Drawer } from '../overlays/drawer'
+import { Label, Paragraph } from './text'
 
 // ─── Helpers ─────────────────────────────────────────────
 
@@ -12,6 +16,13 @@ const MONTH_LABELS = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December',
 ] as const
+
+const FULL_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    month: 'long',
+    weekday: 'long',
+    year: 'numeric',
+})
 
 function isSameDay(a: Date, b: Date) {
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
@@ -76,6 +87,9 @@ type CalendarRootProps<T = unknown> = HTMLAttributes<HTMLDivElement> & {
 
 function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMonthChange, renderDay, renderEvent, ...props }: CalendarRootProps<T>) {
     const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(defaultMonth ?? new Date()))
+    const [previewOpen, setPreviewOpen] = useState(false)
+    const [selectedDate, setSelectedDate] = useState(() => defaultMonth ?? new Date())
+    const isMobile = useIsMobile()
     const today = useMemo(() => new Date(), [])
 
     const year = currentMonth.getFullYear()
@@ -85,6 +99,8 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
     const navigate = useCallback((offset: number) => {
         setCurrentMonth(prev => {
             const next = new Date(prev.getFullYear(), prev.getMonth() + offset, 1)
+            setPreviewOpen(false)
+            setSelectedDate(next)
             onMonthChange?.(next)
             return next
         })
@@ -93,7 +109,20 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
     const goToToday = useCallback(() => {
         const next = startOfMonth(new Date())
         setCurrentMonth(next)
+        setPreviewOpen(false)
+        setSelectedDate(new Date())
         onMonthChange?.(next)
+    }, [onMonthChange])
+
+    const selectDate = useCallback((date: Date) => {
+        setSelectedDate(date)
+        setPreviewOpen(true)
+        setCurrentMonth(previousMonth => {
+            if (previousMonth.getFullYear() === date.getFullYear() && previousMonth.getMonth() === date.getMonth()) return previousMonth
+            const nextMonth = startOfMonth(date)
+            onMonthChange?.(nextMonth)
+            return nextMonth
+        })
     }, [onMonthChange])
 
     function handlePreviousMonth() {
@@ -125,7 +154,11 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
         return eventsByDate.get(key) ?? []
     }
 
+    const selectedEvents = getEventsForDate(selectedDate)
+    const selectedEventCount = `${selectedEvents.length} event${selectedEvents.length === 1 ? '' : 's'}`
+
     return (
+        <>
         <div className={cn('flex flex-col', className)} {...props}>
             {/* Header */}
             <div className="flex items-center justify-between pb-4">
@@ -161,10 +194,42 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
                         )
                     }
 
-                    return <CalendarCell key={index} date={date} events={dayEvents} isCurrentMonth={isCurrentMonth} isToday={isDateToday} renderEvent={renderEvent} />
+                    return <CalendarCell key={index} date={date} events={dayEvents} isCurrentMonth={isCurrentMonth} isMobile={isMobile} isSelected={isSameDay(date, selectedDate)} isToday={isDateToday} onSelect={selectDate} renderEvent={renderEvent} />
                 })}
             </div>
+
         </div>
+        {isMobile && !renderDay ? (
+            <Drawer open={previewOpen} onOpenChange={setPreviewOpen} mobileSide="bottom">
+                <Drawer.Portal>
+                    <Drawer.Backdrop />
+                    <Drawer.Panel aria-label={`Events on ${FULL_DATE_FORMATTER.format(selectedDate)}`}>
+                        <Drawer.Header>
+                            <div className="min-w-0 flex-1">
+                                <Label.md className="block truncate">{FULL_DATE_FORMATTER.format(selectedDate)}</Label.md>
+                                <Paragraph.xs className="text-tertiary">{selectedEventCount}</Paragraph.xs>
+                            </div>
+                            <Drawer.Close>
+                                <Button.Icon aria-label="Close day preview" variant="ghost" icon={<X />} />
+                            </Drawer.Close>
+                        </Drawer.Header>
+                        <Drawer.Content className="px-4 py-4">
+                            {selectedEvents.length > 0 ? (
+                                <div className="flex flex-col gap-1.5">
+                                    {selectedEvents.map((event, index) => renderEvent
+                                        ? renderEvent(event, index)
+                                        : <CalendarEventContent key={event.id ?? index} color={event.color} aria-label={event.label}>{event.label}</CalendarEventContent>
+                                    )}
+                                </div>
+                            ) : (
+                                <Paragraph.sm className="py-3 text-tertiary">No events scheduled for this day.</Paragraph.sm>
+                            )}
+                        </Drawer.Content>
+                    </Drawer.Panel>
+                </Drawer.Portal>
+            </Drawer>
+        ) : null}
+        </>
     )
 }
 
@@ -180,28 +245,64 @@ const eventColorMap: Record<string, string> = {
     gray: 'bg-secondary text-tertiary',
 }
 
+const eventDotColorMap: Record<NonNullable<CalendarEvent['color']>, string> = {
+    red: 'bg-utility-red-500',
+    orange: 'bg-utility-orange-500',
+    yellow: 'bg-utility-yellow-500',
+    green: 'bg-utility-green-500',
+    blue: 'bg-utility-blue-500',
+    purple: 'bg-utility-purple-500',
+    gray: 'bg-utility-gray-500',
+}
+
 type CalendarCellProps<T = unknown> = {
     date: Date
     events: CalendarEvent<T>[]
     isCurrentMonth: boolean
+    isMobile?: boolean
+    isSelected?: boolean
     isToday: boolean
+    onSelect?: (date: Date) => void
     renderEvent?: (event: CalendarEvent<T>, index: number) => ReactNode
 }
 
-function CalendarCell<T = unknown>({ date, events, isCurrentMonth, isToday, renderEvent }: CalendarCellProps<T>) {
+function CalendarCell<T = unknown>({ date, events, isCurrentMonth, isMobile = false, isSelected = false, isToday, onSelect, renderEvent }: CalendarCellProps<T>) {
+    function handleSelect() {
+        onSelect?.(date)
+    }
+
+    const eventCountLabel = `${events.length} event${events.length === 1 ? '' : 's'}`
+
+    if (isMobile) {
+        return (
+            <InteractiveSurface
+                aria-label={`${FULL_DATE_FORMATTER.format(date)}, ${eventCountLabel}`}
+                aria-haspopup="dialog"
+                aria-pressed={isSelected}
+                className={cn(
+                    'flex min-h-14 w-full flex-col items-center justify-center gap-1 border-r border-b border-secondary p-1 text-center',
+                    !isCurrentMonth && 'bg-secondary',
+                    isSelected && 'bg-brand_primary outline-2 -outline-offset-2 outline-brand',
+                )}
+                onClick={handleSelect}
+            >
+                <CalendarDate date={date} isCurrentMonth={isCurrentMonth} isToday={isToday} />
+                <span className="flex h-2 items-center justify-center gap-0.5" aria-hidden="true">
+                    {events.slice(0, 3).map((event, index) => (
+                        <span key={event.id ?? index} className={cn('size-1.5 rounded-full', eventDotColorMap[event.color ?? 'gray'])} />
+                    ))}
+                    {events.length > 3 ? <span className="paragraph-xs text-tertiary">+{events.length - 3}</span> : null}
+                </span>
+            </InteractiveSurface>
+        )
+    }
+
     return (
         <div className={cn(
             'flex min-h-24 flex-col border-r border-b border-secondary p-1.5',
             !isCurrentMonth && 'bg-secondary',
         )}>
-            <span className={cn(
-                'mb-1 inline-flex size-6 items-center justify-center self-start rounded-full paragraph-xs',
-                isToday && 'bg-brand_solid text-primary_on-brand',
-                !isToday && isCurrentMonth && 'text-primary',
-                !isToday && !isCurrentMonth && 'text-quaternary',
-            )}>
-                {date.getDate()}
-            </span>
+            <CalendarDate date={date} isCurrentMonth={isCurrentMonth} isToday={isToday} />
             <div className="flex flex-col gap-0.5">
                 {events.map((event, index) => renderEvent
                     ? renderEvent(event, index)
@@ -209,6 +310,19 @@ function CalendarCell<T = unknown>({ date, events, isCurrentMonth, isToday, rend
                 )}
             </div>
         </div>
+    )
+}
+
+function CalendarDate({ date, isCurrentMonth, isToday }: { date: Date; isCurrentMonth: boolean; isToday: boolean }) {
+    return (
+        <span className={cn(
+            'inline-flex size-6 items-center justify-center rounded-full paragraph-xs md:mb-1 md:self-start',
+            isToday && 'bg-brand_solid text-primary_on-brand',
+            !isToday && isCurrentMonth && 'text-primary',
+            !isToday && !isCurrentMonth && 'text-quaternary',
+        )}>
+            {date.getDate()}
+        </span>
     )
 }
 

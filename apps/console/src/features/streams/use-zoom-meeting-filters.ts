@@ -32,12 +32,8 @@ function isMeetingPast(meeting: ZoomMeeting): boolean {
 export function useZoomMeetingFilters(meetings: ZoomMeeting[]) {
   const [filters, setFilters] = useState<ZoomMeetingFilters>(defaultFilters)
 
-  const filtered = useMemo(() => {
+  const results = useMemo(() => {
     let result = meetings
-
-    if (!filters.showPast) {
-      result = result.filter((m) => !isMeetingPast(m))
-    }
 
     if (filters.recurrenceTypes.size > 0) {
       result = result.filter((m) => filters.recurrenceTypes.has(m.recurrenceType))
@@ -83,7 +79,10 @@ export function useZoomMeetingFilters(meetings: ZoomMeeting[]) {
       }
     })
 
-    return result
+    return {
+      calendarFiltered: result,
+      filtered: filters.showPast ? result : result.filter((meeting) => !isMeetingPast(meeting)),
+    }
   }, [meetings, filters])
 
   const setSearch = useCallback((search: string) => {
@@ -123,7 +122,8 @@ export function useZoomMeetingFilters(meetings: ZoomMeeting[]) {
 
   return {
     filters,
-    filtered,
+    filtered: results.filtered,
+    calendarFiltered: results.calendarFiltered,
     hasActiveFilters,
     setSearch,
     toggleRecurrenceType,
