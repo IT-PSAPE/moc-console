@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { assignmentEventKey } from "./assignment.js"
+import { assignmentEventKey } from "../api/notifications/assignment.js"
 
 describe("assignmentEventKey", () => {
   it("deduplicates retries of one assignment but not a later re-assignment", () => {

@@ -1,3 +1,5 @@
+import type { ProviderResponse } from "./provider-config.js"
+
 const TELEGRAM_API = "https://api.telegram.org"
 const TELEGRAM_REQUEST_TIMEOUT_MS = 10_000
 
@@ -19,7 +21,7 @@ export type TelegramSendDetailed =
   | { ok: true; result: TelegramSendResult | null }
   | { ok: false; errorCode: number | null; description: string; retryAfterSeconds: number | null }
 
-async function callTelegramApi(method: "sendMessage" | "editMessageText", body: Record<string, unknown>): Promise<Response> {
+async function callTelegramApi(method: "sendMessage" | "editMessageText", body: Record<string, unknown>): Promise<ProviderResponse> {
   const token = process.env.TELEGRAM_BOT_TOKEN
   if (!token) throw new Error("TELEGRAM_BOT_TOKEN not configured")
 
@@ -32,7 +34,7 @@ async function callTelegramApi(method: "sendMessage" | "editMessageText", body: 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
       signal: controller.signal,
-    })
+    }) as ProviderResponse
   } finally {
     clearTimeout(timeout)
   }

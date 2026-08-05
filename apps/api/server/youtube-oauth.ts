@@ -1,4 +1,4 @@
-import { fetchProvider, resolveOAuthConfig } from "./provider-config.js"
+import { fetchProvider, resolveOAuthConfig, type ProviderResponse } from "./provider-config.js"
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token"
 const REVOKE_URL = "https://oauth2.googleapis.com/revoke"
@@ -37,7 +37,7 @@ type ExchangeResponse = TokenResponse & {
   channel: ChannelInfo
 }
 
-async function getErrorMessage(response: Response, fallback: string): Promise<string> {
+async function getErrorMessage(response: ProviderResponse, fallback: string): Promise<string> {
   const contentType = response.headers.get("content-type") ?? ""
   if (contentType.includes("application/json")) {
     const data = await response.json() as { error?: string; error_description?: string; message?: string }

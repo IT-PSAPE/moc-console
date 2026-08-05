@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import publicRequestWake from "../api/notify/request.js"
+import publicNotificationWake from "../api/notify/[kind].js"
 import youTubeProxy from "../api/youtube/v3/[...path].js"
 import type { ApiRequest, ApiResponse } from "./http.js"
 import { getRuntimeReadiness, startApiRequest } from "./observability.js"
@@ -95,9 +95,10 @@ describe("observability", () => {
     const response = createResponse()
 
     try {
-      await publicRequestWake({
+      await publicNotificationWake({
         headers: { origin: "https://console.example.com", "x-request-id": "preflight-123" },
         method: "OPTIONS",
+        query: { kind: "request" },
       }, response)
     } finally {
       if (previousAllowedOrigins === undefined) {

@@ -1,5 +1,5 @@
 import { getIntegrationAccessToken, markIntegrationReauthRequired } from "./integration-access.js"
-import { fetchProvider } from "./provider-config.js"
+import { fetchProvider, type ProviderResponse } from "./provider-config.js"
 import { ProviderUpstreamError, type ProviderUpstreamFailureKind } from "./provider-failure.js"
 
 const YOUTUBE_API = "https://www.googleapis.com/youtube/v3"
@@ -18,7 +18,7 @@ function isQuotaFailure(body: string): boolean {
   return normalized.includes("quota") || normalized.includes("rate limit") || normalized.includes("ratelimit")
 }
 
-async function classifyYouTubeFailure(response: Response): Promise<ProviderUpstreamError> {
+async function classifyYouTubeFailure(response: ProviderResponse): Promise<ProviderUpstreamError> {
   if (response.status === 401) return new ProviderUpstreamError("unauthorized")
   if (response.status === 429) return new ProviderUpstreamError("rate_limited")
   if (response.status === 403) {
@@ -40,7 +40,7 @@ function buildRequestInit(body: Buffer | undefined, contentType: string | null |
   }
 }
 
-export async function proxyYouTubeApiRequest({ body, contentType, method, path, workspaceId }: ProxyYouTubeApiParams): Promise<Response> {
+export async function proxyYouTubeApiRequest({ body, contentType, method, path, workspaceId }: ProxyYouTubeApiParams): Promise<ProviderResponse> {
   const baseUrl = path.startsWith("/thumbnails/") ? YOUTUBE_UPLOAD_API : YOUTUBE_API
   const requestUrl = `${baseUrl}${path}`
   let accessToken = await getIntegrationAccessToken("youtube", workspaceId)

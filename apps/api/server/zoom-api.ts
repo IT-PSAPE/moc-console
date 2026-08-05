@@ -1,5 +1,5 @@
 import { getIntegrationAccessToken, markIntegrationReauthRequired } from "./integration-access.js"
-import { fetchProvider } from "./provider-config.js"
+import { fetchProvider, type ProviderResponse } from "./provider-config.js"
 import { ProviderUpstreamError, type ProviderUpstreamFailureKind } from "./provider-failure.js"
 
 const ZOOM_API = "https://api.zoom.us/v2"
@@ -12,13 +12,13 @@ type ProxyZoomApiParams = {
   workspaceId: string
 }
 
-function isRateLimited(response: Response, body: string): boolean {
+function isRateLimited(response: ProviderResponse, body: string): boolean {
   if (response.status === 429) return true
   const normalized = body.toLowerCase()
   return normalized.includes("rate limit") || normalized.includes("ratelimit") || normalized.includes("too many requests")
 }
 
-async function classifyZoomFailure(response: Response): Promise<ProviderUpstreamError> {
+async function classifyZoomFailure(response: ProviderResponse): Promise<ProviderUpstreamError> {
   if (response.status === 401) return new ProviderUpstreamError("unauthorized")
   const body = await response.text()
   if (isRateLimited(response, body)) return new ProviderUpstreamError("rate_limited")
@@ -37,7 +37,7 @@ function buildRequestInit(body: Buffer | undefined, contentType: string | null |
   }
 }
 
-export async function proxyZoomApiRequest({ body, contentType, method, path, workspaceId }: ProxyZoomApiParams): Promise<Response> {
+export async function proxyZoomApiRequest({ body, contentType, method, path, workspaceId }: ProxyZoomApiParams): Promise<ProviderResponse> {
   const requestUrl = `${ZOOM_API}${path}`
   let accessToken = await getIntegrationAccessToken("zoom", workspaceId)
   let providerResponse = await fetchProvider(requestUrl, buildRequestInit(body, contentType, method, accessToken))

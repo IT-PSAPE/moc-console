@@ -3,6 +3,17 @@ export type ProviderOAuthConfig = {
   clientSecret: string
 }
 
+export type ProviderResponse = {
+  readonly headers: {
+    get: (name: string) => string | null
+  }
+  readonly ok: boolean
+  readonly status: number
+  arrayBuffer: () => Promise<ArrayBuffer>
+  json: () => Promise<unknown>
+  text: () => Promise<string>
+}
+
 const PROVIDER_REQUEST_TIMEOUT_MS = 12_000
 
 /**
@@ -69,11 +80,11 @@ export async function fetchProvider(
   input: Parameters<typeof fetch>[0],
   init: Parameters<typeof fetch>[1] = {},
   timeoutMs = PROVIDER_REQUEST_TIMEOUT_MS,
-): Promise<Response> {
+): Promise<ProviderResponse> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
-    return await fetch(input, { ...init, signal: controller.signal })
+    return await fetch(input, { ...init, signal: controller.signal }) as ProviderResponse
   } catch (error) {
     if (controller.signal.aborted) throw new ProviderRequestTimeoutError()
     throw error

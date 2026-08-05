@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { telegramWebhookRateLimitSubject } from "./webhook.js"
+import { telegramWebhookRateLimitSubject } from "../api/telegram/webhook.js"
 
 describe("telegramWebhookRateLimitSubject", () => {
   it("uses the Telegram chat as the stable subject when present", () => {

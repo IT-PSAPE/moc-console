@@ -7,6 +7,13 @@ export type AuthenticatedUser = {
   email: string | null
 }
 
+type SupabaseAuthLookup = {
+  getUser: (token: string) => Promise<{
+    data: { user: { id: string; email?: string | null } | null }
+    error: unknown
+  }>
+}
+
 function extractToken(headers: Record<string, string | undefined>): string | null {
   const raw = headers[SESSION_HEADER] ?? headers[SESSION_HEADER.toUpperCase()]
   if (!raw) return null
@@ -22,7 +29,8 @@ export async function requireAuthenticatedUser(
   }
 
   const admin = getSupabaseAdmin()
-  const { data, error } = await admin.auth.getUser(token)
+  const auth = admin.auth as unknown as SupabaseAuthLookup
+  const { data, error } = await auth.getUser(token)
   if (error || !data.user) {
     throw new AuthError("Invalid session")
   }

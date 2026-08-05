@@ -1,4 +1,4 @@
-import { fetchProvider, resolveOAuthConfig } from "./provider-config.js"
+import { fetchProvider, resolveOAuthConfig, type ProviderResponse } from "./provider-config.js"
 
 const TOKEN_URL = "https://zoom.us/oauth/token"
 const REVOKE_URL = "https://zoom.us/oauth/revoke"
@@ -43,7 +43,7 @@ function getBasicAuthHeader(config: ZoomOAuthConfig): string {
   return `Basic ${credentials}`
 }
 
-async function getErrorMessage(response: Response, fallback: string): Promise<string> {
+async function getErrorMessage(response: ProviderResponse, fallback: string): Promise<string> {
   const contentType = response.headers.get("content-type") ?? ""
 
   if (contentType.includes("application/json")) {
