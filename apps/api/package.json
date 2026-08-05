@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vercel dev --listen 3001",
     "build": "tsc -b",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "bun test"
   },
   "dependencies": {
     "@moc/notifications": "*",

@@ -11,8 +11,6 @@ export type ProviderRouteRule = {
   query: readonly string[]
 }
 
-type ProviderQuery = Record<string, string | string[] | undefined>
-
 export type AuthorizedProviderRoute = {
   body: ProviderBodyKind
   maxBodyBytes: number
@@ -27,22 +25,45 @@ export class ProviderRouteError extends Error {
   }
 }
 
-export function authorizeProviderRoute(method: string | undefined, query: ProviderQuery | undefined, rules: readonly ProviderRouteRule[]): AuthorizedProviderRoute {
+type ProviderRequestDetails = {
+  pathname: string
+  searchParams: URLSearchParams
+}
+
+function providerRequestDetails(requestUrl: string | undefined, routePrefix: string): ProviderRequestDetails {
+  let parsedUrl: URL
+  try {
+    parsedUrl = new URL(requestUrl ?? "/", "https://moc.invalid")
+  } catch {
+    throw new ProviderRouteError("Provider operation is not allowed")
+  }
+
+  const normalizedPrefix = `/${routePrefix.split("/").filter(Boolean).join("/")}`
+  if (!parsedUrl.pathname.startsWith(`${normalizedPrefix}/`)) {
+    throw new ProviderRouteError("Provider operation is not allowed")
+  }
+
+  return {
+    pathname: parsedUrl.pathname.slice(normalizedPrefix.length),
+    searchParams: parsedUrl.searchParams,
+  }
+}
+
+export function authorizeProviderRoute(method: string | undefined, requestUrl: string | undefined, routePrefix: string, rules: readonly ProviderRouteRule[]): AuthorizedProviderRoute {
   const normalizedMethod = method?.toUpperCase()
-  const rawPath = query?.path
-  const segments = Array.isArray(rawPath) ? rawPath : typeof rawPath === "string" ? [rawPath] : []
-  const pathname = `/${segments.join("/")}`
+  const { pathname, searchParams: requestSearchParams } = providerRequestDetails(requestUrl, routePrefix)
   const rule = rules.find((candidate) => candidate.method === normalizedMethod && candidate.path.test(pathname))
 
   if (!rule) throw new ProviderRouteError("Provider operation is not allowed")
 
   const allowedQuery = new Set(rule.query)
   const searchParams = new URLSearchParams()
-  for (const [key, value] of Object.entries(query ?? {})) {
-    if (key === "path" || value === undefined) continue
-    if (!allowedQuery.has(key) || Array.isArray(value)) {
+  const seenQuery = new Set<string>()
+  for (const [key, value] of requestSearchParams) {
+    if (!allowedQuery.has(key) || seenQuery.has(key)) {
       throw new ProviderRouteError("Provider query is not allowed")
     }
+    seenQuery.add(key)
     searchParams.set(key, value)
   }
 

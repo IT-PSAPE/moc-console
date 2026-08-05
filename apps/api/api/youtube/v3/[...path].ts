@@ -8,7 +8,7 @@ type ApiRequest = {
   body?: unknown
   headers?: Record<string, string | undefined>
   method?: string
-  query?: { path?: string | string[] }
+  url?: string
 }
 
 type ApiResponse = {
@@ -18,6 +18,7 @@ type ApiResponse = {
 }
 
 const WORKSPACE_HEADER = "x-moc-workspace"
+const ROUTE_PREFIX = "/api/youtube/v3"
 
 const JSON_BODY_LIMIT = 256 * 1024
 const THUMBNAIL_BODY_LIMIT = 2 * 1024 * 1024
@@ -65,7 +66,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   }
 
   try {
-    const route = authorizeProviderRoute(request.method, request.query, YOUTUBE_ROUTES)
+    const route = authorizeProviderRoute(request.method, request.url, ROUTE_PREFIX, YOUTUBE_ROUTES)
     await requireWorkspacePermission(userId, workspaceId, route.permission)
     const body = prepareProviderBody(request.body, route.body, route.maxBodyBytes)
     const proxyResponse = await proxyYouTubeApiRequest({

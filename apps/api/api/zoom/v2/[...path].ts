@@ -8,9 +8,7 @@ type ApiRequest = {
   body?: unknown
   headers?: Record<string, string | undefined>
   method?: string
-  query?: {
-    path?: string | string[]
-  }
+  url?: string
 }
 
 type ApiResponse = {
@@ -20,6 +18,7 @@ type ApiResponse = {
 }
 
 const WORKSPACE_HEADER = "x-moc-workspace"
+const ROUTE_PREFIX = "/api/zoom/v2"
 
 const JSON_BODY_LIMIT = 128 * 1024
 const ZOOM_ROUTES: readonly ProviderRouteRule[] = [
@@ -59,7 +58,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
 
   let route
   try {
-    route = authorizeProviderRoute(request.method, request.query, ZOOM_ROUTES)
+    route = authorizeProviderRoute(request.method, request.url, ROUTE_PREFIX, ZOOM_ROUTES)
     await requireWorkspacePermission(userId, workspaceId, route.permission)
   } catch (error) {
     response.statusCode = error instanceof ProviderRouteError ? 400 : error instanceof WorkspaceAccessError ? 403 : 500
