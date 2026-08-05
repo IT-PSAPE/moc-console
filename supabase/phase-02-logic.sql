@@ -1,13 +1,14 @@
 -- ============================================================
--- 02-logic.sql — Consolidated Functions, Triggers & RPCs
+-- phase-02-logic.sql — Consolidated Functions, Triggers & RPCs
 -- ============================================================
--- Auto-consolidated from docs/phases/phase-01..phase-31. Only the
+-- Auto-consolidated from the original phase-01..phase-31 ledger. Only the
 -- FINAL resolved version of each function is emitted: phase-22's
 -- handle_auth_user_created(), phase-25's upsert-by-id save_* RPCs,
 -- phase-31's SECURITY DEFINER save_playlist_lanes(). The superseded
 -- save_playlist_queue() RPC is intentionally NOT included.
 --
--- Run order: (00-nuke optional) -> 01-schema -> 02-logic -> 03-security.
+-- Run order: (phase-00-nuke optional) -> phase-01-schema ->
+-- phase-02-logic -> phase-03-security -> target-schema cleanup.
 -- 01-schema's SEED block is the only data inserted.
 -- ============================================================
 

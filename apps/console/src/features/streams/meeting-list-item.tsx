@@ -34,7 +34,7 @@ export function MeetingListItem({ meeting, onSelect }: MeetingListItemProps) {
     >
       <ListItemCard.Root>
         <ListItemCard.Leading>
-          <StreamProviderIcon provider="zoom" className="size-5" />
+          <StreamProviderIcon provider="zoom" />
         </ListItemCard.Leading>
         <ListItemCard.Content>
           <ListItemCard.Title>{meeting.topic}</ListItemCard.Title>

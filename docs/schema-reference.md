@@ -19,9 +19,9 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 - Storage target: Supabase Postgres
 - Naming convention: `snake_case`
 - ID strategy: `uuid` in storage, string in JSON/API responses
-- Source of truth: apply `phase-01-schema.sql`, followed by every file in
-  `phases/patches/` in chronological order. `phase-01-schema.sql` is a
-  historical baseline, not a replacement for later patches.
+- Source of truth: [`supabase/`](../supabase/readme.md). The phase files are a
+  historical baseline; the target-schema cleanup is the current convergence
+  script. Do not apply every historical patch wholesale.
 - Credential boundary: `private.integration_oauth_tokens` is server-only
   storage. It is intentionally excluded from client schema generation and
   must never be queried by browser code.
@@ -32,9 +32,9 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 | --- | --- | --- | --- |
 | `users` | App user profiles aligned to Supabase Auth | `id` | `id -> auth.users.id` |
 | `workspaces` | Workspace containers for operational data | `id` | Referenced by `workspace_users.workspace_id` and workspace-scoped domain tables |
-| `workspace_users` | Membership join between users and workspaces | `id` | `workspace_id -> workspaces.id`, `user_id -> users.id` |
-| `roles` | Role definitions and permissions | `id` | Referenced by `user_roles.role_id` |
-| `user_roles` | Global role assignment per user | `user_id` | `user_id -> users.id`, `role_id -> roles.id` |
+| `workspace_users` | Accepted membership and workspace-scoped role | `id` | `workspace_id -> workspaces.id`, `user_id -> users.id`, `role_id -> roles.id` |
+| `workspace_join_requests` | Pending workspace access requests | `id` | `workspace_id -> workspaces.id`, `user_id -> users.id` |
+| `roles` | Role definitions and permissions | `id` | Referenced by `workspace_users.role_id` |
 | `requests` | Work requests | `id` | `workspace_id -> workspaces.id`; referenced by `request_assignees.request_id` |
 | `request_assignees` | Request-to-user assignments | `id` | `request_id -> requests.id`, `user_id -> users.id` |
 | `equipment` | Inventory records | `id` | `workspace_id -> workspaces.id`; referenced by `booking_items.equipment_id` |
@@ -46,7 +46,6 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 | `streams` | YouTube live stream records | `id` | `workspace_id -> workspaces.id`, `created_by -> users.id` |
 | `zoom_connections` | Workspace-level Zoom connection metadata | `id` | `workspace_id -> workspaces.id`, `connected_by -> users.id` |
 | `zoom_meetings` | Zoom meeting records | `id` | `workspace_id -> workspaces.id`, `created_by -> users.id` |
-| `colors` | Stable semantic color keys shared across domains | `id` | Referenced by workspace-scoped domain tables |
 
 ## Enum Domains
 
@@ -57,7 +56,7 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 | `request_category` | `video_production`, `video_shooting`, `graphic_design`, `event`, `education` |
 | `equipment_category` | `camera`, `lens`, `lighting`, `audio`, `support`, `monitor`, `cable`, `accessory` |
 | `equipment_status` | `available`, `booked`, `booked_out`, `maintenance` |
-| `booking_status` | `booked`, `checked_out`, `returned` |
+| `booking_status` | `booked`, `checked_out`, `returned`, `archived` |
 | `stream_status` | `created`, `ready`, `live`, `complete` |
 
 ## Auth
@@ -85,7 +84,8 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 
 Bootstrap requirement:
 
-- Seed one workspace with slug `default-workspace`. The runtime uses it as the safe fallback when a signed-in user has no `workspace_users` row yet or when requests are made before membership resolution completes.
+- Seed one workspace with slug `default-workspace`. Signup may request it, but
+  the account remains pending until an owner or admin approves the membership.
 
 ### `workspace_users`
 
@@ -94,6 +94,7 @@ Bootstrap requirement:
 | `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
 | `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
 | `user_id` | `uuid` | None | No | No | Foreign key to `users.id`. |
+| `role_id` | `uuid` | None | No | No | Workspace-scoped foreign key to `roles.id`. |
 | `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
 
 Additional constraint:
@@ -111,23 +112,6 @@ Additional constraint:
 | `can_update` | `boolean` | `false` | No | No | Permission flag. |
 | `can_delete` | `boolean` | `false` | No | No | Permission flag. |
 | `can_manage_roles` | `boolean` | `false` | No | No | Admin role-management flag. |
-
-### `user_roles`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `user_id` | `uuid` | None | No | Yes | Primary key and foreign key to `users.id`. |
-| `role_id` | `uuid` | None | No | No | Foreign key to `roles.id`. |
-
-Scope rule:
-
-- A role is currently global to the user, despite `workspace_users` being
-  workspace-scoped. It is not valid to describe a role change as applying to
-  one workspace only.
-- The data-boundary migration blocks changes to a global role once that user
-  belongs to more than one workspace. Add a dedicated `workspace_user_roles`
-  migration and review every permission policy before supporting per-workspace
-  roles.
 
 ## Requests
 
@@ -381,5 +365,3 @@ Keep these tables global rather than workspace-scoped:
 
 - `users`
 - `roles`
-- `user_roles`
-- `colors`

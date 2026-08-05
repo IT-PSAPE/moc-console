@@ -1,0 +1,88 @@
+# Supabase database scripts
+
+This directory is the database source of truth for the MoC Console Supabase
+project (`jypshhgfuvwmtbbcxmhs`). The live project was reconciled against these
+files on 2026-08-05.
+
+## Which script to use
+
+- For the existing MoC Console project, run
+  [`verify-current-schema.sql`](verify-current-schema.sql) first. No migration
+  is required when every returned drift array is empty.
+- To converge an older or partially migrated MoC Console database, back it up
+  and run
+  [`patches/2026-08-04-moc-console-target-schema-cleanup.sql`](patches/2026-08-04-moc-console-target-schema-cleanup.sql).
+  It is atomic and accepts both the legacy schema and the already-clean target
+  schema. It permanently removes retired feature tables when they still exist.
+- For a blank project, run [`phase-01-schema.sql`](phase-01-schema.sql),
+  [`phase-02-logic.sql`](phase-02-logic.sql), and
+  [`phase-03-security.sql`](phase-03-security.sql), then run the target-schema
+  cleanup above to converge the historical baseline to the current product.
+- [`phase-00-nuke.sql`](phase-00-nuke.sql) is development-only and destroys
+  all application, Auth, Storage, and cron data. Never use it as an upgrade.
+
+Do not run every file in `patches/` against a fresh or current database. The
+directory is a chronological audit ledger: several early patches create media,
+playlist, or cue-sheet objects that later patches intentionally remove.
+
+## Current live target
+
+The connected project currently has 33 public application tables, all with RLS
+enabled. Authorization is workspace-scoped through
+`workspace_users.role_id`; new accounts create `workspace_join_requests` and
+remain pending until approved. OAuth secrets live only in
+`private.integration_oauth_tokens`. The legacy `user_roles`, playlist, media
+library, and cue-sheet tables are absent. The `media` Storage bucket remains.
+
+The only entries currently recorded in Supabase migration history are:
+
+1. `20260804192829_lock_privileged_maintenance_rpcs` — source:
+   [`patches/2026-08-04-lock-privileged-maintenance-rpcs.sql`](patches/2026-08-04-lock-privileged-maintenance-rpcs.sql)
+2. `20260804193507_harden_function_execution` — source:
+   [`patches/2026-08-04-function-execution-hardening.sql`](patches/2026-08-04-function-execution-hardening.sql)
+
+Other historical changes were applied through the SQL editor or direct SQL and
+therefore do not appear in `supabase_migrations.schema_migrations`.
+
+## Script history
+
+The phase files are the consolidated historical baseline:
+
+- [`phase-01-schema.sql`](phase-01-schema.sql) — extensions, enums, tables,
+  indexes, and structural seed data.
+- [`phase-02-logic.sql`](phase-02-logic.sql) — functions, triggers, and RPCs.
+- [`phase-03-security.sql`](phase-03-security.sql) — RLS, policies, Storage,
+  and grants.
+
+The patch ledger records how that baseline evolved:
+
+- May–June feature evolution: media metadata, playlist positioning,
+  notification templates/settings, profile fields, booking batches, and
+  archive automation. These are historical because some affected domains were
+  later retired.
+- [`patches/2026-07-28-remove-playlists-media-and-cue-sheet.sql`](patches/2026-07-28-remove-playlists-media-and-cue-sheet.sql)
+  removed retired domains.
+- [`patches/2026-07-31-restore-checklists.sql`](patches/2026-07-31-restore-checklists.sql),
+  [`patches/2026-08-03-checklist-scheduled-dates.sql`](patches/2026-08-03-checklist-scheduled-dates.sql),
+  and [`patches/2026-08-04-checklist-run-request-links.sql`](patches/2026-08-04-checklist-run-request-links.sql)
+  restored standalone checklist workflows.
+- [`patches/2026-08-04-consolidated-live-schema-update.sql`](patches/2026-08-04-consolidated-live-schema-update.sql)
+  was the non-destructive rollout bundle. It is superseded by the target-schema
+  cleanup and is retained only for audit history.
+- The data-boundary, notification outbox, request history, workspace access,
+  and function-execution patches are all folded into
+  [`patches/2026-08-04-moc-console-target-schema-cleanup.sql`](patches/2026-08-04-moc-console-target-schema-cleanup.sql).
+
+## Verification notes
+
+The target-schema cleanup was executed against the live schema inside a
+transaction ending in `ROLLBACK` on 2026-08-05. Its preflight, migration body,
+explicit grants, RLS checks, and final assertions all passed, and production
+was left unchanged.
+
+Supabase Security Advisor may still report the deliberately anonymous public
+submission/tracking RPCs because they are `SECURITY DEFINER`. They are the
+public request application boundary and validate a workspace or tracking code.
+Maintenance RPCs and OAuth-token RPCs are service-role-only. The notification
+queue tables intentionally have RLS without client policies because they are
+also service-role-only.

@@ -37,7 +37,7 @@ const inputVariants = cv({
 
 export function Input({ className, style = 'outline', state, ...props }: InputProps) {
     return (
-        <div className={cn(inputVariants({ state: state, style: style }), className)}>
+        <div data-ui-control className={cn(inputVariants({ state: state, style: style }), className)}>
             {props.icon && <span className='*:size-4 text-tertiary'>{props.icon}</span>}
             <BaseInput className="w-full min-w-0 !p-0 focus:!outline-none focus-visible:!outline-0 !focus:ring-0 paragraph-sm !leading-none" {...props} />
         </div>

@@ -45,7 +45,7 @@ export function EquipmentScreen() {
       </Page.Header>
 
       <CollectionToolbar>
-        <CollectionToolbar.Views>
+        <CollectionToolbar.Views className="max-mobile:hidden">
           <SegmentedControl value={state.activeView} onValueChange={actions.changeView} fill={state.isMobile} >
             <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
             <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={state.isMobile}>Kanban</CollectionToolbar.ViewItem>

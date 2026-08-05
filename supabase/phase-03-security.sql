@@ -1,12 +1,13 @@
 -- ============================================================
--- 03-security.sql — Consolidated RLS, Policies, Storage & Grants
+-- phase-03-security.sql — Consolidated RLS, Policies, Storage & Grants
 -- ============================================================
--- Auto-consolidated from docs/phases/phase-01..phase-31. Where a
+-- Auto-consolidated from the original phase-01..phase-31 ledger. Where a
 -- later phase replaced an earlier policy (phase-23 telegram_groups,
 -- phase-24 workspaces UPDATE) only the FINAL resolved policy is
 -- emitted. Storage buckets are created before their policies.
 --
--- Run order: (00-nuke optional) -> 01-schema -> 02-logic -> 03-security.
+-- Run order: (phase-00-nuke optional) -> phase-01-schema ->
+-- phase-02-logic -> phase-03-security -> target-schema cleanup.
 -- 01-schema's SEED block is the only data inserted.
 -- ============================================================
 

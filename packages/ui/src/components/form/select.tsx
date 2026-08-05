@@ -59,7 +59,7 @@ const triggerVariants = cv({
 
 function SelectTrigger({ children, className, placeholder, state, style = "outline", ...props }: SelectTriggerProps) {
     return (
-        <BaseSelect.Trigger className={cn(triggerVariants({ state, style }), className)} {...props}>
+        <BaseSelect.Trigger data-ui-control className={cn(triggerVariants({ state, style }), className)} {...props}>
             {children ?? (
                 <>
                     <BaseSelect.Value className="min-w-0 flex-1 truncate" placeholder={placeholder} />

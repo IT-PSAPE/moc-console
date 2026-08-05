@@ -27,16 +27,8 @@ const defaultFilters: StreamFilters = {
 export function useStreamFilters(streams: Stream[]) {
   const [filters, setFilters] = useState<StreamFilters>(defaultFilters)
 
-  const filtered = useMemo(() => {
+  const results = useMemo(() => {
     let result = streams
-
-    if (!filters.showCompleted) {
-      result = result.filter((s) => s.streamStatus !== "complete")
-    }
-
-    if (filters.statuses.size > 0) {
-      result = result.filter((s) => filters.statuses.has(s.streamStatus))
-    }
 
     if (filters.privacies.size > 0) {
       result = result.filter((s) => filters.privacies.has(s.privacyStatus))
@@ -82,7 +74,13 @@ export function useStreamFilters(streams: Stream[]) {
       }
     })
 
-    return result
+    const calendarFiltered = result
+    const visibleStatuses = calendarFiltered.filter((stream) => {
+      if (!filters.showCompleted && stream.streamStatus === "complete") return false
+      return filters.statuses.size === 0 || filters.statuses.has(stream.streamStatus)
+    })
+
+    return { calendarFiltered, filtered: visibleStatuses }
   }, [streams, filters])
 
   const setSearch = useCallback((search: string) => {
@@ -132,7 +130,8 @@ export function useStreamFilters(streams: Stream[]) {
 
   return {
     filters,
-    filtered,
+    filtered: results.filtered,
+    calendarFiltered: results.calendarFiltered,
     hasActiveFilters,
     setSearch,
     toggleStatus,

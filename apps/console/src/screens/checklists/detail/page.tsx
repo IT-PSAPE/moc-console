@@ -49,6 +49,7 @@ export function ChecklistDetailScreen() {
 
   return (
     <DetailPage>
+        <DetailPage.Back render={<Link to={`/${routes.checklists}`} />}>Back to checklists</DetailPage.Back>
         <TopBarActions>
           <Button.Icon aria-label="Delete checklist" variant="danger-secondary" icon={<Trash2 />} onClick={actions.openDelete} />
           {checklist.kind === "instance" && <Button.Icon aria-label="Save as checklist template" variant="secondary" icon={<CopyPlus />} onClick={actions.createTemplate} />}

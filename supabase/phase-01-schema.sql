@@ -1,7 +1,7 @@
 -- ============================================================
--- 01-schema.sql — Consolidated Schema (fresh install)
+-- phase-01-schema.sql — Consolidated historical schema baseline
 -- ============================================================
--- Auto-consolidated from docs/phases/phase-01..phase-31 (the
+-- Auto-consolidated from the original phase-01..phase-31 ledger. The
 -- incremental migration ledger). All later ALTER/patch phases are
 -- folded into final-state CREATE TABLE / enum / index definitions;
 -- backfill UPDATEs and patch-only ALTERs are intentionally dropped
@@ -9,10 +9,12 @@
 --
 -- Run order on a fresh Supabase project:
 --   (optional) phase-00-nuke.sql   — reset an existing database
---   01-schema.sql                  — this file (extensions, enums,
+--   phase-01-schema.sql            — this file (extensions, enums,
 --                                    tables, indexes, the ONLY seed)
---   02-logic.sql                   — functions, triggers, RPCs
---   03-security.sql                — RLS, policies, storage, grants
+--   phase-02-logic.sql             — functions, triggers, RPCs
+--   phase-03-security.sql          — RLS, policies, storage, grants
+--   patches/2026-08-04-moc-console-target-schema-cleanup.sql
+--                                  — converge to the current product
 --
 -- The SEED block at the end of this file is the ONLY data inserted.
 -- No phase-11 sample/demo data is included anywhere.

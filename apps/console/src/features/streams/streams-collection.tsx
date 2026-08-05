@@ -1,7 +1,6 @@
 import type { ChangeEvent } from "react"
-import type { Stream } from "@moc/types/streams/stream"
-import type { ZoomMeeting } from "@moc/types/streams/zoom"
 import { Button } from "@moc/ui/components/controls/button"
+import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import { Decision } from "@moc/ui/components/display/decision"
 import { Alert } from "@moc/ui/components/feedback/alert"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
@@ -10,22 +9,23 @@ import { Input } from "@moc/ui/components/form/input"
 import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar"
 import { Page } from "@moc/ui/components/layout/page"
 import { Drawer } from "@moc/ui/components/overlays/drawer"
-import { Plus, RadioTower, RefreshCw, Search } from "lucide-react"
+import { CalendarDays, List, Plus, RadioTower, RefreshCw, Search } from "lucide-react"
 import { CreateStreamModal } from "./create-stream-modal"
 import { MeetingModal } from "./meeting-modal"
 import { StreamFilterDrawer } from "./stream-filter-drawer"
-import { StreamListDetail, useStreamListDetail } from "./stream-list-detail"
+import { StreamListDetail } from "./stream-list-detail"
 import { StreamModal } from "./stream-modal"
 import { StreamProviderIcon } from "./stream-provider-icon"
+import { StreamsCalendar } from "./streams-calendar"
 import { StreamsList } from "./streams-list"
 import { useStreamsCollection } from "./use-streams-collection"
 import { ZoomMeetingFilterDrawer } from "./zoom-meeting-filter-drawer"
 
 export function StreamsCollection() {
   const { state, actions, meta } = useStreamsCollection()
-  const detail = useStreamListDetail()
   const { youtube, zoom } = meta
   const filtered = state.searchQuery.trim().length > 0 || meta.hasActiveFilters
+  const collectionState = meta.isConnected && state.activeView === "calendar" ? state.activeView : meta.listEntries
 
   function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
     actions.setSearchQuery(event.target.value)
@@ -51,14 +51,6 @@ export function StreamsCollection() {
     void zoom.actions.sync()
   }
 
-  function handleSelectStream(stream: Stream) {
-    detail.actions.selectStream(stream, youtube.actions.edit, youtube.actions.remove)
-  }
-
-  function handleSelectMeeting(meeting: ZoomMeeting) {
-    detail.actions.selectMeeting(meeting, zoom.actions.edit, zoom.actions.remove)
-  }
-
   return (
     <Page>
       <Page.Header>
@@ -68,6 +60,12 @@ export function StreamsCollection() {
       </Page.Header>
 
       <CollectionToolbar>
+        <CollectionToolbar.Views>
+          <SegmentedControl value={state.activeView} onValueChange={actions.changeView} fill={meta.isMobile}>
+            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="calendar" icon={<CalendarDays />}>Calendar</CollectionToolbar.ViewItem>
+          </SegmentedControl>
+        </CollectionToolbar.Views>
         <CollectionToolbar.Actions>
           <Input
             aria-label="Search streams and meetings"
@@ -118,7 +116,7 @@ export function StreamsCollection() {
         {zoom.state.syncError ? (
           <Alert variant="error" title="Zoom sync failed" description={zoom.state.syncError} action={<Button variant="secondary" onClick={handleRetryZoomSync}>Retry sync</Button>} />
         ) : null}
-        <Decision value={meta.isConnected ? meta.entries : null} loading={meta.isLoading}>
+        <Decision value={meta.isConnected ? collectionState : null} loading={meta.isLoading}>
           <Decision.Loading>
             <LoadingSpinner className="py-6" />
           </Decision.Loading>
@@ -139,7 +137,11 @@ export function StreamsCollection() {
             )}
           </Decision.Empty>
           <Decision.Data>
-            <StreamsList entries={meta.entries} onSelectStream={handleSelectStream} onSelectMeeting={handleSelectMeeting} />
+            {state.activeView === "list" ? (
+              <StreamsList entries={meta.listEntries} onSelectStream={actions.selectStream} onSelectMeeting={actions.selectMeeting} />
+            ) : (
+              <StreamsCalendar events={meta.calendarEvents} onSelectStream={actions.selectStream} onSelectMeeting={actions.selectMeeting} />
+            )}
           </Decision.Data>
         </Decision>
       </Page.Content>

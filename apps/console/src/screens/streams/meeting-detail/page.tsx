@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 import { Header } from "@moc/ui/components/display/header"
 import { Badge } from "@moc/ui/components/display/badge"
 import { Button } from "@moc/ui/components/controls/button"
@@ -16,6 +16,7 @@ import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dia
 import { Page } from "@moc/ui/components/layout/page"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
+import { routes } from "@/screens/console-routes"
 import { Calendar, Check, Clock, Copy, ExternalLink, Globe, Key, MessageCircle, Mic, Pencil, Repeat, ShieldCheck, Trash2, Video} from "lucide-react"
 
 function formatDuration(minutes: number): string {
@@ -66,6 +67,7 @@ export function MeetingDetailScreen() {
   const isPast = meeting.startTime ? new Date(meeting.startTime) < new Date() : false
   return (
     <DetailPage>
+      <DetailPage.Back render={<Link to={`/${routes.streams}`} />}>Back to streams</DetailPage.Back>
       <Paragraph.xs role="status" aria-live="polite" className="sr-only">{copyMessage}</Paragraph.xs>
       <TopBarActions>
         {meta.canEdit && (

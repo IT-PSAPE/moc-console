@@ -31,7 +31,7 @@ All mutations are public Supabase RPCs — no authentication required, since thi
 - `public_lookup_tracking` — [src/data/lookup-tracking.ts](src/data/lookup-tracking.ts)
 - Equipment catalogue read — [src/data/fetch-equipment.ts](src/data/fetch-equipment.ts)
 
-The RPC signatures are defined in [docs/phases/phase-12-public-access.sql](docs/phases/phase-12-public-access.sql).
+The RPC signatures and grants are defined by the current [target-schema convergence script](../../supabase/patches/2026-08-04-moc-console-target-schema-cleanup.sql).
 
 ## Outbound notifications
 
@@ -57,7 +57,7 @@ There are no server-side variables: this app ships no serverless functions. Serv
 ## Project structure
 
 ```
-docs/phases/             Shared Supabase migrations (kept in sync with moc-console)
+supabase/                Shared Supabase phases, patch history, and drift check
 src/data/                Supabase RPC clients + outbound notify helpers
 src/features/            Domain hooks (use-request-form, use-booking-form, etc.)
 src/lib/                 Supabase client + workspace env helper

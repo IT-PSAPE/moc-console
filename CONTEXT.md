@@ -95,7 +95,7 @@ Removed 2026-07-28. Kept here so the terms are recognised as *gone*, not merely 
 - Section **overview pages** for Requests, Equipment, Broadcast and Cue Sheet — the flat sidebar has no section landings.
 - **Per-frontend server code** — `apps/console/api`, `apps/console/server` and `apps/request/api` all moved to **MOC API**. See [ADR-0008](./docs/adr/0008-extract-moc-api-app.md).
 
-See [ADR-0007](./docs/adr/0007-simplify-console-to-five-features.md) and `docs/phases/patches/2026-07-28-remove-playlists-media-and-cue-sheet.sql`.
+See [ADR-0007](./docs/adr/0007-simplify-console-to-five-features.md) and [`supabase/patches/2026-07-28-remove-playlists-media-and-cue-sheet.sql`](./supabase/patches/2026-07-28-remove-playlists-media-and-cue-sheet.sql).
 
 ## Flagged ambiguities
 
