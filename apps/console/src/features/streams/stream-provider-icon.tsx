@@ -9,5 +9,5 @@ const providerAssets: Record<StreamProvider, { alt: string; src: string }> = {
 
 export function StreamProviderIcon({ provider, decorative = false, className }: { provider: StreamProvider; decorative?: boolean; className?: string }) {
   const asset = providerAssets[provider]
-  return <img src={asset.src} alt={decorative ? "" : asset.alt} className={cn("size-4 object-contain", className)} />
+  return <img src={asset.src} alt={decorative ? "" : asset.alt} className={cn("object-contain", className)} />
 }
