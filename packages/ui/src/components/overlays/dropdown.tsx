@@ -1,6 +1,9 @@
 import { Menu } from '@base-ui/react/menu'
 import { cn } from '@moc/utils/cn'
 import { createContext, useContext, useState, type ComponentProps, type HTMLAttributes, type ReactElement, type ReactNode } from 'react'
+import { useIsMobile } from '../../hooks/use-is-mobile'
+import { Drawer } from './drawer'
+import { mobileSheetPositionerClassName } from './mobile-sheet'
 import { useOverlayStack } from './overlay-provider'
 
 // ─── Placement ───────────────────────────────────────────────────────
@@ -22,7 +25,12 @@ function toSideAlign(placement: Placement): { side: 'top' | 'bottom' | 'left' | 
     return { side, align }
 }
 
-const PlacementContext = createContext<Placement>('bottom')
+type DropdownContextValue = {
+    isMobile: boolean
+    placement: Placement
+}
+
+const DropdownContext = createContext<DropdownContextValue>({ isMobile: false, placement: 'bottom' })
 
 const dropdownItemClassName = [
     'flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm text-secondary outline-none md:min-h-0 md:rounded-sm md:px-2 md:py-1',
@@ -41,6 +49,7 @@ type DropdownRootProps = {
 }
 
 function DropdownRoot({ children, closeOnEscape = true, defaultOpen, onOpenChange, open, placement = 'bottom' }: DropdownRootProps) {
+    const isMobile = useIsMobile()
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false)
     const isOpen = isControlled ? open : uncontrolledOpen
@@ -53,13 +62,25 @@ function DropdownRoot({ children, closeOnEscape = true, defaultOpen, onOpenChang
         onOpenChange?.(nextOpen)
     }
 
-    return (
-        <PlacementContext.Provider value={placement}>
-            <Menu.Root open={isOpen} onOpenChange={handleOpenChange}>
+    function handleDrawerOpenChange(nextOpen: boolean) {
+        if (nextOpen === isOpen) return
+        if (!isControlled) {
+            setUncontrolledOpen(nextOpen)
+        }
+        onOpenChange?.(nextOpen)
+    }
+
+    const dropdown = (
+        <DropdownContext.Provider value={{ isMobile, placement }}>
+            <Menu.Root modal={!isMobile} open={isOpen} onOpenChange={handleOpenChange}>
                 {children}
             </Menu.Root>
-        </PlacementContext.Provider>
+        </DropdownContext.Provider>
     )
+
+    if (!isMobile) return dropdown
+
+    return <Drawer mobileSide="bottom" open={isOpen} onOpenChange={handleDrawerOpenChange}>{dropdown}</Drawer>
 }
 
 // ─── Trigger ─────────────────────────────────────────────────────────
@@ -82,8 +103,22 @@ function DropdownTrigger({ children, className, ...props }: DropdownTriggerProps
 // ─── Panel ───────────────────────────────────────────────────────────
 
 function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    const { side, align } = toSideAlign(useContext(PlacementContext))
+    const { isMobile, placement } = useContext(DropdownContext)
+    const { side, align } = toSideAlign(placement)
     const { state: overlayState } = useOverlayStack()
+
+    if (isMobile) {
+        return (
+            <Drawer.Portal>
+                <Drawer.Backdrop />
+                <Menu.Positioner className={mobileSheetPositionerClassName}>
+                    <Drawer.Panel render={<Menu.Popup />} {...props}>
+                        <div className={cn('p-1', className)}>{children}</div>
+                    </Drawer.Panel>
+                </Menu.Positioner>
+            </Drawer.Portal>
+        )
+    }
 
     return (
         <Menu.Portal container={overlayState.rootElement ?? undefined}>

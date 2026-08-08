@@ -3,7 +3,8 @@ import { cn } from '@moc/utils/cn'
 import { Check, ChevronDown, Search, X } from 'lucide-react'
 import { createContext, Fragment, useContext, useState, type ReactNode } from 'react'
 import { useIsMobile } from '../../hooks/use-is-mobile'
-import { MobileSheetHandle, mobileSheetBackdropClassName, mobileSheetPopupClassName, mobileSheetPositionerClassName } from '../overlays/mobile-sheet'
+import { Drawer } from '../overlays/drawer'
+import { mobileSheetPositionerClassName } from '../overlays/mobile-sheet'
 import { useOverlayStack } from '../overlays/overlay-provider'
 
 // A filterable select over `@base-ui/react/combobox`, in the same visual
@@ -32,6 +33,7 @@ type ComboboxRootProps<Value> = {
     onValueChange?: (value: never) => void
     multiple?: boolean
     disabled?: boolean
+    modal?: boolean
     name?: string
     /** Renders an object option as its display string. Not needed for `{ value, label }`. */
     itemToStringLabel?: (item: Value) => string
@@ -39,7 +41,7 @@ type ComboboxRootProps<Value> = {
     isItemEqualToValue?: (item: Value, value: Value) => boolean
     open?: boolean
     defaultOpen?: boolean
-    onOpenChange?: (open: boolean, eventDetails: BaseCombobox.Root.ChangeEventDetails) => void
+    onOpenChange?: (open: boolean, eventDetails?: BaseCombobox.Root.ChangeEventDetails) => void
 }
 
 type ComboboxContextValue = {
@@ -60,16 +62,24 @@ function useComboboxContext(): ComboboxContextValue {
     return context
 }
 
-function ComboboxRoot<Value>({ children, defaultOpen, itemToStringLabel, multiple = false, onOpenChange, open, ...props }: ComboboxRootProps<Value>) {
+function ComboboxRoot<Value>({ children, defaultOpen, itemToStringLabel, modal, multiple = false, onOpenChange, open, ...props }: ComboboxRootProps<Value>) {
     const isMobile = useIsMobile()
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false)
     const isOpen = isControlled ? open : uncontrolledOpen
-    function handleOpenChange(nextOpen: boolean, eventDetails: BaseCombobox.Root.ChangeEventDetails) {
+    function handleOpenChange(nextOpen: boolean, eventDetails?: BaseCombobox.Root.ChangeEventDetails) {
         if (!isControlled) {
             setUncontrolledOpen(nextOpen)
         }
         onOpenChange?.(nextOpen, eventDetails)
+    }
+
+    function handleDrawerOpenChange(nextOpen: boolean) {
+        if (nextOpen === isOpen) return
+        if (!isControlled) {
+            setUncontrolledOpen(nextOpen)
+        }
+        onOpenChange?.(nextOpen)
     }
 
     // Base UI resolves `multiple` at the type level into single- vs
@@ -78,11 +88,15 @@ function ComboboxRoot<Value>({ children, defaultOpen, itemToStringLabel, multipl
     const Root = BaseCombobox.Root as unknown as (
         p: ComboboxRootProps<Value>,
     ) => React.JSX.Element
-    return (
+    const combobox = (
         <ComboboxContext.Provider value={{ isMobile, itemToStringLabel: itemToStringLabel as ((item: unknown) => string) | undefined, multiple }}>
-            <Root {...props} itemToStringLabel={itemToStringLabel} multiple={multiple} open={isOpen} onOpenChange={handleOpenChange}>{children}</Root>
+            <Root {...props} itemToStringLabel={itemToStringLabel} modal={isMobile ? false : modal} multiple={multiple} open={isOpen} onOpenChange={handleOpenChange}>{children}</Root>
         </ComboboxContext.Provider>
     )
+
+    if (!isMobile) return combobox
+
+    return <Drawer mobileSide="bottom" open={isOpen} onOpenChange={handleDrawerOpenChange}>{combobox}</Drawer>
 }
 
 // Base UI allows `className` to be a function of component state. None of
@@ -219,11 +233,10 @@ function ComboboxContent({ children, className, empty = 'No matches', searchPlac
 
     if (isMobile) {
         return (
-            <BaseCombobox.Portal container={overlayState.rootElement ?? undefined}>
-                <BaseCombobox.Backdrop className={mobileSheetBackdropClassName} />
+            <Drawer.Portal>
+                <Drawer.Backdrop />
                 <BaseCombobox.Positioner className={mobileSheetPositionerClassName}>
-                    <BaseCombobox.Popup className={cn(mobileSheetPopupClassName, 'h-[min(85dvh,44rem)]', className)}>
-                        <MobileSheetHandle />
+                    <Drawer.Panel render={<BaseCombobox.Popup />}>
                         <div className="flex shrink-0 flex-col gap-3 border-b border-secondary px-4 pb-3">
                             <span className="label-md text-primary">{multiple ? 'Select options' : title}</span>
                             <BaseCombobox.InputGroup className={cn(fieldShell, 'flex-nowrap')}>
@@ -249,9 +262,9 @@ function ComboboxContent({ children, className, empty = 'No matches', searchPlac
                                 </BaseCombobox.Trigger>
                             </div>
                         ) : null}
-                    </BaseCombobox.Popup>
+                    </Drawer.Panel>
                 </BaseCombobox.Positioner>
-            </BaseCombobox.Portal>
+            </Drawer.Portal>
         )
     }
 

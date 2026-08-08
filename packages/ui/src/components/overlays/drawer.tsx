@@ -43,6 +43,7 @@ type DrawerContextValue = {
 
 const DrawerContext = createContext<DrawerContextValue | null>(null)
 const MOBILE_SNAP_POINTS = [0.55, 1]
+type DrawerSnapPoint = NonNullable<BaseDrawer.Root.Props['snapPoints']>[number]
 
 export function useDrawer() {
     const context = useContext(DrawerContext)
@@ -71,6 +72,7 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
     const isMobile = useIsMobile()
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
+    const [snapPoint, setSnapPoint] = useState<DrawerSnapPoint | null>(MOBILE_SNAP_POINTS[0])
     const isOpen = isControlled ? open : uncontrolledOpen
     const isMobileSheet = isMobile && mobileSide !== undefined
     const effectiveSide = isMobileSheet ? mobileSide : side
@@ -96,6 +98,9 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
             return
         }
 
+        if (nextOpen && isMobileSheet && snapPoint === null) {
+            setSnapPoint(MOBILE_SNAP_POINTS[0])
+        }
         setOpen(nextOpen)
     }
 
@@ -106,9 +111,10 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
                 disablePointerDismissal={!closeOnBackdropClick}
                 swipeDirection={swipeDirectionBySide[effectiveSide]}
                 snapPoints={isMobileSheet ? MOBILE_SNAP_POINTS : undefined}
-                defaultSnapPoint={isMobileSheet ? MOBILE_SNAP_POINTS[0] : undefined}
+                snapPoint={isMobileSheet ? snapPoint : null}
                 snapToSequentialPoints={isMobileSheet}
                 onOpenChange={handleOpenChange}
+                onSnapPointChange={setSnapPoint}
             >
                 {children}
             </BaseDrawer.Root>
@@ -180,12 +186,17 @@ const slideBySide: Record<Side, string> = {
     bottom: '[transform:translateY(var(--drawer-swipe-movement-y))] data-[starting-style]:[transform:translateY(100%)] data-[ending-style]:[transform:translateY(100%)]',
 }
 
-function DrawerPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+type DrawerPanelProps = HTMLAttributes<HTMLDivElement> & {
+    render?: ReactElement
+}
+
+function DrawerPanel({ children, className, render, ...props }: DrawerPanelProps) {
     const { state } = useDrawer()
 
     return (
         <BaseDrawer.Viewport className="pointer-events-none fixed inset-0 z-10">
             <BaseDrawer.Popup
+                render={render}
                 className={cn(
                     'pointer-events-auto fixed w-full outline-none',
                     state.isSheet && '!max-w-none',

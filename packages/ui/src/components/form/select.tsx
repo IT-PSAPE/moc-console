@@ -2,15 +2,20 @@ import { Select as BaseSelect } from "@base-ui/react/select";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
 import { ChevronDown } from "lucide-react";
-import { useState, type ComponentProps, type ReactNode } from "react";
+import { createContext, useContext, useState, type ComponentProps, type ReactNode } from "react";
 import { useIsMobile } from "../../hooks/use-is-mobile";
-import { MobileSheetHandle, mobileSheetBackdropClassName, mobileSheetPopupClassName, mobileSheetPositionerClassName } from "../overlays/mobile-sheet";
+import { Drawer } from "../overlays/drawer";
+import { mobileSheetPositionerClassName } from "../overlays/mobile-sheet";
 import { useOverlayStack } from "../overlays/overlay-provider";
 
-type SelectRootProps<Value> = BaseSelect.Root.Props<Value, false>;
+type SelectRootProps<Value> = Omit<BaseSelect.Root.Props<Value, false>, "onOpenChange"> & {
+    onOpenChange?: (nextOpen: boolean, eventDetails?: BaseSelect.Root.ChangeEventDetails) => void;
+};
 type Styled<Props> = Omit<Props, "className"> & { className?: string };
+const SelectContext = createContext({ isMobile: false });
 
 function SelectRoot<Value>({ defaultOpen, onOpenChange, open, ...props }: SelectRootProps<Value>) {
+    const isMobile = useIsMobile();
     const isControlled = open !== undefined;
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false);
     const isOpen = isControlled ? open : uncontrolledOpen;
@@ -21,7 +26,23 @@ function SelectRoot<Value>({ defaultOpen, onOpenChange, open, ...props }: Select
         onOpenChange?.(nextOpen, eventDetails);
     }
 
-    return <BaseSelect.Root {...props} open={isOpen} onOpenChange={handleOpenChange} />;
+    function handleDrawerOpenChange(nextOpen: boolean) {
+        if (nextOpen === isOpen) return;
+        if (!isControlled) {
+            setUncontrolledOpen(nextOpen);
+        }
+        onOpenChange?.(nextOpen);
+    }
+
+    const select = (
+        <SelectContext.Provider value={{ isMobile }}>
+            <BaseSelect.Root {...props} modal={isMobile ? false : props.modal} open={isOpen} onOpenChange={handleOpenChange} />
+        </SelectContext.Provider>
+    );
+
+    if (!isMobile) return select;
+
+    return <Drawer mobileSide="bottom" open={isOpen} onOpenChange={handleDrawerOpenChange}>{select}</Drawer>;
 }
 
 type SelectTriggerProps = Omit<ComponentProps<typeof BaseSelect.Trigger>, "children" | "className"> & {
@@ -73,33 +94,40 @@ function SelectTrigger({ children, className, placeholder, state, style = "outli
 }
 
 function SelectContent({ children, className }: { children: ReactNode; className?: string }) {
-    const isMobile = useIsMobile();
+    const { isMobile } = useContext(SelectContext);
     const { state: overlayState } = useOverlayStack();
 
     return (
-        <BaseSelect.Portal container={overlayState.rootElement ?? undefined}>
-            {isMobile ? <BaseSelect.Backdrop className={mobileSheetBackdropClassName} /> : null}
-            <BaseSelect.Positioner alignItemWithTrigger={false} sideOffset={6} className={isMobile ? mobileSheetPositionerClassName : "z-[9050] outline-none"}>
-                <BaseSelect.Popup
-                    className={cn(
-                        isMobile
-                            ? mobileSheetPopupClassName
-                            : cn(
-                                "pointer-events-auto max-h-[min(var(--available-height),16rem)] min-w-[var(--anchor-width)] max-w-[var(--available-width)] overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg outline-none",
-                                "origin-[var(--transform-origin)] transition-[opacity,transform] duration-150 motion-reduce:transition-none",
-                                "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
-                                "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
-                            ),
-                        className,
-                    )}
-                >
-                    {isMobile ? <MobileSheetHandle /> : null}
-                    <BaseSelect.List className="max-h-[inherit] overflow-y-auto overscroll-contain p-1">
-                        {children}
-                    </BaseSelect.List>
-                </BaseSelect.Popup>
-            </BaseSelect.Positioner>
-        </BaseSelect.Portal>
+        isMobile ? (
+            <Drawer.Portal>
+                <Drawer.Backdrop />
+                <BaseSelect.Positioner alignItemWithTrigger={false} className={mobileSheetPositionerClassName}>
+                    <Drawer.Panel render={<BaseSelect.Popup />}>
+                        <BaseSelect.List className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1">
+                            {children}
+                        </BaseSelect.List>
+                    </Drawer.Panel>
+                </BaseSelect.Positioner>
+            </Drawer.Portal>
+        ) : (
+            <BaseSelect.Portal container={overlayState.rootElement ?? undefined}>
+                <BaseSelect.Positioner alignItemWithTrigger={false} sideOffset={6} className="z-[9050] outline-none">
+                    <BaseSelect.Popup
+                        className={cn(
+                            "pointer-events-auto max-h-[min(var(--available-height),16rem)] min-w-[var(--anchor-width)] max-w-[var(--available-width)] overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg outline-none",
+                            "origin-[var(--transform-origin)] transition-[opacity,transform] duration-150 motion-reduce:transition-none",
+                            "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
+                            "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
+                            className,
+                        )}
+                    >
+                        <BaseSelect.List className="max-h-[inherit] overflow-y-auto overscroll-contain p-1">
+                            {children}
+                        </BaseSelect.List>
+                    </BaseSelect.Popup>
+                </BaseSelect.Positioner>
+            </BaseSelect.Portal>
+        )
     );
 }
 

@@ -1,21 +1,8 @@
 import { cn } from '@moc/utils/cn'
 import type { HTMLAttributes } from 'react'
 
-export const mobileSheetBackdropClassName = cn(
-    'pointer-events-auto fixed inset-0 z-[9040] bg-black/40',
-    'transition-opacity duration-200 motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
-)
-
 export const mobileSheetPositionerClassName = cn(
     'pointer-events-none !fixed !inset-0 !z-[9050] !flex !h-auto !w-auto !transform-none items-end justify-center outline-none',
-)
-
-export const mobileSheetPopupClassName = cn(
-    'pointer-events-auto flex !w-full !max-w-none flex-col overflow-hidden rounded-t-3xl border border-b-0 border-secondary bg-primary shadow-xl outline-none',
-    '!max-h-[calc(100dvh-max(0.5rem,env(safe-area-inset-top)))] pb-[env(safe-area-inset-bottom)]',
-    'origin-bottom transition-[opacity,transform] duration-250 motion-reduce:transition-none',
-    'data-[starting-style]:translate-y-full data-[starting-style]:opacity-0',
-    'data-[ending-style]:translate-y-full data-[ending-style]:opacity-0',
 )
 
 // Base UI supplies the live swipe, snap-point, and nested-drawer values used
