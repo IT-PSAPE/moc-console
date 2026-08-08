@@ -332,7 +332,7 @@ type CalendarEventContentProps = HTMLAttributes<HTMLDivElement> & {
 
 function CalendarEventContent({ children, className, color = 'gray', ...props }: CalendarEventContentProps) {
     return (
-        <div className={cn('truncate rounded px-1.5 py-0.5 paragraph-xs', eventColorMap[color], className)} {...props}>
+        <div className={cn('truncate rounded px-1.5 py-0.5 paragraph-xs max-mobile:flex max-mobile:min-h-12 max-mobile:items-center max-mobile:px-3 max-mobile:py-2.5', eventColorMap[color], className)} {...props}>
             {children}
         </div>
     )

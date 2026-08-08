@@ -7,11 +7,13 @@ import type { StreamListEntry } from "./stream-list-entry"
 
 type StreamsCalendarProps = {
   events: CalendarEvent<StreamListEntry>[]
+  month: Date
+  onMonthChange: (date: Date) => void
   onSelectStream: (stream: Stream) => void
   onSelectMeeting: (meeting: ZoomMeeting) => void
 }
 
-export function StreamsCalendar({ events, onSelectStream, onSelectMeeting }: StreamsCalendarProps) {
+export function StreamsCalendar({ events, month, onMonthChange, onSelectStream, onSelectMeeting }: StreamsCalendarProps) {
   function renderEvent(event: CalendarEvent<StreamListEntry>) {
     const entry = event.data
     if (!entry) return null
@@ -37,11 +39,11 @@ export function StreamsCalendar({ events, onSelectStream, onSelectMeeting }: Str
     }
 
     return (
-      <ResponsiveDetailAction key={entry.id} mobileHref={`/${routes.streams}/meeting/${meeting.id}`} onActivate={handleMeetingActivate} className="w-full rounded">
+      <ResponsiveDetailAction key={event.id} mobileHref={`/${routes.streams}/meeting/${meeting.id}`} onActivate={handleMeetingActivate} className="w-full rounded">
         <Calendar.Event color={event.color}>{event.label}</Calendar.Event>
       </ResponsiveDetailAction>
     )
   }
 
-  return <Calendar events={events} renderEvent={renderEvent} />
+  return <Calendar defaultMonth={month} events={events} onMonthChange={onMonthChange} renderEvent={renderEvent} />
 }

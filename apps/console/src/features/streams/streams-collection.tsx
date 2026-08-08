@@ -150,7 +150,7 @@ export function StreamsCollection() {
             {state.activeView === "list" ? (
               <StreamsList entries={meta.listEntries} onSelectStream={actions.selectStream} onSelectMeeting={actions.selectMeeting} />
             ) : (
-              <StreamsCalendar events={meta.calendarEvents} onSelectStream={actions.selectStream} onSelectMeeting={actions.selectMeeting} />
+              <StreamsCalendar events={meta.calendarEvents} month={state.calendarMonth} onMonthChange={actions.changeCalendarMonth} onSelectStream={actions.selectStream} onSelectMeeting={actions.selectMeeting} />
             )}
           </Decision.Data>
         </Decision>

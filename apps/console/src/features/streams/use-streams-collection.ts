@@ -15,6 +15,7 @@ export function useStreamsCollection() {
   const [searchQuery, setSearchQuery] = useQueryText()
   const [activeView, setActiveView] = useViewQuery(streamViews, "list")
   const [createOpen, setCreateOpen] = useState(false)
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date())
   const isMobile = useIsMobile()
   const detail = useStreamListDetail()
   const youtube = useYouTubeStreams(searchQuery)
@@ -27,7 +28,7 @@ export function useStreamsCollection() {
     () => createStreamListEntries(youtube.meta.filters.calendarFiltered, zoom.meta.filters.calendarFiltered),
     [youtube.meta.filters.calendarFiltered, zoom.meta.filters.calendarFiltered],
   )
-  const calendarEvents = useMemo(() => createStreamCalendarEvents(calendarEntries), [calendarEntries])
+  const calendarEvents = useMemo(() => createStreamCalendarEvents(calendarEntries, calendarMonth), [calendarEntries, calendarMonth])
 
   const youtubeAvailable = youtube.meta.isConnected && youtube.meta.canCreate
   const zoomAvailable = zoom.meta.isConnected && zoom.meta.canCreate
@@ -66,9 +67,13 @@ export function useStreamsCollection() {
     setActiveView(value)
   }
 
+  function changeCalendarMonth(date: Date) {
+    setCalendarMonth(date)
+  }
+
   return {
-    state: { searchQuery, createOpen, activeView },
-    actions: { setSearchQuery, setCreateOpen, openCreate, syncConnected, changeView, selectStream, selectMeeting },
+    state: { searchQuery, createOpen, activeView, calendarMonth },
+    actions: { setSearchQuery, setCreateOpen, openCreate, syncConnected, changeView, changeCalendarMonth, selectStream, selectMeeting },
     meta: {
       listEntries,
       calendarEvents,
