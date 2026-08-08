@@ -310,15 +310,12 @@ function ComboboxItem({ children, className, ...props }: Styled<React.ComponentP
     return (
         <BaseCombobox.Item
             className={cn(
-                'grid min-h-11 cursor-pointer grid-cols-[1rem_1fr] items-center gap-2 rounded-lg px-4 py-2 paragraph-sm text-secondary outline-none select-none md:min-h-0 md:rounded-sm md:px-2 md:py-1.5',
+                'min-h-11 cursor-pointer items-center gap-2 rounded-lg paragraph-sm text-secondary outline-none select-none md:min-h-0 md:rounded-sm md:px-2 md:py-1.5',
                 'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
                 className,
             )}
             {...props}
         >
-            <BaseCombobox.ItemIndicator className="col-start-1 text-brand_solid">
-                <Check className="size-3.5" />
-            </BaseCombobox.ItemIndicator>
             <span className="col-start-2 min-w-0 truncate">{children}</span>
         </BaseCombobox.Item>
     )
