@@ -15,11 +15,11 @@ export function StaleAlertsSection() {
     const { state, actions } = useStaleAlerts()
     return (
         <Section>
-            <Section.Header title="Stale-item alerts" description="Notify selected members when work has not been updated." />
+            <Section.Header title="Stale-item alerts" description="Notify selected members once when work becomes inactive or a booking becomes overdue." />
             <Section.Body className="gap-2">
                 {state.isLoading ? <LoadingSpinner className="py-8" /> : (
                     <>
-                        <SettingsRow label="Flag after" description="Days without activity.">
+                        <SettingsRow label="Flag after" description="Days without activity before one alert is sent.">
                             <Input aria-label="Days without activity before flagging" name="stale-threshold-days" type="number" min={1} value={state.thresholdInput} onChange={actions.changeThreshold} onBlur={actions.saveThreshold} className="max-w-32" />
                         </SettingsRow>
                         <SettingsRow label="Recipients">

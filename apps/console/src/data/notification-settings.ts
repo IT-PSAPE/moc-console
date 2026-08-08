@@ -5,9 +5,9 @@ import {
   type DateFormatPreset,
 } from "@moc/notifications";
 
-// Per-workspace stale-item config. The threshold is both the "flag after
-// N days idle" window and the re-nag cadence (the daily sweep re-alerts
-// each item at most once per window). Default matches the DB default.
+// Per-workspace stale-item config. The threshold controls when an activity
+// period is flagged; notification bookkeeping does not create new activity.
+// Default matches the DB default.
 export const DEFAULT_STALE_THRESHOLD_DAYS = 3;
 export const DEFAULT_AUTO_ARCHIVE_COMPLETED_REQUESTS_DAYS = 7;
 export const DEFAULT_AUTO_ARCHIVE_RETURNED_BOOKINGS_DAYS = 7;

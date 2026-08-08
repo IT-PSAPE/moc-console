@@ -65,6 +65,11 @@ The first tracked reliability migration is:
    leaving meeting-derived notification rows behind. Zoom meeting rows are
    anchored to the specific connection identity, so an old-account sync cannot
    recreate meetings after a disconnect or account replacement.
+5. `20260808120000_stale_alert_episode_semantics` — source:
+   [`migrations/20260808120000_stale_alert_episode_semantics.sql`](migrations/20260808120000_stale_alert_episode_semantics.sql).
+   It makes the stale threshold an initial activity threshold rather than a
+   repeating reminder cadence, while preserving one alert when a booking newly
+   becomes overdue.
 
 ## Script history
 
