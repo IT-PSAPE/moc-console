@@ -1,6 +1,6 @@
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { cn } from '@moc/utils/cn'
-import { Check, ChevronDown, Search, X } from 'lucide-react'
+import { ChevronDown, Search, X } from 'lucide-react'
 import { createContext, Fragment, useContext, useState, type ReactNode } from 'react'
 import { useIsMobile } from '../../hooks/use-is-mobile'
 import { Drawer } from '../overlays/drawer'
