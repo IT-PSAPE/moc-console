@@ -42,8 +42,9 @@ export function ZoomDocsScreen() {
           <Paragraph.md className="mb-3">Zoom will display the scopes MOC Console is requesting. Approve to continue. The requested scopes and why we need each one:</Paragraph.md>
           <Card.Content className="bg-secondary_alt">
             <ScopeRow scope="user:read:user" reason="Identify the Zoom host (user ID, email, display name) after you authorize the app." />
-            <ScopeRow scope="meeting:read:list_meetings" reason="List your scheduled meetings when you refresh the Streams screen." />
-            <ScopeRow scope="meeting:write:meeting" reason="Create a new meeting or update an existing one when you schedule or edit it in MOC Console." />
+            <ScopeRow scope="meeting:read:list_meetings" reason="List your scheduled meetings after connection and when you refresh the Streams screen." />
+            <ScopeRow scope="meeting:write:meeting" reason="Create a new meeting when you schedule it in MOC Console." />
+            <ScopeRow scope="meeting:update:meeting" reason="Update an existing meeting when you edit it in MOC Console." />
             <ScopeRow scope="meeting:delete:meeting" reason="Delete a meeting when you remove it from the MOC Console schedule." last />
           </Card.Content>
         </Step>

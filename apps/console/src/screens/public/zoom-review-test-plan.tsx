@@ -21,8 +21,9 @@ export function ZoomReviewTestPlanScreen() {
       <Section title="Requested scopes and test coverage">
         <Card.Content className="bg-secondary_alt">
           <ScopeRow scope="user:read:user" reason="Verify the authorized host's identity after connection." />
-          <ScopeRow scope="meeting:read:list_meetings" reason="Verify the host's scheduled-meeting list during a manual refresh." />
-          <ScopeRow scope="meeting:write:meeting" reason="Create and edit a scheduled meeting from MOC Console." />
+          <ScopeRow scope="meeting:read:list_meetings" reason="Verify the host's scheduled-meeting list after connection and during a manual refresh." />
+          <ScopeRow scope="meeting:write:meeting" reason="Create a scheduled meeting from MOC Console." />
+          <ScopeRow scope="meeting:update:meeting" reason="Edit a scheduled meeting from MOC Console." />
           <ScopeRow scope="meeting:delete:meeting" reason="Delete the reviewer-created test meeting from MOC Console." last />
         </Card.Content>
       </Section>
@@ -34,8 +35,9 @@ export function ZoomReviewTestPlanScreen() {
             <strong> Connect Zoom</strong>. Complete authorization with the reviewer Zoom account in the production app.
           </Paragraph.md>
           <Paragraph.md className="mt-2 text-tertiary">
-            Expected result: Zoom returns to the Streaming connections settings tab and displays the authorized Zoom
-            account. This verifies <code>user:read:user</code>.
+            Expected result: Zoom returns to the Streaming connections settings tab, displays the authorized Zoom
+            account, and imports its upcoming meetings. This verifies <code>user:read:user</code> and
+            <code> meeting:read:list_meetings</code>.
           </Paragraph.md>
         </Step>
 
@@ -68,7 +70,7 @@ export function ZoomReviewTestPlanScreen() {
           </Paragraph.md>
           <Paragraph.md className="mt-2 text-tertiary">
             Expected result: the updated values appear in MOC Console and in Zoom. This uses
-            <code> meeting:write:meeting</code> only for the reviewer-selected meeting.
+            <code> meeting:update:meeting</code> only for the reviewer-selected meeting.
           </Paragraph.md>
         </Step>
 

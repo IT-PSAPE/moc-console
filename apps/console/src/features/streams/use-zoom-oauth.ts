@@ -27,6 +27,7 @@ export function useZoomOAuth() {
       scope: [
         "meeting:read:list_meetings",
         "meeting:write:meeting",
+        "meeting:update:meeting",
         "meeting:delete:meeting",
         "user:read:user",
       ].join(" "),
