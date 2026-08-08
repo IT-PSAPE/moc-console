@@ -112,8 +112,12 @@ function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDiv
             <Drawer.Portal>
                 <Drawer.Backdrop />
                 <Menu.Positioner className={mobileSheetPositionerClassName}>
-                    <Drawer.Panel render={<Menu.Popup />} {...props}>
-                        <div className={cn('p-1', className)}>{children}</div>
+                    <Drawer.Panel>
+                        <Drawer.Content className="overflow-hidden !pb-0">
+                            <Menu.Popup className={cn('min-h-0 flex-1 overflow-y-auto p-1 outline-none', className)} {...props}>
+                                {children}
+                            </Menu.Popup>
+                        </Drawer.Content>
                     </Drawer.Panel>
                 </Menu.Positioner>
             </Drawer.Portal>

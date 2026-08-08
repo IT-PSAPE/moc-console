@@ -186,17 +186,12 @@ const slideBySide: Record<Side, string> = {
     bottom: '[transform:translateY(var(--drawer-swipe-movement-y))] data-[starting-style]:[transform:translateY(100%)] data-[ending-style]:[transform:translateY(100%)]',
 }
 
-type DrawerPanelProps = HTMLAttributes<HTMLDivElement> & {
-    render?: ReactElement
-}
-
-function DrawerPanel({ children, className, render, ...props }: DrawerPanelProps) {
+function DrawerPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     const { state } = useDrawer()
 
     return (
         <BaseDrawer.Viewport className="pointer-events-none fixed inset-0 z-10">
             <BaseDrawer.Popup
-                render={render}
                 className={cn(
                     'pointer-events-auto fixed w-full outline-none',
                     state.isSheet && '!max-w-none',
