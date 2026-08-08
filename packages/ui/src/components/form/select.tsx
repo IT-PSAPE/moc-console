@@ -141,7 +141,7 @@ function SelectItem({ children, className, ...props }: Styled<ComponentProps<typ
     return (
         <BaseSelect.Item
             className={cn(
-                "group flex min-h-11 w-full cursor-default items-center gap-2 rounded-lg paragraph-sm text-secondary outline-none md:min-h-0 md:px-3",
+                "group flex min-h-11 w-full cursor-default items-center gap-2 rounded-lg px-4 py-2 paragraph-sm text-secondary outline-none md:min-h-0 md:px-3",
                 "data-[highlighted]:bg-secondary data-[highlighted]:text-primary data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
                 className,
             )}
