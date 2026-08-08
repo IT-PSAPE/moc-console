@@ -104,7 +104,7 @@ actual_foreign_keys AS (
              ON source_attribute.attrelid = source_relation.oid
             AND source_attribute.attnum = key_column.attnum
            ORDER BY key_column.position
-         ) AS child_columns,
+         )::text[] AS child_columns,
          ARRAY(
            SELECT target_attribute.attname
            FROM unnest(constraint_row.confkey) WITH ORDINALITY AS key_column(attnum, position)
@@ -112,7 +112,7 @@ actual_foreign_keys AS (
              ON target_attribute.attrelid = target_relation.oid
             AND target_attribute.attnum = key_column.attnum
            ORDER BY key_column.position
-         ) AS parent_columns,
+         )::text[] AS parent_columns,
          CASE constraint_row.confdeltype
            WHEN 'c' THEN 'cascade'
            WHEN 'n' THEN 'set null'
@@ -144,7 +144,7 @@ actual_unique_constraints AS (
              ON attribute.attrelid = relation.oid
             AND attribute.attnum = key_column.attnum
            ORDER BY key_column.position
-         ) AS columns
+         )::text[] AS columns
   FROM pg_constraint AS constraint_row
   JOIN pg_class AS relation ON relation.oid = constraint_row.conrelid
   JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
