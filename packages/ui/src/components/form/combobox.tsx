@@ -235,39 +235,41 @@ function ComboboxContent({ children, className, empty = 'No matches', searchPlac
         return (
             <Drawer.Portal>
                 <Drawer.Backdrop />
-                <BaseCombobox.Positioner className={mobileSheetPositionerClassName}>
-                    <Drawer.Panel>
-                        <Drawer.Content className="overflow-hidden !pb-0">
-                            <BaseCombobox.Popup className="flex min-h-0 flex-1 flex-col outline-none">
-                                <div className="flex shrink-0 flex-col gap-3 border-b border-secondary px-4 pb-3">
-                                    <span className="label-md text-primary">{multiple ? 'Select options' : title}</span>
-                                    <BaseCombobox.InputGroup className={cn(fieldShell, 'flex-nowrap')}>
-                                        <BaseCombobox.Input
-                                            placeholder={searchPlaceholder}
-                                            className="w-full min-w-0 flex-1 bg-transparent paragraph-sm !leading-none focus:!outline-none focus-visible:!outline-0 placeholder:text-placeholder"
-                                        />
-                                        <BaseCombobox.Icon className="shrink-0 text-quaternary">
-                                            <Search className="size-4" />
-                                        </BaseCombobox.Icon>
-                                    </BaseCombobox.InputGroup>
-                                </div>
-                                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
-                                    <BaseCombobox.Empty className="px-2 py-6 text-center paragraph-sm text-quaternary empty:p-0">
-                                        {empty}
-                                    </BaseCombobox.Empty>
-                                    <BaseCombobox.List>{children as never}</BaseCombobox.List>
-                                </div>
-                                {multiple ? (
-                                    <div className="shrink-0 border-t border-secondary p-3">
-                                        <BaseCombobox.Trigger className="flex min-h-11 w-full items-center justify-center rounded-md bg-brand_solid px-3 label-sm text-primary_on-brand">
-                                            Done
-                                        </BaseCombobox.Trigger>
+                <BaseCombobox.Portal container={overlayState.rootElement ?? undefined}>
+                    <BaseCombobox.Positioner className={mobileSheetPositionerClassName}>
+                        <Drawer.Panel>
+                            <Drawer.Content className="overflow-hidden !pb-0">
+                                <BaseCombobox.Popup className="flex min-h-0 flex-1 flex-col outline-none">
+                                    <div className="flex shrink-0 flex-col gap-3 border-b border-secondary px-4 pb-3">
+                                        <span className="label-md text-primary">{multiple ? 'Select options' : title}</span>
+                                        <BaseCombobox.InputGroup className={cn(fieldShell, 'flex-nowrap')}>
+                                            <BaseCombobox.Input
+                                                placeholder={searchPlaceholder}
+                                                className="w-full min-w-0 flex-1 bg-transparent paragraph-sm !leading-none focus:!outline-none focus-visible:!outline-0 placeholder:text-placeholder"
+                                            />
+                                            <BaseCombobox.Icon className="shrink-0 text-quaternary">
+                                                <Search className="size-4" />
+                                            </BaseCombobox.Icon>
+                                        </BaseCombobox.InputGroup>
                                     </div>
-                                ) : null}
-                            </BaseCombobox.Popup>
-                        </Drawer.Content>
-                    </Drawer.Panel>
-                </BaseCombobox.Positioner>
+                                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
+                                        <BaseCombobox.Empty className="px-2 py-6 text-center paragraph-sm text-quaternary empty:p-0">
+                                            {empty}
+                                        </BaseCombobox.Empty>
+                                        <BaseCombobox.List>{children as never}</BaseCombobox.List>
+                                    </div>
+                                    {multiple ? (
+                                        <div className="shrink-0 border-t border-secondary p-3">
+                                            <BaseCombobox.Trigger className="flex min-h-11 w-full items-center justify-center rounded-md bg-brand_solid px-3 label-sm text-primary_on-brand">
+                                                Done
+                                            </BaseCombobox.Trigger>
+                                        </div>
+                                    ) : null}
+                                </BaseCombobox.Popup>
+                            </Drawer.Content>
+                        </Drawer.Panel>
+                    </BaseCombobox.Positioner>
+                </BaseCombobox.Portal>
             </Drawer.Portal>
         )
     }
