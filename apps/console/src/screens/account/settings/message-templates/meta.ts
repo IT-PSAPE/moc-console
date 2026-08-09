@@ -17,6 +17,7 @@ const GROUP_META = new Map(
 
 const DM_DESCRIPTIONS: Record<DmMessageType, string> = {
     "assignment.request": "Direct message sent when someone is assigned to a request.",
+    "assignment.checklist_item": "Direct message sent when someone is assigned to a checklist item.",
 };
 
 export type MessageTypeMeta = {

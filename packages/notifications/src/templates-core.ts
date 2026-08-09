@@ -15,12 +15,13 @@ import type { NotificationEventKey } from "./events.js";
 
 export type TemplateScope = "group" | "dm";
 
-export type DmMessageType = "assignment.request";
+export type DmMessageType = "assignment.request" | "assignment.checklist_item";
 
 export type MessageType = NotificationEventKey | DmMessageType;
 
 export const DM_MESSAGE_TYPES: readonly DmMessageType[] = [
   "assignment.request",
+  "assignment.checklist_item",
 ];
 
 export function scopeForMessageType(type: MessageType): TemplateScope {
@@ -86,6 +87,11 @@ const MEETING_TOKENS = specs(
   "meetingType", "waitingRoom", "recurrenceType", "createdAt", "joinUrl",
 );
 
+const CHECKLIST_TOKENS = specs(
+  "title", "checklistName", "checklistDescription", "checklistScheduledAt",
+  "sectionName", "itemChecked", "duty", "assigneeName", "linkUrl",
+);
+
 export const TEMPLATE_TOKENS: Record<MessageType, readonly TokenSpec[]> = {
   "stream.created": STREAM_TOKENS,
   "meeting.created": MEETING_TOKENS,
@@ -101,6 +107,7 @@ export const TEMPLATE_TOKENS: Record<MessageType, readonly TokenSpec[]> = {
   "assignment.request": specs(
     ...REQUEST_TOKENS.map((t) => t.name), "duty", "assigneeName",
   ),
+  "assignment.checklist_item": CHECKLIST_TOKENS,
 };
 
 // Friendly built-in wording with a modest amount of emoji. These are
@@ -129,6 +136,8 @@ export const DEFAULT_TEMPLATES: Record<MessageType, string> = {
     "⏰ <b>Booking needs attention</b>\n\n📌 <b>Title:</b> {{title}} — {{itemCount}} item(s)\n🔄 <b>Status:</b> <i>{{status}}</i>\n⚠️ {{staleReason}}\n⏳ Outstanding for {{staleDays}} day(s)\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "assignment.request":
     "👋 Hey {{assigneeName}}!\nYou've been assigned to a request\n\n📌 <b>Title:</b> {{title}}\n🛠 <b>Duty:</b> <i>{{duty}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">View Full Request Details</a>",
+  "assignment.checklist_item":
+    "👋 Hey {{assigneeName}}!\nYou've been assigned to a checklist item\n\n📌 <b>Title:</b> {{title}}\n📋 <b>Checklist:</b> {{checklistName}}\n🛠 <b>Duty:</b> <i>{{duty}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">View Full Checklist Details</a>",
 };
 
 export type TokenValues = Record<string, string | null | undefined>;
@@ -219,6 +228,7 @@ const DATE_TOKEN_NAMES = new Set<string>([
   "checkedOutAt", "expectedReturnAt", "returnedAt",
   "scheduledStartTime", "actualStartTime",
   "startTime",
+  "checklistScheduledAt",
 ]);
 
 function resolveTimeZone(timezone: string): string {
@@ -378,9 +388,21 @@ export const SAMPLE_TOKENS: Record<MessageType, TokenValues> = {
     staleDays: "4",
   },
   "assignment.request": { ...REQUEST_SAMPLE, duty: "Design", assigneeName: "Craig C." },
+  "assignment.checklist_item": {
+    title: "Check radio mic batteries",
+    checklistName: "Pre-service audio",
+    checklistDescription: "Audio preparation before the service",
+    checklistScheduledAt: "18 May, 7:00 AM",
+    sectionName: "Wireless microphones",
+    itemChecked: "No",
+    duty: "Owner",
+    assigneeName: "Craig C.",
+    linkUrl: "https://app.example.com/checklists/123",
+  },
 };
 
 // Human labels for the settings UI.
 export const DM_MESSAGE_LABELS: Record<DmMessageType, string> = {
   "assignment.request": "Request assignment",
+  "assignment.checklist_item": "Checklist item assignment",
 };

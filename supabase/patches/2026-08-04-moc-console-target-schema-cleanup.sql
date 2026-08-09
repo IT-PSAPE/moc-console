@@ -87,7 +87,7 @@ DROP TYPE IF EXISTS public.playlist_status;
 DROP TYPE IF EXISTS public.cue_type;
 
 DELETE FROM public.notification_message_templates
-WHERE message_type IN ('assignment.cue', 'assignment.checklist_item');
+WHERE message_type = 'assignment.cue';
 
 -- Link standalone checklist runs to the request that prompted the work.
 

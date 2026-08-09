@@ -3,7 +3,7 @@ import { requireAuthenticatedUser, AuthError } from "../../server/auth-guard.js"
 import { resolveBaseUrl } from "../../server/base-url.js"
 import { resolveTemplate } from "../../server/notifications/templates.js"
 import { fetchFormatSettings } from "../../server/notifications/format-settings.js"
-import { enrichRequest } from "../../server/notifications/enrich.js"
+import { enrichChecklistItem, enrichRequest } from "../../server/notifications/enrich.js"
 import { applyCors } from "../../server/cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../server/http.js"
 import { observeApiRequest } from "../../server/observability.js"
@@ -25,7 +25,7 @@ import {
   type TokenValues,
 } from "@moc/notifications"
 
-type AssignmentKind = "request"
+export type AssignmentKind = "request" | "checklist_item"
 
 type Body = {
   kind: AssignmentKind
@@ -43,6 +43,11 @@ type Resolved = {
   tokens: TokenValues
 }
 
+type ParentContext = {
+  workspaceId: string
+  checklistId: string | null
+}
+
 async function resolveRequestWorkspace(parentId: string): Promise<string | null> {
   const admin = getSupabaseAdmin()
   const { data, error } = await admin
@@ -52,6 +57,33 @@ async function resolveRequestWorkspace(parentId: string): Promise<string | null>
     .maybeSingle()
   if (error) throw new Error("Request lookup failed")
   return data?.workspace_id ?? null
+}
+
+async function resolveChecklistItemParent(parentId: string): Promise<ParentContext | null> {
+  const admin = getSupabaseAdmin()
+  const { data: item, error: itemError } = await admin
+    .from("checklist_items")
+    .select("checklist_id")
+    .eq("id", parentId)
+    .maybeSingle()
+  if (itemError) throw new Error("Checklist item lookup failed")
+  if (!item) return null
+
+  const { data: checklist, error: checklistError } = await admin
+    .from("checklists")
+    .select("id, workspace_id")
+    .eq("id", item.checklist_id)
+    .maybeSingle()
+  if (checklistError) throw new Error("Checklist lookup failed")
+  if (!checklist) return null
+
+  return { workspaceId: checklist.workspace_id, checklistId: checklist.id }
+}
+
+async function resolveParent(kind: AssignmentKind, parentId: string): Promise<ParentContext | null> {
+  if (kind === "checklist_item") return resolveChecklistItemParent(parentId)
+  const workspaceId = await resolveRequestWorkspace(parentId)
+  return workspaceId ? { workspaceId, checklistId: null } : null
 }
 
 async function buildRequest(
@@ -74,6 +106,41 @@ async function buildRequest(
   }
 }
 
+async function buildChecklistItem(
+  workspaceId: string,
+  checklistId: string,
+  parentId: string,
+  duty: string,
+  assigneeName: string,
+  baseUrl: string,
+): Promise<Resolved> {
+  const enriched = await enrichChecklistItem(parentId, { throwOnError: true })
+  return {
+    workspaceId,
+    messageType: "assignment.checklist_item",
+    tokens: {
+      ...enriched,
+      duty,
+      assigneeName,
+      linkUrl: `${baseUrl}/checklists/${checklistId}`,
+    },
+  }
+}
+
+async function buildAssignment(
+  kind: AssignmentKind,
+  parent: ParentContext,
+  parentId: string,
+  duty: string,
+  assigneeName: string,
+  baseUrl: string,
+): Promise<Resolved> {
+  if (kind === "checklist_item" && parent.checklistId) {
+    return buildChecklistItem(parent.workspaceId, parent.checklistId, parentId, duty, assigneeName, baseUrl)
+  }
+  return buildRequest(parent.workspaceId, parentId, duty, assigneeName, baseUrl)
+}
+
 function parseBody(value: unknown): Body | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return null
   const body = value as Record<string, unknown>
@@ -83,7 +150,7 @@ function parseBody(value: unknown): Body | null {
 
   const { kind, parentId, userId, duty } = body
   if (
-    kind !== "request" ||
+    (kind !== "request" && kind !== "checklist_item") ||
     !isUuid(parentId) ||
     !isUuid(userId) ||
     typeof duty !== "string" ||
@@ -94,8 +161,32 @@ function parseBody(value: unknown): Body | null {
   return { kind, parentId, userId, duty }
 }
 
-export function assignmentEventKey(assignmentId: string): string {
-  return `assignment.request:${assignmentId}`
+export function assignmentEventKey(kind: AssignmentKind, assignmentId: string): string {
+  return `assignment.${kind}:${assignmentId}`
+}
+
+async function findAssignment(
+  kind: AssignmentKind,
+  parentId: string,
+  userId: string,
+  duty: string,
+): Promise<{ id: string } | null> {
+  const admin = getSupabaseAdmin()
+  const query = kind === "checklist_item"
+    ? admin
+      .from("checklist_item_assignees")
+      .select("id")
+      .eq("checklist_item_id", parentId)
+    : admin
+      .from("request_assignees")
+      .select("id")
+      .eq("request_id", parentId)
+  const { data, error } = await query
+    .eq("user_id", userId)
+    .eq("duty", duty)
+    .maybeSingle()
+  if (error) throw new Error("Assignment lookup failed")
+  return data
 }
 
 async function handleAssignment(request: ApiRequest, response: ApiResponse): Promise<void> {
@@ -133,20 +224,20 @@ async function handleAssignment(request: ApiRequest, response: ApiResponse): Pro
     return
   }
 
-  let workspaceId: string | null
+  let parent: ParentContext | null
   try {
-    workspaceId = await resolveRequestWorkspace(parentId)
+    parent = await resolveParent(kind, parentId)
   } catch {
-    response.status(503).json({ error: "Request lookup is temporarily unavailable" })
+    response.status(503).json({ error: "Assignment parent lookup is temporarily unavailable" })
     return
   }
-  if (!workspaceId) {
+  if (!parent) {
     response.status(200).json({ ok: true, skipped: "parent_not_found" })
     return
   }
 
   try {
-    await requireWorkspacePermission(actorId, workspaceId, "can_update")
+    await requireWorkspacePermission(actorId, parent.workspaceId, "can_update")
   } catch (error) {
     if (error instanceof WorkspaceAccessError) {
       response.status(403).json({ error: "Insufficient workspace permission" })
@@ -159,7 +250,7 @@ async function handleAssignment(request: ApiRequest, response: ApiResponse): Pro
   try {
     const decision = await consumeRateLimit(
       RATE_LIMIT_POLICIES.authenticatedNotificationMutation,
-      hashRateLimitSubject(["notification-mutation", actorId, workspaceId]),
+      hashRateLimitSubject(["notification-mutation", actorId, parent.workspaceId]),
     )
     if (!decision.allowed) {
       writeRateLimitExceeded(response, decision)
@@ -170,27 +261,23 @@ async function handleAssignment(request: ApiRequest, response: ApiResponse): Pro
       writeRateLimitUnavailable(response)
       return
     }
-    response.status(500).json({ error: "Unable to apply assignment request protection" })
+    response.status(500).json({ error: "Unable to apply assignment notification protection" })
     return
   }
 
-  const admin = getSupabaseAdmin()
-  const { data: assignment, error: assignmentError } = await admin
-    .from("request_assignees")
-    .select("id")
-    .eq("request_id", parentId)
-    .eq("user_id", userId)
-    .eq("duty", duty)
-    .maybeSingle()
-  if (assignmentError) {
+  let assignment: { id: string } | null
+  try {
+    assignment = await findAssignment(kind, parentId, userId, duty)
+  } catch {
     response.status(503).json({ error: "Assignment lookup is temporarily unavailable" })
     return
   }
   if (!assignment) {
-    response.status(403).json({ error: "The request assignment was not found" })
+    response.status(403).json({ error: "The assignment was not found" })
     return
   }
 
+  const admin = getSupabaseAdmin()
   const { data: user, error: userError } = await admin
     .from("users")
     .select("telegram_chat_id, name, surname")
@@ -214,9 +301,9 @@ async function handleAssignment(request: ApiRequest, response: ApiResponse): Pro
   const assigneeName = [user.name, user.surname].filter(Boolean).join(" ").trim()
   let resolved: Resolved
   try {
-    resolved = await buildRequest(workspaceId, parentId, duty, assigneeName, baseUrl)
+    resolved = await buildAssignment(kind, parent, parentId, duty, assigneeName, baseUrl)
   } catch {
-    response.status(503).json({ error: "Request details are temporarily unavailable" })
+    response.status(503).json({ error: "Assignment details are temporarily unavailable" })
     return
   }
 
@@ -229,7 +316,7 @@ async function handleAssignment(request: ApiRequest, response: ApiResponse): Pro
     formatDateTokens(resolved.tokens, format.timezone, format.dateFormat),
   )
 
-  const eventKey = assignmentEventKey(assignment.id)
+  const eventKey = assignmentEventKey(kind, assignment.id)
   try {
     await enqueueDelivery({
       workspaceId: resolved.workspaceId,

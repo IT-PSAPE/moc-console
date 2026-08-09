@@ -18,7 +18,7 @@ MOC Console had grown four top-level sections — Requests, Equipment, Broadcast
 - **Delete, don't deprecate.** `apps/broadcast`, `packages/player`, `packages/ui`'s Timeline, the console's cue-sheet and playlist/media features, `@moc/types/cue-sheet`, and the playlist/media halves of `@moc/types/broadcast` (now `@moc/types/streams`) are removed from the tree. The DB drop is a checked-in patch — [`supabase/patches/2026-07-28-remove-playlists-media-and-cue-sheet.sql`](../../supabase/patches/2026-07-28-remove-playlists-media-and-cue-sheet.sql) — applied by hand, not by the app.
 - **The `media` storage bucket survives its table.** Stream thumbnails already upload to `media/<workspace_id>/stream-thumbnails/` and existing thumbnail URLs point there. Only `public.media`, the library index, is dropped. Old playlist objects are left in the bucket; purging them is separate and deliberate.
 - **Stream thumbnails lose the media picker.** Upload and URL remain; the third "Media" tab went with the library. `ThumbnailSource.origin` narrows from `"file" | "url" | "media"` to `"file" | "url"`.
-- **Cue and checklist assignment DMs are gone.** `assignment.cue` and `assignment.checklist_item` drop out of `DmMessageType`, the token catalogue, the default templates, the sample values, and the server's `enrichCue`/`enrichChecklistItem`. `assignment.request` is the only DM type left. The patch deletes any customised rows for the dead types.
+- **Cue assignment DMs are gone.** `assignment.cue` drops out with the removed Cue Sheet domain. Checklist-item assignment DMs remain part of the restored Checklists domain alongside request assignment DMs.
 
 ## Consequences
 

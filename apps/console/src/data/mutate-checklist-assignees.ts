@@ -1,4 +1,5 @@
 import { supabase } from "@moc/data/supabase";
+import { notifyAssignment } from "./notify-assignment";
 
 export async function addChecklistItemAssignee(checklistItemId: string, userId: string, duty: string): Promise<void> {
   const existingResult = await supabase
@@ -13,6 +14,7 @@ export async function addChecklistItemAssignee(checklistItemId: string, userId: 
     if (existingResult.data.duty === duty) return;
     const { error } = await supabase.from("checklist_item_assignees").update({ duty }).eq("id", existingResult.data.id);
     if (error) throw new Error(error.message);
+    notifyAssignment("checklist_item", checklistItemId, userId, duty);
     return;
   }
 
@@ -22,6 +24,7 @@ export async function addChecklistItemAssignee(checklistItemId: string, userId: 
     duty,
   });
   if (error) throw new Error(error.message);
+  notifyAssignment("checklist_item", checklistItemId, userId, duty);
 }
 
 export async function removeChecklistItemAssignee(checklistItemId: string, userId: string): Promise<void> {

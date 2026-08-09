@@ -1,7 +1,7 @@
 import { buildSessionHeaders } from "@/lib/api-auth";
 import { apiUrl } from "@moc/utils/api-url";
 
-export type AssignmentKind = "request";
+export type AssignmentKind = "request" | "checklist_item";
 
 // Fire-and-forget: notification failures must never break the assignment UI.
 // The server endpoint silently no-ops when the assignee has no Telegram linked.

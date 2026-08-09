@@ -61,6 +61,50 @@ export async function enrichRequest(requestId: string, options?: { throwOnError?
   }
 }
 
+export async function enrichChecklistItem(itemId: string, options?: { throwOnError?: boolean }): Promise<TokenValues> {
+  try {
+    const admin = getSupabaseAdmin();
+    const { data: item, error: itemError } = await admin
+      .from("checklist_items")
+      .select("label, checked, checklist_id, section_id")
+      .eq("id", itemId)
+      .maybeSingle();
+    if (itemError) throw new Error("Checklist item enrichment failed");
+    if (!item) return {};
+
+    const { data: checklist, error: checklistError } = await admin
+      .from("checklists")
+      .select("name, description, scheduled_at")
+      .eq("id", item.checklist_id)
+      .maybeSingle();
+    if (checklistError) throw new Error("Checklist enrichment failed");
+    if (!checklist) return {};
+
+    let sectionName = "";
+    if (item.section_id) {
+      const { data: section, error: sectionError } = await admin
+        .from("checklist_sections")
+        .select("name")
+        .eq("id", item.section_id)
+        .maybeSingle();
+      if (sectionError) throw new Error("Checklist section enrichment failed");
+      sectionName = section?.name ?? "";
+    }
+
+    return {
+      title: item.label,
+      checklistName: checklist.name,
+      checklistDescription: checklist.description,
+      checklistScheduledAt: fmtDate(checklist.scheduled_at),
+      sectionName,
+      itemChecked: yesNo(item.checked),
+    };
+  } catch (error) {
+    if (options?.throwOnError) throw error;
+    return {};
+  }
+}
+
 type BookingRow = {
   booked_by: string;
   status: string;
