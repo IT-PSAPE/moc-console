@@ -6,6 +6,7 @@ export const providerFailureCodes = [
   "reauth_required",
   "misconfigured",
   "provider_forbidden",
+  "provider_not_found",
   "rate_limited",
   "service_unavailable",
   "upstream_timed_out",
@@ -39,6 +40,14 @@ export class ProviderRequestError extends Error {
   /** True when retrying without a deployment change cannot help the user. */
   get needsConfiguration(): boolean {
     return this.code === "misconfigured"
+  }
+
+  /**
+   * True when the provider states the item is gone. A settled answer, not a
+   * failure to retry: reconciliation deletes the local row on the strength of it.
+   */
+  get isMissingUpstream(): boolean {
+    return this.code === "provider_not_found"
   }
 
   /** True when retrying later is more useful than reconnecting. */

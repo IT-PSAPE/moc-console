@@ -21,6 +21,7 @@ describe("providerFailure", () => {
       [new ProviderConfigError("Google OAuth", ["GOOGLE_CLIENT_ID"]), 500, "misconfigured"],
       [new ProviderUpstreamError("rate_limited"), 429, "rate_limited"],
       [new ProviderUpstreamError("forbidden"), 403, "provider_forbidden"],
+      [new ProviderUpstreamError("not_found"), 404, "provider_not_found"],
       [new Error("database connection string leaked"), 502, "upstream_failed"],
     ]
 

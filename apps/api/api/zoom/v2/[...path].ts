@@ -27,6 +27,7 @@ const JSON_BODY_LIMIT = 128 * 1024
 export const ZOOM_ROUTES: readonly ProviderRouteRule[] = [
   { method: "GET", path: /^\/users\/me\/meetings$/, query: ["type", "page_size", "next_page_token"], permission: "can_read", body: "none", maxBodyBytes: 0 },
   { method: "POST", path: /^\/users\/me\/meetings$/, query: [], permission: "can_create", body: "json", maxBodyBytes: JSON_BODY_LIMIT },
+  { method: "GET", path: /^\/meetings\/[A-Za-z0-9_-]+$/, query: [], permission: "can_read", body: "none", maxBodyBytes: 0 },
   { method: "PATCH", path: /^\/meetings\/[A-Za-z0-9_-]+$/, query: [], permission: "can_update", body: "json", maxBodyBytes: JSON_BODY_LIMIT },
   { method: "DELETE", path: /^\/meetings\/[A-Za-z0-9_-]+$/, query: [], permission: "can_delete", body: "none", maxBodyBytes: 0 },
 ]

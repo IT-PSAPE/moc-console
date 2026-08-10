@@ -58,6 +58,20 @@ export async function uploadThumbnail(videoId: string, file: Blob): Promise<void
   }
 }
 
+/**
+ * The channel the stored connection currently authenticates as, or null when
+ * YouTube did not answer. Callers use it to check that the connection still
+ * points at the channel the workspace recorded, so a connection repointed at
+ * another Google account is not mistaken for the workspace's own channel.
+ */
+export async function fetchAuthenticatedChannelId(): Promise<string | null> {
+  const response = await youtubeApiFetch("/channels?part=id&mine=true")
+  if (!response.ok) return null
+
+  const data = await response.json() as { items?: Array<{ id?: string }> }
+  return data.items?.[0]?.id ?? null
+}
+
 export async function fetchVideoCategories(regionCode = "US") {
   const response = await youtubeApiFetch(
     `/videoCategories?part=snippet&regionCode=${regionCode}`,

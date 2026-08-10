@@ -1,11 +1,11 @@
-import type { ZoomMeeting } from "@moc/types/streams/zoom"
+import type { ZoomMeeting, ZoomMeetingType } from "@moc/types/streams/zoom"
 import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 import { zoomApiFetch } from "@/lib/zoom-client"
 import { parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time"
 import { providerRequestError } from "@/lib/provider-request-error"
 import { notifyMeetingCreated } from "./notify-event"
-import { getAbsentActiveZoomMeetingIds, type ZoomMeetingReconciliationRow } from "./zoom-meeting-reconciliation"
+import { getZoomMeetingsToVerify, isCurrentOrUpcomingMeeting, type ZoomMeetingReconciliationRow } from "./zoom-meeting-reconciliation"
 import { queueZoomMeetingOperation } from "./zoom-meeting-operation-queue"
 import { fetchZoomConnectionId } from "./fetch-zoom"
 
@@ -25,6 +25,49 @@ function normalizeZoomStartTime(startTime: string | null, timezone: string): str
   if (/z$/i.test(startTime) || /[+-]\d{2}:\d{2}$/.test(startTime)) return new Date(startTime).toISOString()
   return parseDateTimeInputToUtcIso(startTime.slice(0, 19), timezone)
 }
+
+type ZoomMeetingLookup =
+  | { status: "present"; meeting: ZoomMeetingSyncRow }
+  | { status: "absent" }
+  | { status: "unknown" }
+
+/**
+ * Asks Zoom about one meeting directly, so a meeting missing from the upcoming
+ * list can be told apart from a meeting that no longer exists.
+ *
+ * Only the proxy's `provider_not_found` counts as gone — the code it returns
+ * when Zoom itself says the meeting does not exist. Everything else is
+ * `unknown`, and an unknown answer changes nothing locally: an outage, an
+ * expired token or a bad deployment must never be read as a cancellation, or a
+ * sync would delete the workspace's meetings.
+ */
+async function lookUpZoomMeeting(zoomMeetingId: number): Promise<ZoomMeetingLookup> {
+  const response = await zoomApiFetch(`/meetings/${zoomMeetingId}`)
+  if (response.ok) {
+    return { status: "present", meeting: await response.json() as ZoomMeetingSyncRow }
+  }
+
+  const error = await providerRequestError(response, "Failed to read the Zoom meeting")
+  return error.isMissingUpstream ? { status: "absent" } : { status: "unknown" }
+}
+
+function toUpsertRow(meeting: ZoomMeetingSyncRow, workspaceId: string, zoomConnectionId: string, createdBy: string) {
+  return {
+    workspace_id: workspaceId,
+    zoom_connection_id: zoomConnectionId,
+    zoom_meeting_id: meeting.id,
+    topic: meeting.topic ?? "Untitled",
+    description: meeting.agenda ?? "",
+    meeting_type: (meeting.type === 8 ? "recurring_fixed" : "scheduled") as ZoomMeetingType,
+    start_time: normalizeZoomStartTime(meeting.start_time ?? null, meeting.timezone ?? "UTC"),
+    duration: meeting.duration ?? 60,
+    timezone: meeting.timezone ?? "UTC",
+    join_url: meeting.join_url ?? null,
+    created_by: createdBy,
+  }
+}
+
+type ZoomMeetingUpsertRow = ReturnType<typeof toUpsertRow>
 
 export async function syncZoomMeetings(): Promise<ZoomMeeting[]> {
   const workspaceId = await getCurrentWorkspaceId()
@@ -54,30 +97,43 @@ export async function syncZoomMeetingsWithinOperation(workspaceId: string): Prom
   if (existingRowsError) throw new Error(existingRowsError.message)
   const localMeetings = (existingRows ?? []) as Array<ZoomMeetingReconciliationRow & { created_by: string }>
   const existingCreators = new Map(localMeetings.map((row) => [row.zoom_meeting_id, row.created_by]))
-  const absentActiveMeetingIds = getAbsentActiveZoomMeetingIds(localMeetings, meetings.map((meeting) => meeting.id))
-  const payloads = meetings.map((meeting) => ({
-    workspace_id: workspaceId,
-    zoom_connection_id: zoomConnectionId,
-    zoom_meeting_id: meeting.id,
-    topic: meeting.topic ?? "Untitled",
-    description: meeting.agenda ?? "",
-    meeting_type: meeting.type === 8 ? "recurring_fixed" : "scheduled",
-    start_time: normalizeZoomStartTime(meeting.start_time ?? null, meeting.timezone ?? "UTC"),
-    duration: meeting.duration ?? 60,
-    timezone: meeting.timezone ?? "UTC",
-    join_url: meeting.join_url ?? null,
-    created_by: existingCreators.get(meeting.id) ?? user.id,
-  }))
-  if (payloads.length > 0) {
-    const { error } = await supabase.from("zoom_meetings").upsert(payloads, { onConflict: "workspace_id,zoom_meeting_id" })
+
+  // Each meeting that fell out of the upcoming list is confirmed by id: only a
+  // meeting Zoom says is gone is deleted locally, and one that still exists is
+  // reconciled from its own record instead.
+  const cancelledMeetingIds: string[] = []
+  const verifiedMeetings: ZoomMeetingSyncRow[] = []
+  for (const target of getZoomMeetingsToVerify(localMeetings, meetings.map((meeting) => meeting.id))) {
+    const lookup = await lookUpZoomMeeting(target.zoomMeetingId)
+    if (lookup.status === "absent") cancelledMeetingIds.push(target.id)
+    else if (lookup.status === "present") verifiedMeetings.push(lookup.meeting)
+  }
+
+  const now = new Date()
+  // Keyed by Zoom meeting id: one upsert may not touch the same row twice.
+  const payloads = new Map<number, ZoomMeetingUpsertRow>()
+  const adoptedMeetingIds = new Set<number>()
+  for (const meeting of [...meetings, ...verifiedMeetings]) {
+    const row = toUpsertRow(meeting, workspaceId, zoomConnectionId, existingCreators.get(meeting.id) ?? user.id)
+    // A meeting we already track is always reconciled. One we do not track is
+    // only taken on while its slot is still ahead of us.
+    if (existingCreators.has(meeting.id)) {
+      payloads.set(meeting.id, row)
+    } else if (isCurrentOrUpcomingMeeting(row, now)) {
+      payloads.set(meeting.id, row)
+      adoptedMeetingIds.add(meeting.id)
+    }
+  }
+  if (payloads.size > 0) {
+    const { error } = await supabase.from("zoom_meetings").upsert([...payloads.values()], { onConflict: "workspace_id,zoom_meeting_id" })
     if (error) throw new Error(error.message)
   }
-  if (absentActiveMeetingIds.length > 0) {
+  if (cancelledMeetingIds.length > 0) {
     const { error } = await supabase
       .from("zoom_meetings")
       .delete()
       .eq("workspace_id", workspaceId)
-      .in("id", absentActiveMeetingIds)
+      .in("id", cancelledMeetingIds)
     if (error) throw new Error(error.message)
   }
 
@@ -87,7 +143,13 @@ export async function syncZoomMeetingsWithinOperation(workspaceId: string): Prom
     .eq("workspace_id", workspaceId)
     .order("start_time", { ascending: true, nullsFirst: false })
   if (error) throw new Error(error.message)
-  for (const row of rows ?? []) if (!row.notified_at) void notifyMeetingCreated(row.id)
+  // Only the meetings this sync adopted are announced. Announcing every
+  // un-notified row re-sent the whole backlog on each sync, and because the
+  // per-user notification rate limit rejected most of that burst, `notified_at`
+  // stayed null and the same meetings queued up again on the next one.
+  for (const row of rows ?? []) {
+    if (!row.notified_at && adoptedMeetingIds.has(row.zoom_meeting_id)) void notifyMeetingCreated(row.id)
+  }
   return (rows ?? []).map((row) => ({
     id: row.id, workspaceId: row.workspace_id, zoomMeetingId: row.zoom_meeting_id, topic: row.topic, description: row.description,
     meetingType: row.meeting_type, startTime: row.start_time, duration: row.duration, timezone: row.timezone, joinUrl: row.join_url,

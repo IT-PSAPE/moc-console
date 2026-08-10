@@ -18,10 +18,32 @@ function isRateLimited(response: ProviderResponse, body: string): boolean {
   return normalized.includes("rate limit") || normalized.includes("ratelimit") || normalized.includes("too many requests")
 }
 
+/** Zoom's error code for a meeting that does not exist. */
+const MEETING_NOT_FOUND_CODE = 3001
+
+/**
+ * True only when Zoom itself states the resource is gone. Zoom answers a deleted
+ * meeting with code 3001, as a 404 and sometimes as a 400, so the code — not the
+ * status — is what proves absence.
+ *
+ * The console deletes a local meeting on the strength of this, so a bare status
+ * is deliberately not enough: a platform 404 from a bad rewrite or a missing
+ * function would otherwise read as "every meeting was cancelled".
+ */
+export function isZoomNotFoundBody(status: number, body: string): boolean {
+  if (status !== 404 && status !== 400) return false
+  try {
+    return (JSON.parse(body) as { code?: unknown }).code === MEETING_NOT_FOUND_CODE
+  } catch {
+    return false
+  }
+}
+
 async function classifyZoomFailure(response: ProviderResponse): Promise<ProviderUpstreamError> {
   if (response.status === 401) return new ProviderUpstreamError("unauthorized")
   const body = await response.text()
   if (isRateLimited(response, body)) return new ProviderUpstreamError("rate_limited")
+  if (isZoomNotFoundBody(response.status, body)) return new ProviderUpstreamError("not_found")
   const kind: ProviderUpstreamFailureKind = response.status === 403 ? "forbidden" : "failed"
   return new ProviderUpstreamError(kind)
 }

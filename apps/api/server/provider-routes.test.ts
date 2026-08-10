@@ -11,8 +11,13 @@ import { authorizeProviderRoute } from "./provider-route-policy.js"
 // vercel.json), so both forms have to authorize to the same upstream path.
 const YOUTUBE_CALLS: Array<[string, string, string]> = [
   ["GET", "/api/youtube/v3/videoCategories?part=snippet&regionCode=US", "/videoCategories?part=snippet&regionCode=US"],
+  // Confirming the connection still authenticates as the recorded channel, which
+  // is what authorizes deleting streams that vanished from YouTube.
+  ["GET", "/api/youtube/v3/channels?part=id&mine=true", "/channels?part=id&mine=true"],
   ["GET", "/api/youtube/v3/playlists?part=snippet%2CcontentDetails&mine=true&maxResults=50", "/playlists?part=snippet%2CcontentDetails&mine=true&maxResults=50"],
   ["GET", "/api/youtube/v3/liveBroadcasts?part=snippet&broadcastStatus=upcoming&broadcastType=all&maxResults=50", "/liveBroadcasts?part=snippet&broadcastStatus=upcoming&broadcastType=all&maxResults=50"],
+  // Reconciling tracked streams by id, the way the sync settles a finished one.
+  ["GET", "/api/youtube/v3/liveBroadcasts?part=snippet%2Cstatus%2CcontentDetails&id=abc%2Cdef", "/liveBroadcasts?part=snippet%2Cstatus%2CcontentDetails&id=abc%2Cdef"],
   ["POST", "/api/youtube/v3/playlistItems?part=snippet", "/playlistItems?part=snippet"],
   ["PUT", "/api/youtube/v3/videos?part=snippet", "/videos?part=snippet"],
   // Nested, and therefore collapsed by the console before it is sent.
@@ -27,6 +32,8 @@ const ZOOM_CALLS: Array<[string, string, string]> = [
   // Every Zoom route is nested, so none of them arrive un-collapsed.
   ["GET", "/api/zoom/v2/_proxy?type=upcoming&page_size=30&providerPath=users%2Fme%2Fmeetings", "/users/me/meetings?type=upcoming&page_size=30"],
   ["POST", "/api/zoom/v2/_proxy?providerPath=users%2Fme%2Fmeetings", "/users/me/meetings"],
+  // Confirming by id whether a meeting missing from the upcoming list still exists.
+  ["GET", "/api/zoom/v2/_proxy?providerPath=meetings%2F123456", "/meetings/123456"],
   ["PATCH", "/api/zoom/v2/_proxy?providerPath=meetings%2F123456", "/meetings/123456"],
   ["DELETE", "/api/zoom/v2/_proxy?providerPath=meetings%2F123456", "/meetings/123456"],
 ]

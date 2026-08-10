@@ -21,12 +21,13 @@ export type ProviderFailureCode =
   | "reauth_required"
   | "misconfigured"
   | "provider_forbidden"
+  | "provider_not_found"
   | "rate_limited"
   | "service_unavailable"
   | "upstream_timed_out"
   | "upstream_failed"
 
-export type ProviderUpstreamFailureKind = "unauthorized" | "forbidden" | "rate_limited" | "failed"
+export type ProviderUpstreamFailureKind = "unauthorized" | "forbidden" | "not_found" | "rate_limited" | "failed"
 
 /** A sanitised third-party failure that is safe to map onto the public API. */
 export class ProviderUpstreamError extends Error {
@@ -84,6 +85,12 @@ export function providerFailure(providerLabel: string, error: unknown): Provider
     }
     if (error.kind === "forbidden") {
       return { status: 403, body: { error: `${providerLabel} rejected this request`, code: "provider_forbidden" } }
+    }
+    // Distinct from a transient failure on purpose: the console reconciles a
+    // deleted meeting against this code, and treating "gone" as "try again
+    // later" would leave the local row in place forever.
+    if (error.kind === "not_found") {
+      return { status: 404, body: { error: `${providerLabel} no longer has this item`, code: "provider_not_found" } }
     }
     if (error.kind === "rate_limited") {
       return { status: 429, body: { error: `${providerLabel} is temporarily rate limited`, code: "rate_limited" } }

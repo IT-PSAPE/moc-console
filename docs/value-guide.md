@@ -224,7 +224,7 @@ Runtime read model:
 ### Stream data flow
 
 1. **Create**: Client sends form data to `mutate-streams.ts` -> Edge Function creates YouTube broadcast + stream -> binds them -> returns IDs -> client inserts into local `streams` table
-2. **Sync**: Client calls `syncStreamsFromYouTube()` -> Edge Function fetches all broadcasts from YouTube -> client upserts each into local DB
+2. **Sync**: Client calls `syncStreamsFromYouTube()` -> the proxy reads the live and upcoming broadcasts, then looks up by id only those tracked streams that are still in flight but have dropped off both lists (so a finished stream settles without paging YouTube's entire history) -> client upserts every broadcast it already tracks, plus any untracked one that is live or still upcoming. A finished or never-started broadcast is not adopted, so it cannot raise a late "stream created" notification
 3. **Update**: Client sends changes to Edge Function -> YouTube API updates -> local DB updated
 4. **Delete**: Edge Function deletes on YouTube -> local row deleted
 
