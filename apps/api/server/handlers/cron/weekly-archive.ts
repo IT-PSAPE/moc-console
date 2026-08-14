@@ -8,7 +8,9 @@ import { requireAuthorizedCronGet } from "../../cron-auth.js"
 //   • bookings: returned  -> archived
 // Set-based and idempotent (filtered by source status), so a re-run is a
 // no-op. Runs as the service role (bypasses RLS) across all workspaces.
-// Silent by design: no per-item Telegram notification for bulk archiving.
+// Silent by design: the archive RPCs set a transaction-local suppression flag
+// that the requests/bookings notification triggers honour, so bulk archiving
+// enqueues nothing. Manual archives still notify through the normal routes.
 
 type ApiRequest = {
   method?: string

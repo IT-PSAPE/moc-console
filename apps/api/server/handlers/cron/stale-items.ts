@@ -40,6 +40,9 @@ type StaleRequestRow = {
   status: string
   updated_at: string
   stale_notification_event_key: string | null
+  // Computed in SQL from the pre-claim updated_at; null until the
+  // 20260814120000 migration is applied (then daysSince is the fallback).
+  stale_days: number | null
 }
 
 type StaleBookingRow = {
@@ -52,6 +55,8 @@ type StaleBookingRow = {
   expected_return_at: string | null
   returned_at: string | null
   stale_notification_event_key: string | null
+  is_overdue: boolean | null
+  stale_days: number | null
 }
 
 type RecipientRow = {
@@ -62,11 +67,17 @@ type RecipientRow = {
 
 const MS_PER_DAY = 86_400_000
 
-function daysSince(iso: string | null): number {
+// Fallback only — the claim RPCs compute the day count in SQL from the
+// pre-claim timestamps. Overdue counts started days so a deadline that passed
+// hours ago reads as 1, matching the SQL branch.
+function daysSince(iso: string | null, mode: "elapsed" | "started" = "elapsed"): number {
   if (!iso) return 0
   const then = new Date(iso).getTime()
   if (Number.isNaN(then)) return 0
-  return Math.max(0, Math.floor((Date.now() - then) / MS_PER_DAY))
+  const days = (Date.now() - then) / MS_PER_DAY
+  return mode === "started"
+    ? Math.max(1, Math.ceil(days))
+    : Math.max(0, Math.floor(days))
 }
 
 // Build a workspace -> [chat_id] map of enabled, Telegram-linked recipients.
@@ -180,7 +191,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       status: req.status,
       linkUrl: baseUrl ? `${baseUrl}/requests/${req.id}` : "",
       requestId: req.id,
-      staleDays: String(daysSince(req.updated_at)),
+      staleDays: String(req.stale_days ?? daysSince(req.updated_at)),
     }
     const eventKey = staleEventKey(req.stale_notification_event_key, "request", req.id)
     const group = await dispatchEvent(req.workspace_id, "request.stale", payload, { eventKey })
@@ -197,16 +208,22 @@ export default async function handler(request: ApiRequest, response: ApiResponse
 
   for (const bk of (staleBookings ?? []) as StaleBookingRow[]) {
     const overdue =
-      !!bk.expected_return_at &&
-      !bk.returned_at &&
-      new Date(bk.expected_return_at).getTime() < Date.now()
+      bk.is_overdue ??
+      (!!bk.expected_return_at &&
+        !bk.returned_at &&
+        new Date(bk.expected_return_at).getTime() < Date.now())
     const payload: BookingStalePayload = {
       title: bk.title,
       status: bk.status,
       linkUrl: baseUrl ? `${baseUrl}/bookings/${bk.id}` : "",
       trackingCode: bk.tracking_code,
       staleReason: overdue ? "Overdue for return" : "Not updated recently",
-      staleDays: String(daysSince(overdue ? bk.expected_return_at : bk.updated_at)),
+      staleDays: String(
+        bk.stale_days ??
+          (overdue
+            ? daysSince(bk.expected_return_at, "started")
+            : daysSince(bk.updated_at)),
+      ),
     }
     const eventKey = staleEventKey(bk.stale_notification_event_key, "booking", bk.id)
     const group = await dispatchEvent(bk.workspace_id, "booking.stale", payload, { eventKey })
