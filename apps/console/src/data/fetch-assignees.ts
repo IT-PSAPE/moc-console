@@ -2,7 +2,8 @@ import type { User } from "@moc/types/requests";
 import { supabase } from "@moc/data/supabase";
 import { getCurrentWorkspaceId } from "./current-workspace";
 
-export type ResolvedAssignee = User & { duty: string };
+// duty is request-only: checklist-item assignment carries no duty label.
+export type ResolvedAssignee = User & { duty?: string };
 
 type UserRow = {
   id: string;
@@ -35,9 +36,14 @@ function mapUserRow(row: UserRow): User {
   };
 }
 
-function mapAssigneeRow(row: { duty: string; users: UserRow | UserRow[] | null }): ResolvedAssignee | null {
-  const user = Array.isArray(row.users) ? row.users[0] : row.users;
-  return user ? { ...mapUserRow(user), duty: row.duty } : null;
+function mapAssigneeRow(users: UserRow | UserRow[] | null, duty?: string): ResolvedAssignee | null {
+  const user = Array.isArray(users) ? users[0] : users;
+  if (!user) return null;
+  return duty === undefined ? mapUserRow(user) : { ...mapUserRow(user), duty };
+}
+
+function mapRequestAssigneeRow(row: RequestAssigneeRow): ResolvedAssignee | null {
+  return mapAssigneeRow(row.users, row.duty);
 }
 
 export async function fetchAssigneesByRequestId(requestId: string): Promise<ResolvedAssignee[]> {
@@ -53,7 +59,7 @@ export async function fetchAssigneesByRequestId(requestId: string): Promise<Reso
   }
 
   return ((data ?? []) as RequestAssigneeRow[])
-    .map(mapAssigneeRow)
+    .map(mapRequestAssigneeRow)
     .filter((assignee): assignee is ResolvedAssignee => assignee !== null);
 }
 
@@ -61,7 +67,7 @@ export async function fetchAssigneesByChecklistId(checklistId: string): Promise<
   const workspaceId = await getCurrentWorkspaceId();
   const { data, error } = await supabase
     .from("checklist_item_assignees")
-    .select(`checklist_item_id, duty, users(${USER_COLUMNS}), checklist_items!inner(checklist_id, checklists!inner(workspace_id))`)
+    .select(`checklist_item_id, users(${USER_COLUMNS}), checklist_items!inner(checklist_id, checklists!inner(workspace_id))`)
     .eq("checklist_items.checklist_id", checklistId)
     .eq("checklist_items.checklists.workspace_id", workspaceId);
 
@@ -70,8 +76,8 @@ export async function fetchAssigneesByChecklistId(checklistId: string): Promise<
   }
 
   const assigneesByItemId = new Map<string, ResolvedAssignee[]>();
-  for (const row of (data ?? []) as Array<{ checklist_item_id: string; duty: string; users: UserRow | UserRow[] | null }>) {
-    const assignee = mapAssigneeRow(row);
+  for (const row of (data ?? []) as Array<{ checklist_item_id: string; users: UserRow | UserRow[] | null }>) {
+    const assignee = mapAssigneeRow(row.users);
     if (!assignee) continue;
     assigneesByItemId.set(row.checklist_item_id, [...(assigneesByItemId.get(row.checklist_item_id) ?? []), assignee]);
   }

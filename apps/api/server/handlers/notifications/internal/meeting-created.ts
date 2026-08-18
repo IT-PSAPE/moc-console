@@ -1,4 +1,4 @@
-import { enqueueOutboxEvent, processOutboxEvent } from "../../../notifications/outbox.js"
+import { announceMeetingCreated, NotificationStateError } from "../../../notifications/created-announcement.js"
 import { requireWorkspaceCreateOrEntityOwnership } from "../../../notifications/authorization.js"
 import { DestinationInputError, parseNotificationDestinations } from "../../../notifications/destination-input.js"
 import { allowAuthenticatedNotificationMutation } from "../../../notifications/mutation-rate-limit.js"
@@ -71,30 +71,23 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
-  const eventKey = `meeting.created:${data.id}`
-  await enqueueOutboxEvent({
-    workspaceId: data.workspace_id,
-    eventType: "meeting.created",
-    entityType: "meeting",
-    entityId: data.id,
-    eventKey,
-    payload: {
+  let result
+  try {
+    result = await announceMeetingCreated({
+      workspaceId: data.workspace_id,
+      meetingId: data.id,
       topic: data.topic,
       startTime: data.start_time,
       joinUrl: data.join_url,
-      ...(destinations ? { destinations } : {}),
-    },
-  })
-  const { error: markError } = await admin
-    .from("zoom_meetings")
-    .update({ notified_at: new Date().toISOString() })
-    .eq("id", data.id)
-    .is("notified_at", null)
-  if (markError) {
-    console.error("Meeting notification state update failed:", markError)
-    response.status(503).json({ error: "Meeting notification state is temporarily unavailable" })
-    return
+      destinations,
+    })
+  } catch (error) {
+    if (error instanceof NotificationStateError) {
+      console.error("Meeting notification state update failed:", error.cause)
+      response.status(503).json({ error: "Meeting notification state is temporarily unavailable" })
+      return
+    }
+    throw error
   }
-  const result = await processOutboxEvent(eventKey)
   response.status(200).json({ ok: true, ...result })
 }

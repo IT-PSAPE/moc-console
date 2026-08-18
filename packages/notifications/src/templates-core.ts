@@ -89,7 +89,7 @@ const MEETING_TOKENS = specs(
 
 const CHECKLIST_TOKENS = specs(
   "title", "checklistName", "checklistDescription", "checklistScheduledAt",
-  "sectionName", "itemChecked", "duty", "assigneeName", "linkUrl",
+  "sectionName", "itemChecked", "assigneeName", "linkUrl",
 );
 
 export const TEMPLATE_TOKENS: Record<MessageType, readonly TokenSpec[]> = {
@@ -137,7 +137,7 @@ export const DEFAULT_TEMPLATES: Record<MessageType, string> = {
   "assignment.request":
     "👋 Hey {{assigneeName}}!\nYou've been assigned to a request\n\n📌 <b>Title:</b> {{title}}\n🛠 <b>Duty:</b> <i>{{duty}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">View Full Request Details</a>",
   "assignment.checklist_item":
-    "👋 Hey {{assigneeName}}!\nYou've been assigned to a checklist item\n\n📌 <b>Title:</b> {{title}}\n📋 <b>Checklist:</b> {{checklistName}}\n🛠 <b>Duty:</b> <i>{{duty}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">View Full Checklist Details</a>",
+    "👋 Hey {{assigneeName}}!\nYou've been assigned to a checklist item\n\n📌 <b>Title:</b> {{title}}\n📋 <b>Checklist:</b> {{checklistName}}\n\n🔗 <a href=\"{{linkUrl}}\">View Full Checklist Details</a>",
 };
 
 export type TokenValues = Record<string, string | null | undefined>;
@@ -395,7 +395,6 @@ export const SAMPLE_TOKENS: Record<MessageType, TokenValues> = {
     checklistScheduledAt: "18 May, 7:00 AM",
     sectionName: "Wireless microphones",
     itemChecked: "No",
-    duty: "Owner",
     assigneeName: "Craig C.",
     linkUrl: "https://app.example.com/checklists/123",
   },

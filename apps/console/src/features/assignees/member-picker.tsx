@@ -10,14 +10,13 @@ import { MemberPickerPanel } from "./member-picker-panel";
 
 type MemberPickerProps = {
     assignees: ResolvedAssignee[];
-    duties: readonly string[];
-    onAdd: (userId: string, duty: string) => void;
+    onAdd: (userId: string) => void;
     onRemove: (userId: string) => void;
     children: ReactElement;
     placement?: 'bottom' | 'bottom-start' | 'bottom-end' | 'top' | 'top-start' | 'top-end';
 };
 
-export function MemberPicker({ assignees, duties, onAdd, onRemove, children, placement = 'bottom-end' }: MemberPickerProps) {
+export function MemberPicker({ assignees, onAdd, onRemove, children, placement = 'bottom-end' }: MemberPickerProps) {
     const isMobile = useIsMobile();
 
     if (isMobile) {
@@ -35,7 +34,7 @@ export function MemberPicker({ assignees, duties, onAdd, onRemove, children, pla
                                 </Modal.Close>
                             </Modal.Header>
                             <Modal.Content className="p-0">
-                                <MemberPickerPanel assignees={assignees} duties={duties} onAdd={onAdd} onRemove={onRemove} />
+                                <MemberPickerPanel assignees={assignees} onAdd={onAdd} onRemove={onRemove} />
                             </Modal.Content>
                         </Modal.Panel>
                     </Modal.Positioner>
@@ -48,7 +47,7 @@ export function MemberPicker({ assignees, duties, onAdd, onRemove, children, pla
         <Popover placement={placement}>
             <Popover.Trigger>{children}</Popover.Trigger>
             <Popover.Panel className="w-72">
-                <MemberPickerPanel assignees={assignees} duties={duties} onAdd={onAdd} onRemove={onRemove} />
+                <MemberPickerPanel assignees={assignees} onAdd={onAdd} onRemove={onRemove} />
             </Popover.Panel>
         </Popover>
     );

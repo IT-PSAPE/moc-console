@@ -1339,29 +1339,9 @@ CREATE POLICY "checklist_item_assignees_insert" ON public.checklist_item_assigne
     AND private.current_user_can('can_create')
   );
 
-DROP POLICY IF EXISTS "checklist_item_assignees_update" ON public.checklist_item_assignees;
-CREATE POLICY "checklist_item_assignees_update" ON public.checklist_item_assignees
-  FOR UPDATE TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1
-      FROM public.checklist_items
-      JOIN public.checklists ON checklists.id = checklist_items.checklist_id
-      WHERE checklist_items.id = checklist_item_assignees.checklist_item_id
-        AND private.is_workspace_member(checklists.workspace_id)
-    )
-    AND private.current_user_can('can_update')
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1
-      FROM public.checklist_items
-      JOIN public.checklists ON checklists.id = checklist_items.checklist_id
-      WHERE checklist_items.id = checklist_item_assignees.checklist_item_id
-        AND private.is_workspace_member(checklists.workspace_id)
-    )
-    AND private.current_user_can('can_update')
-  );
+-- No UPDATE policy: with duty retired (migration 20260818120000) an assignment
+-- row has no editable payload, and an updatable row would let a PATCH repoint
+-- an assignment at another member without the announcement the insert fires.
 
 DROP POLICY IF EXISTS "checklist_item_assignees_delete" ON public.checklist_item_assignees;
 CREATE POLICY "checklist_item_assignees_delete" ON public.checklist_item_assignees

@@ -1,4 +1,4 @@
-import { enqueueOutboxEvent, processOutboxEvent } from "../../../notifications/outbox.js"
+import { announceStreamCreated, NotificationStateError } from "../../../notifications/created-announcement.js"
 import { requireWorkspaceCreateOrEntityOwnership } from "../../../notifications/authorization.js"
 import { DestinationInputError, parseNotificationDestinations } from "../../../notifications/destination-input.js"
 import { allowAuthenticatedNotificationMutation } from "../../../notifications/mutation-rate-limit.js"
@@ -71,30 +71,23 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
-  const eventKey = `stream.created:${data.id}`
-  await enqueueOutboxEvent({
-    workspaceId: data.workspace_id,
-    eventType: "stream.created",
-    entityType: "stream",
-    entityId: data.id,
-    eventKey,
-    payload: {
+  let result
+  try {
+    result = await announceStreamCreated({
+      workspaceId: data.workspace_id,
+      streamId: data.id,
       title: data.title,
       scheduledStartTime: data.scheduled_start_time,
       streamUrl: data.stream_url,
-      ...(destinations ? { destinations } : {}),
-    },
-  })
-  const { error: markError } = await admin
-    .from("streams")
-    .update({ notified_at: new Date().toISOString() })
-    .eq("id", data.id)
-    .is("notified_at", null)
-  if (markError) {
-    console.error("Stream notification state update failed:", markError)
-    response.status(503).json({ error: "Stream notification state is temporarily unavailable" })
-    return
+      destinations,
+    })
+  } catch (error) {
+    if (error instanceof NotificationStateError) {
+      console.error("Stream notification state update failed:", error.cause)
+      response.status(503).json({ error: "Stream notification state is temporarily unavailable" })
+      return
+    }
+    throw error
   }
-  const result = await processOutboxEvent(eventKey)
   response.status(200).json({ ok: true, ...result })
 }

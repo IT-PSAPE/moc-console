@@ -27,12 +27,11 @@ import {
 
 export type AssignmentKind = "request" | "checklist_item"
 
-type Body = {
-  kind: AssignmentKind
-  parentId: string
-  userId: string
-  duty: string
-}
+// Checklist-item assignment has no duty label, so the payload shape makes one
+// structurally impossible rather than accepting and ignoring it.
+type Body =
+  | { kind: "request"; parentId: string; userId: string; duty: string }
+  | { kind: "checklist_item"; parentId: string; userId: string }
 
 // Once the caller has been authorized for the parent workspace, the builder
 // projects the parent onto the flat {{token}} values used by the template.
@@ -43,10 +42,9 @@ type Resolved = {
   tokens: TokenValues
 }
 
-type ParentContext = {
-  workspaceId: string
-  checklistId: string | null
-}
+type ParentContext =
+  | { kind: "request"; workspaceId: string }
+  | { kind: "checklist_item"; workspaceId: string; checklistId: string }
 
 async function resolveRequestWorkspace(parentId: string): Promise<string | null> {
   const admin = getSupabaseAdmin()
@@ -77,13 +75,13 @@ async function resolveChecklistItemParent(parentId: string): Promise<ParentConte
   if (checklistError) throw new Error("Checklist lookup failed")
   if (!checklist) return null
 
-  return { workspaceId: checklist.workspace_id, checklistId: checklist.id }
+  return { kind: "checklist_item", workspaceId: checklist.workspace_id, checklistId: checklist.id }
 }
 
 async function resolveParent(kind: AssignmentKind, parentId: string): Promise<ParentContext | null> {
   if (kind === "checklist_item") return resolveChecklistItemParent(parentId)
   const workspaceId = await resolveRequestWorkspace(parentId)
-  return workspaceId ? { workspaceId, checklistId: null } : null
+  return workspaceId ? { kind: "request", workspaceId } : null
 }
 
 async function buildRequest(
@@ -110,7 +108,6 @@ async function buildChecklistItem(
   workspaceId: string,
   checklistId: string,
   parentId: string,
-  duty: string,
   assigneeName: string,
   baseUrl: string,
 ): Promise<Resolved> {
@@ -120,7 +117,6 @@ async function buildChecklistItem(
     messageType: "assignment.checklist_item",
     tokens: {
       ...enriched,
-      duty,
       assigneeName,
       linkUrl: `${baseUrl}/checklists/${checklistId}`,
     },
@@ -128,31 +124,42 @@ async function buildChecklistItem(
 }
 
 async function buildAssignment(
-  kind: AssignmentKind,
+  body: Body,
   parent: ParentContext,
-  parentId: string,
-  duty: string,
   assigneeName: string,
   baseUrl: string,
 ): Promise<Resolved> {
-  if (kind === "checklist_item" && parent.checklistId) {
-    return buildChecklistItem(parent.workspaceId, parent.checklistId, parentId, duty, assigneeName, baseUrl)
+  if (body.kind === "request") {
+    return buildRequest(parent.workspaceId, body.parentId, body.duty, assigneeName, baseUrl)
   }
-  return buildRequest(parent.workspaceId, parentId, duty, assigneeName, baseUrl)
+  // TypeScript cannot correlate the body and parent unions; resolveParent always
+  // pairs them, so a mismatch is a bug and the caller maps the throw to a 503.
+  if (parent.kind !== "checklist_item") throw new Error("Assignment parent kind mismatch")
+  return buildChecklistItem(parent.workspaceId, parent.checklistId, body.parentId, assigneeName, baseUrl)
+}
+
+const CHECKLIST_ITEM_KEYS = new Set(["kind", "parentId", "userId"])
+const REQUEST_KEYS = new Set(["kind", "parentId", "userId", "duty"])
+
+function hasExactKeys(body: Record<string, unknown>, allowed: Set<string>): boolean {
+  const keys = Object.keys(body)
+  return keys.length === allowed.size && keys.every((key) => allowed.has(key))
 }
 
 function parseBody(value: unknown): Body | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return null
   const body = value as Record<string, unknown>
-  const keys = Object.keys(body)
-  const allowed = new Set(["kind", "parentId", "userId", "duty"])
-  if (keys.length !== 4 || keys.some((key) => !allowed.has(key))) return null
 
   const { kind, parentId, userId, duty } = body
+  if ((kind !== "request" && kind !== "checklist_item") || !isUuid(parentId) || !isUuid(userId)) return null
+
+  if (kind === "checklist_item") {
+    if (!hasExactKeys(body, CHECKLIST_ITEM_KEYS)) return null
+    return { kind, parentId, userId }
+  }
+
   if (
-    (kind !== "request" && kind !== "checklist_item") ||
-    !isUuid(parentId) ||
-    !isUuid(userId) ||
+    !hasExactKeys(body, REQUEST_KEYS) ||
     typeof duty !== "string" ||
     Buffer.byteLength(duty, "utf8") > 500
   ) {
@@ -165,25 +172,20 @@ export function assignmentEventKey(kind: AssignmentKind, assignmentId: string): 
   return `assignment.${kind}:${assignmentId}`
 }
 
-async function findAssignment(
-  kind: AssignmentKind,
-  parentId: string,
-  userId: string,
-  duty: string,
-): Promise<{ id: string } | null> {
+async function findAssignment(body: Body): Promise<{ id: string } | null> {
   const admin = getSupabaseAdmin()
-  const query = kind === "checklist_item"
+  const query = body.kind === "checklist_item"
     ? admin
       .from("checklist_item_assignees")
       .select("id")
-      .eq("checklist_item_id", parentId)
+      .eq("checklist_item_id", body.parentId)
     : admin
       .from("request_assignees")
       .select("id")
-      .eq("request_id", parentId)
+      .eq("request_id", body.parentId)
+      .eq("duty", body.duty)
   const { data, error } = await query
-    .eq("user_id", userId)
-    .eq("duty", duty)
+    .eq("user_id", body.userId)
     .maybeSingle()
   if (error) throw new Error("Assignment lookup failed")
   return data
@@ -216,7 +218,7 @@ async function handleAssignment(request: ApiRequest, response: ApiResponse): Pro
     response.status(400).json({ error: "Invalid assignment payload" })
     return
   }
-  const { kind, parentId, userId, duty } = body
+  const { kind, parentId, userId } = body
 
   // Self-assignment: skip silently — no point pinging yourself.
   if (userId === actorId) {
@@ -267,7 +269,7 @@ async function handleAssignment(request: ApiRequest, response: ApiResponse): Pro
 
   let assignment: { id: string } | null
   try {
-    assignment = await findAssignment(kind, parentId, userId, duty)
+    assignment = await findAssignment(body)
   } catch {
     response.status(503).json({ error: "Assignment lookup is temporarily unavailable" })
     return
@@ -301,7 +303,7 @@ async function handleAssignment(request: ApiRequest, response: ApiResponse): Pro
   const assigneeName = [user.name, user.surname].filter(Boolean).join(" ").trim()
   let resolved: Resolved
   try {
-    resolved = await buildAssignment(kind, parent, parentId, duty, assigneeName, baseUrl)
+    resolved = await buildAssignment(body, parent, assigneeName, baseUrl)
   } catch {
     response.status(503).json({ error: "Assignment details are temporarily unavailable" })
     return
@@ -326,7 +328,7 @@ async function handleAssignment(request: ApiRequest, response: ApiResponse): Pro
       recipientUserId: userId,
       chatId: user.telegram_chat_id,
       text,
-      payload: { assignmentId: assignment.id, kind, parentId, userId, duty },
+      payload: { assignmentId: assignment.id, ...body },
     })
     const delivery = await processDeliveriesForEvent(eventKey)
     response.status(200).json({ ok: true, ...delivery })

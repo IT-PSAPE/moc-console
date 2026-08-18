@@ -1,7 +1,7 @@
 import { supabase } from "@moc/data/supabase";
 import { getCurrentWorkspaceId } from "./current-workspace";
 import { mapRow, toRow } from "./map-request";
-import { notifyAssignment } from "./notify-assignment";
+import { notifyRequestAssignment } from "./notify-assignment";
 import type { Request, Status } from "@moc/types/requests";
 
 export async function updateRequest(request: Request): Promise<Request> {
@@ -89,7 +89,7 @@ export async function addRequestAssignee(requestId: string, userId: string, duty
     if (error) throw new Error(error.message);
   }
 
-  notifyAssignment("request", requestId, userId, duty);
+  notifyRequestAssignment(requestId, userId, duty);
 }
 
 export async function removeRequestAssignee(requestId: string, userId: string): Promise<void> {

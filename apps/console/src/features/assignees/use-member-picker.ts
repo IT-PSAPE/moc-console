@@ -5,7 +5,7 @@ import { useMembers } from "./use-members";
 
 type UseMemberPickerOptions = {
   assignees: ResolvedAssignee[];
-  onAdd: (userId: string, duty: string) => void;
+  onAdd: (userId: string) => void;
 };
 
 function memberMatchesSearch(member: Pick<User, "name" | "surname">, search: string) {
@@ -14,45 +14,22 @@ function memberMatchesSearch(member: Pick<User, "name" | "surname">, search: str
 
 export function useMemberPicker({ assignees, onAdd }: UseMemberPickerOptions) {
   const { members, isLoading } = useMembers();
-  const [step, setStep] = useState<"browse" | "pick-duty">("browse");
   const [search, setSearch] = useState("");
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [duty, setDuty] = useState("");
   const assignedIds = new Set(assignees.map((assignee) => assignee.id));
   const assignedFiltered = assignees.filter((assignee) => memberMatchesSearch(assignee, search));
   const available = members.filter((member) => !assignedIds.has(member.id) && memberMatchesSearch(member, search));
 
   function selectMember(user: User) {
-    setSelectedUser(user);
-    setDuty("");
-    setStep("pick-duty");
-  }
-
-  function confirm() {
-    if (!selectedUser || !duty) return;
-    onAdd(selectedUser.id, duty);
-    setStep("browse");
-    setSelectedUser(null);
-    setDuty("");
+    onAdd(user.id);
     setSearch("");
-  }
-
-  function back() {
-    setStep("browse");
-    setSelectedUser(null);
-    setDuty("");
   }
 
   function changeSearch(event: ChangeEvent<HTMLInputElement>) {
     setSearch(event.target.value);
   }
 
-  function changeCustomDuty(event: ChangeEvent<HTMLInputElement>) {
-    setDuty(event.target.value);
-  }
-
   return {
-    state: { assignedFiltered, available, duty, isLoading, search, selectedUser, step },
-    actions: { back, changeCustomDuty, changeSearch, confirm, selectMember, setDuty },
+    state: { assignedFiltered, available, isLoading, search },
+    actions: { changeSearch, selectMember },
   };
 }

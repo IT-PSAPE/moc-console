@@ -50,7 +50,7 @@ function requestPath(url: string | undefined): string | null {
   }
 }
 
-function errorMessage(error: unknown): string {
+export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error"
 }
 

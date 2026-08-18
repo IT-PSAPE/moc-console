@@ -1,30 +1,19 @@
 import { supabase } from "@moc/data/supabase";
-import { notifyAssignment } from "./notify-assignment";
+import { notifyChecklistItemAssignment } from "./notify-assignment";
 
-export async function addChecklistItemAssignee(checklistItemId: string, userId: string, duty: string): Promise<void> {
-  const existingResult = await supabase
+export async function addChecklistItemAssignee(checklistItemId: string, userId: string): Promise<void> {
+  const { data, error } = await supabase
     .from("checklist_item_assignees")
-    .select("id, duty")
-    .eq("checklist_item_id", checklistItemId)
-    .eq("user_id", userId)
-    .maybeSingle();
+    .upsert(
+      { checklist_item_id: checklistItemId, user_id: userId },
+      { onConflict: "checklist_item_id,user_id", ignoreDuplicates: true },
+    )
+    .select("id");
 
-  if (existingResult.error) throw new Error(existingResult.error.message);
-  if (existingResult.data) {
-    if (existingResult.data.duty === duty) return;
-    const { error } = await supabase.from("checklist_item_assignees").update({ duty }).eq("id", existingResult.data.id);
-    if (error) throw new Error(error.message);
-    notifyAssignment("checklist_item", checklistItemId, userId, duty);
-    return;
-  }
-
-  const { error } = await supabase.from("checklist_item_assignees").insert({
-    checklist_item_id: checklistItemId,
-    user_id: userId,
-    duty,
-  });
   if (error) throw new Error(error.message);
-  notifyAssignment("checklist_item", checklistItemId, userId, duty);
+  // ON CONFLICT DO NOTHING returns no row when the member was already assigned,
+  // so a repeat click cannot re-announce the assignment.
+  if (data && data.length > 0) notifyChecklistItemAssignment(checklistItemId, userId);
 }
 
 export async function removeChecklistItemAssignee(checklistItemId: string, userId: string): Promise<void> {

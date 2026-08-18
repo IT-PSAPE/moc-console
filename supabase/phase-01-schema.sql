@@ -445,12 +445,13 @@ CREATE TABLE IF NOT EXISTS public.checklist_items (
 );
 
 -- checklist_item_assignees (phase-25 junction table) — after checklist_items + users
+-- (duty retired by migration 20260818120000; assignment is one row per member)
 CREATE TABLE IF NOT EXISTS public.checklist_item_assignees (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   checklist_item_id uuid NOT NULL REFERENCES public.checklist_items(id) ON DELETE CASCADE,
   user_id           uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  duty              text NOT NULL,
-  UNIQUE (checklist_item_id, user_id, duty)
+  CONSTRAINT checklist_item_assignees_checklist_item_id_user_id_key
+    UNIQUE (checklist_item_id, user_id)
 );
 
 -- youtube_connections (phase-13; token_expires_at NOT NULL folded from phase-16;
@@ -771,8 +772,8 @@ CREATE INDEX IF NOT EXISTS idx_checklist_sections_checklist_id_sort_order ON pub
 CREATE INDEX IF NOT EXISTS idx_checklist_items_checklist_id_sort_order ON public.checklist_items (checklist_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_checklist_items_section_id_sort_order   ON public.checklist_items (section_id, sort_order);
 
--- checklist_item_assignees (phase-25)
-CREATE INDEX IF NOT EXISTS idx_checklist_item_assignees_item_user ON public.checklist_item_assignees (checklist_item_id, user_id);
+-- checklist_item_assignees (phase-25) — the (checklist_item_id, user_id) index is
+-- the UNIQUE constraint's own index (migration 20260818120000).
 
 -- youtube_connections / streams (phase-13)
 CREATE INDEX IF NOT EXISTS idx_youtube_connections_workspace_id ON public.youtube_connections (workspace_id);

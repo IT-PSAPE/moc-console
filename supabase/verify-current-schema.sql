@@ -56,6 +56,7 @@ expected_columns(table_schema, table_name, column_name, data_type, is_nullable) 
 expected_indexes(schema_name, table_name, index_name) AS (
   VALUES
     ('public', 'checklist_item_assignees', 'idx_checklist_item_assignees_user_id'),
+    ('public', 'checklist_item_assignees', 'checklist_item_assignees_checklist_item_id_user_id_key'),
     ('public', 'notification_recipients', 'idx_notification_recipients_user_id'),
     ('public', 'notification_routes', 'idx_notification_routes_group_chat_id'),
     ('public', 'notification_outbox', 'idx_notification_outbox_workspace_id'),

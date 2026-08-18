@@ -70,6 +70,36 @@ The first tracked reliability migration is:
    It makes the stale threshold an initial activity threshold rather than a
    repeating reminder cadence, while preserving one alert when a booking newly
    becomes overdue.
+6. `20260810120000_stream_created_notification_skips_finished_streams` — source:
+   [`migrations/20260810120000_stream_created_notification_skips_finished_streams.sql`](migrations/20260810120000_stream_created_notification_skips_finished_streams.sql).
+   It stops the stream-created announcement firing for streams that already
+   completed before the row reached the console.
+7. `20260810130000_delete_finished_streams_and_meetings` — source:
+   [`migrations/20260810130000_delete_finished_streams_and_meetings.sql`](migrations/20260810130000_delete_finished_streams_and_meetings.sql).
+   It lets finished streams and past meetings be deleted without leaving
+   derived notification rows behind.
+8. `20260814120000_true_stale_days_and_silent_auto_archive` — source:
+   [`migrations/20260814120000_true_stale_days_and_silent_auto_archive.sql`](migrations/20260814120000_true_stale_days_and_silent_auto_archive.sql).
+   It makes the stale claim RPCs report the real days-since-activity and keeps
+   the weekly auto-archive cron silent while manual status changes keep
+   notifying.
+9. `20260818120000_checklist_item_assignment_without_duty` — source:
+   [`migrations/20260818120000_checklist_item_assignment_without_duty.sql`](migrations/20260818120000_checklist_item_assignment_without_duty.sql).
+   It retires the per-assignment `duty` label on checklist items, collapsing
+   duplicate member rows and narrowing the uniqueness key to
+   (checklist_item_id, user_id). Request assignments keep their duty. Apply it
+   BEFORE the console and API deploys: the console upserts on the narrower
+   conflict target and no longer sends a duty, so neither write is accepted by
+   the old shape. The migration is not backward compatible in the other
+   direction either — deploy the code immediately after it.
+10. `20260818130000_youtube_channel_replacement_clears_inflight_streams` — source:
+    [`migrations/20260818130000_youtube_channel_replacement_clears_inflight_streams.sql`](migrations/20260818130000_youtube_channel_replacement_clears_inflight_streams.sql).
+    A workspace that authorises a different YouTube channel now has its in-flight
+    streams cleared during the reconnect, the way replacing a Zoom account already
+    clears its meetings. Without it the daily stream-sync cron compares the new
+    channel against the connection row the reconnect just rewrote and deletes the
+    old channel's streams unattended. Finished streams are kept. Apply it before
+    the stream-sync cron is scheduled.
 
 ## Script history
 

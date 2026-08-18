@@ -4,7 +4,7 @@ import { useChecklistAssignees } from "./use-checklist-assignees";
 
 type ChecklistAssigneesContextValue = {
   state: { assigneesMap: Map<string, ResolvedAssignee[]> };
-  actions: { add: (itemId: string, userId: string, duty: string) => Promise<void>; remove: (itemId: string, userId: string) => Promise<void> };
+  actions: { add: (itemId: string, userId: string) => Promise<void>; remove: (itemId: string, userId: string) => Promise<void> };
 };
 
 const ChecklistAssigneesContext = createContext<ChecklistAssigneesContextValue | null>(null);

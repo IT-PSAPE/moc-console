@@ -23,9 +23,9 @@ export function useChecklistAssignees(checklistId: string) {
 
   useEffect(() => { void refresh(); }, [refresh]);
 
-  const add = useCallback(async (itemId: string, userId: string, duty: string) => {
+  const add = useCallback(async (itemId: string, userId: string) => {
     try {
-      await addChecklistItemAssignee(itemId, userId, duty);
+      await addChecklistItemAssignee(itemId, userId);
       await refresh();
     } catch (error) {
       toast({ title: "Failed to add assignee", description: getErrorMessage(error, "Could not add assignee."), variant: "error" });

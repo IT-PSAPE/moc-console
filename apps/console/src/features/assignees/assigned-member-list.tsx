@@ -24,7 +24,7 @@ export function AssignedMemberList({ assignees, onRemove, emptyLabel }: Assigned
   return (
     <div className="flex flex-col gap-1">
       {assignees.map((assignee) => (
-        <div key={`${assignee.id}-${assignee.duty}`} className="flex min-h-11 items-center gap-2 rounded-lg py-1">
+        <div key={assignee.id} className="flex min-h-11 items-center gap-2 rounded-lg py-1">
           <UserAvatar size="sm" user={assignee} />
           <div className="min-w-0 flex-1">
             <Label.sm>{assignee.name} {assignee.surname}</Label.sm>
