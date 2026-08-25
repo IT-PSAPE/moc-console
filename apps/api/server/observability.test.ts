@@ -77,6 +77,8 @@ describe("observability", () => {
     assert.equal(context.requestId, "monitor-123")
     assert.equal(response.headers["X-Request-Id"], "monitor-123")
     assert.equal(response.headers["Cache-Control"], "no-store, max-age=0, must-revalidate")
+    assert.equal(response.headers["CDN-Cache-Control"], "no-store")
+    assert.equal(response.headers["Vercel-CDN-Cache-Control"], "no-store")
   })
 
   it("request correlation replaces invalid request IDs", () => {

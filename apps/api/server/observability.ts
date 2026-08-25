@@ -74,6 +74,8 @@ export function startApiRequest(request: ApiRequest, response: ObservedApiRespon
   }
   response.setHeader("X-Request-Id", context.requestId)
   response.setHeader("Cache-Control", "no-store, max-age=0, must-revalidate")
+  response.setHeader("CDN-Cache-Control", "no-store")
+  response.setHeader("Vercel-CDN-Cache-Control", "no-store")
   return context
 }
 
