@@ -3,6 +3,7 @@ import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 import { fetchAuthenticatedChannelId, youtubeApiFetch } from "@/lib/youtube-client"
 import { providerRequestError } from "@/lib/provider-request-error"
+import { fetchStreams } from "./fetch-streams"
 import { notifyStreamCreated } from "./notify-event"
 import { getDeletedBroadcastIds, getUnfinishedTrackedBroadcastIds, isCurrentOrUpcomingBroadcast, type StreamReconciliationRow } from "./youtube-broadcast-reconciliation"
 
@@ -135,12 +136,16 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
-  const [currentBroadcasts, existingResult] = await Promise.all([
+  const [currentBroadcasts, existingStreams] = await Promise.all([
     fetchCurrentBroadcasts(),
-    supabase.from("streams").select("youtube_broadcast_id, created_by, stream_status, actual_end_time").eq("workspace_id", workspaceId),
+    fetchStreams(workspaceId),
   ])
-  if (existingResult.error) throw new Error(existingResult.error.message)
-  const trackedStreams = (existingResult.data ?? []) as Array<StreamReconciliationRow & { created_by: string }>
+  const trackedStreams: Array<StreamReconciliationRow & { created_by: string }> = existingStreams.map((stream) => ({
+    actual_end_time: stream.actualEndTime,
+    created_by: stream.createdBy,
+    stream_status: stream.streamStatus,
+    youtube_broadcast_id: stream.youtubeBroadcastId,
+  }))
   const existingCreators = new Map(trackedStreams.map((row) => [row.youtube_broadcast_id, row.created_by]))
 
   const unfinishedIds = getUnfinishedTrackedBroadcastIds(trackedStreams, currentBroadcasts.map((broadcast) => broadcast.id))
@@ -181,26 +186,11 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
     if (error) throw new Error(error.message)
   }
 
-  const { data: rows, error } = await supabase
-    .from("streams")
-    .select("id, workspace_id, youtube_broadcast_id, youtube_stream_id, title, description, thumbnail_url, privacy_status, is_for_kids, scheduled_start_time, actual_start_time, actual_end_time, stream_status, stream_url, stream_key, ingestion_url, category_id, tags, latency_preference, enable_dvr, enable_embed, enable_auto_start, enable_auto_stop, playlist_id, created_by, created_at, updated_at, notified_at")
-    .eq("workspace_id", workspaceId)
-    .order("created_at", { ascending: false })
-  if (error) throw new Error(error.message)
-  // Only the streams this sync adopted are announced. Announcing every
-  // un-notified row re-sent the entire backlog on each sync, and because the
-  // per-user notification rate limit rejected most of that burst, `notified_at`
-  // stayed null and the same streams queued up again on the next one.
-  for (const row of rows ?? []) {
-    if (!row.notified_at && adoptedBroadcastIds.has(row.youtube_broadcast_id)) void notifyStreamCreated(row.id)
+  const syncedStreams = await fetchStreams(workspaceId)
+  // Only streams first adopted by this sync are announced. Existing broadcasts
+  // never enter adoptedBroadcastIds, so a later sync cannot resend the backlog.
+  for (const stream of syncedStreams) {
+    if (adoptedBroadcastIds.has(stream.youtubeBroadcastId)) void notifyStreamCreated(stream.id)
   }
-  return (rows ?? []).map((row) => ({
-    id: row.id, workspaceId: row.workspace_id, youtubeBroadcastId: row.youtube_broadcast_id, youtubeStreamId: row.youtube_stream_id,
-    title: row.title, description: row.description, thumbnailUrl: row.thumbnail_url, privacyStatus: row.privacy_status as Stream["privacyStatus"], isForKids: row.is_for_kids,
-    scheduledStartTime: row.scheduled_start_time, actualStartTime: row.actual_start_time, actualEndTime: row.actual_end_time, streamStatus: row.stream_status as Stream["streamStatus"],
-    streamUrl: row.stream_url, streamKey: row.stream_key, ingestionUrl: row.ingestion_url, categoryId: row.category_id ?? null, tags: row.tags ?? [],
-    latencyPreference: (row.latency_preference as Stream["latencyPreference"]) || "normal", enableDvr: row.enable_dvr ?? true, enableEmbed: row.enable_embed ?? true,
-    enableAutoStart: row.enable_auto_start ?? false, enableAutoStop: row.enable_auto_stop ?? true, playlistId: row.playlist_id ?? null,
-    createdBy: row.created_by, createdAt: row.created_at, updatedAt: row.updated_at,
-  }))
+  return syncedStreams
 }

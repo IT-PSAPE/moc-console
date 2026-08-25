@@ -1,5 +1,6 @@
 import type { ZoomConnection, ZoomConnectionStatus, ZoomMeeting } from "@moc/types/streams/zoom"
 import { supabase } from "@moc/data/supabase"
+import { fetchProviderRecords } from "@/lib/provider-records-api"
 import { getCurrentWorkspaceId } from "./current-workspace"
 
 type ZoomConnectionRow = {
@@ -74,9 +75,6 @@ function mapMeetingRow(row: ZoomMeetingRow): ZoomMeeting {
   }
 }
 
-const MEETING_COLUMNS =
-  "id, workspace_id, zoom_meeting_id, topic, description, meeting_type, start_time, duration, timezone, join_url, password, recurrence_type, recurrence_interval, recurrence_days, waiting_room, mute_on_entry, continuous_chat, created_by, created_at, updated_at"
-
 export async function fetchZoomConnection(workspaceId?: string): Promise<ZoomConnection | null> {
   const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId()
   const { data, error } = await supabase
@@ -111,32 +109,11 @@ export async function fetchZoomConnectionId(workspaceId?: string): Promise<strin
 }
 
 export async function fetchZoomMeetings(workspaceId?: string): Promise<ZoomMeeting[]> {
-  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId()
-  const { data, error } = await supabase
-    .from("zoom_meetings")
-    .select(MEETING_COLUMNS)
-    .eq("workspace_id", resolvedWorkspaceId)
-    .order("start_time", { ascending: true, nullsFirst: false })
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return ((data ?? []) as ZoomMeetingRow[]).map(mapMeetingRow)
+  const rows = await fetchProviderRecords<ZoomMeetingRow>("zoom-meetings", { workspaceId })
+  return rows.map(mapMeetingRow)
 }
 
 export async function fetchZoomMeetingById(id: string, workspaceId?: string): Promise<ZoomMeeting | undefined> {
-  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId()
-  const { data, error } = await supabase
-    .from("zoom_meetings")
-    .select(MEETING_COLUMNS)
-    .eq("id", id)
-    .eq("workspace_id", resolvedWorkspaceId)
-    .maybeSingle()
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return data ? mapMeetingRow(data as ZoomMeetingRow) : undefined
+  const [row] = await fetchProviderRecords<ZoomMeetingRow>("zoom-meetings", { id, workspaceId })
+  return row ? mapMeetingRow(row) : undefined
 }

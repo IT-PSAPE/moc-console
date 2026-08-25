@@ -7,7 +7,7 @@ import { providerRequestError } from "@/lib/provider-request-error"
 import { notifyMeetingCreated } from "./notify-event"
 import { getZoomMeetingsToVerify, isCurrentOrUpcomingMeeting, type ZoomMeetingReconciliationRow } from "./zoom-meeting-reconciliation"
 import { queueZoomMeetingOperation } from "./zoom-meeting-operation-queue"
-import { fetchZoomConnectionId } from "./fetch-zoom"
+import { fetchZoomConnectionId, fetchZoomMeetings } from "./fetch-zoom"
 
 type ZoomMeetingSyncRow = {
   id: number
@@ -90,12 +90,14 @@ export async function syncZoomMeetingsWithinOperation(workspaceId: string): Prom
     pageToken = data.next_page_token
   } while (pageToken)
 
-  const { data: existingRows, error: existingRowsError } = await supabase
-    .from("zoom_meetings")
-    .select("id, zoom_meeting_id, recurrence_type, start_time, created_by")
-    .eq("workspace_id", workspaceId)
-  if (existingRowsError) throw new Error(existingRowsError.message)
-  const localMeetings = (existingRows ?? []) as Array<ZoomMeetingReconciliationRow & { created_by: string }>
+  const existingMeetings = await fetchZoomMeetings(workspaceId)
+  const localMeetings: Array<ZoomMeetingReconciliationRow & { created_by: string }> = existingMeetings.map((meeting) => ({
+    created_by: meeting.createdBy,
+    id: meeting.id,
+    recurrence_type: meeting.recurrenceType,
+    start_time: meeting.startTime,
+    zoom_meeting_id: meeting.zoomMeetingId,
+  }))
   const existingCreators = new Map(localMeetings.map((row) => [row.zoom_meeting_id, row.created_by]))
 
   // Each meeting that fell out of the upcoming list is confirmed by id: only a
@@ -137,24 +139,11 @@ export async function syncZoomMeetingsWithinOperation(workspaceId: string): Prom
     if (error) throw new Error(error.message)
   }
 
-  const { data: rows, error } = await supabase
-    .from("zoom_meetings")
-    .select("id, workspace_id, zoom_meeting_id, topic, description, meeting_type, start_time, duration, timezone, join_url, password, recurrence_type, recurrence_interval, recurrence_days, waiting_room, mute_on_entry, continuous_chat, created_by, created_at, updated_at, notified_at")
-    .eq("workspace_id", workspaceId)
-    .order("start_time", { ascending: true, nullsFirst: false })
-  if (error) throw new Error(error.message)
-  // Only the meetings this sync adopted are announced. Announcing every
-  // un-notified row re-sent the whole backlog on each sync, and because the
-  // per-user notification rate limit rejected most of that burst, `notified_at`
-  // stayed null and the same meetings queued up again on the next one.
-  for (const row of rows ?? []) {
-    if (!row.notified_at && adoptedMeetingIds.has(row.zoom_meeting_id)) void notifyMeetingCreated(row.id)
+  const syncedMeetings = await fetchZoomMeetings(workspaceId)
+  // Only meetings first adopted by this sync are announced. Existing meetings
+  // never enter adoptedMeetingIds, so a later sync cannot resend the backlog.
+  for (const meeting of syncedMeetings) {
+    if (adoptedMeetingIds.has(meeting.zoomMeetingId)) void notifyMeetingCreated(meeting.id)
   }
-  return (rows ?? []).map((row) => ({
-    id: row.id, workspaceId: row.workspace_id, zoomMeetingId: row.zoom_meeting_id, topic: row.topic, description: row.description,
-    meetingType: row.meeting_type, startTime: row.start_time, duration: row.duration, timezone: row.timezone, joinUrl: row.join_url,
-    password: row.password, recurrenceType: row.recurrence_type, recurrenceInterval: row.recurrence_interval,
-    recurrenceDays: row.recurrence_days, waitingRoom: row.waiting_room, muteOnEntry: row.mute_on_entry, continuousChat: row.continuous_chat,
-    createdBy: row.created_by, createdAt: row.created_at, updatedAt: row.updated_at,
-  }))
+  return syncedMeetings
 }
