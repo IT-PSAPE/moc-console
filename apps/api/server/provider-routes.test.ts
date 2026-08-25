@@ -10,6 +10,7 @@ import { authorizeProviderRoute } from "./provider-route-policy.js"
 // proxy URL (see provider-proxy-path.ts in the console and the rewrites in
 // vercel.json), so both forms have to authorize to the same upstream path.
 const YOUTUBE_CALLS: Array<[string, string, string]> = [
+  ["GET", "/api/youtube/v3/moc-records", "/moc-records"],
   ["GET", "/api/youtube/v3/videoCategories?part=snippet&regionCode=US", "/videoCategories?part=snippet&regionCode=US"],
   // Confirming the connection still authenticates as the recorded channel, which
   // is what authorizes deleting streams that vanished from YouTube.
@@ -29,6 +30,7 @@ const YOUTUBE_CALLS: Array<[string, string, string]> = [
 ]
 
 const ZOOM_CALLS: Array<[string, string, string]> = [
+  ["GET", "/api/zoom/v2/moc-records?id=00000000-0000-4000-8000-000000000001", "/moc-records?id=00000000-0000-4000-8000-000000000001"],
   // Every Zoom route is nested, so none of them arrive un-collapsed.
   ["GET", "/api/zoom/v2/_proxy?type=upcoming&page_size=30&providerPath=users%2Fme%2Fmeetings", "/users/me/meetings?type=upcoming&page_size=30"],
   ["POST", "/api/zoom/v2/_proxy?providerPath=users%2Fme%2Fmeetings", "/users/me/meetings"],

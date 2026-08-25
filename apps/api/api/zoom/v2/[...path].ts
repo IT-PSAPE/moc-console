@@ -6,6 +6,12 @@ import { authorizeProviderRoute, prepareProviderBody, type ProviderRouteRule } f
 import { providerFailure } from "../../../server/provider-failure.js"
 import { allowProviderProxyRequest } from "../../../server/provider-rate-limit.js"
 import { observeApiRequest } from "../../../server/observability.js"
+import {
+  PROVIDER_RECORDS_PATH,
+  readProviderRecords,
+  resolveProviderRecordsResponse,
+  type ProviderRecordsReader,
+} from "../../../server/provider-records.js"
 
 type ApiRequest = {
   body?: unknown
@@ -20,11 +26,28 @@ type ApiResponse = {
   statusCode: number
 }
 
+export type ZoomProxyDependencies = {
+  authenticate: typeof requireAuthenticatedUser
+  authorize: typeof requireWorkspacePermission
+  proxyRequest: typeof proxyZoomApiRequest
+  rateLimit: typeof allowProviderProxyRequest
+  readRecords: ProviderRecordsReader
+}
+
+const productionDependencies: ZoomProxyDependencies = {
+  authenticate: requireAuthenticatedUser,
+  authorize: requireWorkspacePermission,
+  proxyRequest: proxyZoomApiRequest,
+  rateLimit: allowProviderProxyRequest,
+  readRecords: readProviderRecords,
+}
+
 const WORKSPACE_HEADER = "x-moc-workspace"
 const ROUTE_PREFIX = "/api/zoom/v2"
 
 const JSON_BODY_LIMIT = 128 * 1024
 export const ZOOM_ROUTES: readonly ProviderRouteRule[] = [
+  { method: "GET", path: /^\/moc-records$/, query: ["id"], permission: "can_read", body: "none", maxBodyBytes: 0 },
   { method: "GET", path: /^\/users\/me\/meetings$/, query: ["type", "page_size", "next_page_token"], permission: "can_read", body: "none", maxBodyBytes: 0 },
   { method: "POST", path: /^\/users\/me\/meetings$/, query: [], permission: "can_create", body: "json", maxBodyBytes: JSON_BODY_LIMIT },
   { method: "GET", path: /^\/meetings\/[A-Za-z0-9_-]+$/, query: [], permission: "can_read", body: "none", maxBodyBytes: 0 },
@@ -32,7 +55,11 @@ export const ZOOM_ROUTES: readonly ProviderRouteRule[] = [
   { method: "DELETE", path: /^\/meetings\/[A-Za-z0-9_-]+$/, query: [], permission: "can_delete", body: "none", maxBodyBytes: 0 },
 ]
 
-async function handleZoomProxy(request: ApiRequest, response: ApiResponse): Promise<void> {
+async function handleZoomProxy(
+  request: ApiRequest,
+  response: ApiResponse,
+  dependencies: ZoomProxyDependencies,
+): Promise<void> {
   const isPreflight = request.method === "OPTIONS"
   writeCorsHeaders(request.headers, response, { preflight: isPreflight })
   if (isPreflight) {
@@ -45,7 +72,7 @@ async function handleZoomProxy(request: ApiRequest, response: ApiResponse): Prom
 
   let userId: string
   try {
-    const user = await requireAuthenticatedUser(request.headers)
+    const user = await dependencies.authenticate(request.headers)
     userId = user.userId
   } catch (error) {
     response.statusCode = error instanceof AuthError ? 401 : 500
@@ -63,8 +90,8 @@ async function handleZoomProxy(request: ApiRequest, response: ApiResponse): Prom
   let route
   try {
     route = authorizeProviderRoute(request.method, request.url, ROUTE_PREFIX, ZOOM_ROUTES)
-    await requireWorkspacePermission(userId, workspaceId, route.permission)
-    if (!await allowProviderProxyRequest(response, userId, workspaceId, "zoom", request.method)) return
+    await dependencies.authorize(userId, workspaceId, route.permission)
+    if (!await dependencies.rateLimit(response, userId, workspaceId, "zoom", request.method)) return
   } catch (error) {
     console.error("Zoom proxy authorization failed:", error)
     const failure = providerFailure("Zoom", error)
@@ -74,8 +101,15 @@ async function handleZoomProxy(request: ApiRequest, response: ApiResponse): Prom
   }
 
   try {
+    if (route.path === PROVIDER_RECORDS_PATH || route.path.startsWith(`${PROVIDER_RECORDS_PATH}?`)) {
+      const result = await resolveProviderRecordsResponse("zoom", route.path, workspaceId, dependencies.readRecords)
+      response.statusCode = result.status
+      response.end(JSON.stringify(result.body))
+      return
+    }
+
     const prepared = prepareProviderBody(request.body, route.body, route.maxBodyBytes)
-    const proxyResponse = await proxyZoomApiRequest({
+    const proxyResponse = await dependencies.proxyRequest({
       body: prepared.body,
       contentType: prepared.contentType ?? request.headers?.["content-type"] ?? null,
       method: request.method ?? "GET",
@@ -99,8 +133,14 @@ async function handleZoomProxy(request: ApiRequest, response: ApiResponse): Prom
   }
 }
 
-export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
-  await observeApiRequest("zoom.proxy", request, response, async () => {
-    await handleZoomProxy(request, response)
-  })
+export function createZoomProxyHandler(
+  dependencies: ZoomProxyDependencies = productionDependencies,
+): (request: ApiRequest, response: ApiResponse) => Promise<void> {
+  return async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
+    await observeApiRequest("zoom.proxy", request, response, async () => {
+      await handleZoomProxy(request, response, dependencies)
+    })
+  }
 }
+
+export default createZoomProxyHandler()

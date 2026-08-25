@@ -4,24 +4,30 @@ import { describe, it } from "node:test"
 import { requestProviderRecords, type ProviderRecordsClientDependencies } from "./provider-records-request"
 
 type CapturedRequest = {
-  input: string | URL | Request
   init: RequestInit | undefined
+  path: string
+  provider: "youtube" | "zoom"
 }
 
 function dependencies(captured: CapturedRequest[]): ProviderRecordsClientDependencies {
+  function response(): Response {
+    return Response.json({ records: [{ id: "record-1" }] })
+  }
+
   return {
-    buildSessionHeaders: async () => ({ "X-MOC-Session": "session-token" }),
-    getWorkspaceId: async () => "workspace-1",
-    request: async (input, init) => {
-      captured.push({ input, init })
-      return Response.json({ records: [{ id: "record-1" }] })
+    requestYouTube: async (path, init) => {
+      captured.push({ init, path, provider: "youtube" })
+      return response()
     },
-    resolveApiUrl: (path) => `https://api.example.com${path}`,
+    requestZoom: async (path, init) => {
+      captured.push({ init, path, provider: "zoom" })
+      return response()
+    },
   }
 }
 
 describe("provider records API client", () => {
-  it("requests one Zoom meeting through the API with browser caching disabled", async () => {
+  it("requests one Zoom meeting through its protected gateway with browser caching disabled", async () => {
     const captured: CapturedRequest[] = []
 
     const records = await requestProviderRecords<{ id: string }>(
@@ -31,24 +37,25 @@ describe("provider records API client", () => {
     )
 
     assert.deepEqual(records, [{ id: "record-1" }])
-    assert.equal(captured.length, 1)
-    assert.equal(captured[0].input, "https://api.example.com/api/provider-records/zoom-meetings?id=00000000-0000-4000-8000-000000000001")
-    assert.equal(captured[0].init?.cache, "no-store")
-    assert.deepEqual(captured[0].init?.headers, {
-      "X-MOC-Session": "session-token",
-      "X-MOC-Workspace": "workspace-1",
-    })
+    assert.deepEqual(captured, [{
+      init: {
+        cache: "no-store",
+        headers: { "X-MOC-Workspace": "workspace-1" },
+      },
+      path: "/moc-records?id=00000000-0000-4000-8000-000000000001",
+      provider: "zoom",
+    }])
   })
 
-  it("requests the YouTube stream list for the current workspace", async () => {
+  it("requests the YouTube stream list through its protected gateway", async () => {
     const captured: CapturedRequest[] = []
 
     await requestProviderRecords("youtube-streams", {}, dependencies(captured))
 
-    assert.equal(captured[0].input, "https://api.example.com/api/provider-records/youtube-streams")
-    assert.deepEqual(captured[0].init?.headers, {
-      "X-MOC-Session": "session-token",
-      "X-MOC-Workspace": "workspace-1",
-    })
+    assert.deepEqual(captured, [{
+      init: { cache: "no-store", headers: undefined },
+      path: "/moc-records",
+      provider: "youtube",
+    }])
   })
 })

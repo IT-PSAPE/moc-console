@@ -6,6 +6,7 @@ import { authorizeProviderRoute, prepareProviderBody, type ProviderRouteRule } f
 import { providerFailure } from "../../../server/provider-failure.js"
 import { allowProviderProxyRequest } from "../../../server/provider-rate-limit.js"
 import { observeApiRequest } from "../../../server/observability.js"
+import { PROVIDER_RECORDS_PATH, resolveProviderRecordsResponse } from "../../../server/provider-records.js"
 
 type ApiRequest = {
   body?: unknown
@@ -26,6 +27,7 @@ const ROUTE_PREFIX = "/api/youtube/v3"
 const JSON_BODY_LIMIT = 256 * 1024
 const THUMBNAIL_BODY_LIMIT = 2 * 1024 * 1024
 export const YOUTUBE_ROUTES: readonly ProviderRouteRule[] = [
+  { method: "GET", path: /^\/moc-records$/, query: ["id"], permission: "can_read", body: "none", maxBodyBytes: 0 },
   { method: "GET", path: /^\/channels$/, query: ["part", "mine"], permission: "can_read", body: "none", maxBodyBytes: 0 },
   { method: "GET", path: /^\/videoCategories$/, query: ["part", "regionCode"], permission: "can_read", body: "none", maxBodyBytes: 0 },
   { method: "GET", path: /^\/playlists$/, query: ["part", "mine", "maxResults", "pageToken"], permission: "can_read", body: "none", maxBodyBytes: 0 },
@@ -73,6 +75,13 @@ async function handleYouTubeProxy(request: ApiRequest, response: ApiResponse): P
     const route = authorizeProviderRoute(request.method, request.url, ROUTE_PREFIX, YOUTUBE_ROUTES)
     await requireWorkspacePermission(userId, workspaceId, route.permission)
     if (!await allowProviderProxyRequest(response, userId, workspaceId, "youtube", request.method)) return
+    if (route.path === PROVIDER_RECORDS_PATH || route.path.startsWith(`${PROVIDER_RECORDS_PATH}?`)) {
+      const result = await resolveProviderRecordsResponse("youtube", route.path, workspaceId)
+      response.statusCode = result.status
+      response.end(JSON.stringify(result.body))
+      return
+    }
+
     const prepared = prepareProviderBody(request.body, route.body, route.maxBodyBytes)
     const proxyResponse = await proxyYouTubeApiRequest({
       body: prepared.body,
