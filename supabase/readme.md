@@ -101,6 +101,14 @@ The first tracked reliability migration is:
     old channel's streams unattended. Finished streams are kept. Apply it before
     the stream-sync cron is scheduled.
 
+11. `20260903120000_restore_broadcast_domain` â€” source:
+    [`migrations/20260903120000_restore_broadcast_domain.sql`](migrations/20260903120000_restore_broadcast_domain.sql).
+    It restores a minimal Broadcast domain after the July 2026 removal, with
+    workspace-scoped `broadcasts` and `broadcast_items` tables, a public
+    `broadcast-media` Storage bucket, and anonymous read policies limited to
+    published broadcasts so the separate public player app can loop and preload
+    audio-only or video-only playlists.
+
 ## Script history
 
 The phase files are the consolidated historical baseline:

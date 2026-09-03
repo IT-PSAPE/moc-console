@@ -18,6 +18,10 @@ const aliasEntries = [
     replacement: fileURLToPath(new URL('../../packages/data/src', import.meta.url)),
   },
   {
+    find: '@moc/notifications',
+    replacement: fileURLToPath(new URL('../../packages/notifications/src', import.meta.url)),
+  },
+  {
     find: '@moc/types',
     replacement: fileURLToPath(new URL('../../packages/types/src', import.meta.url)),
   },

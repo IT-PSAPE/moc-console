@@ -7,8 +7,6 @@
     "module": "ESNext",
     "types": ["vite/client"],
     "skipLibCheck": true,
-
-    /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
@@ -19,17 +17,10 @@
       "@moc/ui/styles.css": ["../../packages/ui/src/index.css"],
       "@moc/ui/*": ["../../packages/ui/src/*"],
       "@moc/data/*": ["../../packages/data/src/*"],
-      "@moc/notifications": ["../../packages/notifications/src/index.ts"],
-      "@moc/notifications/*": ["../../packages/notifications/src/*"],
       "@moc/types/*": ["../../packages/types/src/*"],
       "@moc/utils/*": ["../../packages/utils/src/*"],
-      "@/*": ["./src/*"],
-      "@features/*": ["./src/features/*"],
-      "@hooks/*": ["./src/hooks/*"],
-      "@screens/*": ["./src/screens/*"]
+      "@/*": ["./src/*"]
     },
-
-    /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
