@@ -7,7 +7,8 @@
 
 WITH expected_tables(name) AS (
   VALUES
-    ('api_rate_limit_windows'), ('booking_items'), ('bookings'), ('bug_reports'),
+    ('api_rate_limit_windows'), ('booking_items'), ('bookings'),
+    ('broadcast_items'), ('broadcasts'), ('bug_reports'),
     ('checklist_item_assignees'), ('checklist_items'), ('checklist_sections'),
     ('checklist_templates'), ('checklists'), ('equipment'),
     ('notification_deliveries'), ('notification_ingest_replays'),
@@ -16,7 +17,8 @@ WITH expected_tables(name) AS (
     ('request_activity'), ('request_assignees'), ('request_comments'), ('requests'),
     ('roles'), ('streams'), ('telegram_group_topics'), ('telegram_groups'),
     ('telegram_link_tokens'), ('telegram_webhook_updates'), ('template_items'),
-    ('template_sections'), ('users'), ('workspace_join_requests'),
+    ('template_sections'), ('users'), ('venue_booking_slots'), ('venue_bookings'),
+    ('venues'), ('workspace_join_requests'),
     ('workspace_users'), ('workspaces'), ('youtube_connections'),
     ('zoom_connections'), ('zoom_meetings')
 ),

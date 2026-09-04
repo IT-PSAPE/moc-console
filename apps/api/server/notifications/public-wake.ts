@@ -27,12 +27,18 @@ export type PublicWakeDependencies = {
   logError: (message: string, error: unknown) => void
 }
 
+export const ENTITY_TABLES: Record<PublicNotificationWakeOptions["entityType"], string> = {
+  request: "requests",
+  booking: "bookings",
+  venue_booking: "venue_bookings",
+}
+
 async function lookupPublicWakeEntity(
   entityType: PublicNotificationWakeOptions["entityType"],
   entityId: string,
   trackingCode: string,
 ): Promise<string | null> {
-  const table = entityType === "request" ? "requests" : "bookings"
+  const table = ENTITY_TABLES[entityType]
   const admin = getSupabaseAdmin()
   const { data, error } = await admin
     .from(table)

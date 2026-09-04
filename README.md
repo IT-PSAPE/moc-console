@@ -101,6 +101,32 @@ Preview the production build:
 npm run preview
 ```
 
+### Viewing a dev server from another device (Tailscale)
+
+All three browser apps bind every network interface and accept MagicDNS hostnames,
+so anything signed in to the same tailnet — a phone, a tablet, another laptop —
+can open a running dev server with no tunnel and no public URL:
+
+```bash
+bun run dev:console     # http://<machine>.<tailnet>.ts.net:5173
+bun run dev:broadcast   # http://<machine>.<tailnet>.ts.net:5174
+bun run dev:request     # http://<machine>.<tailnet>.ts.net:5176
+```
+
+Each server prints its own tailnet URL alongside Vite's local one at startup.
+Nothing is exposed to the public internet: MagicDNS names only resolve for
+devices already authenticated to the tailnet, and the allow-list is limited to
+`.ts.net`.
+
+The behaviour lives in [scripts/vite-tailscale.ts](scripts/vite-tailscale.ts)
+and is shared by all three apps. If Tailscale is not installed, not running, or
+logged out, the plugin stays quiet and the dev server starts as normal — it
+just prints no tailnet line.
+
+Note that these are plain HTTP origins. That is fine for looking at pages, but
+a browser will not install the request app as a PWA or grant a secure-context
+API over one. Front it with `tailscale serve` if you need HTTPS on the tailnet.
+
 ## Database setup
 
 The SQL source of truth now lives at [`supabase/`](supabase/). See its
@@ -196,6 +222,8 @@ Main app sections:
 - `/equipment/:id`
 - `/bookings`
 - `/bookings/:id`
+- `/venues`
+- `/venues/:id`
 - `/streams`
 - `/streams/stream/:id`
 - `/streams/meeting/:id`

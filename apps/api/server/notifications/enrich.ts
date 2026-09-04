@@ -186,6 +186,66 @@ export async function enrichStream(streamId: string): Promise<TokenValues> {
   }
 }
 
+type VenueBookingRow = {
+  title: string;
+  requested_by: string;
+  tracking_code: string;
+  who: string;
+  what: string;
+  when_text: string;
+  where_text: string;
+  why: string;
+  how: string;
+  notes: string | null;
+  starts_at: string;
+  ends_at: string;
+  cancel_reason: string | null;
+  cancelled_at: string | null;
+  venues: { name: string; location: string | null } | { name: string; location: string | null }[] | null;
+};
+
+// Looked up by id (venue_bookings.id === notification_outbox.entity_id),
+// the same identifier enrichRequest uses. `status` is deliberately not
+// returned here: dispatch.ts's buildTokens derives it from startsAt/endsAt
+// and the event that fired, which already wins over anything this would add.
+export async function enrichVenueBooking(venueBookingId: string, options?: { throwOnError?: boolean }): Promise<TokenValues> {
+  try {
+    const admin = getSupabaseAdmin();
+    const { data, error } = await admin
+      .from("venue_bookings")
+      .select(
+        "title, requested_by, tracking_code, who, what, when_text, where_text, why, how, notes, starts_at, ends_at, cancel_reason, cancelled_at, venues:venue_id(name, location)",
+      )
+      .eq("id", venueBookingId)
+      .maybeSingle();
+    if (error) throw new Error("Venue booking enrichment failed");
+    if (!data) return {};
+    const row = data as unknown as VenueBookingRow;
+    const venue = Array.isArray(row.venues) ? row.venues[0] : row.venues;
+    return {
+      title: row.title,
+      requesterName: row.requested_by,
+      trackingCode: row.tracking_code,
+      venueName: venue?.name,
+      venueLocation: venue?.location,
+      startsAt: fmtDate(row.starts_at),
+      endsAt: fmtDate(row.ends_at),
+      who: row.who,
+      what: row.what,
+      whenText: row.when_text,
+      whereText: row.where_text,
+      why: row.why,
+      how: row.how,
+      notes: row.notes,
+      cancelReason: row.cancel_reason,
+      cancelledAt: fmtDate(row.cancelled_at),
+    };
+  } catch (error) {
+    if (options?.throwOnError) throw error;
+    return {};
+  }
+}
+
 export async function enrichMeeting(meetingId: string): Promise<TokenValues> {
   try {
     const admin = getSupabaseAdmin();

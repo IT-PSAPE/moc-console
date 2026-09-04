@@ -14,6 +14,7 @@ import {
   enrichRequest,
   enrichStream,
   enrichMeeting,
+  enrichVenueBooking,
 } from "./enrich.js"
 import { enqueueDelivery, processDeliveriesForEvent } from "./delivery-store.js"
 
@@ -91,6 +92,24 @@ export type BookingStalePayload = {
   staleReason?: string | null
 }
 
+// starts_at/ends_at are the booked span, always present (NOT NULL columns).
+// There is deliberately no `status` field here — the trigger that enqueues
+// this event never stores one; buildTokens derives the reader-facing phase
+// from the span (and, for the cancelled event, from the event itself) at
+// render time, so a retried delivery reports the phase true when it is sent.
+export type VenueBookingCreatedPayload = {
+  title: string
+  requesterName: string
+  trackingCode: string
+  venueName: string
+  startsAt: string
+  endsAt: string
+  linkUrl: string
+  venueBookingId?: string | null
+}
+
+export type VenueBookingCancelledPayload = VenueBookingCreatedPayload
+
 export type EventPayloadMap = {
   "stream.created": StreamCreatedPayload
   "meeting.created": MeetingCreatedPayload
@@ -101,13 +120,17 @@ export type EventPayloadMap = {
   "booking.created": BookingCreatedPayload
   "booking.status_changed": BookingStatusChangedPayload
   "booking.stale": BookingStalePayload
+  "venue_booking.created": VenueBookingCreatedPayload
+  "venue_booking.cancelled": VenueBookingCancelledPayload
 }
 
 type RouteRow = {
   id: string
-  group_chat_id: string
+  group_chat_id: string | null
   thread_id: number | null
+  user_id: string | null
   telegram_groups: { active: boolean; removed_at: string | null } | null
+  users: { telegram_chat_id: string | null } | { telegram_chat_id: string | null }[] | null
 }
 
 // A Telegram delivery target. Mirrors notification_routes' (group_chat_id,
@@ -118,11 +141,42 @@ export type NotifyDestination = {
   threadId: number | null
 }
 
-type Target = {
+// A route now resolves to either a group/topic post or one person's DM —
+// notification_routes enforces exactly one target (group_chat_id XOR
+// user_id) at the database level; this union mirrors that at the type level
+// instead of carrying nullable fields both branches would have to guard.
+type GroupTarget = {
+  kind: "group"
   /** notification_routes.id, or "" for an override (no route row behind it). */
   routeId: string
   groupChatId: string
   threadId: number | null
+}
+
+type DmTarget = {
+  kind: "dm"
+  routeId: string
+  userId: string
+  chatId: string
+}
+
+type Target = GroupTarget | DmTarget
+
+export type DmRouteResolution =
+  | { kind: "target"; target: DmTarget }
+  | { kind: "skip_unlinked"; userId: string }
+
+// Pure so the unlinked-user skip is directly testable without a DB: given a
+// user-targeted route and that user's telegram_chat_id (already looked up),
+// decide whether it becomes a send target or a visible skip. A null/empty
+// chat id means the person has never linked Telegram.
+export function resolveDmRouteTarget(
+  routeId: string,
+  userId: string,
+  telegramChatId: string | null,
+): DmRouteResolution {
+  if (!telegramChatId) return { kind: "skip_unlinked", userId }
+  return { kind: "target", target: { kind: "dm", routeId, userId, chatId: telegramChatId } }
 }
 
 /**
@@ -184,6 +238,7 @@ async function resolveOverrideTargets(
     seen.add(key)
 
     targets.push({
+      kind: "group",
       routeId: "",
       groupChatId: destination.groupChatId,
       threadId: destination.threadId,
@@ -201,6 +256,38 @@ function formatScheduled(scheduled: string | null): string | null {
   const date = new Date(scheduled)
   if (Number.isNaN(date.getTime())) return null
   return date.toISOString()
+}
+
+// Mirrors public.venue_booking_phase() exactly: cancelled wins, then the
+// clock against the booked span. Pure and takes `now` as a parameter so a
+// message that sits in the outbox and is retried later reports the phase
+// true at send time, never the phase true when the event was enqueued.
+export function deriveVenueBookingPhase(
+  startsAt: string,
+  endsAt: string,
+  cancelled: boolean,
+  now: Date = new Date(),
+): string {
+  if (cancelled) return "cancelled"
+  if (now >= new Date(endsAt)) return "completed"
+  if (now >= new Date(startsAt)) return "in_progress"
+  return "booked"
+}
+
+// Slots are always contiguous 30-minute blocks (enforced by
+// public_submit_venue_booking), so the count is exact from the span alone —
+// no need to join venue_booking_slots just to count rows.
+export function venueBookingSlotCount(startsAt: string, endsAt: string): number {
+  const minutes = (new Date(endsAt).getTime() - new Date(startsAt).getTime()) / 60_000
+  return Math.max(0, Math.round(minutes / 30))
+}
+
+export function formatVenueBookingDuration(startsAt: string, endsAt: string): string {
+  const minutes = Math.max(0, Math.round((new Date(endsAt).getTime() - new Date(startsAt).getTime()) / 60_000))
+  const hours = Math.floor(minutes / 60)
+  const remainder = minutes % 60
+  if (hours === 0) return `${minutes} min`
+  return remainder === 0 ? `${hours}h` : `${hours}h ${remainder}m`
 }
 
 function nonEmpty(values: TokenValues): TokenValues {
@@ -280,6 +367,35 @@ async function buildTokens<K extends NotificationEventKey>(
         : {}
       return { ...enriched, ...nonEmpty(base), linkUrl: p.linkUrl }
     }
+    case "venue_booking.created":
+    case "venue_booking.cancelled": {
+      const p = payload as VenueBookingCreatedPayload & VenueBookingCancelledPayload
+      // Enrich first: the live row is what decides the phase, and it has to be
+      // in hand before deriving it.
+      const enriched = p.venueBookingId ? await enrichVenueBooking(p.venueBookingId) : {}
+      // The stored row never carries a status, so cancellation is read two
+      // ways and either is enough. The firing event covers the cancellation
+      // itself; the row's own cancelled_at covers a `created` message that sat
+      // in the outbox and is being retried after the booking was cancelled —
+      // without it, that late delivery would announce a dead booking as
+      // "Booked". Cancelled beats the clock, exactly as
+      // public.venue_booking_phase() has it.
+      const cancelled =
+        eventType === "venue_booking.cancelled" || Boolean(enriched.cancelledAt)
+      const base: TokenValues = {
+        title: p.title,
+        requesterName: p.requesterName,
+        trackingCode: p.trackingCode,
+        venueName: p.venueName,
+        startsAt: p.startsAt,
+        endsAt: p.endsAt,
+        status: deriveVenueBookingPhase(p.startsAt, p.endsAt, cancelled),
+        slotCount: String(venueBookingSlotCount(p.startsAt, p.endsAt)),
+        duration: formatVenueBookingDuration(p.startsAt, p.endsAt),
+        linkUrl: p.linkUrl,
+      }
+      return { ...enriched, ...nonEmpty(base), linkUrl: p.linkUrl }
+    }
     default:
       return {}
   }
@@ -311,13 +427,18 @@ async function logDeliveryFailure(args: {
   routeId: string
   groupChatId: string
   threadId: number | null
+  /** Set only for a route that targets a person's DM instead of a group. */
+  userId?: string | null
   errorCode: number | null
   description: string
   payload: unknown
 }): Promise<void> {
   try {
     const admin = getSupabaseAdmin()
-    const summary = `Telegram notification failed (${args.eventType} → ${args.groupChatId}${args.threadId !== null ? `/${args.threadId}` : ""}): ${args.description.slice(0, 200)}`
+    const destination = args.userId
+      ? `user ${args.userId}`
+      : `${args.groupChatId}${args.threadId !== null ? `/${args.threadId}` : ""}`
+    const summary = `Telegram notification failed (${args.eventType} → ${destination}): ${args.description.slice(0, 200)}`
     await admin.from("bug_reports").insert({
       description: summary.slice(0, 2000),
       error_context: {
@@ -325,8 +446,9 @@ async function logDeliveryFailure(args: {
         workspace_id: args.workspaceId,
         event_type: args.eventType,
         route_id: args.routeId,
-        group_chat_id: args.groupChatId,
+        group_chat_id: args.groupChatId || null,
         thread_id: args.threadId,
+        user_id: args.userId ?? null,
         telegram_error_code: args.errorCode,
         telegram_description: args.description,
         payload: args.payload,
@@ -395,7 +517,7 @@ export async function dispatchEvent<K extends NotificationEventKey>(
     const admin = getSupabaseAdmin()
     const { data, error } = await admin
       .from("notification_routes")
-      .select("id, group_chat_id, thread_id, telegram_groups(active, removed_at)")
+      .select("id, group_chat_id, thread_id, user_id, telegram_groups(active, removed_at), users(telegram_chat_id)")
       .eq("workspace_id", workspaceId)
       .eq("event_type", eventType)
       .eq("enabled", true)
@@ -414,12 +536,40 @@ export async function dispatchEvent<K extends NotificationEventKey>(
       throw new Error(`Route lookup failed: ${error.message}`)
     }
 
-    targets = ((data ?? []) as unknown as RouteRow[])
-      .filter((r) => {
+    targets = []
+    for (const r of (data ?? []) as unknown as RouteRow[]) {
+      if (r.group_chat_id !== null) {
         const group = Array.isArray(r.telegram_groups) ? r.telegram_groups[0] : r.telegram_groups
-        return group?.active === true && !group.removed_at
-      })
-      .map((r) => ({ routeId: r.id, groupChatId: r.group_chat_id, threadId: r.thread_id }))
+        if (group?.active === true && !group.removed_at) {
+          targets.push({ kind: "group", routeId: r.id, groupChatId: r.group_chat_id, threadId: r.thread_id })
+        }
+        continue
+      }
+
+      if (r.user_id !== null) {
+        const user = Array.isArray(r.users) ? r.users[0] : r.users
+        const resolution = resolveDmRouteTarget(r.id, r.user_id, user?.telegram_chat_id ?? null)
+        if (resolution.kind === "skip_unlinked") {
+          // The route is configured but the person has never linked
+          // Telegram. Skip it, but say so — an admin who wired up a DM
+          // route deserves to know it is silently delivering nothing,
+          // same as an override that matches no valid destination.
+          await logDeliveryFailure({
+            workspaceId,
+            eventType,
+            routeId: r.id,
+            groupChatId: "",
+            threadId: null,
+            userId: resolution.userId,
+            errorCode: null,
+            description: "Notification route targets a user who has not linked Telegram; nothing was sent for this route.",
+            payload,
+          })
+          continue
+        }
+        targets.push(resolution.target)
+      }
+    }
   }
 
   if (targets.length === 0) return { attempted: 0, succeeded: 0, failed: 0 }
@@ -430,15 +580,36 @@ export async function dispatchEvent<K extends NotificationEventKey>(
   const text = await renderEventText(workspaceId, "group", eventType, payload)
   const eventKey = options.eventKey ?? fallbackEventKey(eventType, payload)
 
-  for (const route of targets) {
+  for (const target of targets) {
+    if (target.kind === "group") {
+      await enqueueDelivery({
+        workspaceId,
+        eventKey,
+        eventType,
+        scope: "group",
+        routeId: target.routeId || null,
+        chatId: target.groupChatId,
+        threadId: target.threadId,
+        text,
+        payload,
+      })
+      continue
+    }
+
+    // A route-driven DM still renders the event's group-scope template
+    // above (there is no per-event DM template — "dm" template scope is
+    // reserved for assignment messages, a different MessageType). Only the
+    // destination changes: no thread, and the delivery is scoped/attributed
+    // to the recipient the same way an assignment DM is.
     await enqueueDelivery({
       workspaceId,
       eventKey,
       eventType,
-      scope: "group",
-      routeId: route.routeId || null,
-      chatId: route.groupChatId,
-      threadId: route.threadId,
+      scope: "dm",
+      routeId: target.routeId,
+      recipientUserId: target.userId,
+      chatId: target.chatId,
+      threadId: null,
       text,
       payload,
     })

@@ -6,13 +6,9 @@ import { NOTIFICATION_EVENTS, type NotificationEventDefinition } from '@moc/noti
 import { useConnectEvents } from './use-connect-events'
 import { ConnectEventRow } from './connect-event-row'
 
-export type ConnectEventsTarget = {
-    workspaceId: string
-    groupChatId: string
-    groupTitle: string
-    threadId: number | null
-    topicName: string | null
-}
+export type ConnectEventsTarget =
+    | { kind: 'group'; workspaceId: string; groupChatId: string; groupTitle: string; threadId: number | null; topicName: string | null }
+    | { kind: 'user'; workspaceId: string; userId: string; userName: string }
 
 type ConnectEventsModalProps = {
     target: ConnectEventsTarget | null

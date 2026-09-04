@@ -12,7 +12,9 @@ export type NotificationEventKey =
   | "request.stale"
   | "booking.created"
   | "booking.status_changed"
-  | "booking.stale";
+  | "booking.stale"
+  | "venue_booking.created"
+  | "venue_booking.cancelled";
 
 export type NotificationEventDefinition = {
   key: NotificationEventKey;
@@ -65,6 +67,16 @@ export const NOTIFICATION_EVENTS: readonly NotificationEventDefinition[] = [
     key: "booking.stale",
     label: "Booking not attended to",
     description: "Fires from the daily sweep when a booking is overdue for return or goes longer than the stale threshold without being updated.",
+  },
+  {
+    key: "venue_booking.created",
+    label: "Venue booking created",
+    description: "Fires when someone books a venue in the requests app.",
+  },
+  {
+    key: "venue_booking.cancelled",
+    label: "Venue booking cancelled",
+    description: "Fires when a venue booking is cancelled in the console. Booked, in progress and completed are read off the clock rather than stored, so they raise no event of their own.",
   },
 ] as const;
 

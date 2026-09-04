@@ -1,6 +1,7 @@
 import type { StepValidationErrors } from '@/features/hooks/use-step-validation'
 import type { BookingFormData } from '@/types/booking'
 import type { RequestFormData } from '@/types/request'
+import type { VenueBookingFormData } from '@/types/venue-booking'
 
 function getRequiredTextError(value: string, message: string): string | undefined {
   return value.trim() ? undefined : message
@@ -61,6 +62,39 @@ export function getBookingStepErrors(step: number, data: BookingFormData): StepV
 
   if (step === 2 && data.requestedEquipment.length === 0 && !data.otherEquipment.trim()) {
     return { 'booking-equipment': 'Choose equipment or describe other equipment.' }
+  }
+
+  return {}
+}
+
+export function getVenueBookingStepErrors(step: number, data: VenueBookingFormData): StepValidationErrors {
+  if (step === 1) {
+    const titleError = getRequiredTextError(data.title, 'Enter a booking title.')
+    const requestedByError = getRequiredTextError(data.requestedBy, 'Enter the requester’s name.')
+    const whoError = getRequiredTextError(data.who, 'Enter who is involved or responsible.')
+    const whatError = getRequiredTextError(data.what, 'Enter what needs to be done.')
+    const whenError = getRequiredTextError(data.whenText, 'Enter when this needs to happen.')
+    const whereError = getRequiredTextError(data.whereText, 'Enter where this will take place.')
+    const whyError = getRequiredTextError(data.why, 'Enter why this is needed.')
+    const howError = getRequiredTextError(data.how, 'Enter how this should be executed.')
+
+    return {
+      ...(titleError ? { title: titleError } : {}),
+      ...(requestedByError ? { 'requested-by': requestedByError } : {}),
+      ...(whoError ? { who: whoError } : {}),
+      ...(whatError ? { what: whatError } : {}),
+      ...(whenError ? { 'when-text': whenError } : {}),
+      ...(whereError ? { 'where-text': whereError } : {}),
+      ...(whyError ? { why: whyError } : {}),
+      ...(howError ? { how: howError } : {}),
+    }
+  }
+
+  if (step === 2) {
+    return {
+      ...(!data.venueId ? { venue: 'Choose a venue.' } : {}),
+      ...(data.slotStarts.length === 0 ? { 'venue-slots': 'Choose at least one time slot.' } : {}),
+    }
   }
 
   return {}

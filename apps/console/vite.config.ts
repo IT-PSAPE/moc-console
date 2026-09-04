@@ -3,6 +3,7 @@ import { defineConfig } from 'vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
+import { tailscaleDevServer } from '../../scripts/vite-tailscale'
 
 const aliasEntries = [
   {
@@ -59,6 +60,7 @@ export default defineConfig(() => {
       react(),
       babel({ presets: [reactCompilerPreset()] }),
       tailwindcss(),
+      tailscaleDevServer(5173),
     ],
     resolve: {
       alias: aliasEntries,

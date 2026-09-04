@@ -1,13 +1,14 @@
 import { headerValue, type ApiRequest } from "../http.js"
 
-type EntityIdField = "request_id" | "booking_id"
-type EntityType = "request" | "booking"
+type EntityIdField = "request_id" | "booking_id" | "venue_booking_id"
+type EntityType = "request" | "booking" | "venue_booking"
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const MAX_PUBLIC_WAKE_BODY_BYTES = 512
 const TRACKING_CODE_PATTERN: Record<EntityType, RegExp> = {
   request: /^REQ-[A-F0-9]{6}$/,
   booking: /^BKG-[A-F0-9]{6}$/,
+  venue_booking: /^VEN-[A-F0-9]{6}$/,
 }
 
 export type PublicNotificationWake = {
@@ -18,7 +19,7 @@ export type PublicNotificationWake = {
 export type PublicNotificationWakeOptions = {
   entityIdField: EntityIdField
   entityType: EntityType
-  eventType: "request.created" | "booking.created"
+  eventType: "request.created" | "booking.created" | "venue_booking.created"
   notFoundMessage: string
 }
 

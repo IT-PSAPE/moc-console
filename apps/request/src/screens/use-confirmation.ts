@@ -3,9 +3,15 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { routes } from "@/screens/console-routes"
 
 type ConfirmationState = {
-  type: "request" | "booking"
+  type: "request" | "booking" | "venue_booking"
   trackingCode: string
   title?: string
+}
+
+const typeLabels: Record<ConfirmationState["type"], string> = {
+  request: "Request",
+  booking: "Booking",
+  venue_booking: "Venue Booking",
 }
 
 export function useConfirmation() {
@@ -28,6 +34,6 @@ export function useConfirmation() {
   return {
     state: { confirmation, copied },
     actions: { backToHome, copy },
-    meta: { typeLabel: confirmation?.type === "request" ? "Request" : "Booking" },
+    meta: { typeLabel: confirmation ? typeLabels[confirmation.type] : "" },
   }
 }

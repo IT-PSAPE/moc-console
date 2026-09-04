@@ -30,7 +30,7 @@ playlist, or cue-sheet objects that later patches intentionally remove.
 
 ## Post-migration target
 
-After the reliability migration, the target has 36 public application tables,
+After the reliability migration, the target has 41 public application tables,
 all with RLS enabled. Authorization is workspace-scoped through
 `workspace_users.role_id`; new accounts create `workspace_join_requests` and
 remain pending until approved. OAuth secrets live only in
@@ -114,6 +114,36 @@ The first tracked reliability migration is:
     broadcast publicly readable and continuously looping; enables Realtime for
     playlist changes; and adds permission-checked transactional functions for
     creating and replacing playlists without exposing partial database state.
+
+13. `20260904140000_venue_booking_domain` — source:
+    [`migrations/20260904140000_venue_booking_domain.sql`](migrations/20260904140000_venue_booking_domain.sql).
+    It adds the venue booking domain — `venues`, `venue_bookings` and
+    `venue_booking_slots` — as a second public submission flow alongside
+    requests and equipment bookings, with the `public_list_venues`,
+    `public_venue_availability` and `public_submit_venue_booking` RPCs and a
+    third `public_lookup_tracking` branch.
+
+    Two things about it are deliberate and easy to undo by accident:
+
+    - `venue_bookings.status` stores ONLY `'auto'` and `'cancelled'`. Booked →
+      in progress → completed is derived from the clock by
+      `public.venue_booking_phase()`, so no scheduled job has to run for a
+      booking to become "in progress" at its start time, and a Telegram
+      message retried an hour later reports the phase that is true when it is
+      sent. Do not add a stored lifecycle column.
+    - Double-booking is prevented by a partial unique index on
+      `venue_booking_slots (venue_id, slot_start) WHERE active`, not by the
+      UI. Cancelling releases the slots (`active` goes false) while keeping the
+      record of what was booked; un-cancelling reclaims them and correctly
+      fails if someone else has taken them since.
+
+    It also generalises `notification_routes`: `group_chat_id` becomes
+    nullable, a `user_id` target is added, and a CHECK enforces exactly one
+    target, so any event can now be delivered to one person's Telegram DM as
+    well as to a group or forum topic. Existing group routes are unaffected,
+    but the migration DELETEs pre-existing duplicate routes for the same
+    (workspace, event, group, thread) before adding the unique indexes —
+    review that against production data before applying.
 
 ## Script history
 
