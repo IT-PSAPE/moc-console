@@ -4,6 +4,7 @@ export const routes = {
     resetPassword: 'reset-password',
     passwordRecovery: 'password-recovery',
     dashboard: 'dashboard',
+    broadcasts: 'broadcasts',
     requests: 'requests',
     requestsDetail: 'requests/:id',
     equipment: 'equipment',

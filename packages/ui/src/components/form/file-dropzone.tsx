@@ -10,22 +10,34 @@ type FileDropzoneProps = {
   accept?: string
   className?: string
   fileName?: string
-  onFileSelect: (file: File | null) => void
+  fileNames?: string[]
+  hint?: string
+  multiple?: boolean
+  onFileSelect?: (file: File | null) => void
+  onFilesSelect?: (files: File[]) => void
   placeholder?: string
   selectedHint?: string
 }
 
-export function FileDropzone({ accept, className, fileName, onFileSelect, placeholder = "Drag and drop a file here, or click to browse.", selectedHint = "Drop a new file or click to replace it." }: FileDropzoneProps) {
+export function FileDropzone({ accept, className, fileName, fileNames, hint = "Supports image, audio, and video files.", multiple = false, onFileSelect, onFilesSelect, placeholder = "Drag and drop a file here, or click to browse.", selectedHint = "Drop a new file or click to replace it." }: FileDropzoneProps) {
   const [isDragging, setIsDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const selectedFileNames = fileNames?.length ? fileNames : fileName ? [fileName] : []
+  const hasSelection = selectedFileNames.length > 0
+  const displayName = hasSelection
+    ? selectedFileNames.length === 1
+      ? selectedFileNames[0]
+      : `${selectedFileNames.length} files selected`
+    : null
 
   function handleTriggerClick() {
     inputRef.current?.click()
   }
 
   function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
-    const nextFile = event.target.files?.[0] ?? null
-    onFileSelect(nextFile)
+    const nextFiles = Array.from(event.target.files ?? [])
+    onFilesSelect?.(nextFiles)
+    onFileSelect?.(nextFiles[0] ?? null)
     event.target.value = ""
   }
 
@@ -52,13 +64,14 @@ export function FileDropzone({ accept, className, fileName, onFileSelect, placeh
   function handleDrop(event: DragEvent<HTMLButtonElement>) {
     event.preventDefault()
     setIsDragging(false)
-    const nextFile = event.dataTransfer.files?.[0] ?? null
-    onFileSelect(nextFile)
+    const nextFiles = Array.from(event.dataTransfer.files ?? [])
+    onFilesSelect?.(nextFiles)
+    onFileSelect?.(nextFiles[0] ?? null)
   }
 
   return (
     <>
-      <BaseInput ref={inputRef} type="file" accept={accept} className="hidden" onChange={handleInputChange} />
+      <BaseInput ref={inputRef} type="file" accept={accept} multiple={multiple} className="hidden" onChange={handleInputChange} />
       <BaseButton
         type="button"
         className={cn(
@@ -74,15 +87,15 @@ export function FileDropzone({ accept, className, fileName, onFileSelect, placeh
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-tertiary", fileName && "text-utility-green-700")}>
-          {fileName ? <Check className="size-4" /> : <Upload className="size-4" />}
+        <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-tertiary", hasSelection && "text-utility-green-700")}>
+          {hasSelection ? <Check className="size-4" /> : <Upload className="size-4" />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <Paragraph.sm className={cn("text-secondary", !fileName && "text-tertiary")}>
-            {fileName ?? placeholder}
+          <Paragraph.sm className={cn("text-secondary", !hasSelection && "text-tertiary")}>
+            {displayName ?? placeholder}
           </Paragraph.sm>
           <Paragraph.xs className="text-quaternary">
-            {fileName ? selectedHint : "Supports image, audio, and video files."}
+            {hasSelection ? selectedHint : hint}
           </Paragraph.xs>
         </span>
       </BaseButton>

@@ -7,6 +7,7 @@ MOC Console is a React 19 admin application for managing operational workflows a
 - equipment bookings
 - checklist runs and reusable templates
 - YouTube streams and Zoom meetings
+- continuously looping public audio and video broadcasts
 - authenticated users and role-aware navigation
 
 The UI is built with React, TypeScript, Vite, and Tailwind CSS v4.
@@ -60,7 +61,11 @@ The app uses Supabase Auth for login, signup, reset password, and session handli
 Required environment variables:
 
 - `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+The console also uses `VITE_BROADCAST_APP_URL` to build public-player links. For
+local development, set it to `http://localhost:5174`; the console is pinned to
+port 5173 and the broadcast player to port 5174.
 
 These are read in [src/lib/supabase.ts](/Users/Craig/Developer/Projects/moc-console/src/lib/supabase.ts).
 
@@ -115,7 +120,7 @@ stored per workspace in `workspace_users.role_id`.
 `supabase/phase-00-nuke.sql` is development-only, destructive, and has no undo.
 Never use it as an upgrade script.
 
-Configure each app (`apps/console`, `apps/request`, `apps/api`) from its
+Configure each app (`apps/console`, `apps/request`, `apps/broadcast`, `apps/api`) from its
 `.env.example`. The frontends use the Supabase URL, publishable key, and
 `VITE_API_BASE_URL`; server secrets live only in `apps/api`.
 
@@ -132,6 +137,7 @@ The repo is a bun-workspaces monorepo:
 - `apps/console` — the authenticated admin app (this README)
 - `apps/request` — the public submission PWA
 - `apps/api` — every serverless function and the `server/` library behind it; see [apps/api/README.md](apps/api/README.md)
+- `apps/broadcast` — the public continuous-playback audio/video app
 - `packages/{ui,types,utils,data,notifications}` — shared code
 
 Inside a frontend app:

@@ -101,6 +101,20 @@ The first tracked reliability migration is:
     old channel's streams unattended. Finished streams are kept. Apply it before
     the stream-sync cron is scheduled.
 
+11. `20260903120000_restore_broadcast_domain` — source:
+    [`migrations/20260903120000_restore_broadcast_domain.sql`](migrations/20260903120000_restore_broadcast_domain.sql).
+    It restores a minimal Broadcast domain after the July 2026 removal, with
+    workspace-scoped `broadcasts` and `broadcast_items` tables, a public
+    `broadcast-media` Storage bucket and the original publish, loop, and preload
+    controls used by the first player implementation.
+
+12. `20260904100000_broadcast_invariants_and_atomic_playlist_writes` — source:
+    [`migrations/20260904100000_broadcast_invariants_and_atomic_playlist_writes.sql`](migrations/20260904100000_broadcast_invariants_and_atomic_playlist_writes.sql).
+    It removes the temporary publish, loop, and preload settings; makes every
+    broadcast publicly readable and continuously looping; enables Realtime for
+    playlist changes; and adds permission-checked transactional functions for
+    creating and replacing playlists without exposing partial database state.
+
 ## Script history
 
 The phase files are the consolidated historical baseline:

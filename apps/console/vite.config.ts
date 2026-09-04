@@ -18,6 +18,10 @@ const aliasEntries = [
     replacement: fileURLToPath(new URL('../../packages/data/src', import.meta.url)),
   },
   {
+    find: '@moc/notifications',
+    replacement: fileURLToPath(new URL('../../packages/notifications/src', import.meta.url)),
+  },
+  {
     find: '@moc/types',
     replacement: fileURLToPath(new URL('../../packages/types/src', import.meta.url)),
   },
@@ -63,6 +67,10 @@ export default defineConfig(() => {
       // root — two module instances, and every Base UI hook throws
       // "Invalid hook call". Dedupe pins both to one copy.
       dedupe: ['react', 'react-dom'],
+    },
+    server: {
+      port: 5173,
+      strictPort: true,
     },
   }
 })
