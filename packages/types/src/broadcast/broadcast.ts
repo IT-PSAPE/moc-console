@@ -22,9 +22,6 @@ export type Broadcast = {
   description: string
   slug: string
   kind: BroadcastKind
-  isPublished: boolean
-  loopEnabled: boolean
-  preloadCount: number
   createdAt: string
   updatedAt: string
   items: BroadcastItem[]

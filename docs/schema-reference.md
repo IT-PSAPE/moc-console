@@ -251,9 +251,6 @@ Scope rules:
 | `description` | `text` | `''` | No | No | Optional operator-facing summary. |
 | `slug` | `text` | None | No | Yes | Public URL identifier used by the separate broadcast app. |
 | `kind` | `broadcast_kind` | None | No | No | Playlist media kind: `audio` or `video`. |
-| `is_published` | `boolean` | `false` | No | No | Only published broadcasts are readable by anonymous public-player clients. |
-| `loop_enabled` | `boolean` | `true` | No | No | Whether playback wraps back to the first item after the last one. |
-| `preload_count` | `integer` | `1` | No | No | Number of upcoming items the player should preload; constrained to 1..3. |
 | `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
 | `updated_at` | `timestamptz` | `now()` | No | No | Last update timestamp. |
 
@@ -276,8 +273,9 @@ Scope rules:
 Important notes:
 
 - Each broadcast contains only one media kind: all items must be audio when `kind = 'audio'`, or video when `kind = 'video'`.
-- `broadcast_items` are ordered by `sort_order` and loop according to the parent broadcast's `loop_enabled` setting.
-- Public assets live in the `broadcast-media` storage bucket. Anonymous Storage read is intentional so the public player can preload the next item without signed URLs.
+- `broadcast_items` are ordered by `sort_order`; the public player continuously loops the playlist and automatically preloads the next item.
+- Broadcast metadata and assets are publicly readable by design. Public assets live in the `broadcast-media` storage bucket so the player can preload the next item without signed URLs.
+- Broadcast and item changes are included in the `supabase_realtime` publication so an open player can refresh its queue without a reload.
 
 ## Integrations
 
