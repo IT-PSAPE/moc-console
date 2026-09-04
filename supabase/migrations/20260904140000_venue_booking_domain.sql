@@ -555,7 +555,7 @@ CREATE POLICY "venues_select" ON public.venues
   FOR SELECT TO authenticated
   USING (
     private.is_workspace_member(workspace_id)
-    AND private.current_user_can('can_read')
+    AND private.current_user_can(workspace_id, 'can_read')
   );
 
 DROP POLICY IF EXISTS "venues_insert" ON public.venues;
@@ -563,7 +563,7 @@ CREATE POLICY "venues_insert" ON public.venues
   FOR INSERT TO authenticated
   WITH CHECK (
     private.is_workspace_member(workspace_id)
-    AND private.current_user_can('can_create')
+    AND private.current_user_can(workspace_id, 'can_create')
   );
 
 DROP POLICY IF EXISTS "venues_update" ON public.venues;
@@ -571,11 +571,11 @@ CREATE POLICY "venues_update" ON public.venues
   FOR UPDATE TO authenticated
   USING (
     private.is_workspace_member(workspace_id)
-    AND private.current_user_can('can_update')
+    AND private.current_user_can(workspace_id, 'can_update')
   )
   WITH CHECK (
     private.is_workspace_member(workspace_id)
-    AND private.current_user_can('can_update')
+    AND private.current_user_can(workspace_id, 'can_update')
   );
 
 DROP POLICY IF EXISTS "venues_delete" ON public.venues;
@@ -583,7 +583,7 @@ CREATE POLICY "venues_delete" ON public.venues
   FOR DELETE TO authenticated
   USING (
     private.is_workspace_member(workspace_id)
-    AND private.current_user_can('can_delete')
+    AND private.current_user_can(workspace_id, 'can_delete')
   );
 
 DROP POLICY IF EXISTS "venue_bookings_select" ON public.venue_bookings;
@@ -591,7 +591,7 @@ CREATE POLICY "venue_bookings_select" ON public.venue_bookings
   FOR SELECT TO authenticated
   USING (
     private.is_workspace_member(workspace_id)
-    AND private.current_user_can('can_read')
+    AND private.current_user_can(workspace_id, 'can_read')
   );
 
 DROP POLICY IF EXISTS "venue_bookings_update" ON public.venue_bookings;
@@ -599,11 +599,11 @@ CREATE POLICY "venue_bookings_update" ON public.venue_bookings
   FOR UPDATE TO authenticated
   USING (
     private.is_workspace_member(workspace_id)
-    AND private.current_user_can('can_update')
+    AND private.current_user_can(workspace_id, 'can_update')
   )
   WITH CHECK (
     private.is_workspace_member(workspace_id)
-    AND private.current_user_can('can_update')
+    AND private.current_user_can(workspace_id, 'can_update')
   );
 
 DROP POLICY IF EXISTS "venue_bookings_delete" ON public.venue_bookings;
@@ -611,7 +611,7 @@ CREATE POLICY "venue_bookings_delete" ON public.venue_bookings
   FOR DELETE TO authenticated
   USING (
     private.is_workspace_member(workspace_id)
-    AND private.current_user_can('can_delete')
+    AND private.current_user_can(workspace_id, 'can_delete')
   );
 
 DROP POLICY IF EXISTS "venue_booking_slots_select" ON public.venue_booking_slots;
@@ -623,7 +623,7 @@ CREATE POLICY "venue_booking_slots_select" ON public.venue_booking_slots
       FROM public.venue_bookings AS booking
       WHERE booking.id = venue_booking_slots.venue_booking_id
         AND private.is_workspace_member(booking.workspace_id)
-        AND private.current_user_can('can_read')
+        AND private.current_user_can(booking.workspace_id, 'can_read')
     )
   );
 
