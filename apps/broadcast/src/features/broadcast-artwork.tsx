@@ -1,11 +1,16 @@
-import { AudioLines } from "lucide-react"
+import { useBroadcastItemDisplay, useBroadcastPlaybackContext } from "./broadcast-playback-provider"
+import { BroadcastCover } from "./broadcast-cover"
 
 export function BroadcastArtwork() {
+  const { state } = useBroadcastPlaybackContext()
+  const display = useBroadcastItemDisplay(state.activeItem?.id)
+
   return (
-    <div className="flex aspect-square max-h-full w-full max-w-sm items-center justify-center rounded-2xl border border-secondary bg-secondary">
-      <span className="flex size-24 items-center justify-center rounded-full bg-brand_solid text-primary_on-brand sm:size-32">
-        <AudioLines className="size-10 sm:size-14" aria-hidden="true" />
-      </span>
-    </div>
+    <BroadcastCover
+      className="aspect-square w-full rounded-xl"
+      coverUrl={display?.coverUrl ?? null}
+      iconClassName="size-10"
+      title={display?.title ?? ""}
+    />
   )
 }

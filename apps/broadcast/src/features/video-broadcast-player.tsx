@@ -7,11 +7,10 @@ export function VideoBroadcastPlayer({ broadcast }: { broadcast: Broadcast }) {
     <BroadcastPlayer.Root broadcast={broadcast}>
       <BroadcastPlayer.Stage>
         <BroadcastPlayer.Main>
-          <BroadcastPlayer.Header />
           <BroadcastPlayer.Screen>
             <BroadcastVideoDecks />
           </BroadcastPlayer.Screen>
-          <BroadcastPlayer.Transport />
+          <BroadcastPlayer.NowPlaying />
         </BroadcastPlayer.Main>
         <BroadcastPlayer.Queue />
       </BroadcastPlayer.Stage>

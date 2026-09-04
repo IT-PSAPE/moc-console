@@ -8,11 +8,10 @@ export function AudioBroadcastPlayer({ broadcast }: { broadcast: Broadcast }) {
     <BroadcastPlayer.Root broadcast={broadcast}>
       <BroadcastPlayer.Stage>
         <BroadcastPlayer.Main>
-          <BroadcastPlayer.Header />
           <BroadcastPlayer.Screen>
             <BroadcastArtwork />
           </BroadcastPlayer.Screen>
-          <BroadcastPlayer.Transport />
+          <BroadcastPlayer.NowPlaying />
         </BroadcastPlayer.Main>
         <BroadcastPlayer.Queue />
       </BroadcastPlayer.Stage>

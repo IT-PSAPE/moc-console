@@ -1,46 +1,35 @@
-import type { BroadcastItem, BroadcastKind } from "@moc/types/broadcast/broadcast"
+import type { BroadcastItem } from "@moc/types/broadcast/broadcast"
 import { InteractiveSurface } from "@moc/ui/components/controls/interactive-surface"
-import { ListItemCard } from "@moc/ui/components/display/list-item-card"
+import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { cn } from "@moc/utils/cn"
-import { Music4, Play, Video } from "lucide-react"
+import { BroadcastCover } from "./broadcast-cover"
+import type { BroadcastItemDisplay } from "./use-broadcast-metadata"
 
 type BroadcastQueueItemProps = {
-  index: number
+  display: BroadcastItemDisplay
   isActive: boolean
   item: BroadcastItem
-  kind: BroadcastKind
   onSelect: (itemId: string) => void
 }
 
-export function BroadcastQueueItem({ index, isActive, item, kind, onSelect }: BroadcastQueueItemProps) {
+export function BroadcastQueueItem({ display, isActive, item, onSelect }: BroadcastQueueItemProps) {
   function handleSelect() {
     onSelect(item.id)
   }
 
-  function renderIcon() {
-    if (isActive) return <Play className="fill-current" aria-hidden="true" />
-    return kind === "audio" ? <Music4 aria-hidden="true" /> : <Video aria-hidden="true" />
-  }
-
   return (
-    <li className="w-56 shrink-0 lg:w-auto">
-      <InteractiveSurface.Card
+    <li>
+      <InteractiveSurface
         aria-current={isActive ? "true" : undefined}
-        className={cn("h-full rounded-md", isActive && "border-brand bg-primary_hover")}
+        className="flex w-full min-w-0 items-center gap-3 rounded-lg p-1.5 transition-colors hover:bg-secondary"
         onClick={handleSelect}
       >
-        <ListItemCard.Root className="items-center px-2 py-2 md:px-2">
-          <ListItemCard.Leading className={cn("size-9", isActive && "bg-brand_solid text-primary_on-brand")}>
-            {renderIcon()}
-          </ListItemCard.Leading>
-          <ListItemCard.Content>
-            <ListItemCard.Title>{item.title}</ListItemCard.Title>
-            <ListItemCard.Meta className="mt-0.5">
-              <ListItemCard.MetaItem>{isActive ? "Now playing" : `Item ${index + 1}`}</ListItemCard.MetaItem>
-            </ListItemCard.Meta>
-          </ListItemCard.Content>
-        </ListItemCard.Root>
-      </InteractiveSurface.Card>
+        <BroadcastCover className="size-10 rounded-md" coverUrl={display.coverUrl} iconClassName="size-4" title={display.title} />
+        <span className="min-w-0 flex-1">
+          <Label.sm className={cn("block truncate", isActive ? "text-brand_secondary" : "text-primary")}>{display.title}</Label.sm>
+          {display.artist ? <Paragraph.xs className="block truncate text-quaternary">{display.artist}</Paragraph.xs> : null}
+        </span>
+      </InteractiveSurface>
     </li>
   )
 }

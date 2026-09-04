@@ -35,6 +35,10 @@ function createBroadcast(itemIds: string[]): Broadcast {
   }
 }
 
+function createMetadata(broadcast: Broadcast) {
+  return new Map(broadcast.items.map((item) => [item.id, { artist: "Someone", coverUrl: null, title: item.title }]))
+}
+
 const playbackContext = {
   state: { activeItemId: "one" },
   actions: {
@@ -42,7 +46,14 @@ const playbackContext = {
       return undefined
     },
   },
-  meta: { broadcast: createBroadcast(["one"]) },
+  meta: { broadcast: createBroadcast(["one"]), metadata: createMetadata(createBroadcast(["one"])) },
+}
+
+function useBroadcast(itemIds: string[]) {
+  const broadcast = createBroadcast(itemIds)
+  playbackContext.meta.broadcast = broadcast
+  playbackContext.meta.metadata = createMetadata(broadcast)
+  return broadcast
 }
 
 mock.module("react", () => ({ ...React, ...createMockReactModule() }))
@@ -53,6 +64,7 @@ mock.module("./broadcast-playback-provider", () => ({
 }))
 
 const { BroadcastQueue } = await import("./broadcast-queue")
+const { BroadcastQueueItem } = await import("./broadcast-queue-item")
 
 function collectText(node: ReactNode, values: string[] = []) {
   if (Array.isArray(node)) {
@@ -71,39 +83,53 @@ function collectText(node: ReactNode, values: string[] = []) {
   return values
 }
 
+type QueueRowProps = { display: { title: string }; isActive: boolean }
+
+function collectRows(node: ReactNode, rows: QueueRowProps[] = []): QueueRowProps[] {
+  if (Array.isArray(node)) {
+    for (const child of node) collectRows(child, rows)
+    return rows
+  }
+
+  if (!node || typeof node !== "object" || !("props" in node) || !("type" in node)) return rows
+
+  const element = node as { props: Record<string, unknown>; type: unknown }
+
+  if (element.type === BroadcastQueueItem) rows.push(element.props as unknown as QueueRowProps)
+
+  collectRows(element.props.children as ReactNode, rows)
+  return rows
+}
+
 describe("BroadcastQueue", () => {
   beforeEach(() => {
     playbackContext.state.activeItemId = "one"
-    globalThis.document = {
-      querySelector() {
-        return null
-      },
-    } as unknown as Document
   })
 
   test("pluralizes the queue count label", () => {
-    playbackContext.meta.broadcast = createBroadcast(["one"])
-    expect(collectText(new HookRuntime(BroadcastQueue).render({}))).toContain("1 item")
+    useBroadcast(["one"])
+    expect(collectText(new HookRuntime(BroadcastQueue).render({}))).toContain("Playlist · 1 item")
 
-    playbackContext.meta.broadcast = createBroadcast(["one", "two"])
-    expect(collectText(new HookRuntime(BroadcastQueue).render({}))).toContain("2 items")
+    useBroadcast(["one", "two"])
+    expect(collectText(new HookRuntime(BroadcastQueue).render({}))).toContain("Playlist · 2 items")
   })
 
-  test("scrolls the active queue item into view when it changes", () => {
-    const scrollCalls: ScrollIntoViewOptions[] = []
-    globalThis.document = {
-      querySelector() {
-        return {
-          scrollIntoView(options?: ScrollIntoViewOptions) {
-            scrollCalls.push(options ?? {})
-          },
-        }
-      },
-    } as unknown as Document
-    playbackContext.meta.broadcast = createBroadcast(["one", "two"])
+  test("heads the list with Playlist and no other chrome", () => {
+    useBroadcast(["one", "two"])
 
-    new HookRuntime(BroadcastQueue).render({})
+    const text = collectText(new HookRuntime(BroadcastQueue).render({})).join(" ")
 
-    expect(scrollCalls).toEqual([{ behavior: "smooth", block: "nearest", inline: "nearest" }])
+    expect(text).toContain("Broadcast")
+    expect(text).not.toContain("Now playing")
+    expect(text).not.toContain("Item 2")
+  })
+
+  test("gives every row its resolved metadata and marks only the active one", () => {
+    useBroadcast(["one", "two", "three"])
+
+    const rows = collectRows(new HookRuntime(BroadcastQueue).render({}))
+
+    expect(rows.map((row) => row.display.title)).toEqual(["one", "two", "three"])
+    expect(rows.map((row) => row.isActive)).toEqual([true, false, false])
   })
 })

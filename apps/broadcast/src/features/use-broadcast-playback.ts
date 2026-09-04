@@ -21,6 +21,8 @@ export function useBroadcastPlayback(broadcast: Broadcast) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [volume, setVolume] = useState(1)
   const [playbackError, setPlaybackError] = useState<string | null>(null)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [loadedDuration, setLoadedDuration] = useState(0)
   const lastAudibleVolumeRef = useRef(1)
   const mediaRefs = useRef<Array<HTMLMediaElement | null>>([null, null])
   const playerRootRef = useRef<HTMLElement | null>(null)
@@ -38,6 +40,9 @@ export function useBroadcastPlayback(broadcast: Broadcast) {
   const deckItems: [BroadcastItem | null, BroadcastItem | null] = activeDeck === 0
     ? [resolvedActiveItem, preloadItem]
     : [preloadItem, resolvedActiveItem]
+  // The stored duration lets the scrubber render a real track before the
+  // browser has any metadata for the current item.
+  const durationSeconds = loadedDuration || resolvedActiveItem?.durationSeconds || 0
 
   useEffect(() => {
     const activeElement = mediaRefs.current[activeDeck]
@@ -56,6 +61,38 @@ export function useBroadcastPlayback(broadcast: Broadcast) {
       setPlaybackError("Playback needs a user interaction to continue.")
     })
   }, [activeDeck, activeItemKey, inactiveDeck, isPlaying, nextItemKey])
+
+  useEffect(() => {
+    const element = mediaRefs.current[activeDeck]
+
+    if (!element) {
+      return
+    }
+
+    function syncElapsed() {
+      const media = mediaRefs.current[activeDeck]
+      if (media) setElapsedSeconds(media.currentTime)
+    }
+
+    function syncDuration() {
+      const media = mediaRefs.current[activeDeck]
+      if (media) setLoadedDuration(Number.isFinite(media.duration) ? media.duration : 0)
+    }
+
+    syncElapsed()
+    syncDuration()
+    element.addEventListener("timeupdate", syncElapsed)
+    element.addEventListener("seeked", syncElapsed)
+    element.addEventListener("durationchange", syncDuration)
+    element.addEventListener("loadedmetadata", syncDuration)
+
+    return () => {
+      element.removeEventListener("timeupdate", syncElapsed)
+      element.removeEventListener("seeked", syncElapsed)
+      element.removeEventListener("durationchange", syncDuration)
+      element.removeEventListener("loadedmetadata", syncDuration)
+    }
+  }, [activeDeck, activeItemKey])
 
   useEffect(() => {
     mediaRefs.current.forEach((element) => {
@@ -217,6 +254,17 @@ export function useBroadcastPlayback(broadcast: Broadcast) {
     setIsMuted(true)
   }
 
+  function seek(event: ChangeEvent<HTMLInputElement>) {
+    const element = mediaRefs.current[activeDeck]
+    const nextTime = Number(event.currentTarget.value)
+
+    if (element) {
+      element.currentTime = nextTime
+    }
+
+    setElapsedSeconds(nextTime)
+  }
+
   function changeVolume(event: ChangeEvent<HTMLInputElement>) {
     const nextVolume = Number(event.currentTarget.value)
     if (nextVolume > 0) {
@@ -250,6 +298,8 @@ export function useBroadcastPlayback(broadcast: Broadcast) {
       activeItem: resolvedActiveItem,
       activeItemId,
       deckItems,
+      durationSeconds,
+      elapsedSeconds,
       isFullscreen,
       isMuted,
       isPlaying,
@@ -260,6 +310,7 @@ export function useBroadcastPlayback(broadcast: Broadcast) {
       changeVolume,
       moveToNext,
       moveToPrevious,
+      seek,
       selectItem,
       setFirstMediaElement,
       handleMediaError,

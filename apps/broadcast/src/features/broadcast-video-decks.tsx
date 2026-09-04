@@ -18,7 +18,7 @@ export function BroadcastVideoDecks() {
   } = useBroadcastDecks()
 
   return (
-    <div className="relative aspect-video max-h-full w-full overflow-hidden rounded-xl border border-secondary bg-secondary">
+    <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-tertiary">
       <video
         ref={setFirstMediaElement}
         aria-hidden={!isFirstActive}

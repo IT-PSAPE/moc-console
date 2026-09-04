@@ -1,15 +1,13 @@
-import { BroadcastHeader } from "./broadcast-header"
+import { BroadcastNowPlaying } from "./broadcast-now-playing"
 import { BroadcastPlaybackProvider } from "./broadcast-playback-provider"
 import { BroadcastQueue } from "./broadcast-queue"
 import { BroadcastMain, BroadcastScreen, BroadcastStage } from "./broadcast-stage"
-import { BroadcastTransport } from "./broadcast-transport"
 
 export const BroadcastPlayer = {
-  Header: BroadcastHeader,
   Main: BroadcastMain,
+  NowPlaying: BroadcastNowPlaying,
   Queue: BroadcastQueue,
   Root: BroadcastPlaybackProvider,
   Screen: BroadcastScreen,
   Stage: BroadcastStage,
-  Transport: BroadcastTransport,
 }
