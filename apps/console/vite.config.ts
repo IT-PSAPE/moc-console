@@ -68,5 +68,9 @@ export default defineConfig(() => {
       // "Invalid hook call". Dedupe pins both to one copy.
       dedupe: ['react', 'react-dom'],
     },
+    server: {
+      port: 5173,
+      strictPort: true,
+    },
   }
 })

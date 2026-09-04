@@ -41,4 +41,8 @@ export default defineConfig({
     alias: aliasEntries,
     dedupe: ["react", "react-dom"],
   },
+  server: {
+    port: 5174,
+    strictPort: true,
+  },
 })
