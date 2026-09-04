@@ -1,32 +1,57 @@
+import type { BroadcastItem } from "@moc/types/broadcast/broadcast"
 import { describe, expect, test } from "bun:test"
-import { getNextPlaybackIndex, getPreloadIndices } from "./playback-sequence"
+import {
+  getMediaSourceKey,
+  getNextPlaybackIndex,
+  getNextPlaybackItem,
+  getPreviousPlaybackIndex,
+  getPreviousPlaybackItem,
+} from "./playback-sequence"
 
-describe("getNextPlaybackIndex", () => {
-  test("advances to the next item while there is another item to play", () => {
-    expect(getNextPlaybackIndex(3, 0, true)).toBe(1)
-    expect(getNextPlaybackIndex(3, 1, false)).toBe(2)
+function createItem(id: string, publicUrl = `https://example.com/${id}.mp3`): BroadcastItem {
+  return {
+    id,
+    broadcastId: "broadcast-id",
+    title: id,
+    sortOrder: 0,
+    storageBucket: "broadcasts",
+    storagePath: `${id}.mp3`,
+    publicUrl,
+    mimeType: "audio/mpeg",
+    fileSizeBytes: 1,
+    durationSeconds: null,
+    createdAt: "2026-09-03T00:00:00.000Z",
+  }
+}
+
+describe("playback indices", () => {
+  test("always wraps in both directions", () => {
+    expect(getNextPlaybackIndex(3, 2)).toBe(0)
+    expect(getPreviousPlaybackIndex(3, 0)).toBe(2)
   })
 
-  test("wraps to the start when looping is enabled", () => {
-    expect(getNextPlaybackIndex(3, 2, true)).toBe(0)
-  })
-
-  test("stops at the end when looping is disabled", () => {
-    expect(getNextPlaybackIndex(3, 2, false)).toBeNull()
-    expect(getNextPlaybackIndex(0, 0, true)).toBeNull()
+  test("returns no index for an empty queue", () => {
+    expect(getNextPlaybackIndex(0, 0)).toBeNull()
+    expect(getPreviousPlaybackIndex(0, 0)).toBeNull()
   })
 })
 
-describe("getPreloadIndices", () => {
-  test("returns the configured number of upcoming items", () => {
-    expect(getPreloadIndices(4, 1, 2, false)).toEqual([2, 3])
+describe("playlist changes", () => {
+  const items = [createItem("one"), createItem("two"), createItem("three")]
+
+  test("uses the latest queue order around the current item", () => {
+    expect(getNextPlaybackItem(items, "two")?.id).toBe("three")
+    expect(getPreviousPlaybackItem(items, "two")?.id).toBe("one")
   })
 
-  test("wraps preloads when looping is enabled", () => {
-    expect(getPreloadIndices(3, 2, 2, true)).toEqual([0, 1])
+  test("starts from the queue edge when the playing item was removed", () => {
+    expect(getNextPlaybackItem(items, "removed")?.id).toBe("one")
+    expect(getPreviousPlaybackItem(items, "removed")?.id).toBe("three")
   })
 
-  test("never duplicates the active item when the list is shorter than the preload count", () => {
-    expect(getPreloadIndices(2, 0, 3, true)).toEqual([1])
+  test("distinguishes a replaced media file that keeps its item id", () => {
+    expect(getMediaSourceKey(createItem("one", "https://example.com/old.mp3"))).not.toBe(
+      getMediaSourceKey(createItem("one", "https://example.com/new.mp3")),
+    )
   })
 })

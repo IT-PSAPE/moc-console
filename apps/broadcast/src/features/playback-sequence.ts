@@ -1,33 +1,47 @@
-export function getNextPlaybackIndex(total: number, activeIndex: number, loopEnabled: boolean): number | null {
+import type { BroadcastItem } from "@moc/types/broadcast/broadcast"
+
+export function getNextPlaybackIndex(total: number, activeIndex: number): number | null {
   if (total <= 0) {
     return null
   }
 
-  const nextIndex = activeIndex + 1
-
-  if (nextIndex < total) {
-    return nextIndex
-  }
-
-  return loopEnabled ? 0 : null
+  return (activeIndex + 1) % total
 }
 
-export function getPreloadIndices(total: number, activeIndex: number, preloadCount: number, loopEnabled: boolean): number[] {
-  const indices: number[] = []
-  const seen = new Set<number>()
-  let cursor = activeIndex
-
-  for (let offset = 0; offset < preloadCount; offset += 1) {
-    const nextIndex = getNextPlaybackIndex(total, cursor, loopEnabled)
-
-    if (nextIndex === null || nextIndex === activeIndex || seen.has(nextIndex)) {
-      break
-    }
-
-    indices.push(nextIndex)
-    seen.add(nextIndex)
-    cursor = nextIndex
+export function getPreviousPlaybackIndex(total: number, activeIndex: number): number | null {
+  if (total <= 0) {
+    return null
   }
 
-  return indices
+  return (activeIndex - 1 + total) % total
+}
+
+export function getPlaybackItemIndex(items: BroadcastItem[], activeItemId: string): number {
+  return items.findIndex((item) => item.id === activeItemId)
+}
+
+export function getNextPlaybackItem(items: BroadcastItem[], activeItemId: string): BroadcastItem | null {
+  if (items.length === 0) {
+    return null
+  }
+
+  const activeIndex = getPlaybackItemIndex(items, activeItemId)
+  const nextIndex = activeIndex < 0 ? 0 : getNextPlaybackIndex(items.length, activeIndex)
+
+  return nextIndex === null ? null : (items[nextIndex] ?? null)
+}
+
+export function getPreviousPlaybackItem(items: BroadcastItem[], activeItemId: string): BroadcastItem | null {
+  if (items.length === 0) {
+    return null
+  }
+
+  const activeIndex = getPlaybackItemIndex(items, activeItemId)
+  const previousIndex = activeIndex < 0 ? items.length - 1 : getPreviousPlaybackIndex(items.length, activeIndex)
+
+  return previousIndex === null ? null : (items[previousIndex] ?? null)
+}
+
+export function getMediaSourceKey(item: BroadcastItem): string {
+  return `${item.id}:${item.publicUrl}`
 }

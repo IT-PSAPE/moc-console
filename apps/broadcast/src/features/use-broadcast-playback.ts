@@ -1,61 +1,273 @@
-import type { Broadcast } from "@moc/types/broadcast/broadcast"
-import { startTransition, useMemo, useState } from "react"
-import { getNextPlaybackIndex, getPreloadIndices } from "./playback-sequence"
+import type { Broadcast, BroadcastItem } from "@moc/types/broadcast/broadcast"
+import type { ChangeEvent } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import {
+  getMediaSourceKey,
+  getNextPlaybackItem,
+  getPreviousPlaybackItem,
+} from "./playback-sequence"
+
+type MediaDeck = 0 | 1
+
+function getOtherDeck(deck: MediaDeck): MediaDeck {
+  return deck === 0 ? 1 : 0
+}
 
 export function useBroadcastPlayback(broadcast: Broadcast) {
-  const [activeIndex, setActiveIndex] = useState(0)
+  const [activeItem, setActiveItem] = useState<BroadcastItem | null>(broadcast.items[0] ?? null)
+  const [activeDeck, setActiveDeck] = useState<MediaDeck>(0)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [volume, setVolume] = useState(1)
   const [playbackError, setPlaybackError] = useState<string | null>(null)
+  const lastAudibleVolumeRef = useRef(1)
+  const mediaRefs = useRef<Array<HTMLMediaElement | null>>([null, null])
+  const playerRootRef = useRef<HTMLElement | null>(null)
 
-  const activeItem = broadcast.items[activeIndex] ?? null
-  const nextIndex = getNextPlaybackIndex(broadcast.items.length, activeIndex, broadcast.loopEnabled)
-  const preloadIndices = useMemo(
-    () => getPreloadIndices(broadcast.items.length, activeIndex, broadcast.preloadCount, broadcast.loopEnabled),
-    [activeIndex, broadcast.items.length, broadcast.loopEnabled, broadcast.preloadCount],
+  const resolvedActiveItem = activeItem ?? broadcast.items[0] ?? null
+  const activeItemId = resolvedActiveItem?.id ?? ""
+  const activeItemKey = resolvedActiveItem ? getMediaSourceKey(resolvedActiveItem) : ""
+  const nextItem = useMemo(
+    () => (resolvedActiveItem ? getNextPlaybackItem(broadcast.items, resolvedActiveItem.id) : null),
+    [broadcast.items, resolvedActiveItem],
   )
+  const nextItemKey = nextItem ? getMediaSourceKey(nextItem) : ""
+  const preloadItem = activeItemKey === nextItemKey ? null : nextItem
+  const inactiveDeck = getOtherDeck(activeDeck)
+  const deckItems: [BroadcastItem | null, BroadcastItem | null] = activeDeck === 0
+    ? [resolvedActiveItem, preloadItem]
+    : [preloadItem, resolvedActiveItem]
+
+  useEffect(() => {
+    const activeElement = mediaRefs.current[activeDeck]
+    const inactiveElement = mediaRefs.current[inactiveDeck]
+
+    inactiveElement?.load()
+
+    if (!isPlaying) {
+      activeElement?.pause()
+      inactiveElement?.pause()
+      return
+    }
+
+    void activeElement?.play().catch(() => {
+      setIsPlaying(false)
+      setPlaybackError("Playback needs a user interaction to continue.")
+    })
+  }, [activeDeck, activeItemKey, inactiveDeck, isPlaying, nextItemKey])
+
+  useEffect(() => {
+    mediaRefs.current.forEach((element) => {
+      if (element) {
+        element.muted = isMuted
+        element.volume = volume
+      }
+    })
+  }, [isMuted, volume])
+
+  useEffect(() => {
+    function handleFullscreenChange() {
+      setIsFullscreen(document.fullscreenElement === playerRootRef.current)
+    }
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange)
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
+  }, [])
+
+  function setFirstMediaElement(element: HTMLMediaElement | null) {
+    mediaRefs.current[0] = element
+  }
+
+  function setSecondMediaElement(element: HTMLMediaElement | null) {
+    mediaRefs.current[1] = element
+  }
+
+  function setPlayerRoot(element: HTMLElement | null) {
+    playerRootRef.current = element
+  }
 
   function startPlayback() {
     setPlaybackError(null)
+    void mediaRefs.current[activeDeck]?.play().catch(() => {
+      setIsPlaying(false)
+      setPlaybackError("Playback needs a user interaction to continue.")
+    })
     setIsPlaying(true)
   }
 
   function pausePlayback() {
+    mediaRefs.current.forEach((element) => element?.pause())
     setIsPlaying(false)
   }
 
-  function selectIndex(index: number) {
-    startTransition(() => {
-      setActiveIndex(index)
-      setPlaybackError(null)
+  function restartCurrentItem() {
+    const activeElement = mediaRefs.current[activeDeck]
+    if (!activeElement) {
+      return
+    }
+
+    activeElement.currentTime = 0
+    setPlaybackError(null)
+
+    if (!isPlaying) {
+      return
+    }
+
+    void activeElement.play().catch(() => {
+      setIsPlaying(false)
+      setPlaybackError("Playback needs a user interaction to continue.")
     })
   }
 
+  function promoteItem(item: BroadcastItem) {
+    const activeElement = mediaRefs.current[activeDeck]
+    const preloadedElement = mediaRefs.current[inactiveDeck]
+    const isPreloaded = nextItemKey === getMediaSourceKey(item)
+
+    activeElement?.pause()
+    setPlaybackError(null)
+
+    if (isPreloaded) {
+      if (isPlaying) {
+        void preloadedElement?.play().catch(() => {
+          setIsPlaying(false)
+          setPlaybackError("Playback needs a user interaction to continue.")
+        })
+      }
+
+      setActiveDeck(inactiveDeck)
+    } else if (activeElement) {
+      activeElement.currentTime = 0
+    }
+
+    setActiveItem(item)
+  }
+
   function moveToNext() {
-    if (nextIndex === null) {
+    if (!resolvedActiveItem) {
+      return
+    }
+
+    if (!nextItem) {
+      setActiveItem(null)
       setIsPlaying(false)
       return
     }
 
-    startTransition(() => {
-      setActiveIndex(nextIndex)
-      setPlaybackError(null)
-    })
+    if (activeItemKey === nextItemKey) {
+      const activeElement = mediaRefs.current[activeDeck]
+      if (activeElement) {
+        activeElement.currentTime = 0
+        if (isPlaying) {
+          void activeElement.play().catch(() => {
+            setIsPlaying(false)
+            setPlaybackError("Playback needs a user interaction to continue.")
+          })
+        }
+      }
+      return
+    }
+
+    promoteItem(nextItem)
+  }
+
+  function moveToPrevious() {
+    if (!resolvedActiveItem) {
+      return
+    }
+
+    const previousItem = getPreviousPlaybackItem(broadcast.items, resolvedActiveItem.id)
+    if (!previousItem) {
+      return
+    }
+
+    if (getMediaSourceKey(previousItem) === activeItemKey) {
+      restartCurrentItem()
+      return
+    }
+
+    promoteItem(previousItem)
+  }
+
+  function selectItem(itemId: string) {
+    const item = broadcast.items.find((queueItem) => queueItem.id === itemId)
+    if (item && getMediaSourceKey(item) !== activeItemKey) {
+      promoteItem(item)
+    }
+  }
+
+  function togglePlayback() {
+    if (isPlaying) {
+      pausePlayback()
+      return
+    }
+
+    startPlayback()
+  }
+
+  function toggleMuted() {
+    if (isMuted || volume === 0) {
+      const restoredVolume = Math.max(lastAudibleVolumeRef.current, 0.05)
+      setVolume(restoredVolume)
+      setIsMuted(false)
+      return
+    }
+
+    setIsMuted(true)
+  }
+
+  function changeVolume(event: ChangeEvent<HTMLInputElement>) {
+    const nextVolume = Number(event.currentTarget.value)
+    if (nextVolume > 0) {
+      lastAudibleVolumeRef.current = nextVolume
+    }
+    setVolume(nextVolume)
+    setIsMuted(nextVolume === 0)
+  }
+
+  function handleMediaError() {
+    mediaRefs.current.forEach((element) => element?.pause())
+    setIsPlaying(false)
+    setPlaybackError("This media could not be played.")
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen()
+      } else {
+        await playerRootRef.current?.requestFullscreen()
+      }
+    } catch {
+      setPlaybackError("Fullscreen is not available in this browser.")
+    }
   }
 
   return {
     state: {
-      activeIndex,
-      activeItem,
+      activeDeck,
+      activeItem: resolvedActiveItem,
+      activeItemId,
+      deckItems,
+      isFullscreen,
+      isMuted,
       isPlaying,
       playbackError,
-      preloadIndices,
+      volume,
     },
     actions: {
+      changeVolume,
       moveToNext,
-      pausePlayback,
-      selectIndex,
-      setPlaybackError,
-      startPlayback,
+      moveToPrevious,
+      selectItem,
+      setFirstMediaElement,
+      handleMediaError,
+      setPlayerRoot,
+      setSecondMediaElement,
+      toggleFullscreen,
+      toggleMuted,
+      togglePlayback,
     },
   }
 }
