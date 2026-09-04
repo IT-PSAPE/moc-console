@@ -55,5 +55,11 @@ export const BOOKING_STEPS = [
   { label: 'Review' },
 ]
 
+export const VENUE_STEPS = [
+  { label: 'Details' },
+  { label: 'Schedule' },
+  { label: 'Review' },
+]
+
 export const PRIORITIES: RequestPriority[] = ['low', 'medium', 'high', 'urgent']
 export const CATEGORIES: RequestCategory[] = ['video_production', 'video_shooting', 'graphic_design', 'event', 'education']

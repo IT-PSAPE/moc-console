@@ -6,6 +6,7 @@ import { Spinner } from '@moc/ui/components/feedback/spinner'
 const HomeScreen = lazy(() => import('@/screens/home-screen').then((module) => ({ default: module.HomeScreen })))
 const RequestScreen = lazy(() => import('@/screens/request-screen').then((module) => ({ default: module.RequestScreen })))
 const BookingScreen = lazy(() => import('@/screens/booking-screen').then((module) => ({ default: module.BookingScreen })))
+const VenueScreen = lazy(() => import('@/screens/venue-screen').then((module) => ({ default: module.VenueScreen })))
 const ConfirmationScreen = lazy(() => import('@/screens/confirmation-screen').then((module) => ({ default: module.ConfirmationScreen })))
 const TrackScreen = lazy(() => import('@/screens/track-screen').then((module) => ({ default: module.TrackScreen })))
 const NotFoundScreen = lazy(() => import('@/screens/not-found-screen').then((module) => ({ default: module.NotFoundScreen })))
@@ -15,6 +16,7 @@ const router = createBrowserRouter([
     { path: routes.publicHome, element: <HomeScreen />, errorElement: <ErrorScreen /> },
     { path: routes.publicRequest, element: <RequestScreen />, errorElement: <ErrorScreen /> },
     { path: routes.publicBooking, element: <BookingScreen />, errorElement: <ErrorScreen /> },
+    { path: routes.publicVenue, element: <VenueScreen />, errorElement: <ErrorScreen /> },
     { path: routes.publicConfirmation, element: <ConfirmationScreen />, errorElement: <ErrorScreen /> },
     { path: routes.publicTrack, element: <TrackScreen />, errorElement: <ErrorScreen /> },
     { path: '*', element: <NotFoundScreen /> },

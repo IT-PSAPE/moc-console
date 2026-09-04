@@ -26,3 +26,10 @@ export function wakeBookingCreatedNotification(bookingId: string, trackingCode: 
     body: { booking_id: bookingId, tracking_code: trackingCode },
   })
 }
+
+export function wakeVenueBookingCreatedNotification(venueBookingId: string, trackingCode: string): void {
+  wakeNotification({
+    endpoint: "/api/notify/venue-booking",
+    body: { venue_booking_id: venueBookingId, tracking_code: trackingCode },
+  })
+}

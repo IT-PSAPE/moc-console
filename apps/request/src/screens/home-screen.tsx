@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Title } from '@moc/ui/components/display/text'
+import { Building2 } from 'lucide-react'
 import { PublicLayout } from '@/features/components/public-layout'
 import { OptionCard } from '@/features/components/option-card'
 import { RequestDraftCard } from '@/features/components/request-draft-card'
@@ -13,6 +14,7 @@ export function HomeScreen() {
 
   const handleRequest = () => navigate(routes.publicRequest)
   const handleBooking = () => navigate(routes.publicBooking)
+  const handleVenue = () => navigate(routes.publicVenue)
   const handleTrack = () => navigate(routes.publicTrack)
   const handleContinueDraft = () => navigate(routes.publicRequest)
 
@@ -43,6 +45,12 @@ export function HomeScreen() {
           title="Book equipment"
           description="Browse available equipment and reserve what you need."
           onClick={handleBooking}
+        />
+        <OptionCard
+          icon={<Building2 className="size-20 p-5" aria-hidden="true" />}
+          title="Book a venue"
+          description="Choose a venue and reserve a block of time."
+          onClick={handleVenue}
         />
         <OptionCard
           icon={<img src="/assets/icon_folder.png" alt="" width="80" height="80" className='size-20' />}
