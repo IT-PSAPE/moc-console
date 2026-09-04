@@ -15,6 +15,7 @@ Use it with:
 | Auth | Profile plus role | Supabase Auth + Supabase | User profiles now include `telegramChatId`, and password recovery completes on a dedicated route. |
 | Workspace | Membership-filtered directory views | Supabase with runtime fallback | Users can belong to multiple workspaces; runtime can fall back to the seeded default workspace for unresolved scope. |
 | Equipment | Denormalized inventory and booking objects | Supabase | `bookedBy` stays a runtime convenience field. |
+| Venues | Venue list plus booking objects with a DERIVED status | Supabase | The stored `status` is only `auto` or `cancelled`; `booked`/`in_progress`/`completed` are derived from the clock and never written. |
 | Streams | YouTube live streams with workspace-level OAuth | Supabase + Edge Functions | Local `streams` table caches YouTube broadcast data. All YouTube API calls are proxied through Supabase Edge Functions to keep OAuth secrets server-side. |
 
 ## Global Rules
@@ -168,6 +169,58 @@ Important rules:
 - `equipmentName` is joined from equipment data.
 - `bookedBy` is free text in storage and the runtime model.
 - `duration` is derived in the app.
+
+## Venues
+
+### Venue read model
+
+Current runtime shape:
+
+- `id`
+- `name`
+- `location`
+- `capacity`
+- `active`
+- `sortOrder`
+
+The public request app sees a narrower shape (`PublicVenue`: `id`, `name`,
+`location`, `capacity`) returned by `public_list_venues`, which only ever
+returns active venues.
+
+### Venue booking read model
+
+Current runtime shape:
+
+- `id`
+- `venueId`
+- `venueName`
+- `venueLocation`
+- `trackingCode`
+- `title`
+- `requestedBy`
+- `who`, `what`, `when`, `where`, `why`, `how`
+- `notes`
+- `status`
+- `startsAt`
+- `endsAt`
+- `cancelledAt`, `cancelledBy`, `cancelReason`
+
+Important rules:
+
+- `venueName` and `venueLocation` are joined from venue data.
+- `requestedBy` is free text in storage and the runtime model.
+- **`status` is not the status a reader should see.** It is the stored state and
+  is only ever `auto` or `cancelled`. The reader-facing phase — `booked`,
+  `in_progress`, `completed`, `cancelled` — is derived from the clock against
+  `startsAt`/`endsAt` by `deriveVenueBookingPhase` in `@moc/types/venues`. No
+  UI may branch on the raw `status`, and nothing writes a phase back.
+- Derive a list of bookings against a single instant (pass the same `at` to
+  every call) so rows in one render cannot disagree about the current time.
+- `when` and `where` are the submitter's own words. The authoritative time is
+  `startsAt`/`endsAt` and the authoritative place is the venue.
+- The duration is derived in the app, not stored.
+- Slot rows exist in storage but are not part of the read model: a booking is
+  always one continuous block, so `startsAt`/`endsAt` describe it fully.
 
 ## Streams
 

@@ -17,6 +17,7 @@ It separates:
 | Workspace | Supabase membership + approval queue | `apps/console/src/data/current-workspace.ts`, `apps/console/src/data/fetch-workspaces.ts` | Pending accounts cannot resolve an accepted workspace until an owner or admin approves them. |
 | Equipment | Supabase | `src/data/fetch-equipment.ts`, `src/data/mutate-equipment.ts` | Equipment rows remain normalized; booking-derived display fields are added in the mapper. |
 | Streams | Supabase + MoC API | `apps/console/src/data/fetch-streams.ts`, `apps/console/src/data/mutate-streams.ts`, `apps/api/api/youtube/` | Provider calls and OAuth secrets stay behind the dedicated API app. Local `streams` is a cache of provider state. |
+| Venues | Supabase | `apps/console/src/data/fetch-venues.ts`, `mutate-venues.ts`, `fetch-venue-bookings.ts`, `mutate-venue-bookings.ts`, `map-venue-booking.ts`; `apps/request/src/data/submit-venue-booking.ts`, `fetch-venue-availability.ts` | The console reads and cancels only; submissions come from MOC Request through `public_submit_venue_booking`. The booking status shown anywhere is derived by `deriveVenueBookingPhase`, never read from the row. |
 | Structural seed | Checked-in SQL | `supabase/phase-01-schema.sql` | Seeds only the roles and default workspace required for bootstrap. |
 
 ## Current Live Code Changes
