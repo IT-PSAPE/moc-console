@@ -76,6 +76,17 @@ const BOOKING_TOKENS = specs(
   "linkUrl",
 );
 
+const VENUE_BOOKING_TOKENS = specs(
+  "title", "status", "requesterName",
+  "venueName", "venueLocation",
+  "startsAt", "endsAt", "slotCount", "duration",
+  "who", "what", "whenText", "whereText", "why", "how", "notes",
+  "trackingCode",
+  // cancelReason / cancelledAt — populated for venue_booking.cancelled only.
+  "cancelReason", "cancelledAt",
+  "linkUrl",
+);
+
 const STREAM_TOKENS = specs(
   "title", "description", "scheduledStartTime", "actualStartTime",
   "status", "privacyStatus", "isForKids", "latencyPreference", "tags",
@@ -102,6 +113,8 @@ export const TEMPLATE_TOKENS: Record<MessageType, readonly TokenSpec[]> = {
   "booking.created": BOOKING_TOKENS,
   "booking.status_changed": BOOKING_TOKENS,
   "booking.stale": BOOKING_TOKENS,
+  "venue_booking.created": VENUE_BOOKING_TOKENS,
+  "venue_booking.cancelled": VENUE_BOOKING_TOKENS,
   // Request assignment shares the request category, plus the DM-only
   // duty / assignee fields.
   "assignment.request": specs(
@@ -134,6 +147,10 @@ export const DEFAULT_TEMPLATES: Record<MessageType, string> = {
     "📣 <b>Equipment booking updated</b>\n\n📌 <b>Title:</b> {{title}} — {{itemCount}} item(s)\n🔄 Now: <i>{{status}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "booking.stale":
     "⏰ <b>Booking needs attention</b>\n\n📌 <b>Title:</b> {{title}} — {{itemCount}} item(s)\n🔄 <b>Status:</b> <i>{{status}}</i>\n⚠️ {{staleReason}}\n⏳ Outstanding for {{staleDays}} day(s)\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
+  "venue_booking.created":
+    "✨ <b>New venue booking</b>\n\n📌 <b>Title:</b> {{title}}\n🏛 <b>Venue:</b> {{venueName}}\n🗓 <b>When:</b> {{startsAt}} → {{endsAt}}\n🙋 <b>From:</b> {{requesterName}}\n🎯 <b>What for:</b> {{what}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
+  "venue_booking.cancelled":
+    "🚫 <b>Venue booking cancelled</b>\n\n📌 <b>Title:</b> {{title}}\n🏛 <b>Venue:</b> {{venueName}}\n🗓 <b>Was:</b> {{startsAt}} → {{endsAt}}\n🙋 <b>From:</b> {{requesterName}}\nℹ️ {{cancelReason}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "assignment.request":
     "👋 Hey {{assigneeName}}!\nYou've been assigned to a request\n\n📌 <b>Title:</b> {{title}}\n🛠 <b>Duty:</b> <i>{{duty}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">View Full Request Details</a>",
   "assignment.checklist_item":
@@ -229,6 +246,7 @@ const DATE_TOKEN_NAMES = new Set<string>([
   "scheduledStartTime", "actualStartTime",
   "startTime",
   "checklistScheduledAt",
+  "startsAt", "endsAt", "cancelledAt",
 ]);
 
 function resolveTimeZone(timezone: string): string {
@@ -343,6 +361,29 @@ const BOOKING_SAMPLE: TokenValues = {
   linkUrl: "https://app.example.com/equipment/bookings",
 };
 
+const VENUE_BOOKING_SAMPLE: TokenValues = {
+  title: "Youth rehearsal",
+  status: "booked",
+  requesterName: "Tapiwa N.",
+  venueName: "Main Auditorium",
+  venueLocation: "Ground floor, east wing",
+  startsAt: "22 May, 6:00 PM",
+  endsAt: "22 May, 8:00 PM",
+  slotCount: "4",
+  duration: "2h",
+  who: "Youth worship team — 12 people",
+  what: "Run through Sunday's set",
+  whenText: "Friday evening before the service",
+  whereText: "Main auditorium stage",
+  why: "Final rehearsal before leading on Sunday",
+  how: "Full band setup, house PA and stage monitors",
+  notes: "Need the stage cleared of the conference chairs",
+  trackingCode: "VEN-3B81D0",
+  cancelReason: "",
+  cancelledAt: "",
+  linkUrl: "https://app.example.com/venues/123",
+};
+
 // Sample data for the settings live-preview. Values are intentionally
 // realistic so admins see escaping behaviour (e.g. the & in a title).
 export const SAMPLE_TOKENS: Record<MessageType, TokenValues> = {
@@ -386,6 +427,13 @@ export const SAMPLE_TOKENS: Record<MessageType, TokenValues> = {
     status: "checked_out",
     staleReason: "Overdue for return",
     staleDays: "4",
+  },
+  "venue_booking.created": VENUE_BOOKING_SAMPLE,
+  "venue_booking.cancelled": {
+    ...VENUE_BOOKING_SAMPLE,
+    status: "cancelled",
+    cancelReason: "Clashes with the elders' meeting",
+    cancelledAt: "20 May, 9:15 AM",
   },
   "assignment.request": { ...REQUEST_SAMPLE, duty: "Design", assigneeName: "Craig C." },
   "assignment.checklist_item": {
