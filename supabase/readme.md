@@ -145,6 +145,21 @@ The first tracked reliability migration is:
     (workspace, event, group, thread) before adding the unique indexes —
     review that against production data before applying.
 
+14. `20260904160000_venue_booking_data_api_grants` — source:
+    [`migrations/20260904160000_venue_booking_data_api_grants.sql`](migrations/20260904160000_venue_booking_data_api_grants.sql).
+    The venue booking migration granted EXECUTE on its functions but no table
+    privileges, and this database is deny-by-default for the Data API roles
+    (the target-schema cleanup revoked the schema-wide default privileges for
+    `anon`, `authenticated` and `service_role`). Every venue query therefore
+    failed with 42501 `permission denied for table venues` before RLS was
+    consulted. This migration adds the table grants that mirror the domain
+    migration's policies: full CRUD on `venues`, read/update/delete on
+    `venue_bookings` (never insert — only the SECURITY DEFINER submit RPC
+    writes one), read on `venue_booking_slots`, nothing for `anon`, and all of
+    it for `service_role`. Apply it to any database that already has the venue
+    booking domain — without it the console's Venues settings tab and the
+    venue booking notification enrichment are both dead.
+
 ## Script history
 
 The phase files are the consolidated historical baseline:
