@@ -1,89 +1,60 @@
-import { fetchPublicBroadcast } from "@/data/fetch-public-broadcast"
 import { AudioBroadcastPlayer } from "@/features/audio-broadcast-player"
+import { usePublicBroadcast } from "@/features/use-public-broadcast"
 import { VideoBroadcastPlayer } from "@/features/video-broadcast-player"
 import type { Broadcast } from "@moc/types/broadcast/broadcast"
+import { Decision } from "@moc/ui/components/display/decision"
 import { Alert } from "@moc/ui/components/feedback/alert"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
-import { Page } from "@moc/ui/components/layout/page"
-import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
 import { RadioTower } from "lucide-react"
+import { useParams } from "react-router-dom"
+import { BroadcastLayout } from "@/features/broadcast-layout"
+
+function renderPlayer(broadcast: Broadcast) {
+  if (broadcast.items.length === 0) {
+    return (
+      <BroadcastLayout>
+        <EmptyState
+          icon={<RadioTower />}
+          title="Nothing is queued yet"
+          description="This player starts as soon as the broadcast owner adds media."
+        />
+      </BroadcastLayout>
+    )
+  }
+
+  return broadcast.kind === "audio"
+    ? <AudioBroadcastPlayer key={broadcast.id} broadcast={broadcast} />
+    : <VideoBroadcastPlayer key={broadcast.id} broadcast={broadcast} />
+}
 
 export function PublicBroadcastScreen() {
   const { slug } = useParams()
-  const [broadcast, setBroadcast] = useState<Broadcast | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
+  const { broadcast, error, isLoading } = usePublicBroadcast(slug)
 
-  useEffect(() => {
-    if (!slug) {
-      setBroadcast(null)
-      setIsLoading(false)
-      return
-    }
-
-    const broadcastSlug = slug
-    let cancelled = false
-
-    async function loadBroadcast() {
-      setIsLoading(true)
-      setLoadError(null)
-
-      try {
-        const nextBroadcast = await fetchPublicBroadcast(broadcastSlug)
-
-        if (!cancelled) {
-          setBroadcast(nextBroadcast)
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setLoadError(error instanceof Error ? error.message : "The broadcast could not be loaded.")
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    void loadBroadcast()
-
-    return () => {
-      cancelled = true
-    }
-  }, [slug])
-
-  function renderContent() {
-    if (isLoading) {
-      return <LoadingSpinner className="py-10" />
-    }
-
-    if (loadError) {
-      return <Alert variant="error" title="Could not load broadcast" description={loadError} />
-    }
-
-    if (!broadcast) {
-      return (
-        <EmptyState
-          icon={<RadioTower />}
-          title="Broadcast not found"
-          description="This link does not point to a published broadcast."
-        />
-      )
-    }
-
-    return broadcast.kind === "audio" ? <AudioBroadcastPlayer broadcast={broadcast} /> : <VideoBroadcastPlayer broadcast={broadcast} />
+  if (error) {
+    return (
+      <BroadcastLayout>
+        <Alert variant="error" title="Could not load broadcast" description={error} />
+      </BroadcastLayout>
+    )
   }
 
   return (
-    <Page>
-      <Page.Header>
-        <Page.Heading>
-          <Page.Title>Broadcast</Page.Title>
-        </Page.Heading>
-      </Page.Header>
-      <Page.Content className="flex flex-col gap-4">{renderContent()}</Page.Content>
-    </Page>
+    <Decision value={broadcast} loading={isLoading}>
+      <Decision.Loading>
+        <BroadcastLayout><LoadingSpinner /></BroadcastLayout>
+      </Decision.Loading>
+      <Decision.Empty>
+        <BroadcastLayout>
+          <EmptyState
+            icon={<RadioTower />}
+            title="Broadcast not found"
+            description="This link does not point to an available broadcast."
+          />
+        </BroadcastLayout>
+      </Decision.Empty>
+      <Decision.Data>{renderPlayer}</Decision.Data>
+    </Decision>
   )
 }
