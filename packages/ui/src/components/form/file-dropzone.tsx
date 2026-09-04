@@ -11,14 +11,15 @@ type FileDropzoneProps = {
   className?: string
   fileName?: string
   fileNames?: string[]
+  hint?: string
   multiple?: boolean
-  onFileSelect: (file: File | null) => void
+  onFileSelect?: (file: File | null) => void
   onFilesSelect?: (files: File[]) => void
   placeholder?: string
   selectedHint?: string
 }
 
-export function FileDropzone({ accept, className, fileName, fileNames, multiple = false, onFileSelect, onFilesSelect, placeholder = "Drag and drop a file here, or click to browse.", selectedHint = "Drop a new file or click to replace it." }: FileDropzoneProps) {
+export function FileDropzone({ accept, className, fileName, fileNames, hint = "Supports image, audio, and video files.", multiple = false, onFileSelect, onFilesSelect, placeholder = "Drag and drop a file here, or click to browse.", selectedHint = "Drop a new file or click to replace it." }: FileDropzoneProps) {
   const [isDragging, setIsDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const selectedFileNames = fileNames?.length ? fileNames : fileName ? [fileName] : []
@@ -36,7 +37,7 @@ export function FileDropzone({ accept, className, fileName, fileNames, multiple 
   function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
     const nextFiles = Array.from(event.target.files ?? [])
     onFilesSelect?.(nextFiles)
-    onFileSelect(nextFiles[0] ?? null)
+    onFileSelect?.(nextFiles[0] ?? null)
     event.target.value = ""
   }
 
@@ -65,7 +66,7 @@ export function FileDropzone({ accept, className, fileName, fileNames, multiple 
     setIsDragging(false)
     const nextFiles = Array.from(event.dataTransfer.files ?? [])
     onFilesSelect?.(nextFiles)
-    onFileSelect(nextFiles[0] ?? null)
+    onFileSelect?.(nextFiles[0] ?? null)
   }
 
   return (
@@ -94,7 +95,7 @@ export function FileDropzone({ accept, className, fileName, fileNames, multiple 
             {displayName ?? placeholder}
           </Paragraph.sm>
           <Paragraph.xs className="text-quaternary">
-            {hasSelection ? selectedHint : "Supports image, audio, and video files."}
+            {hasSelection ? selectedHint : hint}
           </Paragraph.xs>
         </span>
       </BaseButton>
