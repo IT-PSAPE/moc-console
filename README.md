@@ -103,13 +103,14 @@ npm run preview
 
 ### Viewing a dev server from another device (Tailscale)
 
-Both browser apps bind every network interface and accept MagicDNS hostnames,
+All three browser apps bind every network interface and accept MagicDNS hostnames,
 so anything signed in to the same tailnet — a phone, a tablet, another laptop —
 can open a running dev server with no tunnel and no public URL:
 
 ```bash
-bun run dev:console   # http://<machine>.<tailnet>.ts.net:5173
-bun run dev:request   # http://<machine>.<tailnet>.ts.net:5176
+bun run dev:console     # http://<machine>.<tailnet>.ts.net:5173
+bun run dev:broadcast   # http://<machine>.<tailnet>.ts.net:5174
+bun run dev:request     # http://<machine>.<tailnet>.ts.net:5176
 ```
 
 Each server prints its own tailnet URL alongside Vite's local one at startup.
@@ -118,7 +119,7 @@ devices already authenticated to the tailnet, and the allow-list is limited to
 `.ts.net`.
 
 The behaviour lives in [scripts/vite-tailscale.ts](scripts/vite-tailscale.ts)
-and is shared by both apps. If Tailscale is not installed, not running, or
+and is shared by all three apps. If Tailscale is not installed, not running, or
 logged out, the plugin stays quiet and the dev server starts as normal — it
 just prints no tailnet line.
 
