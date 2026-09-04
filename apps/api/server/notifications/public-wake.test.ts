@@ -2,12 +2,14 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
 import {
+  ENTITY_TABLES,
   handlePublicNotificationWake,
   parsePublicNotificationWake,
   publicWakeRateLimitSubject,
   type PublicWakeDependencies,
   type PublicNotificationWakeOptions,
 } from "./public-wake.js"
+import publicNotificationWake from "../../api/notify/[kind].js"
 import type { ApiResponse } from "../http.js"
 
 const requestOptions: PublicNotificationWakeOptions = {
@@ -17,8 +19,17 @@ const requestOptions: PublicNotificationWakeOptions = {
   notFoundMessage: "Request not found",
 }
 
+const venueBookingOptions: PublicNotificationWakeOptions = {
+  entityIdField: "venue_booking_id",
+  entityType: "venue_booking",
+  eventType: "venue_booking.created",
+  notFoundMessage: "Venue booking not found",
+}
+
 const requestId = "f3cc40f7-e4a9-4d9a-b9fc-fac06eb8be7d"
 const trackingCode = "REQ-ABC123"
+const venueBookingId = "2d6f9d0a-9f3f-4a4a-8a3a-6a9f7b1e2c3d"
+const venueBookingTrackingCode = "VEN-3B81D0"
 
 type TestResponse = {
   statusCode: number | null
@@ -205,6 +216,94 @@ describe("handlePublicNotificationWake", () => {
     )
 
     assert.equal(limitCalled, false)
+    assert.equal(result.statusCode, 400)
+    assert.deepEqual(result.body, { error: "Invalid notification wake request" })
+  })
+})
+
+describe("venue-booking wake", () => {
+  it("looks up the venue booking wake entity against venue_bookings", () => {
+    assert.equal(ENTITY_TABLES.venue_booking, "venue_bookings")
+    assert.equal(ENTITY_TABLES.request, "requests")
+    assert.equal(ENTITY_TABLES.booking, "bookings")
+  })
+
+  it("accepts the venue_booking_id + tracking_code shape and its VEN- tracking codes", () => {
+    assert.deepEqual(
+      parsePublicNotificationWake(
+        { venue_booking_id: venueBookingId, tracking_code: venueBookingTrackingCode },
+        venueBookingOptions,
+      ),
+      { entityId: venueBookingId, trackingCode: venueBookingTrackingCode },
+    )
+  })
+
+  it("rejects a request-shaped body (wrong id field, wrong tracking-code prefix)", () => {
+    assert.equal(
+      parsePublicNotificationWake({ request_id: venueBookingId, tracking_code: venueBookingTrackingCode }, venueBookingOptions),
+      null,
+    )
+    assert.equal(
+      parsePublicNotificationWake({ venue_booking_id: venueBookingId, tracking_code: trackingCode }, venueBookingOptions),
+      null,
+    )
+  })
+
+  it("looks up the venue_booking table and dispatches venue_booking.created", async () => {
+    const result = createResponse()
+    let lookupArgs: unknown[] = []
+    let dispatchArgs: unknown[] = []
+    await handlePublicNotificationWake(
+      { method: "POST", body: { venue_booking_id: venueBookingId, tracking_code: venueBookingTrackingCode } },
+      result.response,
+      venueBookingOptions,
+      dependencies({
+        lookup: async (...args) => {
+          lookupArgs = args
+          return venueBookingId
+        },
+        dispatch: async (...args) => {
+          dispatchArgs = args
+          return { attempted: 1, dispatched: 1, failed: 0, pendingRetry: 0 }
+        },
+      }),
+    )
+
+    assert.deepEqual(lookupArgs, ["venue_booking", venueBookingId, venueBookingTrackingCode])
+    assert.deepEqual(dispatchArgs, ["venue_booking", venueBookingId, "venue_booking.created"])
+    assert.equal(result.statusCode, 200)
+    assert.deepEqual(result.body, { ok: true })
+  })
+
+  it("reports the venue-booking not-found message on a tracking-code mismatch", async () => {
+    const result = createResponse()
+    await handlePublicNotificationWake(
+      { method: "POST", body: { venue_booking_id: venueBookingId, tracking_code: venueBookingTrackingCode } },
+      result.response,
+      venueBookingOptions,
+      dependencies({ lookup: async () => null }),
+    )
+
+    assert.equal(result.statusCode, 404)
+    assert.deepEqual(result.body, { error: "Venue booking not found" })
+  })
+
+  // Exercises the real /api/notify/[kind] router (not the injected
+  // dependencies above) to prove "venue-booking" is actually wired to the
+  // venue_booking_id-shaped options, not just that a same-shaped options
+  // object works in isolation. A wrong-field body 400s before touching the
+  // database, so this needs no Supabase credentials.
+  it("wires the 'venue-booking' route kind to venue_booking_id, not request_id", async () => {
+    const result = createResponse()
+    await publicNotificationWake(
+      {
+        method: "POST",
+        query: { kind: "venue-booking" },
+        body: { request_id: venueBookingId, tracking_code: venueBookingTrackingCode },
+      },
+      result.response,
+    )
+
     assert.equal(result.statusCode, 400)
     assert.deepEqual(result.body, { error: "Invalid notification wake request" })
   })

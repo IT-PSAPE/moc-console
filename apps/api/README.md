@@ -12,6 +12,7 @@ See [ADR-0008](../../docs/adr/0008-extract-moc-api-app.md) for why this exists.
 | --- | --- | --- |
 | `POST /api/notify/request` | MOC Request (browser) | stored request ID + tracking code |
 | `POST /api/notify/booking` | MOC Request (browser) | stored booking ID + tracking code |
+| `POST /api/notify/venue-booking` | MOC Request (browser) | stored venue booking ID + tracking code |
 | `POST /api/notifications/requests` | external senders | HMAC `X-Signature` |
 | `POST /api/notifications/bookings` | external senders | HMAC `X-Signature` |
 | `POST /api/notifications/assignment` | MOC Console (browser) | Supabase session (`x-moc-session`) |

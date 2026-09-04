@@ -28,6 +28,15 @@ const routes: Readonly<Record<string, PublicWakeRoute>> = {
       notFoundMessage: "Request not found",
     },
   },
+  "venue-booking": {
+    observationRoute: "notify.venue-booking",
+    options: {
+      entityIdField: "venue_booking_id",
+      entityType: "venue_booking",
+      eventType: "venue_booking.created",
+      notFoundMessage: "Venue booking not found",
+    },
+  },
 }
 
 async function handleWake(request: ApiRequest, response: ApiResponse, options: PublicNotificationWakeOptions): Promise<void> {

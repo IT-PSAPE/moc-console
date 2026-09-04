@@ -6,7 +6,7 @@ import { dispatchEvent, type EventPayloadMap, type NotifyDestination } from "./d
 const MAX_ATTEMPTS = 5
 const CLAIM_TIMEOUT_MS = 5 * 60_000
 
-type OutboxRow = {
+export type OutboxRow = {
   id: string
   workspace_id: string
   event_type: string
@@ -81,7 +81,7 @@ function text(value: unknown): string | null {
   return typeof value === "string" ? value : null
 }
 
-function buildPayload(row: OutboxRow): EventPayloadMap[NotificationEventKey] {
+export function buildPayload(row: OutboxRow): EventPayloadMap[NotificationEventKey] {
   const payload = row.payload
   const baseUrl = resolveBaseUrl()
   if (!baseUrl) throw new Error("CONSOLE_BASE_URL not configured")
@@ -108,6 +108,28 @@ function buildPayload(row: OutboxRow): EventPayloadMap[NotificationEventKey] {
       requesterName: text(payload.requesterName),
       trackingCode,
       linkUrl: `${baseUrl}/bookings/${encodeURIComponent(row.entity_id)}`,
+    } as EventPayloadMap[NotificationEventKey]
+  }
+
+  if (row.event_type.startsWith("venue_booking.")) {
+    const title = text(payload.title)
+    const requesterName = text(payload.requesterName)
+    const trackingCode = text(payload.trackingCode)
+    const venueName = text(payload.venueName)
+    const startsAt = text(payload.startsAt)
+    const endsAt = text(payload.endsAt)
+    if (!title || !requesterName || !trackingCode || !venueName || !startsAt || !endsAt) {
+      throw new Error("Venue booking notification is missing required details")
+    }
+    return {
+      title,
+      requesterName,
+      trackingCode,
+      venueName,
+      startsAt,
+      endsAt,
+      venueBookingId: row.entity_id,
+      linkUrl: `${baseUrl}/venues/${encodeURIComponent(row.entity_id)}`,
     } as EventPayloadMap[NotificationEventKey]
   }
 
