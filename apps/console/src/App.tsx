@@ -18,6 +18,7 @@ import { useWorkspace } from './lib/workspace-context'
 import { PendingAccessScreen } from './screens/auth/pending-access'
 
 const StreamsScreen = lazy(() => import('@/screens/streams/page').then((m) => ({ default: m.StreamsScreen })))
+const BroadcastsScreen = lazy(() => import('@/screens/broadcasts/page').then((m) => ({ default: m.BroadcastsScreen })))
 const StreamDetailScreen = lazy(() => import('@/screens/streams/stream-detail/page').then((m) => ({ default: m.StreamDetailScreen })))
 const MeetingDetailScreen = lazy(() => import('@/screens/streams/meeting-detail/page').then((m) => ({ default: m.MeetingDetailScreen })))
 const DashboardScreen = lazy(() => import('@/screens/dashboard/page').then((m) => ({ default: m.DashboardScreen })))
@@ -178,6 +179,7 @@ const router = createBrowserRouter([
             { path: routes.bookingDetail, element: <BookingDetailScreen /> },
             { path: routes.venues, element: <VenueBookingsScreen /> },
             { path: routes.venueBookingDetail, element: <VenueBookingDetailScreen /> },
+            { path: routes.broadcasts, element: <BroadcastsScreen /> },
             { path: routes.streams, element: <StreamsScreen /> },
             { path: routes.streamDetail, element: <StreamDetailScreen /> },
             { path: routes.meetingDetail, element: <MeetingDetailScreen /> },

@@ -7,7 +7,8 @@
 
 WITH expected_tables(name) AS (
   VALUES
-    ('api_rate_limit_windows'), ('booking_items'), ('bookings'), ('bug_reports'),
+    ('api_rate_limit_windows'), ('booking_items'), ('bookings'),
+    ('broadcast_items'), ('broadcasts'), ('bug_reports'),
     ('checklist_item_assignees'), ('checklist_items'), ('checklist_sections'),
     ('checklist_templates'), ('checklists'), ('equipment'),
     ('notification_deliveries'), ('notification_ingest_replays'),

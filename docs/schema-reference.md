@@ -45,6 +45,8 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 | `venue_booking_slots` | The 30-minute slots a venue booking holds | `id` | `venue_booking_id -> venue_bookings.id`, `venue_id -> venues.id` |
 | `checklist_templates` | Reusable checklist definitions | `id` | `workspace_id -> workspaces.id` |
 | `checklists` | Scheduled checklist runs | `id` | `workspace_id -> workspaces.id`, optional `request_id -> requests.id` |
+| `broadcasts` | Workspace-scoped broadcast playlists for the public player | `id` | `workspace_id -> workspaces.id`, `created_by -> users.id` |
+| `broadcast_items` | Ordered audio/video files belonging to a broadcast playlist | `id` | `broadcast_id -> broadcasts.id` |
 | `youtube_connections` | Workspace-level YouTube connection metadata | `id` | `workspace_id -> workspaces.id`, `connected_by -> users.id` |
 | `streams` | YouTube live stream records | `id` | `workspace_id -> workspaces.id`, `created_by -> users.id` |
 | `zoom_connections` | Workspace-level Zoom connection metadata | `id` | `workspace_id -> workspaces.id`, `connected_by -> users.id` |
@@ -61,6 +63,7 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 | `equipment_status` | `available`, `booked`, `booked_out`, `maintenance` |
 | `booking_status` | `booked`, `checked_out`, `returned`, `archived` |
 | `venue_booking_status` | `auto`, `cancelled` — the only STORED states. The reader-facing phase (`booked`, `in_progress`, `completed`, `cancelled`) is derived, not stored. See below. |
+| `broadcast_kind` | `audio`, `video` |
 | `stream_status` | `created`, `ready`, `live`, `complete` |
 
 ## Auth
@@ -326,6 +329,45 @@ Scope rules:
 - Checklist assignees must be workspace members. An optional linked request
   must be in the checklist workspace. Both checks run in the database.
 
+## Broadcasts
+
+### `broadcasts`
+
+| Column | Postgres type | Default | Nullable | Unique | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
+| `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
+| `created_by` | `uuid` | None | No | No | Foreign key to `users.id`. |
+| `title` | `text` | None | No | No | Broadcast playlist title. |
+| `description` | `text` | `''` | No | No | Optional operator-facing summary. |
+| `slug` | `text` | None | No | Yes | Public URL identifier used by the separate broadcast app. |
+| `kind` | `broadcast_kind` | None | No | No | Playlist media kind: `audio` or `video`. |
+| `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
+| `updated_at` | `timestamptz` | `now()` | No | No | Last update timestamp. |
+
+### `broadcast_items`
+
+| Column | Postgres type | Default | Nullable | Unique | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
+| `broadcast_id` | `uuid` | None | No | No | Foreign key to `broadcasts.id`. |
+| `title` | `text` | None | No | No | Source file title, defaulting to the uploaded filename. |
+| `sort_order` | `integer` | None | No | Per broadcast | Zero-based playlist position. |
+| `storage_bucket` | `text` | `'broadcast-media'` | No | No | Storage bucket holding the public media asset. |
+| `storage_path` | `text` | None | No | No | Object path within the storage bucket. |
+| `public_url` | `text` | None | No | No | Public playback URL resolved from Storage. |
+| `mime_type` | `text` | None | No | No | Uploaded file MIME type. |
+| `file_size_bytes` | `bigint` | None | No | No | Uploaded file size. |
+| `duration_seconds` | `numeric` | `null` | Yes | No | Best-effort client-side metadata captured at upload time. |
+| `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
+
+Important notes:
+
+- Each broadcast contains only one media kind: all items must be audio when `kind = 'audio'`, or video when `kind = 'video'`.
+- `broadcast_items` are ordered by `sort_order`; the public player continuously loops the playlist and automatically preloads the next item.
+- Broadcast metadata and assets are publicly readable by design. Public assets live in the `broadcast-media` storage bucket so the player can preload the next item without signed URLs.
+- Broadcast and item changes are included in the `supabase_realtime` publication so an open player can refresh its queue without a reload.
+
 ## Integrations
 
 ### `youtube_connections`
@@ -439,6 +481,7 @@ Use `workspace_id` on top-level operational tables that need direct scoping, wor
 - `bookings`
 - `checklist_templates`
 - `checklists`
+- `broadcasts`
 - `streams`
 - `youtube_connections`
 - `zoom_connections`
