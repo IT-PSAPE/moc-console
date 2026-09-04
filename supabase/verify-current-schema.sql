@@ -16,7 +16,8 @@ WITH expected_tables(name) AS (
     ('request_activity'), ('request_assignees'), ('request_comments'), ('requests'),
     ('roles'), ('streams'), ('telegram_group_topics'), ('telegram_groups'),
     ('telegram_link_tokens'), ('telegram_webhook_updates'), ('template_items'),
-    ('template_sections'), ('users'), ('workspace_join_requests'),
+    ('template_sections'), ('users'), ('venue_booking_slots'), ('venue_bookings'),
+    ('venues'), ('workspace_join_requests'),
     ('workspace_users'), ('workspaces'), ('youtube_connections'),
     ('zoom_connections'), ('zoom_meetings')
 ),
