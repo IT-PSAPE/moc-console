@@ -9,6 +9,7 @@ import { RequestsProvider } from '@/features/requests/request-provider'
 import { EquipmentProvider } from '@/features/equipment/equipment-provider'
 import { StreamsProvider } from '@/features/streams/streams-provider'
 import { ChecklistsProvider } from '@/features/checklists/checklists-provider'
+import { VenueBookingsProvider } from '@/features/venues/venue-bookings-provider'
 import { BreadcrumbProvider } from '@moc/ui/components/navigation/breadcrumb'
 import { SidebarProvider } from '@moc/ui/components/navigation/sidebar'
 import { TopBarProvider } from './features/topbar'
@@ -22,6 +23,8 @@ const MeetingDetailScreen = lazy(() => import('@/screens/streams/meeting-detail/
 const DashboardScreen = lazy(() => import('@/screens/dashboard/page').then((m) => ({ default: m.DashboardScreen })))
 const BookingsScreen = lazy(() => import('@/screens/bookings/page').then((m) => ({ default: m.BookingsScreen })))
 const BookingDetailScreen = lazy(() => import('@/screens/bookings/detail/page').then((m) => ({ default: m.BookingDetailScreen })))
+const VenueBookingsScreen = lazy(() => import('@/screens/venues/page').then((m) => ({ default: m.VenueBookingsScreen })))
+const VenueBookingDetailScreen = lazy(() => import('@/screens/venues/detail/page').then((m) => ({ default: m.VenueBookingDetailScreen })))
 const EquipmentScreen = lazy(() => import('@/screens/equipment/page').then((m) => ({ default: m.EquipmentScreen })))
 const EquipmentDetailScreen = lazy(() => import('@/screens/equipment/detail/page').then((m) => ({ default: m.EquipmentDetailScreen })))
 const RequestsScreen = lazy(() => import('@/screens/requests/page').then((m) => ({ default: m.RequestsScreen })))
@@ -103,19 +106,21 @@ function WorkspaceAccessGate() {
                 <EquipmentProvider>
                     <StreamsProvider>
                         <ChecklistsProvider>
-                            <BreadcrumbProvider>
-                                <SidebarProvider>
-                                    <TopBarProvider>
-                                        <AppShell>
-                                            <RouteErrorBoundary>
-                                                <Suspense fallback={<FullScreenSpinner />}>
-                                                    <Outlet />
-                                                </Suspense>
-                                            </RouteErrorBoundary>
-                                        </AppShell>
-                                    </TopBarProvider>
-                                </SidebarProvider>
-                            </BreadcrumbProvider>
+                            <VenueBookingsProvider>
+                                <BreadcrumbProvider>
+                                    <SidebarProvider>
+                                        <TopBarProvider>
+                                            <AppShell>
+                                                <RouteErrorBoundary>
+                                                    <Suspense fallback={<FullScreenSpinner />}>
+                                                        <Outlet />
+                                                    </Suspense>
+                                                </RouteErrorBoundary>
+                                            </AppShell>
+                                        </TopBarProvider>
+                                    </SidebarProvider>
+                                </BreadcrumbProvider>
+                            </VenueBookingsProvider>
                         </ChecklistsProvider>
                     </StreamsProvider>
                 </EquipmentProvider>
@@ -171,6 +176,8 @@ const router = createBrowserRouter([
             { path: routes.equipmentDetail, element: <EquipmentDetailScreen /> },
             { path: routes.bookings, element: <BookingsScreen /> },
             { path: routes.bookingDetail, element: <BookingDetailScreen /> },
+            { path: routes.venues, element: <VenueBookingsScreen /> },
+            { path: routes.venueBookingDetail, element: <VenueBookingDetailScreen /> },
             { path: routes.streams, element: <StreamsScreen /> },
             { path: routes.streamDetail, element: <StreamDetailScreen /> },
             { path: routes.meetingDetail, element: <MeetingDetailScreen /> },

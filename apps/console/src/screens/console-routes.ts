@@ -10,6 +10,8 @@ export const routes = {
     equipmentDetail: 'equipment/:id',
     bookings: 'bookings',
     bookingDetail: 'bookings/:id',
+    venues: 'venues',
+    venueBookingDetail: 'venues/:id',
     checklists: 'checklists',
     checklistTemplates: 'checklists/templates',
     checklistDetail: 'checklists/:id',
