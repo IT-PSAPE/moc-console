@@ -8,7 +8,7 @@ import { Label, Paragraph, Title } from "@moc/ui/components/display/text"
 import { SplitPanel } from "@moc/ui/components/layout/split-panel"
 import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time"
 import { Check, Clock, Copy, FileAudio, FileVideo, Link2, ListMusic, Pencil } from "lucide-react"
-import { formatBroadcastFileSize } from "./broadcast-file-format"
+import { formatFileSize } from "@moc/utils/file-constraints"
 import { useBroadcastDetail } from "./use-broadcast-detail"
 
 type BroadcastDetailPanelProps = {
@@ -36,7 +36,7 @@ export function BroadcastDetailPanel({ broadcast, canEdit, onEdit }: BroadcastDe
           <ListItemCard.Title>{item.title}</ListItemCard.Title>
           <ListItemCard.Meta>
             <ListItemCard.MetaItem>{`Position ${index + 1}`}</ListItemCard.MetaItem>
-            <ListItemCard.MetaItem>{formatBroadcastFileSize(item.fileSizeBytes)}</ListItemCard.MetaItem>
+            <ListItemCard.MetaItem>{formatFileSize(item.fileSizeBytes)}</ListItemCard.MetaItem>
           </ListItemCard.Meta>
         </ListItemCard.Content>
       </ListItemCard.Root>

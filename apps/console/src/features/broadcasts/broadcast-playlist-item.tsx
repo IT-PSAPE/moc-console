@@ -3,7 +3,7 @@ import { Button } from "@moc/ui/components/controls/button"
 import { ListItemCard } from "@moc/ui/components/display/list-item-card"
 import { ArrowDown, ArrowUp, FileAudio, FileVideo, Trash2 } from "lucide-react"
 import type { BroadcastEditorItem } from "./broadcast-editor-types"
-import { formatBroadcastFileSize } from "./broadcast-file-format"
+import { formatFileSize } from "@moc/utils/file-constraints"
 
 type BroadcastPlaylistItemProps = {
   isFirst: boolean
@@ -53,7 +53,7 @@ export function BroadcastPlaylistItem({ isFirst, isLast, isLocked, item, kind, o
       <ListItemCard.Content>
         <ListItemCard.Title>{title}</ListItemCard.Title>
         <ListItemCard.Meta>
-          <ListItemCard.MetaItem>{formatBroadcastFileSize(getItemSize(item))}</ListItemCard.MetaItem>
+          <ListItemCard.MetaItem>{formatFileSize(getItemSize(item))}</ListItemCard.MetaItem>
           {status ? (
             <ListItemCard.MetaItem
               aria-live={hasFailed ? "assertive" : "polite"}
