@@ -3,7 +3,9 @@ import type { Broadcast, BroadcastKind } from "@moc/types/broadcast/broadcast"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { useEffect, useMemo, useState, type ChangeEvent } from "react"
 import type { BroadcastEditorErrors, BroadcastEditorItem, BroadcastEditorUploadItem, BroadcastFormSubmit } from "./broadcast-editor-types"
-import { getBroadcastEditorErrors, splitBroadcastFilesByKind } from "./broadcast-editor-validation"
+import { getBroadcastEditorErrors } from "./broadcast-editor-validation"
+import { checkBroadcastFiles } from "./broadcast-file-check"
+import type { FilePartition, FileRejection } from "@moc/utils/file-constraints"
 
 type BroadcastFormOptions = {
   broadcast?: Broadcast | null
@@ -27,6 +29,8 @@ export function useBroadcastForm({ broadcast, onOpenChange, onSubmit, open }: Br
   const [items, setItems] = useState<BroadcastEditorItem[]>(() => toEditorItems(broadcast))
   const [errors, setErrors] = useState<BroadcastEditorErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isCheckingFiles, setIsCheckingFiles] = useState(false)
+  const [rejections, setRejections] = useState<FileRejection[]>([])
   const [discardChangesOpen, setDiscardChangesOpen] = useState(false)
 
   useEffect(() => {
@@ -36,6 +40,7 @@ export function useBroadcastForm({ broadcast, onOpenChange, onSubmit, open }: Br
     setKind(broadcast?.kind ?? defaultKind)
     setItems(toEditorItems(broadcast))
     setErrors({})
+    setRejections([])
     setDiscardChangesOpen(false)
   }, [broadcast, open])
 
@@ -64,25 +69,51 @@ export function useBroadcastForm({ broadcast, onOpenChange, onSubmit, open }: Br
     if (isEditing || value === kind) return
     setKind(value as BroadcastKind)
     setItems([])
+    setRejections([])
     setErrors((current) => ({ ...current, playlist: undefined }))
   }
 
-  function addFiles(files: File[]) {
-    const { acceptedFiles, rejectedFiles } = splitBroadcastFilesByKind(kind, files)
-    const addedItems = acceptedFiles.map((file): BroadcastEditorUploadItem => ({ file, key: crypto.randomUUID(), source: "upload", status: "queued" }))
+  // One batch, one verdict. The dropzone has already turned away the wrong
+  // types and sizes; the decode probe runs over what is left. Every file is
+  // checked — a bad one never discards the rest — and the two sets of
+  // rejections are reported together so the user sees the whole outcome once.
+  async function addFiles({ acceptedFiles, rejections: constraintRejections }: FilePartition) {
+    if (acceptedFiles.length === 0 && constraintRejections.length === 0) return
 
-    if (addedItems.length > 0) {
-      setItems((current) => [...current, ...addedItems])
-      setErrors((current) => ({ ...current, playlist: undefined }))
-    }
+    setRejections(constraintRejections)
+    setIsCheckingFiles(true)
 
-    if (rejectedFiles.length > 0) {
-      toast({
-        title: "Some files were not added",
-        description: `Only ${kind} files belong in this playlist. Skipped: ${rejectedFiles.map((file) => file.name).join(", ")}.`,
-        variant: "error",
-      })
+    try {
+      const checked = await checkBroadcastFiles(acceptedFiles, kind)
+      const addedItems = checked.acceptedFiles.map((file): BroadcastEditorUploadItem => ({ file, key: crypto.randomUUID(), source: "upload", status: "queued" }))
+      const batchRejections = [...constraintRejections, ...checked.rejections]
+
+      if (addedItems.length > 0) {
+        setItems((current) => [...current, ...addedItems])
+        setErrors((current) => ({ ...current, playlist: undefined }))
+      }
+
+      setRejections(batchRejections)
+      if (batchRejections.length > 0) notifyRejections(batchRejections, addedItems.length)
+    } finally {
+      setIsCheckingFiles(false)
     }
+  }
+
+  function notifyRejections(batchRejections: FileRejection[], addedCount: number) {
+    const [first] = batchRejections
+
+    toast({
+      title: `${batchRejections.length} ${batchRejections.length === 1 ? "file" : "files"} rejected`,
+      description: batchRejections.length === 1
+        ? `${first.file.name} — ${first.reason}`
+        : `${addedCount} added. Each rejected file is listed with its reason.`,
+      variant: "error",
+    })
+  }
+
+  function dismissRejections() {
+    setRejections([])
   }
 
   function removeItem(key: string) {
@@ -160,8 +191,8 @@ export function useBroadcastForm({ broadcast, onOpenChange, onSubmit, open }: Br
   }
 
   return {
-    state: { description, discardChangesOpen, errors, isSubmitting, items, kind, title, uploadProgress },
-    actions: { addFiles, cancelDiscardChanges, changeDescription, changeKind, changeOpen, changeTitle, discardChanges, moveItem, removeItem, requestClose, submit },
+    state: { description, discardChangesOpen, errors, isCheckingFiles, isSubmitting, items, kind, rejections, title, uploadProgress },
+    actions: { addFiles, cancelDiscardChanges, changeDescription, changeKind, changeOpen, changeTitle, discardChanges, dismissRejections, moveItem, removeItem, requestClose, submit },
     meta: { isEditing, submitLabel: isSubmitting ? (isEditing ? "Saving…" : "Creating…") : (isEditing ? "Save changes" : "Create broadcast") },
   }
 }

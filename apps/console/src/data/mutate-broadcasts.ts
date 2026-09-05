@@ -1,3 +1,4 @@
+import { probeMediaFile } from "@moc/utils/probe-media-file"
 import { supabase } from "@moc/data/supabase"
 import type { Broadcast, BroadcastItem, BroadcastKind } from "@moc/types/broadcast/broadcast"
 import { BROADCAST_MEDIA_BUCKET } from "@moc/types/broadcast/broadcast-constants"
@@ -60,37 +61,17 @@ async function requireSignedInUser(): Promise<string> {
   return data.user.id
 }
 
-async function getDurationSeconds(file: File, kind: BroadcastKind): Promise<number | null> {
-  if (typeof document === "undefined") return null
-  const objectUrl = URL.createObjectURL(file)
+// Last line of defence. The editor already checks every file, but nothing
+// unplayable may reach storage — a broadcast whose items cannot decode is the
+// one failure a viewer sees as "This media could not be played".
+async function requireDecodableFile(file: File, kind: BroadcastKind): Promise<number | null> {
+  const { durationSeconds, isDecodable } = await probeMediaFile(file, kind)
 
-  try {
-    return await new Promise<number | null>((resolve) => {
-      const media = document.createElement(kind)
-
-      function handleLoadedMetadata() {
-        cleanup()
-        resolve(Number.isFinite(media.duration) ? media.duration : null)
-      }
-
-      function handleError() {
-        cleanup()
-        resolve(null)
-      }
-
-      function cleanup() {
-        media.removeEventListener("loadedmetadata", handleLoadedMetadata)
-        media.removeEventListener("error", handleError)
-      }
-
-      media.preload = "metadata"
-      media.addEventListener("loadedmetadata", handleLoadedMetadata)
-      media.addEventListener("error", handleError)
-      media.src = objectUrl
-    })
-  } finally {
-    URL.revokeObjectURL(objectUrl)
+  if (!isDecodable) {
+    throw new Error(`"${file.name}" is not a playable ${kind} file and was not uploaded.`)
   }
+
+  return durationSeconds
 }
 
 async function removeStoragePaths(paths: string[]): Promise<void> {
@@ -105,6 +86,17 @@ async function uploadFiles(params: { broadcastId: string; files: BroadcastUpload
   try {
     for (const upload of params.files) {
       params.onStatusChange?.(upload.clientId, "uploading")
+
+      // Probe before the upload so an unplayable file never reaches storage.
+      let durationSeconds: number | null
+      try {
+        durationSeconds = await requireDecodableFile(upload.file, params.kind)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "This file is not playable."
+        params.onStatusChange?.(upload.clientId, "error", message)
+        throw error
+      }
+
       const storagePath = createStoragePath(params.workspaceId, params.userId, params.broadcastId, upload.file)
       const { error } = await supabase.storage.from(BROADCAST_MEDIA_BUCKET).upload(storagePath, upload.file, { upsert: false })
 
@@ -114,7 +106,6 @@ async function uploadFiles(params: { broadcastId: string; files: BroadcastUpload
       }
 
       const publicUrl = supabase.storage.from(BROADCAST_MEDIA_BUCKET).getPublicUrl(storagePath).data.publicUrl
-      const durationSeconds = await getDurationSeconds(upload.file, params.kind)
       uploadedItems.push({ clientId: upload.clientId, durationSeconds, file: upload.file, publicUrl, storagePath })
       params.onStatusChange?.(upload.clientId, "complete")
     }

@@ -1,4 +1,5 @@
 import type { Broadcast } from "@moc/types/broadcast/broadcast"
+import type { FilePartition } from "@moc/utils/file-constraints"
 import { BROADCAST_KIND_LABELS } from "@moc/types/broadcast/broadcast-constants"
 import { Button } from "@moc/ui/components/controls/button"
 import { Paragraph } from "@moc/ui/components/display/text"
@@ -29,6 +30,10 @@ export function BroadcastForm({ broadcast, onOpenChange, onSubmit, open }: Broad
 
   function handleSubmit() {
     void actions.submit()
+  }
+
+  function handleFilesAdd(batch: FilePartition) {
+    void actions.addFiles(batch)
   }
 
   return (
@@ -74,19 +79,22 @@ export function BroadcastForm({ broadcast, onOpenChange, onSubmit, open }: Broad
 
           <BroadcastPlaylistField
             error={state.errors.playlist}
+            isChecking={state.isCheckingFiles}
             isLocked={state.isSubmitting}
             items={state.items}
             kind={state.kind}
-            onFilesAdd={actions.addFiles}
+            onFilesAdd={handleFilesAdd}
             onItemMove={actions.moveItem}
             onItemRemove={actions.removeItem}
+            onRejectionsDismiss={actions.dismissRejections}
+            rejections={state.rejections}
             uploadProgress={state.uploadProgress}
           />
         </div>
       </Modal.Content>
 
       <Modal.Footer>
-        <Button disabled={state.isSubmitting} onClick={handleSubmit}>{meta.submitLabel}</Button>
+        <Button disabled={state.isSubmitting || state.isCheckingFiles} onClick={handleSubmit}>{meta.submitLabel}</Button>
         <Button variant="secondary" disabled={state.isSubmitting} onClick={actions.requestClose}>Cancel</Button>
       </Modal.Footer>
       <UnsavedChangesDialog open={state.discardChangesOpen} onSave={handleSubmit} onDiscard={actions.discardChanges} onCancel={actions.cancelDiscardChanges} isSaving={state.isSubmitting} />

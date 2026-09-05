@@ -1,14 +1,8 @@
-import type { BroadcastKind } from "@moc/types/broadcast/broadcast"
 import type { BroadcastEditorErrors } from "./broadcast-editor-types"
 
 type BroadcastEditorValidationInput = {
   itemCount: number
   title: string
-}
-
-type BroadcastFilePartition = {
-  acceptedFiles: File[]
-  rejectedFiles: File[]
 }
 
 export function getBroadcastEditorErrors({ itemCount, title }: BroadcastEditorValidationInput): BroadcastEditorErrors {
@@ -23,16 +17,4 @@ export function getBroadcastEditorErrors({ itemCount, title }: BroadcastEditorVa
   }
 
   return errors
-}
-
-export function splitBroadcastFilesByKind(kind: BroadcastKind, files: File[]): BroadcastFilePartition {
-  return files.reduce<BroadcastFilePartition>((partition, file) => {
-    if (file.type.startsWith(`${kind}/`)) {
-      partition.acceptedFiles.push(file)
-    } else {
-      partition.rejectedFiles.push(file)
-    }
-
-    return partition
-  }, { acceptedFiles: [], rejectedFiles: [] })
 }
