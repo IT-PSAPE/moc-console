@@ -21,10 +21,10 @@ export function ConfirmationDialog({ cancelLabel = 'Cancel', confirmLabel, descr
     return (
         <BaseAlertDialog.Root open={open} onOpenChange={onOpenChange}>
             <BaseAlertDialog.Portal container={overlayState.rootElement ?? undefined}>
-                <BaseAlertDialog.Backdrop className="fixed inset-0 z-[9100] bg-black/40 transition-opacity duration-200 motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
-                <BaseAlertDialog.Viewport className="fixed inset-0 z-[9100] flex items-center justify-center overscroll-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
+                <BaseAlertDialog.Backdrop className="pointer-events-auto fixed inset-0 z-[9100] bg-black/40 transition-opacity duration-200 motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
+                <BaseAlertDialog.Viewport className="pointer-events-none fixed inset-0 z-[9100] flex items-center justify-center overscroll-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
                     <BaseAlertDialog.Popup className={cn(
-                        'w-full max-w-md rounded-xl border border-secondary bg-primary p-4 shadow-xl outline-none',
+                        'pointer-events-auto w-full max-w-md rounded-xl border border-secondary bg-primary p-4 shadow-xl outline-none',
                         'origin-center transition-[opacity,transform] duration-200 motion-reduce:transition-none',
                         'data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
                     )}>
