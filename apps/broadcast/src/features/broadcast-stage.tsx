@@ -17,7 +17,7 @@ export function BroadcastStage({ children, className, ...props }: HTMLAttributes
     <section
       ref={setPlayerRoot}
       aria-label={`${broadcast.title} player`}
-      className={cn("grid h-dvh w-full grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(16rem,1fr)] overflow-y-auto bg-primary text-primary lg:grid-cols-[minmax(0,1fr)_21rem] lg:grid-rows-1 lg:overflow-hidden", className)}
+      className={cn("h-dvh w-full overflow-y-auto bg-primary text-primary lg:grid lg:grid-cols-[minmax(0,1fr)_21rem] lg:grid-rows-1 lg:overflow-hidden", className)}
       {...props}
     >
       {children}
