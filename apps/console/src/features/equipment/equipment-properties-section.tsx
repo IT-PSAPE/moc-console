@@ -1,20 +1,17 @@
-import { Dropdown } from "@moc/ui/components/overlays/dropdown";
-import { Badge } from "@moc/ui/components/display/badge";
+import { Select } from "@moc/ui/components/form/select";
 import { Paragraph } from "@moc/ui/components/display/text";
-import { MetaRow } from "@/features/requests/request-properties";
+import { MetaRow } from "@moc/ui/components/display/meta-row";
 import { Input } from "@moc/ui/components/form/input";
 import {
   equipmentStatusLabel,
-  equipmentStatusColor,
   equipmentCategoryLabel,
-  equipmentCategoryColor,
 } from "@moc/types/equipment";
 import type {
   Equipment,
   EquipmentStatus,
   EquipmentCategory,
 } from "@moc/types/equipment";
-import { Check, Hash, Loader, MapPin, Tag, User } from "lucide-react";
+import { Hash, Loader, MapPin, Tag, User } from "lucide-react";
 import type { ChangeEvent } from "react";
 
 const allStatuses: EquipmentStatus[] = [
@@ -33,6 +30,8 @@ const allCategories: EquipmentCategory[] = [
   "cable",
   "accessory",
 ];
+const statusItems = allStatuses.map((status) => ({ label: equipmentStatusLabel[status], value: status }));
+const categoryItems = allCategories.map((category) => ({ label: equipmentCategoryLabel[category], value: category }));
 
 type EquipmentPropertiesSectionProps = {
   draft: Equipment;
@@ -50,6 +49,22 @@ export function EquipmentPropertiesSection({
     onUpdateField("location", event.target.value);
   }
 
+  function handleCategoryChange(value: EquipmentCategory | null) {
+    if (value) onUpdateField("category", value);
+  }
+
+  function handleStatusChange(value: EquipmentStatus | null) {
+    if (value) onUpdateField("status", value);
+  }
+
+  function renderCategory(category: EquipmentCategory) {
+    return <Select.Item key={category} value={category}>{equipmentCategoryLabel[category]}</Select.Item>;
+  }
+
+  function renderStatus(status: EquipmentStatus) {
+    return <Select.Item key={status} value={status}>{equipmentStatusLabel[status]}</Select.Item>;
+  }
+
   return (
     <div className="px-4 space-y-3">
       <MetaRow icon={<Hash />} label="Serial Number">
@@ -57,51 +72,24 @@ export function EquipmentPropertiesSection({
       </MetaRow>
 
       <MetaRow icon={<Tag />} label="Category">
-        <Dropdown placement="bottom">
-          <Dropdown.Trigger>
-            <Badge
-              label={equipmentCategoryLabel[draft.category]}
-              color={equipmentCategoryColor[draft.category]}
-              className="cursor-pointer"
-            />
-          </Dropdown.Trigger>
-          <Dropdown.Panel>
-            {allCategories.map((category) => (
-              <CategoryOption
-                key={category}
-                category={category}
-                selected={category === draft.category}
-                onSelect={onUpdateField}
-              />
-            ))}
-          </Dropdown.Panel>
-        </Dropdown>
+        <Select.Root name="equipment-category" items={categoryItems} value={draft.category} onValueChange={handleCategoryChange}>
+          <Select.Trigger aria-label="Equipment category" style="ghost" />
+          <Select.Content>{allCategories.map(renderCategory)}</Select.Content>
+        </Select.Root>
       </MetaRow>
 
       <MetaRow icon={<Loader />} label="Status">
-        <Dropdown placement="bottom">
-          <Dropdown.Trigger>
-            <Badge
-              label={equipmentStatusLabel[draft.status]}
-              color={equipmentStatusColor[draft.status]}
-              className="cursor-pointer"
-            />
-          </Dropdown.Trigger>
-          <Dropdown.Panel>
-            {allStatuses.map((status) => (
-              <StatusOption
-                key={status}
-                status={status}
-                selected={status === draft.status}
-                onSelect={onUpdateField}
-              />
-            ))}
-          </Dropdown.Panel>
-        </Dropdown>
+        <Select.Root name="equipment-status" items={statusItems} value={draft.status} onValueChange={handleStatusChange}>
+          <Select.Trigger aria-label="Equipment status" style="ghost" />
+          <Select.Content>{allStatuses.map(renderStatus)}</Select.Content>
+        </Select.Root>
       </MetaRow>
 
       <MetaRow icon={<MapPin />} label="Location">
         <Input
+          aria-label="Equipment location"
+          name="equipment-location"
+          autoComplete="off"
           type="text"
           value={draft.location}
           onChange={handleLocationChange}
@@ -114,47 +102,5 @@ export function EquipmentPropertiesSection({
         <Paragraph.sm>{draft.bookedBy ?? "—"}</Paragraph.sm>
       </MetaRow>
     </div>
-  );
-}
-
-type CategoryOptionProps = {
-  category: EquipmentCategory;
-  selected: boolean;
-  onSelect: (field: "category", value: EquipmentCategory) => void;
-};
-
-function CategoryOption({ category, selected, onSelect }: CategoryOptionProps) {
-  function handleSelect() {
-    onSelect("category", category);
-  }
-
-  return (
-    <Dropdown.Item onSelect={handleSelect}>
-      <span className="size-4 shrink-0 flex items-center justify-center">
-        {selected && <Check className="size-3.5 text-brand_secondary" />}
-      </span>
-      {equipmentCategoryLabel[category]}
-    </Dropdown.Item>
-  );
-}
-
-type StatusOptionProps = {
-  status: EquipmentStatus;
-  selected: boolean;
-  onSelect: (field: "status", value: EquipmentStatus) => void;
-};
-
-function StatusOption({ status, selected, onSelect }: StatusOptionProps) {
-  function handleSelect() {
-    onSelect("status", status);
-  }
-
-  return (
-    <Dropdown.Item onSelect={handleSelect}>
-      <span className="size-4 shrink-0 flex items-center justify-center">
-        {selected && <Check className="size-3.5 text-brand_secondary" />}
-      </span>
-      {equipmentStatusLabel[status]}
-    </Dropdown.Item>
   );
 }

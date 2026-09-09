@@ -1,4 +1,5 @@
 import { Badge } from "@moc/ui/components/display/badge";
+import { Button } from "@moc/ui/components/controls/button";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { equipmentCategoryLabel } from "@moc/types/equipment";
 import type { BookingItem } from "@moc/types/equipment";
@@ -51,13 +52,13 @@ function BookingItemRow({ item, isScanned, onNavigate }: { item: BookingItem; is
   }
 
   return (
-    <button
+    <Button.Unstyled
       type="button"
       onClick={handleClick}
       className="flex w-full items-center gap-3 py-3 border-b border-border-secondary text-left hover:bg-background-primary-hover transition-colors"
     >
       {item.equipmentThumbnail ? (
-        <img src={item.equipmentThumbnail} alt={item.equipmentName} className="size-10 rounded object-cover" />
+        <img src={item.equipmentThumbnail} alt={item.equipmentName} width="40" height="40" className="size-10 rounded object-cover" />
       ) : (
         <span className="flex size-10 shrink-0 items-center justify-center rounded bg-secondary text-quaternary">
           <Package className="size-5" />
@@ -71,6 +72,6 @@ function BookingItemRow({ item, isScanned, onNavigate }: { item: BookingItem; is
       </div>
       {isScanned ? <Badge color="green" label="Scanned" /> : null}
       <ChevronRight className="size-4 text-quaternary" />
-    </button>
+    </Button.Unstyled>
   );
 }

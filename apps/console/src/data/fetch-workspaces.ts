@@ -11,6 +11,17 @@ type WorkspaceRow = {
 type WorkspaceMembershipRow = {
   workspace_id: string;
   user_id: string;
+  roles: RoleRow | RoleRow[] | null;
+};
+
+type RoleRow = {
+  id: string;
+  name: string;
+  can_create: boolean;
+  can_read: boolean;
+  can_update: boolean;
+  can_delete: boolean;
+  can_manage_roles: boolean;
 };
 
 export type WorkspaceDirectory = {
@@ -46,7 +57,7 @@ export async function fetchWorkspaceDirectory(userIds: string[]): Promise<Worksp
 
   const [{ data: workspaceData, error: workspaceError }, { data: membershipData, error: membershipError }] = await Promise.all([
     supabase.from("workspaces").select("id, name, slug, description").order("name"),
-    supabase.from("workspace_users").select("workspace_id, user_id").in("user_id", userIds),
+    supabase.from("workspace_users").select("workspace_id, user_id, roles(id, name, can_create, can_read, can_update, can_delete, can_manage_roles)").in("user_id", userIds),
   ]);
 
   if (workspaceError) {
@@ -67,6 +78,7 @@ export async function fetchWorkspaceDirectory(userIds: string[]): Promise<Worksp
     memberships: ((membershipData ?? []) as WorkspaceMembershipRow[]).map((membership) => ({
       workspaceId: membership.workspace_id,
       userId: membership.user_id,
+      role: (Array.isArray(membership.roles) ? membership.roles[0] : membership.roles) ?? null,
     })),
   };
 }

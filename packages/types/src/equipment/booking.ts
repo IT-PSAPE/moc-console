@@ -1,6 +1,6 @@
 import type { EquipmentCategory } from "./category";
 
-export type BookingStatus = "booked" | "checked_out" | "returned";
+export type BookingStatus = "booked" | "checked_out" | "returned" | "archived";
 
 export type BookingItem = {
   id: string;

@@ -7,17 +7,13 @@ import { DeleteEquipmentModal } from "./delete-equipment-modal";
 import { EquipmentPropertiesSection } from "./equipment-properties-section";
 import { EquipmentNotesSection } from "./equipment-notes-section";
 import { BookingHistorySection } from "./booking-history-section";
-import { useEquipmentStore } from "./use-equipment-store";
-import { useEquipment } from "./equipment-provider";
-import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
-import { fetchBookingsByEquipmentId } from "@/data/fetch-equipment";
-import { deleteEquipment } from "@/data/mutate-equipment";
+import { useEquipmentEditor } from "./use-equipment-editor";
 import type { Equipment } from "@moc/types/equipment";
-import type { Booking } from "@moc/types/equipment";
 import { Maximize2, Package, Trash2, X } from "lucide-react";
-import { useCallback, useEffect, useState, type RefObject } from "react";
-import { useNavigate } from "react-router-dom";
-import { getErrorMessage } from "@moc/utils/get-error-message";
+import type { RefObject } from "react";
+import { useDrawerClose } from "@/hooks/use-drawer-close";
+import { useDrawerEditorGuard } from "@/hooks/use-drawer-editor-guard";
+import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 
 export type EquipmentDrawerProps = {
   equipment: Equipment;
@@ -53,145 +49,30 @@ function EquipmentDrawerContent({
   isDirtyRef,
   requestCloseRef,
 }: EquipmentDrawerProps) {
-  const { state: drawerState, actions: drawerActions } = useDrawer();
-  const navigate = useNavigate();
-  const { toast } = useFeedback();
-  const {
-    actions: { syncEquipment, removeEquipment, removeBookingItemsByEquipmentId },
-  } = useEquipment();
+  const { state: drawerState } = useDrawer();
+  const closeDrawer = useDrawerClose(onEquipmentClose);
 
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [isLoadingBookings, setIsLoadingBookings] = useState(false);
-  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  return <EquipmentPanelContent equipment={equipment} open={drawerState.isOpen} onClose={closeDrawer} isDirtyRef={isDirtyRef} requestCloseRef={requestCloseRef} />;
+}
 
-  const store = useEquipmentStore(equipment, { syncEquipment });
+type EquipmentPanelContentProps = Omit<EquipmentDrawerProps, "onEquipmentClose"> & {
+  onClose: () => void;
+  open: boolean;
+};
 
-  // Sync dirty state to parent ref
-  useEffect(() => {
-    if (isDirtyRef) isDirtyRef.current = store.state.isDirty;
-  }, [isDirtyRef, store.state.isDirty]);
+export function EquipmentPanelContent({ equipment, onClose, open, isDirtyRef, requestCloseRef }: EquipmentPanelContentProps) {
 
-  // Register close-with-modal handler
-  useEffect(() => {
-    if (requestCloseRef) {
-      requestCloseRef.current = () => setShowUnsavedModal(true);
-    }
-    return () => {
-      if (requestCloseRef) requestCloseRef.current = null;
-    };
-  }, [requestCloseRef]);
+  const editor = useEquipmentEditor(equipment, onClose, open);
+  const { store, bookingHistory } = editor;
 
-  // Load booking history
-  useEffect(() => {
-    if (!drawerState.isOpen) return;
-    setIsLoadingBookings(true);
-    fetchBookingsByEquipmentId(equipment.id)
-      .then(setBookings)
-      .finally(() => setIsLoadingBookings(false));
-  }, [drawerState.isOpen, equipment.id]);
-
-  const closeDrawer = useCallback(() => {
-    if (onEquipmentClose) {
-      onEquipmentClose();
-      return;
-    }
-    drawerActions.close();
-  }, [onEquipmentClose, drawerActions]);
-
-  const handleClose = useCallback(() => {
-    if (store.state.isDirty) {
-      setShowUnsavedModal(true);
-      return;
-    }
-    closeDrawer();
-  }, [store.state.isDirty, closeDrawer]);
-
-  function handleOpenFullPage() {
-    if (store.state.isDirty) {
-      setShowUnsavedModal(true);
-      return;
-    }
-    closeDrawer();
-    navigate(`/equipment/${equipment.id}`);
-  }
-
-  const handleSave = useCallback(async () => {
-    try {
-      await store.actions.save();
-      toast({ title: "Equipment saved", variant: "success" });
-    } catch (error) {
-      toast({
-        title: "Failed to save equipment",
-        description: getErrorMessage(
-          error,
-          "The equipment item could not be saved.",
-        ),
-        variant: "error",
-      });
-    }
-  }, [store.actions, toast]);
-
-  // Unsaved changes modal actions
-  async function handleModalSave() {
-    try {
-      await store.actions.save();
-      toast({ title: "Equipment saved", variant: "success" });
-      setShowUnsavedModal(false);
-      closeDrawer();
-    } catch (error) {
-      toast({
-        title: "Failed to save equipment",
-        description: getErrorMessage(
-          error,
-          "The equipment item could not be saved.",
-        ),
-        variant: "error",
-      });
-    }
-  }
-
-  function handleModalDiscard() {
-    store.actions.discard();
-    setShowUnsavedModal(false);
-    closeDrawer();
-  }
-
-  function handleModalCancel() {
-    setShowUnsavedModal(false);
-  }
+  const guard = useDrawerEditorGuard({ close: onClose, discard: store.actions.discard, href: `/equipment/${equipment.id}`, isDirty: store.state.isDirty, isDirtyRef, requestCloseRef, save: editor.actions.save });
 
   function handleDeleteRequest() {
-    setShowDeleteModal(true);
+    editor.actions.setDeleteOpen(true);
   }
 
   function handleDeleteCancel() {
-    setShowDeleteModal(false);
-  }
-
-  // Delete
-  async function handleDelete() {
-    setIsDeleting(true);
-    try {
-      await deleteEquipment(equipment.id);
-      removeEquipment(equipment.id);
-      removeBookingItemsByEquipmentId(equipment.id);
-      toast({ title: "Equipment deleted", variant: "success" });
-      setShowDeleteModal(false);
-      closeDrawer();
-    } catch (error) {
-      toast({
-        title: "Failed to delete equipment",
-        description: getErrorMessage(
-          error,
-          "The equipment item could not be deleted.",
-        ),
-        variant: "error",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
+    editor.actions.setDeleteOpen(false);
   }
 
   const draft = store.state.draft;
@@ -199,28 +80,32 @@ function EquipmentDrawerContent({
   return (
     <>
       {/* Header */}
-      <Drawer.Header className="flex items-center gap-1">
-        <Button.Icon variant="ghost" icon={<X />} onClick={handleClose} />
+      <SplitPanel.Header className="flex items-center gap-1">
+        <Button.Icon aria-label="Close equipment" variant="ghost" icon={<X />} onClick={guard.actions.requestClose} />
         <Button.Icon
           variant="ghost"
+          aria-label="Open full page"
           icon={<Maximize2 />}
-          onClick={handleOpenFullPage}
+          onClick={guard.actions.openFullPage}
         />
         <div className="flex-1" />
         <Button.Icon
           variant="ghost"
+          aria-label="Delete equipment"
           icon={<Trash2 />}
           onClick={handleDeleteRequest}
         />
-      </Drawer.Header>
+      </SplitPanel.Header>
 
-      <Drawer.Content className="py-4">
+      <SplitPanel.Content className="py-4">
         {/* Thumbnail + Name */}
         <div className="flex items-center gap-3 px-4 pb-4">
           {draft.thumbnail ? (
             <img
               src={draft.thumbnail}
               alt={draft.name}
+              width="48"
+              height="48"
               className="size-12 rounded-lg object-cover"
             />
           ) : (
@@ -241,46 +126,46 @@ function EquipmentDrawerContent({
           onUpdateField={store.actions.updateField}
         />
 
-        <Divider className="px-4 py-6" />
+        <Divider className="my-6" />
         <EquipmentNotesSection
           draft={draft}
           onUpdateField={store.actions.updateField}
         />
 
-        <Divider className="px-4 py-6" />
+        <Divider className="my-6" />
         <BookingHistorySection
-          bookings={bookings}
-          isLoading={isLoadingBookings}
+          bookings={bookingHistory.state.bookings}
+          isLoading={bookingHistory.state.isLoading}
         />
-      </Drawer.Content>
+      </SplitPanel.Content>
 
       {/* Save footer — visible only when dirty */}
       {store.state.isDirty && (
-        <Drawer.Footer className="justify-end">
+        <SplitPanel.Footer className="justify-end">
           <Button variant="ghost" onClick={store.actions.discard}>
             Discard
           </Button>
-          <Button onClick={handleSave} disabled={store.state.isSaving}>
-            {store.state.isSaving ? "Saving..." : "Save"}
+          <Button onClick={editor.actions.save} disabled={store.state.isSaving}>
+            {store.state.isSaving ? "Saving…" : "Save"}
           </Button>
-        </Drawer.Footer>
+        </SplitPanel.Footer>
       )}
 
       {/* Unsaved changes modal */}
       <UnsavedChangesModal
-        open={showUnsavedModal}
-        onSave={handleModalSave}
-        onDiscard={handleModalDiscard}
-        onCancel={handleModalCancel}
+        open={guard.state.isPromptOpen}
+        onSave={guard.actions.saveAndClose}
+        onDiscard={guard.actions.discardAndClose}
+        onCancel={guard.actions.cancel}
         isSaving={store.state.isSaving}
       />
 
       {/* Delete confirmation modal */}
       <DeleteEquipmentModal
-        open={showDeleteModal}
-        onDelete={handleDelete}
+        open={editor.state.deleteOpen}
+        onDelete={editor.actions.remove}
         onCancel={handleDeleteCancel}
-        isDeleting={isDeleting}
+        isDeleting={editor.state.isDeleting}
       />
     </>
   );

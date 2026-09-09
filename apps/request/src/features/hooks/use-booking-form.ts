@@ -1,5 +1,7 @@
 import { useReducer, useCallback } from 'react'
 import { submitPublicBookingBatch } from '@/data/submit-booking'
+import { getBookingStepErrors } from '@/features/public-flow-validation'
+import { useStepValidation } from '@/features/hooks/use-step-validation'
 import type { BookingFormData, SubmitBookingResult } from '@/types/booking'
 // TODO(equipment-inventory): STOPGAP import — only used to order the
 // hardcoded equipment selections in the assembled notes. Remove with the
@@ -86,33 +88,13 @@ function reducer(state: BookingFormState, action: BookingFormAction): BookingFor
   }
 }
 
-// Step 1: Details (name, dates) — Step 2: Equipment — Step 3: Review
-function canProceedFromStep(step: number, data: BookingFormData): boolean {
-  switch (step) {
-    case 1:
-      return Boolean(
-        data.title.trim() &&
-        data.title.length <= 120 &&
-        data.bookedBy.trim() &&
-        data.checkedOutAt &&
-        data.expectedReturnAt &&
-        new Date(data.expectedReturnAt) > new Date(data.checkedOutAt)
-      )
-    case 2:
-      // TODO(equipment-inventory): STOPGAP — gate on the hardcoded selection
-      // instead of equipmentIds. Restore `data.equipmentIds.length > 0` when
-      // live inventory comes back.
-      return data.requestedEquipment.length > 0 || data.otherEquipment.trim().length > 0
-    case 3:
-      return true
-    default:
-      return false
-  }
-}
-
-export function isReturnBeforeCheckout(data: BookingFormData): boolean {
-  if (!data.checkedOutAt || !data.expectedReturnAt) return false
-  return new Date(data.expectedReturnAt) <= new Date(data.checkedOutAt)
+const errorIdByField: Partial<Record<keyof BookingFormData, string>> = {
+  title: 'title',
+  bookedBy: 'booked-by',
+  checkedOutAt: 'checkout-date',
+  expectedReturnAt: 'expected-return-date',
+  requestedEquipment: 'booking-equipment',
+  otherEquipment: 'booking-equipment',
 }
 
 export function useBookingForm() {
@@ -122,6 +104,9 @@ export function useBookingForm() {
     submitting: false,
     error: null,
   })
+  const validation = useStepValidation()
+  const { errors: validationErrors } = validation.state
+  const { clearError, validate } = validation.actions
 
   const toggleEquipment = useCallback((id: string) => {
     dispatch({ type: 'TOGGLE_EQUIPMENT', id })
@@ -130,11 +115,14 @@ export function useBookingForm() {
   // TODO(equipment-inventory): STOPGAP — toggle a hardcoded equipment label.
   const toggleRequestedEquipment = useCallback((label: string) => {
     dispatch({ type: 'TOGGLE_REQUESTED_EQUIPMENT', label })
-  }, [])
+    clearError('booking-equipment')
+  }, [clearError])
 
   const setField = useCallback((field: keyof BookingFormData, value: string) => {
     dispatch({ type: 'SET_FIELD', field, value })
-  }, [])
+    const errorId = errorIdByField[field]
+    if (errorId) clearError(errorId)
+  }, [clearError])
 
   const nextStep = useCallback(() => {
     dispatch({ type: 'NEXT_STEP' })
@@ -144,9 +132,9 @@ export function useBookingForm() {
     dispatch({ type: 'PREV_STEP' })
   }, [])
 
-  const canProceed = useCallback(() => {
-    return canProceedFromStep(state.step, state.data)
-  }, [state.step, state.data])
+  const validateCurrentStep = useCallback(() => {
+    return validate(getBookingStepErrors(state.step, state.data))
+  }, [state.step, state.data, validate])
 
   const submit = useCallback(async (): Promise<SubmitBookingResult | null> => {
     dispatch({ type: 'SUBMIT_START' })
@@ -170,7 +158,7 @@ export function useBookingForm() {
   }, [state.data])
 
   return {
-    state,
-    actions: { toggleEquipment, toggleRequestedEquipment, setField, nextStep, prevStep, submit, canProceed },
+    state: { ...state, validationErrors },
+    actions: { toggleEquipment, toggleRequestedEquipment, setField, nextStep, prevStep, submit, validateCurrentStep },
   }
 }

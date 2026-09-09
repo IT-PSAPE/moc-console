@@ -1,8 +1,9 @@
-import { fetchEquipment, fetchBookings } from "@/data/fetch-equipment";
-import type { Equipment } from "@moc/types/equipment/equipment";
-import type { Booking } from "@moc/types/equipment/booking";
+import { fetchBookings, fetchEquipment } from "@/data/fetch-equipment";
+import { useWorkspaceResource } from "@/hooks/use-workspace-resource";
 import { useWorkspace } from "@/lib/workspace-context";
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import type { Booking } from "@moc/types/equipment/booking";
+import type { Equipment } from "@moc/types/equipment/equipment";
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 
 type EquipmentContextValue = {
   state: {
@@ -10,11 +11,15 @@ type EquipmentContextValue = {
     bookings: Booking[];
     isLoadingEquipment: boolean;
     isLoadingBookings: boolean;
+    equipmentError: Error | null;
+    bookingsError: Error | null;
   };
   actions: {
     loadEquipment: () => Promise<void>;
     refreshEquipment: () => Promise<void>;
+    retryEquipment: () => Promise<void>;
     loadBookings: () => Promise<void>;
+    retryBookings: () => Promise<void>;
     addEquipment: (equipment: Equipment) => void;
     syncEquipment: (equipment: Equipment) => void;
     removeEquipment: (id: string) => void;
@@ -25,117 +30,80 @@ type EquipmentContextValue = {
 };
 
 const EquipmentContext = createContext<EquipmentContextValue | null>(null);
+const emptyEquipment: Equipment[] = [];
+const emptyBookings: Booking[] = [];
 
 export function EquipmentProvider({ children }: { children: ReactNode }) {
-  const [equipment, setEquipment] = useState<Equipment[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [isLoadingEquipment, setIsLoadingEquipment] = useState(false);
-  const [isLoadingBookings, setIsLoadingBookings] = useState(false);
-
-  const equipmentLoadedRef = useRef<string | null>(null);
-  const equipmentPromiseRef = useRef<Promise<void> | null>(null);
-  const bookingsLoadedRef = useRef<string | null>(null);
-  const bookingsPromiseRef = useRef<Promise<void> | null>(null);
-
   const { currentWorkspaceId } = useWorkspace();
-  const [trackedWorkspaceId, setTrackedWorkspaceId] = useState(currentWorkspaceId);
-  if (trackedWorkspaceId !== currentWorkspaceId) {
-    setTrackedWorkspaceId(currentWorkspaceId);
-    setEquipment([]);
-    setBookings([]);
-  }
+  const { data: equipment, error: equipmentError, isLoading: isLoadingEquipment, load: loadEquipmentResource, updateData: updateEquipment } = useWorkspaceResource({ emptyValue: emptyEquipment, fetcher: fetchEquipment, resource: "equipment", workspaceId: currentWorkspaceId });
+  const { data: bookings, error: bookingsError, isLoading: isLoadingBookings, load: loadBookingsResource, updateData: updateBookings } = useWorkspaceResource({ emptyValue: emptyBookings, fetcher: fetchBookings, resource: "bookings", workspaceId: currentWorkspaceId });
 
   const addEquipment = useCallback((newItem: Equipment) => {
-    setEquipment((prev) => [newItem, ...prev]);
-  }, []);
+    updateEquipment((current) => [newItem, ...current]);
+  }, [updateEquipment]);
 
   const syncEquipment = useCallback((updated: Equipment) => {
-    setEquipment((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
-  }, []);
+    updateEquipment((current) => current.map((item) => item.id === updated.id ? updated : item));
+  }, [updateEquipment]);
 
   const removeEquipment = useCallback((id: string) => {
-    setEquipment((prev) => prev.filter((e) => e.id !== id));
-  }, []);
+    updateEquipment((current) => current.filter((item) => item.id !== id));
+  }, [updateEquipment]);
 
   const syncBooking = useCallback((updated: Booking) => {
-    setBookings((prev) => {
-      const exists = prev.some((booking) => booking.id === updated.id);
-      if (!exists) {
-        return [updated, ...prev];
-      }
-
-      return prev.map((booking) => (booking.id === updated.id ? updated : booking));
+    updateBookings((current) => {
+      const exists = current.some((booking) => booking.id === updated.id);
+      if (!exists) return [updated, ...current];
+      return current.map((booking) => booking.id === updated.id ? updated : booking);
     });
-  }, []);
+  }, [updateBookings]);
 
   const removeBooking = useCallback((id: string) => {
-    setBookings((prev) => prev.filter((booking) => booking.id !== id));
-  }, []);
+    updateBookings((current) => current.filter((booking) => booking.id !== id));
+  }, [updateBookings]);
 
-  // Equipment deletion cascades through booking_items in the database
-  // (ON DELETE CASCADE). The booking row itself survives — possibly with
-  // zero items — as an audit trail of the original submission. The local
-  // mirror drops only the matching item from each booking's items array.
   const removeBookingItemsByEquipmentId = useCallback((equipmentId: string) => {
-    setBookings((prev) =>
-      prev.map((booking) => ({
+    updateBookings((current) =>
+      current.map((booking) => ({
         ...booking,
         items: booking.items.filter((item) => item.equipmentId !== equipmentId),
       })),
     );
-  }, []);
+  }, [updateBookings]);
 
   const loadEquipment = useCallback(async () => {
-    if (equipmentLoadedRef.current === currentWorkspaceId) return;
-    if (equipmentPromiseRef.current) return equipmentPromiseRef.current;
+    await loadEquipmentResource();
+  }, [loadEquipmentResource]);
 
-    setIsLoadingEquipment(true);
-    equipmentPromiseRef.current = fetchEquipment()
-      .then((data) => {
-        setEquipment(data);
-        equipmentLoadedRef.current = currentWorkspaceId;
-      })
-      .finally(() => {
-        equipmentPromiseRef.current = null;
-        setIsLoadingEquipment(false);
-      });
-
-    return equipmentPromiseRef.current;
-  }, [currentWorkspaceId]);
-
-  // Force a full refetch even if equipment was already loaded for this
-  // workspace. Used after booking mutations so the inventory list's
-  // bookedBy / availability data picks up the change across every item
-  // in the booking (a per-id sync would only refresh one piece).
   const refreshEquipment = useCallback(async () => {
-    equipmentLoadedRef.current = null;
-    return loadEquipment();
-  }, [loadEquipment]);
+    await loadEquipmentResource(true);
+  }, [loadEquipmentResource]);
+
+  const retryEquipment = useCallback(async () => {
+    await loadEquipmentResource(true);
+  }, [loadEquipmentResource]);
 
   const loadBookings = useCallback(async () => {
-    if (bookingsLoadedRef.current === currentWorkspaceId) return;
-    if (bookingsPromiseRef.current) return bookingsPromiseRef.current;
+    await loadBookingsResource();
+  }, [loadBookingsResource]);
 
-    setIsLoadingBookings(true);
-    bookingsPromiseRef.current = fetchBookings()
-      .then((data) => {
-        setBookings(data);
-        bookingsLoadedRef.current = currentWorkspaceId;
-      })
-      .finally(() => {
-        bookingsPromiseRef.current = null;
-        setIsLoadingBookings(false);
-      });
+  const retryBookings = useCallback(async () => {
+    await loadBookingsResource(true);
+  }, [loadBookingsResource]);
 
-    return bookingsPromiseRef.current;
-  }, [currentWorkspaceId]);
-
-  const value = useMemo(
+  const value = useMemo<EquipmentContextValue>(
     () => ({
-      state: { equipment, bookings, isLoadingEquipment, isLoadingBookings },
-      actions: { loadEquipment, refreshEquipment, loadBookings, addEquipment, syncEquipment, removeEquipment, syncBooking, removeBooking, removeBookingItemsByEquipmentId },
+      state: {
+        equipment,
+        bookings,
+        isLoadingEquipment,
+        isLoadingBookings,
+        equipmentError,
+        bookingsError,
+      },
+      actions: { loadEquipment, refreshEquipment, retryEquipment, loadBookings, retryBookings, addEquipment, syncEquipment, removeEquipment, syncBooking, removeBooking, removeBookingItemsByEquipmentId },
     }),
-    [equipment, bookings, isLoadingEquipment, isLoadingBookings, loadEquipment, refreshEquipment, loadBookings, addEquipment, syncEquipment, removeEquipment, syncBooking, removeBooking, removeBookingItemsByEquipmentId],
+    [addEquipment, bookings, bookingsError, equipment, equipmentError, isLoadingBookings, isLoadingEquipment, loadBookings, loadEquipment, refreshEquipment, removeBooking, removeBookingItemsByEquipmentId, removeEquipment, retryBookings, retryEquipment, syncBooking, syncEquipment],
   );
 
   return <EquipmentContext.Provider value={value}>{children}</EquipmentContext.Provider>;

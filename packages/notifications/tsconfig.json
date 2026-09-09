@@ -1,0 +1,28 @@
+{
+  /* A referenced project with no build script of its own: `tsc -b` in apps/api
+     builds it, which is the only place the emitted output is needed. */
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+
+    /* Emitted for plain-Node consumers. The API's Vercel functions import this
+       package at runtime, where nothing transpiles TypeScript and a `./x.js`
+       specifier is not resolved to `x.ts` the way a bundler resolves it — so the
+       package has to ship real JavaScript. Bundled consumers still read `src`
+       (see the export conditions in package.json). */
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "declaration": true,
+    "declarationMap": true,
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
+
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}

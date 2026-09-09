@@ -15,8 +15,7 @@ Use it with:
 | Auth | Profile plus role | Supabase Auth + Supabase | User profiles now include `telegramChatId`, and password recovery completes on a dedicated route. |
 | Workspace | Membership-filtered directory views | Supabase with runtime fallback | Users can belong to multiple workspaces; runtime can fall back to the seeded default workspace for unresolved scope. |
 | Equipment | Denormalized inventory and booking objects | Supabase | `bookedBy` stays a runtime convenience field. |
-| Broadcast | Playlists with nested queue entries | Supabase | Queue rows are normalized in storage and re-expanded into cue objects after fetch. |
-| Cue Sheet | Events, checklists, tracks, and cues as nested objects | Supabase | Storage is split into templates and runs even though the runtime API still exposes a combined `kind` model. |
+| Venues | Venue list plus booking objects with a DERIVED status | Supabase | The stored `status` is only `auto` or `cancelled`; `booked`/`in_progress`/`completed` are derived from the clock and never written. |
 | Streams | YouTube live streams with workspace-level OAuth | Supabase + Edge Functions | Local `streams` table caches YouTube broadcast data. All YouTube API calls are proxied through Supabase Edge Functions to keep OAuth secrets server-side. |
 
 ## Global Rules
@@ -171,67 +170,57 @@ Important rules:
 - `bookedBy` is free text in storage and the runtime model.
 - `duration` is derived in the app.
 
-## Broadcast
+## Venues
 
-### Media entity
+### Venue read model
 
-Current runtime shape still includes a `duration` field in some app flows.
+Current runtime shape:
 
-Schema direction:
+- `id`
+- `name`
+- `location`
+- `capacity`
+- `active`
+- `sortOrder`
 
-- storage should not treat media duration as a required table column
-- runtime duration can still exist when extracted from uploaded media metadata
+The public request app sees a narrower shape (`PublicVenue`: `id`, `name`,
+`location`, `capacity`) returned by `public_list_venues`, which only ever
+returns active venues.
 
-### Playlist entity
+### Venue booking read model
 
-Runtime expectations:
+Current runtime shape:
 
-- `musicId` should be the stored relation when background music exists
-- `defaultImageDuration` should remain a positive number
-- queue item duration can override the playlist default
+- `id`
+- `venueId`
+- `venueName`
+- `venueLocation`
+- `trackingCode`
+- `title`
+- `requestedBy`
+- `who`, `what`, `when`, `where`, `why`, `how`
+- `notes`
+- `status`
+- `startsAt`
+- `endsAt`
+- `cancelledAt`, `cancelledBy`, `cancelReason`
 
-### Queue item entity
+Important rules:
 
-Runtime expectations:
-
-- `mediaId` is the stored relation
-- `duration` is nullable and acts as the item-level override
-- `disabled` defaults to `false`
-
-Denormalized runtime fields such as media name or type are acceptable after fetch, but they should not become storage columns.
-
-## Cue Sheet
-
-### Event templates vs events
-
-- template data and live event data are now conceptually separate
-- the combined `kind` and `templateId` shape is no longer the target schema
-- the current runtime still uses combined objects, but the schema now treats templates and event runs as separate tables
-
-### Checklist templates vs checklists
-
-- the same separation applies to checklist templates and checklist runs
-- template duplication should copy sections and items into live checklist rows
-
-### Track colors
-
-Runtime rule:
-
-- tracks should carry a stable `colorKey`
-- UI code should map `colorKey` to the actual CSS value
-- the underlying storage lookup is now conceptually a shared `colors` table, not a track-only table
-
-Current code update:
-
-- cue-sheet track data now uses color keys instead of raw CSS values
-
-### Cue timing
-
-Runtime expectations:
-
-- use `start` and `duration` conceptually in schema
-- the current app still exposes `startMin` and `durationMin` in its runtime types
-- that is a runtime naming detail, not the target storage naming
+- `venueName` and `venueLocation` are joined from venue data.
+- `requestedBy` is free text in storage and the runtime model.
+- **`status` is not the status a reader should see.** It is the stored state and
+  is only ever `auto` or `cancelled`. The reader-facing phase — `booked`,
+  `in_progress`, `completed`, `cancelled` — is derived from the clock against
+  `startsAt`/`endsAt` by `deriveVenueBookingPhase` in `@moc/types/venues`. No
+  UI may branch on the raw `status`, and nothing writes a phase back.
+- Derive a list of bookings against a single instant (pass the same `at` to
+  every call) so rows in one render cannot disagree about the current time.
+- `when` and `where` are the submitter's own words. The authoritative time is
+  `startsAt`/`endsAt` and the authoritative place is the venue.
+- The duration is derived in the app, not stored.
+- Slot rows exist in storage but are not part of the read model: a booking is
+  always one continuous block, so `startsAt`/`endsAt` describe it fully.
 
 ## Streams
 
@@ -288,7 +277,7 @@ Runtime read model:
 ### Stream data flow
 
 1. **Create**: Client sends form data to `mutate-streams.ts` -> Edge Function creates YouTube broadcast + stream -> binds them -> returns IDs -> client inserts into local `streams` table
-2. **Sync**: Client calls `syncStreamsFromYouTube()` -> Edge Function fetches all broadcasts from YouTube -> client upserts each into local DB
+2. **Sync**: Client calls `syncStreamsFromYouTube()` -> the proxy reads the live and upcoming broadcasts, then looks up by id only those tracked streams that are still in flight but have dropped off both lists (so a finished stream settles without paging YouTube's entire history) -> client upserts every broadcast it already tracks, plus any untracked one that is live or still upcoming. A finished or never-started broadcast is not adopted, so it cannot raise a late "stream created" notification
 3. **Update**: Client sends changes to Edge Function -> YouTube API updates -> local DB updated
 4. **Delete**: Edge Function deletes on YouTube -> local row deleted
 
@@ -303,9 +292,6 @@ Environment secrets (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIREC
 
 ## Current Implementation Gaps
 
-- Cue-sheet events and checklists still use combined template/instance app objects even though the target schema now separates them.
-- Playlist `videoSettings` remain frontend-only runtime data; they are not persisted in the current schema.
-- Media `duration` still exists as a runtime field in some flows even though storage does not require it.
 - Workspace membership is only surfaced explicitly in the users screen today. Other domains resolve one active workspace at fetch time rather than exposing a workspace switcher everywhere.
 
 That gap is acceptable for now as long as the schema doc remains the source of truth for storage and the runtime layer keeps the conversions explicit.

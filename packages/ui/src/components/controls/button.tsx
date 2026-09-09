@@ -1,4 +1,5 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { Button as BaseButton } from "@base-ui/react/button";
+import type { ButtonHTMLAttributes, ComponentProps, ReactElement, ReactNode } from "react";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
 import { Label } from "../display/text";
@@ -12,14 +13,15 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 }
 
 type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+    "aria-label": string
     icon: ReactNode
     variant?: ButtonVariant
 }
 
 const buttonVariants = cv({
     base: [
-        "inline-flex items-center justify-center gap-2 rounded-md border text-nowrap",
-        "transition-colors",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border text-nowrap md:min-h-0 flex-none",
+        "touch-manipulation transition-colors motion-reduce:transition-none",
         "focus-visible:outline-2 focus-visible:outline-offset-1",
         "disabled:cursor-not-allowed",
     ],
@@ -53,7 +55,7 @@ const buttonVariants = cv({
         },
         size: {
             default: ["px-3 py-2"],
-            icon: ["px-2 py-2"],
+            icon: ["min-w-11 px-2 py-2 md:min-w-0"],
         },
     },
     defaultVariants: {
@@ -76,7 +78,7 @@ function ButtonRoot({ children, className, disabled, icon, iconPosition = "leadi
     const trailing = iconPosition === "trailing";
 
     return (
-        <button
+        <BaseButton
             type={type}
             disabled={disabled}
             className={cn(buttonVariants({ variant, size: "default" }), className)}
@@ -85,23 +87,76 @@ function ButtonRoot({ children, className, disabled, icon, iconPosition = "leadi
             {showIcon && !trailing ? <IconSpan icon={icon} /> : null}
             {showLabel ? <Label.sm className="inline-flex items-center justify-center gap-2 text-[inherit]">{children}</Label.sm> : null}
             {showIcon && trailing ? <IconSpan icon={icon} /> : null}
-        </button>
+        </BaseButton>
     );
 }
 
 function IconButton({ icon, className, disabled, type = "button", variant = "primary", ...props }: IconButtonProps) {
     return (
-        <button
+        <BaseButton
             type={type}
             disabled={disabled}
             className={cn(buttonVariants({ variant, size: "icon" }), className)}
             {...props}
         >
             <IconSpan icon={icon} />
-        </button>
+        </BaseButton>
+    );
+}
+
+type LinkButtonProps = Omit<ButtonProps, 'type'> & {
+    render: ReactElement
+}
+
+type IconLinkButtonProps = Omit<IconButtonProps, 'type'> & {
+    render: ReactElement
+}
+
+function LinkButton({ children, className, disabled, icon, iconPosition = 'leading', render, variant = 'primary', ...props }: LinkButtonProps) {
+    const showIcon = icon !== null && icon !== undefined
+    const trailing = iconPosition === 'trailing'
+
+    return (
+        <BaseButton nativeButton={false} render={render} disabled={disabled} className={cn(buttonVariants({ variant, size: 'default' }), className)} {...props}>
+            {showIcon && !trailing ? <IconSpan icon={icon} /> : null}
+            <Label.sm className="inline-flex items-center justify-center gap-2 text-[inherit]">{children}</Label.sm>
+            {showIcon && trailing ? <IconSpan icon={icon} /> : null}
+        </BaseButton>
+    )
+}
+
+function IconLinkButton({ icon, className, disabled, render, variant = 'primary', ...props }: IconLinkButtonProps) {
+    return (
+        <BaseButton nativeButton={false} render={render} disabled={disabled} className={cn(buttonVariants({ variant, size: 'icon' }), className)} {...props}>
+            <IconSpan icon={icon} />
+        </BaseButton>
+    )
+}
+
+function UnstyledButton({ children, className, disabled, type = "button", ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
+    return (
+        <BaseButton type={type} disabled={disabled} className={className} {...props}>
+            {children}
+        </BaseButton>
+    );
+}
+
+type SurfaceButtonProps = Omit<ComponentProps<typeof BaseButton>, "className" | "nativeButton" | "render"> & {
+    className?: string
+};
+
+function SurfaceButton({ children, className, ...props }: SurfaceButtonProps) {
+    return (
+        <BaseButton nativeButton={false} render={<div />} className={className} {...props}>
+            {children}
+        </BaseButton>
     );
 }
 
 export const Button = Object.assign(ButtonRoot, {
     Icon: IconButton,
+    IconLink: IconLinkButton,
+    Link: LinkButton,
+    Surface: SurfaceButton,
+    Unstyled: UnstyledButton,
 });

@@ -1,5 +1,7 @@
 # Unified playlist playback engine (`@moc/player`)
 
+> **Superseded by [ADR-0007](./0007-simplify-console-to-five-features.md) (2026-07-28).** The system described below was removed from the repo. Kept as history — do not treat it as current design.
+
 The Console preview and MOC Broadcast had diverged into two half-built clocks (a minute-scaled cue-sheet `ClockTransport` wired into the playlist Timeline by mistake, and a separate `setInterval` wall-clock in `apps/broadcast`), so the editor playhead moved but nothing actually played and the two surfaces behaved differently. We are extracting **one** playlist playback engine into a new package `@moc/player` — an authoritative master-clock transport plus a lane-priority alpha compositor — consumed by both the Console **Broadcasts section** preview and the **MOC Broadcast** player, so authoring and playback are the same code and the same experience.
 
 ## Decision

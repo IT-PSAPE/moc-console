@@ -1,6 +1,8 @@
+import { Toast as BaseToast } from '@base-ui/react/toast'
 import { cn } from '@moc/utils/cn'
 import { Label, Paragraph } from '../display/text'
 import { AlertCircle, CheckCircle2, Info, Lightbulb, TriangleAlert, X } from 'lucide-react'
+import { Button } from '../controls/button'
 import type { FeedbackVariant, FeedbackStyle } from './alert'
 import type { ReactNode } from 'react'
 
@@ -40,48 +42,57 @@ const colorMap: Record<FeedbackVariant, Record<FeedbackStyle, string>> = {
 // ─── Types ──────────────────────────────────────────────────────────
 
 export type ToastData = {
-    id: string
-    title: string
-    description?: string
     variant: FeedbackVariant
     style: FeedbackStyle
-    duration: number
+    dismissible: boolean
 }
 
 // ─── Component ──────────────────────────────────────────────────────
 
 type ToastProps = {
-    toast: ToastData
-    onDismiss: (id: string) => void
+    toast: BaseToast.Root.ToastObject<ToastData>
 }
 
-export function Toast({ toast, onDismiss }: ToastProps) {
-    const { id, title, description, variant, style } = toast
+export function Toast({ toast }: ToastProps) {
+    const variant = toast.data?.variant ?? 'info'
+    const style = toast.data?.style ?? 'filled'
+    const dismissible = toast.data?.dismissible ?? true
 
     return (
-        <div
-            role="status"
-            aria-live="polite"
+        <BaseToast.Root
+            toast={toast}
+            swipeDirection={dismissible ? 'right' : []}
             className={cn(
-                'flex items-start gap-3 rounded-lg border p-3 shadow-lg min-w-72 max-w-96 animate-in fade-in slide-in-from-bottom-2',
+                'pointer-events-auto absolute right-0 bottom-0 w-full origin-bottom-right select-none rounded-lg border shadow-lg outline-none',
+                '[--gap:0.75rem] [--peek:0.5rem] [--scale:calc(max(0,1-(var(--toast-index)*0.05)))] [--shrink:calc(1-var(--scale))]',
+                '[--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-offset-y)*-1+calc(var(--toast-index)*var(--gap)*-1)+var(--toast-swipe-movement-y))]',
+                'z-[calc(1000-var(--toast-index))] h-[var(--height)]',
+                '[transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--toast-index)*var(--peek))-(var(--shrink)*var(--height))))_scale(var(--scale))]',
+                'transition-[transform,opacity,height] duration-300 ease-out motion-reduce:transition-none',
+                'data-expanded:h-[var(--toast-height)] data-expanded:[transform:translateX(var(--toast-swipe-movement-x))_translateY(var(--offset-y))]',
+                'data-limited:opacity-0 data-[starting-style]:translate-x-full data-[starting-style]:opacity-0',
+                'data-[ending-style]:translate-x-full data-[ending-style]:opacity-0',
+                'after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full after:content-[\'\']',
                 colorMap[variant][style],
             )}
         >
-            <span className="shrink-0 mt-0.5">{variantIcons[variant]}</span>
-            <div className="flex-1 min-w-0">
-                <Label.sm className="text-inherit">{title}</Label.sm>
-                {description && (
-                    <Paragraph.sm className="text-inherit/80 mt-0.5">{description}</Paragraph.sm>
-                )}
-            </div>
-            <button
-                type="button"
-                onClick={() => onDismiss(id)}
-                className="shrink-0 mt-0.5 cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
-                aria-label="Dismiss"
-            >
-                <X className="size-4" />
-            </button>
-        </div>
+            <BaseToast.Content className="flex h-full items-start gap-3 overflow-hidden p-3 transition-opacity duration-200 data-behind:opacity-0 data-expanded:opacity-100 motion-reduce:transition-none">
+                <span className="mt-0.5 shrink-0">{variantIcons[variant]}</span>
+                <div className="min-w-0 flex-1">
+                    <BaseToast.Title render={<Label.sm className="text-inherit" />} />
+                    {toast.description ? <BaseToast.Description render={<Paragraph.sm className="mt-0.5 text-inherit/80" />} /> : null}
+                    {toast.actionProps ? (
+                        <div className="mt-2">
+                            <BaseToast.Action render={<Button variant="secondary" />} />
+                        </div>
+                    ) : null}
+                </div>
+                {dismissible ? (
+                    <BaseToast.Close className="mt-0.5 shrink-0 cursor-pointer opacity-70 transition-opacity hover:opacity-100" aria-label="Dismiss">
+                        <X className="size-4" />
+                    </BaseToast.Close>
+                ) : null}
+            </BaseToast.Content>
+        </BaseToast.Root>
     )
 }

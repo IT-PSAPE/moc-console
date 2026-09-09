@@ -33,7 +33,7 @@ export type TrackingBookingItem = {
 }
 
 export type TrackingResult = {
-  type: 'request' | 'booking'
+  type: 'request' | 'booking' | 'venue_booking'
   trackingCode: string
   status?: string
   title?: string
@@ -48,4 +48,8 @@ export type TrackingResult = {
   returnedAt?: string | null
   notes?: string
   items?: TrackingBookingItem[]
+  venueName?: string
+  venueLocation?: string | null
+  startsAt?: string
+  endsAt?: string
 }

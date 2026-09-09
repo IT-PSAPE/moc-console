@@ -1,11 +1,11 @@
-import { Title, Paragraph, Label } from "@moc/ui/components/display/text"
-import { Divider } from "@moc/ui/components/display/divider"
+import { Title, Paragraph } from "@moc/ui/components/display/text"
 import { PublicLayout } from "./layout"
+import { PublicDocumentSection as Section } from "./public-document-section"
 
 export function PrivacyPolicyScreen() {
   return (
     <PublicLayout>
-      <Title.h3 className="mb-2">Privacy Policy</Title.h3>
+      <Title.h1 className="mb-2 title-h3">Privacy policy</Title.h1>
       <Paragraph.sm className="text-tertiary mb-8">Last updated: 3 May 2026</Paragraph.sm>
 
       <Paragraph.md className="mb-8">
@@ -50,8 +50,8 @@ export function PrivacyPolicyScreen() {
 
       <Section title="4. Data Retention">
         <ul className="list-disc pl-6 space-y-2">
-          <li><Paragraph.md><strong>Zoom tokens and connection data</strong> are retained only while the connection is active. Disconnecting Zoom inside the Service (or revoking the app from the Zoom Marketplace) triggers revocation of the tokens with Zoom and deletion of the connection row in our database.</Paragraph.md></li>
-          <li><Paragraph.md><strong>Synced meeting metadata</strong> is retained while your workspace is active so you can view historical schedules. You can delete individual meetings at any time.</Paragraph.md></li>
+          <li><Paragraph.md><strong>Zoom tokens and connection data</strong> are retained only while the connection is active. Disconnecting Zoom inside the Service revokes the tokens with Zoom and deletes the stored OAuth tokens, connection data, and synced Zoom meeting metadata.</Paragraph.md></li>
+          <li><Paragraph.md><strong>Synced meeting metadata</strong> is retained only while the Zoom connection is active. You can delete individual meetings at any time. Disconnecting in MOC Console or removing the app through Zoom Marketplace deletes the associated meeting metadata and pending meeting notifications.</Paragraph.md></li>
           <li><Paragraph.md><strong>Account data</strong> is retained for the life of your account. If you delete your account, we remove your personal information within 30 days, except where longer retention is required by law (e.g., tax, audit, or legal-hold obligations).</Paragraph.md></li>
           <li><Paragraph.md><strong>Server logs</strong> are retained for up to 90 days.</Paragraph.md></li>
           <li><Paragraph.md><strong>Bug reports</strong> are retained for up to 12 months after a report is marked resolved, after which we delete them. You can request earlier deletion of your own reports at any time.</Paragraph.md></li>
@@ -92,7 +92,7 @@ export function PrivacyPolicyScreen() {
           the email address associated with your account. We will respond within the timeframe required by
           applicable law (typically 30 days). We may need to verify your identity before fulfilling the request.
           You can also exercise many of these rights directly in the Service: disconnect Zoom at any time from
-          the Streams screen, delete meetings you created, or request account deletion from your profile.
+          Settings → Streaming connections, delete meetings you created, or request account deletion from your profile.
         </Paragraph.md>
       </Section>
 
@@ -130,15 +130,5 @@ export function PrivacyPolicyScreen() {
         </ul>
       </Section>
     </PublicLayout>
-  )
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="mb-8">
-      <Divider className="mb-6" />
-      <Label.lg className="block mb-3">{title}</Label.lg>
-      {children}
-    </section>
   )
 }

@@ -46,10 +46,10 @@ function KanbanBoardRoot({ children, ...props }: RootProps) {
 
 function KanbanBoardColumns({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className="overflow-x-auto w-full">
+        <div className="w-full overflow-x-auto">
             <div
                 className={cn(
-                    "flex gap-3 p-4 pt-0 mx-auto w-full max-w-content *:flex-1 *:min-w-sm",
+                    "flex min-w-full gap-3 pb-2 *:min-w-sm *:flex-1",
                     className,
                 )}
                 {...props}

@@ -1,3 +1,4 @@
+import { Button as BaseButton } from '@base-ui/react/button'
 import { ChevronRight } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@moc/utils/cn'
@@ -105,9 +106,9 @@ function BreadcrumbItem({ label, isLast, onClick, icon }: BreadcrumbItemProps) {
     }
 
     return (
-        <button type="button" onClick={onClick} className="paragraph-sm text-tertiary hover:text-secondary cursor-pointer flex items-center gap-1" >
+        <BaseButton type="button" onClick={onClick} className="paragraph-sm text-tertiary hover:text-secondary cursor-pointer flex items-center gap-1" >
             {icon} {label}
-        </button>
+        </BaseButton>
     )
 }
 

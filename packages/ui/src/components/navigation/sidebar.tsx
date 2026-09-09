@@ -1,8 +1,8 @@
-import { ChevronRight } from 'lucide-react'
+import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip'
 import { cn } from '@moc/utils/cn'
-import { cv } from '@moc/utils/cv'
-import { Children, createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type MouseEventHandler, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type MouseEventHandler, type ReactElement, type ReactNode } from 'react'
 import { Label } from '../display/text'
+import { NavigationList } from './navigation-list'
 
 // ─── Context ─────────────────────────────────────────────
 
@@ -50,61 +50,12 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     }), [isCollapsed, isMobileOpen, actions])
 
     return (
-        <SidebarContext.Provider value={value}>
-            {children}
-        </SidebarContext.Provider>
+        <BaseTooltip.Provider delay={350} closeDelay={100}>
+            <SidebarContext.Provider value={value}>
+                {children}
+            </SidebarContext.Provider>
+        </BaseTooltip.Provider>
     )
-}
-
-// ─── Menu Level Context ──────────────────────────────────
-
-type SidebarMenuLevelContextValue = {
-    state: {
-        isChild: boolean
-    }
-    actions: Record<string, never>
-    meta: Record<string, never>
-}
-
-const sidebarMenuLevelContextDefaultValue: SidebarMenuLevelContextValue = {
-    state: {
-        isChild: false,
-    },
-    actions: {},
-    meta: {},
-}
-
-const SidebarMenuLevelContext = createContext<SidebarMenuLevelContextValue>(sidebarMenuLevelContextDefaultValue)
-
-const nestedSidebarMenuLevelContextValue: SidebarMenuLevelContextValue = {
-    state: {
-        isChild: true,
-    },
-    actions: {},
-    meta: {},
-}
-
-const menuItemVarients = cv({
-    base: [
-        'py-1 rounded-md inline-flex justify-start items-center gap-2 overflow-hidden w-full min-h-9',
-    ],
-    variants: {
-        state: {
-            active: ['bg-brand_primary text-brand_secondary hover:bg-brand_secondary'],
-            inactive: ['bg-transparent text-color-secondary hover:bg-secondary active:bg-secondary'],
-        },
-        isCollapsed: {
-            true: ['px-1'],
-            false: []
-        }
-    },
-    defaultVariants: {
-        state: 'inactive',
-    },
-})
-
-function useSidebarMenuLevel() {
-    return useContext(SidebarMenuLevelContext)
 }
 
 // ─── Components ──────────────────────────────────────────
@@ -119,12 +70,12 @@ function SidebarPanel({ children, className }: HTMLAttributes<HTMLDivElement>) {
                 'area-sidebar',
                 // Mobile: fixed overlay, slide in/out
                 'fixed inset-y-0 left-0 z-50',
-                'transition-transform duration-300 ease-in-out',
+                'transition-transform duration-300 ease-in-out motion-reduce:transition-none',
                 state.isMobileOpen ? 'translate-x-0' : '-translate-x-full',
                 // Desktop: static in grid, always visible
                 'md:static md:z-auto md:translate-x-0',
                 // Width from CSS tokens
-                state.isCollapsed ? 'w-sidebar-collapsed' : state.isMobileOpen ? 'w-[80%]' : 'w-sidebar',
+                state.isCollapsed ? 'w-sidebar-collapsed' : state.isMobileOpen ? 'w-[min(88%,24rem)]' : 'w-sidebar',
                 className,
             )}
         >
@@ -184,79 +135,64 @@ function SidebarGroupTitle({ title, className }: { title: string, className?: st
 
 function SidebarGroupContent({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("w-full px-2 flex flex-col justify-start items-start", className)}>
+        <NavigationList.Root className={cn('px-2', className)}>
             {children}
-        </div>
+        </NavigationList.Root>
     )
 }
 
 type SidebarMenuItemProps = {
-    children?: ReactNode
     icon?: ReactNode
     active?: boolean
     onClick?: MouseEventHandler<HTMLButtonElement>
+    render?: ReactElement
     title: string
 }
 
-function SidebarMenuItem({ title, children, icon, active = false, onClick }: SidebarMenuItemProps) {
-    const { state: levelState } = useSidebarMenuLevel()
+// Menu items are flat — one item, one destination. There is no nesting and
+// no expand/collapse; the only collapsing left is the panel rail itself.
+function SidebarMenuItem({ title, icon, active = false, onClick, render }: SidebarMenuItemProps) {
     const { state: sidebarState } = useSidebar()
-    const [isOpen, setIsOpen] = useState(true)
-    const menuChildren = Children.toArray(children)
-    const hasChildren = menuChildren.length > 0
-    const itemState = active ? 'active' : 'inactive'
     const isCollapsed = sidebarState.isCollapsed
 
-    function handleToggle() {
-        if (!hasChildren) {
-            return
-        }
-
-        setIsOpen(!isOpen)
-    }
-
-    const handleClick = hasChildren ? handleToggle : onClick
-    const cursorClassName = handleClick ? 'cursor-pointer' : 'cursor-default'
-
-    return (
-        <div className={isCollapsed ? "w-fit" : "w-full"}>
-            <button type="button" className={cn(menuItemVarients({ state: itemState, isCollapsed: isCollapsed ? 'true' : 'false'}), cursorClassName)} onClick={handleClick} aria-expanded={hasChildren ? isOpen : undefined} title={isCollapsed ? title : undefined} > 
+    const menuButton = (
+        <NavigationList.Item
+            active={active}
+            tone="brand"
+            nativeButton={render === undefined}
+            render={render}
+            type={render ? undefined : 'button'}
+            className={cn('px-1 py-1', isCollapsed && 'w-fit')}
+            onClick={onClick}
+            aria-current={render && active ? 'page' : undefined}
+            aria-label={isCollapsed ? title : undefined}
+        >
                 <div className={cn("flex-1 px-1 flex justify-start items-center gap-1.5", isCollapsed && "justify-center px-0")}>
                     <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
-                        {levelState.isChild ? null : icon}
+                        {icon}
                     </div>
                     {!isCollapsed && (
-                        <Label.sm className={cn("flex-1 text-left whitespace-nowrap text-inherit", levelState.isChild && "!font-normal", (!active && levelState.isChild) && "!text-quaternary")}>
+                        <Label.sm className="flex-1 text-left whitespace-nowrap text-inherit">
                             {title}
                         </Label.sm>
                     )}
-                    {(!isCollapsed && hasChildren) && (
-                        <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
-                            <ChevronRight className={cn('size-4 transition-transform', isOpen ? 'rotate-90' : 'rotate-0')} aria-hidden="true" />
-                        </div>
-                    )}
                 </div>
-            </button>
-            <SidebarMenuItemChildren expanded={isOpen}>
-                {menuChildren}
-            </SidebarMenuItemChildren>
-        </div>
+        </NavigationList.Item>
     )
-}
-
-function SidebarMenuItemChildren({ children, expanded }: HTMLAttributes<HTMLDivElement> & { expanded?: boolean }) {
-    const { state } = useSidebar()
-
-    const showChildren = (Children.toArray(children).length > 0) && expanded && !state.isCollapsed
-
-    if (!showChildren) return null;
 
     return (
-        <SidebarMenuLevelContext.Provider value={nestedSidebarMenuLevelContextValue}>
-            <div className="flex flex-col justify-start items-start pt-0.5 w-full">
-                {children}
-            </div>
-        </SidebarMenuLevelContext.Provider>
+        <div className={isCollapsed ? "w-fit" : "w-full"}>
+            <BaseTooltip.Root disabled={!isCollapsed}>
+                <BaseTooltip.Trigger render={menuButton} />
+                <BaseTooltip.Portal>
+                    <BaseTooltip.Positioner side="right" sideOffset={8} className="z-[9100]">
+                        <BaseTooltip.Popup className="rounded-md bg-background-primary-solid px-2 py-1 label-xs text-white shadow-md">
+                            {title}
+                        </BaseTooltip.Popup>
+                    </BaseTooltip.Positioner>
+                </BaseTooltip.Portal>
+            </BaseTooltip.Root>
+        </div>
     )
 }
 

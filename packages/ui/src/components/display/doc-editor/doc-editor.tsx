@@ -4,6 +4,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { DocEditorSortableBlock } from './doc-editor-sortable-block'
 import type { DocEditorBlock } from './doc-editor-types'
 import { createDocEditorBlock, deserializeDocEditorValue, moveDocEditorBlock, normalizeDocEditorValue, serializeDocEditorBlocks } from './doc-editor-utils'
+import { Button } from '../../controls/button'
 
 type DocEditorProps = {
     value?: string
@@ -36,7 +37,7 @@ function focusEditorPosition(element: HTMLDivElement | null, collapseToEnd: bool
     }
 }
 
-export function DocEditor({ value, onChange, placeholder = 'Type something...', className }: DocEditorProps) {
+export function DocEditor({ value, onChange, placeholder = 'Type something…', className }: DocEditorProps) {
     const [blocks, setBlocks] = useState<DocEditorBlock[]>(() => deserializeDocEditorValue(value))
     const [openMenuId, setOpenMenuId] = useState<string | null>(null)
     const contentRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -314,7 +315,7 @@ export function DocEditor({ value, onChange, placeholder = 'Type something...', 
                     </SortableContext>
                 </DndContext>
 
-                <div className="min-h-20 cursor-text pl-13 pt-1" onClick={handleCanvasClick} />
+                <Button.Unstyled type="button" aria-label="Add a document block" className="block min-h-20 w-full cursor-text pl-13 pt-1 text-left" onClick={handleCanvasClick} />
             </div>
         </div>
     )

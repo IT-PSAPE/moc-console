@@ -1,4 +1,4 @@
-import type { Booking } from "@moc/types/equipment/booking";
+import type { Booking, BookingStatus } from "@moc/types/equipment/booking";
 import { supabase } from "@moc/data/supabase";
 import { BOOKING_SELECT, type BookingRow, mapBookingRow } from "./booking-row";
 
@@ -25,6 +25,20 @@ export async function updateBooking(booking: Booking): Promise<Booking> {
   }
 
   return mapBookingRow(data as unknown as BookingRow);
+}
+
+export async function updateBookingStatus(id: string, status: BookingStatus): Promise<void> {
+  const now = new Date().toISOString();
+  const values = {
+    status,
+    ...(status === "checked_out" ? { checked_out_at: now } : {}),
+    ...(status === "returned" ? { returned_at: now } : {}),
+  };
+  const { error } = await supabase.from("bookings").update(values).eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
 export async function deleteBooking(id: string): Promise<void> {

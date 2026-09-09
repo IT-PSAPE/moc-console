@@ -1,20 +1,15 @@
+import { Tabs as BaseTabs } from "@base-ui/react/tabs"
 import { cn } from "@moc/utils/cn"
 import { cv } from "@moc/utils/cv"
-import type { HTMLAttributes } from "react"
-import React, { createContext, useContext, useState } from "react"
+import { createContext, useContext, type HTMLAttributes, type ReactNode } from "react"
 
 type TabsVariant = 'default' | 'pill'
 
-type TabsContextState = {
-    value?: string
-    setValue: React.Dispatch<React.SetStateAction<string>>
-    variant: TabsVariant
-}
-
-const TabContext = createContext<TabsContextState | null>(null);
+const VariantContext = createContext<TabsVariant>('default')
 
 type TabsRootProps = {
-    children: React.ReactNode
+    children: ReactNode
+    className?: string
     defaultTab?: string
     value?: string
     onValueChange?: (value: string) => void
@@ -32,98 +27,72 @@ const tabsListVariants = cv({
     defaultVariants: { variant: 'default' },
 })
 
+// Active styling keys off Base UI's `data-active` attribute rather than the
+// previous computed `${variant}-${active|inactive}` state string.
 const tabsTabVariants = cv({
-    base: ['cursor-pointer transition-colors'],
+    base: ['flex min-h-11 cursor-pointer items-center transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-1 motion-reduce:transition-none md:min-h-0'],
     variants: {
         variant: {
-            default: ['py-1.5 border-b-2 paragraph-sm'],
-            pill: ['px-3 py-1.5 rounded-md label-sm'],
-        },
-        state: {
-            'default-active': ['border-brand'],
-            'default-inactive': ['border-transparent'],
-            'pill-active': ['bg-primary text-primary border border-secondary shadow-xs'],
-            'pill-inactive': ['text-tertiary hover:text-primary hover:bg-secondary'],
+            default: ['py-1.5 border-b-2 paragraph-sm border-transparent data-[active]:border-brand'],
+            pill: [
+                'px-3 py-1.5 rounded-md label-sm border border-transparent',
+                'text-tertiary hover:text-primary hover:bg-secondary',
+                'data-[active]:bg-primary data-[active]:text-primary data-[active]:border-secondary data-[active]:shadow-xs',
+            ],
         },
     },
+    defaultVariants: { variant: 'default' },
 })
 
-function TabsRoot({ children, defaultTab, value: controlledValue, onValueChange, variant = 'default' }: TabsRootProps) {
-    const [uncontrolledValue, setUncontrolledValue] = useState<string>(defaultTab ?? 'null');
-
-    const isControlled = controlledValue !== undefined;
-    const value = isControlled ? controlledValue : uncontrolledValue;
-    const setValue: React.Dispatch<React.SetStateAction<string>> = (next) => {
-        const nextValue = typeof next === 'function' ? next(value) : next;
-        if (!isControlled) setUncontrolledValue(nextValue);
-        onValueChange?.(nextValue);
-    };
-
-    const context: TabsContextState = { value, setValue, variant };
-
-    return (
-        <TabContext.Provider value={context}>
-            {children}
-        </TabContext.Provider>
-    );
-}
-
-function TabsList({children, className}: HTMLAttributes<HTMLDivElement>){
-    const { variant } = useTabContext();
-    return (
-        <div className={cn(tabsListVariants({ variant }), className)}>
-            {children}
-        </div>
-    )
-}
-
-function TabsTab({children, className, value}: HTMLAttributes<HTMLDivElement> & {value: string}){
-    const { setValue, value: selectedValue, variant } = useTabContext();
-
-    const current = value === selectedValue;
-    const state = `${variant}-${current ? 'active' : 'inactive'}` as
-        | 'default-active'
-        | 'default-inactive'
-        | 'pill-active'
-        | 'pill-inactive';
-
-    function handleClick() {
-        setValue(value);
+function TabsRoot({ children, className, defaultTab, value, onValueChange, variant = 'default' }: TabsRootProps) {
+    function handleValueChange(next: string | number) {
+        onValueChange?.(String(next))
     }
 
     return (
-        <div className={cn(tabsTabVariants({ variant, state }), className)} onClick={handleClick}>
-            {children}
-        </div>
+        <VariantContext.Provider value={variant}>
+            <BaseTabs.Root
+                value={value}
+                defaultValue={defaultTab}
+                onValueChange={handleValueChange}
+                className={className}
+            >
+                {children}
+            </BaseTabs.Root>
+        </VariantContext.Provider>
     )
 }
 
-function TabsPanels({children, className}: HTMLAttributes<HTMLDivElement>){
+function TabsList({ children, className }: HTMLAttributes<HTMLDivElement>) {
+    const variant = useContext(VariantContext)
     return (
-        <div className={cn(className)}>
+        <BaseTabs.List className={cn(tabsListVariants({ variant }), className)}>
             {children}
-        </div>
+        </BaseTabs.List>
     )
 }
 
-function TabsPanel({children, className, value}: HTMLAttributes<HTMLDivElement> & {value: string}){
-    const { value: selectedValue } = useTabContext();
-
-    if (value !== selectedValue) return null;
-
+function TabsTab({ children, className, value }: HTMLAttributes<HTMLDivElement> & { value: string }) {
+    const variant = useContext(VariantContext)
     return (
-        <div className={cn(className)}>
+        <BaseTabs.Tab value={value} className={cn(tabsTabVariants({ variant }), className)}>
             {children}
-        </div>
+        </BaseTabs.Tab>
     )
 }
 
-export function useTabContext() {
-    const context = useContext(TabContext);
+// Base UI has no plural "Panels" wrapper — panels live directly under Root — so
+// this stays a layout-transparent passthrough for API compatibility.
+function TabsPanels({ children, className }: HTMLAttributes<HTMLDivElement>) {
+    return <div className={cn(className)}>{children}</div>
+}
 
-    if (!context) throw new Error("useTabContext must be used within a TabContextProvider");
-
-    return context;
+function TabsPanel({ children, className, value }: HTMLAttributes<HTMLDivElement> & { value: string }) {
+    return (
+        <BaseTabs.Panel value={value} className={cn(className)}>
+            {children}
+        </BaseTabs.Panel>
+    )
 }
 
 export const Tabs = Object.assign(TabsRoot, {

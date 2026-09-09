@@ -1,6 +1,7 @@
 # Schema Reference
 
-This document defines the intended relational schema for the project.
+This document describes the current relational schema after the checked-in
+migration ledger has been applied.
 
 It is the database view only:
 
@@ -18,7 +19,12 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 - Storage target: Supabase Postgres
 - Naming convention: `snake_case`
 - ID strategy: `uuid` in storage, string in JSON/API responses
-- Current runtime status: auth, workspaces, requests, equipment, broadcast, and cue-sheet flows now read and write Supabase directly; the remaining gap is mostly between normalized storage and denormalized runtime objects
+- Source of truth: [`supabase/`](../supabase/readme.md). The phase files are a
+  historical baseline; the target-schema cleanup is the current convergence
+  script. Do not apply every historical patch wholesale.
+- Credential boundary: `private.integration_oauth_tokens` is server-only
+  storage. It is intentionally excluded from client schema generation and
+  must never be queried by browser code.
 
 ## Table Overview
 
@@ -26,31 +32,25 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 | --- | --- | --- | --- |
 | `users` | App user profiles aligned to Supabase Auth | `id` | `id -> auth.users.id` |
 | `workspaces` | Workspace containers for operational data | `id` | Referenced by `workspace_users.workspace_id` and workspace-scoped domain tables |
-| `workspace_users` | Membership join between users and workspaces | `id` | `workspace_id -> workspaces.id`, `user_id -> users.id` |
-| `roles` | Role definitions and permissions | `id` | Referenced by `user_roles.role_id` |
-| `user_roles` | Role assignment per user | `user_id` | `user_id -> users.id`, `role_id -> roles.id` |
+| `workspace_users` | Accepted membership and workspace-scoped role | `id` | `workspace_id -> workspaces.id`, `user_id -> users.id`, `role_id -> roles.id` |
+| `workspace_join_requests` | Pending workspace access requests | `id` | `workspace_id -> workspaces.id`, `user_id -> users.id` |
+| `roles` | Role definitions and permissions | `id` | Referenced by `workspace_users.role_id` |
 | `requests` | Work requests | `id` | `workspace_id -> workspaces.id`; referenced by `request_assignees.request_id` |
 | `request_assignees` | Request-to-user assignments | `id` | `request_id -> requests.id`, `user_id -> users.id` |
-| `equipment` | Inventory records | `id` | `workspace_id -> workspaces.id`; referenced by `bookings.equipment_id` |
-| `bookings` | Equipment reservations and checkout rows | `id` | `workspace_id -> workspaces.id`, `equipment_id -> equipment.id` |
-| `media` | Broadcast media library | `id` | `workspace_id -> workspaces.id`; referenced by `playlists.music_id` and `queue.media_id` |
-| `playlists` | Broadcast playlists | `id` | `workspace_id -> workspaces.id`, `music_id -> media.id` |
-| `queue` | Ordered playlist entries | `id` | `playlist_id -> playlists.id`, `media_id -> media.id` |
-| `youtube_connections` | Workspace-level YouTube OAuth credentials | `id` | `workspace_id -> workspaces.id`, `connected_by -> users.id` |
+| `equipment` | Inventory records | `id` | `workspace_id -> workspaces.id`; referenced by `booking_items.equipment_id` |
+| `bookings` | Booking header and lifecycle | `id` | `workspace_id -> workspaces.id`; referenced by `booking_items.booking_id` |
+| `booking_items` | Equipment assigned to a booking | `id` | `booking_id -> bookings.id`, `equipment_id -> equipment.id` |
+| `venues` | Bookable venues managed per workspace | `id` | `workspace_id -> workspaces.id`; referenced by `venue_bookings.venue_id` |
+| `venue_bookings` | Venue booking header, 5W1H detail and stored state | `id` | `workspace_id -> workspaces.id`, `venue_id -> venues.id` (RESTRICT); referenced by `venue_booking_slots.venue_booking_id` |
+| `venue_booking_slots` | The 30-minute slots a venue booking holds | `id` | `venue_booking_id -> venue_bookings.id`, `venue_id -> venues.id` |
+| `checklist_templates` | Reusable checklist definitions | `id` | `workspace_id -> workspaces.id` |
+| `checklists` | Scheduled checklist runs | `id` | `workspace_id -> workspaces.id`, optional `request_id -> requests.id` |
+| `broadcasts` | Workspace-scoped broadcast playlists for the public player | `id` | `workspace_id -> workspaces.id`, `created_by -> users.id` |
+| `broadcast_items` | Ordered audio/video files belonging to a broadcast playlist | `id` | `broadcast_id -> broadcasts.id` |
+| `youtube_connections` | Workspace-level YouTube connection metadata | `id` | `workspace_id -> workspaces.id`, `connected_by -> users.id` |
 | `streams` | YouTube live stream records | `id` | `workspace_id -> workspaces.id`, `created_by -> users.id` |
-| `event_templates` | Reusable event templates | `id` | `workspace_id -> workspaces.id`; referenced by `template_tracks.event_template_id` |
-| `template_tracks` | Track templates for event templates | `id` | `event_template_id -> event_templates.id`, `color_id -> colors.id` |
-| `template_cues` | Cue templates for template tracks | `id` | `template_track_id -> template_tracks.id` |
-| `events` | Actual scheduled cue-sheet events | `id` | `workspace_id -> workspaces.id`; referenced by `tracks.event_id` |
-| `colors` | Stable semantic color keys shared across domains | `id` | Referenced by `tracks.color_id` and `template_tracks.color_id` |
-| `tracks` | Event timeline tracks | `id` | `event_id -> events.id`, `color_id -> colors.id` |
-| `cues` | Event timeline cues | `id` | `track_id -> tracks.id` |
-| `checklist_templates` | Reusable checklist templates | `id` | `workspace_id -> workspaces.id`; referenced by `template_sections.checklist_template_id` and `template_items.checklist_template_id` |
-| `template_sections` | Section templates for checklist templates | `id` | `checklist_template_id -> checklist_templates.id` |
-| `template_items` | Item templates for checklist templates | `id` | `checklist_template_id -> checklist_templates.id`, `template_section_id -> template_sections.id` |
-| `checklists` | Actual checklist runs | `id` | `workspace_id -> workspaces.id`; referenced by `checklist_sections.checklist_id` and `checklist_items.checklist_id` |
-| `checklist_sections` | Grouped sections inside a checklist | `id` | `checklist_id -> checklists.id` |
-| `checklist_items` | Checklist tasks | `id` | `checklist_id -> checklists.id`, `section_id -> checklist_sections.id` |
+| `zoom_connections` | Workspace-level Zoom connection metadata | `id` | `workspace_id -> workspaces.id`, `connected_by -> users.id` |
+| `zoom_meetings` | Zoom meeting records | `id` | `workspace_id -> workspaces.id`, `created_by -> users.id` |
 
 ## Enum Domains
 
@@ -61,10 +61,9 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 | `request_category` | `video_production`, `video_shooting`, `graphic_design`, `event`, `education` |
 | `equipment_category` | `camera`, `lens`, `lighting`, `audio`, `support`, `monitor`, `cable`, `accessory` |
 | `equipment_status` | `available`, `booked`, `booked_out`, `maintenance` |
-| `booking_status` | `booked`, `checked_out`, `returned` |
-| `media_type` | `image`, `audio`, `video` |
-| `playlist_status` | `draft`, `published` |
-| `cue_type` | `performance`, `technical`, `equipment`, `announcement`, `transition` |
+| `booking_status` | `booked`, `checked_out`, `returned`, `archived` |
+| `venue_booking_status` | `auto`, `cancelled` — the only STORED states. The reader-facing phase (`booked`, `in_progress`, `completed`, `cancelled`) is derived, not stored. See below. |
+| `broadcast_kind` | `audio`, `video` |
 | `stream_status` | `created`, `ready`, `live`, `complete` |
 
 ## Auth
@@ -92,7 +91,8 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 
 Bootstrap requirement:
 
-- Seed one workspace with slug `default-workspace`. The runtime uses it as the safe fallback when a signed-in user has no `workspace_users` row yet or when requests are made before membership resolution completes.
+- Seed one workspace with slug `default-workspace`. Signup may request it, but
+  the account remains pending until an owner or admin approves the membership.
 
 ### `workspace_users`
 
@@ -101,6 +101,7 @@ Bootstrap requirement:
 | `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
 | `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
 | `user_id` | `uuid` | None | No | No | Foreign key to `users.id`. |
+| `role_id` | `uuid` | None | No | No | Workspace-scoped foreign key to `roles.id`. |
 | `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
 
 Additional constraint:
@@ -118,13 +119,6 @@ Additional constraint:
 | `can_update` | `boolean` | `false` | No | No | Permission flag. |
 | `can_delete` | `boolean` | `false` | No | No | Permission flag. |
 | `can_manage_roles` | `boolean` | `false` | No | No | Admin role-management flag. |
-
-### `user_roles`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `user_id` | `uuid` | None | No | Yes | Primary key and foreign key to `users.id`. |
-| `role_id` | `uuid` | None | No | No | Foreign key to `roles.id`. |
 
 ## Requests
 
@@ -164,6 +158,8 @@ Additional constraint:
 Additional constraint:
 
 - Add `unique (request_id, user_id, duty)`.
+- Assignees must be members of the request's workspace; a database trigger
+  enforces this for direct writes and RPCs.
 
 Important note:
 
@@ -197,66 +193,182 @@ Important normalization rule:
 | --- | --- | --- | --- | --- | --- |
 | `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
 | `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
-| `equipment_id` | `uuid` | None | No | No | Foreign key to `equipment.id`. |
+| `tracking_code` | `text` | None | No | Yes | Public-facing booking tracking identifier. |
+| `title` | `text` | None | No | No | Booking title, 1–120 characters. |
 | `booked_by` | `text` | None | No | No | Free-text name of the person the booking is for. Not necessarily a logged-in user. |
 | `checked_out_at` | `timestamptz` | None | No | No | Start/checkout timestamp. |
 | `expected_return_at` | `timestamptz` | None | No | No | Due-back timestamp. |
 | `returned_at` | `timestamptz` | `null` | Yes | No | Null until the item is returned. |
 | `notes` | `text` | `null` | Yes | No | Booking notes. |
-| `status` | `booking_status` | `booked` | No | No | Booking lifecycle state. |
+| `status` | `booking_status` | `booked` | No | No | Booking lifecycle state for the whole batch. |
+| `created_at` | `timestamptz` | `now()` | No | No | Booking creation time. |
+
+### `booking_items`
+
+| Column | Postgres type | Default | Nullable | Unique | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
+| `booking_id` | `uuid` | None | No | No | Foreign key to `bookings.id`. |
+| `equipment_id` | `uuid` | None | No | No | Foreign key to `equipment.id`. |
 
 Important normalization rules:
 
-- `bookings` stores `equipment_id`, not `equipment_name`.
+- A booking is a batch; `booking_items` stores its equipment assignments.
+- A booking item must reference equipment in the booking's workspace; a
+  database trigger enforces this.
 - `bookings` stores `booked_by` as text, not a user id.
 - The human-readable duration shown in the UI should be derived, not stored.
 
-## Broadcast
+## Venues
 
-### `media`
+A venue booking is a public submission, like a request: MOC Request writes it
+through `public_submit_venue_booking` and the console only ever reads and
+cancels it.
+
+Two things here are unlike every other table in this schema, and both are
+deliberate — see [ADR-0010](adr/0010-venue-bookings-with-a-derived-lifecycle.md).
+
+1. **The lifecycle is mostly not stored.** `venue_bookings.status` holds only
+   `auto` or `cancelled`. Booked → in progress → completed is derived from the
+   clock against `starts_at`/`ends_at` by `public.venue_booking_phase()`, and
+   mirrored in TypeScript by `deriveVenueBookingPhase` in `@moc/types/venues`.
+   Nothing writes a phase. Do not add a stored lifecycle column, and do not
+   branch UI on the raw `status`.
+2. **Double-booking is prevented by an index, not by a check.** A booking is
+   stored as one row per 30-minute slot, and
+   `venue_booking_slots (venue_id, slot_start) WHERE active` is unique. Two
+   racing submissions cannot both succeed.
+
+### `venues`
 
 | Column | Postgres type | Default | Nullable | Unique | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
 | `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
-| `name` | `text` | None | No | No | Media label. |
-| `type` | `media_type` | None | No | No | Image/audio/video. |
-| `url` | `text` | None | No | No | Media source URL. |
-| `thumbnail_url` | `text` | `null` | Yes | No | Optional preview image URL. |
-| `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
+| `name` | `text` | None | No | Yes | 1–120 characters. Unique per workspace, case-insensitively and ignoring surrounding whitespace. |
+| `location` | `text` | `null` | Yes | No | Where in the building. |
+| `capacity` | `integer` | `null` | Yes | No | Must be greater than zero when set. |
+| `notes` | `text` | `null` | Yes | No | Internal notes. |
+| `active` | `boolean` | `true` | No | No | Inactive venues are hidden from the public app but keep their history. |
+| `sort_order` | `integer` | `0` | No | No | Display order, then name. |
+| `created_at` | `timestamptz` | `now()` | No | No | |
+| `updated_at` | `timestamptz` | `now()` | No | No | Maintained by the `set_updated_at` trigger. |
 
-Important note:
-
-- `media` does not store `duration`.
-- Media duration should come from the source file metadata or ingestion layer when needed.
-
-### `playlists`
+### `venue_bookings`
 
 | Column | Postgres type | Default | Nullable | Unique | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
 | `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
-| `name` | `text` | None | No | No | Playlist name. |
-| `description` | `text` | `''` | No | No | Playlist summary. |
-| `status` | `playlist_status` | `draft` | No | No | Playlist state. |
-| `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
-| `music_id` | `uuid` | `null` | Yes | No | Optional foreign key to `media.id` for background music. |
-| `default_image_duration` | `integer` | `10` | No | No | Default image duration used by the queue when no item-level duration is set. |
+| `venue_id` | `uuid` | None | No | No | Foreign key to `venues.id`, `ON DELETE RESTRICT`: a venue that has been booked cannot be deleted, only deactivated. |
+| `tracking_code` | `text` | None | No | Yes | Public tracking identifier, `VEN-XXXXXX`. Generated by the submit RPC. |
+| `title` | `text` | None | No | No | 1–120 characters. |
+| `requested_by` | `text` | None | No | No | Free-text name of the person booking. Not necessarily a logged-in user. |
+| `who` | `text` | None | No | No | 5W1H, as on `requests`. |
+| `what` | `text` | None | No | No | 5W1H. |
+| `when_text` | `text` | None | No | No | 5W1H. The authoritative times are `starts_at`/`ends_at`; this is the submitter's own words. |
+| `where_text` | `text` | None | No | No | 5W1H. The authoritative place is `venue_id`. |
+| `why` | `text` | None | No | No | 5W1H. |
+| `how` | `text` | None | No | No | 5W1H. |
+| `notes` | `text` | `null` | Yes | No | |
+| `status` | `venue_booking_status` | `auto` | No | No | Only ever `auto` or `cancelled`. Not the status a reader sees. |
+| `starts_at` | `timestamptz` | None | No | No | Start of the booked block: the first slot's start. |
+| `ends_at` | `timestamptz` | None | No | No | End of the booked block: the last slot's end. Must be after `starts_at`. |
+| `cancelled_at` | `timestamptz` | `null` | Yes | No | Set together with `status = 'cancelled'`; a CHECK enforces that the two never disagree. |
+| `cancelled_by` | `uuid` | `null` | Yes | No | Foreign key to `users.id`, `ON DELETE SET NULL`. |
+| `cancel_reason` | `text` | `null` | Yes | No | Why it was cancelled. |
+| `created_at` | `timestamptz` | `now()` | No | No | |
+| `updated_at` | `timestamptz` | `now()` | No | No | Maintained by the `set_updated_at` trigger. |
 
-### `queue`
+### `venue_booking_slots`
 
 | Column | Postgres type | Default | Nullable | Unique | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
-| `playlist_id` | `uuid` | None | No | No | Foreign key to `playlists.id`. |
-| `media_id` | `uuid` | None | No | No | Foreign key to `media.id`. |
-| `sort_order` | `integer` | None | No | No | 1-based order inside the playlist. |
-| `duration` | `integer` | `null` | Yes | No | Optional item-level duration override. |
-| `disabled` | `boolean` | `false` | No | No | Skip item during playout. |
+| `venue_booking_id` | `uuid` | None | No | No | Foreign key to `venue_bookings.id`, `ON DELETE CASCADE`. |
+| `venue_id` | `uuid` | None | No | No | Denormalised from the parent so the unique index can span venue and time. Overwritten from the parent by a `BEFORE` trigger. |
+| `slot_start` | `timestamptz` | None | No | No | Unique per venue among active slots. |
+| `slot_end` | `timestamptz` | None | No | No | Always 30 minutes after `slot_start`. |
+| `active` | `boolean` | `true` | No | No | False once the parent is cancelled, which releases the slot. Also overwritten from the parent by the `BEFORE` trigger, so it cannot be set independently. |
 
-Additional constraint:
+Important normalization rules:
 
-- Add `unique (playlist_id, sort_order)`.
+- A booking holds one unbroken run of slots, in one venue, on one local day.
+  `public_submit_venue_booking` enforces all three; the picker only mirrors it.
+- The bookable day is 08:00–23:00 in the workspace's time zone, in 30-minute
+  steps (30 slots, the last 22:30–23:00), defined once by
+  `public.venue_slot_grid`. `public_venue_availability` and the submit RPC both
+  read it, so the public picker cannot offer a slot the writer would reject.
+- The time zone comes from `notification_settings.timezone`, falling back to
+  `Africa/Harare` when unset or unrecognised.
+- `venue_bookings` stores `requested_by` as text, not a user id.
+- `starts_at`/`ends_at` duplicate the span of the slot rows. They are stored
+  because the phase derivation, the calendar and list ordering all need them,
+  and the submit RPC is their only writer.
+
+## Checklists
+
+### `checklists`
+
+| Column | Postgres type | Default | Nullable | Unique | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
+| `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
+| `request_id` | `uuid` | `null` | Yes | No | Optional foreign key to `requests.id`. |
+| `name` | `text` | None | No | No | Run name. |
+| `description` | `text` | `''` | No | No | Run description. |
+| `scheduled_at` | `timestamptz` | None | No | No | Scheduled execution date. |
+| `created_at` | `timestamptz` | `now()` | No | No | Creation time. |
+| `updated_at` | `timestamptz` | `now()` | No | No | Last update time. |
+
+Scope rules:
+
+- `checklist_sections` and `checklist_items` inherit the run's workspace.
+- A checklist item section must belong to the same checklist, and a template
+  item section must belong to the same template; triggers enforce both joins.
+- Checklist assignees must be workspace members. An optional linked request
+  must be in the checklist workspace. Both checks run in the database.
+
+## Broadcasts
+
+### `broadcasts`
+
+| Column | Postgres type | Default | Nullable | Unique | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
+| `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
+| `created_by` | `uuid` | None | No | No | Foreign key to `users.id`. |
+| `title` | `text` | None | No | No | Broadcast playlist title. |
+| `description` | `text` | `''` | No | No | Optional operator-facing summary. |
+| `slug` | `text` | None | No | Yes | Public URL identifier used by the separate broadcast app. |
+| `kind` | `broadcast_kind` | None | No | No | Playlist media kind: `audio` or `video`. |
+| `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
+| `updated_at` | `timestamptz` | `now()` | No | No | Last update timestamp. |
+
+### `broadcast_items`
+
+| Column | Postgres type | Default | Nullable | Unique | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
+| `broadcast_id` | `uuid` | None | No | No | Foreign key to `broadcasts.id`. |
+| `title` | `text` | None | No | No | Source file title, defaulting to the uploaded filename. |
+| `sort_order` | `integer` | None | No | Per broadcast | Zero-based playlist position. |
+| `storage_bucket` | `text` | `'broadcast-media'` | No | No | Storage bucket holding the public media asset. |
+| `storage_path` | `text` | None | No | No | Object path within the storage bucket. |
+| `public_url` | `text` | None | No | No | Public playback URL resolved from Storage. |
+| `mime_type` | `text` | None | No | No | Uploaded file MIME type. |
+| `file_size_bytes` | `bigint` | None | No | No | Uploaded file size. |
+| `duration_seconds` | `numeric` | `null` | Yes | No | Best-effort client-side metadata captured at upload time. |
+| `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
+
+Important notes:
+
+- Each broadcast contains only one media kind: all items must be audio when `kind = 'audio'`, or video when `kind = 'video'`.
+- `broadcast_items` are ordered by `sort_order`; the public player continuously loops the playlist and automatically preloads the next item.
+- Broadcast metadata and assets are publicly readable by design. Public assets live in the `broadcast-media` storage bucket so the player can preload the next item without signed URLs.
+- Broadcast and item changes are included in the `supabase_realtime` publication so an open player can refresh its queue without a reload.
+
+## Integrations
 
 ### `youtube_connections`
 
@@ -266,9 +378,9 @@ Additional constraint:
 | `workspace_id` | `uuid` | None | No | Yes | Foreign key to `workspaces.id`. One connection per workspace. |
 | `channel_id` | `text` | None | No | No | YouTube channel ID. |
 | `channel_title` | `text` | None | No | No | YouTube channel display name. |
-| `access_token` | `text` | None | No | No | Google OAuth access token. |
-| `refresh_token` | `text` | None | No | No | Google OAuth refresh token. |
 | `token_expires_at` | `timestamptz` | None | No | No | Access token expiry timestamp. |
+| `status` | `youtube_connection_status` | `'active'` | No | No | Connection health, including `reauth_required`. |
+| `presets` | `jsonb` | `null` | Yes | No | Workspace stream preset metadata. |
 | `connected_by` | `uuid` | None | No | No | Foreign key to `users.id`. Admin who connected the account. |
 | `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
 | `updated_at` | `timestamptz` | `now()` | No | No | Last update timestamp. |
@@ -276,8 +388,45 @@ Additional constraint:
 Important notes:
 
 - One YouTube connection per workspace, enforced by `unique (workspace_id)`.
-- Tokens are managed server-side via Supabase Edge Functions. The client never sees the raw tokens.
-- Only admins (`can_manage_roles`) can insert, update, or delete connections.
+- OAuth access and refresh tokens are in `private.integration_oauth_tokens`,
+  never in this public metadata table. Only the API service role can execute
+  the private-storage RPCs.
+- Browser clients call the authenticated `/api/youtube/v3/*` proxy with an
+  explicit workspace context; the API refreshes credentials server-side.
+
+### `private.integration_oauth_tokens`
+
+This private-schema table is not exposed through the client data API.
+
+| Column | Postgres type | Default | Nullable | Unique | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `provider` | `text` | None | No | Composite | Restricted to `youtube` or `zoom`. |
+| `workspace_id` | `uuid` | None | No | Composite | Foreign key to `workspaces.id`. |
+| `access_token` | `text` | None | No | No | Server-only provider credential. |
+| `refresh_token` | `text` | None | No | No | Server-only provider credential. |
+| `token_expires_at` | `timestamptz` | None | No | No | Provider access-token expiry. |
+| `updated_at` | `timestamptz` | `now()` | No | No | Last credential update. |
+
+### `zoom_connections`
+
+| Column | Postgres type | Default | Nullable | Unique | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
+| `workspace_id` | `uuid` | None | No | Yes | One connection per workspace. |
+| `zoom_user_id` | `text` | None | No | No | Connected Zoom account identifier. |
+| `email` | `text` | None | No | No | Connected account email. |
+| `display_name` | `text` | None | No | No | Connected account name. |
+| `token_expires_at` | `timestamptz` | None | No | No | Access-token expiry metadata. |
+| `connected_by` | `uuid` | None | No | No | User who connected the account. |
+| `created_at` | `timestamptz` | `now()` | No | No | Creation time. |
+| `updated_at` | `timestamptz` | `now()` | No | No | Last update time. |
+
+### `zoom_meetings`
+
+`zoom_meetings` stores workspace-scoped provider meeting metadata, keyed by
+`unique (workspace_id, zoom_meeting_id)`. Its credential source is the same
+private integration-token table; browser code must call the authenticated
+`/api/zoom/v2/*` proxy rather than Zoom directly.
 
 ### `streams`
 
@@ -313,156 +462,6 @@ Important notes:
 - `stream_key` and `ingestion_url` are sensitive — only users with `can_create` see them in the UI.
 - Editing a stream is only permitted when `stream_status` is `created`.
 
-## Cue Sheet
-
-### `event_templates`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
-| `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
-| `title` | `text` | None | No | No | Template title. |
-| `description` | `text` | `''` | No | No | Template summary. |
-| `duration` | `integer` | None | No | No | Total timeline duration. |
-| `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
-| `updated_at` | `timestamptz` | `now()` | No | No | Last update timestamp. |
-
-### `template_tracks`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
-| `event_template_id` | `uuid` | None | No | No | Foreign key to `event_templates.id`. |
-| `name` | `text` | None | No | No | Track name. |
-| `color_id` | `uuid` | None | No | No | Foreign key to `colors.id`. |
-| `sort_order` | `integer` | None | No | No | Track order inside the template. |
-
-### `template_cues`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
-| `template_track_id` | `uuid` | None | No | No | Foreign key to `template_tracks.id`. |
-| `label` | `text` | None | No | No | Cue label. |
-| `start` | `integer` | None | No | No | Start offset in minutes. |
-| `duration` | `integer` | None | No | No | Cue duration in minutes. |
-| `type` | `cue_type` | None | No | No | Cue classification. |
-| `assignee` | `text` | `null` | Yes | No | Optional assignee text. |
-| `notes` | `text` | `null` | Yes | No | Optional notes. |
-
-### `events`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
-| `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
-| `title` | `text` | None | No | No | Event title. |
-| `description` | `text` | `''` | No | No | Event summary. |
-| `scheduled_at` | `timestamptz` | None | No | No | Actual scheduled timestamp. |
-| `duration` | `integer` | None | No | No | Total timeline duration. |
-| `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
-| `updated_at` | `timestamptz` | `now()` | No | No | Last update timestamp. |
-
-### `colors`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
-| `key` | `text` | None | No | Yes | Stable semantic key such as `red`, `blue`, or `green`. |
-| `name` | `text` | None | No | No | Human-readable label. |
-
-Important note:
-
-- The app should map `colors.key` to actual CSS tokens. Rebranding should happen in code, not by rewriting stored rows.
-- `colors` is intentionally shared. Tracks are only one consumer.
-
-### `tracks`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
-| `event_id` | `uuid` | None | No | No | Foreign key to `events.id`. |
-| `name` | `text` | None | No | No | Track name. |
-| `color_id` | `uuid` | None | No | No | Foreign key to `colors.id`. |
-| `sort_order` | `integer` | None | No | No | Track order inside the event. |
-
-### `cues`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
-| `track_id` | `uuid` | None | No | No | Foreign key to `tracks.id`. |
-| `label` | `text` | None | No | No | Cue label. |
-| `start` | `integer` | None | No | No | Start offset in minutes. |
-| `duration` | `integer` | None | No | No | Cue duration in minutes. |
-| `type` | `cue_type` | None | No | No | Cue classification. |
-| `assignee` | `text` | `null` | Yes | No | Optional assignee text. |
-| `notes` | `text` | `null` | Yes | No | Optional notes. |
-
-## Checklists
-
-### `checklist_templates`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
-| `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
-| `name` | `text` | None | No | No | Template name. |
-| `description` | `text` | `''` | No | No | Template summary. |
-| `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
-| `updated_at` | `timestamptz` | `now()` | No | No | Last update timestamp. |
-
-### `template_sections`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
-| `checklist_template_id` | `uuid` | None | No | No | Foreign key to `checklist_templates.id`. |
-| `name` | `text` | None | No | No | Template section name. |
-| `sort_order` | `integer` | None | No | No | Section order inside the template. |
-
-### `template_items`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
-| `checklist_template_id` | `uuid` | None | No | No | Foreign key to `checklist_templates.id`. |
-| `template_section_id` | `uuid` | `null` | Yes | No | Null for top-level template items. |
-| `label` | `text` | None | No | No | Template item label. |
-| `sort_order` | `integer` | None | No | No | Item order. |
-
-### `checklists`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
-| `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
-| `name` | `text` | None | No | No | Checklist run name. |
-| `description` | `text` | `''` | No | No | Checklist summary. |
-| `scheduled_at` | `timestamptz` | None | No | No | Scheduled runtime. |
-| `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |
-| `updated_at` | `timestamptz` | `now()` | No | No | Last update timestamp. |
-
-### `checklist_sections`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
-| `checklist_id` | `uuid` | None | No | No | Foreign key to `checklists.id`. |
-| `name` | `text` | None | No | No | Section name. |
-| `sort_order` | `integer` | None | No | No | Section order inside the checklist. |
-
-### `checklist_items`
-
-| Column | Postgres type | Default | Nullable | Unique | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
-| `checklist_id` | `uuid` | None | No | No | Foreign key to `checklists.id`. |
-| `section_id` | `uuid` | `null` | Yes | No | Null for top-level checklist items. |
-| `label` | `text` | None | No | No | Item label. |
-| `checked` | `boolean` | `false` | No | No | Completion state. |
-| `sort_order` | `integer` | None | No | No | Item order. |
-
 ## Schema Boundary
 
 These are read-model fields and should not be stored as standalone table columns:
@@ -470,8 +469,6 @@ These are read-model fields and should not be stored as standalone table columns
 - `equipment.bookedBy`
 - `bookings.equipmentName`
 - `bookings.duration`
-- `queue.mediaName`
-- `queue.mediaType`
 
 Those should be derived after fetch.
 
@@ -482,31 +479,23 @@ Use `workspace_id` on top-level operational tables that need direct scoping, wor
 - `requests`
 - `equipment`
 - `bookings`
-- `media`
-- `playlists`
-- `event_templates`
-- `events`
 - `checklist_templates`
 - `checklists`
-- `youtube_connections`
+- `broadcasts`
 - `streams`
+- `youtube_connections`
+- `zoom_connections`
+- `zoom_meetings`
 
 Do not add `workspace_id` to subordinate rows that already inherit scope from their parent:
 
 - `request_assignees`
-- `queue`
-- `template_tracks`
-- `template_cues`
-- `tracks`
-- `cues`
-- `template_sections`
-- `template_items`
+- `booking_items`
 - `checklist_sections`
 - `checklist_items`
+- `checklist_item_assignees`
 
 Keep these tables global rather than workspace-scoped:
 
 - `users`
 - `roles`
-- `user_roles`
-- `colors`

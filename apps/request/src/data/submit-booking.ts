@@ -1,7 +1,7 @@
 import { supabase } from '@moc/data/supabase'
+import { wakeBookingCreatedNotification } from '@/data/notify-event'
 import { workspaceId } from '@/lib/workspace'
 import type { BookingFormData, SubmitBookingResult } from '@/types/booking'
-import { notifyBookingCreated } from './notify-event'
 
 export async function submitPublicBookingBatch(data: BookingFormData): Promise<SubmitBookingResult> {
   const { data: result, error } = await supabase.rpc('public_submit_booking_batch', {
@@ -19,12 +19,6 @@ export async function submitPublicBookingBatch(data: BookingFormData): Promise<S
   const bookingId: string = result.booking_id
   const trackingCode: string = result.tracking_code
   const title: string = result.title
-  notifyBookingCreated({
-    bookingId,
-    trackingCode,
-    title,
-    requesterName: data.bookedBy || null,
-  })
-
+  wakeBookingCreatedNotification(bookingId, trackingCode)
   return { bookingId, trackingCode, title }
 }

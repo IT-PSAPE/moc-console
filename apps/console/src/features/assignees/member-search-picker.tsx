@@ -1,14 +1,12 @@
 import { UserAvatar } from "@moc/ui/components/display/user-avatar";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
-import { Input } from "@moc/ui/components/form/input";
+import { Combobox } from "@moc/ui/components/form/combobox";
 import { Spinner } from "@moc/ui/components/feedback/spinner";
-import { Button } from "@moc/ui/components/controls/button";
-import { AnchoredPanel } from "@moc/ui/components/overlays/anchored-panel";
-import { fetchAllUsers, type ResolvedAssignee } from "@/data/fetch-assignees";
+import { type ResolvedAssignee } from "@/data/fetch-assignees";
 import type { User } from "@moc/types/requests";
 import { cn } from "@moc/utils/cn";
-import { Search, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMembers } from "./use-members";
+import { AssignedMemberList } from "./assigned-member-list";
 
 type MemberSearchPickerProps = {
     assignees: ResolvedAssignee[];
@@ -23,116 +21,44 @@ export function MemberSearchPicker({
     assignees,
     onAdd,
     onRemove,
-    placeholder = "Search members...",
+    placeholder = "Search members…",
     emptyLabel = "No assignees yet",
     className,
 }: MemberSearchPickerProps) {
-    const [allUsers, setAllUsers] = useState<User[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [search, setSearch] = useState("");
-    const [isOpen, setIsOpen] = useState(false);
-    const [anchor, setAnchor] = useState<HTMLDivElement | null>(null);
-
-    useEffect(() => {
-        fetchAllUsers()
-            .then(setAllUsers)
-            .finally(() => setIsLoading(false));
-    }, []);
+    const { members, isLoading } = useMembers();
 
     const assignedIds = new Set(assignees.map((a) => a.id));
-    const matchesSearch = (user: User) => {
-        if (!search.trim()) return true;
-        const fullName = `${user.name} ${user.surname}`.toLowerCase();
-        const email = user.email.toLowerCase();
-        const query = search.toLowerCase();
-        return fullName.includes(query) || email.includes(query);
-    };
+    const available = members.filter((user) => !assignedIds.has(user.id));
 
-    const available = allUsers.filter((u) => !assignedIds.has(u.id) && matchesSearch(u));
-
-    function handleSelect(user: User) {
+    function handleSelect(user: User | null) {
+        if (!user) return;
         onAdd(user);
-        setSearch("");
-        setIsOpen(false);
+    }
+
+    function userToSearchLabel(user: User) {
+        return `${user.name} ${user.surname} ${user.email}`;
     }
 
     return (
         <div className={cn("flex flex-col gap-3", className)}>
-            <div ref={setAnchor}>
-                <Input
-                    icon={<Search />}
-                    placeholder={placeholder}
-                    value={search}
-                    onChange={(e) => { setSearch(e.target.value); setIsOpen(true); }}
-                    onFocus={() => setIsOpen(true)}
-                />
-            </div>
-
-            <AnchoredPanel
-                anchor={anchor}
-                open={isOpen}
-                onClose={() => setIsOpen(false)}
-                placement="bottom-start"
-                matchAnchorWidth
-                className="max-h-64"
-            >
-                {isLoading && (
-                    <div className="flex justify-center py-4">
-                        <Spinner size="sm" />
-                    </div>
-                )}
-                {!isLoading && available.length === 0 && (
-                    <div className="px-3 py-3 text-center">
-                        <Paragraph.sm className="text-quaternary">No members found</Paragraph.sm>
-                    </div>
-                )}
-                {!isLoading && available.map((user) => (
-                    <MemberResultRow key={user.id} user={user} onSelect={handleSelect} />
-                ))}
-            </AnchoredPanel>
-
-            {assignees.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                    {assignees.map((a) => (
-                        <div key={`${a.id}-${a.duty}`} className="flex items-center gap-2 rounded-lg py-1">
-                            <UserAvatar size="sm" user={a} />
-                            <div className="flex-1 min-w-0">
-                                <Label.sm>{a.name} {a.surname}</Label.sm>
-                                {a.duty && <Paragraph.xs className="text-quaternary truncate">{a.duty}</Paragraph.xs>}
-                            </div>
-                            <Button.Icon icon={<X />} variant="ghost" onClick={() => onRemove(a.id)} />
-                        </div>
+            <Combobox.Root items={available} value={null} onValueChange={handleSelect} itemToStringLabel={userToSearchLabel}>
+                <Combobox.Field placeholder={placeholder} disabled={isLoading} />
+                <Combobox.Content empty={isLoading ? <Spinner size="sm" /> : "No members found"} searchPlaceholder="Search members" title="Choose a member" className="max-h-64">
+                    {available.map((user) => (
+                        <Combobox.Item key={user.id} value={user}>
+                            <span className="flex min-w-0 items-center gap-2">
+                                <UserAvatar size="sm" user={user} />
+                                <span className="min-w-0 flex-1">
+                                    <Label.sm>{user.name} {user.surname}</Label.sm>
+                                    <Paragraph.xs className="truncate text-quaternary">{user.currentDuty ?? user.email}</Paragraph.xs>
+                                </span>
+                            </span>
+                        </Combobox.Item>
                     ))}
-                </div>
-            ) : (
-                <Paragraph.sm className="text-quaternary">{emptyLabel}</Paragraph.sm>
-            )}
+                </Combobox.Content>
+            </Combobox.Root>
+
+            <AssignedMemberList assignees={assignees} onRemove={onRemove} emptyLabel={emptyLabel} />
         </div>
-    );
-}
-
-type MemberResultRowProps = {
-    user: User;
-    onSelect: (user: User) => void;
-};
-
-function MemberResultRow({ user, onSelect }: MemberResultRowProps) {
-    function handleMouseDown(e: React.MouseEvent) {
-        e.preventDefault();
-        onSelect(user);
-    }
-
-    return (
-        <Button
-            variant="ghost"
-            className="w-full flex items-center justify-start gap-2 px-3 py-2 text-left hover:bg-secondary transition-colors cursor-pointer"
-            onMouseDown={handleMouseDown}
-        >
-            <UserAvatar size="sm" user={user} />
-            <div className="flex-1 min-w-0">
-                <Label.sm>{user.name} {user.surname}</Label.sm>
-                <Paragraph.xs className="text-quaternary truncate">{user.currentDuty ?? user.email}</Paragraph.xs>
-            </div>
-        </Button>
     );
 }

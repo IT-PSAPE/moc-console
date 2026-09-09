@@ -1,5 +1,5 @@
 import { cn } from '@moc/utils/cn'
-import { Label, Paragraph } from '@moc/ui/components/display/text'
+import { Paragraph } from '@moc/ui/components/display/text'
 import type { HTMLAttributes, ReactNode } from 'react'
 
 type EmptyStateProps = HTMLAttributes<HTMLDivElement> & {
@@ -7,14 +7,16 @@ type EmptyStateProps = HTMLAttributes<HTMLDivElement> & {
     title: string
     description?: string
     action?: ReactNode
+    headingLevel?: 'h1' | 'h2' | 'h3'
 }
 
-export function EmptyState({ icon, title, description, action, className, ...props }: EmptyStateProps) {
+export function EmptyState({ icon, title, description, action, headingLevel = 'h2', className, ...props }: EmptyStateProps) {
+    const Heading = headingLevel
     return (
         <div className={cn('flex flex-col items-center justify-center text-center gap-3 py-16', className)} {...props}>
             {icon && <span className="text-quaternary *:size-10">{icon}</span>}
             <div className="flex flex-col gap-1">
-                <Label.sm className="text-secondary">{title}</Label.sm>
+                <Heading className="label-sm text-secondary">{title}</Heading>
                 {description && <Paragraph.sm className="text-tertiary">{description}</Paragraph.sm>}
             </div>
             {action && <div className="pt-2">{action}</div>}

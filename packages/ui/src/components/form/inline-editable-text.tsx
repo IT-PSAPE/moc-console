@@ -1,5 +1,7 @@
+import { Input as BaseInput } from '@base-ui/react/input'
+import { Button as BaseButton } from '@base-ui/react/button'
 import { cn } from '@moc/utils/cn'
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
 
 type InlineEditableTextProps = {
     value: string
@@ -57,13 +59,21 @@ export function InlineEditableText({ value, onSave, className, placeholder = 'Un
         }
     }, [commit, value])
 
+    function handleChange(event: ChangeEvent<HTMLInputElement>) {
+        setDraft(event.target.value)
+    }
+
+    function handleStartEditing() {
+        setIsEditing(true)
+    }
+
     if (isEditing) {
         return (
-            <input
+            <BaseInput
                 ref={inputRef}
                 type="text"
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={handleChange}
                 onBlur={commit}
                 onKeyDown={handleKeyDown}
                 className={cn(
@@ -77,16 +87,13 @@ export function InlineEditableText({ value, onSave, className, placeholder = 'Un
     }
 
     return (
-        <span
-            className={cn('cursor-text select-none truncate', className)}
-            onDoubleClick={() => setIsEditing(true)}
-            role="textbox"
-            tabIndex={0}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter') setIsEditing(true)
-            }}
+        <BaseButton
+            type="button"
+            aria-label={`Edit ${value || placeholder}`}
+            className={cn('block max-w-full cursor-text select-none truncate text-left', className)}
+            onClick={handleStartEditing}
         >
             {value || placeholder}
-        </span>
+        </BaseButton>
     )
 }

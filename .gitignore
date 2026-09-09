@@ -21,6 +21,7 @@ build
 **/build
 **/.env.local
 **/.env.production
+apps/api/.env
 .notes
 .playwright-mcp
 *.local

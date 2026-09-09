@@ -1,39 +1,28 @@
-import type { PlaylistStatus } from "./broadcast-status"
-import type { PlaybackMode } from "./playback-mode"
-import type { PlaylistTransition } from "./transition"
-import type { Cue } from "./cue"
-import type { PlaylistLane } from "./lane"
+export type BroadcastKind = "audio" | "video"
 
-export type VideoSettings = {
-  autoplay: boolean
-  loop: boolean
-  muted: boolean
+export type BroadcastItem = {
+  id: string
+  broadcastId: string
+  title: string
+  sortOrder: number
+  storageBucket: string
+  storagePath: string
+  publicUrl: string
+  mimeType: string
+  fileSizeBytes: number
+  durationSeconds: number | null
+  createdAt: string
 }
 
-export type Playlist = {
+export type Broadcast = {
   id: string
-  name: string
+  workspaceId: string
+  createdBy: string
+  title: string
   description: string
-  status: PlaylistStatus
+  slug: string
+  kind: BroadcastKind
   createdAt: string
-  /**
-   * Parallel lanes (ADR-0004). Lane order = visual z-stack.
-   * Single-lane playlists are the degenerate (pre-multi-track) case.
-   */
-  lanes: PlaylistLane[]
-  /**
-   * All lanes' cues flattened in lane→order sequence. Derived, kept for
-   * back-compat with single-lane consumers; lanes is the source of truth.
-   */
-  cues: Cue[]
-  backgroundMusicId?: string | null
-  backgroundMusicUrl: string | null
-  backgroundMusicName: string | null
-  defaultImageDuration: number // seconds
-  videoSettings: VideoSettings
-  thumbnailUrl: string | null
-  playbackMode: PlaybackMode
-  nextPlaylistId: string | null
-  transition: PlaylistTransition
-  transitionDurationMs: number
+  updatedAt: string
+  items: BroadcastItem[]
 }

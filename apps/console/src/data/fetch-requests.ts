@@ -12,9 +12,9 @@ function selectRequests(workspaceId: string) {
     .eq("workspace_id", workspaceId);
 }
 
-export async function fetchRequests(): Promise<Request[]> {
-  const workspaceId = await getCurrentWorkspaceId();
-  const { data, error } = await selectRequests(workspaceId)
+export async function fetchRequests(workspaceId?: string): Promise<Request[]> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
+  const { data, error } = await selectRequests(resolvedWorkspaceId)
     .neq("status", "archived")
     .order("due_date", { ascending: true });
 
@@ -38,9 +38,9 @@ export async function fetchRequestsByStatus(status: Status): Promise<Request[]> 
   return ((data ?? []) as RequestRow[]).map(mapRow);
 }
 
-export async function fetchRequestById(id: string): Promise<Request | undefined> {
-  const workspaceId = await getCurrentWorkspaceId();
-  const { data, error } = await selectRequests(workspaceId)
+export async function fetchRequestById(id: string, workspaceId?: string): Promise<Request | undefined> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
+  const { data, error } = await selectRequests(resolvedWorkspaceId)
     .eq("id", id)
     .maybeSingle();
 
@@ -51,9 +51,9 @@ export async function fetchRequestById(id: string): Promise<Request | undefined>
   return data ? mapRow(data as RequestRow) : undefined;
 }
 
-export async function fetchArchivedRequests(): Promise<Request[]> {
-  const workspaceId = await getCurrentWorkspaceId();
-  const { data, error } = await selectRequests(workspaceId)
+export async function fetchArchivedRequests(workspaceId?: string): Promise<Request[]> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
+  const { data, error } = await selectRequests(resolvedWorkspaceId)
     .eq("status", "archived")
     .order("updated_at", { ascending: false });
 

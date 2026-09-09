@@ -11,8 +11,8 @@ type SettingsRowProps = {
 
 export function SettingsRow({ label, description, children, className }: SettingsRowProps) {
     return (
-        <div className={cn("flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:gap-6", className)}>
-            <div className="sm:w-96 sm:shrink-0">
+        <div className={cn("grid gap-2 py-2 sm:grid-cols-[minmax(8rem,11rem)_minmax(0,1fr)] sm:items-start sm:gap-6", className)}>
+            <div className="pt-1.5">
                 <Label.sm className="block text-primary">{label}</Label.sm>
                 {description && (
                     <Paragraph.xs className="text-tertiary pt-1">{description}</Paragraph.xs>

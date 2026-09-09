@@ -1,0 +1,64 @@
+import { useCallback, useEffect, useState } from 'react'
+import { createEquipment } from '@/data/mutate-equipment'
+import { useViewQuery } from '@/hooks/use-view-query'
+import { randomId } from '@moc/utils/random-id'
+import { getErrorMessage } from '@moc/utils/get-error-message'
+import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
+import { useIsMobile } from '@moc/ui/hooks/use-is-mobile'
+import type { Equipment, EquipmentCategory } from '@moc/types/equipment'
+import { useEquipment } from './equipment-provider'
+import { useEquipmentFilters } from './use-equipment-filters'
+import { useListDetailSelection } from '@/hooks/use-list-detail-selection'
+
+const equipmentViews = ['list', 'kanban'] as const
+
+type NewEquipment = {
+  name: string
+  serialNumber: string
+  category: EquipmentCategory
+  location: string
+}
+
+export function useEquipmentScreen() {
+  const [view, setView] = useViewQuery(equipmentViews, 'list')
+  const isMobile = useIsMobile()
+  const { state: equipmentState, actions: equipmentActions } = useEquipment()
+  const { loadEquipment, addEquipment } = equipmentActions
+  const { toast } = useFeedback()
+  const [createOpen, setCreateOpen] = useState(false)
+  const filters = useEquipmentFilters(equipmentState.equipment)
+  const activeView = isMobile && view === 'kanban' ? 'list' : view
+  const detail = useListDetailSelection<Equipment>(equipmentState.equipment)
+  const { close: closeDetail, select: selectEquipment } = detail.actions
+
+  useEffect(() => { void loadEquipment() }, [loadEquipment])
+  useEffect(() => {
+    if (activeView !== 'list') closeDetail()
+  }, [activeView, closeDetail])
+
+  const create = useCallback(async ({ name, serialNumber, category, location }: NewEquipment) => {
+    const equipment: Equipment = { id: randomId(), name, serialNumber, category, status: 'available', location, notes: '', lastActiveDate: new Date().toISOString(), bookedBy: null, thumbnail: null }
+    try {
+      const saved = await createEquipment(equipment)
+      addEquipment(saved)
+      setCreateOpen(false)
+      toast({ title: 'Equipment added', variant: 'success' })
+    } catch (error) {
+      toast({ title: 'Failed to add equipment', description: getErrorMessage(error, 'The equipment item could not be added.'), variant: 'error' })
+    }
+  }, [addEquipment, toast])
+
+  function changeView(nextView: string) {
+    setView(nextView)
+  }
+
+  function openCreate() {
+    setCreateOpen(true)
+  }
+
+  return {
+    state: { activeView, isMobile, createOpen, detailOpen: detail.state.isOpen, selectedEquipment: detail.state.selectedItem, isLoading: equipmentState.isLoadingEquipment, filtered: filters.filtered, filterState: filters.filters },
+    actions: { changeView, closeDetail, selectEquipment, setCreateOpen, openCreate, create, setSearch: filters.setSearch },
+    meta: { filters },
+  }
+}

@@ -16,9 +16,10 @@ export function NotFoundScreen() {
     <PublicLayout>
       <EmptyState
         icon={<FileQuestion />}
+        headingLevel="h1"
         title="Page not found"
         description="The page you're looking for doesn't exist or has been moved."
-        action={<Button variant="secondary" onClick={handleHome}>Back to Home</Button>}
+        action={<Button variant="secondary" onClick={handleHome}>Back to home</Button>}
       />
     </PublicLayout>
   )

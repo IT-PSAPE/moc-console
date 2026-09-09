@@ -1,6 +1,9 @@
-import { useReducer, useCallback } from 'react'
+import { useReducer, useCallback, useEffect } from 'react'
 import { submitPublicRequest } from '@/data/submit-request'
-import type { RequestFormData, SubmitRequestResult, RequestPriority, RequestCategory } from '@/types/request'
+import { clearRequestDraft, getEmptyRequestDraft, loadRequestDraft, saveRequestDraft } from '@/data/request-draft-storage'
+import { getRequestStepErrors } from '@/features/public-flow-validation'
+import { useStepValidation } from '@/features/hooks/use-step-validation'
+import type { RequestFormData, SubmitRequestResult } from '@/types/request'
 
 type RequestFormState = {
   step: number
@@ -17,20 +20,15 @@ type RequestFormAction =
   | { type: 'SUBMIT_SUCCESS' }
   | { type: 'SUBMIT_ERROR'; error: string }
 
-const initialData: RequestFormData = {
-  title: '',
-  requestedBy: '',
-  priority: 'medium' as RequestPriority,
-  dueDate: '',
-  category: 'video_production' as RequestCategory,
-  who: '',
-  what: '',
-  whenText: '',
-  whereText: '',
-  why: '',
-  how: '',
-  notes: '',
-  flow: '',
+function getInitialData(): RequestFormData {
+  return getEmptyRequestDraft()
+}
+
+function getInitialState(): RequestFormState {
+  const savedDraft = loadRequestDraft()
+  return savedDraft
+    ? { ...savedDraft, submitting: false, error: null }
+    : { step: 1, data: getInitialData(), submitting: false, error: null }
 }
 
 function reducer(state: RequestFormState, action: RequestFormAction): RequestFormState {
@@ -50,35 +48,33 @@ function reducer(state: RequestFormState, action: RequestFormAction): RequestFor
   }
 }
 
-function canProceedFromStep(step: number, data: RequestFormData): boolean {
-  switch (step) {
-    case 1:
-      return Boolean(data.title.trim() && data.requestedBy.trim() && data.dueDate)
-    case 2:
-      return Boolean(
-        data.who.trim() && data.what.trim() && data.whenText.trim() &&
-        data.whereText.trim() && data.why.trim() && data.how.trim()
-      )
-    case 3:
-      return true
-    case 4:
-      return true
-    default:
-      return false
-  }
+const errorIdByField: Partial<Record<keyof RequestFormData, string>> = {
+  title: 'title',
+  requestedBy: 'requested-by',
+  dueDate: 'due-date-date',
+  who: 'who',
+  what: 'what',
+  whenText: 'when-text',
+  whereText: 'where-text',
+  why: 'why',
+  how: 'how',
 }
 
 export function useRequestForm() {
-  const [state, dispatch] = useReducer(reducer, {
-    step: 1,
-    data: initialData,
-    submitting: false,
-    error: null,
-  })
+  const [state, dispatch] = useReducer(reducer, undefined, getInitialState)
+  const validation = useStepValidation()
+  const { errors: validationErrors } = validation.state
+  const { clearError, validate } = validation.actions
+
+  useEffect(() => {
+    saveRequestDraft({ step: state.step, data: state.data })
+  }, [state.data, state.step])
 
   const setField = useCallback((field: keyof RequestFormData, value: string) => {
     dispatch({ type: 'SET_FIELD', field, value })
-  }, [])
+    const errorId = errorIdByField[field]
+    if (errorId) clearError(errorId)
+  }, [clearError])
 
   const nextStep = useCallback(() => {
     dispatch({ type: 'NEXT_STEP' })
@@ -88,15 +84,16 @@ export function useRequestForm() {
     dispatch({ type: 'PREV_STEP' })
   }, [])
 
-  const canProceed = useCallback(() => {
-    return canProceedFromStep(state.step, state.data)
-  }, [state.step, state.data])
+  const validateCurrentStep = useCallback(() => {
+    return validate(getRequestStepErrors(state.step, state.data))
+  }, [state.step, state.data, validate])
 
   const submit = useCallback(async (): Promise<SubmitRequestResult | null> => {
     dispatch({ type: 'SUBMIT_START' })
     try {
       const result = await submitPublicRequest(state.data)
       dispatch({ type: 'SUBMIT_SUCCESS' })
+      clearRequestDraft()
       return result
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to submit request'
@@ -106,7 +103,7 @@ export function useRequestForm() {
   }, [state.data])
 
   return {
-    state,
-    actions: { setField, nextStep, prevStep, submit, canProceed },
+    state: { ...state, validationErrors },
+    actions: { setField, nextStep, prevStep, submit, validateCurrentStep },
   }
 }

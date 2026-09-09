@@ -1,19 +1,13 @@
-import { Label, Paragraph } from '@moc/ui/components/display/text'
+import { Label } from '@moc/ui/components/display/text'
 import { TextArea } from '@moc/ui/components/form/text-area'
 import { FormLabel } from '@moc/ui/components/form/form-label'
-import { cn } from '@moc/utils/cn'
-import { Check } from 'lucide-react'
-import { useState } from 'react'
+import { FieldError } from '@/features/components/field-error'
+import { Checkbox } from '@moc/ui/components/form/checkbox'
+import { useBookingEquipmentPicker } from '../hooks/use-booking-equipment-picker'
+import type { StepValidationErrors } from '@/features/hooks/use-step-validation'
 
-// ────────────────────────────────────────────────────────────────────────
-// TODO(equipment-inventory): STOPGAP — hardcoded bookable equipment.
-// While the inventory backend is being rebuilt, the live equipment browser
-// (useEquipmentBrowser + <EquipmentList />, both commented out in
-// booking-screen.tsx) is disabled and replaced by this fixed list. The
-// selections do NOT map to real equipment rows — they're folded into the
-// booking's notes at submit time. Restore the live picker (and drop this
-// file + the BOOKABLE_EQUIPMENT constant) once inventory is ready.
-// ────────────────────────────────────────────────────────────────────────
+// These choices are submitted as requested equipment labels rather than
+// inventory row IDs. Inventory allocation happens after the booking request.
 export const BOOKABLE_EQUIPMENT = [
   'Wireless Microphone',
   'Speaker',
@@ -33,86 +27,56 @@ type BookingEquipmentPickerProps = {
   onToggle: (label: string) => void
   otherEquipment: string
   onOtherChange: (text: string) => void
+  errors: StepValidationErrors
 }
 
-export function BookingEquipmentPicker({ selected, onToggle, otherEquipment, onOtherChange }: BookingEquipmentPickerProps) {
-  // "Other" is open whenever it's been toggled on, or there's already text
-  // for it (so the field survives navigating away from this step and back).
-  const [otherOpen, setOtherOpen] = useState(otherEquipment.trim().length > 0)
+export function BookingEquipmentPicker({ selected, onToggle, otherEquipment, onOtherChange, errors }: BookingEquipmentPickerProps) {
+  const picker = useBookingEquipmentPicker({ otherEquipment, onOtherChange, onToggle })
 
-  function toggleOther() {
-    const next = !otherOpen
-    setOtherOpen(next)
-    if (!next) onOtherChange('') // clear the text when collapsing
+  function renderEquipment(label: typeof BOOKABLE_EQUIPMENT[number]) {
+    return (
+      <Checkbox
+        key={label}
+        id={label === BOOKABLE_EQUIPMENT[0] ? 'booking-equipment' : undefined}
+        value={label}
+        checked={selected.includes(label)}
+        onChange={picker.actions.changeEquipment}
+        aria-describedby={errors['booking-equipment'] ? 'booking-equipment-error' : undefined}
+        className="w-full rounded-lg border border-secondary px-3 py-2.5"
+      >
+        <Label.sm>{label}</Label.sm>
+      </Checkbox>
+    )
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <FormLabel label="Equipment" required />
-        <Paragraph.xs className="text-tertiary">
-          Select everything you need. Tap "Other" to add anything that isn't listed.
-        </Paragraph.xs>
-      </div>
+    <fieldset aria-invalid={Boolean(errors['booking-equipment']) || undefined} aria-describedby={errors['booking-equipment'] ? 'booking-equipment-error' : undefined} className="flex flex-col gap-4">
+      <legend className="sr-only">Equipment</legend>
+      <FormLabel label="Equipment" required />
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {BOOKABLE_EQUIPMENT.map((label) => (
-          <PickerRow
-            key={label}
-            label={label}
-            selected={selected.includes(label)}
-            onClick={() => onToggle(label)}
-          />
-        ))}
-        <PickerRow label={OTHER_LABEL} selected={otherOpen} onClick={toggleOther} />
+        {BOOKABLE_EQUIPMENT.map(renderEquipment)}
+        <Checkbox checked={picker.state.isOtherOpen} onChange={picker.actions.toggleOther} className="w-full rounded-lg border border-secondary px-3 py-2.5">
+          <Label.sm>{OTHER_LABEL}</Label.sm>
+        </Checkbox>
       </div>
 
-      {otherOpen && (
+      {picker.state.isOtherOpen && (
         <div className="flex flex-col gap-1.5">
           <FormLabel label="Other equipment" />
           <TextArea
-            placeholder="List anything else you need that isn't shown above..."
+            aria-label="Other equipment"
+            name="other-equipment"
+            aria-invalid={Boolean(errors['booking-equipment']) || undefined}
+            aria-describedby={errors['booking-equipment'] ? 'booking-equipment-error' : undefined}
+            placeholder="List anything else you need that isn't shown above…"
             value={otherEquipment}
-            onChange={(e) => onOtherChange(e.target.value)}
+            onChange={picker.actions.changeOther}
             rows={3}
           />
         </div>
       )}
-    </div>
-  )
-}
-
-function PickerRow({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      onClick()
-    }
-  }
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-pressed={selected}
-      onClick={onClick}
-      onKeyDown={handleKeyDown}
-      className={cn(
-        'flex items-center justify-between gap-2 rounded-lg border p-3 transition-all cursor-pointer hover:bg-secondary/60 active:scale-[0.98]',
-        selected
-          ? 'border-brand bg-brand/5 ring-2 ring-utility-brand-400/20'
-          : 'border-secondary bg-primary',
-      )}
-    >
-      <Label.sm>{label}</Label.sm>
-      <span
-        className={cn(
-          'flex size-5 shrink-0 items-center justify-center rounded-md border transition-colors',
-          selected ? 'border-brand bg-brand text-white' : 'border-secondary text-transparent',
-        )}
-      >
-        <Check className="size-3.5" />
-      </span>
-    </div>
+      <FieldError id="booking-equipment-error" message={errors['booking-equipment']} />
+    </fieldset>
   )
 }

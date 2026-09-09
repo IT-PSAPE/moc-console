@@ -1,36 +1,42 @@
-import { Card } from "@moc/ui/components/display/card";
+import { GroupedList } from "@moc/ui/components/display/grouped-list";
 import { Indicator } from "@moc/ui/components/display/indicator";
 import { Label } from "@moc/ui/components/display/text";
-import { useMemo } from "react";
 import { equipmentStatusGroup } from "@moc/types/equipment/constants";
 import type { Equipment } from "@moc/types/equipment";
-import { EquipmentItem } from "./equipment-item";
+import { EquipmentItemContent } from "./equipment-item-content";
+import { ResponsiveDetailAction } from "@/features/responsive-detail-action";
+import { routes } from "@/screens/console-routes";
 
-const activeStatusGroups = equipmentStatusGroup.filter((g) => g.key !== "maintenance");
+export function InventoryListView({ equipment, onSelect }: { equipment: Equipment[]; onSelect: (equipment: Equipment) => void }) {
+    function renderEquipment(item: Equipment) {
+        function handleSelect() {
+            onSelect(item)
+        }
 
-export function InventoryListView({ equipment }: { equipment: Equipment[] }) {
-    const visible = useMemo(() => equipment.filter((e) => e.status !== "maintenance"), [equipment]);
+        return (
+            <ResponsiveDetailAction.Card key={item.id} mobileHref={`/${routes.equipment}/${item.id}`} onActivate={handleSelect}>
+                <EquipmentItemContent equipment={item} />
+            </ResponsiveDetailAction.Card>
+        )
+    }
 
     return (
-        <div className="flex flex-col gap-4 p-4 pt-0 mx-auto w-full max-w-content">
-            {activeStatusGroups.map((group) => {
-                const items = visible.filter((e) => e.status === group.key);
+        <GroupedList>
+            {equipmentStatusGroup.map((group) => {
+                const items = equipment.filter((e) => e.status === group.key);
                 if (items.length === 0) return null;
                 return (
-                    <Card key={group.key}>
-                        <Card.Header tight className="gap-1.5">
+                    <GroupedList.Group key={group.key}>
+                        <GroupedList.Header>
                             <Indicator color={group.color} className="size-6" />
                             <Label.sm>{group.label}</Label.sm>
-                            <Label.sm className="text-quaternary ml-auto">{items.length}</Label.sm>
-                        </Card.Header>
-                        <Card.Content ghost className="flex flex-col gap-1.5">
-                            {items.map((e) => (
-                                <EquipmentItem key={e.id} equipment={e} />
-                            ))}
-                        </Card.Content>
-                    </Card>
+                        </GroupedList.Header>
+                        <GroupedList.Content>
+                            {items.map(renderEquipment)}
+                        </GroupedList.Content>
+                    </GroupedList.Group>
                 );
             })}
-        </div>
+        </GroupedList>
     );
 }

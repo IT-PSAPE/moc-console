@@ -1,75 +1,47 @@
-import { useLocation, useNavigate, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { PublicLayout } from '@/features/components/public-layout'
 import { routes } from '@/screens/console-routes'
 import { Label, Paragraph, Title } from '@moc/ui/components/display/text'
 import { Button } from '@moc/ui/components/controls/button'
 import { Check, Copy } from 'lucide-react'
-import { useState } from 'react'
-
-type ConfirmationState = {
-  type: 'request' | 'booking'
-  trackingCode: string
-  title?: string
-}
+import { useConfirmation } from './use-confirmation'
+import { PublicFlow } from '@/features/components/public-flow'
 
 export function ConfirmationScreen() {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const confirmationState = location.state as ConfirmationState | null
-  const [copied, setCopied] = useState(false)
+  const { state, actions, meta } = useConfirmation()
+  const confirmationState = state.confirmation
 
   if (!confirmationState?.trackingCode) {
     return <Navigate to={routes.publicHome} replace />
   }
 
-  const { type, trackingCode, title } = confirmationState
-  const typeLabel = type === 'request' ? 'Request' : 'Booking'
-
-  function handleBackToHome() {
-    navigate(routes.publicHome)
-  }
-
-  async function handleCopy() {
-    await navigator.clipboard.writeText(trackingCode)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+  const { trackingCode, title } = confirmationState
 
   return (
-    <PublicLayout className="py-16">
-      <img src="/assets/icon_check.png" className='size-60 mb-8 mx-auto' />
+    <PublicLayout className="py-8 sm:py-12">
+      <img src="/assets/icon_check.png" alt="" width="240" height="240" className='size-60 mb-8 mx-auto' />
+      <Title.h1 className="title-h3 text-center">Submission received</Title.h1>
 
       {title && (
-        <div className="flex flex-col items-center gap-1 w-full mb-6 text-center">
-          <Label.xs className="text-tertiary uppercase tracking-wider">{typeLabel}</Label.xs>
-          <Title.h5 className="px-4">{title}</Title.h5>
+        <div className="mt-6 flex w-full flex-col items-center gap-1 text-center">
+          <Label.xs className="text-tertiary uppercase tracking-wider">{meta.typeLabel}</Label.xs>
+          <Title.h5>{title}</Title.h5>
         </div>
       )}
 
-      <div className="flex flex-col items-center gap-3 w-full mb-8">
-        <Paragraph.md className="text-secondary">Your tracking code is:</Paragraph.md>
-        <div className="flex items-center justify-center gap-3 rounded-xl border border-secondary bg-secondary/50 px-5 py-3 cursor-pointer w-full max-w-sm" onClick={handleCopy} >
+      <div className="mt-8 flex w-full flex-col items-center gap-3">
+        <Paragraph.md className="text-secondary">Save this tracking code</Paragraph.md>
+        <Button.Surface aria-label="Copy tracking code" className="flex w-full max-w-sm items-center justify-center gap-3 rounded-xl border border-secondary bg-secondary/50 px-5 py-3" onClick={actions.copy}>
           <Title.h4 className="font-mono tracking-widest">{trackingCode}</Title.h4>
-          {copied ? <Check className="size-4 text-success" /> : <Copy className="size-4 text-tertiary" />}
-        </div>
+          {state.copied ? <Check className="size-4 text-success" /> : <Copy className="size-4 text-tertiary" />}
+        </Button.Surface>
       </div>
 
-      <div className="flex flex-col items-center gap-1">
-        <Label.sm className="text-secondary">Save this code to track your submission status.</Label.sm>
-        <Paragraph.xs className="text-tertiary">
-          You can look up your {typeLabel.toLowerCase()} anytime from the home page.
-        </Paragraph.xs>
-      </div>
-
-
-      <div className="flex flex-col w-full max-w-sm gap-2 mx-auto mt-20">
-        <Button onClick={handleBackToHome} className="rounded-full px-6 py-3">
-          New Submission
+      <PublicFlow.Actions className="mx-auto mt-12 max-w-sm">
+        <Button variant="secondary" onClick={actions.backToHome} className="rounded-full px-6 py-3">
+          Back to home
         </Button>
-        <Button variant="secondary" onClick={handleBackToHome} className="rounded-full px-6 py-3">
-          Back to Home
-        </Button>
-      </div>
+      </PublicFlow.Actions>
     </PublicLayout>
   )
 }

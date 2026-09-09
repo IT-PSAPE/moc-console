@@ -2,10 +2,12 @@
 
 MOC Console is a React 19 admin application for managing operational workflows across:
 
-- requests
-- equipment
-- broadcast media and playlists
-- cue sheet views
+- requests (archived ones behind a filter)
+- equipment inventory
+- equipment bookings
+- checklist runs and reusable templates
+- YouTube streams and Zoom meetings
+- continuously looping public audio and video broadcasts
 - authenticated users and role-aware navigation
 
 The UI is built with React, TypeScript, Vite, and Tailwind CSS v4.
@@ -21,41 +23,36 @@ The UI is built with React, TypeScript, Vite, and Tailwind CSS v4.
 
 ## Feature Areas
 
+Navigation is flat: one sidebar item per feature, no nested sections.
+
 ### Requests
 
-- overview dashboard
-- all requests
-- archived requests
+- all submitted requests
 - request detail view
 - request assignees and request duty roles
 
-Requests use local mock JSON data, and request assignees start blank. Adding or removing assignees only updates local app state. The live auth domain still provides users, roles, and auth sessions for sign-in and assignment pickers.
-
 ### Equipment
 
-- overview
-- inventory
-- bookings
-- maintenance
-- equipment detail view
-- reports placeholder
+- full inventory (list, table and kanban views)
+- status filter, including items in maintenance
+- equipment detail view with QR and notes
 
-Equipment currently reads from mock JSON files and uses mock mutations.
+### Bookings
 
-### Broadcast
+- equipment bookings (list, table and calendar views)
+- booking detail view with scan-based checkout and return
 
-- overview
-- media library
-- playlists
-- playlist detail view
+### Checklists
 
-Broadcast media and playlists currently read from mock JSON files and use mock mutations.
+- active and completed checklist runs
+- reusable checklist templates
+- item grouping, ordering, completion, and assignments
 
-### Cue Sheet
+### Streams
 
-- overview
-- event
-- checklist
+- YouTube live streams
+- Zoom meetings
+- stream and meeting detail views
 
 ## Authentication
 
@@ -64,7 +61,11 @@ The app uses Supabase Auth for login, signup, reset password, and session handli
 Required environment variables:
 
 - `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+The console also uses `VITE_BROADCAST_APP_URL` to build public-player links. For
+local development, set it to `http://localhost:5174`; the console is pinned to
+port 5173 and the broadcast player to port 5174.
 
 These are read in [src/lib/supabase.ts](/Users/Craig/Developer/Projects/moc-console/src/lib/supabase.ts).
 
@@ -100,59 +101,77 @@ Preview the production build:
 npm run preview
 ```
 
+### Viewing a dev server from another device (Tailscale)
+
+All three browser apps bind every network interface and accept MagicDNS hostnames,
+so anything signed in to the same tailnet — a phone, a tablet, another laptop —
+can open a running dev server with no tunnel and no public URL:
+
+```bash
+bun run dev:console     # http://<machine>.<tailnet>.ts.net:5173
+bun run dev:broadcast   # http://<machine>.<tailnet>.ts.net:5174
+bun run dev:request     # http://<machine>.<tailnet>.ts.net:5176
+```
+
+Each server prints its own tailnet URL alongside Vite's local one at startup.
+Nothing is exposed to the public internet: MagicDNS names only resolve for
+devices already authenticated to the tailnet, and the allow-list is limited to
+`.ts.net`.
+
+The behaviour lives in [scripts/vite-tailscale.ts](scripts/vite-tailscale.ts)
+and is shared by all three apps. If Tailscale is not installed, not running, or
+logged out, the plugin stays quiet and the dev server starts as normal — it
+just prints no tailnet line.
+
+Note that these are plain HTTP origins. That is fine for looking at pages, but
+a browser will not install the request app as a PWA or grant a secure-context
+API over one. Front it with `tailscale serve` if you need HTTPS on the tailnet.
+
 ## Database setup
 
-The full Postgres/Supabase schema is shipped as three consolidated SQL
-scripts in [`docs/phases/`](docs/phases/). They replace what used to be a
-long incremental migration ledger — every historical patch is already
-folded into its final state, so a fresh project only ever runs three
-files.
+The SQL source of truth now lives at [`supabase/`](supabase/). See its
+[`readme.md`](supabase/readme.md) before running anything; the patch directory
+is a historical ledger and must not be applied wholesale.
 
-1. **Create a new Supabase project** (or use an empty one).
-2. Open the project's **SQL editor** and run, **in order**:
-   1. `docs/phases/01-schema.sql` — extensions, enums, every table,
-      indexes, and the only seed (3 roles, 12 colors, 1 default
-      workspace).
-   2. `docs/phases/02-logic.sql` — functions, triggers, RBAC helpers,
-      and all RPCs.
-   3. `docs/phases/03-security.sql` — row-level security policies,
-      storage buckets, and grants.
-3. **Configure the apps.** For each app (`apps/console`,
-   `apps/request`, `apps/broadcast`) copy `.env.example` to
-   `.env.local` and set the Supabase project URL and anon key.
+For a blank project, run `phase-01-schema.sql`, `phase-02-logic.sql`, and
+`phase-03-security.sql`, followed by the current target-schema convergence
+script. For the existing MoC Console project, run
+[`verify-current-schema.sql`](supabase/verify-current-schema.sql) first and
+apply no SQL when the drift report is clean.
 
-That's it — the database is fully provisioned. Sign-up works
-immediately: the first user is auto-joined to the default workspace
-with the `viewer` role. Promote an admin from the SQL editor with
-`select private.promote_user_to_role('you@example.com', 'admin');`.
+New signups create a pending workspace access request. An owner or admin must
+approve that request before the account gains normal member access. Roles are
+stored per workspace in `workspace_users.role_id`.
 
-**No demo data is included.** The seed block at the end of
-`01-schema.sql` is the *only* data inserted, and it is purely the
-structural bootstrap the app needs to function (RBAC roles, the color
-palette, and the default workspace that new sign-ups join). Delete or
-edit that block if you want to bootstrap differently.
+`supabase/phase-00-nuke.sql` is development-only, destructive, and has no undo.
+Never use it as an upgrade script.
 
-**Resetting.** `docs/phases/00-nuke.sql` wipes a Supabase project back
-to empty so you can re-run `01`→`02`→`03`. It is **destructive and has
-no undo**, and it removes `storage.objects`/`buckets` *metadata* only —
-to reclaim S3 space, delete buckets from the Supabase dashboard first.
-You never need it on a brand-new project.
+Configure each app (`apps/console`, `apps/request`, `apps/broadcast`, `apps/api`) from its
+`.env.example`. The frontends use the Supabase URL, publishable key, and
+`VITE_API_BASE_URL`; server secrets live only in `apps/api`.
 
 **External integrations.** The schema is complete on its own. Optional
 features — Telegram bot linking/notifications, YouTube and Zoom
 streaming — additionally require their own credentials and external
 services (bot token, OAuth apps); these are app/config concerns, not
-database setup. Live event-playback sync uses Supabase Realtime
-*Broadcast* channels, which need no extra database configuration.
+database setup.
 
 ## Project Structure
 
-Main source folders:
+The repo is a bun-workspaces monorepo:
+
+- `apps/console` — the authenticated admin app (this README)
+- `apps/request` — the public submission PWA
+- `apps/api` — every serverless function and the `server/` library behind it; see [apps/api/README.md](apps/api/README.md)
+- `apps/broadcast` — the public continuous-playback audio/video app
+- `packages/{ui,types,utils,data,notifications}` — shared code
+
+Inside a frontend app:
 
 - `src/screens` for route-level screens
 - `src/features` for domain-specific state and UI
 - `src/components` for shared UI primitives and composed components
-- `src/data` for data access and mock data
+- `src/data` for Supabase reads, writes and mappers
 - `src/types` for domain models
 - `src/lib` for app infrastructure such as Supabase and auth context
 - `docs` for project documentation
@@ -171,7 +190,7 @@ Use them together:
 
 Important caveat:
 
-- This schema documentation is inferred from the current TypeScript models, Supabase queries, and mock data in the repository.
+- This schema documentation is inferred from the current TypeScript models and Supabase queries in the repository.
 - There are no checked-in SQL migrations or generated database types in this repo at the moment.
 
 ## Current Data Backing
@@ -185,19 +204,10 @@ Important caveat:
 - auth sessions
 - request duty role presets
 
-### Mock-backed
+### Not backed by mocks
 
-- requests
-- request assignees
-- equipment
-- equipment bookings
-- broadcast media
-- broadcast playlists
-- playlist cues
-
-Mock data lives under `src/data/mock`.
-
-All mock record ids are UUID strings.
+Nothing is mock-backed any more — every operational domain reads and
+writes Supabase directly.
 
 ## Routing Summary
 
@@ -207,21 +217,16 @@ Main app sections:
 
 - `/dashboard`
 - `/requests`
-- `/requests/all-requests`
-- `/requests/archived`
 - `/requests/:id`
 - `/equipment`
-- `/equipment/inventory`
-- `/equipment/bookings`
-- `/equipment/maintenance`
 - `/equipment/:id`
-- `/broadcast`
-- `/broadcast/media`
-- `/broadcast/playlists`
-- `/broadcast/playlists/:id`
-- `/cue-sheet`
-- `/cue-sheet/event`
-- `/cue-sheet/checklist`
+- `/bookings`
+- `/bookings/:id`
+- `/venues`
+- `/venues/:id`
+- `/streams`
+- `/streams/stream/:id`
+- `/streams/meeting/:id`
 
 Auth routes:
 

@@ -1,4 +1,4 @@
-import type { ComponentPropsWithoutRef, ReactNode } from "react"
+import type { ComponentPropsWithoutRef } from "react"
 import { cn } from "@moc/utils/cn"
 
 type TitleH1Props = ComponentPropsWithoutRef<"h1">
@@ -8,15 +8,8 @@ type TitleH4Props = ComponentPropsWithoutRef<"h4">
 type TitleH5Props = ComponentPropsWithoutRef<"h5">
 type TitleH6Props = ComponentPropsWithoutRef<"h6">
 
-type ParagraphProps = {
-    children?: ReactNode
-    className?: string
-}
-
-type LabelProps = {
-    children?: ReactNode
-    className?: string
-}
+type ParagraphProps = ComponentPropsWithoutRef<"p">
+type LabelProps = ComponentPropsWithoutRef<"span">
 
 function TitleH1({ children, className, ...props }: TitleH1Props) {
     return (
@@ -54,69 +47,69 @@ function TitleH6({ children, className, ...props }: TitleH6Props) {
     )
 }
 
-function ParagraphLg({ children, className }: ParagraphProps) {
+function ParagraphLg({ children, className, ...props }: ParagraphProps) {
     return (
-        <p className={cn("paragraph-lg", className)}>{children}</p>
+        <p className={cn("paragraph-lg", className)} {...props}>{children}</p>
     )
 }
 
-function ParagraphBg({ children, className }: ParagraphProps) {
+function ParagraphBg({ children, className, ...props }: ParagraphProps) {
     return (
-        <p className={cn("paragraph-bg", className)}>{children}</p>
+        <p className={cn("paragraph-bg", className)} {...props}>{children}</p>
     )
 }
 
-function ParagraphMd({ children, className }: ParagraphProps) {
+function ParagraphMd({ children, className, ...props }: ParagraphProps) {
     return (
-        <p className={cn("paragraph-md", className)}>{children}</p>
+        <p className={cn("paragraph-md", className)} {...props}>{children}</p>
     )
 }
 
-function ParagraphSm({ children, className }: ParagraphProps) {
+function ParagraphSm({ children, className, ...props }: ParagraphProps) {
     return (
-        <p className={cn("paragraph-sm", className)}>{children}</p>
+        <p className={cn("paragraph-sm", className)} {...props}>{children}</p>
     )
 }
 
-function ParagraphXs({ children, className }: ParagraphProps) {
+function ParagraphXs({ children, className, ...props }: ParagraphProps) {
     return (
-        <p className={cn("paragraph-xs", className)}>{children}</p>
+        <p className={cn("paragraph-xs", className)} {...props}>{children}</p>
     )
 }
 
-function LabelLg({ children, className }: LabelProps) {
+function LabelLg({ children, className, ...props }: LabelProps) {
     return (
-        <span className={cn("label-lg", className)}>{children}</span>
+        <span className={cn("label-lg", className)} {...props}>{children}</span>
     )
 }
 
-function LabelBg({ children, className }: LabelProps) {
+function LabelBg({ children, className, ...props }: LabelProps) {
     return (
-        <span className={cn("label-bg", className)}>{children}</span>
+        <span className={cn("label-bg", className)} {...props}>{children}</span>
     )
 }
 
-function LabelMd({ children, className }: LabelProps) {
+function LabelMd({ children, className, ...props }: LabelProps) {
     return (
-        <span className={cn("label-md", className)}>{children}</span>
+        <span className={cn("label-md", className)} {...props}>{children}</span>
     )
 }
 
-function LabelSm({ children, className }: LabelProps) {
+function LabelSm({ children, className, ...props }: LabelProps) {
     return (
-        <span className={cn("label-sm", className)}>{children}</span>
+        <span className={cn("label-sm", className)} {...props}>{children}</span>
     )
 }
 
-function LabelXs({ children, className }: LabelProps) {
+function LabelXs({ children, className, ...props }: LabelProps) {
     return (
-        <span className={cn("label-xs", className)}>{children}</span>
+        <span className={cn("label-xs", className)} {...props}>{children}</span>
     )
 }
 
-export function TextBlock({ children, className }: LabelProps) {
+export function TextBlock({ children, className, ...props }: LabelProps) {
     return (
-        <span className={cn(className)}>{children}</span>
+        <span className={cn(className)} {...props}>{children}</span>
     )
 }
 

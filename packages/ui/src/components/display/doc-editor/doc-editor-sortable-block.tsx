@@ -1,3 +1,4 @@
+import { Button as BaseButton } from '@base-ui/react/button'
 import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react'
 import { Plus, GripVertical } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
@@ -88,7 +89,7 @@ export function DocEditorSortableBlock({
         isDragging,
     } = useSortable({ id: block.id })
     const contentElementRef = useRef<HTMLDivElement | null>(null)
-    const [menuTriggerElement, setMenuTriggerElement] = useState<HTMLButtonElement | null>(null)
+    const [menuTriggerElement, setMenuTriggerElement] = useState<HTMLElement | null>(null)
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -196,17 +197,17 @@ export function DocEditorSortableBlock({
                     isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
                 )}
             >
-                <button
+                <BaseButton
                     type="button"
                     className="flex size-5.5 items-center justify-center rounded text-quaternary hover:bg-tertiary hover:text-secondary"
                     onMouseDown={handleButtonMouseDown}
                     onClick={handleAddBelow}
                 >
                     <Plus size={12} />
-                </button>
+                </BaseButton>
 
                 <div className="relative">
-                    <button
+                    <BaseButton
                         ref={setMenuTriggerElement}
                         type="button"
                         className="flex size-5.5 cursor-grab items-center justify-center rounded text-quaternary hover:bg-tertiary hover:text-secondary"
@@ -215,7 +216,7 @@ export function DocEditorSortableBlock({
                         {...attributes}
                     >
                         <GripVertical size={12} />
-                    </button>
+                    </BaseButton>
                     {isMenuOpen ? <DocEditorBlockMenu anchorElement={menuTriggerElement} onAction={handleMenuAction} onClose={onMenuClose} /> : null}
                 </div>
             </div>

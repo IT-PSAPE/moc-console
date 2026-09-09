@@ -1,3 +1,4 @@
+import { Switch } from "@base-ui/react/switch";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
 import type { ReactNode } from "react";
@@ -14,9 +15,11 @@ type ToggleProps = {
 
 const trackVariants = cv({
     base: [
-        'relative inline-flex shrink-0 rounded-full transition-colors',
+        'relative inline-flex shrink-0 rounded-full transition-colors motion-reduce:transition-none after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 md:after:hidden',
         'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-border-brand/10',
-        'disabled:cursor-not-allowed disabled:!bg-quaternary',
+        // Base UI marks the disabled Switch.Root with `data-disabled` + `aria-disabled`
+        // (it stays focusable), not the native `:disabled` pseudo-class.
+        'data-[disabled]:cursor-not-allowed data-[disabled]:!bg-quaternary',
     ],
     variants: {
         size: {
@@ -35,7 +38,7 @@ const trackVariants = cv({
 })
 
 const thumbVariants = cv({
-    base: ['inline-block rounded-full bg-white shadow translate-y-0.5 transition-transform'],
+    base: ['inline-block rounded-full bg-white shadow translate-y-0.5 transition-transform motion-reduce:transition-none'],
     variants: {
         size: {
             sm: ['size-3'],
@@ -51,30 +54,28 @@ const thumbVariants = cv({
 })
 
 export function Toggle({ checked, onChange, disabled, size = 'md', className, children, ...rest }: ToggleProps) {
-    const button = (
-        <button
-            type="button"
-            role="switch"
-            aria-checked={checked}
+    const control = (
+        <Switch.Root
+            checked={checked}
+            onCheckedChange={(next) => onChange(next)}
             disabled={disabled}
-            onClick={() => onChange(!checked)}
-            className={cn(trackVariants({ size, checked: checked ? 'true' : 'false' }), !children && className)}
             aria-label={rest['aria-label']}
+            className={cn(trackVariants({ size, checked: checked ? 'true' : 'false' }), !children && className)}
         >
-            <span
+            <Switch.Thumb
                 className={thumbVariants({
                     size,
                     checkedAndSize: `${size}-${checked ? 'on' : 'off'}` as 'sm-on' | 'sm-off' | 'md-on' | 'md-off',
                 })}
             />
-        </button>
+        </Switch.Root>
     )
 
-    if (!children) return button
+    if (!children) return control
 
     return (
-        <label className={cn('inline-flex items-center gap-2 has-[:disabled]:cursor-not-allowed', className)}>
-            {button}
+        <label className={cn('inline-flex min-h-11 items-center gap-2 has-[:disabled]:cursor-not-allowed md:min-h-0', className)}>
+            {control}
             {children}
         </label>
     )

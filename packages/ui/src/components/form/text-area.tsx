@@ -1,19 +1,20 @@
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
 import type { TextareaHTMLAttributes } from "react";
+import { useAutoSizeTextArea } from "../../hooks/use-auto-size-text-area";
 
 type TextAreaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
+    "aria-label": string
     ref?: React.Ref<HTMLTextAreaElement>
     state?: 'active' | 'inactive'
     style?: 'outline' | 'ghost'
-    resize?: 'none' | 'vertical' | 'horizontal' | 'both'
 }
 
 const textAreaVariants = cv({
     base: [
-        'w-full bg-primary disabled:cursor-not-allowed disabled:bg-disabled',
+        'w-full resize-none overflow-hidden bg-secondary disabled:cursor-not-allowed disabled:bg-disabled',
         'paragraph-sm',
-        'focus:outline-none',
+        'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-border-brand/10',
     ],
     variants: {
         state: {
@@ -23,28 +24,26 @@ const textAreaVariants = cv({
         style: {
             outline: [
                 'py-2 px-3',
-                'rounded-lg border border-secondary focus:border-brand disabled:border-disabled',
-                'focus:ring-3 focus:ring-border-brand/10',
+                'rounded-lg border border-secondary focus-visible:border-brand disabled:border-disabled',
             ],
-            ghost: [''],
-        },
-        resize: {
-            none: ['resize-none'],
-            vertical: ['resize-y'],
-            horizontal: ['resize-x'],
-            both: ['resize'],
+            ghost: ['rounded-md px-2 py-1.5'],
         },
     },
     defaultVariants: {
         state: 'inactive',
-        resize: 'none',
     },
 })
 
-export function TextArea({ className, style = 'outline', state, resize, ...props }: TextAreaProps) {
+export function TextArea({ className, defaultValue, onInput, ref, style = 'outline', state, value, ...props }: TextAreaProps) {
+    const autoSize = useAutoSizeTextArea({ onInput, ref, value: value ?? defaultValue })
+
     return (
         <textarea
-            className={cn(textAreaVariants({ state, style, resize }), className)}
+            ref={autoSize.setRef}
+            className={cn(textAreaVariants({ state, style }), className)}
+            defaultValue={defaultValue}
+            onInput={autoSize.handleInput}
+            value={value}
             {...props}
         />
     )

@@ -1,5 +1,6 @@
-import type { Stream, StreamPreset, YouTubeConnection, YouTubeConnectionStatus, YouTubeCategory, YouTubePlaylist } from "@moc/types/broadcast/stream"
+import type { Stream, StreamPreset, YouTubeConnection, YouTubeConnectionStatus, YouTubeCategory, YouTubePlaylist } from "@moc/types/streams/stream"
 import { supabase } from "@moc/data/supabase"
+import { fetchProviderRecords } from "@/lib/provider-records-api"
 import { getCurrentWorkspaceId } from "./current-workspace"
 import { fetchVideoCategories, fetchChannelPlaylists } from "@/lib/youtube-client"
 
@@ -91,47 +92,22 @@ function mapConnectionRow(row: ConnectionRow): YouTubeConnection {
   }
 }
 
-export async function fetchStreams(): Promise<Stream[]> {
-  const workspaceId = await getCurrentWorkspaceId()
-  const { data, error } = await supabase
-    .from("streams")
-    .select(
-      "id, workspace_id, youtube_broadcast_id, youtube_stream_id, title, description, thumbnail_url, privacy_status, is_for_kids, scheduled_start_time, actual_start_time, actual_end_time, stream_status, stream_url, stream_key, ingestion_url, category_id, tags, latency_preference, enable_dvr, enable_embed, enable_auto_start, enable_auto_stop, playlist_id, created_by, created_at, updated_at",
-    )
-    .eq("workspace_id", workspaceId)
-    .order("created_at", { ascending: false })
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return ((data ?? []) as StreamRow[]).map(mapStreamRow)
+export async function fetchStreams(workspaceId?: string): Promise<Stream[]> {
+  const rows = await fetchProviderRecords<StreamRow>("youtube-streams", { workspaceId })
+  return rows.map(mapStreamRow)
 }
 
-export async function fetchStreamById(id: string): Promise<Stream | undefined> {
-  const workspaceId = await getCurrentWorkspaceId()
-  const { data, error } = await supabase
-    .from("streams")
-    .select(
-      "id, workspace_id, youtube_broadcast_id, youtube_stream_id, title, description, thumbnail_url, privacy_status, is_for_kids, scheduled_start_time, actual_start_time, actual_end_time, stream_status, stream_url, stream_key, ingestion_url, category_id, tags, latency_preference, enable_dvr, enable_embed, enable_auto_start, enable_auto_stop, playlist_id, created_by, created_at, updated_at",
-    )
-    .eq("id", id)
-    .eq("workspace_id", workspaceId)
-    .maybeSingle()
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return data ? mapStreamRow(data as StreamRow) : undefined
+export async function fetchStreamById(id: string, workspaceId?: string): Promise<Stream | undefined> {
+  const [row] = await fetchProviderRecords<StreamRow>("youtube-streams", { id, workspaceId })
+  return row ? mapStreamRow(row) : undefined
 }
 
-export async function fetchYouTubeConnection(): Promise<YouTubeConnection | null> {
-  const workspaceId = await getCurrentWorkspaceId()
+export async function fetchYouTubeConnection(workspaceId?: string): Promise<YouTubeConnection | null> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId()
   const { data, error } = await supabase
     .from("youtube_connections")
     .select("id, workspace_id, channel_id, channel_title, presets, connected_by, created_at, token_expires_at, status")
-    .eq("workspace_id", workspaceId)
+    .eq("workspace_id", resolvedWorkspaceId)
     .maybeSingle()
 
   if (error) {

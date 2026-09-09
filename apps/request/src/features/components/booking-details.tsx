@@ -1,48 +1,78 @@
 import { Input } from '@moc/ui/components/form/input'
+import { DateTimeFields } from '@moc/ui/components/form/date-time-fields'
 import { TextArea } from '@moc/ui/components/form/text-area'
 import { FormLabel } from '@moc/ui/components/form/form-label'
-import { Paragraph } from '@moc/ui/components/display/text'
+import { FieldError } from '@/features/components/field-error'
+import type { StepValidationErrors } from '@/features/hooks/use-step-validation'
 import type { BookingFormData } from '@/types/booking'
-import { isReturnBeforeCheckout } from '../hooks/use-booking-form'
+import { isReturnBeforeCheckout } from '@/features/public-flow-validation'
+import type { ChangeEvent } from 'react'
 
 type BookingDetailsProps = {
   data: BookingFormData
   onChange: (field: keyof BookingFormData, value: string) => void
+  errors: StepValidationErrors
 }
 
-export function BookingDetails({ data, onChange }: BookingDetailsProps) {
+export function BookingDetails({ data, onChange, errors }: BookingDetailsProps) {
   const invalidRange = isReturnBeforeCheckout(data)
+  const expectedReturnError = errors['expected-return-date'] ?? (invalidRange ? 'Expected return must be after checkout.' : undefined)
+
+  function handleCheckedOutAtChange(value: string) {
+    onChange('checkedOutAt', value)
+  }
+
+  function handleExpectedReturnAtChange(value: string) {
+    onChange('expectedReturnAt', value)
+  }
+
+  function handleTitleChange(event: ChangeEvent<HTMLInputElement>) {
+    onChange('title', event.target.value)
+  }
+
+  function handleBookedByChange(event: ChangeEvent<HTMLInputElement>) {
+    onChange('bookedBy', event.target.value)
+  }
+
+  function handleNotesChange(event: ChangeEvent<HTMLTextAreaElement>) {
+    onChange('notes', event.target.value)
+  }
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
-        <FormLabel label="Title" required />
-        <Input placeholder="e.g. Sunday Service Setup" maxLength={120} value={data.title} onChange={(e) => onChange('title', e.target.value)} />
+        <FormLabel label="Title" htmlFor="title" required />
+        <Input id="title" aria-label="Title" aria-invalid={Boolean(errors.title) || undefined} aria-describedby={errors.title ? 'title-error' : undefined} name="title" autoComplete="off" placeholder="e.g. Sunday service setup" maxLength={120} value={data.title} onChange={handleTitleChange} required />
+        <FieldError id="title-error" message={errors.title} />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <FormLabel label="Requested by" required />
-        <Input placeholder="Who is booking this equipment?" value={data.bookedBy} onChange={(e) => onChange('bookedBy', e.target.value)} />
+        <FormLabel label="Requested by" htmlFor="booked-by" required />
+        <Input id="booked-by" aria-label="Requested by" aria-invalid={Boolean(errors['booked-by']) || undefined} aria-describedby={errors['booked-by'] ? 'booked-by-error' : undefined} name="booked-by" autoComplete="name" placeholder="Who is booking this equipment?" value={data.bookedBy} onChange={handleBookedByChange} required />
+        <FieldError id="booked-by-error" message={errors['booked-by']} />
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <FormLabel label="Checkout date" required />
-          <Input type="datetime-local" value={data.checkedOutAt} onChange={(e) => onChange('checkedOutAt', e.target.value)} />
-        </div>
+      <DateTimeFields
+        label="Checkout"
+        name="checkout"
+        required
+        value={data.checkedOutAt}
+        onChange={handleCheckedOutAtChange}
+        errorText={errors['checkout-date']}
+      />
 
-        <div className="flex flex-col gap-1.5">
-          <FormLabel label="Expected return" required />
-          <Input type="datetime-local" value={data.expectedReturnAt} onChange={(e) => onChange('expectedReturnAt', e.target.value)} />
-          {invalidRange && (
-            <Paragraph.xs className="text-error">Expected return must be after checkout.</Paragraph.xs>
-          )}
-        </div>
-      </div>
+      <DateTimeFields
+        label="Expected return"
+        name="expected-return"
+        required
+        value={data.expectedReturnAt}
+        onChange={handleExpectedReturnAtChange}
+        errorText={expectedReturnError}
+      />
 
       <div className="flex flex-col gap-1.5">
         <FormLabel label="Notes" optional />
-        <TextArea placeholder="Any notes about this booking..." value={data.notes} onChange={(e) => onChange('notes', e.target.value)} rows={3} />
+        <TextArea aria-label="Notes" name="notes" placeholder="Any notes about this booking…" value={data.notes} onChange={handleNotesChange} rows={3} />
       </div>
     </div>
   )

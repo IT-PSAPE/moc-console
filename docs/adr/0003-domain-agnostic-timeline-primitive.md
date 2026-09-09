@@ -1,5 +1,7 @@
 # A domain-agnostic, composable Timeline primitive
 
+> **Superseded by [ADR-0007](./0007-simplify-console-to-five-features.md) (2026-07-28).** The system described below was removed from the repo. Kept as history — do not treat it as current design.
+
 The existing cue-sheet timeline (`apps/console/src/components/timeline`) is good but coupled: `TimelineRoot` hard-codes its sidebar/canvas, threads a `readOnly` boolean through context, and bakes a Supabase controller/follower clock into the component. We need the same surface for two unrelated domains — Cue sheets (events) and the Broadcasts section (playlists) — so we are extracting a single domain-agnostic **Timeline** primitive into `@moc/ui`. It speaks only **Lane** and **Block** (see CONTEXT.md); each domain maps its own `Track`/`Cue` onto those and renders Block contents as real children. The domain `Cue` types are deliberately *not* unified.
 
 ## Considered options

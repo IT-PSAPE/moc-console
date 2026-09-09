@@ -1,41 +1,75 @@
-import { getValidAccessToken } from "./youtube-auth"
-
-const YOUTUBE_API = "https://www.googleapis.com/youtube/v3"
+import { buildSessionHeaders } from "./api-auth"
+import { providerProxyPath } from "./provider-proxy-path"
+import { providerRequestError } from "./provider-request-error"
+import { getCurrentWorkspaceId } from "@/data/current-workspace"
+import { apiUrl } from "@moc/utils/api-url"
 
 export async function youtubeApiFetch(
   path: string,
   options: RequestInit = {},
 ): Promise<Response> {
-  const accessToken = await getValidAccessToken()
-  const url = path.startsWith("http") ? path : `${YOUTUBE_API}${path}`
+  const [sessionHeaders, workspaceId] = await Promise.all([buildSessionHeaders(), getCurrentWorkspaceId()])
 
-  return fetch(url, {
+  return fetch(apiUrl(`/api/youtube/v3${providerProxyPath(path)}`), {
     ...options,
     headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
+      // Only declare a payload type when there is a payload: the proxy rejects a
+      // body on read routes, and a bodyless JSON request is parsed server-side
+      // into an empty object that reads as one.
+      ...(options.body === undefined || options.body === null ? {} : { "Content-Type": "application/json" }),
+      "X-MOC-Workspace": workspaceId,
+      ...sessionHeaders,
       ...options.headers,
     },
   })
 }
 
-export async function uploadThumbnail(videoId: string, file: Blob): Promise<void> {
-  const accessToken = await getValidAccessToken()
-  const url = `https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${videoId}&uploadType=media`
+/** Reads a blob as base64, without the `data:…;base64,` prefix. */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error("The thumbnail image could not be read"))
+    reader.onload = () => {
+      const result = String(reader.result)
+      const comma = result.indexOf(",")
+      if (comma === -1) reject(new Error("The thumbnail image could not be read"))
+      else resolve(result.slice(comma + 1))
+    }
+    reader.readAsDataURL(blob)
+  })
+}
 
-  const response = await fetch(url, {
+/**
+ * Sends the image inside a JSON envelope rather than as a raw binary body: the
+ * proxy re-encodes it to bytes and forwards it to YouTube with the real image
+ * content type. A raw body depends on the serverless runtime passing binary
+ * through untouched, and a body it treats as text arrives corrupt — which
+ * YouTube rejects as an invalid image.
+ */
+export async function uploadThumbnail(videoId: string, file: Blob): Promise<void> {
+  const image = await blobToBase64(file)
+  const response = await youtubeApiFetch(`/thumbnails/set?videoId=${encodeURIComponent(videoId)}&uploadType=media`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": file.type || "image/jpeg",
-    },
-    body: file,
+    body: JSON.stringify({ image, contentType: file.type || "image/jpeg" }),
   })
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to upload thumbnail: ${err}`)
+    throw await providerRequestError(response, "Failed to upload thumbnail")
   }
+}
+
+/**
+ * The channel the stored connection currently authenticates as, or null when
+ * YouTube did not answer. Callers use it to check that the connection still
+ * points at the channel the workspace recorded, so a connection repointed at
+ * another Google account is not mistaken for the workspace's own channel.
+ */
+export async function fetchAuthenticatedChannelId(): Promise<string | null> {
+  const response = await youtubeApiFetch("/channels?part=id&mine=true")
+  if (!response.ok) return null
+
+  const data = await response.json() as { items?: Array<{ id?: string }> }
+  return data.items?.[0]?.id ?? null
 }
 
 export async function fetchVideoCategories(regionCode = "US") {
@@ -44,8 +78,7 @@ export async function fetchVideoCategories(regionCode = "US") {
   )
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to fetch video categories: ${err}`)
+    throw await providerRequestError(response, "Failed to fetch video categories")
   }
 
   const data = await response.json()
@@ -63,8 +96,7 @@ export async function fetchChannelPlaylists() {
   )
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to fetch playlists: ${err}`)
+    throw await providerRequestError(response, "Failed to fetch playlists")
   }
 
   const data = await response.json()
@@ -92,8 +124,7 @@ export async function addVideoToPlaylist(playlistId: string, videoId: string): P
   })
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to add video to playlist: ${err}`)
+    throw await providerRequestError(response, "Failed to add video to playlist")
   }
 }
 
@@ -106,8 +137,7 @@ export async function updateVideoMetadata(
   )
 
   if (!getResponse.ok) {
-    const err = await getResponse.text()
-    throw new Error(`Failed to fetch video for metadata update: ${err}`)
+    throw await providerRequestError(getResponse, "Failed to fetch video for metadata update")
   }
 
   const getData = await getResponse.json()
@@ -124,7 +154,6 @@ export async function updateVideoMetadata(
   })
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to update video metadata: ${err}`)
+    throw await providerRequestError(response, "Failed to update video metadata")
   }
 }

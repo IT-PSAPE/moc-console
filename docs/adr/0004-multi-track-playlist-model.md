@@ -1,5 +1,7 @@
 # Multi-track playlists: lane-order compositing on a computed-sequence schema
 
+> **Superseded by [ADR-0007](./0007-simplify-console-to-five-features.md) (2026-07-28).** The system described below was removed from the repo. Kept as history — do not treat it as current design.
+
 A playlist has always been a single ordered `Cue` sequence. We are making it genuinely multi-track on the shared **Timeline** (ADR-0003): a playlist gains **Lanes**, lanes render and play in parallel, and `Timeline.Preview` composites them. Lane order *is* the visual z-stack — the top lane is the topmost layer — so a base video/image lane, overlay lanes (logo/lower-third), and an audio lane compose by their tree order. Each lane stays an ordered sequence: per-cue we store `laneId` + `order` + `duration`, and a block's `start` is the **computed** cumulative sum within its lane (no stored absolute positions, no gaps/overlaps within a lane; all lanes start at t=0; playlist duration = the longest lane). This is the resolution path for ADR-0002's deferred "audio as background music" — audio becomes a parallel background Lane rather than an inline queue item.
 
 ## Considered options

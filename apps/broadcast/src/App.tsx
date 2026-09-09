@@ -1,20 +1,22 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import { routes } from './screens/broadcast-routes'
-import { WorkspaceChooserScreen } from '@/screens/workspace-chooser-screen'
-import { HomeScreen } from '@/screens/home-screen'
-import { PlayerScreen } from '@/screens/player-screen'
-import { NotFoundScreen } from '@/screens/not-found-screen'
-import { ErrorScreen } from '@/screens/error-screen'
+import { createBrowserRouter, RouterProvider } from "react-router-dom"
+import { Suspense, lazy } from "react"
+import { Spinner } from "@moc/ui/components/feedback/spinner"
+import { routes } from "./screens/broadcast-routes"
+
+const HomeScreen = lazy(() => import("@/screens/home-screen").then((module) => ({ default: module.HomeScreen })))
+const PublicBroadcastScreen = lazy(() => import("@/screens/public-broadcast-screen").then((module) => ({ default: module.PublicBroadcastScreen })))
 
 const router = createBrowserRouter([
-  { path: routes.chooser, element: <WorkspaceChooserScreen />, errorElement: <ErrorScreen /> },
-  { path: routes.home, element: <HomeScreen />, errorElement: <ErrorScreen /> },
-  { path: routes.player, element: <PlayerScreen />, errorElement: <ErrorScreen /> },
-  { path: '*', element: <NotFoundScreen /> },
+  { path: routes.home, element: <HomeScreen /> },
+  { path: routes.broadcast, element: <PublicBroadcastScreen /> },
 ])
 
 function App() {
-  return <RouterProvider router={router} />
+  return (
+    <Suspense fallback={<main className="flex min-h-dvh items-center justify-center"><Spinner size="lg" /></main>}>
+      <RouterProvider router={router} />
+    </Suspense>
+  )
 }
 
 export default App

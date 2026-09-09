@@ -1,48 +1,41 @@
+import { Menu } from '@base-ui/react/menu'
 import { cn } from '@moc/utils/cn'
-import { createPortal } from 'react-dom'
-import { createContext, useCallback, useContext, useEffect, useId, useMemo, useState, type CSSProperties, type HTMLAttributes, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent, type ReactNode } from 'react'
-import { useAnchorPosition, useClickOutside, type Placement } from './overlay-primitives'
+import { createContext, useContext, useState, type ComponentProps, type HTMLAttributes, type ReactElement, type ReactNode } from 'react'
+import { useIsMobile } from '../../hooks/use-is-mobile'
+import { Drawer } from './drawer'
+import { mobileSheetPositionerClassName } from './mobile-sheet'
 import { useOverlayStack } from './overlay-provider'
 
-// ─── Context ─────────────────────────────────────────────────────────
+// ─── Placement ───────────────────────────────────────────────────────
+//
+// Preserves the historical `placement` prop shape and maps it onto Base UI's
+// Floating-UI-based `side` + `align` props on the Positioner.
+
+type Placement =
+    | 'top' | 'top-start' | 'top-end'
+    | 'bottom' | 'bottom-start' | 'bottom-end'
+    | 'left' | 'left-start' | 'left-end'
+    | 'right' | 'right-start' | 'right-end'
+
+function toSideAlign(placement: Placement): { side: 'top' | 'bottom' | 'left' | 'right'; align: 'start' | 'center' | 'end' } {
+    const dash = placement.indexOf('-')
+    const side = (dash === -1 ? placement : placement.slice(0, dash)) as 'top' | 'bottom' | 'left' | 'right'
+    const alignPart = dash === -1 ? '' : placement.slice(dash + 1)
+    const align = alignPart === 'start' ? 'start' : alignPart === 'end' ? 'end' : 'center'
+    return { side, align }
+}
 
 type DropdownContextValue = {
-    state: {
-        isOpen: boolean
-        zIndex: number
-        activeIndex: number
-        placement: Placement
-    }
-    actions: {
-        close: () => void
-        open: () => void
-        toggle: () => void
-        setActiveIndex: (index: number) => void
-        registerItem: (id: string) => void
-        setPanelElement: (node: HTMLDivElement | null) => void
-        setTriggerElement: (node: HTMLSpanElement | null) => void
-        unregisterItem: (id: string) => void
-    }
-    elements: {
-        triggerElement: HTMLSpanElement | null
-        panelElement: HTMLDivElement | null
-    }
-    meta: {
-        itemIds: string[]
-    }
+    isMobile: boolean
+    placement: Placement
 }
 
-const DropdownContext = createContext<DropdownContextValue | null>(null)
+const DropdownContext = createContext<DropdownContextValue>({ isMobile: false, placement: 'bottom' })
 
-export function useDropdown() {
-    const context = useContext(DropdownContext)
-
-    if (!context) {
-        throw new Error('useDropdown must be used within a Dropdown')
-    }
-
-    return context
-}
+const dropdownItemClassName = [
+    'flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm text-secondary outline-none md:min-h-0 md:rounded-sm md:px-2 md:py-1',
+    'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
+].join(' ')
 
 // ─── Root ────────────────────────────────────────────────────────────
 
@@ -55,327 +48,148 @@ type DropdownRootProps = {
     placement?: Placement
 }
 
-function DropdownRoot({ children, closeOnEscape = true, defaultOpen = false, onOpenChange, open, placement = 'bottom' }: DropdownRootProps) {
+function DropdownRoot({ children, closeOnEscape = true, defaultOpen, onOpenChange, open, placement = 'bottom' }: DropdownRootProps) {
+    const isMobile = useIsMobile()
     const isControlled = open !== undefined
-    const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
-    const [activeIndex, setActiveIndex] = useState(-1)
-    const [itemIds, setItemIds] = useState<string[]>([])
-    const [triggerElement, setTriggerElementState] = useState<HTMLSpanElement | null>(null)
-    const [panelElement, setPanelElementState] = useState<HTMLDivElement | null>(null)
-
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false)
     const isOpen = isControlled ? open : uncontrolledOpen
+    function handleOpenChange(nextOpen: boolean, eventDetails: Menu.Root.ChangeEventDetails) {
+        if (!closeOnEscape && eventDetails.reason === 'escape-key') return
 
-    // Lightweight: use a fixed high z-index rather than overlay stack
-    const { meta: overlayMeta } = useOverlayStack()
-    const zIndex = overlayMeta.baseZIndex + 50
-
-    const setOpenState = useCallback((nextOpen: boolean) => {
         if (!isControlled) {
             setUncontrolledOpen(nextOpen)
         }
-
-        if (!nextOpen) {
-            setActiveIndex(-1)
-        }
-
         onOpenChange?.(nextOpen)
-    }, [isControlled, onOpenChange])
+    }
 
-    const openDropdown = useCallback(() => {
-        setOpenState(true)
-    }, [setOpenState])
-
-    const closeDropdown = useCallback(() => {
-        setOpenState(false)
-    }, [setOpenState])
-
-    const toggle = useCallback(() => {
-        setOpenState(!isOpen)
-    }, [isOpen, setOpenState])
-
-    const registerItem = useCallback((id: string) => {
-        setItemIds(prev => prev.includes(id) ? prev : [...prev, id])
-    }, [])
-
-    const setTriggerElement = useCallback((node: HTMLSpanElement | null) => {
-        setTriggerElementState(node)
-    }, [])
-
-    const setPanelElement = useCallback((node: HTMLDivElement | null) => {
-        setPanelElementState(node)
-    }, [])
-
-    const unregisterItem = useCallback((id: string) => {
-        setItemIds(prev => {
-            const next = prev.filter(itemId => itemId !== id)
-            return next.length === prev.length ? prev : next
-        })
-    }, [])
-
-    // Click outside to close
-    useClickOutside([triggerElement, panelElement], isOpen, closeDropdown)
-
-    // Escape key
-    useEffect(() => {
-        if (!isOpen || !closeOnEscape) {
-            return undefined
+    function handleDrawerOpenChange(nextOpen: boolean) {
+        if (nextOpen === isOpen) return
+        if (!isControlled) {
+            setUncontrolledOpen(nextOpen)
         }
+        onOpenChange?.(nextOpen)
+    }
 
-        function handleDocumentKeyDown(event: KeyboardEvent) {
-            if (event.key !== 'Escape') {
-                return
-            }
-
-            event.preventDefault()
-            closeDropdown()
-            triggerElement?.focus()
-        }
-
-        document.addEventListener('keydown', handleDocumentKeyDown)
-
-        return () => {
-            document.removeEventListener('keydown', handleDocumentKeyDown)
-        }
-    }, [closeDropdown, closeOnEscape, isOpen, triggerElement])
-
-    const state = useMemo<DropdownContextValue['state']>(() => ({
-        isOpen,
-        zIndex,
-        activeIndex,
-        placement,
-    }), [activeIndex, isOpen, placement, zIndex])
-
-    const actions = useMemo<DropdownContextValue['actions']>(() => ({
-        close: closeDropdown,
-        open: openDropdown,
-        toggle,
-        setActiveIndex,
-        registerItem,
-        setPanelElement,
-        setTriggerElement,
-        unregisterItem,
-    }), [closeDropdown, openDropdown, registerItem, setPanelElement, setTriggerElement, toggle, unregisterItem])
-
-    const elements = useMemo<DropdownContextValue['elements']>(() => ({
-        triggerElement,
-        panelElement,
-    }), [panelElement, triggerElement])
-
-    const meta = useMemo<DropdownContextValue['meta']>(() => ({
-        itemIds,
-    }), [itemIds])
-
-    const value = useMemo<DropdownContextValue>(() => ({
-        state,
-        actions,
-        elements,
-        meta,
-    }), [actions, elements, meta, state])
-
-    return (
-        <DropdownContext.Provider value={value}>
-            <span className="relative inline-flex">{children}</span>
+    const dropdown = (
+        <DropdownContext.Provider value={{ isMobile, placement }}>
+            <Menu.Root modal={!isMobile} open={isOpen} onOpenChange={handleOpenChange}>
+                {children}
+            </Menu.Root>
         </DropdownContext.Provider>
     )
+
+    if (!isMobile) return dropdown
+
+    return <Drawer mobileSide="bottom" open={isOpen} onOpenChange={handleDrawerOpenChange}>{dropdown}</Drawer>
 }
 
 // ─── Trigger ─────────────────────────────────────────────────────────
+//
+// Reuses the supplied interactive element as Base UI's trigger, avoiding
+// wrapper elements and nested buttons.
 
-function DropdownTrigger({ children, onClick, ...props }: HTMLAttributes<HTMLSpanElement>) {
-    const { state, actions } = useDropdown()
-    const handleTriggerRef = useCallback((node: HTMLSpanElement | null) => {
-        actions.setTriggerElement(node)
-    }, [actions])
+type DropdownTriggerProps = Omit<HTMLAttributes<HTMLElement>, 'children'> & {
+    children: ReactElement
+}
 
-    function handleClick(event: MouseEvent<HTMLSpanElement>) {
-        onClick?.(event)
-
-        if (event.defaultPrevented) {
-            return
-        }
-
-        actions.toggle()
-    }
-
-    function handleKeyDown(event: ReactKeyboardEvent<HTMLSpanElement>) {
-        if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault()
-
-            if (!state.isOpen) {
-                actions.open()
-            }
-
-            actions.setActiveIndex(0)
-        }
-    }
+function DropdownTrigger({ children, className, ...props }: DropdownTriggerProps) {
+    const nativeButton = typeof children.type !== 'string' || children.type === 'button'
 
     return (
-        <span
-            ref={handleTriggerRef}
-            aria-expanded={state.isOpen}
-            aria-haspopup="menu"
-            onClick={handleClick}
-            onKeyDown={handleKeyDown}
-            role="button"
-            tabIndex={0}
-            {...props}
-        >
-            {children}
-        </span>
+        <Menu.Trigger nativeButton={nativeButton} render={children} className={className} {...props} />
     )
 }
 
 // ─── Panel ───────────────────────────────────────────────────────────
 
-function DropdownPanel({ children, className, style, ...props }: HTMLAttributes<HTMLDivElement>) {
-    const { state, actions, elements, meta } = useDropdown()
+function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    const { isMobile, placement } = useContext(DropdownContext)
+    const { side, align } = toSideAlign(placement)
     const { state: overlayState } = useOverlayStack()
-    const position = useAnchorPosition(elements.triggerElement, elements.panelElement, state.isOpen, state.placement)
-    const handlePanelRef = useCallback((node: HTMLDivElement | null) => {
-        actions.setPanelElement(node)
-    }, [actions])
 
-    if (!state.isOpen) {
-        return null
+    if (isMobile) {
+        return (
+            <Drawer.Portal>
+                <Drawer.Backdrop />
+                <Menu.Portal container={overlayState.rootElement ?? undefined}>
+                    <Menu.Positioner className={mobileSheetPositionerClassName}>
+                        <Drawer.Panel>
+                            <Drawer.Content className="overflow-hidden !pb-0">
+                                <Menu.Popup className={cn('min-h-0 flex-1 overflow-y-auto p-1 outline-none', className)} {...props}>
+                                    {children}
+                                </Menu.Popup>
+                            </Drawer.Content>
+                        </Drawer.Panel>
+                    </Menu.Positioner>
+                </Menu.Portal>
+            </Drawer.Portal>
+        )
     }
 
-    function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-        const itemCount = meta.itemIds.length
-
-        if (itemCount === 0) {
-            return
-        }
-
-        if (event.key === 'ArrowDown') {
-            event.preventDefault()
-            actions.setActiveIndex(state.activeIndex < 0 ? 0 : (state.activeIndex + 1) % itemCount)
-        } else if (event.key === 'ArrowUp') {
-            event.preventDefault()
-            actions.setActiveIndex(state.activeIndex < 0 ? itemCount - 1 : (state.activeIndex - 1 + itemCount) % itemCount)
-        }
-    }
-
-    const panelStyle: CSSProperties = {
-        top: position.top,
-        left: position.left,
-        zIndex: state.zIndex,
-        maxWidth: position.maxWidth,
-        maxHeight: position.maxHeight,
-        visibility: position.isPositioned ? 'visible' : 'hidden',
-        ...style,
-    }
-
-    const panel = (
-        <div
-            ref={handlePanelRef}
-            className={cn(
-                'pointer-events-auto fixed z-50 flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg',
-                className,
-            )}
-            onKeyDown={handleKeyDown}
-            role="menu"
-            style={panelStyle}
-            tabIndex={-1}
-            {...props}
-        >
-            {children}
-        </div>
+    return (
+        <Menu.Portal container={overlayState.rootElement ?? undefined}>
+            <Menu.Positioner side={side} align={align} sideOffset={6} className="z-[9050] outline-none">
+                <Menu.Popup
+                    className={cn(
+                        'pointer-events-auto flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none',
+                        'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150 motion-reduce:transition-none',
+                        'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+                        'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
+                        className,
+                    )}
+                    {...props}
+                >
+                    {children}
+                </Menu.Popup>
+            </Menu.Positioner>
+        </Menu.Portal>
     )
-
-    if (!overlayState.rootElement) {
-        return panel
-    }
-
-    return createPortal(panel, overlayState.rootElement)
 }
 
 // ─── Item ────────────────────────────────────────────────────────────
 
-type DropdownItemProps = HTMLAttributes<HTMLDivElement> & {
+type DropdownItemProps = Omit<ComponentProps<typeof Menu.Item>, 'children' | 'className' | 'onClick'> & {
+    children: ReactNode
+    className?: string
+    onClick?: ComponentProps<typeof Menu.Item>['onClick']
     onSelect?: () => void
 }
 
 function DropdownItem({ children, className, onClick, onSelect, ...props }: DropdownItemProps) {
-    const itemId = useId()
-    const { state, actions, meta } = useDropdown()
-    const itemIndex = meta.itemIds.indexOf(itemId)
-    const isActive = itemIndex === state.activeIndex
-
-    useEffect(() => {
-        actions.registerItem(itemId)
-
-        return () => {
-            actions.unregisterItem(itemId)
-        }
-    }, [actions, itemId])
-
-    function handleClick(event: MouseEvent<HTMLDivElement>) {
+    function handleClick(event: Parameters<NonNullable<ComponentProps<typeof Menu.Item>['onClick']>>[0]) {
         onClick?.(event)
-
-        if (event.defaultPrevented) {
-            return
-        }
-
         onSelect?.()
-        actions.close()
-    }
-
-    function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-        if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault()
-            onSelect?.()
-            actions.close()
-        }
     }
 
     return (
-        <div
-            aria-selected={isActive}
-            className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 text-sm text-secondary',
-                isActive && 'bg-secondary text-primary',
-                className,
-            )}
+        <Menu.Item
+            className={cn(dropdownItemClassName, className)}
             onClick={handleClick}
-            onKeyDown={handleKeyDown}
-            onPointerMove={() => actions.setActiveIndex(itemIndex)}
-            role="menuitem"
-            tabIndex={-1}
             {...props}
         >
             {children}
-        </div>
+        </Menu.Item>
+    )
+}
+
+type DropdownLinkProps = {
+    children: ReactNode
+    className?: string
+    render: ReactElement
+}
+
+function DropdownLink({ children, className, render }: DropdownLinkProps) {
+    return (
+        <Menu.Item nativeButton={false} render={render} className={cn(dropdownItemClassName, className)}>
+            {children}
+        </Menu.Item>
     )
 }
 
 // ─── Separator ───────────────────────────────────────────────────────
 
 function DropdownSeparator({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    return (
-        <div className={cn('my-1 h-px bg-secondary', className)} role="separator" {...props} />
-    )
-}
-
-// ─── Close ───────────────────────────────────────────────────────────
-
-function DropdownClose({ children, onClick, ...props }: HTMLAttributes<HTMLSpanElement>) {
-    const { actions } = useDropdown()
-
-    function handleClick(event: MouseEvent<HTMLSpanElement>) {
-        onClick?.(event)
-
-        if (event.defaultPrevented) {
-            return
-        }
-
-        actions.close()
-    }
-
-    return (
-        <span onClick={handleClick} role="button" {...props}>
-            {children}
-        </span>
-    )
+    return <Menu.Separator className={cn('my-1 h-px bg-secondary', className)} {...props} />
 }
 
 // ─── Compound Export ─────────────────────────────────────────────────
@@ -384,6 +198,6 @@ export const Dropdown = Object.assign(DropdownRoot, {
     Trigger: DropdownTrigger,
     Panel: DropdownPanel,
     Item: DropdownItem,
+    Link: DropdownLink,
     Separator: DropdownSeparator,
-    Close: DropdownClose,
 })

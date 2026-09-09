@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom'
-import { Title, Paragraph } from '@moc/ui/components/display/text'
 import { Button } from '@moc/ui/components/controls/button'
 import { Input } from '@moc/ui/components/form/input'
 import { Spinner } from '@moc/ui/components/feedback/spinner'
@@ -9,13 +8,16 @@ import { PublicLayout } from '@/features/components/public-layout'
 import { TrackingResult } from '@/features/components/tracking-result'
 import { useTrackingLookup } from '@/features/hooks/use-tracking-lookup'
 import { routes } from '@/screens/console-routes'
-import { Search, ArrowLeft, FileSearch } from 'lucide-react'
+import { Search, FileSearch } from 'lucide-react'
+import { FlowHeader } from '@/features/components/flow-header'
+import { PublicFlow } from '@/features/components/public-flow'
+import type { ChangeEvent, FormEvent } from 'react'
 
 export function TrackScreen() {
   const navigate = useNavigate()
   const { code, setCode, result, loading, error, notFound, lookup } = useTrackingLookup()
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: FormEvent) {
     e.preventDefault()
     lookup()
   }
@@ -24,27 +26,25 @@ export function TrackScreen() {
     navigate(routes.publicHome)
   }
 
-  return (
-    <PublicLayout className="py-16">
-      <div className="flex max-mobile:flex-col">
-        <div className="shrink-0 w-full max-w-40 mb-8">
-          <Button variant="ghost" icon={<ArrowLeft />} onClick={handleBack} className="self-start">Back</Button>
-        </div>
-        <div className="flex flex-col gap-1 flex-1 text-center">
-          <Title.h3>Track Submission</Title.h3>
-          <Paragraph.sm className="text-secondary">Enter your tracking code to view the status of your request or booking.</Paragraph.sm>
-        </div>
-        <div className="shrink-0 w-full max-w-40" />
-      </div>
+  function handleCodeChange(event: ChangeEvent<HTMLInputElement>) {
+    setCode(event.target.value)
+  }
 
-      <div className="w-full max-w-content-sm mx-auto">
-        <form onSubmit={handleSubmit} className="flex gap-2 my-20">
+  return (
+    <PublicLayout className="py-8 sm:py-12">
+      <FlowHeader title="Track submission" description="Enter your tracking code to view its status." onBack={handleBack} />
+
+      <PublicFlow>
+        <form onSubmit={handleSubmit} className="my-10 flex gap-2 sm:my-16">
           <Input
+            aria-label="Tracking code"
+            name="tracking-code"
+            autoComplete="off"
             className="flex-1"
             icon={<Search />}
             placeholder="e.g. REQ-A1B2C3"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={handleCodeChange}
           />
           <Button type="submit" disabled={!code.trim() || loading}>
             {loading ? <Spinner size="sm" /> : 'Search'}
@@ -65,7 +65,7 @@ export function TrackScreen() {
 
         {result && <TrackingResult data={result} />}
 
-      </div>
+      </PublicFlow>
     </PublicLayout>
   )
 }

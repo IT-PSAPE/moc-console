@@ -1,11 +1,17 @@
-import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/broadcast/zoom"
+import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/streams/zoom"
 import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
 import { zoomApiFetch, revokeZoomToken } from "@/lib/zoom-client"
-import { fetchZoomMeetingById } from "./fetch-zoom"
-import { formatUtcIsoForZoomApi, parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time"
+import { fetchZoomConnectionId, fetchZoomMeetingById } from "./fetch-zoom"
+import { formatUtcIsoForZoomApi } from "@moc/utils/zoned-date-time"
 import { randomId } from "@moc/utils/random-id"
 import { notifyMeetingCreated } from "./notify-event"
+import type { NotifyDestination } from "@moc/types/streams"
+import { providerRequestError } from "@/lib/provider-request-error"
+import { syncZoomMeetingsWithinOperation } from "./zoom-meeting-sync"
+import { queueZoomMeetingOperation } from "./zoom-meeting-operation-queue"
+
+export { syncZoomMeetings } from "./zoom-meeting-sync"
 
 export type CreateMeetingParams = {
   topic: string
@@ -19,22 +25,19 @@ export type CreateMeetingParams = {
   waitingRoom: boolean
   muteOnEntry: boolean
   continuousChat: boolean
+  // Optional per-meeting override of the Telegram notification destination.
+  notifyDestinations?: NotifyDestination[]
 }
 
-type ZoomMeetingSyncRow = {
-  id: number
-  topic?: string
-  agenda?: string
-  type?: number
-  start_time?: string | null
-  duration?: number
-  timezone?: string
-  join_url?: string | null
+export type ZoomMeetingMutationResult = {
+  meeting: ZoomMeeting
+  reconciliationWarning: string | null
 }
 
 type LocalZoomMeetingInsertPayload = {
   id?: string
   workspace_id: string
+  zoom_connection_id: string
   zoom_meeting_id: number
   topic: string
   description: string
@@ -43,7 +46,6 @@ type LocalZoomMeetingInsertPayload = {
   duration: number
   timezone: string
   join_url: string | null
-  start_url?: string | null
   password?: string | null
   recurrence_type: ZoomRecurrenceType
   recurrence_interval: number | null
@@ -56,6 +58,57 @@ type LocalZoomMeetingInsertPayload = {
 
 async function insertLocalZoomMeeting(payload: LocalZoomMeetingInsertPayload): Promise<void> {
   const { error } = await supabase.from("zoom_meetings").insert(payload)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+}
+
+function mapLocalZoomMeetingPayload(payload: LocalZoomMeetingInsertPayload): ZoomMeeting {
+  const timestamp = new Date().toISOString()
+
+  return {
+    id: payload.id ?? randomId(),
+    workspaceId: payload.workspace_id,
+    zoomMeetingId: payload.zoom_meeting_id,
+    topic: payload.topic,
+    description: payload.description,
+    meetingType: payload.meeting_type,
+    startTime: payload.start_time,
+    duration: payload.duration,
+    timezone: payload.timezone,
+    joinUrl: payload.join_url,
+    password: payload.password ?? null,
+    recurrenceType: payload.recurrence_type,
+    recurrenceInterval: payload.recurrence_interval,
+    recurrenceDays: payload.recurrence_days,
+    waitingRoom: payload.waiting_room,
+    muteOnEntry: payload.mute_on_entry,
+    continuousChat: payload.continuous_chat,
+    createdBy: payload.created_by,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  }
+}
+
+function getLocalZoomMeetingUpdate(meeting: ZoomMeeting) {
+  return {
+    topic: meeting.topic,
+    description: meeting.description,
+    start_time: meeting.startTime,
+    duration: meeting.duration,
+    timezone: meeting.timezone,
+    recurrence_type: meeting.recurrenceType,
+    recurrence_interval: meeting.recurrenceInterval,
+    recurrence_days: meeting.recurrenceDays,
+    waiting_room: meeting.waitingRoom,
+    mute_on_entry: meeting.muteOnEntry,
+    continuous_chat: meeting.continuousChat,
+  }
+}
+
+async function persistLocalZoomMeetingUpdate(meetingId: string, values: ReturnType<typeof getLocalZoomMeetingUpdate>): Promise<void> {
+  const { error } = await supabase.from("zoom_meetings").update(values).eq("id", meetingId)
 
   if (error) {
     throw new Error(error.message)
@@ -87,18 +140,13 @@ function getMeetingType(recurrenceType: ZoomRecurrenceType): number {
   return 8 // recurring with fixed time
 }
 
-function normalizeZoomStartTime(startTime: string | null, timezone: string): string | null {
-  if (!startTime) return null
-
-  if (/z$/i.test(startTime) || /[+-]\d{2}:\d{2}$/.test(startTime)) {
-    return new Date(startTime).toISOString()
-  }
-
-  return parseDateTimeInputToUtcIso(startTime.slice(0, 19), timezone)
-}
-
 export async function createZoomMeeting(params: CreateMeetingParams): Promise<ZoomMeeting> {
   const workspaceId = await getCurrentWorkspaceId()
+  return queueZoomMeetingOperation(workspaceId, () => createZoomMeetingWithinOperation(params, workspaceId))
+}
+
+async function createZoomMeetingWithinOperation(params: CreateMeetingParams, workspaceId: string): Promise<ZoomMeeting> {
+  const zoomConnectionId = await fetchZoomConnectionId(workspaceId)
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -133,16 +181,17 @@ export async function createZoomMeeting(params: CreateMeetingParams): Promise<Zo
   })
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to create Zoom meeting: ${err}`)
+    throw await providerRequestError(response, "Failed to create Zoom meeting")
   }
 
   const meeting = await response.json()
 
   // Store in local database
+  const localMeetingId = randomId()
   const payload: LocalZoomMeetingInsertPayload = {
-    id: randomId(),
+    id: localMeetingId,
     workspace_id: workspaceId,
+    zoom_connection_id: zoomConnectionId,
     zoom_meeting_id: meeting.id,
     topic: params.topic,
     description: params.description,
@@ -151,7 +200,6 @@ export async function createZoomMeeting(params: CreateMeetingParams): Promise<Zo
     duration: params.duration,
     timezone: params.timezone,
     join_url: meeting.join_url ?? null,
-    start_url: meeting.start_url ?? null,
     password: meeting.password ?? null,
     recurrence_type: params.recurrenceType,
     recurrence_interval: params.recurrenceInterval,
@@ -161,38 +209,44 @@ export async function createZoomMeeting(params: CreateMeetingParams): Promise<Zo
     continuous_chat: params.continuousChat,
     created_by: user.id,
   }
-  const localMeetingId = payload.id
-
   try {
     await insertLocalZoomMeeting(payload)
   } catch (error) {
+    // The browser can lose the response after Supabase has committed the row.
+    // Treat an already-persisted client-generated ID as success rather than
+    // deleting the provider meeting and encouraging a duplicate retry.
+    const persisted = await fetchZoomMeetingById(localMeetingId).catch(() => undefined)
+    if (persisted) {
+      await notifyMeetingCreated(persisted.id, params.notifyDestinations).catch(() => undefined)
+      return persisted
+    }
+
     const rollbackResponse = await zoomApiFetch(`/meetings/${meeting.id}`, {
       method: "DELETE",
     })
 
-    if (!rollbackResponse.ok && rollbackResponse.status !== 204) {
-      throw new Error(`Local meeting save failed after Zoom creation, and rollback also failed: ${await rollbackResponse.text()}`)
+    if (!rollbackResponse.ok && rollbackResponse.status !== 204 && rollbackResponse.status !== 404) {
+      const rollbackError = await providerRequestError(rollbackResponse, "Zoom meeting was created, but the local record could not be saved and cleanup failed")
+      throw rollbackError
     }
 
     throw error
   }
 
-  if (!localMeetingId) {
-    throw new Error("Created meeting payload is missing a local id")
-  }
+  // A successful insert is the durable create boundary. Do not turn a
+  // follow-up read problem into a failed-create message that causes retries.
+  const saved = await fetchZoomMeetingById(localMeetingId).catch(() => undefined) ?? mapLocalZoomMeetingPayload(payload)
 
-  const saved = await fetchZoomMeetingById(localMeetingId)
-
-  if (!saved) {
-    throw new Error("Created meeting could not be reloaded")
-  }
-
-  notifyMeetingCreated(saved.id)
+  await notifyMeetingCreated(saved.id, params.notifyDestinations).catch(() => undefined)
 
   return saved
 }
 
-export async function updateZoomMeeting(meeting: ZoomMeeting): Promise<ZoomMeeting> {
+export async function updateZoomMeeting(meeting: ZoomMeeting): Promise<ZoomMeetingMutationResult> {
+  return queueZoomMeetingOperation(meeting.workspaceId, () => updateZoomMeetingWithinOperation(meeting))
+}
+
+async function updateZoomMeetingWithinOperation(meeting: ZoomMeeting): Promise<ZoomMeetingMutationResult> {
   const recurrence = mapRecurrenceToZoomApi({
     topic: meeting.topic,
     description: meeting.description,
@@ -230,41 +284,37 @@ export async function updateZoomMeeting(meeting: ZoomMeeting): Promise<ZoomMeeti
   })
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`Failed to update Zoom meeting: ${err}`)
+    throw await providerRequestError(response, "Failed to update Zoom meeting")
   }
 
-  const { error } = await supabase
-    .from("zoom_meetings")
-    .update({
-      topic: meeting.topic,
-      description: meeting.description,
-      start_time: meeting.startTime,
-      duration: meeting.duration,
-      timezone: meeting.timezone,
-      recurrence_type: meeting.recurrenceType,
-      recurrence_interval: meeting.recurrenceInterval,
-      recurrence_days: meeting.recurrenceDays,
-      waiting_room: meeting.waitingRoom,
-      mute_on_entry: meeting.muteOnEntry,
-      continuous_chat: meeting.continuousChat,
-    })
-    .eq("id", meeting.id)
+  const localValues = getLocalZoomMeetingUpdate(meeting)
 
-  if (error) {
-    throw new Error(error.message)
+  try {
+    await persistLocalZoomMeetingUpdate(meeting.id, localValues)
+  } catch {
+    // Zoom has already accepted the update. Re-sync its canonical meeting and
+    // retry local persistence once before asking the user to reconcile later.
+    try {
+      await syncZoomMeetingsWithinOperation(meeting.workspaceId)
+      await persistLocalZoomMeetingUpdate(meeting.id, localValues)
+    } catch {
+      return {
+        meeting,
+        reconciliationWarning: "Zoom was updated, but the local record could not be saved. Refresh meetings later to reconcile the change.",
+      }
+    }
   }
 
-  const saved = await fetchZoomMeetingById(meeting.id)
+  const saved = await fetchZoomMeetingById(meeting.id).catch(() => undefined) ?? meeting
 
-  if (!saved) {
-    throw new Error("Updated meeting could not be reloaded")
-  }
-
-  return saved
+  return { meeting: saved, reconciliationWarning: null }
 }
 
 export async function deleteZoomMeeting(meeting: ZoomMeeting): Promise<void> {
+  return queueZoomMeetingOperation(meeting.workspaceId, () => deleteZoomMeetingWithinOperation(meeting))
+}
+
+async function deleteZoomMeetingWithinOperation(meeting: ZoomMeeting): Promise<void> {
   // Delete remote first: a failure here just throws, leaving the local row
   // intact. If we deleted locally first and the remote call failed, a rollback
   // could itself fail and leave the two systems permanently out of sync.
@@ -272,8 +322,8 @@ export async function deleteZoomMeeting(meeting: ZoomMeeting): Promise<void> {
     method: "DELETE",
   })
 
-  if (!response.ok && response.status !== 204) {
-    throw new Error(`Failed to delete Zoom meeting: ${await response.text()}`)
+  if (!response.ok && response.status !== 204 && response.status !== 404) {
+    throw await providerRequestError(response, "Failed to delete Zoom meeting")
   }
 
   const { error } = await supabase
@@ -286,125 +336,21 @@ export async function deleteZoomMeeting(meeting: ZoomMeeting): Promise<void> {
   }
 }
 
-export async function syncZoomMeetings(): Promise<ZoomMeeting[]> {
+export async function deleteLocalZoomMeetingRecord(id: string): Promise<void> {
   const workspaceId = await getCurrentWorkspaceId()
-  const { data: { user } } = await supabase.auth.getUser()
+  return queueZoomMeetingOperation(workspaceId, () => deleteLocalZoomMeetingRecordWithinOperation(id))
+}
 
-  if (!user) {
-    throw new Error("Not authenticated")
-  }
-
-  const [upcomingRes, previousRes] = await Promise.all([
-    zoomApiFetch("/users/me/meetings?type=upcoming&page_size=300"),
-    zoomApiFetch("/users/me/meetings?type=previous_meetings&page_size=300"),
-  ])
-
-  if (!upcomingRes.ok) {
-    throw new Error(`Failed to fetch Zoom meetings: ${await upcomingRes.text()}`)
-  }
-  if (!previousRes.ok) {
-    throw new Error(`Failed to fetch Zoom meetings: ${await previousRes.text()}`)
-  }
-
-  const upcomingData = await upcomingRes.json() as { meetings?: ZoomMeetingSyncRow[] }
-  const previousData = await previousRes.json() as { meetings?: ZoomMeetingSyncRow[] }
-  const byId = new Map<number, ZoomMeetingSyncRow>()
-  for (const m of upcomingData.meetings ?? []) byId.set(m.id, m)
-  for (const m of previousData.meetings ?? []) if (!byId.has(m.id)) byId.set(m.id, m)
-  const meetings = Array.from(byId.values())
-
-  for (const m of meetings) {
-    const payload = {
-      workspace_id: workspaceId,
-      zoom_meeting_id: m.id,
-      topic: m.topic ?? "Untitled",
-      description: m.agenda ?? "",
-      meeting_type: m.type === 8 ? "recurring_fixed" : "scheduled",
-      start_time: normalizeZoomStartTime(m.start_time ?? null, m.timezone ?? "UTC"),
-      duration: m.duration ?? 60,
-      timezone: m.timezone ?? "UTC",
-      join_url: m.join_url ?? null,
-      created_by: user.id,
-    }
-
-    const { error } = await supabase
-      .from("zoom_meetings")
-      .upsert(payload, { onConflict: "workspace_id,zoom_meeting_id" })
-
-    if (error) {
-      throw new Error(error.message)
-    }
-  }
-
-  const remoteIds = Array.from(byId.keys())
-  let deleteQuery = supabase
+async function deleteLocalZoomMeetingRecordWithinOperation(id: string): Promise<void> {
+  const { error } = await supabase
     .from("zoom_meetings")
     .delete()
-    .eq("workspace_id", workspaceId)
-  if (remoteIds.length > 0) {
-    deleteQuery = deleteQuery.not("zoom_meeting_id", "in", `(${remoteIds.join(",")})`)
-  }
-  const { error: deleteError } = await deleteQuery
-  if (deleteError) {
-    throw new Error(deleteError.message)
-  }
+    .eq("id", id)
 
-  const { data: rows, error } = await supabase
-    .from("zoom_meetings")
-    .select("*")
-    .eq("workspace_id", workspaceId)
-    .order("start_time", { ascending: true, nullsFirst: false })
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  // Fire-and-forget notify for any rows that have never been notified.
-  // The server atomically claims notified_at, so concurrent syncs are safe.
-  for (const row of rows ?? []) {
-    if (!row.notified_at) notifyMeetingCreated(row.id)
-  }
-
-  return (rows ?? []).map((row) => ({
-    id: row.id,
-    workspaceId: row.workspace_id,
-    zoomMeetingId: row.zoom_meeting_id,
-    topic: row.topic,
-    description: row.description,
-    meetingType: row.meeting_type,
-    startTime: row.start_time,
-    duration: row.duration,
-    timezone: row.timezone,
-    joinUrl: row.join_url,
-    startUrl: row.start_url,
-    password: row.password,
-    recurrenceType: row.recurrence_type,
-    recurrenceInterval: row.recurrence_interval,
-    recurrenceDays: row.recurrence_days,
-    waitingRoom: row.waiting_room,
-    muteOnEntry: row.mute_on_entry,
-    continuousChat: row.continuous_chat,
-    createdBy: row.created_by,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }))
+  if (error) throw new Error(error.message)
 }
 
 export async function disconnectZoom(): Promise<void> {
   const workspaceId = await getCurrentWorkspaceId()
-
-  const { data: connection } = await supabase
-    .from("zoom_connections")
-    .select("id, access_token")
-    .eq("workspace_id", workspaceId)
-    .single()
-
-  if (connection) {
-    await revokeZoomToken(connection.access_token)
-
-    await supabase
-      .from("zoom_connections")
-      .delete()
-      .eq("id", connection.id)
-  }
+  await queueZoomMeetingOperation(workspaceId, () => revokeZoomToken(workspaceId))
 }

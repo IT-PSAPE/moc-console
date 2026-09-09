@@ -16,14 +16,18 @@ const DEFAULT_MESSAGE =
     'You are about to close this request with unsaved changes. Would you like to save these changes before closing?'
 
 export function UnsavedChangesModal({ open, onSave, onDiscard, onCancel, isSaving = false, message = DEFAULT_MESSAGE }: UnsavedChangesModalProps) {
+    function handleOpenChange(nextOpen: boolean) {
+        if (!nextOpen) onCancel()
+    }
+
     return (
-        <Modal open={open} onOpenChange={(o) => { if (!o) onCancel() }}>
+        <Modal open={open} onOpenChange={handleOpenChange}>
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
                     <Modal.Panel>
                         <Modal.Header>
-                            <Label.md>Unsaved Changes</Label.md>
+                            <Label.md>Unsaved changes</Label.md>
                         </Modal.Header>
                         <Modal.Content className="p-4 flex-row gap-4">
                             <TriangleAlert className='size-8 shrink-0' />
@@ -39,7 +43,7 @@ export function UnsavedChangesModal({ open, onSave, onDiscard, onCancel, isSavin
                                 Cancel
                             </Button>
                             <Button onClick={onSave} disabled={isSaving}>
-                                {isSaving ? 'Saving...' : 'Save Changes'}
+                                {isSaving ? 'Saving…' : 'Save changes'}
                             </Button>
                         </Modal.Footer>
                     </Modal.Panel>

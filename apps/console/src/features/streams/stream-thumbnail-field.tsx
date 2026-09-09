@@ -1,0 +1,135 @@
+import type { ChangeEvent } from "react"
+import { Button } from "@moc/ui/components/controls/button"
+import { Input } from "@moc/ui/components/form/input"
+import { FormLabel } from "@moc/ui/components/form/form-label"
+import { FileDropzone } from "@moc/ui/components/form/file-dropzone"
+import { Paragraph } from "@moc/ui/components/display/text"
+import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
+import { Link, Loader2, X } from "lucide-react"
+
+type ThumbnailMode = "file" | "url"
+export type ThumbnailStatus = "idle" | "resolving" | "ready" | "error"
+
+type StreamThumbnailFieldProps = {
+  // Whether the user has actively selected a new thumbnail (vs. just the
+  // stream's existing one shown for reference in edit mode).
+  hasSelection: boolean
+  selectionName: string | undefined
+  // Object URL of the resolved blob, or — in edit mode with no new
+  // selection — the stream's current thumbnail URL, for a static preview.
+  previewUrl: string | null
+  status: ThumbnailStatus
+  errorMessage: string | null
+  thumbnailUrlInput: string
+  thumbnailMode: ThumbnailMode
+  onModeChange: (mode: ThumbnailMode) => void
+  onFileSelect: (file: File | null) => void
+  onUrlInputChange: (value: string) => void
+  onUrlConfirm: () => void
+  onClear: () => void
+}
+
+export function StreamThumbnailField({
+  hasSelection,
+  selectionName,
+  previewUrl,
+  status,
+  errorMessage,
+  thumbnailUrlInput,
+  thumbnailMode,
+  onModeChange,
+  onFileSelect,
+  onUrlInputChange,
+  onUrlConfirm,
+  onClear,
+}: StreamThumbnailFieldProps) {
+  function handleModeChange(value: string) {
+    onModeChange(value as ThumbnailMode)
+  }
+
+  function handleUrlInputChange(event: ChangeEvent<HTMLInputElement>) {
+    onUrlInputChange(event.target.value)
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <FormLabel label="Thumbnail" optional />
+
+      {hasSelection ? (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 rounded-lg border border-secondary bg-primary p-2">
+            {previewUrl && (
+              <img src={previewUrl} alt="" width="32" height="32" className="size-8 shrink-0 rounded object-cover" />
+            )}
+            <Paragraph.sm className="text-secondary truncate flex-1">{selectionName}</Paragraph.sm>
+            {status === "resolving" && (
+              <Loader2 className="size-3.5 animate-spin text-quaternary shrink-0 motion-reduce:animate-none" />
+            )}
+            <Button.Icon aria-label="Remove thumbnail" variant="ghost" icon={<X className="size-3.5" />} onClick={onClear} />
+          </div>
+          {status === "resolving" && (
+            <Paragraph.xs className="text-quaternary">Checking image…</Paragraph.xs>
+          )}
+          {status === "error" && errorMessage && (
+            <Paragraph.xs className="text-utility-red-700">{errorMessage}</Paragraph.xs>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {previewUrl && (
+            <div className="flex items-center gap-2 rounded-lg border border-secondary bg-primary p-2">
+              <img src={previewUrl} alt="" width="32" height="32" className="size-8 shrink-0 rounded object-cover" />
+              <Paragraph.sm className="text-quaternary truncate flex-1">
+                Current thumbnail — choose a source below to replace it.
+              </Paragraph.sm>
+            </div>
+          )}
+
+          <SegmentedControl
+            fill
+            value={thumbnailMode}
+            onValueChange={handleModeChange}
+          >
+            <SegmentedControl.Item value="file">Upload</SegmentedControl.Item>
+            <SegmentedControl.Item value="url">URL</SegmentedControl.Item>
+          </SegmentedControl>
+
+          {thumbnailMode === "file" && (
+            <FileDropzone
+              accept="image/jpeg,image/png"
+              onFileSelect={onFileSelect}
+              placeholder="Drop a thumbnail image or click to browse."
+              selectedHint="Drop a new image or click to replace."
+            />
+          )}
+
+          {thumbnailMode === "url" && (
+            <div className="flex gap-2">
+              <Input
+                aria-label="Thumbnail URL"
+                name="thumbnail-url"
+                autoComplete="url"
+                icon={<Link className="size-3.5" />}
+                value={thumbnailUrlInput}
+                onChange={handleUrlInputChange}
+                placeholder="https://example.com/thumbnail.jpg"
+                className="flex-1"
+              />
+              <Button variant="secondary" onClick={onUrlConfirm} disabled={!thumbnailUrlInput.trim()}>
+                Set
+              </Button>
+            </div>
+          )}
+
+          {status === "error" && errorMessage && (
+            <Paragraph.xs className="text-utility-red-700">{errorMessage}</Paragraph.xs>
+          )}
+
+          <Paragraph.xs className="text-quaternary">
+            JPEG or PNG, 1280x720 recommended, max 2 MB.
+          </Paragraph.xs>
+        </div>
+      )}
+    </div>
+  )
+}

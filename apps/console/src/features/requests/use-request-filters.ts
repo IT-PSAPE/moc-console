@@ -2,6 +2,9 @@ import { useMemo, useState } from "react";
 import type { Request } from "@moc/types/requests";
 import type { Category } from "@moc/types/requests/category";
 import type { Priority } from "@moc/types/requests/priority";
+import type { Status } from "@moc/types/requests/status";
+import { areSetsEqual } from "@/utils/sets";
+import { useQueryText } from "@/hooks/use-query-text";
 
 // ─── Filter / Sort state ───────────────────────────────
 
@@ -12,6 +15,7 @@ export type RequestFilters = {
     search: string;
     categories: Set<Category>;
     priorities: Set<Priority>;
+    statuses: Set<Status>;
     dateRange: { start: string; end: string };
     sortField: SortField;
     sortDirection: SortDirection;
@@ -21,6 +25,7 @@ const defaultFilters: RequestFilters = {
     search: "",
     categories: new Set(),
     priorities: new Set(),
+    statuses: new Set<Status>(["not_started", "in_progress"]),
     dateRange: { start: "", end: "" },
     sortField: "createdAt",
     sortDirection: "desc",
@@ -29,9 +34,11 @@ const defaultFilters: RequestFilters = {
 // ─── Hook ──────────────────────────────────────────────
 
 export function useRequestFilters(requests: Request[]) {
-    const [filters, setFilters] = useState<RequestFilters>(defaultFilters);
+    const [filterState, setFilters] = useState<RequestFilters>(defaultFilters);
+    const [search, setSearchQuery] = useQueryText();
+    const filters = useMemo(() => ({ ...filterState, search }), [filterState, search]);
 
-    const filtered = useMemo(() => {
+    const results = useMemo(() => {
         let result = requests;
 
         // Search
@@ -83,13 +90,16 @@ export function useRequestFilters(requests: Request[]) {
             }
         });
 
-        return result;
+        return {
+            calendarFiltered: result,
+            filtered: result.filter((request) => filters.statuses.has(request.status)),
+        };
     }, [requests, filters]);
 
     // ─── Actions ───────────────────────────────────────
 
     function setSearch(search: string) {
-        setFilters((f) => ({ ...f, search }));
+        setSearchQuery(search);
     }
 
     function toggleCategory(category: Category) {
@@ -110,6 +120,15 @@ export function useRequestFilters(requests: Request[]) {
         });
     }
 
+    function toggleStatus(status: Status) {
+        setFilters((f) => {
+            const next = new Set(f.statuses);
+            if (next.has(status)) next.delete(status);
+            else next.add(status);
+            return { ...f, statuses: next };
+        });
+    }
+
     function setDateRange(start: string, end: string) {
         setFilters((f) => ({ ...f, dateRange: { start, end } }));
     }
@@ -120,21 +139,30 @@ export function useRequestFilters(requests: Request[]) {
 
     function reset() {
         setFilters(defaultFilters);
+        setSearchQuery("");
     }
 
     const hasActiveFilters =
         filters.categories.size > 0 ||
         filters.priorities.size > 0 ||
+        !areSetsEqual(filters.statuses, defaultFilters.statuses) ||
         filters.dateRange.start !== "" ||
         filters.dateRange.end !== "";
 
+    // True when the current view includes archived requests, so callers know
+    // they must have loaded them.
+    const includesArchived = filters.statuses.has("archived");
+
     return {
         filters,
-        filtered,
+        filtered: results.filtered,
+        calendarFiltered: results.calendarFiltered,
         hasActiveFilters,
+        includesArchived,
         setSearch,
         toggleCategory,
         togglePriority,
+        toggleStatus,
         setDateRange,
         setSort,
         reset,

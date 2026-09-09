@@ -1,9 +1,8 @@
-import { createPortal } from 'react-dom'
-import { useCallback, useEffect, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
+import { Menu } from '@base-ui/react/menu'
 import { ArrowDownToLine, ArrowUpToLine, Copy, Trash2 } from 'lucide-react'
 import { cn } from '@moc/utils/cn'
 import { useOverlayStack } from '@moc/ui/components/overlays/overlay-provider'
-import { useAnchorPosition } from '@moc/ui/components/overlays/overlay-primitives'
+import type { ReactNode } from 'react'
 
 type DocEditorBlockMenuProps = {
     anchorElement: HTMLElement | null
@@ -26,91 +25,43 @@ const menuItems: DocEditorMenuItem[] = [
     { id: 'move-bottom', icon: <ArrowDownToLine size={14} />, label: 'Move to bottom' },
 ]
 
-function isSeparator(item: DocEditorMenuItem) {
-    return item.id === 'separator'
+function DocEditorBlockMenuItem({ item, onAction }: { item: DocEditorMenuItem; onAction: (action: string) => void }) {
+    function handleClick() {
+        onAction(item.id)
+    }
+
+    return (
+        <Menu.Item
+            className={cn(
+                'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 text-sm outline-none data-[highlighted]:bg-secondary',
+                item.danger ? 'text-error' : 'text-secondary',
+            )}
+            onClick={handleClick}
+        >
+            {item.icon}
+            {item.label}
+        </Menu.Item>
+    )
 }
 
 export function DocEditorBlockMenu({ anchorElement, onAction, onClose }: DocEditorBlockMenuProps) {
-    const [menuElement, setMenuElement] = useState<HTMLDivElement | null>(null)
-    const { state: overlayState, meta: overlayMeta } = useOverlayStack()
-    const position = useAnchorPosition(anchorElement, menuElement, true, 'bottom', 6)
+    const { state: overlayState } = useOverlayStack()
 
-    const handleMenuRef = useCallback((node: HTMLDivElement | null) => {
-        setMenuElement(node)
-    }, [])
-
-    useEffect(() => {
-        function handleMouseDown(event: MouseEvent) {
-            if (menuElement && !menuElement.contains(event.target as Node)) {
-                onClose()
-            }
-        }
-
-        const timer = window.setTimeout(() => {
-            document.addEventListener('mousedown', handleMouseDown)
-        }, 50)
-
-        return () => {
-            window.clearTimeout(timer)
-            document.removeEventListener('mousedown', handleMouseDown)
-        }
-    }, [menuElement, onClose])
-
-    function handleAction(action: string) {
-        onAction(action)
+    function handleOpenChange(open: boolean) {
+        if (!open) onClose()
     }
 
-    function handleButtonMouseDown(event: ReactMouseEvent<HTMLButtonElement>) {
-        event.preventDefault()
-    }
-
-    function renderMenuItem(item: DocEditorMenuItem) {
-        if (isSeparator(item)) {
-            return <div key={item.id} className="my-1 h-px bg-secondary" />
-        }
-
-        function handleClick() {
-            handleAction(item.id)
-        }
-
-        return (
-            <button
-                key={item.id}
-                type="button"
-                className={cn(
-                    'flex items-center gap-2 rounded-sm px-2 py-1 text-sm hover:bg-secondary',
-                    item.danger ? 'text-error' : 'text-secondary',
-                )}
-                onMouseDown={handleButtonMouseDown}
-                onClick={handleClick}
-            >
-                {item.icon}
-                {item.label}
-            </button>
-        )
-    }
-
-    const menuStyle: CSSProperties = {
-        top: position.top,
-        left: position.left,
-        maxHeight: position.maxHeight,
-        zIndex: overlayMeta.baseZIndex + 50,
-        visibility: position.isPositioned ? 'visible' : 'hidden',
-    }
-
-    const menu = (
-        <div
-            ref={handleMenuRef}
-            className="pointer-events-auto fixed z-50 flex min-w-48 flex-col overflow-x-hidden overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg"
-            style={menuStyle}
-        >
-            {menuItems.map(renderMenuItem)}
-        </div>
+    return (
+        <Menu.Root open onOpenChange={handleOpenChange}>
+            <Menu.Portal container={overlayState.rootElement ?? undefined}>
+                <Menu.Positioner anchor={anchorElement} side="bottom" align="center" sideOffset={6} className="z-[9050] outline-none">
+                    <Menu.Popup className="pointer-events-auto flex min-w-48 flex-col overflow-x-hidden overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none">
+                        {menuItems.map((item) => item.id === 'separator'
+                            ? <Menu.Separator key={item.id} className="my-1 h-px bg-secondary" />
+                            : <DocEditorBlockMenuItem key={item.id} item={item} onAction={onAction} />)}
+                    </Menu.Popup>
+                </Menu.Positioner>
+            </Menu.Portal>
+        </Menu.Root>
     )
-
-    if (!overlayState.rootElement) {
-        return menu
-    }
-
-    return createPortal(menu, overlayState.rootElement)
 }
