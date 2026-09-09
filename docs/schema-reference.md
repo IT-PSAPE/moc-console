@@ -367,6 +367,7 @@ Important notes:
 - `broadcast_items` are ordered by `sort_order`; the public player continuously loops the playlist and automatically preloads the next item.
 - Broadcast metadata and assets are publicly readable by design. Public assets live in the `broadcast-media` storage bucket so the player can preload the next item without signed URLs.
 - Broadcast and item changes are included in the `supabase_realtime` publication so an open player can refresh its queue without a reload.
+- Broadcast deletion uses `delete_broadcast_with_items` to remove the playlist rows and return every Storage path; the console then deletes those now-unreferenced objects from `broadcast-media`.
 
 ## Integrations
 

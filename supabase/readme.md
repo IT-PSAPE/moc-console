@@ -160,6 +160,12 @@ The first tracked reliability migration is:
     booking domain — without it the console's Venues settings tab and the
     venue booking notification enrichment are both dead.
 
+15. `20260909120000_delete_broadcast_with_items` — source:
+    [`migrations/20260909120000_delete_broadcast_with_items.sql`](migrations/20260909120000_delete_broadcast_with_items.sql).
+    It adds a permission-checked broadcast deletion RPC that removes the
+    playlist rows transactionally and returns their Storage paths so the console
+    can delete every uploaded media object after its database reference is gone.
+
 ## Script history
 
 The phase files are the consolidated historical baseline:
