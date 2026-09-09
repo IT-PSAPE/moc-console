@@ -18,7 +18,7 @@ export function buildRequestScreenshotFileName(title: string): string {
   return `${slug || 'request'}-details.png`
 }
 
-export async function captureElementAsPngFile(element: HTMLElement, fileName: string): Promise<File> {
+export async function captureElementAsPngBlob(element: HTMLElement): Promise<Blob> {
   const rect = element.getBoundingClientRect()
   const width = Math.ceil(rect.width)
   const height = Math.ceil(rect.height)
@@ -65,8 +65,12 @@ export async function captureElementAsPngFile(element: HTMLElement, fileName: st
   context.fillRect(0, 0, width, height)
   context.drawImage(image, 0, 0, width, height)
 
-  const blob = await canvasToBlob(canvas)
-  return new File([blob], fileName, { type: 'image/png' })
+  return canvasToBlob(canvas)
+}
+
+export async function captureElementAsPngFile(element: HTMLElement, fileName: string): Promise<File> {
+  const blob = await captureElementAsPngBlob(element)
+  return new File([blob], fileName, { type: blob.type })
 }
 
 function cloneElementTree(source: HTMLElement): HTMLElement {

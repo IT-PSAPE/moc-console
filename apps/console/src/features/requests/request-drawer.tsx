@@ -280,6 +280,7 @@ function RequestDrawerContent({
           <div className="flex-1" />
           <RequestShareActions.LinkButton />
           <RequestShareActions.ScreenshotButton />
+          <RequestShareActions.CopyButton />
           <Dropdown placement="bottom">
             <Dropdown.Trigger>
               <Button.Icon variant="ghost" icon={<EllipsisVertical />} />

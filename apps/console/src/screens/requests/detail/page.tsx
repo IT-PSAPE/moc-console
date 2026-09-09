@@ -92,6 +92,7 @@ function RequestDetailContent({ request, assignees, setAssignees, syncRequest }:
                     )}
                     <RequestShareActions.LinkButton variant="secondary" />
                     <RequestShareActions.ScreenshotButton variant="secondary" />
+                    <RequestShareActions.CopyButton variant="secondary" />
                     <Dropdown placement="bottom">
                         <Dropdown.Trigger>
                             <Button.Icon variant="secondary" icon={<EllipsisVertical />} />

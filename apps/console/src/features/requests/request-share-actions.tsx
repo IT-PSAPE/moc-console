@@ -1,6 +1,6 @@
 import { Button } from '@moc/ui/components/controls/button'
 import type { Request } from '@moc/types/requests'
-import { ImageUp, Loader, Share2 } from 'lucide-react'
+import { Check, Copy, ImageUp, Loader, Share2 } from 'lucide-react'
 import {
   createContext,
   useContext,
@@ -56,6 +56,27 @@ function ScreenshotButton({ variant = 'ghost' }: { variant?: IconVariant }) {
   )
 }
 
+function CopyButton({ variant = 'ghost' }: { variant?: IconVariant }) {
+  const { actions, state } = useRequestShareActionsContext()
+
+  return (
+    <Button.Icon
+      variant={variant}
+      icon={
+        state.isCopyingScreenshot
+          ? <Loader className="animate-spin" />
+          : state.hasCopiedScreenshot
+            ? <Check className="text-utility-green-700" />
+            : <Copy />
+      }
+      onClick={actions.copyScreenshot}
+      disabled={state.isSharingLink || state.isSharingScreenshot || state.isCopyingScreenshot}
+      aria-label="Copy request screenshot"
+      title="Copy request screenshot"
+    />
+  )
+}
+
 function useRequestShareActionsContext() {
   const context = useContext(RequestShareActionsContext)
 
@@ -67,6 +88,7 @@ function useRequestShareActionsContext() {
 }
 
 export const RequestShareActions = {
+  CopyButton,
   Root,
   LinkButton,
   ScreenshotButton,

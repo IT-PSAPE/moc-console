@@ -1,10 +1,11 @@
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import type { Request } from '@moc/types/requests'
 import { getErrorMessage } from '@moc/utils/get-error-message'
-import { useCallback, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import {
   buildRequestScreenshotFileName,
   buildRequestShareUrl,
+  captureElementAsPngBlob,
   captureElementAsPngFile,
 } from './request-share-utils'
 
@@ -15,9 +16,20 @@ type UseRequestShareOptions = {
 
 export function useRequestShare({ request, targetRef }: UseRequestShareOptions) {
   const { toast } = useFeedback()
+  const copyResetTimeoutRef = useRef<number | null>(null)
   const [isSharingLink, setIsSharingLink] = useState(false)
   const [isSharingScreenshot, setIsSharingScreenshot] = useState(false)
+  const [isCopyingScreenshot, setIsCopyingScreenshot] = useState(false)
+  const [hasCopiedScreenshot, setHasCopiedScreenshot] = useState(false)
   const shareUrl = buildRequestShareUrl(request.id)
+
+  useEffect(() => {
+    return () => {
+      if (copyResetTimeoutRef.current !== null) {
+        window.clearTimeout(copyResetTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const shareLink = useCallback(async () => {
     if (!navigator.share) {
@@ -102,12 +114,76 @@ export function useRequestShare({ request, targetRef }: UseRequestShareOptions) 
     }
   }, [request.title, targetRef, toast])
 
+  const copyScreenshot = useCallback(async () => {
+    if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+      toast({
+        title: 'Image copy is not supported here',
+        description: 'This browser does not support copying images to the clipboard.',
+        variant: 'error',
+      })
+      return
+    }
+
+    const target = targetRef.current
+    if (!target) {
+      toast({
+        title: 'Could not copy screenshot',
+        description: 'The request details are not ready yet.',
+        variant: 'error',
+      })
+      return
+    }
+
+    setIsCopyingScreenshot(true)
+
+    try {
+      const blob = await captureElementAsPngBlob(target)
+
+      if (ClipboardItem.supports && !ClipboardItem.supports(blob.type)) {
+        toast({
+          title: 'Image copy is not supported here',
+          description: `This browser does not support copying ${blob.type} to the clipboard.`,
+          variant: 'error',
+        })
+        return
+      }
+
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          [blob.type]: blob,
+        }),
+      ])
+
+      if (copyResetTimeoutRef.current !== null) {
+        window.clearTimeout(copyResetTimeoutRef.current)
+      }
+
+      setHasCopiedScreenshot(true)
+      copyResetTimeoutRef.current = window.setTimeout(() => {
+        setHasCopiedScreenshot(false)
+        copyResetTimeoutRef.current = null
+      }, 2000)
+      toast({ title: 'Screenshot copied', variant: 'success' })
+    } catch (error) {
+      toast({
+        title: 'Could not copy screenshot',
+        description: getErrorMessage(error, 'The request screenshot could not be copied.'),
+        variant: 'error',
+      })
+    } finally {
+      setIsCopyingScreenshot(false)
+    }
+  }, [targetRef, toast])
+
   return {
     state: {
+      hasCopiedScreenshot,
+      isCopyingScreenshot,
       isSharingLink,
       isSharingScreenshot,
     },
     actions: {
+      copyScreenshot,
       shareLink,
       shareScreenshot,
     },
