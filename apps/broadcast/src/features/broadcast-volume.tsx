@@ -14,7 +14,7 @@ export function BroadcastVolume() {
       <Button.Icon
         aria-label={isMuted ? "Unmute" : "Mute"}
         variant="ghost"
-        className="size-7 min-w-0 shrink-0 rounded-full border-transparent text-quaternary hover:text-primary [&_svg]:size-4"
+        className="size-11 min-w-0 shrink-0 rounded-full border-transparent text-quaternary hover:text-primary [&_svg]:size-4"
         icon={isMuted ? <VolumeX /> : <Volume1 />}
         onClick={toggleMuted}
       />

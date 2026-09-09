@@ -29,8 +29,19 @@ export function BroadcastQueue() {
   const itemCountLabel = `${broadcast.items.length} ${broadcast.items.length === 1 ? "item" : "items"}`
 
   useEffect(() => {
-    const activeQueueItem = queueRef.current?.querySelector<HTMLElement>('[aria-current="true"]')
-    activeQueueItem?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+    const queue = queueRef.current
+    const activeQueueItem = queue?.querySelector<HTMLElement>('[aria-current="true"]')
+    if (!queue || !activeQueueItem) return
+
+    const queueBounds = queue.getBoundingClientRect()
+    const itemBounds = activeQueueItem.getBoundingClientRect()
+    const overflowAbove = itemBounds.top - queueBounds.top
+    const overflowBelow = itemBounds.bottom - queueBounds.bottom
+
+    // Scroll only the playlist; advancing tracks must not move the mobile player.
+    if (overflowAbove < 0 || overflowBelow > 0) {
+      queue.scrollBy({ top: overflowAbove < 0 ? overflowAbove : overflowBelow, behavior: "smooth" })
+    }
   }, [activeItemId, queueRef])
 
   function renderItem(item: BroadcastItem) {
@@ -50,14 +61,14 @@ export function BroadcastQueue() {
   }
 
   return (
-    <aside className="flex max-h-[42dvh] min-h-0 min-w-0 max-w-full flex-col gap-2 pt-[max(1.5rem,env(safe-area-inset-top))] lg:max-h-none pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-1" aria-label="Broadcast queue">
+    <aside className="mx-auto flex max-h-[max(16rem,42dvh)] min-h-0 w-full min-w-0 max-w-112 flex-col gap-2 pt-2 pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] lg:mx-0 lg:max-h-none lg:max-w-full lg:pt-[max(1.5rem,env(safe-area-inset-top))] lg:pl-1" aria-label="Broadcast queue">
       <div className="px-1.5">
         <Label.sm className="block truncate">{broadcast.title}</Label.sm>
         <Paragraph.xs className="text-quaternary">{`Playlist · ${itemCountLabel}`}</Paragraph.xs>
       </div>
       <ol
         ref={queueRef}
-        className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto"
+        className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-y-contain"
         style={getFadeStyle(edges.hasAbove, edges.hasBelow)}
       >
         {broadcast.items.map(renderItem)}

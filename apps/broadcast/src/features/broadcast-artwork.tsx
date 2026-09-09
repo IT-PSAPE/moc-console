@@ -7,7 +7,7 @@ export function BroadcastArtwork() {
 
   return (
     <BroadcastCover
-      className="aspect-square w-full rounded-xl"
+      className="aspect-square w-full max-w-[min(16rem,65vw,34svh)] rounded-xl lg:max-w-none"
       coverUrl={display?.coverUrl ?? null}
       iconClassName="size-10"
       title={display?.title ?? ""}

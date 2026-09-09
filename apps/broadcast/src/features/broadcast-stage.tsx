@@ -17,7 +17,7 @@ export function BroadcastStage({ children, className, ...props }: HTMLAttributes
     <section
       ref={setPlayerRoot}
       aria-label={`${broadcast.title} player`}
-      className={cn("grid h-dvh w-full grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-primary text-primary lg:grid-cols-[minmax(0,1fr)_21rem] lg:grid-rows-1", className)}
+      className={cn("grid h-dvh w-full grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(16rem,1fr)] overflow-y-auto bg-primary text-primary lg:grid-cols-[minmax(0,1fr)_21rem] lg:grid-rows-1 lg:overflow-hidden", className)}
       {...props}
     >
       {children}
@@ -26,14 +26,13 @@ export function BroadcastStage({ children, className, ...props }: HTMLAttributes
 }
 
 /**
- * Cover and controls are one column of the same width, sized from whichever of
- * the column's two dimensions runs out first, so they stay grouped instead of
- * drifting apart as the viewport grows.
+ * Mobile keeps the player at its natural height so the controls remain reachable.
+ * Desktop sizes the grouped cover and controls against the available column height.
  */
 export function BroadcastMain({ children }: { children: ReactNode }) {
   return (
-    <div className="@container flex min-h-0 min-w-0 items-center justify-center px-4 py-[max(1rem,env(safe-area-inset-top))] lg:px-8">
-      <div className="flex w-[min(26rem,100cqh_-_13rem)] min-w-0 flex-col gap-5">
+    <div className="flex min-h-0 min-w-0 items-center justify-center pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-6 pl-[max(1rem,env(safe-area-inset-left))] lg:[container-type:size] lg:px-8 lg:pb-4">
+      <div className="flex w-full min-w-0 max-w-104 flex-col gap-5 lg:w-[min(26rem,max(12rem,100cqh_-_16rem))] lg:max-h-full lg:overflow-y-auto">
         {children}
       </div>
     </div>
