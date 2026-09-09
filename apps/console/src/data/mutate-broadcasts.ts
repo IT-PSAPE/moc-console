@@ -37,6 +37,15 @@ export type UpdateBroadcastParams = {
   onUploadStatusChange?: BroadcastUploadStatusChange
 }
 
+export type DeleteBroadcastParams = {
+  id: string
+  workspaceId: string
+}
+
+export type DeleteBroadcastResult = {
+  storageCleanupError: Error | null
+}
+
 type UploadedBroadcastItem = {
   clientId: string
   durationSeconds: number | null
@@ -208,4 +217,26 @@ export async function updateBroadcast(params: UpdateBroadcastParams): Promise<Br
 
   await removeStoragePaths(removedItems.map((item) => item.storagePath)).catch(() => undefined)
   return reloadBroadcast(params.id, params.workspaceId)
+}
+
+export async function deleteBroadcast(params: DeleteBroadcastParams): Promise<DeleteBroadcastResult> {
+  const { data, error } = await supabase.rpc("delete_broadcast_with_items", {
+    p_broadcast_id: params.id,
+    p_workspace_id: params.workspaceId,
+  })
+
+  if (error) throw new Error(error.message)
+
+  const storagePaths = ((data ?? []) as { storage_path: string }[]).map((item) => item.storage_path)
+
+  try {
+    await removeStoragePaths(storagePaths)
+    return { storageCleanupError: null }
+  } catch (cleanupError) {
+    return {
+      storageCleanupError: cleanupError instanceof Error
+        ? cleanupError
+        : new Error("The uploaded broadcast files could not be removed."),
+    }
+  }
 }

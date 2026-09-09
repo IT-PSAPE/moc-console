@@ -9,6 +9,7 @@ import { Input } from "@moc/ui/components/form/input"
 import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar"
 import { Page } from "@moc/ui/components/layout/page"
 import { SplitPanel } from "@moc/ui/components/layout/split-panel"
+import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
 import { Plus, RadioTower, Search } from "lucide-react"
 import type { ChangeEvent } from "react"
 import { BroadcastDetailPanel } from "./broadcast-detail-panel"
@@ -26,6 +27,10 @@ function BroadcastsCollection() {
 
   function handleDetailOpenChange(open: boolean) {
     if (!open) actions.closeDetail()
+  }
+
+  function handleDeleteOpenChange(open: boolean) {
+    actions.setDeleteOpen(open)
   }
 
   function renderBroadcast(broadcast: Broadcast) {
@@ -97,12 +102,21 @@ function BroadcastsCollection() {
             onOpenChange={actions.setEditorOpen}
             onSubmit={actions.submitEditor}
           />
+          <ConfirmationDialog
+            open={state.deleteTarget !== null}
+            onOpenChange={handleDeleteOpenChange}
+            title="Delete broadcast?"
+            description="This permanently deletes the playlist and all of its uploaded files. This can't be undone."
+            confirmLabel="Delete broadcast"
+            isConfirming={state.isDeleting}
+            onConfirm={actions.confirmDelete}
+          />
         </Page>
       </SplitPanel.Primary>
       <SplitPanel.ResizeHandle />
       <SplitPanel.Detail>
         {state.selectedBroadcast ? (
-          <BroadcastDetailPanel broadcast={state.selectedBroadcast} canEdit={meta.canEdit} onEdit={actions.openEdit} />
+          <BroadcastDetailPanel broadcast={state.selectedBroadcast} canDelete={meta.canDelete} canEdit={meta.canEdit} onDelete={actions.openDelete} onEdit={actions.openEdit} />
         ) : null}
       </SplitPanel.Detail>
     </SplitPanel>

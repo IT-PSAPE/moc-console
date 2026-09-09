@@ -7,13 +7,15 @@ import { MetaRow } from "@moc/ui/components/display/meta-row"
 import { Label, Paragraph, Title } from "@moc/ui/components/display/text"
 import { SplitPanel } from "@moc/ui/components/layout/split-panel"
 import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time"
-import { Check, Clock, Copy, FileAudio, FileVideo, Link2, ListMusic, Pencil } from "lucide-react"
+import { Check, Clock, Copy, FileAudio, FileVideo, Link2, ListMusic, Pencil, Trash2 } from "lucide-react"
 import { formatFileSize } from "@moc/utils/file-constraints"
 import { useBroadcastDetail } from "./use-broadcast-detail"
 
 type BroadcastDetailPanelProps = {
   broadcast: Broadcast
+  canDelete: boolean
   canEdit: boolean
+  onDelete: (broadcast: Broadcast) => void
   onEdit: (broadcast: Broadcast) => void
 }
 
@@ -21,11 +23,15 @@ function formatItemCount(count: number): string {
   return `${count} ${count === 1 ? "item" : "items"}`
 }
 
-export function BroadcastDetailPanel({ broadcast, canEdit, onEdit }: BroadcastDetailPanelProps) {
+export function BroadcastDetailPanel({ broadcast, canDelete, canEdit, onDelete, onEdit }: BroadcastDetailPanelProps) {
   const detail = useBroadcastDetail(broadcast, onEdit)
 
   function handleCopy() {
     void detail.actions.copyPublicUrl()
+  }
+
+  function handleDelete() {
+    onDelete(broadcast)
   }
 
   function renderItem(item: BroadcastItem, index: number) {
@@ -50,6 +56,7 @@ export function BroadcastDetailPanel({ broadcast, canEdit, onEdit }: BroadcastDe
         <SplitPanel.Close aria-label="Close broadcast" />
         <div className="flex-1" />
         {canEdit ? <Button.Icon aria-label="Edit broadcast" variant="ghost" icon={<Pencil />} onClick={detail.actions.edit} /> : null}
+        {canDelete ? <Button.Icon aria-label="Delete broadcast" variant="danger-secondary" icon={<Trash2 />} onClick={handleDelete} /> : null}
       </SplitPanel.Header>
 
       <SplitPanel.Content className="py-4">
