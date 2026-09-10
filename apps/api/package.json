@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "bun x tsc -b --force",
+    "build": "npm x tsc -b --force",
     "lint": "eslint .",
-    "test": "bun test"
+    "test": "npm test"
   },
   "dependencies": {
     "@moc/notifications": "*",

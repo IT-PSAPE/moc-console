@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "bun run build",
+  "buildCommand": "npm run build",
   "crons": [
     { "path": "/api/cron/weekly-archive", "schedule": "0 0 * * 1" },
     { "path": "/api/cron/stale-items", "schedule": "0 0 * * *" },
