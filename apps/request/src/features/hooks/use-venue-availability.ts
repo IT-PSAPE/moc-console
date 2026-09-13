@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { fetchPublicVenues } from '@/data/fetch-venues'
+import { fetchPublicVenueEvents } from '@/data/fetch-venue-events'
 import { fetchVenueAvailability } from '@/data/fetch-venue-availability'
 import { formatTime } from '@/lib/utils'
-import type { PublicVenue } from '@moc/types/venues'
+import type { PublicVenue, PublicVenueEvent } from '@moc/types/venues'
 import type { VenueAvailabilitySlot } from '@/types/venue-booking'
 
 export type VenueSlotOption = {
@@ -16,6 +17,13 @@ type SlotsState = {
   timeZone: string | null
   error: string | null
   settledKey: string | null
+}
+
+type ListsState = {
+  venues: PublicVenue[]
+  events: PublicVenueEvent[]
+  loading: boolean
+  error: string | null
 }
 
 function toSlotOption(slot: VenueAvailabilitySlot): VenueSlotOption {
@@ -32,15 +40,13 @@ function getErrorMessage(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback
 }
 
-// Loads the venue list once, then reloads the selected day's slot grid
-// whenever the chosen venue or date changes. Components read this instead of
-// fetching directly. Loading state is derived from whether the last
+// Loads the venue and event lists once, then reloads the selected day's slot
+// grid whenever the chosen venue or date changes. Components read this instead
+// of fetching directly. Loading state is derived from whether the last
 // settled fetch matches the current (venueId, bookingDate) key, rather than
 // toggled with a synchronous setState at the top of the effect.
 export function useVenueAvailability(venueId: string, bookingDate: string) {
-  const [venues, setVenues] = useState<PublicVenue[]>([])
-  const [venuesLoading, setVenuesLoading] = useState(true)
-  const [venuesError, setVenuesError] = useState<string | null>(null)
+  const [lists, setLists] = useState<ListsState>({ venues: [], events: [], loading: true, error: null })
 
   const [slotsState, setSlotsState] = useState<SlotsState>({ slots: [], timeZone: null, error: null, settledKey: null })
   const slotsKey = `${venueId}::${bookingDate}`
@@ -48,15 +54,15 @@ export function useVenueAvailability(venueId: string, bookingDate: string) {
   useEffect(() => {
     let cancelled = false
 
-    fetchPublicVenues()
-      .then((result) => {
-        if (!cancelled) setVenues(result)
+    // The two lists fill the same row of dropdowns, so they are awaited
+    // together: reporting one as ready while the other is still loading would
+    // only make that row settle twice.
+    Promise.all([fetchPublicVenues(), fetchPublicVenueEvents()])
+      .then(([venues, events]) => {
+        if (!cancelled) setLists({ venues, events, loading: false, error: null })
       })
       .catch((err: unknown) => {
-        if (!cancelled) setVenuesError(getErrorMessage(err, 'Failed to load venues'))
-      })
-      .finally(() => {
-        if (!cancelled) setVenuesLoading(false)
+        if (!cancelled) setLists({ venues: [], events: [], loading: false, error: getErrorMessage(err, 'Failed to load venues') })
       })
 
     return () => {
@@ -85,13 +91,14 @@ export function useVenueAvailability(venueId: string, bookingDate: string) {
 
   const hasVenueAndDate = Boolean(venueId && bookingDate)
   const slotsCurrent = slotsState.settledKey === slotsKey
-  const selectedVenue = venues.find((venue) => venue.id === venueId) ?? null
+  const selectedVenue = lists.venues.find((venue) => venue.id === venueId) ?? null
 
   return {
     state: {
-      venues,
-      venuesLoading,
-      venuesError,
+      venues: lists.venues,
+      events: lists.events,
+      listsLoading: lists.loading,
+      listsError: lists.error,
       selectedVenue,
       slots: slotsCurrent ? slotsState.slots : [],
       timeZone: slotsCurrent ? slotsState.timeZone : null,

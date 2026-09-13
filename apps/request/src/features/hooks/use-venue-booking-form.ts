@@ -1,5 +1,5 @@
 import { useReducer, useCallback } from 'react'
-import { VENUE_SLOT_MINUTES } from '@moc/types/venues'
+import { VENUE_SLOT_MINUTES, VENUE_EVENT_OTHER_ID } from '@moc/types/venues'
 import { submitPublicVenueBooking } from '@/data/submit-venue-booking'
 import { getVenueBookingStepErrors } from '@/features/public-flow-validation'
 import { useStepValidation } from '@/features/hooks/use-step-validation'
@@ -21,6 +21,7 @@ export type VenueBookingFormState = {
 type VenueBookingFormAction =
   | { type: 'SET_FIELD'; field: VenueBookingTextField; value: string }
   | { type: 'SET_VENUE'; venueId: string }
+  | { type: 'SET_EVENT'; eventId: string }
   | { type: 'SET_BOOKING_DATE'; bookingDate: string }
   | { type: 'SET_SLOTS'; slotStarts: string[] }
   | { type: 'NEXT_STEP' }
@@ -29,19 +30,21 @@ type VenueBookingFormAction =
   | { type: 'SUBMIT_SUCCESS' }
   | { type: 'SUBMIT_ERROR'; error: string }
 
-const initialData: VenueBookingFormData = {
-  title: '',
-  requestedBy: '',
-  who: '',
-  what: '',
-  whenText: '',
-  whereText: '',
-  why: '',
-  how: '',
-  notes: '',
-  venueId: '',
-  bookingDate: '',
-  slotStarts: [],
+const LAST_STEP = 2
+
+// Today, not blank: with a date already chosen, picking a venue is enough for
+// the times to appear on their own. Nobody has to click a date — least of all
+// the date the calendar is already showing as selected — before the column
+// fills in.
+function getInitialData(): VenueBookingFormData {
+  return {
+    requestedBy: '',
+    venueId: '',
+    eventId: '',
+    eventOther: '',
+    bookingDate: formatCalendarDateKey(new Date()),
+    slotStarts: [],
+  }
 }
 
 // The booked window is derived from the selected (contiguous, chronological)
@@ -63,12 +66,22 @@ function reducer(state: VenueBookingFormState, action: VenueBookingFormAction): 
       return { ...state, data: { ...state.data, [action.field]: action.value } }
     case 'SET_VENUE':
       return { ...state, data: { ...state.data, venueId: action.venueId, slotStarts: [] } }
+    case 'SET_EVENT':
+      // Moving off "Other" drops the description that only belonged to it.
+      return {
+        ...state,
+        data: {
+          ...state.data,
+          eventId: action.eventId,
+          eventOther: action.eventId === VENUE_EVENT_OTHER_ID ? state.data.eventOther : '',
+        },
+      }
     case 'SET_BOOKING_DATE':
       return { ...state, data: { ...state.data, bookingDate: action.bookingDate, slotStarts: [] } }
     case 'SET_SLOTS':
       return { ...state, data: { ...state.data, slotStarts: action.slotStarts } }
     case 'NEXT_STEP':
-      return { ...state, step: Math.min(state.step + 1, 3) }
+      return { ...state, step: Math.min(state.step + 1, LAST_STEP) }
     case 'PREV_STEP':
       return { ...state, step: Math.max(state.step - 1, 1) }
     case 'SUBMIT_START':
@@ -80,38 +93,37 @@ function reducer(state: VenueBookingFormState, action: VenueBookingFormAction): 
   }
 }
 
-const errorIdByField: Partial<Record<VenueBookingTextField, string>> = {
-  title: 'title',
+const errorIdByField: Record<VenueBookingTextField, string> = {
   requestedBy: 'requested-by',
-  who: 'who',
-  what: 'what',
-  whenText: 'when-text',
-  whereText: 'where-text',
-  why: 'why',
-  how: 'how',
+  eventOther: 'event-other',
 }
 
 export function useVenueBookingForm() {
-  const [state, dispatch] = useReducer(reducer, {
+  const [state, dispatch] = useReducer(reducer, undefined, () => ({
     step: 1,
-    data: initialData,
+    data: getInitialData(),
     submitting: false,
     error: null,
-  })
+  }))
   const validation = useStepValidation()
   const { errors: validationErrors } = validation.state
   const { clearError, validate } = validation.actions
 
   const setField = useCallback((field: VenueBookingTextField, value: string) => {
     dispatch({ type: 'SET_FIELD', field, value })
-    const errorId = errorIdByField[field]
-    if (errorId) clearError(errorId)
+    clearError(errorIdByField[field])
   }, [clearError])
 
   const setVenue = useCallback((venueId: string) => {
     dispatch({ type: 'SET_VENUE', venueId })
     clearError('venue')
     clearError('venue-slots')
+  }, [clearError])
+
+  const setEvent = useCallback((eventId: string) => {
+    dispatch({ type: 'SET_EVENT', eventId })
+    clearError('event')
+    clearError('event-other')
   }, [clearError])
 
   const setBookingDate = useCallback((date: Date) => {
@@ -151,6 +163,7 @@ export function useVenueBookingForm() {
 
   return {
     state: { ...state, validationErrors, bookingWindow: deriveBookingWindow(state.data.slotStarts) },
-    actions: { setField, setVenue, setBookingDate, setSlots, nextStep, prevStep, submit, validateCurrentStep },
+    actions: { setField, setVenue, setEvent, setBookingDate, setSlots, nextStep, prevStep, submit, validateCurrentStep },
+    meta: { isLastStep: state.step === LAST_STEP, totalSteps: LAST_STEP },
   }
 }

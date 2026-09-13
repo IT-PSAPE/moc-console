@@ -57,7 +57,6 @@ export const BOOKING_STEPS = [
 
 export const VENUE_STEPS = [
   { label: 'Details' },
-  { label: 'Schedule' },
   { label: 'Review' },
 ]
 

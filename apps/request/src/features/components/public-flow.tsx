@@ -8,7 +8,7 @@ type PublicFlowRootProps<T extends ElementType> = {
 function PublicFlowRoot<T extends ElementType = 'div'>({ as, className, ...props }: PublicFlowRootProps<T>) {
   const Component = as ?? 'div'
 
-  return <Component className={cn("mx-auto w-full max-w-content-sm", className)} {...props} />
+  return <Component className={cn("mx-auto w-full max-w-content", className)} {...props} />
 }
 
 function PublicFlowProgress({ className, ...props }: ComponentPropsWithoutRef<'div'>) {

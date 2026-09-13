@@ -2,9 +2,9 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@moc/ui/components/controls/button'
 import { Alert } from '@moc/ui/components/feedback/alert'
 import { Spinner } from '@moc/ui/components/feedback/spinner'
+import { VENUE_EVENT_OTHER_ID } from '@moc/types/venues'
 import { PublicLayout } from '@/features/components/public-layout'
 import { VenueBookingDetails } from '@/features/components/venue-booking-details'
-import { VenueBookingSchedule } from '@/features/components/venue-booking-schedule'
 import { VenueBookingReview } from '@/features/components/venue-booking-review'
 import { useVenueBookingForm } from '@/features/hooks/use-venue-booking-form'
 import { useVenueAvailability } from '@/features/hooks/use-venue-availability'
@@ -14,20 +14,29 @@ import { StepIndicatorBar } from '@/features/components/step-indicator-bar'
 import { FlowHeader } from '@/features/components/flow-header'
 import { PublicFlow } from '@/features/components/public-flow'
 import { StepErrorSummary } from '@/features/components/step-error-summary'
+import type { PublicVenueEvent } from '@moc/types/venues'
+import type { VenueBookingFormData } from '@/types/venue-booking'
 import type { FormEvent } from 'react'
 
 const venueStepLabels = VENUE_STEPS.map((step) => step.label)
 
+// What the booking will be called, resolved the same way the submit RPC
+// resolves it: the chosen event's name, or the description typed under
+// "Other".
+function resolveEventLabel(data: VenueBookingFormData, events: PublicVenueEvent[]): string {
+  if (data.eventId === VENUE_EVENT_OTHER_ID) return data.eventOther
+  return events.find((event) => event.id === data.eventId)?.name ?? ''
+}
+
 export function VenueScreen() {
   const navigate = useNavigate()
-  const { state, actions } = useVenueBookingForm()
+  const { state, actions, meta } = useVenueBookingForm()
   const availability = useVenueAvailability(state.data.venueId, state.data.bookingDate)
-  const isLastStep = state.step === 3
 
   async function handleNext() {
     if (!actions.validateCurrentStep()) return
 
-    if (isLastStep) {
+    if (meta.isLastStep) {
       const result = await actions.submit()
       if (result) {
         navigate(routes.publicConfirmation, { state: { type: 'venue_booking', trackingCode: result.trackingCode, title: result.title } })
@@ -56,36 +65,44 @@ export function VenueScreen() {
 
       <PublicFlow as="form" noValidate onSubmit={handleSubmit}>
         <PublicFlow.Progress>
-          <StepIndicatorBar currentStep={state.step} totalSteps={3} labels={venueStepLabels} />
+          <StepIndicatorBar currentStep={state.step} totalSteps={meta.totalSteps} labels={venueStepLabels} />
         </PublicFlow.Progress>
 
         <StepErrorSummary errors={state.validationErrors} />
 
-        {state.step === 1 && <VenueBookingDetails data={state.data} onChange={actions.setField} errors={state.validationErrors} />}
-        {state.step === 2 && (
-          <VenueBookingSchedule
+        {state.step === 1 && (
+          <VenueBookingDetails
             data={state.data}
             venues={availability.state.venues}
-            venuesLoading={availability.state.venuesLoading}
+            events={availability.state.events}
+            listsLoading={availability.state.listsLoading}
             slots={availability.state.slots}
             slotsLoading={availability.state.slotsLoading}
+            onChange={actions.setField}
             onVenueChange={actions.setVenue}
+            onEventChange={actions.setEvent}
             onDateChange={actions.setBookingDate}
             onSlotsChange={actions.setSlots}
             errors={state.validationErrors}
           />
         )}
-        {state.step === 3 && (
-          <VenueBookingReview data={state.data} venueName={availability.state.selectedVenue?.name ?? ''} bookingWindow={state.bookingWindow} timeZone={availability.state.timeZone} />
+        {state.step === 2 && (
+          <VenueBookingReview
+            data={state.data}
+            venueName={availability.state.selectedVenue?.name ?? ''}
+            eventLabel={resolveEventLabel(state.data, availability.state.events)}
+            bookingWindow={state.bookingWindow}
+            timeZone={availability.state.timeZone}
+          />
         )}
 
         {state.error && <Alert title="Submission failed" description={state.error} variant="error" style="filled" />}
-        {availability.state.venuesError && <Alert title="Could not load venues" description={availability.state.venuesError} variant="error" style="filled" />}
+        {availability.state.listsError && <Alert title="Could not load venues" description={availability.state.listsError} variant="error" style="filled" />}
         {availability.state.slotsError && <Alert title="Could not load availability" description={availability.state.slotsError} variant="error" style="filled" />}
 
         <PublicFlow.Actions>
           <Button type="submit" disabled={state.submitting} className="rounded-full">
-            {state.submitting ? <Spinner size="sm" /> : isLastStep ? 'Submit' : 'Next'}
+            {state.submitting ? <Spinner size="sm" /> : meta.isLastStep ? 'Submit' : 'Next'}
           </Button>
         </PublicFlow.Actions>
       </PublicFlow>

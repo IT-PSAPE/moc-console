@@ -1,3 +1,4 @@
+import { VENUE_EVENT_OTHER_ID } from '@moc/types/venues'
 import type { StepValidationErrors } from '@/features/hooks/use-step-validation'
 import type { BookingFormData } from '@/types/booking'
 import type { RequestFormData } from '@/types/request'
@@ -69,30 +70,14 @@ export function getBookingStepErrors(step: number, data: BookingFormData): StepV
 
 export function getVenueBookingStepErrors(step: number, data: VenueBookingFormData): StepValidationErrors {
   if (step === 1) {
-    const titleError = getRequiredTextError(data.title, 'Enter a booking title.')
     const requestedByError = getRequiredTextError(data.requestedBy, 'Enter the requester’s name.')
-    const whoError = getRequiredTextError(data.who, 'Enter who is involved or responsible.')
-    const whatError = getRequiredTextError(data.what, 'Enter what needs to be done.')
-    const whenError = getRequiredTextError(data.whenText, 'Enter when this needs to happen.')
-    const whereError = getRequiredTextError(data.whereText, 'Enter where this will take place.')
-    const whyError = getRequiredTextError(data.why, 'Enter why this is needed.')
-    const howError = getRequiredTextError(data.how, 'Enter how this should be executed.')
+    const isOtherEvent = data.eventId === VENUE_EVENT_OTHER_ID
 
     return {
-      ...(titleError ? { title: titleError } : {}),
       ...(requestedByError ? { 'requested-by': requestedByError } : {}),
-      ...(whoError ? { who: whoError } : {}),
-      ...(whatError ? { what: whatError } : {}),
-      ...(whenError ? { 'when-text': whenError } : {}),
-      ...(whereError ? { 'where-text': whereError } : {}),
-      ...(whyError ? { why: whyError } : {}),
-      ...(howError ? { how: howError } : {}),
-    }
-  }
-
-  if (step === 2) {
-    return {
       ...(!data.venueId ? { venue: 'Choose a venue.' } : {}),
+      ...(!data.eventId ? { event: 'Choose an event.' } : {}),
+      ...(isOtherEvent && !data.eventOther.trim() ? { 'event-other': 'Describe the event.' } : {}),
       ...(data.slotStarts.length === 0 ? { 'venue-slots': 'Choose at least one time slot.' } : {}),
     }
   }
