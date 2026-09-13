@@ -78,9 +78,8 @@ const BOOKING_TOKENS = specs(
 
 const VENUE_BOOKING_TOKENS = specs(
   "title", "status", "requesterName",
-  "venueName", "venueLocation",
-  "startsAt", "endsAt", "slotCount", "duration",
-  "who", "what", "whenText", "whereText", "why", "how", "notes",
+  "venueName", "venueLocation", "eventName",
+  "startsAt", "endsAt", "slotCount", "duration", "notes",
   "trackingCode",
   // cancelReason / cancelledAt — populated for venue_booking.cancelled only.
   "cancelReason", "cancelledAt",
@@ -148,7 +147,7 @@ export const DEFAULT_TEMPLATES: Record<MessageType, string> = {
   "booking.stale":
     "⏰ <b>Booking needs attention</b>\n\n📌 <b>Title:</b> {{title}} — {{itemCount}} item(s)\n🔄 <b>Status:</b> <i>{{status}}</i>\n⚠️ {{staleReason}}\n⏳ Outstanding for {{staleDays}} day(s)\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "venue_booking.created":
-    "✨ <b>New venue booking</b>\n\n📌 <b>Title:</b> {{title}}\n🏛 <b>Venue:</b> {{venueName}}\n🗓 <b>When:</b> {{startsAt}} → {{endsAt}}\n🙋 <b>From:</b> {{requesterName}}\n🎯 <b>What for:</b> {{what}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
+    "✨ <b>New venue booking</b>\n\n📌 <b>Title:</b> {{title}}\n🏛 <b>Venue:</b> {{venueName}}\n🎯 <b>Event:</b> {{eventName}}\n🗓 <b>When:</b> {{startsAt}} → {{endsAt}}\n🙋 <b>From:</b> {{requesterName}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "venue_booking.cancelled":
     "🚫 <b>Venue booking cancelled</b>\n\n📌 <b>Title:</b> {{title}}\n🏛 <b>Venue:</b> {{venueName}}\n🗓 <b>Was:</b> {{startsAt}} → {{endsAt}}\n🙋 <b>From:</b> {{requesterName}}\nℹ️ {{cancelReason}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "assignment.request":
@@ -367,16 +366,11 @@ const VENUE_BOOKING_SAMPLE: TokenValues = {
   requesterName: "Tapiwa N.",
   venueName: "Main Auditorium",
   venueLocation: "Ground floor, east wing",
+  eventName: "Youth rehearsal",
   startsAt: "22 May, 6:00 PM",
   endsAt: "22 May, 8:00 PM",
   slotCount: "4",
   duration: "2h",
-  who: "Youth worship team — 12 people",
-  what: "Run through Sunday's set",
-  whenText: "Friday evening before the service",
-  whereText: "Main auditorium stage",
-  why: "Final rehearsal before leading on Sunday",
-  how: "Full band setup, house PA and stage monitors",
   notes: "Need the stage cleared of the conference chairs",
   trackingCode: "VEN-3B81D0",
   cancelReason: "",
