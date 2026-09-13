@@ -187,6 +187,24 @@ The public request app sees a narrower shape (`PublicVenue`: `id`, `name`,
 `location`, `capacity`) returned by `public_list_venues`, which only ever
 returns active venues.
 
+### Venue event read model
+
+Current runtime shape:
+
+- `id`
+- `name`
+- `description`
+- `active`
+- `sortOrder`
+
+The public request app sees a narrower shape (`PublicVenueEvent`: `id`,
+`name`, `description`) returned by `public_list_venue_events`, which only ever
+returns active events.
+
+"Other" is not an event. It is the sentinel `VENUE_EVENT_OTHER_ID` in a
+picker, and it submits no event id at all — just free text. Nothing may create
+a `venue_events` row to represent it.
+
 ### Venue booking read model
 
 Current runtime shape:
@@ -195,10 +213,10 @@ Current runtime shape:
 - `venueId`
 - `venueName`
 - `venueLocation`
+- `eventId`, `eventName`, `eventOther`
 - `trackingCode`
 - `title`
 - `requestedBy`
-- `who`, `what`, `when`, `where`, `why`, `how`
 - `notes`
 - `status`
 - `startsAt`
@@ -207,7 +225,15 @@ Current runtime shape:
 
 Important rules:
 
-- `venueName` and `venueLocation` are joined from venue data.
+- `venueName` and `venueLocation` are joined from venue data, and `eventName`
+  from event data.
+- **Never branch on `eventName` vs `eventOther` in UI.** Exactly one of them is
+  set — call `venueBookingEventLabel` for what the booking is for, and
+  `isOtherVenueBookingEvent` when it matters that the submitter wrote it
+  themselves. Bookings made before events existed have neither and fall back to
+  their title.
+- `title` is derived by the submit RPC from whichever of the two is set; no
+  client supplies it.
 - `requestedBy` is free text in storage and the runtime model.
 - **`status` is not the status a reader should see.** It is the stored state and
   is only ever `auto` or `cancelled`. The reader-facing phase — `booked`,
@@ -216,8 +242,6 @@ Important rules:
   UI may branch on the raw `status`, and nothing writes a phase back.
 - Derive a list of bookings against a single instant (pass the same `at` to
   every call) so rows in one render cannot disagree about the current time.
-- `when` and `where` are the submitter's own words. The authoritative time is
-  `startsAt`/`endsAt` and the authoritative place is the venue.
 - The duration is derived in the app, not stored.
 - Slot rows exist in storage but are not part of the read model: a booking is
   always one continuous block, so `startsAt`/`endsAt` describe it fully.
