@@ -34,25 +34,25 @@ export function HomeScreen() {
           />
         )}
         <OptionCard
-          icon={<img src="/assets/icon_inbox.png" alt="" width="80" height="80" className='size-20' />}
+          icon={<img src="/assets/icon_inbox.avif" alt="" width="80" height="80" className='size-20' />}
           title="Make a request"
           description="Submit a new production or media request with full details."
           onClick={handleRequest}
           />
         <OptionCard
-          icon={<img src="/assets/icon_toolbox.png" alt="" width="80" height="80" className='size-20' />}
+          icon={<img src="/assets/icon_toolbox.avif" alt="" width="80" height="80" className='size-20' />}
           title="Book equipment"
           description="Browse available equipment and reserve what you need."
           onClick={handleBooking}
         />
         <OptionCard
-          icon={<img src="/assets/icon_venue.png" alt="" width="80" height="80" className='size-20' />}
+          icon={<img src="/assets/icon_venue.avif" alt="" width="80" height="80" className='size-20' />}
           title="Book a venue"
           description="Choose a venue and reserve a block of time."
           onClick={handleVenue}
         />
         <OptionCard
-          icon={<img src="/assets/icon_folder.png" alt="" width="80" height="80" className='size-20' />}
+          icon={<img src="/assets/icon_folder.avif" alt="" width="80" height="80" className='size-20' />}
           title="Track a submission"
           description="Look up the status of an existing request or booking."
           onClick={handleTrack}

@@ -19,7 +19,7 @@ export function ConfirmationScreen() {
 
   return (
     <PublicLayout className="py-8 sm:py-12">
-      <img src="/assets/icon_check.png" alt="" width="240" height="240" className='size-60 mb-8 mx-auto' />
+      <img src="/assets/icon_check.avif" alt="" width="240" height="240" className='size-60 mb-8 mx-auto' />
       <Title.h1 className="title-h3 text-center">Submission received</Title.h1>
 
       {title && (
