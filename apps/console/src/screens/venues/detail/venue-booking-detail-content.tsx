@@ -1,6 +1,5 @@
 import { Ban, EllipsisVertical, RotateCcw } from "lucide-react"
 import { Link } from "react-router-dom"
-import { VenueBookingFiveW } from "@/features/venues/venue-booking-five-w"
 import { VenueBookingMetaFields } from "@/features/venues/venue-booking-meta-fields"
 import { VenueBookingNotes } from "@/features/venues/venue-booking-notes"
 import { VenueBookingCancellationAudit } from "@/features/venues/venue-booking-cancellation-audit"
@@ -56,8 +55,6 @@ export function VenueBookingDetailContent({ booking }: VenueBookingDetailContent
 
       <DetailPage.Header><Header.Lead className="gap-2"><Page.Title>{booking.title}</Page.Title></Header.Lead></DetailPage.Header>
       <DetailPage.Section><VenueBookingMetaFields booking={booking} at={at} /></DetailPage.Section>
-      <DetailPage.Divider />
-      <DetailPage.Section><VenueBookingFiveW booking={booking} /></DetailPage.Section>
       {booking.notes && <><DetailPage.Divider /><DetailPage.Section><VenueBookingNotes booking={booking} /></DetailPage.Section></>}
       {isCancelled && <><DetailPage.Divider /><DetailPage.Section><VenueBookingCancellationAudit booking={booking} /></DetailPage.Section></>}
 

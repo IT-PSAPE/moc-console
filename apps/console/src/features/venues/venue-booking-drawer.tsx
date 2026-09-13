@@ -9,7 +9,6 @@ import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 import type { VenueBooking } from "@moc/types/venues";
 import { routes } from "@/screens/console-routes";
 import { useDrawerClose } from "@/hooks/use-drawer-close";
-import { VenueBookingFiveW } from "./venue-booking-five-w";
 import { VenueBookingMetaFields } from "./venue-booking-meta-fields";
 import { VenueBookingNotes } from "./venue-booking-notes";
 import { VenueBookingCancellationAudit } from "./venue-booking-cancellation-audit";
@@ -91,9 +90,6 @@ export function VenueBookingPanelContent({ booking, onClose }: VenueBookingPanel
         <div className="px-4">
           <VenueBookingMetaFields booking={booking} at={at} />
         </div>
-
-        <Divider className="my-6" />
-        <VenueBookingFiveW booking={booking} className="px-4" />
 
         {booking.notes && (
           <>
