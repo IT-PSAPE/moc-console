@@ -1,6 +1,9 @@
 export type { Venue, PublicVenue } from "./venue";
+export type { VenueEvent, PublicVenueEvent } from "./venue-event";
+export { VENUE_EVENT_OTHER_ID } from "./venue-event";
 export type { VenueBookingStatus, VenueBookingPhase } from "./status";
 export type { VenueBooking, VenueBookingSlot } from "./venue-booking";
+export { venueBookingEventLabel, isOtherVenueBookingEvent } from "./venue-booking";
 export { deriveVenueBookingPhase } from "./phase";
 export {
   VENUE_SLOT_MINUTES,
