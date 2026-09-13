@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react'
 import { cn } from '@moc/utils/cn'
 import { Button } from '@moc/ui/components/controls/button'
 import { InteractiveSurface } from '@moc/ui/components/controls/interactive-surface'
@@ -30,9 +30,15 @@ type DateSlotPickerContextValue = {
   actions: {
     selectDate: (date: Date) => void
     selectSlot: (id: string) => void
+    registerLeadSlot: (node: HTMLElement | null) => void
   }
   meta: {
     slots: DateSlotPickerSlotData[]
+    // The slot the column should open on — see findLeadSlotId. Slots reads
+    // the id to know when to re-scroll; the ref is filled in by whichever
+    // Slot recognises itself as the lead.
+    leadSlotId: string | null
+    leadSlotRef: RefObject<HTMLElement | null>
   }
 }
 
@@ -42,6 +48,20 @@ type DateSlotPickerContextValue = {
 
 function isSameCalendarDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+}
+
+/**
+ * The slot the column should be scrolled to: the first one still bookable. A
+ * day's grid starts at the venue's opening hour, so on today most of the top
+ * of the list is already in the past — opening at the top would make someone
+ * scroll past dead slots every time.
+ *
+ * It deliberately ignores the selection. This id is what the scroll effect
+ * keys on, and it only changes when the day's availability does, so clicking
+ * a slot part-way down the list never yanks it to the top.
+ */
+export function findLeadSlotId(slots: DateSlotPickerSlotData[]): string | null {
+  return slots.find((slot) => slot.available)?.id ?? null
 }
 
 /**
@@ -93,15 +113,22 @@ type DateSlotPickerRootProps = {
 }
 
 function DateSlotPickerRoot({ children, className, selectedDate, onSelectDate, slots, selectedSlotIds, onSelectedSlotIdsChange }: DateSlotPickerRootProps) {
+  const leadSlotRef = useRef<HTMLElement | null>(null)
+  const leadSlotId = findLeadSlotId(slots)
+
   const selectSlot = useCallback((id: string) => {
     onSelectedSlotIdsChange(computeSlotRangeSelection(slots, selectedSlotIds, id))
   }, [slots, selectedSlotIds, onSelectedSlotIdsChange])
 
+  const registerLeadSlot = useCallback((node: HTMLElement | null) => {
+    leadSlotRef.current = node
+  }, [])
+
   const value = useMemo<DateSlotPickerContextValue>(() => ({
     state: { selectedDate, selectedSlotIds },
-    actions: { selectDate: onSelectDate, selectSlot },
-    meta: { slots },
-  }), [selectedDate, selectedSlotIds, onSelectDate, selectSlot, slots])
+    actions: { selectDate: onSelectDate, selectSlot, registerLeadSlot },
+    meta: { slots, leadSlotId, leadSlotRef },
+  }), [selectedDate, selectedSlotIds, onSelectDate, selectSlot, registerLeadSlot, slots, leadSlotId])
 
   return (
     <DateSlotPickerContext.Provider value={value}>
@@ -162,10 +189,34 @@ type DateSlotPickerSlotsProps = {
   'aria-label'?: string
 }
 
+// Matches the `p-1` on the content below, so a lead slot that is already the
+// first one in the list stays flush against the top instead of having its
+// padding scrolled away.
+const SLOT_LIST_PADDING = 4
+
 function DateSlotPickerSlots({ children, className, 'aria-label': ariaLabel = 'Available times' }: DateSlotPickerSlotsProps) {
+  const { meta } = useDateSlotPickerContext()
+  const viewportRef = useRef<HTMLDivElement | null>(null)
+  const { leadSlotId, leadSlotRef } = meta
+
+  // Refs are attached before effects run, so both the viewport and the lead
+  // slot are in place by the time this fires — including on the first render
+  // after a day's slots arrive.
+  useEffect(() => {
+    const viewport = viewportRef.current
+    const leadSlot = leadSlotRef.current
+    if (!viewport || !leadSlot || !leadSlotId) return
+
+    const offset = leadSlot.getBoundingClientRect().top - viewport.getBoundingClientRect().top
+    viewport.scrollTop = Math.max(0, viewport.scrollTop + offset - SLOT_LIST_PADDING)
+  }, [leadSlotId, leadSlotRef])
+
   return (
-    <ScrollArea className={cn('h-72 lg:h-full lg:min-h-96', className)}>
-      <ScrollArea.Viewport>
+    // A definite height, not `h-full`: the grid row is auto-sized, so a
+    // percentage height resolved to auto and the column grew to fit every
+    // slot — which is what made the whole page scroll instead of the list.
+    <ScrollArea className={cn('h-72 lg:h-96', className)}>
+      <ScrollArea.Viewport ref={viewportRef}>
         <ScrollArea.Content aria-label={ariaLabel} role="group" className="flex flex-col gap-2 p-1">
           {children}
         </ScrollArea.Content>
@@ -186,15 +237,24 @@ type DateSlotPickerSlotProps = {
 }
 
 function DateSlotPickerSlot({ id, label, available }: DateSlotPickerSlotProps) {
-  const { state, actions } = useDateSlotPickerContext()
+  const { state, actions, meta } = useDateSlotPickerContext()
   const isSelected = state.selectedSlotIds.includes(id)
+  const isLead = meta.leadSlotId === id
+  const { registerLeadSlot } = actions
 
   function handleClick() {
     actions.selectSlot(id)
   }
 
+  // Only the lead slot reports its element, so Slots can scroll to it without
+  // the picker having to reach into the DOM to find a slot by id.
+  const handleRef = useCallback((node: HTMLButtonElement | null) => {
+    if (isLead) registerLeadSlot(node)
+  }, [isLead, registerLeadSlot])
+
   return (
     <Button
+      ref={handleRef}
       variant={isSelected ? 'primary' : 'secondary'}
       disabled={!available}
       aria-pressed={isSelected}

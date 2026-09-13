@@ -1,15 +1,18 @@
 import { Button as BaseButton } from "@base-ui/react/button";
-import type { ButtonHTMLAttributes, ComponentProps, ReactElement, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ComponentProps, ReactElement, ReactNode, Ref } from "react";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
 import { Label } from "../display/text";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "danger-secondary";
 
+// React 19 passes `ref` as an ordinary prop, so it rides along in `...props`
+// onto the underlying element — it only has to be declared to be typed.
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
     icon?: ReactNode
     iconPosition?: "leading" | "trailing"
     variant?: ButtonVariant
+    ref?: Ref<HTMLButtonElement>
 }
 
 type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
