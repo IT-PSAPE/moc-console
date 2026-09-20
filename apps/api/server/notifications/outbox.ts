@@ -83,8 +83,15 @@ function text(value: unknown): string | null {
 
 export function buildPayload(row: OutboxRow): EventPayloadMap[NotificationEventKey] {
   const payload = row.payload
-  const baseUrl = resolveBaseUrl()
-  if (!baseUrl) throw new Error("CONSOLE_BASE_URL not configured")
+  const deletedByRequester = row.event_type.endsWith(".requester_deleted")
+  const requesterMutation = row.event_type.includes(".requester_")
+  const trackingCode = text(payload.trackingCode)
+  const changeSummary = text(payload.changeSummary)
+  if (requesterMutation && (!trackingCode || !changeSummary)) {
+    throw new Error("Requester notification is missing its tracking snapshot")
+  }
+  const baseUrl = deletedByRequester ? "" : resolveBaseUrl()
+  if (!deletedByRequester && !baseUrl) throw new Error("CONSOLE_BASE_URL not configured")
 
   if (row.event_type.startsWith("request.")) {
     const title = text(payload.title)
@@ -93,28 +100,29 @@ export function buildPayload(row: OutboxRow): EventPayloadMap[NotificationEventK
       title,
       status: text(payload.status),
       requesterName: text(payload.requesterName),
+      ...(trackingCode ? { trackingCode } : {}),
+      ...(changeSummary ? { changeSummary } : {}),
       requestId: row.entity_id,
-      linkUrl: `${baseUrl}/requests/${encodeURIComponent(row.entity_id)}`,
+      linkUrl: deletedByRequester ? "" : `${baseUrl}/requests/${encodeURIComponent(row.entity_id)}`,
     } as EventPayloadMap[NotificationEventKey]
   }
 
   if (row.event_type.startsWith("booking.")) {
     const title = text(payload.title)
-    const trackingCode = text(payload.trackingCode)
     if (!title || !trackingCode) throw new Error("Booking notification is missing required details")
     return {
       title,
       status: text(payload.status),
       requesterName: text(payload.requesterName),
       trackingCode,
-      linkUrl: `${baseUrl}/bookings/${encodeURIComponent(row.entity_id)}`,
+      ...(changeSummary ? { changeSummary } : {}),
+      linkUrl: deletedByRequester ? "" : `${baseUrl}/bookings/${encodeURIComponent(row.entity_id)}`,
     } as EventPayloadMap[NotificationEventKey]
   }
 
   if (row.event_type.startsWith("venue_booking.")) {
     const title = text(payload.title)
     const requesterName = text(payload.requesterName)
-    const trackingCode = text(payload.trackingCode)
     const venueName = text(payload.venueName)
     const startsAt = text(payload.startsAt)
     const endsAt = text(payload.endsAt)
@@ -128,8 +136,9 @@ export function buildPayload(row: OutboxRow): EventPayloadMap[NotificationEventK
       venueName,
       startsAt,
       endsAt,
+      ...(changeSummary ? { changeSummary } : {}),
       venueBookingId: row.entity_id,
-      linkUrl: `${baseUrl}/venues/${encodeURIComponent(row.entity_id)}`,
+      linkUrl: deletedByRequester ? "" : `${baseUrl}/venues/${encodeURIComponent(row.entity_id)}`,
     } as EventPayloadMap[NotificationEventKey]
   }
 

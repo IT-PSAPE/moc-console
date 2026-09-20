@@ -77,3 +77,35 @@ describe("buildPayload — venue_booking.*", () => {
     })
   })
 })
+
+describe("buildPayload — requester deletion", () => {
+  it("builds a deleted request entirely from its snapshot without requiring a dead deep link", () => {
+    withConsoleBaseUrl(undefined, () => {
+      const row: OutboxRow = {
+        id: "outbox-delete-1",
+        workspace_id: "workspace-1",
+        event_type: "request.requester_deleted",
+        entity_type: "request",
+        entity_id: "22222222-2222-2222-2222-222222222222",
+        event_key: "request.requester_deleted:22222222-2222-2222-2222-222222222222:1",
+        attempt_count: 0,
+        payload: {
+          title: "Easter service recap",
+          requesterName: "Tendai M.",
+          trackingCode: "REQ-123456789ABC",
+          changeSummary: "Request deleted",
+        },
+      }
+
+      assert.deepEqual(buildPayload(row), {
+        title: "Easter service recap",
+        status: null,
+        requesterName: "Tendai M.",
+        trackingCode: "REQ-123456789ABC",
+        changeSummary: "Request deleted",
+        requestId: "22222222-2222-2222-2222-222222222222",
+        linkUrl: "",
+      })
+    })
+  })
+})

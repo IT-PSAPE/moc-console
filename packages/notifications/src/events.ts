@@ -7,13 +7,19 @@ export type NotificationEventKey =
   | "stream.created"
   | "meeting.created"
   | "request.created"
+  | "request.requester_updated"
+  | "request.requester_deleted"
   | "request.status_changed"
   | "request.archived"
   | "request.stale"
   | "booking.created"
+  | "booking.requester_updated"
+  | "booking.requester_deleted"
   | "booking.status_changed"
   | "booking.stale"
   | "venue_booking.created"
+  | "venue_booking.requester_updated"
+  | "venue_booking.requester_deleted"
   | "venue_booking.cancelled";
 
 export type NotificationEventDefinition = {
@@ -39,6 +45,16 @@ export const NOTIFICATION_EVENTS: readonly NotificationEventDefinition[] = [
     description: "Fires when a new request is submitted in the requests app.",
   },
   {
+    key: "request.requester_updated",
+    label: "Request updated by requester",
+    description: "Fires when someone changes their request through the public tracking page.",
+  },
+  {
+    key: "request.requester_deleted",
+    label: "Request deleted by requester",
+    description: "Fires when someone deletes their request through the public tracking page.",
+  },
+  {
     key: "request.status_changed",
     label: "Request status changed",
     description: "Fires whenever a request moves between statuses (e.g. in progress → completed).",
@@ -59,6 +75,16 @@ export const NOTIFICATION_EVENTS: readonly NotificationEventDefinition[] = [
     description: "Fires when a new equipment booking is made in the requests/bookings app.",
   },
   {
+    key: "booking.requester_updated",
+    label: "Equipment booking updated by requester",
+    description: "Fires when someone changes their equipment booking through the public tracking page.",
+  },
+  {
+    key: "booking.requester_deleted",
+    label: "Equipment booking deleted by requester",
+    description: "Fires when someone deletes their equipment booking through the public tracking page.",
+  },
+  {
     key: "booking.status_changed",
     label: "Equipment booking status changed",
     description: "Fires whenever an equipment booking changes status.",
@@ -72,6 +98,16 @@ export const NOTIFICATION_EVENTS: readonly NotificationEventDefinition[] = [
     key: "venue_booking.created",
     label: "Venue booking created",
     description: "Fires when someone books a venue in the requests app.",
+  },
+  {
+    key: "venue_booking.requester_updated",
+    label: "Venue booking updated by requester",
+    description: "Fires when someone changes their venue booking through the public tracking page.",
+  },
+  {
+    key: "venue_booking.requester_deleted",
+    label: "Venue booking deleted by requester",
+    description: "Fires when someone deletes their venue booking through the public tracking page.",
   },
   {
     key: "venue_booking.cancelled",

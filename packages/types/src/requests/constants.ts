@@ -1,8 +1,15 @@
-import type { Category } from "./category";
 import type { Priority } from "./priority";
 import type { Status } from "./status";
 
-// ─── Labels ────────────────────────────────────────────
+// Legacy category metadata remains as a visual fallback for existing keys.
+// Workspace-managed category names are loaded from request_categories.
+export const categoryLabel: Record<string, string> = {
+    video_production: "Video Production",
+    video_shooting: "Video Shooting",
+    graphic_design: "Graphic Design",
+    event: "Event",
+    education: "Education",
+};
 
 export const statusLabel: Record<Status, string> = {
     not_started: "Not Started",
@@ -16,14 +23,6 @@ export const priorityLabel: Record<Priority, string> = {
     medium: "Medium",
     high: "High",
     urgent: "Urgent",
-};
-
-export const categoryLabel: Record<Category, string> = {
-    video_production: "Video Production",
-    video_shooting: "Video Shooting",
-    graphic_design: "Graphic Design",
-    event: "Event",
-    education: "Education",
 };
 
 // ─── Colors ────────────────────────────────────────────
@@ -42,13 +41,13 @@ export const priorityColor = {
     low: "gray",
 } as const satisfies Record<Priority, string>;
 
-export const categoryColor = {
+export const categoryColor: Record<string, "orange" | "purple" | "blue" | "green" | "gray"> = {
     video_production: "orange",
     video_shooting: "orange",
     graphic_design: "purple",
     event: "blue",
     education: "green",
-} as const satisfies Record<Category, string>;
+};
 
 export const eventColorMap: Record<string, string> = {
     red: "bg-error_primary text-error",
@@ -67,3 +66,7 @@ export const statusGroups = [
     { key: "in_progress", label: "In Progress", color: "yellow" },
     { key: "completed", label: "Completed", color: "green" },
 ] as const;
+
+export function getCategoryLabel(category: string, managedName?: string): string {
+    return managedName ?? categoryLabel[category] ?? category.replaceAll("_", " ").replace(/\b\w/g, (character) => character.toUpperCase());
+}

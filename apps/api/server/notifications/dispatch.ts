@@ -68,6 +68,11 @@ export type RequestStalePayload = {
   staleDays?: string | null
 }
 
+export type RequestRequesterMutationPayload = RequestCreatedPayload & {
+  trackingCode: string
+  changeSummary: string
+}
+
 export type BookingCreatedPayload = {
   title: string
   status?: string | null
@@ -92,6 +97,11 @@ export type BookingStalePayload = {
   staleReason?: string | null
 }
 
+export type BookingRequesterMutationPayload = BookingCreatedPayload & {
+  trackingCode: string
+  changeSummary: string
+}
+
 // starts_at/ends_at are the booked span, always present (NOT NULL columns).
 // There is deliberately no `status` field here — the trigger that enqueues
 // this event never stores one; buildTokens derives the reader-facing phase
@@ -110,17 +120,27 @@ export type VenueBookingCreatedPayload = {
 
 export type VenueBookingCancelledPayload = VenueBookingCreatedPayload
 
+export type VenueBookingRequesterMutationPayload = VenueBookingCreatedPayload & {
+  changeSummary: string
+}
+
 export type EventPayloadMap = {
   "stream.created": StreamCreatedPayload
   "meeting.created": MeetingCreatedPayload
   "request.created": RequestCreatedPayload
+  "request.requester_updated": RequestRequesterMutationPayload
+  "request.requester_deleted": RequestRequesterMutationPayload
   "request.status_changed": RequestStatusChangedPayload
   "request.archived": RequestArchivedPayload
   "request.stale": RequestStalePayload
   "booking.created": BookingCreatedPayload
+  "booking.requester_updated": BookingRequesterMutationPayload
+  "booking.requester_deleted": BookingRequesterMutationPayload
   "booking.status_changed": BookingStatusChangedPayload
   "booking.stale": BookingStalePayload
   "venue_booking.created": VenueBookingCreatedPayload
+  "venue_booking.requester_updated": VenueBookingRequesterMutationPayload
+  "venue_booking.requester_deleted": VenueBookingRequesterMutationPayload
   "venue_booking.cancelled": VenueBookingCancelledPayload
 }
 
@@ -330,6 +350,8 @@ async function buildTokens<K extends NotificationEventKey>(
       return { ...enriched, ...nonEmpty(base) }
     }
     case "request.created":
+    case "request.requester_updated":
+    case "request.requester_deleted":
     case "request.status_changed":
     case "request.archived":
     case "request.stale": {
@@ -337,11 +359,14 @@ async function buildTokens<K extends NotificationEventKey>(
         RequestStatusChangedPayload &
         RequestArchivedPayload &
         RequestStalePayload
+      const requesterMutation = p as Partial<RequestRequesterMutationPayload>
       const base: TokenValues = {
         title: p.title,
         status: p.status,
         requesterName: p.requesterName,
         staleDays: p.staleDays,
+        trackingCode: requesterMutation.trackingCode,
+        changeSummary: requesterMutation.changeSummary,
         linkUrl: p.linkUrl,
       }
       const enriched = p.requestId ? await enrichRequest(p.requestId) : {}
@@ -349,17 +374,21 @@ async function buildTokens<K extends NotificationEventKey>(
       return { ...enriched, ...nonEmpty(base), linkUrl: p.linkUrl }
     }
     case "booking.created":
+    case "booking.requester_updated":
+    case "booking.requester_deleted":
     case "booking.status_changed":
     case "booking.stale": {
       const p = payload as BookingCreatedPayload &
         BookingStatusChangedPayload &
         BookingStalePayload
+      const requesterMutation = p as Partial<BookingRequesterMutationPayload>
       const base: TokenValues = {
         title: p.title,
         status: p.status,
         requesterName: p.requesterName,
         staleDays: p.staleDays,
         staleReason: p.staleReason,
+        changeSummary: requesterMutation.changeSummary,
         linkUrl: p.linkUrl,
       }
       const enriched = p.trackingCode
@@ -368,8 +397,11 @@ async function buildTokens<K extends NotificationEventKey>(
       return { ...enriched, ...nonEmpty(base), linkUrl: p.linkUrl }
     }
     case "venue_booking.created":
+    case "venue_booking.requester_updated":
+    case "venue_booking.requester_deleted":
     case "venue_booking.cancelled": {
       const p = payload as VenueBookingCreatedPayload & VenueBookingCancelledPayload
+      const requesterMutation = p as Partial<VenueBookingRequesterMutationPayload>
       // Enrich first: the live row is what decides the phase, and it has to be
       // in hand before deriving it.
       const enriched = p.venueBookingId ? await enrichVenueBooking(p.venueBookingId) : {}
@@ -392,6 +424,7 @@ async function buildTokens<K extends NotificationEventKey>(
         status: deriveVenueBookingPhase(p.startsAt, p.endsAt, cancelled),
         slotCount: String(venueBookingSlotCount(p.startsAt, p.endsAt)),
         duration: formatVenueBookingDuration(p.startsAt, p.endsAt),
+        changeSummary: requesterMutation.changeSummary,
         linkUrl: p.linkUrl,
       }
       return { ...enriched, ...nonEmpty(base), linkUrl: p.linkUrl }

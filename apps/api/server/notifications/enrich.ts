@@ -23,13 +23,18 @@ function yesNo(v: boolean | null | undefined): string {
   return v ? "Yes" : "No";
 }
 
+function relatedName(value: { name: unknown } | { name: unknown }[] | null): string | null {
+  const relation = Array.isArray(value) ? value[0] : value;
+  return typeof relation?.name === "string" ? relation.name : null;
+}
+
 export async function enrichRequest(requestId: string, options?: { throwOnError?: boolean }): Promise<TokenValues> {
   try {
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
       .from("requests")
       .select(
-        "title, status, priority, category, requested_by, due_date, created_at, updated_at, tracking_code, who, what, when_text, where_text, why, how, notes, flow",
+        "title, status, priority, category, requested_by, due_date, created_at, updated_at, tracking_code, who, what, when_text, where_text, why, how, notes, flow, request_categories!requests_workspace_category_fkey(name)",
       )
       .eq("id", requestId)
       .maybeSingle();
@@ -39,7 +44,7 @@ export async function enrichRequest(requestId: string, options?: { throwOnError?
       title: data.title,
       status: data.status,
       priority: data.priority,
-      category: data.category,
+      category: relatedName(data.request_categories) ?? data.category,
       requesterName: data.requested_by,
       requestedBy: data.requested_by,
       dueDate: fmtDate(data.due_date),

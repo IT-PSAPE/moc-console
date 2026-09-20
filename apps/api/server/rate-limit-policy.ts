@@ -8,6 +8,8 @@ export type RateLimitPolicyName =
   | "provider_proxy_write"
   | "telegram_webhook"
   | "authenticated_notification_mutation"
+  | "public_submission_lookup"
+  | "public_submission_mutation"
 
 export type RateLimitPolicy = {
   name: RateLimitPolicyName
@@ -57,6 +59,18 @@ export const RATE_LIMIT_POLICIES = {
     name: "authenticated_notification_mutation",
     limit: 30,
     windowSeconds: 60,
+    failureMode: "closed",
+  },
+  publicSubmissionLookup: {
+    name: "public_submission_lookup",
+    limit: 20,
+    windowSeconds: 60,
+    failureMode: "closed",
+  },
+  publicSubmissionMutation: {
+    name: "public_submission_mutation",
+    limit: 8,
+    windowSeconds: 300,
     failureMode: "closed",
   },
 } as const satisfies Record<string, RateLimitPolicy>

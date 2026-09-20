@@ -59,6 +59,12 @@ describe("rate limits", () => {
     assert.equal(RATE_LIMIT_POLICIES.telegramWebhook.failureMode, "closed")
     assert.equal(RATE_LIMIT_POLICIES.authenticatedNotificationMutation.failureMode, "closed")
     assert.equal(RATE_LIMIT_POLICIES.authenticatedNotificationMutation.limit, 30)
+    assert.equal(RATE_LIMIT_POLICIES.publicSubmissionLookup.failureMode, "closed")
+    assert.equal(RATE_LIMIT_POLICIES.publicSubmissionLookup.limit, 20)
+    assert.equal(RATE_LIMIT_POLICIES.publicSubmissionLookup.windowSeconds, 60)
+    assert.equal(RATE_LIMIT_POLICIES.publicSubmissionMutation.failureMode, "closed")
+    assert.equal(RATE_LIMIT_POLICIES.publicSubmissionMutation.limit, 8)
+    assert.equal(RATE_LIMIT_POLICIES.publicSubmissionMutation.windowSeconds, 300)
   })
 
   it("hashes a stable, domain-separated subject instead of persisting its raw parts", () => {

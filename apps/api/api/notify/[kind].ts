@@ -2,6 +2,7 @@ import { applyCors } from "../../server/cors.js"
 import type { ApiRequest, ApiResponse } from "../../server/http.js"
 import { handlePublicNotificationWake, type PublicNotificationWakeOptions } from "../../server/notifications/public-wake.js"
 import { observeApiRequest } from "../../server/observability.js"
+import { handlePublicSubmission } from "../../server/public-submissions/handler.js"
 import { routeParameterValue } from "../../server/route-dispatch.js"
 
 type PublicWakeRoute = {
@@ -47,6 +48,13 @@ async function handleWake(request: ApiRequest, response: ApiResponse, options: P
 
 export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
   const kind = routeParameterValue(request, "kind")
+  if (kind === "public-submissions") {
+    await observeApiRequest("public.submissions", request, response, async () => {
+      await handlePublicSubmission(request, response)
+    })
+    return
+  }
+
   const route = kind ? routes[kind] : undefined
   if (!route) {
     response.status(404).json({ error: "Not found" })

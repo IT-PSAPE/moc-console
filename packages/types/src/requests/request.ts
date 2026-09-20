@@ -8,6 +8,7 @@ export type Request = {
   priority: Priority;
   status: Status;
   category: Category;
+  categoryName?: string;
   createdAt: string;
   updatedAt: string;
   dueDate: string;

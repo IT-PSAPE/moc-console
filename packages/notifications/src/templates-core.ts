@@ -62,7 +62,7 @@ const REQUEST_TOKENS = specs(
   "dueDate", "createdAt", "updatedAt", "trackingCode",
   "who", "what", "whenText", "whereText", "why", "how", "notes", "flow",
   // staleDays — days since last update; populated for request.stale only.
-  "staleDays",
+  "staleDays", "changeSummary",
   "linkUrl",
 );
 
@@ -72,7 +72,7 @@ const BOOKING_TOKENS = specs(
   "itemCount", "equipmentName", "equipmentNames",
   "equipmentCategory", "equipmentLocation", "equipmentSerial",
   // staleDays / staleReason — populated for booking.stale only.
-  "staleDays", "staleReason",
+  "staleDays", "staleReason", "changeSummary",
   "linkUrl",
 );
 
@@ -82,7 +82,7 @@ const VENUE_BOOKING_TOKENS = specs(
   "startsAt", "endsAt", "slotCount", "duration", "notes",
   "trackingCode",
   // cancelReason / cancelledAt — populated for venue_booking.cancelled only.
-  "cancelReason", "cancelledAt",
+  "cancelReason", "cancelledAt", "changeSummary",
   "linkUrl",
 );
 
@@ -106,13 +106,19 @@ export const TEMPLATE_TOKENS: Record<MessageType, readonly TokenSpec[]> = {
   "stream.created": STREAM_TOKENS,
   "meeting.created": MEETING_TOKENS,
   "request.created": REQUEST_TOKENS,
+  "request.requester_updated": REQUEST_TOKENS,
+  "request.requester_deleted": REQUEST_TOKENS,
   "request.status_changed": REQUEST_TOKENS,
   "request.archived": REQUEST_TOKENS,
   "request.stale": REQUEST_TOKENS,
   "booking.created": BOOKING_TOKENS,
+  "booking.requester_updated": BOOKING_TOKENS,
+  "booking.requester_deleted": BOOKING_TOKENS,
   "booking.status_changed": BOOKING_TOKENS,
   "booking.stale": BOOKING_TOKENS,
   "venue_booking.created": VENUE_BOOKING_TOKENS,
+  "venue_booking.requester_updated": VENUE_BOOKING_TOKENS,
+  "venue_booking.requester_deleted": VENUE_BOOKING_TOKENS,
   "venue_booking.cancelled": VENUE_BOOKING_TOKENS,
   // Request assignment shares the request category, plus the DM-only
   // duty / assignee fields.
@@ -134,6 +140,10 @@ export const DEFAULT_TEMPLATES: Record<MessageType, string> = {
     "✨ <b>New Zoom meeting scheduled</b>\n\n📌 <b>Title:</b> {{topic}}\n🗓 <b>Scheduled:</b> Starts {{startTime}}\n\n🔗 <a href=\"{{joinUrl}}\">Join the meeting</a>",
   "request.created":
     "✨ <b>New request just came in</b>\n\n📌 <b>Title:</b> {{title}}\n🙋 <b>From:</b> {{requesterName}}\n🗂️ <b>Category:</b> {{category}}\n🎯 <b>Priority:</b> {{priority}}\n📅 <b>Due:</b> {{dueDate}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the request</a>",
+  "request.requester_updated":
+    "✏️ <b>Request updated by requester</b>\n\n📌 <b>Title:</b> {{title}}\n🙋 <b>From:</b> {{requesterName}}\n📝 <b>Changed:</b> {{changeSummary}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the request</a>",
+  "request.requester_deleted":
+    "🗑️ <b>Request deleted by requester</b>\n\n📌 <b>Title:</b> {{title}}\n🙋 <b>From:</b> {{requesterName}}",
   "request.status_changed":
     "📣 <b>Request status updated</b>\n\n📌 <b>Title:</b> {{title}}\n🔄 Now: <i>{{status}}</i>\n🙋 <b>From:</b> {{requesterName}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the request</a>",
   "request.archived":
@@ -142,12 +152,20 @@ export const DEFAULT_TEMPLATES: Record<MessageType, string> = {
     "⏰ <b>Request needs attention</b>\n\n📌 <b>Title:</b> {{title}}\n🔄 <b>Status:</b> <i>{{status}}</i>\n⏳ Untouched for {{staleDays}} day(s)\n🙋 <b>From:</b> {{requesterName}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the request</a>",
   "booking.created":
     "✨ <b>New equipment booking</b>\n\n📌 <b>Title:</b> {{title}} — {{itemCount}} item(s)\n🙋 <b>From:</b> {{requesterName}}\n🔄 <b>Status:</b> <i>{{status}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
+  "booking.requester_updated":
+    "✏️ <b>Equipment booking updated by requester</b>\n\n📌 <b>Title:</b> {{title}}\n🙋 <b>From:</b> {{requesterName}}\n📝 <b>Changed:</b> {{changeSummary}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
+  "booking.requester_deleted":
+    "🗑️ <b>Equipment booking deleted by requester</b>\n\n📌 <b>Title:</b> {{title}}\n🙋 <b>From:</b> {{requesterName}}",
   "booking.status_changed":
     "📣 <b>Equipment booking updated</b>\n\n📌 <b>Title:</b> {{title}} — {{itemCount}} item(s)\n🔄 Now: <i>{{status}}</i>\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "booking.stale":
     "⏰ <b>Booking needs attention</b>\n\n📌 <b>Title:</b> {{title}} — {{itemCount}} item(s)\n🔄 <b>Status:</b> <i>{{status}}</i>\n⚠️ {{staleReason}}\n⏳ Outstanding for {{staleDays}} day(s)\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "venue_booking.created":
     "✨ <b>New venue booking</b>\n\n📌 <b>Title:</b> {{title}}\n🏛 <b>Venue:</b> {{venueName}}\n🎯 <b>Event:</b> {{eventName}}\n🗓 <b>When:</b> {{startsAt}} → {{endsAt}}\n🙋 <b>From:</b> {{requesterName}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
+  "venue_booking.requester_updated":
+    "✏️ <b>Venue booking updated by requester</b>\n\n📌 <b>Title:</b> {{title}}\n🏛 <b>Venue:</b> {{venueName}}\n🗓 <b>When:</b> {{startsAt}} → {{endsAt}}\n🙋 <b>From:</b> {{requesterName}}\n📝 <b>Changed:</b> {{changeSummary}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
+  "venue_booking.requester_deleted":
+    "🗑️ <b>Venue booking deleted by requester</b>\n\n📌 <b>Title:</b> {{title}}\n🏛 <b>Venue:</b> {{venueName}}\n🗓 <b>Was:</b> {{startsAt}} → {{endsAt}}\n🙋 <b>From:</b> {{requesterName}}",
   "venue_booking.cancelled":
     "🚫 <b>Venue booking cancelled</b>\n\n📌 <b>Title:</b> {{title}}\n🏛 <b>Venue:</b> {{venueName}}\n🗓 <b>Was:</b> {{startsAt}} → {{endsAt}}\n🙋 <b>From:</b> {{requesterName}}\nℹ️ {{cancelReason}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "assignment.request":
@@ -407,10 +425,14 @@ export const SAMPLE_TOKENS: Record<MessageType, TokenValues> = {
     joinUrl: "https://zoom.us/j/123456789",
   },
   "request.created": { ...REQUEST_SAMPLE, status: "not started" },
+  "request.requester_updated": { ...REQUEST_SAMPLE, changeSummary: "Title, due date" },
+  "request.requester_deleted": { ...REQUEST_SAMPLE, changeSummary: "Request deleted", linkUrl: "" },
   "request.status_changed": REQUEST_SAMPLE,
   "request.archived": { ...REQUEST_SAMPLE, status: "archived" },
   "request.stale": { ...REQUEST_SAMPLE, status: "in progress", staleDays: "5" },
   "booking.created": BOOKING_SAMPLE,
+  "booking.requester_updated": { ...BOOKING_SAMPLE, changeSummary: "Expected return, notes" },
+  "booking.requester_deleted": { ...BOOKING_SAMPLE, changeSummary: "Booking deleted", linkUrl: "" },
   "booking.status_changed": {
     ...BOOKING_SAMPLE,
     status: "returned",
@@ -423,6 +445,8 @@ export const SAMPLE_TOKENS: Record<MessageType, TokenValues> = {
     staleDays: "4",
   },
   "venue_booking.created": VENUE_BOOKING_SAMPLE,
+  "venue_booking.requester_updated": { ...VENUE_BOOKING_SAMPLE, changeSummary: "Venue, time" },
+  "venue_booking.requester_deleted": { ...VENUE_BOOKING_SAMPLE, changeSummary: "Booking deleted", linkUrl: "" },
   "venue_booking.cancelled": {
     ...VENUE_BOOKING_SAMPLE,
     status: "cancelled",

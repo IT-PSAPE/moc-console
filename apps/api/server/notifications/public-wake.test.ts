@@ -78,6 +78,14 @@ describe("parsePublicNotificationWake", () => {
     )
   })
 
+  it("accepts the stronger 12-hex tracking codes issued to new submissions", () => {
+    const strongTrackingCode = "REQ-0123456789AB"
+    assert.deepEqual(
+      parsePublicNotificationWake({ request_id: requestId, tracking_code: strongTrackingCode }, requestOptions),
+      { entityId: requestId, trackingCode: strongTrackingCode },
+    )
+  })
+
   it("rejects extra keys, oversized values, malformed UUIDs, and mismatched tracking codes", () => {
     assert.equal(
       parsePublicNotificationWake({ request_id: requestId, tracking_code: trackingCode, extra: "no" }, requestOptions),

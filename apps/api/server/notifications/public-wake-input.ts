@@ -6,9 +6,9 @@ type EntityType = "request" | "booking" | "venue_booking"
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const MAX_PUBLIC_WAKE_BODY_BYTES = 512
 const TRACKING_CODE_PATTERN: Record<EntityType, RegExp> = {
-  request: /^REQ-[A-F0-9]{6}$/,
-  booking: /^BKG-[A-F0-9]{6}$/,
-  venue_booking: /^VEN-[A-F0-9]{6}$/,
+  request: /^REQ-(?:[A-F0-9]{6}|[A-F0-9]{12})$/,
+  booking: /^BKG-(?:[A-F0-9]{6}|[A-F0-9]{12})$/,
+  venue_booking: /^VEN-(?:[A-F0-9]{6}|[A-F0-9]{12})$/,
 }
 
 export type PublicNotificationWake = {
@@ -28,7 +28,7 @@ function isValidEntityId(value: string): boolean {
 }
 
 function isValidTrackingCode(value: string, entityType: EntityType): boolean {
-  return value.length === 10 && TRACKING_CODE_PATTERN[entityType].test(value)
+  return (value.length === 10 || value.length === 16) && TRACKING_CODE_PATTERN[entityType].test(value)
 }
 
 export function hasBoundedPublicWakeBody(request: ApiRequest): boolean {

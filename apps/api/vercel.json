@@ -11,6 +11,7 @@
     "api/cron/*.ts": { "maxDuration": 60 }
   },
   "rewrites": [
+    { "source": "/api/public/submissions", "destination": "/api/notify/public-submissions" },
     { "source": "/api/youtube/v3/(.*)", "destination": "/api/youtube/v3/_proxy?rewrittenPath=$1" },
     { "source": "/api/zoom/v2/(.*)", "destination": "/api/zoom/v2/_proxy?rewrittenPath=$1" }
   ],
