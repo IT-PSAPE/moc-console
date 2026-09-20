@@ -27,7 +27,7 @@ export function UnlinkTelegramModal({ open, onConfirm, onCancel, isUnlinking = f
                         <Modal.Content className="p-4 flex-row gap-4">
                             <TriangleAlert className="size-8 shrink-0 text-utility-red-600" />
                             <Paragraph.sm className="text-secondary">
-                                You'll stop receiving MOC Console notifications in Telegram. You can reconnect anytime from this page.
+                                You'll stop receiving MOC Console notifications in Telegram. You can reconnect anytime from Edit profile.
                             </Paragraph.sm>
                         </Modal.Content>
                         <Modal.Footer className="justify-end">

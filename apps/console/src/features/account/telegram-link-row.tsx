@@ -1,4 +1,4 @@
-import { UnlinkTelegramModal } from "@/features/account/unlink-telegram-modal"
+import { UnlinkTelegramModal } from "./unlink-telegram-modal"
 import { Button } from "@moc/ui/components/controls/button"
 import { Paragraph } from "@moc/ui/components/display/text"
 import { Send } from "lucide-react"

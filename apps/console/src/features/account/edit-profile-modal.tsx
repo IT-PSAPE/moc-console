@@ -10,6 +10,7 @@ import { TextArea } from "@moc/ui/components/form/text-area"
 import { Modal } from "@moc/ui/components/overlays/modal"
 import { UnsavedChangesDialog } from "@moc/ui/components/overlays/unsaved-changes-dialog"
 import { Camera, Trash2 } from "lucide-react"
+import { TelegramLinkRow } from "./telegram-link-row"
 import { PROFILE_STATUS_MAX_LENGTH, useProfileSettings } from "./use-profile-settings"
 
 type EditProfileModalProps = {
@@ -90,6 +91,13 @@ export function EditProfileModal({ open, onOpenChange }: EditProfileModalProps) 
                     <FormField label="Status" htmlFor="status" optional>
                       <TextArea id="status" aria-label="Status" autoComplete="off" name="status" value={state.status} onChange={handleStatusChange} placeholder="What's on your mind?" rows={2} maxLength={PROFILE_STATUS_MAX_LENGTH} />
                       <Paragraph.xs className={meta.statusLength > PROFILE_STATUS_MAX_LENGTH ? "text-error" : "text-quaternary"}>{meta.statusLength}/{PROFILE_STATUS_MAX_LENGTH}</Paragraph.xs>
+                    </FormField>
+
+                    <FormField label="Telegram">
+                      <Paragraph.xs className="text-tertiary">
+                        {profile.telegramChatId ? "Assignment and stream notifications reach you in Telegram." : "Connect Telegram to get assignment and stream notifications there."}
+                      </Paragraph.xs>
+                      <TelegramLinkRow userId={profile.id} telegramChatId={profile.telegramChatId} />
                     </FormField>
                   </div>
                 ) : <Paragraph.sm className="p-4 text-tertiary">Sign in to edit your profile.</Paragraph.sm>}
