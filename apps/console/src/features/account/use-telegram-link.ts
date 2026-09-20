@@ -16,14 +16,19 @@ export function useTelegramLink(userId: string, telegramChatId: string | null) {
   const [copied, setCopied] = useState<TelegramCopyTarget | null>(null)
   const [unlinkOpen, setUnlinkOpen] = useState(false)
 
+  // The profile is loaded once at sign-in, but the link itself completes in
+  // Telegram, outside this tab. While unlinked, re-read the profile whenever
+  // this row appears or the tab regains focus so a finished link shows up
+  // without a full reload.
   useEffect(() => {
-    if (!pending) return
+    if (telegramChatId) return
+    void refreshProfile().catch(() => undefined)
     function refreshWhenVisible() {
       if (document.visibilityState === "visible") void refreshProfile().catch(() => undefined)
     }
     document.addEventListener("visibilitychange", refreshWhenVisible)
     return () => document.removeEventListener("visibilitychange", refreshWhenVisible)
-  }, [pending, refreshProfile])
+  }, [telegramChatId, refreshProfile])
 
   useEffect(() => {
     if (!telegramChatId) return
