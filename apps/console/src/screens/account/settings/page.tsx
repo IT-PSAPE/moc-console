@@ -8,6 +8,7 @@ import { WorkspaceTab } from './workspace-tab'
 import { AutomationTab } from './automation-tab'
 import { VenuesTab } from './venues-tab'
 import { EventsTab } from './events-tab'
+import { RequestCategoriesTab } from './request-categories-tab'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getSettingsHref, settingsTabLabel, useSettingsScreen, type SettingsTab } from './use-settings-screen'
 import { UsersTab } from './users-tab'
@@ -43,6 +44,7 @@ export function SettingsScreen() {
         if (meta.activeTab === 'members') return <UsersTab />
         if (meta.activeTab === 'venues' && meta.canManage) return <VenuesTab />
         if (meta.activeTab === 'events' && meta.canManage) return <EventsTab />
+        if (meta.activeTab === 'request-categories' && meta.canManage) return <RequestCategoriesTab />
         if (meta.activeTab === 'telegram' && meta.canManage) return <TelegramTab />
         if (meta.activeTab === 'streams' && meta.canManage) return <StreamsTab />
         if (meta.activeTab === 'automation' && meta.canManage) return <AutomationTab />

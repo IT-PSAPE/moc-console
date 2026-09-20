@@ -25,7 +25,7 @@ import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar"
 
 export function RequestsScreen() {
   const { state, actions, meta } = useRequestsScreen();
-  const { filters, activeView, isMobile } = meta;
+  const { filters, activeView, isMobile, requestCategories } = meta;
   const CollectionContent = activeView === "kanban" ? Page.CollectionContent : Page.Content;
   const visibleRequests = activeView === "calendar" ? filters.calendarFiltered : filters.filtered;
   const collectionState = activeView === "list" ? visibleRequests : activeView;
@@ -58,7 +58,7 @@ export function RequestsScreen() {
             <Drawer.Trigger>
               <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter requests">Filter</CollectionToolbar.ActionButton>
             </Drawer.Trigger>
-            <RequestFilterDrawer filters={filters} />
+            <RequestFilterDrawer filters={filters} categories={requestCategories} />
           </Drawer>
         </CollectionToolbar.Actions>
       </CollectionToolbar>

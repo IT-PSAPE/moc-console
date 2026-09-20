@@ -14,7 +14,7 @@ export async function updateRequest(request: Request): Promise<Request> {
   const { data, error } = await supabase
     .from("requests")
     .upsert(payload, { onConflict: "id" })
-    .select("id, title, priority, status, category, created_at, updated_at, due_date, requested_by, who, what, when_text, where_text, why, how, notes, flow, content")
+    .select("id, title, priority, status, category, created_at, updated_at, due_date, requested_by, who, what, when_text, where_text, why, how, notes, flow, content, request_categories!requests_workspace_category_fkey(name)")
     .single();
 
   if (error) {

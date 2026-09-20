@@ -93,6 +93,7 @@ export function RequestPanelContent({
 }: RequestPanelContentProps) {
   const shareTargetRef = useRef<HTMLDivElement | null>(null);
   const {
+    state: { requestCategories },
     actions: { syncRequest },
   } = useRequests();
 
@@ -157,6 +158,7 @@ export function RequestPanelContent({
             <div className="px-4">
               <RequestMetaFields
                 request={store.state.draft}
+                categories={requestCategories}
                 editable
                 onFieldChange={store.actions.updateField}
               />

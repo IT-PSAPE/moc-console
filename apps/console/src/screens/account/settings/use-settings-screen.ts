@@ -2,13 +2,14 @@ import { useSearchParams } from "react-router-dom"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useIsMobile } from "@moc/ui/hooks/use-is-mobile"
 
-export type SettingsTab = "general" | "members" | "venues" | "events" | "telegram" | "streams" | "automation"
+export type SettingsTab = "general" | "members" | "venues" | "events" | "request-categories" | "telegram" | "streams" | "automation"
 
 export const settingsTabLabel: Record<SettingsTab, string> = {
   automation: "Automation",
   events: "Events",
   general: "General",
   members: "Members",
+  "request-categories": "Request categories",
   streams: "Streaming",
   telegram: "Telegram",
   venues: "Venues",
@@ -23,7 +24,7 @@ export function useSettingsScreen() {
   const [searchParams] = useSearchParams()
   const isMobile = useIsMobile()
   const canManage = role?.can_manage_roles === true
-  const tabs: SettingsTab[] = canManage ? ["general", "members", "venues", "events", "telegram", "streams", "automation"] : ["general"]
+  const tabs: SettingsTab[] = canManage ? ["general", "members", "venues", "events", "request-categories", "telegram", "streams", "automation"] : ["general"]
   const tabParam = searchParams.get("tab")
   const requestedTab = (tabParam === "workspace" ? "general" : tabParam) as SettingsTab | null
   const requestedTabIsAvailable = requestedTab !== null && tabs.includes(requestedTab)

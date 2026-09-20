@@ -13,7 +13,7 @@ function toCalendarEvents(requests: Request[]): CalendarEvent<Request>[] {
             id: r.id,
             date: new Date(r.dueDate),
             label: r.title,
-            color: categoryColor[r.category],
+            color: categoryColor[r.category] ?? "gray",
             data: r,
         }));
 }

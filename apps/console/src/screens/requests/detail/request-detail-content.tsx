@@ -23,6 +23,7 @@ import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { Page } from "@moc/ui/components/layout/page"
 import { Dropdown } from "@moc/ui/components/overlays/dropdown"
 import type { Request } from "@moc/types/requests"
+import { useRequests } from "@/features/requests/request-provider"
 
 type RequestDetailContentProps = {
   request: Request
@@ -31,6 +32,7 @@ type RequestDetailContentProps = {
 
 export function RequestDetailContent({ request, syncRequest }: RequestDetailContentProps) {
   const shareTargetRef = useRef<HTMLDivElement | null>(null)
+  const { state: { requestCategories } } = useRequests()
   const detail = useRequestDetail({ request, syncRequest })
   const { assignees, blockerState, isDeleting, relatedChecklists, showDeleteModal, store } = detail
   const actions = detail.actions
@@ -67,7 +69,7 @@ export function RequestDetailContent({ request, syncRequest }: RequestDetailCont
 
           <div ref={shareTargetRef}>
             <DetailPage.Header><Header.Lead className="gap-2"><Page.Title><RequestTitle value={store.state.draft.title} onChange={handleTitleChange} /></Page.Title></Header.Lead></DetailPage.Header>
-            <DetailPage.Section><RequestMetaFields request={store.state.draft} editable onFieldChange={store.actions.updateField} /></DetailPage.Section>
+            <DetailPage.Section><RequestMetaFields request={store.state.draft} categories={requestCategories} editable onFieldChange={store.actions.updateField} /></DetailPage.Section>
             <DetailPage.Divider />
             <DetailPage.Section><RequestFiveW request={store.state.draft} /></DetailPage.Section>
             {store.state.draft.notes && <><DetailPage.Divider /><DetailPage.Section><RequestNotes request={store.state.draft} /></DetailPage.Section></>}

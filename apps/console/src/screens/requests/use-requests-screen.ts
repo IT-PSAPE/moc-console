@@ -13,7 +13,7 @@ export function useRequestsScreen() {
   const isMobile = useIsMobile()
   const activeView = isMobile && view === "kanban" ? "list" : view
   const {
-    state: { allRequests, isLoadingActive, isLoadingArchived },
+    state: { allRequests, requestCategories, isLoadingActive, isLoadingArchived, isLoadingCategories },
     actions: { loadActiveRequests, loadArchivedRequests },
   } = useRequests()
   const filters = useRequestFilters(allRequests)
@@ -45,7 +45,8 @@ export function useRequestsScreen() {
       filters,
       activeView,
       isMobile,
-      isLoading: isLoadingActive || (loadsArchived && isLoadingArchived),
+      requestCategories,
+      isLoading: isLoadingActive || isLoadingCategories || (loadsArchived && isLoadingArchived),
     },
   }
 }

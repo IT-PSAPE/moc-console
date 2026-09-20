@@ -5,7 +5,8 @@ import { Input } from "@moc/ui/components/form/input";
 import { Radio, RadioGroup } from "@moc/ui/components/form/radio";
 import { Tabs } from "@moc/ui/components/layout/tabs";
 import { FilterDrawer } from "@moc/ui/components/overlays/filter-drawer";
-import { categoryLabel, priorityLabel, statusLabel } from "@moc/types/requests";
+import { priorityLabel, statusLabel } from "@moc/types/requests";
+import type { RequestCategoryDefinition } from "@moc/types/requests";
 import type { Category } from "@moc/types/requests/category";
 import type { Priority } from "@moc/types/requests/priority";
 import type { Status } from "@moc/types/requests/status";
@@ -15,9 +16,10 @@ import { parseSortValue } from "@/utils/parse-sort-value";
 
 type RequestFilterDrawerProps = {
     filters: ReturnType<typeof useRequestFilters>;
+    categories: RequestCategoryDefinition[];
 };
 
-export function RequestFilterDrawer({ filters }: RequestFilterDrawerProps) {
+export function RequestFilterDrawer({ filters, categories }: RequestFilterDrawerProps) {
     const { filters: state, toggleCategory, togglePriority, toggleStatus, setDateRange, setSort, reset, hasActiveFilters } = filters;
 
     const sortValue = `${state.sortField}-${state.sortDirection}`;
@@ -47,35 +49,34 @@ export function RequestFilterDrawer({ filters }: RequestFilterDrawerProps) {
         setDateRange(state.dateRange.start, event.target.value);
     }
 
+    function renderCategory(category: RequestCategoryDefinition) {
+        return (
+            <Checkbox key={category.key} checked={state.categories.has(category.key)} value={category.key} onChange={handleCategoryChange}>
+                <FormLabel label={category.name} />
+            </Checkbox>
+        );
+    }
+
     return (
         <FilterDrawer hasActiveFilters={hasActiveFilters} onReset={reset}>
-                    <Tabs defaultTab="filters">
-                        <Tabs.List>
-                            <Tabs.Tab value="filters">
-                                <Label.sm>Filters</Label.sm>
-                            </Tabs.Tab>
-                            <Tabs.Tab value="sort">
-                                <Label.sm>Sort</Label.sm>
-                            </Tabs.Tab>
-                        </Tabs.List>
-                        <Tabs.Panels>
-                            {/* ── Filters ── */}
-                            <Tabs.Panel value="filters">
-                                <FilterDrawer.Group label="Type">
-                                    <FilterDrawer.Options>
-                                        {(Object.entries(categoryLabel) as [Category, string][]).map(([key, label]) => (
-                                            <Checkbox
-                                                key={key}
-                                                checked={state.categories.has(key)}
-                                                value={key}
-                                                onChange={handleCategoryChange}
-                                            >
-                                                <FormLabel label={label} />
-                                            </Checkbox>
-                                        ))}
-                                    </FilterDrawer.Options>
-                                </FilterDrawer.Group>
-                                <FilterDrawer.Group label="Status">
+                <Tabs defaultTab="filters">
+                    <Tabs.List>
+                        <Tabs.Tab value="filters">
+                            <Label.sm>Filters</Label.sm>
+                        </Tabs.Tab>
+                        <Tabs.Tab value="sort">
+                            <Label.sm>Sort</Label.sm>
+                        </Tabs.Tab>
+                    </Tabs.List>
+                    <Tabs.Panels>
+                        {/* ── Filters ── */}
+                        <Tabs.Panel value="filters">
+                            <FilterDrawer.Group label="Type">
+                                <FilterDrawer.Options>
+                                    {categories.map(renderCategory)}
+                                </FilterDrawer.Options>
+                            </FilterDrawer.Group>
+                            <FilterDrawer.Group label="Status">
                                     <FilterDrawer.Options>
                                         {(Object.entries(statusLabel) as [Status, string][]).map(([key, label]) => (
                                             <Checkbox

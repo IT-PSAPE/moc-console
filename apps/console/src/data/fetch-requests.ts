@@ -8,7 +8,9 @@ type RequestRow = Record<string, unknown>;
 function selectRequests(workspaceId: string) {
   return supabase
     .from("requests")
-    .select("id, title, priority, status, category, created_at, updated_at, due_date, requested_by, who, what, when_text, where_text, why, how, notes, flow, content")
+    .select(
+      "id, title, priority, status, category, created_at, updated_at, due_date, requested_by, who, what, when_text, where_text, why, how, notes, flow, content, request_categories!requests_workspace_category_fkey(name)"
+    )
     .eq("workspace_id", workspaceId);
 }
 

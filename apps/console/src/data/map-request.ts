@@ -1,13 +1,25 @@
 import type { Request, Priority, Status, Category } from "@moc/types/requests";
+import { getCategoryLabel } from "@moc/types/requests";
+
+function getManagedCategoryName(row: Record<string, unknown>): string | undefined {
+  const relation = row.request_categories;
+  if (!relation || typeof relation !== "object" || Array.isArray(relation)) return undefined;
+  const name = (relation as Record<string, unknown>).name;
+  return typeof name === "string" ? name : undefined;
+}
 
 /** Convert a snake_case Supabase row to a camelCase Request */
 export function mapRow(row: Record<string, unknown>): Request {
+  const category = row.category as Category;
+  const categoryName = getCategoryLabel(category, getManagedCategoryName(row));
+
   return {
     id: row.id as string,
     title: row.title as string,
     priority: row.priority as Priority,
     status: row.status as Status,
-    category: row.category as Category,
+    category,
+    categoryName,
     createdAt: row.created_at as string,
     updatedAt: (row.updated_at as string | undefined) ?? (row.created_at as string),
     dueDate: row.due_date as string,
