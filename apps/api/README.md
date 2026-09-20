@@ -13,6 +13,9 @@ See [ADR-0008](../../docs/adr/0008-extract-moc-api-app.md) for why this exists.
 | `POST /api/notify/request` | MOC Request (browser) | stored request ID + tracking code |
 | `POST /api/notify/booking` | MOC Request (browser) | stored booking ID + tracking code |
 | `POST /api/notify/venue-booking` | MOC Request (browser) | stored venue booking ID + tracking code |
+| `POST /api/public/submissions` | MOC Request tracking page | tracking code (lookup) |
+| `PATCH /api/public/submissions` | MOC Request tracking page | tracking code + optimistic version (update) |
+| `DELETE /api/public/submissions` | MOC Request tracking page | tracking code + optimistic version (delete) |
 | `POST /api/notifications/requests` | external senders | HMAC `X-Signature` |
 | `POST /api/notifications/bookings` | external senders | HMAC `X-Signature` |
 | `POST /api/notifications/assignment` | MOC Console (browser) | Supabase session (`x-moc-session`) |
@@ -33,6 +36,26 @@ the same transaction as the source write. The Request PWA can best-effort wake
 the pending created event by presenting the returned record ID and tracking code;
 it cannot inject a workspace, destination, or message payload. Signed external
 endpoints have the same record-derived boundary.
+
+## Public submission management
+
+Tracking codes are bearer secrets: anyone holding a code can view, update, or
+delete that submission until its work has started or it reaches a terminal
+state. The public browser calls the dedicated API domain; it never receives a
+Supabase service credential and cannot execute the tracking mutation RPCs
+directly. New codes contain 12 hexadecimal characters while existing
+6-character codes remain valid.
+
+`POST`, `PATCH`, and `DELETE /api/public/submissions` enforce exact request
+shapes, a 32 KiB body limit, exact-origin CORS, fail-closed rate limiting, and
+type/prefix matching. Mutations use `updatedAt` for optimistic concurrency, so
+an older browser cannot overwrite a newer change. Each update or deletion and
+its requester-originated notification outbox row commit in the same database
+transaction; an immediate delivery failure is retried by the outbox cron.
+
+The public URL is rewritten internally to the existing `/api/notify/[kind]`
+function. This keeps the deployment within the Vercel function budget without
+changing the browser-facing contract.
 
 ## Destination overrides
 
@@ -101,6 +124,8 @@ Browser calls arrive cross-origin and carry a session plus workspace context in
 headers (`x-moc-session`, `x-moc-workspace`), so `ALLOWED_ORIGINS` is an exact allow-list
 and the API echoes the caller's origin — never `*`. Unset means no browser
 origin is allowed. Telegram and Vercel Cron send no `Origin` and are unaffected.
+Public submission management additionally requires an allowed `Origin`; it is
+intentionally a browser-only bearer-code boundary.
 
 **Deploy the API with both frontend origins listed before pointing the
 frontends at it**, or every call fails preflight.
@@ -131,8 +156,8 @@ configuration in the ignored `.env.local`. The launcher creates a temporary
 symlink for the dev process and removes it on shutdown; it never copies or
 prints the values.
 
-Only work that touches Zoom, YouTube or notifications needs the API running.
-Requests, equipment and bookings go straight to Supabase from the browser.
+Creating a request or booking still uses the narrow public Supabase RPCs.
+Tracking-code lookup, update, and deletion require the API to be running.
 
 The root command pins the Vercel CLI version and deliberately avoids an
 API-local `dev` script: Vercel treats that script as its application

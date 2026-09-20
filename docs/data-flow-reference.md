@@ -12,12 +12,13 @@ It separates:
 
 | Domain | Current source | Key files | Notes |
 | --- | --- | --- | --- |
-| Requests | Supabase | `src/data/fetch-requests.ts`, `src/data/mutate-requests.ts`, `src/data/fetch-assignees.ts`, `src/data/map-request.ts` | Duty presets now come from code constants, not a table. |
+| Requests | Supabase + MoC API | `apps/console/src/data/fetch-requests.ts`, `apps/console/src/data/mutate-requests.ts`, `apps/console/src/data/fetch-request-categories.ts`, `apps/request/src/data/tracking-submissions.ts` | Request categories are workspace-managed rows. Public tracking lookup, update, and deletion cross the API boundary rather than exposing mutation RPCs to browser roles. |
 | Auth | Supabase Auth + Supabase | `src/lib/auth-context.tsx`, `src/screens/auth/reset-password.tsx`, `src/screens/auth/password-recovery.tsx` | `users` reads now include `telegram_chat_id`, and password recovery completes through the dedicated recovery route. |
 | Workspace | Supabase membership + approval queue | `apps/console/src/data/current-workspace.ts`, `apps/console/src/data/fetch-workspaces.ts` | Pending accounts cannot resolve an accepted workspace until an owner or admin approves them. |
 | Equipment | Supabase | `src/data/fetch-equipment.ts`, `src/data/mutate-equipment.ts` | Equipment rows remain normalized; booking-derived display fields are added in the mapper. |
 | Streams | Supabase + MoC API | `apps/console/src/data/fetch-streams.ts`, `apps/console/src/data/mutate-streams.ts`, `apps/api/api/youtube/` | Provider calls and OAuth secrets stay behind the dedicated API app. Local `streams` is a cache of provider state. |
 | Venues | Supabase | `apps/console/src/data/fetch-venues.ts`, `mutate-venues.ts`, `fetch-venue-events.ts`, `mutate-venue-events.ts`, `fetch-venue-bookings.ts`, `mutate-venue-bookings.ts`, `map-venue-booking.ts`; `apps/request/src/data/submit-venue-booking.ts`, `fetch-venues.ts`, `fetch-venue-events.ts`, `fetch-venue-availability.ts` | The console reads and cancels only; submissions come from MOC Request through `public_submit_venue_booking`. The booking status shown anywhere is derived by `deriveVenueBookingPhase`, never read from the row. |
+| Public submission tracking | MoC API + service-role RPCs | `apps/api/server/public-submissions/`, `apps/request/src/data/tracking-submissions.ts` | `POST`, `PATCH`, and `DELETE /api/public/submissions` use the tracking code as a bearer secret, enforce allowed origins and fail-closed rate limits, apply optimistic concurrency, and enqueue requester-specific notification events transactionally. |
 | Structural seed | Checked-in SQL | `supabase/phase-01-schema.sql` | Seeds only the roles and default workspace required for bootstrap. |
 
 ## Current Live Code Changes
@@ -32,6 +33,21 @@ The codebase was updated in this pass to align the runtime layer with the docume
 - made request `dueDate` required in the app model
 - added a workspace directory layer plus current-workspace caching and reset hooks around auth changes
 - added the email-reset plus recovery-route password update flow
+
+## Managed Request Categories
+
+`request_categories` is the workspace-scoped source of truth for the normal
+request form and console filters. The initial five categories are seeded for
+each existing workspace during migration and for future workspaces at creation,
+while settings users can add,
+rename, deactivate, or delete unused categories without a code
+deployment. Requests store the stable category key and join the current name
+for display. Categories already referenced by requests cannot be deleted.
+
+The public form reads only active categories through
+`public_list_request_categories`. Tracking an older request still returns its
+joined category name even when that category is inactive, so editing does not
+silently remap historical data.
 
 ## Storage Model vs Read Model
 

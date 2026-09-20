@@ -166,6 +166,28 @@ The first tracked reliability migration is:
     playlist rows transactionally and returns their Storage paths so the console
     can delete every uploaded media object after its database reference is gone.
 
+16. `20260912120000_venue_events_and_lean_venue_bookings` — source:
+    [`migrations/20260912120000_venue_events_and_lean_venue_bookings.sql`](migrations/20260912120000_venue_events_and_lean_venue_bookings.sql).
+    It adds workspace-managed venue event types and narrows public venue
+    bookings to the requested venue, event, requester, and reserved slots.
+
+17. `20260920120000_public_submission_management` — source:
+    [`migrations/20260920120000_public_submission_management.sql`](migrations/20260920120000_public_submission_management.sql).
+    It adds workspace-managed request categories (including defaults for new
+    workspaces), 12-hex tracking codes for
+    new submissions, editable equipment-request labels, and service-role-only
+    lookup, update, and delete RPCs for tracked requests, equipment bookings,
+    and venue bookings. Mutations use the prior `updated_at` value for
+    optimistic concurrency, reject terminal or already-started records, update
+    venue slots transactionally, and enqueue distinct requester update/delete
+    events with durable snapshots. Browser clients must reach these functions
+    through the MoC API; the former anonymous tracking lookup grant is removed.
+
+    Apply this migration before deploying the matching API, request app, and
+    console. Deploy those applications together immediately afterward: the
+    request app expects managed categories and the new API boundary, while the
+    console expects the category relation on request reads.
+
 ## Script history
 
 The phase files are the consolidated historical baseline:
@@ -210,8 +232,9 @@ in policies. It is a drift report rather than a replacement for migration
 history: any non-empty report must be investigated before deployment.
 
 Supabase Security Advisor may still report the deliberately anonymous public
-submission/tracking RPCs because they are `SECURITY DEFINER`. They are the
-public request application boundary and validate a workspace or tracking code.
+submission RPCs because they are `SECURITY DEFINER`; those functions validate
+the workspace and submitted values. Tracking lookup and mutation RPCs are
+service-role-only and sit behind the MoC API's origin checks and rate limits.
 Maintenance RPCs and OAuth-token RPCs are service-role-only. The notification
 queue tables intentionally have RLS without client policies because they are
 also service-role-only.
