@@ -8,16 +8,16 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:console": "npm run dev --workspace apps/console",
-    "dev:request": "npm run dev --workspace apps/request",
-    "dev:broadcast": "npm run dev --workspace apps/broadcast",
-    "dev:api": "npm run --workspace apps/api build",
-    "build:console": "npm run build --workspace apps/console",
-    "build:request": "npm run build --workspace apps/request",
-    "build:broadcast": "npm run build --workspace apps/broadcast",
-    "build:api": "npm run build --workspace apps/api",
-    "build": "npm run build --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
-    "test:api": "npm run test --workspace apps/api"
+    "dev:console": "bun --filter moc-console dev",
+    "dev:request": "bun --filter moc-request dev",
+    "dev:broadcast": "bun --filter moc-broadcast dev",
+    "dev:api": "bun apps/api/scripts/dev.ts",
+    "build:console": "bun --filter moc-console build",
+    "build:request": "bun --filter moc-request build",
+    "build:broadcast": "bun --filter moc-broadcast build",
+    "build:api": "bun --filter moc-api build",
+    "build": "bun --filter '*' build",
+    "lint": "bun --filter '*' lint",
+    "test:api": "bun --filter moc-api test"
   }
 }

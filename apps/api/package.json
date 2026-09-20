@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc -b --force",
     "lint": "eslint .",
-    "test": "npm test"
+    "test": "bun test"
   },
   "dependencies": {
     "@moc/notifications": "*",
