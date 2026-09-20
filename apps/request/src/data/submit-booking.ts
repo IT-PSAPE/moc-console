@@ -12,6 +12,8 @@ export async function submitPublicBookingBatch(data: BookingFormData): Promise<S
     p_checked_out_at: new Date(data.checkedOutAt).toISOString(),
     p_expected_return_at: new Date(data.expectedReturnAt).toISOString(),
     p_notes: data.notes || null,
+    p_requested_equipment: data.requestedEquipment,
+    p_other_equipment: data.otherEquipment.trim() || null,
   })
 
   if (error) throw new Error(error.message)

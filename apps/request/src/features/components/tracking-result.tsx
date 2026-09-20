@@ -5,10 +5,10 @@ import { Label, Paragraph, Title } from '@moc/ui/components/display/text'
 import { Hash, Package, User, CalendarDays, Flag, Tag, CalendarCheck, StickyNote, Building2 } from 'lucide-react'
 import { venueBookingPhaseLabel, venueBookingPhaseColor } from '@moc/types/venues'
 import type { VenueBookingPhase } from '@moc/types/venues'
-import { PRIORITY_LABELS, PRIORITY_COLORS, CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS } from '../constants'
+import { PRIORITY_LABELS, PRIORITY_COLORS, STATUS_LABELS, STATUS_COLORS } from '../constants'
 import { formatDate, formatDateTime } from '@/lib/utils'
-import type { TrackingResult as TrackingResultType } from '@/types/booking'
-import type { RequestPriority, RequestCategory } from '@/types/request'
+import type { TrackingResult as TrackingResultType } from '@/types/tracking'
+import type { RequestPriority } from '@/types/request'
 
 const trackingTypeLabels: Record<TrackingResultType['type'], string> = {
   request: 'Request',
@@ -46,7 +46,7 @@ export function TrackingResult({ data }: { data: TrackingResultType }) {
               )}
               {data.category && (
                 <MetaRow icon={<Tag />} label="Category">
-                  <Badge label={CATEGORY_LABELS[data.category as RequestCategory] ?? data.category} color="blue" variant="outline" />
+                  <Badge label={data.categoryName} color="blue" variant="outline" />
                 </MetaRow>
               )}
               {data.dueDate && (

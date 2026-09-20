@@ -1,4 +1,4 @@
-import type { RequestPriority, RequestCategory } from '@/types/request'
+import type { RequestPriority } from '@/types/request'
 
 export const PRIORITY_LABELS: Record<RequestPriority, string> = {
   low: 'Low',
@@ -12,14 +12,6 @@ export const PRIORITY_COLORS: Record<RequestPriority, 'gray' | 'blue' | 'yellow'
   medium: 'blue',
   high: 'yellow',
   urgent: 'red',
-}
-
-export const CATEGORY_LABELS: Record<RequestCategory, string> = {
-  video_production: 'Video Production',
-  video_shooting: 'Video Shooting',
-  graphic_design: 'Graphic Design',
-  event: 'Event',
-  education: 'Education',
 }
 
 export const STATUS_LABELS: Record<string, string> = {
@@ -61,4 +53,3 @@ export const VENUE_STEPS = [
 ]
 
 export const PRIORITIES: RequestPriority[] = ['low', 'medium', 'high', 'urgent']
-export const CATEGORIES: RequestCategory[] = ['video_production', 'video_shooting', 'graphic_design', 'event', 'education']

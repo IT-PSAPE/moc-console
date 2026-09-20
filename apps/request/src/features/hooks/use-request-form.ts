@@ -4,6 +4,7 @@ import { clearRequestDraft, getEmptyRequestDraft, loadRequestDraft, saveRequestD
 import { getRequestStepErrors } from '@/features/public-flow-validation'
 import { useStepValidation } from '@/features/hooks/use-step-validation'
 import type { RequestFormData, SubmitRequestResult } from '@/types/request'
+import type { RequestCategoryOption } from '@/types/tracking'
 
 type RequestFormState = {
   step: number
@@ -60,11 +61,17 @@ const errorIdByField: Partial<Record<keyof RequestFormData, string>> = {
   how: 'how',
 }
 
-export function useRequestForm() {
+export function useRequestForm(categories: RequestCategoryOption[]) {
   const [state, dispatch] = useReducer(reducer, undefined, getInitialState)
   const validation = useStepValidation()
   const { errors: validationErrors } = validation.state
   const { clearError, validate } = validation.actions
+
+  useEffect(() => {
+    const firstCategory = categories[0]
+    if (!firstCategory || categories.some((category) => category.value === state.data.category)) return
+    dispatch({ type: 'SET_FIELD', field: 'category', value: firstCategory.value })
+  }, [categories, state.data.category])
 
   useEffect(() => {
     saveRequestDraft({ step: state.step, data: state.data })

@@ -3,9 +3,10 @@ import { PublicLayout } from '@/features/components/public-layout'
 import { routes } from '@/screens/console-routes'
 import { Label, Paragraph, Title } from '@moc/ui/components/display/text'
 import { Button } from '@moc/ui/components/controls/button'
-import { Check, Copy } from 'lucide-react'
+import { Check, Copy, Share2 } from 'lucide-react'
 import { useConfirmation } from './use-confirmation'
 import { PublicFlow } from '@/features/components/public-flow'
+import { Alert } from '@moc/ui/components/feedback/alert'
 
 export function ConfirmationScreen() {
   const { state, actions, meta } = useConfirmation()
@@ -35,9 +36,15 @@ export function ConfirmationScreen() {
           <Title.h4 className="font-mono tracking-widest">{trackingCode}</Title.h4>
           {state.copied ? <Check className="size-4 text-success" /> : <Copy className="size-4 text-tertiary" />}
         </Button.Surface>
+        <Paragraph.sm className="max-w-sm text-center text-tertiary">Keep this code private. Anyone who has it can view, update, or delete this submission.</Paragraph.sm>
       </div>
 
+      {state.shareError && <Alert className="mx-auto mt-6 max-w-sm" title="Could not copy or share" description={state.shareError} variant="error" style="filled" />}
+
       <PublicFlow.Actions className="mx-auto mt-12 max-w-sm">
+        <Button variant="secondary" icon={state.shared ? <Check /> : <Share2 />} onClick={actions.share} className="rounded-full px-6 py-3">
+          {state.shared ? 'Shared' : 'Share tracking details'}
+        </Button>
         <Button variant="secondary" onClick={actions.backToHome} className="rounded-full px-6 py-3">
           Back to home
         </Button>

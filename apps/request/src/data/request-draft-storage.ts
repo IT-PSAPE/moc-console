@@ -12,7 +12,7 @@ const EMPTY_REQUEST_DRAFT: RequestFormData = {
   requestedBy: "",
   priority: "medium",
   dueDate: "",
-  category: "video_production",
+  category: "",
   who: "",
   what: "",
   whenText: "",

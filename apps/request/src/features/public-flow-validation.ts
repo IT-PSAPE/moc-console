@@ -21,6 +21,7 @@ export function getRequestStepErrors(step: number, data: RequestFormData): StepV
     return {
       ...(titleError ? { title: titleError } : {}),
       ...(requestedByError ? { 'requested-by': requestedByError } : {}),
+      ...(!data.category ? { category: 'Choose a request category.' } : {}),
       ...(!data.dueDate ? { 'due-date-date': 'Enter a due date and time.' } : {}),
     }
   }

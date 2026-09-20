@@ -4,20 +4,20 @@ import { FormLabel } from '@moc/ui/components/form/form-label'
 import { FieldError } from '@/features/components/field-error'
 import type { StepValidationErrors } from '@/features/hooks/use-step-validation'
 import { SelectField } from '@moc/ui/components/form/select-field'
-import { PRIORITIES, PRIORITY_LABELS, CATEGORIES, CATEGORY_LABELS } from '../constants'
+import { PRIORITIES, PRIORITY_LABELS } from '../constants'
 import type { RequestFormData } from '@/types/request'
+import type { RequestCategoryOption } from '@/types/tracking'
 import type { ChangeEvent } from 'react'
 
 const priorityItems = PRIORITIES.map((priority) => ({ label: PRIORITY_LABELS[priority], value: priority }))
-const categoryItems = CATEGORIES.map((category) => ({ label: CATEGORY_LABELS[category], value: category }))
-
 type RequestBasicInfoProps = {
   data: RequestFormData
+  categories: RequestCategoryOption[]
   onChange: (field: keyof RequestFormData, value: string) => void
   errors: StepValidationErrors
 }
 
-export function RequestBasicInfo({ data, onChange, errors }: RequestBasicInfoProps) {
+export function RequestBasicInfo({ data, categories, onChange, errors }: RequestBasicInfoProps) {
   function handleTitleChange(event: ChangeEvent<HTMLInputElement>) {
     onChange('title', event.target.value)
   }
@@ -70,9 +70,10 @@ export function RequestBasicInfo({ data, onChange, errors }: RequestBasicInfoPro
             label="Category"
             name="category"
             value={data.category}
-            items={categoryItems}
+            items={categories}
             onValueChange={handleCategoryChange}
           />
+          <FieldError id="category-error" message={errors.category} />
         </div>
       </div>
 

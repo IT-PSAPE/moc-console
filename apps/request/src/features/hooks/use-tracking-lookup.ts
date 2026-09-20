@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
-import { lookupTrackingCode } from '@/data/lookup-tracking'
-import type { TrackingResult } from '@/types/booking'
+import { deleteTrackedSubmission, lookupTrackingCode } from '@/data/tracking-submissions'
+import type { TrackingResult } from '@/types/tracking'
+import { canRequesterModify } from '@/features/tracking-submission'
 
 export function useTrackingLookup() {
   const [code, setCode] = useState('')
@@ -9,6 +10,10 @@ export function useTrackingLookup() {
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [searched, setSearched] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
 
   const lookup = useCallback(async () => {
     if (!code.trim()) return
@@ -17,6 +22,8 @@ export function useTrackingLookup() {
     setError(null)
     setNotFound(false)
     setResult(null)
+    setEditing(false)
+    setNotice(null)
     setSearched(true)
 
     try {
@@ -33,5 +40,49 @@ export function useTrackingLookup() {
     }
   }, [code])
 
-  return { code, setCode, result, loading, error, notFound, searched, lookup }
+  function beginEdit() {
+    setEditing(true)
+    setNotice(null)
+  }
+
+  function cancelEdit() {
+    setEditing(false)
+  }
+
+  function handleSaved(submission: TrackingResult) {
+    setResult(submission)
+    setEditing(false)
+    setNotice("Your changes have been saved.")
+  }
+
+  function openDelete() {
+    setDeleteOpen(true)
+  }
+
+  function closeDelete() {
+    setDeleteOpen(false)
+  }
+
+  const remove = useCallback(async () => {
+    if (!result) return
+    setDeleting(true)
+    setError(null)
+    try {
+      await deleteTrackedSubmission(result)
+      setResult(null)
+      setEditing(false)
+      setDeleteOpen(false)
+      setNotice("The submission has been deleted.")
+    } catch (err) {
+      setDeleteOpen(false)
+      setError(err instanceof Error ? err.message : "Failed to delete the submission")
+    } finally {
+      setDeleting(false)
+    }
+  }, [result])
+
+  return {
+    state: { code, result, loading, error, notFound, searched, editing, deleteOpen, deleting, notice, canModify: result ? canRequesterModify(result) : false },
+    actions: { setCode, lookup, beginEdit, cancelEdit, handleSaved, openDelete, closeDelete, remove },
+  }
 }

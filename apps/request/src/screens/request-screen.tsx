@@ -14,14 +14,22 @@ import { StepIndicatorBar } from '@/features/components/step-indicator-bar';
 import { FlowHeader } from '@/features/components/flow-header'
 import { PublicFlow } from '@/features/components/public-flow'
 import { StepErrorSummary } from '@/features/components/step-error-summary'
+import { useRequestCategories } from '@/features/hooks/use-request-categories'
 import type { FormEvent } from 'react'
+import type { RequestCategoryOption } from '@/types/tracking'
 
 const requestStepLabels = REQUEST_STEPS.map((step) => step.label)
 
+function resolveCategoryName(categories: RequestCategoryOption[], value: string): string {
+  return categories.find((category) => category.value === value)?.label ?? value
+}
+
 export function RequestScreen() {
   const navigate = useNavigate()
-  const { state, actions } = useRequestForm()
+  const categoryOptions = useRequestCategories()
+  const { state, actions } = useRequestForm(categoryOptions.state.categories)
   const isLastStep = state.step === 4
+  const categoryName = resolveCategoryName(categoryOptions.state.categories, state.data.category)
 
   async function handleNext() {
     if (!actions.validateCurrentStep()) return
@@ -60,15 +68,16 @@ export function RequestScreen() {
 
         <StepErrorSummary errors={state.validationErrors} />
 
-        {state.step === 1 && <RequestBasicInfo data={state.data} onChange={actions.setField} errors={state.validationErrors} />}
+        {state.step === 1 && <RequestBasicInfo data={state.data} categories={categoryOptions.state.categories} onChange={actions.setField} errors={state.validationErrors} />}
         {state.step === 2 && <RequestDetails data={state.data} onChange={actions.setField} errors={state.validationErrors} />}
         {state.step === 3 && <RequestFlow data={state.data} onChange={actions.setField} />}
-        {state.step === 4 && <RequestReview data={state.data} />}
+        {state.step === 4 && <RequestReview data={state.data} categoryName={categoryName} />}
 
+        {categoryOptions.state.error && <Alert title="Could not load categories" description={categoryOptions.state.error} variant="error" style="filled" />}
         {state.error && <Alert title="Submission failed" description={state.error} variant="error" style="filled" />}
 
         <PublicFlow.Actions>
-          <Button type="submit" disabled={state.submitting} className="rounded-full">
+          <Button type="submit" disabled={state.submitting || categoryOptions.state.loading || categoryOptions.state.categories.length === 0} className="rounded-full">
             {state.submitting ? <Spinner size="sm" /> : isLastStep ? 'Submit' : 'Next'}
           </Button>
         </PublicFlow.Actions>

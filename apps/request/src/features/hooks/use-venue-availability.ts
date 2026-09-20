@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { fetchPublicVenues } from '@/data/fetch-venues'
 import { fetchPublicVenueEvents } from '@/data/fetch-venue-events'
 import { fetchVenueAvailability } from '@/data/fetch-venue-availability'
@@ -26,8 +26,8 @@ type ListsState = {
   error: string | null
 }
 
-function toSlotOption(slot: VenueAvailabilitySlot): VenueSlotOption {
-  return { id: slot.slotStart, label: formatTime(slot.slotStart, slot.timeZone), available: slot.available }
+function toSlotOption(slot: VenueAvailabilitySlot, reservedSlots: ReadonlySet<string>): VenueSlotOption {
+  return { id: slot.slotStart, label: formatTime(slot.slotStart, slot.timeZone), available: slot.available || reservedSlots.has(slot.slotStart) }
 }
 
 // Every row of one response reports the same workspace zone, so the first row
@@ -45,11 +45,13 @@ function getErrorMessage(err: unknown, fallback: string): string {
 // of fetching directly. Loading state is derived from whether the last
 // settled fetch matches the current (venueId, bookingDate) key, rather than
 // toggled with a synchronous setState at the top of the effect.
-export function useVenueAvailability(venueId: string, bookingDate: string) {
+export function useVenueAvailability(venueId: string, bookingDate: string, reservedSlotStarts: string[] = []) {
   const [lists, setLists] = useState<ListsState>({ venues: [], events: [], loading: true, error: null })
 
   const [slotsState, setSlotsState] = useState<SlotsState>({ slots: [], timeZone: null, error: null, settledKey: null })
   const slotsKey = `${venueId}::${bookingDate}`
+  const reservedSlotsKey = reservedSlotStarts.join("::")
+  const reservedSlots = useMemo(() => new Set(reservedSlotsKey ? reservedSlotsKey.split("::") : []), [reservedSlotsKey])
 
   useEffect(() => {
     let cancelled = false
@@ -78,7 +80,7 @@ export function useVenueAvailability(venueId: string, bookingDate: string) {
 
     fetchVenueAvailability(venueId, bookingDate)
       .then((result) => {
-        if (!cancelled) setSlotsState({ slots: result.map(toSlotOption), timeZone: gridTimeZone(result), error: null, settledKey: requestedKey })
+        if (!cancelled) setSlotsState({ slots: result.map((slot) => toSlotOption(slot, reservedSlots)), timeZone: gridTimeZone(result), error: null, settledKey: requestedKey })
       })
       .catch((err: unknown) => {
         if (!cancelled) setSlotsState({ slots: [], timeZone: null, error: getErrorMessage(err, 'Failed to load availability'), settledKey: requestedKey })
@@ -87,7 +89,7 @@ export function useVenueAvailability(venueId: string, bookingDate: string) {
     return () => {
       cancelled = true
     }
-  }, [venueId, bookingDate, slotsKey])
+  }, [venueId, bookingDate, slotsKey, reservedSlots])
 
   const hasVenueAndDate = Boolean(venueId && bookingDate)
   const slotsCurrent = slotsState.settledKey === slotsKey

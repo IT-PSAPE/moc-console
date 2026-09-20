@@ -1,13 +1,11 @@
-export type BookingStatus = 'booked' | 'checked_out' | 'returned'
+export type BookingStatus = 'booked' | 'checked_out' | 'returned' | 'archived'
 
 export type BookingFormData = {
   title: string
   equipmentIds: string[]
-  // TODO(equipment-inventory): STOPGAP fields. While live inventory is
-  // disabled, equipment is chosen from a hardcoded list (requestedEquipment)
-  // plus a free-text "Other" (otherEquipment); these are folded into `notes`
-  // at submit and `equipmentIds` stays empty. Remove both once the real
-  // equipment browser is restored (see booking-equipment-picker.tsx).
+  // Public bookings currently capture requested equipment labels rather than
+  // allocating inventory rows. The backend stores these separately from notes
+  // so the requester can safely edit them later.
   requestedEquipment: string[]
   otherEquipment: string
   bookedBy: string
@@ -30,26 +28,4 @@ export type TrackingBookingItem = {
   equipmentId: string
   equipmentName: string
   equipmentCategory: string
-}
-
-export type TrackingResult = {
-  type: 'request' | 'booking' | 'venue_booking'
-  trackingCode: string
-  status?: string
-  title?: string
-  priority?: string
-  category?: string
-  requestedBy?: string
-  dueDate?: string
-  createdAt: string
-  bookedBy?: string
-  checkedOutAt?: string
-  expectedReturnAt?: string
-  returnedAt?: string | null
-  notes?: string
-  items?: TrackingBookingItem[]
-  venueName?: string
-  venueLocation?: string | null
-  startsAt?: string
-  endsAt?: string
 }

@@ -1,6 +1,6 @@
 export type RequestPriority = 'low' | 'medium' | 'high' | 'urgent'
 export type RequestStatus = 'not_started' | 'in_progress' | 'completed' | 'archived'
-export type RequestCategory = 'video_production' | 'video_shooting' | 'graphic_design' | 'event' | 'education'
+export type RequestCategory = string
 
 export type RequestFormData = {
   title: string

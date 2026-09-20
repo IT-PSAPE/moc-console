@@ -3,11 +3,11 @@ import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Divider } from '@moc/ui/components/display/divider'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { User, FileText, Flag, CalendarDays, Tag, Users, MapPin, Clock, Target, Lightbulb, Wrench, StickyNote, GitBranch } from 'lucide-react'
-import { PRIORITY_LABELS, PRIORITY_COLORS, CATEGORY_LABELS } from '../constants'
+import { PRIORITY_LABELS, PRIORITY_COLORS } from '../constants'
 import type { RequestFormData, RequestPriority } from '@/types/request'
 import { formatDateTime } from '@/lib/utils'
 
-export function RequestReview({ data }: { data: RequestFormData }) {
+export function RequestReview({ data, categoryName }: { data: RequestFormData; categoryName: string }) {
   return (
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-3">
@@ -23,7 +23,7 @@ export function RequestReview({ data }: { data: RequestFormData }) {
             <Badge label={PRIORITY_LABELS[data.priority]} color={PRIORITY_COLORS[data.priority as RequestPriority]} />
           </MetaRow>
           <MetaRow icon={<Tag />} label="Category">
-            <Badge label={CATEGORY_LABELS[data.category]} color="blue" variant="outline" />
+            <Badge label={categoryName || data.category} color="blue" variant="outline" />
           </MetaRow>
           <MetaRow icon={<CalendarDays />} label="Due date">
             <Label.sm>{formatDateTime(data.dueDate)}</Label.sm>

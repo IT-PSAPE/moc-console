@@ -3,10 +3,6 @@ import { submitPublicBookingBatch } from '@/data/submit-booking'
 import { getBookingStepErrors } from '@/features/public-flow-validation'
 import { useStepValidation } from '@/features/hooks/use-step-validation'
 import type { BookingFormData, SubmitBookingResult } from '@/types/booking'
-// TODO(equipment-inventory): STOPGAP import — only used to order the
-// hardcoded equipment selections in the assembled notes. Remove with the
-// rest of the stopgap once live inventory is restored.
-import { BOOKABLE_EQUIPMENT } from '@/features/components/booking-equipment-picker'
 
 export type BookingFormState = {
   step: number
@@ -35,25 +31,6 @@ const initialData: BookingFormData = {
   checkedOutAt: '',
   expectedReturnAt: '',
   notes: '',
-}
-
-// TODO(equipment-inventory): STOPGAP — assemble the hardcoded equipment
-// selection into the booking's notes. Selections are listed in display
-// order, with the free-text "Other" entry last. Remove once live inventory
-// (real equipmentIds) is restored.
-function assembleBookingNotes(data: BookingFormData): string {
-  const lines = BOOKABLE_EQUIPMENT
-    .filter((label) => data.requestedEquipment.includes(label))
-    .map((label) => `- ${label}`)
-
-  const other = data.otherEquipment.trim()
-  if (other) lines.push(`- Other: ${other}`)
-
-  const userNotes = data.notes.trim()
-  if (lines.length === 0) return userNotes
-
-  const section = `Requested equipment:\n${lines.join('\n')}`
-  return userNotes ? `${userNotes}\n\n---\n\n${section}` : section
 }
 
 function reducer(state: BookingFormState, action: BookingFormAction): BookingFormState {
@@ -139,13 +116,9 @@ export function useBookingForm() {
   const submit = useCallback(async (): Promise<SubmitBookingResult | null> => {
     dispatch({ type: 'SUBMIT_START' })
     try {
-      // TODO(equipment-inventory): STOPGAP — fold the hardcoded equipment
-      // selection into notes and submit with an empty equipmentIds. Restore
-      // submitting `state.data` directly (with real equipmentIds) later.
       const payload: BookingFormData = {
         ...state.data,
         equipmentIds: [],
-        notes: assembleBookingNotes(state.data),
       }
       const result = await submitPublicBookingBatch(payload)
       dispatch({ type: 'SUBMIT_SUCCESS' })
