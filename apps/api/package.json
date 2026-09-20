@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc -b --force",
     "lint": "eslint .",
-    "test": "bun test"
+    "test": "bun test",
+    "telegram:webhook": "bun run scripts/set-telegram-webhook.ts"
   },
   "dependencies": {
     "@moc/notifications": "*",
