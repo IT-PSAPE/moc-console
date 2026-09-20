@@ -4,12 +4,26 @@ import { describe, it } from "node:test"
 import { buildTrackingShareData, canRequesterModify, toBookingEditData, toRequestEditData, toVenueEditData } from "./tracking-submission.js"
 
 describe("buildTrackingShareData", () => {
-  it("shares the tracking page without putting the bearer code in the URL", () => {
+  it("separates the private tracking code and tracking page into scannable sections", () => {
     const share = buildTrackingShareData("REQ-123456789ABC", "https://requests.example.com")
 
+    assert.equal(share.title, "MOC request tracking details")
     assert.equal(share.url, "https://requests.example.com/track")
-    assert.ok(share.text.includes("REQ-123456789ABC"))
-    assert.ok(share.text.includes("Keep it private"))
+    assert.equal(share.text, [
+      "MOC REQUEST TRACKING DETAILS",
+      "",
+      "IMPORTANT: Keep this tracking code safe and private.",
+      "",
+      "Tracking code:",
+      "REQ-123456789ABC",
+      "",
+      "Anyone with this code can view, update, or delete the submission.",
+      "",
+      "Open the tracking page and enter the code:",
+      "",
+      "",
+      "https://requests.example.com/track",
+    ].join("\n"))
     assert.ok(!share.url.includes("REQ-123456789ABC"))
   })
 })

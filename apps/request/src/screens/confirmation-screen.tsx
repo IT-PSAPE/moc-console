@@ -33,7 +33,7 @@ export function ConfirmationScreen() {
       <div className="mt-8 flex w-full flex-col items-center gap-3">
         <Paragraph.md className="text-secondary">Save this tracking code</Paragraph.md>
         <Button.Surface aria-label="Copy tracking code" className="flex w-full max-w-sm items-center justify-center gap-3 rounded-xl border border-secondary bg-secondary/50 px-5 py-3" onClick={actions.copy}>
-          <Title.h4 className="font-mono tracking-widest">{trackingCode}</Title.h4>
+          <Title.h6 className="font-mono tracking-widest">{trackingCode}</Title.h6>
           {state.copied ? <Check className="size-4 text-success" /> : <Copy className="size-4 text-tertiary" />}
         </Button.Surface>
         <Paragraph.sm className="max-w-sm text-center text-tertiary">Keep this code private. Anyone who has it can view, update, or delete this submission.</Paragraph.sm>
