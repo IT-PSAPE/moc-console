@@ -10,7 +10,7 @@ export function OptionCard({ icon, title, description, onClick, className }: { i
     <Button.Surface
       className={cn(
         'group flex items-center gap-4 rounded-xl p-2 cursor-pointer transition-[background-color border-color box-shadow transform] motion-reduce:transition-none',
-        'bg-secondary hover:bg-tertiary active:scale-[0.98]',
+        'bg-secondary/90 hover:bg-tertiary/90 backdrop-blur-md active:scale-[0.98]',
         className,
       )}
       onClick={onClick}

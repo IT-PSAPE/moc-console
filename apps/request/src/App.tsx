@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import { routes } from './screens/console-routes'
 import { Spinner } from '@moc/ui/components/feedback/spinner'
+import { useSystemTheme } from '@/hooks/use-system-theme'
 
 const HomeScreen = lazy(() => import('@/screens/home-screen').then((module) => ({ default: module.HomeScreen })))
 const RequestScreen = lazy(() => import('@/screens/request-screen').then((module) => ({ default: module.RequestScreen })))
@@ -23,6 +24,8 @@ const router = createBrowserRouter([
 ])
 
 function App() {
+    useSystemTheme()
+
     return (
         <Suspense fallback={<main className="flex min-h-dvh items-center justify-center"><Spinner size="lg" /></main>}>
             <RouterProvider router={router} />

@@ -7,6 +7,7 @@ import { Check, Copy, Share2 } from 'lucide-react'
 import { useConfirmation } from './use-confirmation'
 import { PublicFlow } from '@/features/components/public-flow'
 import { Alert } from '@moc/ui/components/feedback/alert'
+import { ColorSchemeImage } from '@moc/ui/components/display/color-scheme-image'
 
 export function ConfirmationScreen() {
   const { state, actions, meta } = useConfirmation()
@@ -20,7 +21,7 @@ export function ConfirmationScreen() {
 
   return (
     <PublicLayout className="py-8 sm:py-12">
-      <img src="/assets/light/icon_check.avif" alt="" width="240" height="240" className='size-60 mb-8 mx-auto' />
+      <ColorSchemeImage lightSrc="/assets/light/icon_check.avif" darkSrc="/assets/dark/icon_check.avif" alt="" width="240" height="240" className="mx-auto mb-8 size-60" />
       <Title.h1 className="title-h3 text-center">Submission received</Title.h1>
 
       {title && (

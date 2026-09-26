@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Title } from '@moc/ui/components/display/text'
+import { ColorSchemeImage } from '@moc/ui/components/display/color-scheme-image'
 import { PublicLayout } from '@/features/components/public-layout'
 import { OptionCard } from '@/features/components/option-card'
 import { SubmissionDrafts } from '@/features/components/submission-drafts'
@@ -23,7 +24,7 @@ export function HomeScreen() {
   return (
     <PublicLayout>
       <div className="py-12">
-        <Title.h1 className="title-h3 text-center">PE Church request portal</Title.h1>
+        <Title.h1 className="title-h3 text-center">PE Church Request Portal</Title.h1>
       </div>
 
       <div className="w-full space-y-4">
@@ -38,31 +39,37 @@ export function HomeScreen() {
           />
         )}
         <OptionCard
-          icon={<img src="/assets/light/icon_inbox.avif" className='size-16' />}
+          icon={<ColorSchemeImage lightSrc="/assets/light/icon_inbox.avif" darkSrc="/assets/dark/icon_inbox.avif" alt="" className="size-16" />}
           title="Make a request"
           description="Submit a new production or media request with full details."
           onClick={handleRequest}
-          />
+        />
         <OptionCard
-          icon={<img src="/assets/light/icon_toolbox.avif" className='size-16' />}
+          icon={<ColorSchemeImage lightSrc="/assets/light/icon_toolbox.avif" darkSrc="/assets/dark/icon_toolbox.avif" alt="" className="size-16" />}
           title="Book equipment"
           description="Browse available equipment and reserve what you need."
           onClick={handleBooking}
         />
         <OptionCard
-          icon={<img src="/assets/light/icon_venue.avif" className='size-16' />}
+          icon={<ColorSchemeImage lightSrc="/assets/light/icon_venue.avif" darkSrc="/assets/dark/icon_venue.avif" alt="" className="size-16" />}
           title="Book a venue"
           description="Choose a venue and reserve a block of time."
           onClick={handleVenue}
         />
         <OptionCard
-          icon={<img src="/assets/light/icon_folder.avif" className='size-16' />}
+          icon={<ColorSchemeImage lightSrc="/assets/light/icon_folder.avif" darkSrc="/assets/dark/icon_folder.avif" alt="" className="size-16" />}
           title="Track a submission"
           description="Look up the status of an existing request or booking."
           onClick={handleTrack}
         />
       </div>
-      <img src="./assets/light/background-sky.avif" alt="" className="w-full h-full object-cover absolute -z-1 inset-0" />
+      <ColorSchemeImage
+        lightSrc="/assets/light/background-sky.avif"
+        darkSrc="/assets/dark/background-sky.avif"
+        alt=""
+        pictureClassName="absolute inset-0 -z-1"
+        className="size-full object-cover"
+      />
     </PublicLayout>
   )
 }
