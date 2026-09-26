@@ -98,19 +98,6 @@ CREATE TRIGGER set_notification_recipients_updated_at
   BEFORE UPDATE ON public.notification_recipients
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
--- phase-17: bug_reports has its own updated_at stamper
-CREATE OR REPLACE FUNCTION public.set_bug_reports_updated_at()
-RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN
-  NEW.updated_at := now();
-  RETURN NEW;
-END $$;
-
-DROP TRIGGER IF EXISTS bug_reports_set_updated_at ON public.bug_reports;
-CREATE TRIGGER bug_reports_set_updated_at
-  BEFORE UPDATE ON public.bug_reports
-  FOR EACH ROW EXECUTE FUNCTION public.set_bug_reports_updated_at();
-
 -- phase-18: event_shares has its own updated_at stamper
 CREATE OR REPLACE FUNCTION public.set_event_shares_updated_at()
 RETURNS trigger LANGUAGE plpgsql AS $$

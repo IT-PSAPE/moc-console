@@ -96,12 +96,6 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- phase-17 enum
-DO $$ BEGIN
-  CREATE TYPE public.bug_report_status AS ENUM ('new', 'triaged', 'in_progress', 'resolved', 'wontfix');
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
-
 -- ===== TABLES =====
 
 -- colors
@@ -553,27 +547,6 @@ CREATE TABLE IF NOT EXISTS public.zoom_meetings (
   UNIQUE (workspace_id, zoom_meeting_id)
 );
 
--- bug_reports (phase-17; phase-19 error_context folded in)
-CREATE TABLE IF NOT EXISTS public.bug_reports (
-  id                 uuid                     PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id            uuid                     NULL REFERENCES public.users(id) ON DELETE SET NULL,
-  description        text                     NOT NULL CHECK (char_length(description) BETWEEN 1 AND 2000),
-  url                text                     NULL,
-  user_agent         text                     NULL,
-  platform           text                     NULL,
-  viewport_width     integer                  NULL,
-  viewport_height    integer                  NULL,
-  device_pixel_ratio numeric                  NULL,
-  timezone           text                     NULL,
-  locale             text                     NULL,
-  app_version        text                     NULL,
-  status             public.bug_report_status NOT NULL DEFAULT 'new',
-  resolution_notes   text                     NULL,
-  error_context      jsonb                    NULL,
-  created_at         timestamptz              NOT NULL DEFAULT now(),
-  updated_at         timestamptz              NOT NULL DEFAULT now()
-);
-
 -- event_shares (phase-18)
 CREATE TABLE IF NOT EXISTS public.event_shares (
   id                uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -786,14 +759,6 @@ CREATE INDEX IF NOT EXISTS idx_zoom_meetings_workspace_id    ON public.zoom_meet
 CREATE INDEX IF NOT EXISTS idx_zoom_meetings_zoom_connection_workspace_id
   ON public.zoom_meetings (zoom_connection_id, workspace_id);
 CREATE INDEX IF NOT EXISTS idx_zoom_meetings_start_time      ON public.zoom_meetings (start_time);
-
--- bug_reports (phase-17 + phase-19)
-CREATE INDEX IF NOT EXISTS bug_reports_user_id_idx    ON public.bug_reports (user_id);
-CREATE INDEX IF NOT EXISTS bug_reports_status_idx     ON public.bug_reports (status);
-CREATE INDEX IF NOT EXISTS bug_reports_created_at_idx ON public.bug_reports (created_at DESC);
-CREATE INDEX IF NOT EXISTS bug_reports_error_context_present_idx
-  ON public.bug_reports ((error_context IS NOT NULL))
-  WHERE error_context IS NOT NULL;
 
 -- event_shares / event_playback_state (phase-18)
 CREATE UNIQUE INDEX IF NOT EXISTS event_shares_one_active_per_event_idx

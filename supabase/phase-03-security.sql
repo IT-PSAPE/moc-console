@@ -46,7 +46,6 @@ ALTER TABLE public.youtube_connections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.streams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.zoom_connections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.zoom_meetings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.bug_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.event_shares ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.event_playback_state ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.telegram_link_tokens ENABLE ROW LEVEL SECURITY;
@@ -1506,27 +1505,6 @@ CREATE POLICY "zoom_meetings_delete" ON public.zoom_meetings
     private.is_workspace_member(workspace_id)
     AND private.current_user_can('can_delete')
   );
-
--- ===== BUG REPORTS POLICIES (phase-17) =====
-
-DROP POLICY IF EXISTS "bug_reports_insert" ON public.bug_reports;
-CREATE POLICY "bug_reports_insert" ON public.bug_reports
-  FOR INSERT TO authenticated
-  WITH CHECK (user_id = auth.uid());
-
-DROP POLICY IF EXISTS "bug_reports_select" ON public.bug_reports;
-CREATE POLICY "bug_reports_select" ON public.bug_reports
-  FOR SELECT TO authenticated
-  USING (
-    user_id = auth.uid()
-    OR private.current_user_can('can_manage_roles')
-  );
-
-DROP POLICY IF EXISTS "bug_reports_update" ON public.bug_reports;
-CREATE POLICY "bug_reports_update" ON public.bug_reports
-  FOR UPDATE TO authenticated
-  USING (private.current_user_can('can_manage_roles'))
-  WITH CHECK (private.current_user_can('can_manage_roles'));
 
 -- ===== EVENT SHARING POLICIES (phase-18) =====
 

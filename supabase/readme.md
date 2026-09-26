@@ -188,6 +188,12 @@ The first tracked reliability migration is:
     request app expects managed categories and the new API boundary, while the
     console expects the category relation on request reads.
 
+18. `20260925120000_remove_bug_reports` — source:
+    [`migrations/20260925120000_remove_bug_reports.sql`](migrations/20260925120000_remove_bug_reports.sql).
+    It permanently removes the retired `bug_reports` table, its trigger helper,
+    and the `bug_report_status` enum. Back up any reports that must be retained
+    before applying it.
+
 ## Script history
 
 The phase files are the consolidated historical baseline:

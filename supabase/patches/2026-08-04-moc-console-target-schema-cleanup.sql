@@ -11,7 +11,7 @@
 -- configuration, Telegram configuration, avatars, and media-bucket objects.
 --
 -- Removed data includes the old bookings backup, Broadcast playlists/library,
--- Cue Sheet events/tracks/cues/templates/shares/playback, colors, and the
+-- Cue Sheet events/tracks/cues/templates/shares/playback, bug reports, colors, and the
 -- legacy global user_roles table after its values are copied into
 -- workspace_users.role_id.
 --
@@ -47,6 +47,7 @@ DROP FUNCTION IF EXISTS public.save_event_tracks(uuid, jsonb);
 DROP FUNCTION IF EXISTS public.get_shared_event_view(text);
 DROP FUNCTION IF EXISTS public.upsert_event_playback_state(uuid, numeric, boolean, numeric);
 DROP FUNCTION IF EXISTS public.set_event_shares_updated_at() CASCADE;
+DROP FUNCTION IF EXISTS public.set_bug_reports_updated_at() CASCADE;
 DROP FUNCTION IF EXISTS public.save_playlist_lanes(uuid, jsonb);
 DROP FUNCTION IF EXISTS public.save_playlist_queue(uuid, jsonb);
 
@@ -81,10 +82,12 @@ DROP TABLE IF EXISTS public.queue CASCADE;
 DROP TABLE IF EXISTS public.playlist_lanes CASCADE;
 DROP TABLE IF EXISTS public.playlists CASCADE;
 DROP TABLE IF EXISTS public.media CASCADE;
+DROP TABLE IF EXISTS public.bug_reports CASCADE;
 
 DROP TYPE IF EXISTS public.media_type;
 DROP TYPE IF EXISTS public.playlist_status;
 DROP TYPE IF EXISTS public.cue_type;
+DROP TYPE IF EXISTS public.bug_report_status;
 
 DELETE FROM public.notification_message_templates
 WHERE message_type = 'assignment.cue';
@@ -1064,41 +1067,6 @@ CREATE POLICY "workspaces_update" ON public.workspaces
   USING (private.current_user_can(id, 'can_manage_roles'))
   WITH CHECK (private.current_user_can(id, 'can_manage_roles'));
 
--- Bug reports have no workspace_id. Managers may see/update a report only if
--- they share at least one accepted workspace with its author.
-DROP POLICY IF EXISTS "bug_reports_select" ON public.bug_reports;
-CREATE POLICY "bug_reports_select" ON public.bug_reports
-  FOR SELECT TO authenticated
-  USING (
-    user_id = auth.uid()
-    OR EXISTS (
-      SELECT 1
-      FROM public.workspace_users AS author_membership
-      WHERE author_membership.user_id = bug_reports.user_id
-        AND private.current_user_can(author_membership.workspace_id, 'can_manage_roles')
-    )
-  );
-
-DROP POLICY IF EXISTS "bug_reports_update" ON public.bug_reports;
-CREATE POLICY "bug_reports_update" ON public.bug_reports
-  FOR UPDATE TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1
-      FROM public.workspace_users AS author_membership
-      WHERE author_membership.user_id = bug_reports.user_id
-        AND private.current_user_can(author_membership.workspace_id, 'can_manage_roles')
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1
-      FROM public.workspace_users AS author_membership
-      WHERE author_membership.user_id = bug_reports.user_id
-        AND private.current_user_can(author_membership.workspace_id, 'can_manage_roles')
-    )
-  );
-
 -- Rewrite conventional policies that pair is_workspace_member(workspace) with
 -- the legacy one-argument permission helper. The permission check is moved
 -- beside that exact workspace expression. Exceptional OR policies are replaced
@@ -1148,7 +1116,6 @@ BEGIN
     FROM pg_policies
     WHERE schemaname = 'public'
       AND tablename NOT IN (
-        'bug_reports',
         'notification_message_templates',
         'notification_recipients',
         'notification_routes',
@@ -1552,8 +1519,6 @@ GRANT SELECT, UPDATE, DELETE ON public.bookings TO authenticated;
 GRANT SELECT ON public.booking_items TO authenticated;
 GRANT SELECT ON public.request_activity TO authenticated;
 GRANT SELECT, INSERT ON public.request_comments TO authenticated;
-GRANT SELECT, INSERT, UPDATE ON public.bug_reports TO authenticated;
-
 -- Integrations: credentials and provider lifecycle writes stay server-side.
 GRANT SELECT, UPDATE ON public.youtube_connections TO authenticated;
 GRANT SELECT ON public.zoom_connections TO authenticated;
@@ -1650,7 +1615,6 @@ BEGIN
     AND relation.relname <> ALL (ARRAY[
       'booking_items',
       'bookings',
-      'bug_reports',
       'checklist_item_assignees',
       'checklist_items',
       'checklist_sections',
