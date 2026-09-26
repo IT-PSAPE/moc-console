@@ -90,6 +90,13 @@ export function computeSlotRangeSelection(slots: DateSlotPickerSlotData[], selec
   return range.every((slot) => slot.available) ? range.map((slot) => slot.id) : selectedIds
 }
 
+export function getDateSlotPickerSlotClassName(available: boolean, selected: boolean): string {
+  return cn(
+    'w-full justify-center',
+    available && !selected && 'hover:border-brand/40 hover:bg-brand_solid/10',
+  )
+}
+
 // ─── Context ─────────────────────────────────────────────
 
 const DateSlotPickerContext = createContext<DateSlotPickerContextValue | null>(null)
@@ -259,7 +266,7 @@ function DateSlotPickerSlot({ id, label, available }: DateSlotPickerSlotProps) {
       disabled={!available}
       aria-pressed={isSelected}
       aria-label={available ? label : `${label}, unavailable`}
-      className="w-full justify-center"
+      className={getDateSlotPickerSlotClassName(available, isSelected)}
       onClick={handleClick}
     >
       {label}
