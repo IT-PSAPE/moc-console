@@ -13,7 +13,7 @@ export function PendingAccessScreen({ checking, onCheckAgain, onSignOut }: Pendi
   return (
     <AuthLayout>
       <div className="space-y-5 text-center">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-brand_secondary text-brand">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-brand text-brand">
           <Clock3 className="size-6" aria-hidden="true" />
         </div>
         <div className="space-y-2">

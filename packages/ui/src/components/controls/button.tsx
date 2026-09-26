@@ -31,29 +31,29 @@ const buttonVariants = cv({
     variants: {
         variant: {
             primary: [
-                "border-transparent bg-brand_solid text-primary_on-brand",
-                "hover:bg-brand_solid-hover active:bg-brand_solid-hover",
-                "disabled:border-disabled disabled:bg-disabled disabled:text-disable",
+                "border-transparent bg-brand_solid text-on-brand",
+                "hover:bg-brand_solid/90 active:bg-brand_solid/90",
+                "disabled:border-primary disabled:bg-tertiary disabled:text-quaternary",
             ],
             secondary: [
                 "border-secondary bg-primary text-secondary",
-                "hover:bg-primary_hover active:bg-primary_hover",
-                "disabled:border-disabled disabled:bg-disabled disabled:text-disable",
+                "hover:bg-tertiary active:bg-tertiary",
+                "disabled:border-primary disabled:bg-tertiary disabled:text-quaternary",
             ],
             ghost: [
                 "border-transparent bg-transparent text-secondary",
-                "hover:bg-primary_hover active:bg-primary_hover",
-                "disabled:text-disable",
+                "hover:bg-tertiary active:bg-tertiary",
+                "disabled:text-quaternary",
             ],
             danger: [
-                "border-error bg-error_solid text-white",
-                "hover:border-error hover:bg-error_solid-hover active:bg-error_solid-hover",
-                "disabled:border-disabled disabled:bg-disabled disabled:text-disable",
+                "border-error bg-error_solid text-on-brand",
+                "hover:border-error hover:bg-error_solid/90 active:bg-error_solid/90",
+                "disabled:border-primary disabled:bg-tertiary disabled:text-quaternary",
             ],
             "danger-secondary": [
-                "border-secondary bg-primary text-secondary hover:text-white",
-                "hover:border-error hover:bg-error_solid-hover active:bg-error_solid-hover",
-                "disabled:border-disabled disabled:bg-disabled disabled:text-disable",
+                "border-secondary bg-primary text-secondary hover:text-on-brand",
+                "hover:border-error hover:bg-error_solid/90 active:bg-error_solid/90",
+                "disabled:border-primary disabled:bg-tertiary disabled:text-quaternary",
             ],
         },
         size: {

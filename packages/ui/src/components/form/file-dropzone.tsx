@@ -91,9 +91,9 @@ export function FileDropzone({ accept, className, fileName, fileNames, hint = "S
         type="button"
         className={cn(
           "flex flex-col min-h-24 w-full items-center gap-3 rounded-lg border border-dashed bg-primary px-4 py-3 text-left transition-colors",
-          "border-secondary hover:border-brand hover:bg-primary_hover",
-          "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand",
-          isDragging && "border-brand bg-primary_hover ring-3 ring-border-brand/10",
+          "border-secondary hover:border-brand hover:bg-tertiary",
+          "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-border-brand",
+          isDragging && "border-brand bg-tertiary ring-3 ring-border-brand/10",
           className,
         )}
         onClick={handleTriggerClick}
@@ -102,7 +102,7 @@ export function FileDropzone({ accept, className, fileName, fileNames, hint = "S
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-tertiary", hasSelection && "text-utility-green-700")}>
+        <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-tertiary", hasSelection && "text-success")}>
           {hasSelection ? <Check className="size-4" /> : <Upload className="size-4" />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-1">

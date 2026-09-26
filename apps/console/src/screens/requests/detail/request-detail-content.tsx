@@ -62,7 +62,7 @@ export function RequestDetailContent({ request, syncRequest }: RequestDetailCont
                   {request.status === "archived" ? <><ArchiveRestore className="size-4" />Unarchive</> : <><Archive className="size-4" />Archive</>}
                 </Dropdown.Item>
                 <Dropdown.Separator />
-                <Dropdown.Item onSelect={actions.openDeleteModal}><Trash2 className="size-4 text-utility-red-600" /><span className="text-utility-red-600">Delete</span></Dropdown.Item>
+                <Dropdown.Item onSelect={actions.openDeleteModal}><Trash2 className="size-4 text-error" /><span className="text-error">Delete</span></Dropdown.Item>
               </Dropdown.Panel>
             </Dropdown>
           </TopBarActions>

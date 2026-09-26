@@ -56,7 +56,7 @@ type SelectTriggerProps = Omit<ComponentProps<typeof BaseSelect.Trigger>, "child
 const triggerVariants = cv({
     base: [
         "relative flex min-h-11 w-full items-center gap-1.5 text-left paragraph-sm !leading-none md:min-h-0",
-        "bg-secondary data-[disabled]:cursor-not-allowed data-[disabled]:bg-disabled",
+        "bg-secondary data-[disabled]:cursor-not-allowed data-[disabled]:bg-tertiary",
         "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-border-brand/10",
     ],
     variants: {
@@ -67,7 +67,7 @@ const triggerVariants = cv({
         style: {
             outline: [
                 "rounded-lg border border-secondary px-3 py-2",
-                "focus-visible:border-brand data-[disabled]:border-disabled",
+                "focus-visible:border-brand data-[disabled]:border-primary",
             ],
             ghost: ["rounded-md px-2 py-1.5"],
         },

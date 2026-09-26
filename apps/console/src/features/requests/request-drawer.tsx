@@ -142,8 +142,8 @@ export function RequestPanelContent({
               </Dropdown.Item>
               <Dropdown.Separator />
               <Dropdown.Item onSelect={detail.actions.openDeleteModal}>
-                <Trash2 className="size-4 text-utility-red-600" />
-                <span className="text-utility-red-600">Delete</span>
+                <Trash2 className="size-4 text-error" />
+                <span className="text-error">Delete</span>
               </Dropdown.Item>
             </Dropdown.Panel>
           </Dropdown>

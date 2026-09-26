@@ -12,7 +12,7 @@ type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size" | "type"
 const checkboxControlVariants = cv({
     base: [
         "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-sm border",
-        "bg-primary text-primary_on-brand transition-colors",
+        "bg-primary text-on-brand transition-colors",
         "border-secondary group-hover:border-brand",
         // Base UI puts focus on Checkbox.Root itself (no sibling `peer` input to
         // target), so focus styles are applied directly rather than via `peer-*`.
@@ -22,8 +22,8 @@ const checkboxControlVariants = cv({
         // pseudo-classes the old `peer-*` selectors relied on.
         "data-[checked]:border-brand data-[checked]:bg-brand_solid",
         "data-[indeterminate]:border-brand data-[indeterminate]:bg-brand_solid",
-        "data-[disabled]:border-disabled data-[disabled]:bg-disabled data-[disabled]:text-foreground-disabled",
-        "data-[disabled]:group-hover:border-disabled data-[disabled]:group-hover:bg-disabled",
+        "data-[disabled]:border-primary data-[disabled]:bg-tertiary data-[disabled]:text-quaternary",
+        "data-[disabled]:group-hover:border-primary data-[disabled]:group-hover:bg-tertiary",
     ],
 });
 

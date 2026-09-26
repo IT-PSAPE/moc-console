@@ -26,7 +26,7 @@ export function DraggableCheckRow({ item, onToggle, onRename, onDelete, itemSlot
 
   return (
     <div ref={setDropRef}>
-      <div ref={setDragRef} style={style} className="group/item flex w-full items-center gap-1 px-3 py-1.5 transition-colors hover:bg-background-primary-hover">
+      <div ref={setDragRef} style={style} className="group/item flex w-full items-center gap-1 px-3 py-1.5 transition-colors hover:bg-tertiary">
         <span {...listeners} {...attributes} className="shrink-0 cursor-grab touch-none text-quaternary opacity-100 transition-opacity hover:text-secondary md:opacity-0 md:group-hover/item:opacity-100"><GripVertical className="size-4" /></span>
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <Checkbox aria-label={item.checked ? `Mark ${item.label} incomplete` : `Mark ${item.label} complete`} checked={item.checked} onChange={toggle} />

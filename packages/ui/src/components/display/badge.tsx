@@ -22,12 +22,12 @@ const variants = cv({
         },
         color: {
             yellow: ['bg-utility-yellow-50 text-utility-yellow-700'],
-            green: ['bg-utility-green-50 text-utility-green-700'],
-            red: ['bg-utility-red-50 text-utility-red-700'],
+            green: ['bg-success text-success'],
+            red: ['bg-error text-error'],
             blue: ['bg-utility-blue-50 text-utility-blue-700'],
-            gray: ['bg-utility-gray-50 text-utility-gray-700'],
+            gray: ['bg-secondary text-secondary'],
             purple: ['bg-utility-purple-50 text-utility-purple-700'],
-            orange: ['bg-utility-orange-50 text-utility-orange-700'],
+            orange: ['bg-warning text-warning'],
         },
     },
     defaultVariants: {

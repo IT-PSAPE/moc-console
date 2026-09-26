@@ -26,14 +26,14 @@ export function PasswordRecoveryScreen() {
       <AuthLayout step={3} totalSteps={3}>
         <div className="space-y-5">
           <div className="flex justify-center pt-1">
-            <CheckCircle2 className="size-10 text-brand_secondary" strokeWidth={1.5} aria-hidden />
+            <CheckCircle2 className="size-10 text-brand" strokeWidth={1.5} aria-hidden />
           </div>
           <div className="space-y-1.5 text-center">
             <h2 className="title-h6">You're all set</h2>
             <p className="paragraph-sm text-tertiary">Your password was updated. Redirecting in <span className="text-primary tabular-nums">{state.countdown}s</span>.</p>
           </div>
           <Button className="w-full" onClick={actions.navigateToDestination} icon={<ArrowRight />} iconPosition="trailing">
-            {meta.hasSession ? "Continue to dashboard" : "Back to sign in"}
+            {meta.hasSession ? "Continue" : "Back to sign in"}
           </Button>
         </div>
       </AuthLayout>

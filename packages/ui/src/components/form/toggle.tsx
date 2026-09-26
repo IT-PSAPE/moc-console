@@ -27,7 +27,7 @@ const trackVariants = cv({
             md: ['h-5 w-9'],
         },
         checked: {
-            true: ['bg-utility-brand-500'],
+            true: ['bg-brand_solid'],
             false: ['bg-quaternary'],
         },
     },

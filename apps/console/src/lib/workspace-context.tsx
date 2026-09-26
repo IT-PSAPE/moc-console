@@ -125,7 +125,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
                 if (prev === id) return prev
                 setCurrentWorkspaceIdMirror(id)
                 writeStoredWorkspaceId(id)
-                navigate(`/${routes.dashboard}`, { replace: true })
+                navigate(`/${routes.requests}`, { replace: true })
                 return id
             })
         },

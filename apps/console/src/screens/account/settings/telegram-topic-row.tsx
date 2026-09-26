@@ -16,7 +16,7 @@ export function TelegramTopicRow({ group, topic, onOpenConnect }: TelegramTopicR
     }
 
     return (
-        <div className="flex items-center justify-between border-b border-tertiary px-3 py-2 last:border-b-0">
+        <div className="flex items-center justify-between border-b border-secondary px-3 py-2 last:border-b-0">
             <div className="flex items-center gap-2">
                 <Label.sm>{topic.name || '(unnamed)'}</Label.sm>
                 <Paragraph.xs className="text-quaternary">#{topic.threadId}</Paragraph.xs>

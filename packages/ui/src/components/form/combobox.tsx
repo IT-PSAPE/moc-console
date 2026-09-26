@@ -107,7 +107,7 @@ type Styled<P> = Omit<P, 'className'> & { className?: string }
 const fieldShell = cn(
     'flex min-h-11 w-full flex-wrap items-center gap-1 rounded-lg border border-secondary bg-secondary px-3 py-2 md:min-h-0',
     'focus-within:border-brand focus-within:ring-3 focus-within:ring-border-brand/10',
-    'has-[:disabled]:cursor-not-allowed has-[:disabled]:bg-disabled has-[:disabled]:border-disabled',
+    'has-[:disabled]:cursor-not-allowed has-[:disabled]:bg-tertiary has-[:disabled]:border-primary',
 )
 
 // ─── Single-value field ──────────────────────────────────────────────
@@ -138,7 +138,7 @@ function ComboboxField({ className, ...props }: Styled<React.ComponentProps<type
     return (
         <BaseCombobox.InputGroup className={cn(fieldShell, 'flex-nowrap', className)}>
             <BaseCombobox.Input
-                className="w-full min-w-0 flex-1 bg-transparent paragraph-sm !leading-none focus:!outline-none focus-visible:!outline-0 placeholder:text-placeholder disabled:cursor-not-allowed"
+                className="w-full min-w-0 flex-1 bg-transparent paragraph-sm !leading-none focus:!outline-none focus-visible:!outline-0 placeholder:text-quaternary disabled:cursor-not-allowed"
                 {...props}
             />
             <BaseCombobox.Icon className="shrink-0 text-quaternary">
@@ -203,7 +203,7 @@ function ComboboxChipsField<Value>({ chipLabel, chipKey, placeholder, className 
                             ))}
                             <BaseCombobox.Input
                                 placeholder={selected.length > 0 ? '' : placeholder}
-                                className="h-5 min-w-24 flex-1 border-0 bg-transparent p-0 paragraph-sm !leading-none focus:!outline-none focus-visible:!outline-0 placeholder:text-placeholder disabled:cursor-not-allowed"
+                                className="h-5 min-w-24 flex-1 border-0 bg-transparent p-0 paragraph-sm !leading-none focus:!outline-none focus-visible:!outline-0 placeholder:text-quaternary disabled:cursor-not-allowed"
                             />
                         </Fragment>
                     )}
@@ -245,7 +245,7 @@ function ComboboxContent({ children, className, empty = 'No matches', searchPlac
                                         <BaseCombobox.InputGroup className={cn(fieldShell, 'flex-nowrap')}>
                                             <BaseCombobox.Input
                                                 placeholder={searchPlaceholder}
-                                                className="w-full min-w-0 flex-1 bg-transparent paragraph-sm !leading-none focus:!outline-none focus-visible:!outline-0 placeholder:text-placeholder"
+                                                className="w-full min-w-0 flex-1 bg-transparent paragraph-sm !leading-none focus:!outline-none focus-visible:!outline-0 placeholder:text-quaternary"
                                             />
                                             <BaseCombobox.Icon className="shrink-0 text-quaternary">
                                                 <Search className="size-4" />
@@ -260,7 +260,7 @@ function ComboboxContent({ children, className, empty = 'No matches', searchPlac
                                     </div>
                                     {multiple ? (
                                         <div className="shrink-0 border-t border-secondary p-3">
-                                            <BaseCombobox.Trigger className="flex min-h-11 w-full items-center justify-center rounded-md bg-brand_solid px-3 label-sm text-primary_on-brand">
+                                            <BaseCombobox.Trigger className="flex min-h-11 w-full items-center justify-center rounded-md bg-brand_solid px-3 label-sm text-on-brand">
                                                 Done
                                             </BaseCombobox.Trigger>
                                         </div>

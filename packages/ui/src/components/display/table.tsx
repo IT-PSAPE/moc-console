@@ -16,7 +16,7 @@ function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) 
 
 function TableHeader({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <th className={cn("font-semibold bg-gray-100 border-r last:border-r-0 !border-b border-secondary text-left", className)} {...props} />
+    <th className={cn("font-semibold bg-tertiary border-r last:border-r-0 !border-b border-secondary text-left", className)} {...props} />
   );
 }
 

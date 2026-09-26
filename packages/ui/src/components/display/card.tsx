@@ -3,7 +3,7 @@ import type { HTMLAttributes } from "react";
 
 function CardRoot({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("flex flex-col gap-1.5 p-1.5 rounded-lg border border-tertiary bg-secondary_alt", className)}>
+        <div className={cn("flex flex-col gap-1.5 p-1.5 rounded-lg border border-secondary bg-secondary", className)}>
             {children}
         </div>
     )
@@ -17,7 +17,7 @@ function CardHeader({ children, className, tight = false }: HTMLAttributes<HTMLD
 }
 function CardContent({ children, className, ghost = false }: HTMLAttributes<HTMLDivElement> & { ghost?: boolean }) {
     return (
-        <div className={cn(!ghost && "bg-primary rounded-md border border-tertiary", className)}>
+        <div className={cn(!ghost && "bg-primary rounded-md border border-secondary", className)}>
             {children}
         </div>
     )

@@ -84,14 +84,14 @@ function Editor({ messageType }: { messageType: MessageType }) {
                                                 type="button"
                                                 data-token={t.name}
                                                 onClick={actions.insertTokenFromButton}
-                                                className="rounded bg-utility-gray-50 px-1.5 py-0.5 font-mono text-utility-gray-700 hover:bg-utility-gray-100"
+                                                className="rounded bg-secondary px-1.5 py-0.5 font-mono text-secondary hover:bg-tertiary"
                                             >
                                                 <Label.xs className="text-inherit">{`{{ ${t.name} }}`}</Label.xs>
                                             </Button.Unstyled>
                                         ))}
                                     </div>
                                     {state.unknown.length > 0 && (
-                                        <Paragraph.xs className="text-utility-red-700">
+                                        <Paragraph.xs className="text-error">
                                             Unknown placeholder{state.unknown.length > 1 ? "s" : ""} for this
                                             message: {state.unknown.map((unknownToken) => `{{${unknownToken}}}`).join(", ")}
                                         </Paragraph.xs>

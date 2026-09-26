@@ -165,11 +165,11 @@ function DateSlotPickerCalendar({ className, defaultMonth, isDateDisabled }: Dat
         disabled={disabled}
         className={cn(
           'flex min-h-12 w-full items-center justify-center paragraph-sm disabled:cursor-not-allowed',
-          isCurrentMonth && !isSelected && !disabled && 'text-primary hover:bg-primary_hover',
+          isCurrentMonth && !isSelected && !disabled && 'text-primary hover:bg-tertiary',
           !isCurrentMonth && !isSelected && 'text-quaternary',
-          isToday && !isSelected && 'font-semibold text-brand_secondary',
-          isSelected && 'bg-brand_solid text-primary_on-brand hover:bg-brand_solid',
-          disabled && 'text-disabled opacity-50 hover:bg-transparent',
+          isToday && !isSelected && 'font-semibold text-brand',
+          isSelected && 'bg-brand_solid text-on-brand hover:bg-brand_solid',
+          disabled && 'text-quaternary opacity-50 hover:bg-transparent',
         )}
         onClick={handleSelect}
       >

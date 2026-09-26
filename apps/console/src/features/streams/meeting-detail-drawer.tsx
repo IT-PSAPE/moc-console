@@ -122,7 +122,7 @@ export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: Meeti
                     <Button.Icon
                       aria-label="Copy join link"
                       variant="ghost"
-                      icon={drawer.state.copiedField === "join" ? <Check className="text-utility-green-700" /> : <Copy />}
+                      icon={drawer.state.copiedField === "join" ? <Check className="text-success" /> : <Copy />}
                       onClick={drawer.actions.copyJoinUrl}
                     />
                     <Button.IconLink render={<a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open join link" variant="ghost" icon={<ExternalLink />} />
@@ -141,7 +141,7 @@ export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: Meeti
                       <Button.Icon
                         aria-label="Copy passcode"
                         variant="ghost"
-                        icon={drawer.state.copiedField === "pass" ? <Check className="text-utility-green-700" /> : <Copy />}
+                        icon={drawer.state.copiedField === "pass" ? <Check className="text-success" /> : <Copy />}
                         onClick={drawer.actions.copyPassword}
                       />
                     </div>

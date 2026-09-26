@@ -57,10 +57,10 @@ export function LoginScreen() {
         </div>
 
         <div className="flex justify-end">
-          <Link to="/reset-password" className="paragraph-xs text-brand_secondary hover:underline">Forgot password?</Link>
+          <Link to="/reset-password" className="paragraph-xs text-brand hover:underline">Forgot password?</Link>
         </div>
         <Button type="submit" disabled={state.loading} className="w-full">{state.loading ? "Signing in…" : "Sign in"}</Button>
-        <p className="paragraph-sm text-center text-tertiary">Don't have an account? <Link to="/signup" className="text-brand_secondary hover:underline">Sign up</Link></p>
+        <p className="paragraph-sm text-center text-tertiary">Don't have an account? <Link to="/signup" className="text-brand hover:underline">Sign up</Link></p>
       </form>
     </AuthLayout>
   )

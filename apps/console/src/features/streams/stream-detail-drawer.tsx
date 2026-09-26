@@ -176,7 +176,7 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
                     <Button.Icon
                       aria-label="Copy stream link"
                       variant="ghost"
-                      icon={drawer.state.copiedField === "url" ? <Check className="text-utility-green-700" /> : <Copy />}
+                      icon={drawer.state.copiedField === "url" ? <Check className="text-success" /> : <Copy />}
                       onClick={drawer.actions.copyUrl}
                     />
                     <Button.IconLink render={<a href={stream.streamUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open stream link" variant="ghost" icon={<ExternalLink />} />
@@ -197,7 +197,7 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
                       <Button.Icon
                         aria-label="Copy stream key"
                         variant="ghost"
-                        icon={drawer.state.copiedField === "key" ? <Check className="text-utility-green-700" /> : <Copy />}
+                        icon={drawer.state.copiedField === "key" ? <Check className="text-success" /> : <Copy />}
                         onClick={drawer.actions.copyKey}
                       />
                     </div>
@@ -210,7 +210,7 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
                         <Button.Icon
                           aria-label="Copy server URL"
                           variant="ghost"
-                          icon={drawer.state.copiedField === "ingestion" ? <Check className="text-utility-green-700" /> : <Copy />}
+                          icon={drawer.state.copiedField === "ingestion" ? <Check className="text-success" /> : <Copy />}
                           onClick={drawer.actions.copyIngestionUrl}
                         />
                       </div>

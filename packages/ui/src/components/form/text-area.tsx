@@ -12,7 +12,7 @@ type TextAreaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
 
 const textAreaVariants = cv({
     base: [
-        'w-full resize-none overflow-hidden bg-secondary disabled:cursor-not-allowed disabled:bg-disabled',
+        'w-full resize-none overflow-hidden bg-secondary disabled:cursor-not-allowed disabled:bg-tertiary',
         'paragraph-sm',
         'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-border-brand/10',
     ],
@@ -24,7 +24,7 @@ const textAreaVariants = cv({
         style: {
             outline: [
                 'py-2 px-3',
-                'rounded-lg border border-secondary focus-visible:border-brand disabled:border-disabled',
+                'rounded-lg border border-secondary focus-visible:border-brand disabled:border-primary',
             ],
             ghost: ['rounded-md px-2 py-1.5'],
         },

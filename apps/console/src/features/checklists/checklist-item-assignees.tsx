@@ -14,7 +14,7 @@ export function ChecklistItemAssignees({ item }: { item: ChecklistItem }) {
 
   return (
     <MemberPicker assignees={assignees} onAdd={add} onRemove={remove}>
-      <Button.Unstyled aria-label="Assign members" className="flex min-h-11 min-w-11 items-center justify-center gap-1 rounded p-1 text-quaternary transition-colors hover:bg-background-primary-hover hover:text-secondary md:min-h-0 md:min-w-0">
+      <Button.Unstyled aria-label="Assign members" className="flex min-h-11 min-w-11 items-center justify-center gap-1 rounded p-1 text-quaternary transition-colors hover:bg-tertiary hover:text-secondary md:min-h-0 md:min-w-0">
         {assignees.length > 0 ? <AssigneeAvatars assignees={assignees} max={2} /> : <UserPlus className="size-4" />}
       </Button.Unstyled>
     </MemberPicker>

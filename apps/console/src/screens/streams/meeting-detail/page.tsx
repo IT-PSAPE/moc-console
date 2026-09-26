@@ -148,7 +148,7 @@ export function MeetingDetailScreen() {
                 <Button.Icon
                   aria-label="Copy join link"
                   variant="ghost"
-                  icon={copiedField === "join" ? <Check className="text-utility-green-700" /> : <Copy />}
+                  icon={copiedField === "join" ? <Check className="text-success" /> : <Copy />}
                   onClick={actions.copyJoinUrl}
                 />
                 <Button.IconLink render={<a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open join link" variant="ghost" icon={<ExternalLink />} />
@@ -161,7 +161,7 @@ export function MeetingDetailScreen() {
                     <Button.Icon
                       aria-label="Copy passcode"
                       variant="ghost"
-                      icon={copiedField === "pass" ? <Check className="text-utility-green-700" /> : <Copy />}
+                      icon={copiedField === "pass" ? <Check className="text-success" /> : <Copy />}
                       onClick={actions.copyPassword}
                     />
                   </div>

@@ -71,7 +71,7 @@ function KanbanBoardColumn({
         <ColumnContext.Provider value={{ setNodeRef, isOver }}>
             <Card
                 className={cn(
-                    isOver ? "ring-2 ring-brand ring-offset-2 transition-shadow" : "transition-shadow",
+                    isOver ? "ring-2 ring-border-brand ring-offset-2 transition-shadow" : "transition-shadow",
                     className,
                 )}
                 {...props}

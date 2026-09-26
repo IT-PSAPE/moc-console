@@ -38,7 +38,7 @@ export function AvatarCropperModal({ open, file, onCancel, onConfirm }: AvatarCr
                                 <Button.Unstyled
                                     type="button"
                                     aria-label="Position photo. Use arrow keys to move it; hold Shift for larger movements."
-                                    className="relative overflow-hidden rounded-full bg-secondary touch-none cursor-grab select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:cursor-grabbing"
+                                    className="relative overflow-hidden rounded-full bg-secondary touch-none cursor-grab select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-brand active:cursor-grabbing"
                                     style={{ width: AVATAR_CROP_VIEWPORT, height: AVATAR_CROP_VIEWPORT }}
                                     onPointerDown={cropper.actions.startDrag}
                                     onPointerMove={cropper.actions.drag}
@@ -74,7 +74,7 @@ export function AvatarCropperModal({ open, file, onCancel, onConfirm }: AvatarCr
                                     disabled={!natural}
                                     onChange={cropper.actions.changeZoom}
                                     style="ghost"
-                                    className="w-full max-w-xs accent-brand"
+                                    className="w-full max-w-xs accent-background-brand_solid"
                                     aria-label="Zoom"
                                 />
                             </div>

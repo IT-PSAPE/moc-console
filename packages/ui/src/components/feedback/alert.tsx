@@ -45,16 +45,16 @@ const alertVariants = cv({
 
 const colorMap: Record<FeedbackVariant, Record<FeedbackStyle, string>> = {
     error: {
-        filled: 'bg-utility-red-50 text-utility-red-700',
-        outline: 'border-utility-red-700/20 text-utility-red-700',
+        filled: 'bg-error text-error',
+        outline: 'border-error/20 text-error',
     },
     warning: {
         filled: 'bg-utility-yellow-50 text-utility-yellow-700',
         outline: 'border-utility-yellow-700/20 text-utility-yellow-700',
     },
     success: {
-        filled: 'bg-utility-green-50 text-utility-green-700',
-        outline: 'border-utility-green-700/20 text-utility-green-700',
+        filled: 'bg-success text-success',
+        outline: 'border-text-success/20 text-success',
     },
     info: {
         filled: 'bg-utility-blue-50 text-utility-blue-700',

@@ -64,7 +64,7 @@ function CopyButton({ variant = 'ghost' }: { variant?: IconVariant }) {
         state.isCopyingScreenshot
           ? <Loader className="animate-spin" />
           : state.hasCopiedScreenshot
-            ? <Check className="text-utility-green-700" />
+            ? <Check className="text-success" />
             : <Copy />
       }
       onClick={actions.copyScreenshot}

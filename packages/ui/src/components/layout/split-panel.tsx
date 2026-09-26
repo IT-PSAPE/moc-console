@@ -259,7 +259,7 @@ function SplitPanelResizeHandle({ className, ...props }: HTMLAttributes<HTMLDivE
             aria-valuemin={Math.round(state.minimumRatio * 100)}
             aria-valuenow={Math.round(state.primaryRatio * 100)}
             aria-valuetext={`${Math.round(state.primaryRatio * 100)}% list, ${Math.round((1 - state.primaryRatio) * 100)}% details`}
-            className={cn('group relative z-10 hidden w-px shrink-0 cursor-col-resize touch-none bg-secondary outline-none lg:block', 'before:absolute before:inset-y-0 before:left-1/2 before:w-3 before:-translate-x-1/2', 'after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-transparent after:transition-colors', 'hover:after:bg-brand focus-visible:after:bg-brand', state.isResizing && 'after:bg-brand', className)}
+            className={cn('group relative z-10 hidden w-px shrink-0 cursor-col-resize touch-none bg-secondary outline-none lg:block', 'before:absolute before:inset-y-0 before:left-1/2 before:w-3 before:-translate-x-1/2', 'after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-transparent after:transition-colors', 'hover:after:bg-border-brand focus-visible:after:bg-border-brand', state.isResizing && 'after:bg-border-brand', className)}
             onDoubleClick={actions.resetRatio}
             onKeyDown={handleKeyDown}
             onPointerCancel={handlePointerEnd}

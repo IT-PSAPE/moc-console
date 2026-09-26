@@ -21,7 +21,6 @@ const StreamsScreen = lazy(() => import('@/screens/streams/page').then((m) => ({
 const BroadcastsScreen = lazy(() => import('@/screens/broadcasts/page').then((m) => ({ default: m.BroadcastsScreen })))
 const StreamDetailScreen = lazy(() => import('@/screens/streams/stream-detail/page').then((m) => ({ default: m.StreamDetailScreen })))
 const MeetingDetailScreen = lazy(() => import('@/screens/streams/meeting-detail/page').then((m) => ({ default: m.MeetingDetailScreen })))
-const DashboardScreen = lazy(() => import('@/screens/dashboard/page').then((m) => ({ default: m.DashboardScreen })))
 const BookingsScreen = lazy(() => import('@/screens/bookings/page').then((m) => ({ default: m.BookingsScreen })))
 const BookingDetailScreen = lazy(() => import('@/screens/bookings/detail/page').then((m) => ({ default: m.BookingDetailScreen })))
 const VenueBookingsScreen = lazy(() => import('@/screens/venues/page').then((m) => ({ default: m.VenueBookingsScreen })))
@@ -143,14 +142,14 @@ function RedirectIfAuth({ children }: { children: React.ReactNode }) {
     }
 
     if (session) {
-        return <Navigate to={`/${routes.dashboard}`} replace />
+        return <Navigate to={`/${routes.requests}`} replace />
     }
 
     return children
 }
 
 const router = createBrowserRouter([
-    // Auth routes — redirect to dashboard if already signed in
+    // Auth routes — redirect to requests if already signed in
     { path: routes.login, element: <RedirectIfAuth><SuspenseRoute><LoginScreen /></SuspenseRoute></RedirectIfAuth> },
     { path: routes.signup, element: <RedirectIfAuth><SuspenseRoute><SignupScreen /></SuspenseRoute></RedirectIfAuth> },
     { path: routes.resetPassword, element: <RedirectIfAuth><SuspenseRoute><ResetPasswordScreen /></SuspenseRoute></RedirectIfAuth> },
@@ -167,8 +166,7 @@ const router = createBrowserRouter([
     {
         element: <RequireAuth />,
         children: [
-            { index: true, element: <Navigate to={`/${routes.dashboard}`} replace /> },
-            { path: routes.dashboard, element: <DashboardScreen /> },
+            { index: true, element: <Navigate to={`/${routes.requests}`} replace /> },
             { path: routes.settings, element: <SettingsScreen /> },
             { path: routes.messageTemplateDetail, element: <MessageTemplateDetailScreen /> },
             { path: routes.requests, element: <RequestsScreen /> },

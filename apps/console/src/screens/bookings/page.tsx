@@ -33,7 +33,7 @@ export function BookingsScreen() {
       <Page>
       <Page.Header>
         <Page.Heading>
-          <Page.Title>Bookings</Page.Title>
+          <Page.Title>Equipment Bookings</Page.Title>
         </Page.Heading>
       </Page.Header>
 

@@ -26,7 +26,7 @@ export function BroadcastRejectedFiles({ onDismiss, rejections }: BroadcastRejec
   }
 
   return (
-    <div role="alert" aria-live="polite" className="flex flex-col gap-2 rounded-md border border-error_subtle bg-error-primary px-3 py-2.5">
+    <div role="alert" aria-live="polite" className="flex flex-col gap-2 rounded-md border border-error/50 bg-error px-3 py-2.5">
       <div className="flex items-start gap-2">
         <FileWarning className="size-4 shrink-0 text-error" />
         <Paragraph.xs className="flex-1 text-secondary">{`${rejections.length} ${fileLabel} not added to the playlist.`}</Paragraph.xs>

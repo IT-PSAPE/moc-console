@@ -44,7 +44,7 @@ export function ConnectEventsModal({ target, onClose }: ConnectEventsModalProps)
                         </Modal.Header>
                         <Modal.Content>
                             {state.isLoading ? <div className="flex justify-center py-6"><LoadingSpinner size="lg" /></div> : (
-                                <div className="divide-y divide-tertiary px-3 py-1">
+                                <div className="divide-y divide-border-secondary px-3 py-1">
                                     {NOTIFICATION_EVENTS.map(renderEvent)}
                                 </div>
                             )}

@@ -14,12 +14,12 @@ const indicatorVariants = cv({
     ],
     variants: {
         color: {
-            yellow: ['bg-utility-yellow-500'],
-            green: ['bg-utility-green-500'],
-            red: ['bg-utility-red-500'],
-            blue: ['bg-utility-blue-500'],
-            gray: ['bg-utility-gray-500'],
-            purple: ['bg-utility-purple-500'],
+            yellow: ['bg-utility-yellow-700'],
+            green: ['bg-text-success'],
+            red: ['bg-error_solid'],
+            blue: ['bg-utility-blue-700'],
+            gray: ['bg-text-quaternary'],
+            purple: ['bg-utility-purple-700'],
         },
     },
     defaultVariants: {

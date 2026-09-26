@@ -59,7 +59,7 @@ export function Radio({ value, children, className, disabled, ...rest }: RadioPr
                     // Focus moves to Base UI's Radio.Root (no sibling `peer` input).
                     "focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-border-brand/10 focus-visible:outline-none",
                     "data-[checked]:border-brand data-[checked]:bg-brand_solid",
-                    "data-[disabled]:border-disabled data-[disabled]:bg-disabled",
+                    "data-[disabled]:border-primary data-[disabled]:bg-tertiary",
                     className,
                 )}
             >

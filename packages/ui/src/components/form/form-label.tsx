@@ -29,7 +29,7 @@ export function FormLabel({ label, htmlFor, required, optional, className }: Lab
     return (
         <label htmlFor={htmlFor} className={cn("flex justify-start items-center gap-0.5", className)}>
             <TextLabel.xs className="text-primary">{label}</TextLabel.xs>
-            {required && <TextLabel.xs  className="text-brand_secondary">*</TextLabel.xs>}
+            {required && <TextLabel.xs  className="text-brand">*</TextLabel.xs>}
             {optional && <TextLabel.xs className="text-quaternary">(Optional)</TextLabel.xs>}
         </label>
     )

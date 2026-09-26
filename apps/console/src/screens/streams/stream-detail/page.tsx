@@ -85,7 +85,7 @@ export function StreamDetailScreen() {
             alt={stream.title}
             width="640"
             height="360"
-            className="w-full rounded-lg object-cover aspect-video border border-tertiary"
+            className="w-full rounded-lg object-cover aspect-video border border-secondary"
           />
         </DetailPage.Section>
       )}
@@ -194,7 +194,7 @@ export function StreamDetailScreen() {
               <Button.Icon
                 aria-label="Copy stream link"
                 variant="ghost"
-                icon={copiedField === "url" ? <Check className="text-utility-green-700" /> : <Copy />}
+                icon={copiedField === "url" ? <Check className="text-success" /> : <Copy />}
                 onClick={actions.copyStreamUrl}
               />
               <Button.IconLink render={<a href={stream.streamUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open stream link" variant="ghost" icon={<ExternalLink />} />
@@ -216,7 +216,7 @@ export function StreamDetailScreen() {
                   <Button.Icon
                     aria-label="Copy stream key"
                     variant="ghost"
-                    icon={copiedField === "key" ? <Check className="text-utility-green-700" /> : <Copy />}
+                    icon={copiedField === "key" ? <Check className="text-success" /> : <Copy />}
                     onClick={actions.copyStreamKey}
                   />
                 </div>
@@ -229,7 +229,7 @@ export function StreamDetailScreen() {
                     <Button.Icon
                       aria-label="Copy server URL"
                       variant="ghost"
-                      icon={copiedField === "ingestion" ? <Check className="text-utility-green-700" /> : <Copy />}
+                      icon={copiedField === "ingestion" ? <Check className="text-success" /> : <Copy />}
                       onClick={actions.copyIngestionUrl}
                     />
                   </div>

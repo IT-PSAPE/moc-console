@@ -1,7 +1,7 @@
 import { routes } from '@/screens/console-routes'
 import { Sidebar } from '@moc/ui/components/navigation/sidebar'
 import { NavigationList } from '@moc/ui/components/navigation/navigation-list'
-import { Building2, CalendarCheck, FileText, LayoutGrid, ListChecks, Package, Radio, RadioTower, Settings, X } from 'lucide-react'
+import { Check, Inbox, MapPin, Megaphone, PackageCheck, Settings, Video, Wrench, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Divider } from '@moc/ui/components/display/divider'
 import { AccountMenu } from './account/account-menu'
@@ -27,21 +27,13 @@ export function AppNavigation({ isRouteActive, isSigningOut, onCloseMobileNaviga
             <Sidebar.Content>
                 <Sidebar.Group>
                     <Sidebar.GroupContent>
-                        <Sidebar.MenuItem title="Dashboard" icon={<LayoutGrid />} active={isRouteActive(routes.dashboard)} render={<Link to={`/${routes.dashboard}`} />} />
-                    </Sidebar.GroupContent>
-                </Sidebar.Group>
-
-                <Divider className="px-2" />
-
-                <Sidebar.Group>
-                    <Sidebar.GroupContent>
-                        <Sidebar.MenuItem title="Requests" icon={<FileText />} active={isRouteActive(routes.requests)} render={<Link to={`/${routes.requests}`} />} />
-                        <Sidebar.MenuItem title="Bookings" icon={<CalendarCheck />} active={isRouteActive(routes.bookings)} render={<Link to={`/${routes.bookings}`} />} />
-                        <Sidebar.MenuItem title="Venues" icon={<Building2 />} active={isRouteActive(routes.venues)} render={<Link to={`/${routes.venues}`} />} />
-                        <Sidebar.MenuItem title="Broadcast" icon={<RadioTower />} active={isRouteActive(routes.broadcasts)} render={<Link to={`/${routes.broadcasts}`} />} />
-                        <Sidebar.MenuItem title="Streams" icon={<Radio />} active={isRouteActive(routes.streams)} render={<Link to={`/${routes.streams}`} />} />
-                        <Sidebar.MenuItem title="Checklists" icon={<ListChecks />} active={isRouteActive(routes.checklists)} render={<Link to={`/${routes.checklists}`} />} />
-                        <Sidebar.MenuItem title="Equipment" icon={<Package />} active={isRouteActive(routes.equipment)} render={<Link to={`/${routes.equipment}`} />} />
+                        <Sidebar.MenuItem title="Requests" icon={<Inbox />} active={isRouteActive(routes.requests)} render={<Link to={`/${routes.requests}`} />} />
+                        <Sidebar.MenuItem title="Equipment bookings" icon={<PackageCheck />} active={isRouteActive(routes.bookings)} render={<Link to={`/${routes.bookings}`} />} />
+                        <Sidebar.MenuItem title="Venues" icon={<MapPin />} active={isRouteActive(routes.venues)} render={<Link to={`/${routes.venues}`} />} />
+                        <Sidebar.MenuItem title="Broadcast" icon={<Megaphone />} active={isRouteActive(routes.broadcasts)} render={<Link to={`/${routes.broadcasts}`} />} />
+                        <Sidebar.MenuItem title="Streams" icon={<Video />} active={isRouteActive(routes.streams)} render={<Link to={`/${routes.streams}`} />} />
+                        <Sidebar.MenuItem title="Checklists" icon={<Check />} active={isRouteActive(routes.checklists)} render={<Link to={`/${routes.checklists}`} />} />
+                        <Sidebar.MenuItem title="Equipment" icon={<Wrench />} active={isRouteActive(routes.equipment)} render={<Link to={`/${routes.equipment}`} />} />
                     </Sidebar.GroupContent>
                 </Sidebar.Group>
             </Sidebar.Content>

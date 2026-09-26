@@ -18,7 +18,7 @@ export function SupportScreen() {
         <Paragraph.md className="mb-3">
           The fastest way to reach the team is by email. We read every message and respond in the order received.
         </Paragraph.md>
-        <Card.Content className="mb-4 bg-secondary_alt p-5">
+        <Card.Content className="mb-4 bg-secondary p-5">
           <Label.sm className="block mb-1">Email</Label.sm>
           <a href="mailto:psape.dev@gmail.com" className="title-h6 text-brand hover:underline">psape.dev@gmail.com</a>
         </Card.Content>

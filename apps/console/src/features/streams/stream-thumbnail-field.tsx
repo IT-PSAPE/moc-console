@@ -71,7 +71,7 @@ export function StreamThumbnailField({
             <Paragraph.xs className="text-quaternary">Checking image…</Paragraph.xs>
           )}
           {status === "error" && errorMessage && (
-            <Paragraph.xs className="text-utility-red-700">{errorMessage}</Paragraph.xs>
+            <Paragraph.xs className="text-error">{errorMessage}</Paragraph.xs>
           )}
         </div>
       ) : (
@@ -122,7 +122,7 @@ export function StreamThumbnailField({
           )}
 
           {status === "error" && errorMessage && (
-            <Paragraph.xs className="text-utility-red-700">{errorMessage}</Paragraph.xs>
+            <Paragraph.xs className="text-error">{errorMessage}</Paragraph.xs>
           )}
 
           <Paragraph.xs className="text-quaternary">

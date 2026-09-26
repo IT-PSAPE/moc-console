@@ -35,7 +35,7 @@ function InteractiveSurfaceLink({ children, className, render, ...props }: Inter
     )
 }
 
-const cardClassName = 'w-full rounded-lg border border-secondary bg-primary shadow-xs transition-colors hover:bg-primary_hover active:bg-primary_hover'
+const cardClassName = 'w-full rounded-lg border border-secondary bg-primary shadow-xs transition-colors hover:bg-tertiary active:bg-tertiary'
 
 function InteractiveSurfaceCard({ className, ...props }: InteractiveSurfaceProps) {
     return <InteractiveSurfaceRoot className={cn(cardClassName, className)} {...props} />

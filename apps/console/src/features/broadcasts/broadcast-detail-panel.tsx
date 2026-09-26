@@ -81,7 +81,7 @@ export function BroadcastDetailPanel({ broadcast, canDelete, canEdit, onDelete, 
                 <Button.Icon
                   aria-label="Copy public link"
                   variant="ghost"
-                  icon={detail.state.copiedField === "link" ? <Check className="text-utility-green-700" /> : <Copy />}
+                  icon={detail.state.copiedField === "link" ? <Check className="text-success" /> : <Copy />}
                   onClick={handleCopy}
                 />
               </div>

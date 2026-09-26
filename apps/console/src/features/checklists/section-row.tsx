@@ -46,7 +46,7 @@ export function SectionRow({ section, onToggle, onAddItem, onRenameItem, onDelet
       <Accordion.Item value={section.id} className="border-b border-secondary">
         <div className="group/section flex items-center">
           <div className="pl-3"><DraggableSectionHandle sectionId={section.id} /></div>
-          <Accordion.Trigger className="flex items-center gap-3 px-2 py-2.5 pl-1.5 transition-colors hover:bg-background-primary-hover">
+          <Accordion.Trigger className="flex items-center gap-3 px-2 py-2.5 pl-1.5 transition-colors hover:bg-tertiary">
             <ChevronDown className="size-4 shrink-0 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
             <InlineEditableText value={section.name} onSave={renameSection} className="label-sm text-left" />
             <Paragraph.xs className="shrink-0 text-tertiary">{checkedCount}/{section.items.length}</Paragraph.xs>

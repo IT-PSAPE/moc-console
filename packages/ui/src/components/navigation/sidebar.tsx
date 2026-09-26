@@ -66,7 +66,7 @@ function SidebarPanel({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
         <aside
             className={cn(
-                'flex flex-col border-r border-secondary overflow-hidden bg-primary',
+                'flex flex-col overflow-hidden bg-secondary',
                 'area-sidebar',
                 // Mobile: fixed overlay, slide in/out
                 'fixed inset-y-0 left-0 z-50',
@@ -186,7 +186,7 @@ function SidebarMenuItem({ title, icon, active = false, onClick, render }: Sideb
                 <BaseTooltip.Trigger render={menuButton} />
                 <BaseTooltip.Portal>
                     <BaseTooltip.Positioner side="right" sideOffset={8} className="z-[9100]">
-                        <BaseTooltip.Popup className="rounded-md bg-background-primary-solid px-2 py-1 label-xs text-white shadow-md">
+                        <BaseTooltip.Popup className="rounded-md border border-secondary bg-primary px-2 py-1 label-xs text-primary shadow-md">
                             {title}
                         </BaseTooltip.Popup>
                     </BaseTooltip.Positioner>

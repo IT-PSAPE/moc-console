@@ -10,12 +10,12 @@ const navigationListItemVariants = cv({
         'inline-flex min-h-11 w-full cursor-pointer items-center justify-start gap-2 overflow-hidden rounded-md px-3 py-2 label-sm',
         'touch-manipulation transition-colors motion-reduce:transition-none',
         'focus-visible:outline-2 focus-visible:outline-offset-1',
-        'disabled:cursor-not-allowed disabled:text-disable md:min-h-9',
+        'disabled:cursor-not-allowed disabled:text-quaternary md:min-h-9',
     ],
     variants: {
         state: {
             inactive: ['bg-transparent text-secondary hover:bg-secondary active:bg-secondary'],
-            'active-brand': ['bg-brand_primary text-brand_secondary hover:bg-brand_primary active:bg-brand_primary'],
+            'active-brand': ['bg-brand text-brand hover:bg-brand active:bg-brand'],
             'active-neutral': ['bg-secondary text-primary hover:bg-secondary active:bg-secondary'],
         },
     },

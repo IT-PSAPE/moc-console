@@ -90,7 +90,7 @@ export function StreamOptionsSection({
           {/* ─── Tags ─── */}
           <div className="flex flex-col gap-1.5">
             <FormLabel label="Tags" optional />
-            <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
+            <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 focus-within:border-brand focus-within:ring-1 focus-within:ring-border-brand">
               {tags.map((tag) => (
                 <span
                   key={tag}

@@ -154,7 +154,7 @@ export function SignupScreen() {
         </div>
 
         <Button type="submit" disabled={state.loading} className="w-full">{state.loading ? "Creating account…" : "Sign up"}</Button>
-        <p className="paragraph-sm text-center text-tertiary">Already have an account? <Link to="/login" className="text-brand_secondary hover:underline">Sign in</Link></p>
+        <p className="paragraph-sm text-center text-tertiary">Already have an account? <Link to="/login" className="text-brand hover:underline">Sign in</Link></p>
       </form>
     </AuthLayout>
   )

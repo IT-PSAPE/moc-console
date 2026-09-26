@@ -1,25 +1,21 @@
 import { Sidebar } from '@moc/ui/components/navigation/sidebar'
-import { Breadcrumb } from '@moc/ui/components/navigation/breadcrumb'
-import { TopBar } from './topbar'
 import { SkipLink } from '@moc/ui/components/navigation/skip-link'
 import { useAppShell } from './use-app-shell'
 import { EditProfileModal } from './account/edit-profile-modal'
-import { Label } from '@moc/ui/components/display/text'
-import { useWorkspace } from '@/lib/workspace-context'
 import { Drawer } from '@moc/ui/components/overlays/drawer'
 import { useIsMobile } from '@moc/ui/hooks/use-is-mobile'
 import { AppNavigation } from './app-navigation'
+import { ScrollArea } from '@moc/ui/components/display/scroll-area';
 
 
 export function AppShell({ children }: { children: React.ReactNode }) {
     const { state, actions } = useAppShell()
-    const { currentWorkspace } = useWorkspace()
     const isMobile = useIsMobile()
 
     return (
         <>
             <SkipLink />
-            <div className="app-grid md:app-grid-desktop bg-primary text-primary">
+            <div className="flex h-dvh min-h-0 w-full min-w-0 overflow-hidden bg-secondary text-primary">
                 {isMobile ? (
                     <Drawer open={state.mobileSidebarOpen} onOpenChange={actions.setMobileSidebarOpen} side="left">
                         <Drawer.Portal>
@@ -36,7 +32,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         </Drawer.Portal>
                     </Drawer>
                 ) : (
-                    <Sidebar.Panel>
+                    <Sidebar.Panel className="shrink-0">
                         <AppNavigation
                             isRouteActive={actions.isRouteActive}
                             isSigningOut={state.isSigningOut}
@@ -47,16 +43,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </Sidebar.Panel>
                 )}
 
-                <TopBar>
-                    <Breadcrumb />
-                    <span className="min-w-0 truncate md:ml-2" aria-live="polite">
-                        <Label.xs className="sr-only">Current workspace: </Label.xs>
-                        <Label.sm className="text-tertiary">{currentWorkspace?.name ?? 'No workspace selected'}</Label.sm>
-                    </span>
-                </TopBar>
-
-                <main id="main-content" tabIndex={-1} className="area-content min-h-0 overflow-y-auto overscroll-contain bg-[var(--background-color-primary)] focus-visible:outline-2 focus-visible:outline-brand">
-                    {children}
+                <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-2">
+                    <ScrollArea id="main-content" tabIndex={-1} className="flex-1 min-h-0 rounded-xl overflow-y-auto overscroll-contain bg-primary focus-visible:outline-2 focus-visible:outline-border-brand">
+                        <ScrollArea.Viewport>
+                            <ScrollArea.Content className="h-full">
+                                {children}
+                            </ScrollArea.Content>
+                        </ScrollArea.Viewport>
+                    </ScrollArea>
                 </main>
             </div>
 

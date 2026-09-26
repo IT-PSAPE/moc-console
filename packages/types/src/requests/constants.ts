@@ -50,12 +50,12 @@ export const categoryColor: Record<string, "orange" | "purple" | "blue" | "green
 };
 
 export const eventColorMap: Record<string, string> = {
-    red: "bg-error_primary text-error",
-    orange: "bg-warning_primary text-warning",
-    yellow: "bg-warning_primary text-warning",
-    green: "bg-success_primary text-success",
-    blue: "bg-utility-blue-50 text-color-utility-blue-700",
-    purple: "bg-brand_primary text-brand_secondary",
+    red: "bg-error text-error",
+    orange: "bg-warning text-warning",
+    yellow: "bg-warning text-warning",
+    green: "bg-success text-success",
+    blue: "bg-utility-blue-50 text-utility-blue-700",
+    purple: "bg-brand text-brand",
     gray: "bg-secondary text-tertiary",
 };
 

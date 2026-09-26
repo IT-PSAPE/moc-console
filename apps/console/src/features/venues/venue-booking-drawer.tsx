@@ -74,8 +74,8 @@ export function VenueBookingPanelContent({ booking, onClose }: VenueBookingPanel
               </Dropdown.Item>
             ) : (
               <Dropdown.Item onSelect={handleOpenCancel}>
-                <Ban className="size-4 text-utility-red-600" />
-                <span className="text-utility-red-600">Cancel booking</span>
+                <Ban className="size-4 text-error" />
+                <span className="text-error">Cancel booking</span>
               </Dropdown.Item>
             )}
           </Dropdown.Panel>

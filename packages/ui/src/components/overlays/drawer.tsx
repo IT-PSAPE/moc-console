@@ -161,7 +161,7 @@ function DrawerBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>)
     return (
         <BaseDrawer.Backdrop
             className={cn(
-                'pointer-events-auto fixed inset-0 z-0 bg-black/40 md:bg-black/30',
+                'pointer-events-auto fixed inset-0 z-0 bg-overlay/40 md:bg-overlay/30',
                 'transition-opacity duration-200 motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
                 className,
             )}

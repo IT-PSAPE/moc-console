@@ -72,10 +72,11 @@ The sidebar is flat — one item, one destination, no expand/collapse and no sec
 
 | Item | Route | Content |
 | --- | --- | --- |
-| Dashboard | `/dashboard` | Requests + equipment summary |
 | Requests | `/requests` | All submitted requests; archived ones behind the status filter |
 | Equipment | `/equipment` | Full inventory, filterable by status incl. maintenance |
-| Bookings | `/bookings` | Equipment bookings |
+| Equipment bookings | `/bookings` | Equipment reservations and returns |
+| Venues | `/venues` | Venue bookings |
+| Broadcast | `/broadcasts` | Broadcast queue and playback management |
 | Checklists | `/checklists` | Active and completed checklist runs; reusable templates at `/checklists/templates` |
 | Streams | `/streams` | YouTube streams and Zoom meetings |
 
@@ -83,8 +84,9 @@ Two things that read like features but are filters: **Archive** (a request statu
 
 ## Removed features
 
-Removed 2026-07-28. Kept here so the terms are recognised as *gone*, not merely undocumented — do not reintroduce them without a new ADR.
+Removed features are kept here so the terms are recognised as *gone*, not merely undocumented — do not reintroduce them without a new ADR.
 
+- **Dashboard** — the combined requests and equipment-bookings summary. Removed 2026-09-26 after user testing showed that the individual sections were the useful destinations; see [ADR-0011](./docs/adr/0011-remove-dashboard-and-use-section-landing.md).
 - **Broadcasts section** — the Console playlist authoring area (playlist editor, media library). Removed with its `playlists`, `playlist_lanes`, `queue` and `media` tables.
 - **MOC Broadcast** — the public player app (`apps/broadcast`) and the shared playback engine (`@moc/player`). Nothing plays playlists any more.
 - **Cue Sheet (QSheets)** — events, tracks, cues, public event shares and playhead sync. Checklists were restored as a standalone feature on 2026-07-31; see [ADR-0009](./docs/adr/0009-restore-checklists-as-standalone-feature.md).

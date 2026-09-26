@@ -20,7 +20,7 @@ const tabsListVariants = cv({
     base: ['flex'],
     variants: {
         variant: {
-            default: ['gap-3 px-3 border-b border-tertiary'],
+            default: ['gap-3 px-3 border-b border-secondary'],
             pill: ['gap-1 items-center'],
         },
     },

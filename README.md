@@ -215,7 +215,6 @@ Protected routes are mounted in [src/App.tsx](/Users/Craig/Developer/Projects/mo
 
 Main app sections:
 
-- `/dashboard`
 - `/requests`
 - `/requests/:id`
 - `/equipment`
@@ -224,6 +223,10 @@ Main app sections:
 - `/bookings/:id`
 - `/venues`
 - `/venues/:id`
+- `/broadcasts`
+- `/checklists`
+- `/checklists/templates`
+- `/checklists/:id`
 - `/streams`
 - `/streams/stream/:id`
 - `/streams/meeting/:id`

@@ -21,7 +21,7 @@ export function useLogin() {
       setLoading(false)
       return
     }
-    navigate(`/${routes.dashboard}`, { replace: true })
+    navigate(`/${routes.requests}`, { replace: true })
   }
 
   return {

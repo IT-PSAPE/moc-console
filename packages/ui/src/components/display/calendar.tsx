@@ -236,23 +236,23 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
 // ─── Cell ────────────────────────────────────────────────
 
 const eventColorMap: Record<string, string> = {
-    red: 'bg-error_primary text-error',
-    orange: 'bg-warning_primary text-warning',
-    yellow: 'bg-warning_primary text-warning',
-    green: 'bg-success_primary text-success',
+    red: 'bg-error text-error',
+    orange: 'bg-warning text-warning',
+    yellow: 'bg-warning text-warning',
+    green: 'bg-success text-success',
     blue: 'bg-[var(--color-utility-blue-50)] text-[var(--color-utility-blue-700)]',
-    purple: 'bg-brand_primary text-brand_secondary',
+    purple: 'bg-brand text-brand',
     gray: 'bg-secondary text-tertiary',
 }
 
 const eventDotColorMap: Record<NonNullable<CalendarEvent['color']>, string> = {
-    red: 'bg-utility-red-500',
-    orange: 'bg-utility-orange-500',
-    yellow: 'bg-utility-yellow-500',
-    green: 'bg-utility-green-500',
-    blue: 'bg-utility-blue-500',
-    purple: 'bg-utility-purple-500',
-    gray: 'bg-utility-gray-500',
+    red: 'bg-error_solid',
+    orange: 'bg-text-warning',
+    yellow: 'bg-utility-yellow-700',
+    green: 'bg-text-success',
+    blue: 'bg-utility-blue-700',
+    purple: 'bg-utility-purple-700',
+    gray: 'bg-text-quaternary',
 }
 
 type CalendarCellProps<T = unknown> = {
@@ -282,7 +282,7 @@ function CalendarCell<T = unknown>({ date, events, isCurrentMonth, isMobile = fa
                 className={cn(
                     'flex min-h-14 w-full flex-col items-center justify-center gap-1 border-r border-b border-secondary p-1 text-center',
                     !isCurrentMonth && 'bg-secondary',
-                    isSelected && 'bg-brand_primary outline-2 -outline-offset-2 outline-brand',
+                    isSelected && 'bg-brand outline-2 -outline-offset-2 outline-border-brand',
                 )}
                 onClick={handleSelect}
             >
@@ -317,7 +317,7 @@ function CalendarDate({ date, isCurrentMonth, isToday }: { date: Date; isCurrent
     return (
         <span className={cn(
             'inline-flex size-6 items-center justify-center rounded-full paragraph-xs md:mb-1 md:self-start',
-            isToday && 'bg-brand_solid text-primary_on-brand',
+            isToday && 'bg-brand_solid text-on-brand',
             !isToday && isCurrentMonth && 'text-primary',
             !isToday && !isCurrentMonth && 'text-quaternary',
         )}>

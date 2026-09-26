@@ -9,7 +9,7 @@ type AvatarProps = {
 }
 
 const variants = cv({
-    base: [ 'overflow-clip shrink-0 bg-brand_primary flex items-center justify-center text-brand_secondary' ],
+    base: [ 'overflow-clip shrink-0 bg-brand flex items-center justify-center text-brand' ],
     variants: {
         size: {
             '2xs': ['size-5 rounded-full text-[9px] leading-none'],

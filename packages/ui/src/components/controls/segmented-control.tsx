@@ -63,7 +63,7 @@ function SegmentedControlItem({ children, className, icon, value, hide, ...props
                 'inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-1.5 label-sm transition-colors',
                 'touch-manipulation focus-visible:outline-2 focus-visible:outline-offset-1 motion-reduce:transition-none',
                 'text-tertiary hover:text-primary',
-                'data-[pressed]:bg-primary data-[pressed]:text-brand_secondary data-[pressed]:shadow-sm',
+                'data-[pressed]:bg-primary data-[pressed]:text-brand data-[pressed]:shadow-sm',
                 className,
             )}
             {...props}

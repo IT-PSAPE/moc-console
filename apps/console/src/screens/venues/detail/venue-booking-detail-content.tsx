@@ -47,7 +47,7 @@ export function VenueBookingDetailContent({ booking }: VenueBookingDetailContent
             {isCancelled ? (
               <Dropdown.Item onSelect={handleRestore}><RotateCcw className="size-4" />Restore booking</Dropdown.Item>
             ) : (
-              <Dropdown.Item onSelect={handleOpenCancel}><Ban className="size-4 text-utility-red-600" /><span className="text-utility-red-600">Cancel booking</span></Dropdown.Item>
+              <Dropdown.Item onSelect={handleOpenCancel}><Ban className="size-4 text-error" /><span className="text-error">Cancel booking</span></Dropdown.Item>
             )}
           </Dropdown.Panel>
         </Dropdown>

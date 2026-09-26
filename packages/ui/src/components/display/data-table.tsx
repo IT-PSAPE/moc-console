@@ -76,7 +76,7 @@ export function DataTable<T extends Record<string, unknown>>({
               <Table.Row
                 key={rowIndex}
                 className={cn(
-                  onRowClick && "cursor-pointer hover:bg-gray-50",
+                  onRowClick && "cursor-pointer hover:bg-tertiary",
                   typeof rowClassName === "function"
                     ? rowClassName(row, rowIndex)
                     : rowClassName,

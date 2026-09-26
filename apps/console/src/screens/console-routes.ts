@@ -3,7 +3,6 @@ export const routes = {
     signup: 'signup',
     resetPassword: 'reset-password',
     passwordRecovery: 'password-recovery',
-    dashboard: 'dashboard',
     broadcasts: 'broadcasts',
     requests: 'requests',
     requestsDetail: 'requests/:id',

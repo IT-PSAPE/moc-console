@@ -84,7 +84,7 @@ function ErrorFallback({ error }: { error: Error }) {
 
     return (
         <div className="flex min-h-[60dvh] flex-col items-center justify-center gap-6 p-6 text-center">
-            <span className="flex size-14 items-center justify-center rounded-full bg-utility-red-50 text-utility-red-600">
+            <span className="flex size-14 items-center justify-center rounded-full bg-error text-error">
                 <AlertTriangle className="size-7" />
             </span>
 

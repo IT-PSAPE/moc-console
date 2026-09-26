@@ -21,7 +21,7 @@ export function ResetPasswordScreen() {
       <AuthLayout step={2} totalSteps={3}>
         <div className="space-y-5">
           <div className="flex justify-center pt-1">
-            <MailCheck className="size-10 text-brand_secondary" strokeWidth={1.5} aria-hidden />
+            <MailCheck className="size-10 text-brand" strokeWidth={1.5} aria-hidden />
           </div>
           <div className="space-y-1.5 text-center">
             <h2 className="title-h6">Check your inbox</h2>
@@ -69,7 +69,7 @@ export function ResetPasswordScreen() {
         <Button type="submit" disabled={state.isSubmitting || !meta.emailIsValid} className="w-full">
           {state.isSubmitting ? "Sending reset link…" : "Send reset link"}
         </Button>
-        <p className="paragraph-sm text-center text-tertiary"><Link to={`/${routes.login}`} className="text-brand_secondary hover:underline">Back to sign in</Link></p>
+        <p className="paragraph-sm text-center text-tertiary"><Link to={`/${routes.login}`} className="text-brand hover:underline">Back to sign in</Link></p>
       </form>
     </AuthLayout>
   )

@@ -18,7 +18,7 @@ export function TelegramLinkRow({ userId, telegramChatId }: TelegramLinkRowProps
       <>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="inline-flex items-center gap-2">
-            <span aria-hidden className="size-2 shrink-0 rounded-full bg-utility-green-500" />
+            <span aria-hidden className="size-2 shrink-0 rounded-full bg-text-success" />
             <Label.sm className="text-primary">Connected</Label.sm>
           </span>
           <Button variant="secondary" icon={<Unplug />} onClick={actions.openUnlink} disabled={state.busy}>

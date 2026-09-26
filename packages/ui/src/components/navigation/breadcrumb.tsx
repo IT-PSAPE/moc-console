@@ -73,13 +73,13 @@ function formatSegment(segment: string): string {
 function deriveBreadcrumbs(pathname: string, overrides: BreadcrumbOverrides): Array<{ label: string; path: string }> {
     const segments = pathname.split('/').filter(Boolean)
     const crumbs: Array<{ label: string; path: string }> = [
-        { label: 'Home', path: '/dashboard' },
+        { label: 'Home', path: '/requests' },
     ]
 
     let currentPath = ''
     for (const segment of segments) {
         currentPath += `/${segment}`
-        if (currentPath === '/dashboard') continue
+        if (currentPath === '/requests') continue
         const label = overrides[segment] ?? formatSegment(segment)
         crumbs.push({ label, path: currentPath })
     }
@@ -114,7 +114,7 @@ function BreadcrumbItem({ label, isLast, onClick, icon }: BreadcrumbItemProps) {
 
 function BreadcrumbSeparator() {
     return (
-        <ChevronRight className="size-4 text-placeholder" aria-hidden="true" />
+        <ChevronRight className="size-4 text-quaternary" aria-hidden="true" />
     )
 }
 

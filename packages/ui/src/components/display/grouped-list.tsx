@@ -6,7 +6,7 @@ function GroupedListRoot({ children, className, ...props }: HTMLAttributes<HTMLD
 }
 
 function GroupedListGroup({ children, className, ...props }: HTMLAttributes<HTMLElement>) {
-  return <section className={cn("flex flex-col gap-1.5 rounded-lg border border-tertiary bg-secondary_alt p-1.5", className)} {...props}>{children}</section>;
+  return <section className={cn("flex flex-col gap-1.5 rounded-lg border border-secondary bg-secondary p-1.5", className)} {...props}>{children}</section>;
 }
 
 function GroupedListHeader({ children, className, ...props }: HTMLAttributes<HTMLElement>) {

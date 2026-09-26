@@ -26,7 +26,7 @@ export function BroadcastQueueItem({ display, isActive, item, onSelect }: Broadc
       >
         <BroadcastCover className="size-10 rounded-md" coverUrl={display.coverUrl} iconClassName="size-4" title={display.title} />
         <span className="min-w-0 flex-1">
-          <Label.sm className={cn("block truncate", isActive ? "text-brand_secondary" : "text-primary")}>{display.title}</Label.sm>
+          <Label.sm className={cn("block truncate", isActive ? "text-brand" : "text-primary")}>{display.title}</Label.sm>
           {display.artist ? <Paragraph.xs className="block truncate text-quaternary">{display.artist}</Paragraph.xs> : null}
         </span>
       </InteractiveSurface>

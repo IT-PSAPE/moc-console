@@ -77,7 +77,7 @@ export function NotifyDestinationField({ value, onChange }: NotifyDestinationFie
       </Combobox.Root>
 
       {failed ? (
-        <Paragraph.xs className="text-utility-red-700">
+        <Paragraph.xs className="text-error">
           Couldn't load your Telegram groups. The notification will follow your notification settings.
         </Paragraph.xs>
       ) : (

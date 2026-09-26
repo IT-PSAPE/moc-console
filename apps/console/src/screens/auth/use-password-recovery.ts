@@ -36,7 +36,7 @@ export function usePasswordRecovery() {
   const confirmMatches = confirmPassword.length > 0 && confirmPassword === password
   const showConfirmMismatch = confirmTouched && confirmPassword.length > 0 && confirmPassword !== password
   const canSubmit = passwordMeetsMinimum && confirmMatches
-  const destination = session ? `/${routes.dashboard}` : `/${routes.login}`
+  const destination = session ? `/${routes.requests}` : `/${routes.login}`
 
   useEffect(() => {
     if (!success) return
