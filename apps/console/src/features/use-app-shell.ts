@@ -13,7 +13,6 @@ export function useAppShell() {
   const { toast } = useFeedback()
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
-  const [reportBugOpen, setReportBugOpen] = useState(false)
 
   useEffect(() => {
     closeMobile()
@@ -35,17 +34,13 @@ export function useAppShell() {
     return pathname === `/${route}` || pathname.startsWith(`/${route}/`)
   }
 
-  function openReportBug() {
-    setReportBugOpen(true)
-  }
-
   function openProfile() {
     closeMobile()
     setProfileOpen(true)
   }
 
   return {
-    state: { isSigningOut, profileOpen, reportBugOpen, mobileSidebarOpen: sidebar.state.isMobileOpen },
-    actions: { isRouteActive, signOut: signOutUser, openProfile, setProfileOpen, openReportBug, setReportBugOpen, closeMobileSidebar: closeMobile, setMobileSidebarOpen: setMobileOpen },
+    state: { isSigningOut, profileOpen, mobileSidebarOpen: sidebar.state.isMobileOpen },
+    actions: { isRouteActive, signOut: signOutUser, openProfile, setProfileOpen, closeMobileSidebar: closeMobile, setMobileSidebarOpen: setMobileOpen },
   }
 }

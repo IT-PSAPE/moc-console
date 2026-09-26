@@ -1,9 +1,7 @@
-import { Component, useState, type ErrorInfo, type ReactNode } from 'react'
-import { AlertTriangle, MessageSquareWarning, RefreshCw } from 'lucide-react'
+import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { AlertTriangle, RefreshCw } from 'lucide-react'
 import { Button } from '@moc/ui/components/controls/button'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
-import { ReportBugModal } from '@/features/account/report-bug-modal'
-import { captureBugReportErrorContext, type BugReportErrorContext } from '@/data/bug-reports'
 
 type FriendlyError = {
     title: string
@@ -38,7 +36,7 @@ function getFriendlyError(error: Error): FriendlyError {
     if (name.includes('typeerror') || name.includes('referenceerror')) {
         return {
             title: 'Something on this page broke',
-            description: 'A part of the page didn\'t render the way it should. The team has been notified — refreshing usually clears it up.',
+            description: 'A part of the page didn\'t render the way it should. Refreshing usually clears it up.',
         }
     }
 
@@ -54,45 +52,34 @@ type ErrorBoundaryProps = {
 
 type ErrorBoundaryState = {
     error: Error | null
-    componentStack: string | null
 }
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-    state: ErrorBoundaryState = { error: null, componentStack: null }
+    state: ErrorBoundaryState = { error: null }
 
     static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-        return { error, componentStack: null }
+        return { error }
     }
 
     componentDidCatch(error: Error, info: ErrorInfo) {
-        this.setState({ componentStack: info.componentStack ?? null })
         console.error('[ErrorBoundary] caught error', error, info)
     }
 
     render() {
         if (this.state.error) {
             return (
-                <ErrorFallback
-                    error={this.state.error}
-                    componentStack={this.state.componentStack}
-                />
+                <ErrorFallback error={this.state.error} />
             )
         }
         return this.props.children
     }
 }
 
-function ErrorFallback({ error, componentStack }: { error: Error; componentStack: string | null }) {
-    const [reportOpen, setReportOpen] = useState(false)
+function ErrorFallback({ error }: { error: Error }) {
     const friendly = getFriendlyError(error)
-    const errorContext: BugReportErrorContext = captureBugReportErrorContext(error, componentStack)
 
     function handleRefresh() {
         window.location.reload()
-    }
-
-    function handleOpenReport() {
-        setReportOpen(true)
     }
 
     return (
@@ -110,16 +97,7 @@ function ErrorFallback({ error, componentStack }: { error: Error; componentStack
                 <Button variant="secondary" icon={<RefreshCw />} onClick={handleRefresh}>
                     Refresh page
                 </Button>
-                <Button icon={<MessageSquareWarning />} onClick={handleOpenReport}>
-                    Send bug report
-                </Button>
             </div>
-
-            <ReportBugModal
-                open={reportOpen}
-                onOpenChange={setReportOpen}
-                errorContext={errorContext}
-            />
         </div>
     )
 }

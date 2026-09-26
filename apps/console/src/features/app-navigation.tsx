@@ -1,7 +1,7 @@
 import { routes } from '@/screens/console-routes'
 import { Sidebar } from '@moc/ui/components/navigation/sidebar'
 import { NavigationList } from '@moc/ui/components/navigation/navigation-list'
-import { Bug, Building2, CalendarCheck, FileText, LayoutGrid, ListChecks, Package, Radio, RadioTower, Settings, X } from 'lucide-react'
+import { Building2, CalendarCheck, FileText, LayoutGrid, ListChecks, Package, Radio, RadioTower, Settings, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Divider } from '@moc/ui/components/display/divider'
 import { AccountMenu } from './account/account-menu'
@@ -13,11 +13,10 @@ type AppNavigationProps = {
     isSigningOut: boolean
     onCloseMobileNavigation: () => void
     onEditProfile: () => void
-    onReportBug: () => void
     onSignOut: () => void
 }
 
-export function AppNavigation({ isRouteActive, isSigningOut, onCloseMobileNavigation, onEditProfile, onReportBug, onSignOut }: AppNavigationProps) {
+export function AppNavigation({ isRouteActive, isSigningOut, onCloseMobileNavigation, onEditProfile, onSignOut }: AppNavigationProps) {
     return (
         <>
             <Sidebar.Header>
@@ -51,7 +50,6 @@ export function AppNavigation({ isRouteActive, isSigningOut, onCloseMobileNaviga
                 <div className="flex w-full flex-col">
                     <NavigationList.Root>
                         <Sidebar.MenuItem title="Settings" icon={<Settings />} active={isRouteActive(routes.settings)} render={<Link to={`/${routes.settings}`} />} />
-                        <Sidebar.MenuItem title="Report a bug" icon={<Bug />} onClick={onReportBug} />
                     </NavigationList.Root>
                     <Divider className="my-1" />
                     <AccountMenu onEditProfile={onEditProfile} onSignOut={onSignOut} isSigningOut={isSigningOut} />

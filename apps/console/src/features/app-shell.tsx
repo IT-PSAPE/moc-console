@@ -1,7 +1,6 @@
 import { Sidebar } from '@moc/ui/components/navigation/sidebar'
 import { Breadcrumb } from '@moc/ui/components/navigation/breadcrumb'
 import { TopBar } from './topbar'
-import { ReportBugModal } from './account/report-bug-modal'
 import { SkipLink } from '@moc/ui/components/navigation/skip-link'
 import { useAppShell } from './use-app-shell'
 import { EditProfileModal } from './account/edit-profile-modal'
@@ -31,7 +30,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                     isSigningOut={state.isSigningOut}
                                     onCloseMobileNavigation={actions.closeMobileSidebar}
                                     onEditProfile={actions.openProfile}
-                                    onReportBug={actions.openReportBug}
                                     onSignOut={actions.signOut}
                                 />
                             </Drawer.Panel>
@@ -44,7 +42,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             isSigningOut={state.isSigningOut}
                             onCloseMobileNavigation={actions.closeMobileSidebar}
                             onEditProfile={actions.openProfile}
-                            onReportBug={actions.openReportBug}
                             onSignOut={actions.signOut}
                         />
                     </Sidebar.Panel>
@@ -64,7 +61,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
 
             <EditProfileModal open={state.profileOpen} onOpenChange={actions.setProfileOpen} />
-            <ReportBugModal open={state.reportBugOpen} onOpenChange={actions.setReportBugOpen} />
         </>
     )
 }

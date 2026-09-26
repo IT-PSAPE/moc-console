@@ -466,31 +466,20 @@ async function logDeliveryFailure(args: {
   description: string
   payload: unknown
 }): Promise<void> {
-  try {
-    const admin = getSupabaseAdmin()
-    const destination = args.userId
-      ? `user ${args.userId}`
-      : `${args.groupChatId}${args.threadId !== null ? `/${args.threadId}` : ""}`
-    const summary = `Telegram notification failed (${args.eventType} → ${destination}): ${args.description.slice(0, 200)}`
-    await admin.from("bug_reports").insert({
-      description: summary.slice(0, 2000),
-      error_context: {
-        source: "notifications.dispatch",
-        workspace_id: args.workspaceId,
-        event_type: args.eventType,
-        route_id: args.routeId,
-        group_chat_id: args.groupChatId || null,
-        thread_id: args.threadId,
-        user_id: args.userId ?? null,
-        telegram_error_code: args.errorCode,
-        telegram_description: args.description,
-        payload: args.payload,
-      },
-    })
-  } catch (logErr) {
-    // Last-resort console: never let logging crash the dispatcher.
-    console.error("Failed to log notification delivery failure:", logErr)
-  }
+  const destination = args.userId
+    ? `user ${args.userId}`
+    : `${args.groupChatId}${args.threadId !== null ? `/${args.threadId}` : ""}`
+  console.error(`Telegram notification failed (${args.eventType} → ${destination})`, {
+    source: "notifications.dispatch",
+    workspaceId: args.workspaceId,
+    routeId: args.routeId,
+    groupChatId: args.groupChatId || null,
+    threadId: args.threadId,
+    userId: args.userId ?? null,
+    errorCode: args.errorCode,
+    description: args.description,
+    payload: args.payload,
+  })
 }
 
 export type DispatchOptions = {
