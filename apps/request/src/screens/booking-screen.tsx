@@ -7,15 +7,12 @@ import { BookingDetails } from '@/features/components/booking-details'
 import { BookingEquipmentPicker } from '@/features/components/booking-equipment-picker'
 import { BookingReview } from '@/features/components/booking-review'
 import { useBookingForm } from '@/features/hooks/use-booking-form'
-import { BOOKING_STEPS } from '@/features/constants'
 import { routes } from '@/screens/console-routes'
 import { StepIndicatorBar } from '@/features/components/step-indicator-bar';
 import { FlowHeader } from '@/features/components/flow-header'
 import { PublicFlow } from '@/features/components/public-flow'
 import { StepErrorSummary } from '@/features/components/step-error-summary'
 import type { FormEvent } from 'react'
-
-const bookingStepLabels = BOOKING_STEPS.map((step) => step.label)
 
 export function BookingScreen() {
   const navigate = useNavigate()
@@ -58,7 +55,7 @@ export function BookingScreen() {
 
       <PublicFlow as="form" noValidate onSubmit={handleSubmit}>
         <PublicFlow.Progress>
-          <StepIndicatorBar currentStep={state.step} totalSteps={3} labels={bookingStepLabels} />
+          <StepIndicatorBar currentStep={state.step} totalSteps={3} />
         </PublicFlow.Progress>
 
         <StepErrorSummary errors={state.validationErrors} />

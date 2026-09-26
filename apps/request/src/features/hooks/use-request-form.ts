@@ -1,6 +1,6 @@
 import { useReducer, useCallback, useEffect } from 'react'
 import { submitPublicRequest } from '@/data/submit-request'
-import { clearRequestDraft, getEmptyRequestDraft, loadRequestDraft, saveRequestDraft } from '@/data/request-draft-storage'
+import { clearSubmissionDraft, getEmptyRequestDraft, hasMeaningfulRequestDraft, loadSubmissionDraft, saveSubmissionDraft } from '@/data/submission-draft-storage'
 import { getRequestStepErrors } from '@/features/public-flow-validation'
 import { useStepValidation } from '@/features/hooks/use-step-validation'
 import type { RequestFormData, SubmitRequestResult } from '@/types/request'
@@ -26,7 +26,7 @@ function getInitialData(): RequestFormData {
 }
 
 function getInitialState(): RequestFormState {
-  const savedDraft = loadRequestDraft()
+  const savedDraft = loadSubmissionDraft('request')
   return savedDraft
     ? { ...savedDraft, submitting: false, error: null }
     : { step: 1, data: getInitialData(), submitting: false, error: null }
@@ -63,6 +63,7 @@ const errorIdByField: Partial<Record<keyof RequestFormData, string>> = {
 
 export function useRequestForm(categories: RequestCategoryOption[]) {
   const [state, dispatch] = useReducer(reducer, undefined, getInitialState)
+  const defaultCategory = categories[0]?.value ?? ''
   const validation = useStepValidation()
   const { errors: validationErrors } = validation.state
   const { clearError, validate } = validation.actions
@@ -74,8 +75,8 @@ export function useRequestForm(categories: RequestCategoryOption[]) {
   }, [categories, state.data.category])
 
   useEffect(() => {
-    saveRequestDraft({ step: state.step, data: state.data })
-  }, [state.data, state.step])
+    saveSubmissionDraft('request', { step: state.step, data: state.data }, hasMeaningfulRequestDraft(state.data, defaultCategory))
+  }, [defaultCategory, state.data, state.step])
 
   const setField = useCallback((field: keyof RequestFormData, value: string) => {
     dispatch({ type: 'SET_FIELD', field, value })
@@ -100,7 +101,7 @@ export function useRequestForm(categories: RequestCategoryOption[]) {
     try {
       const result = await submitPublicRequest(state.data)
       dispatch({ type: 'SUBMIT_SUCCESS' })
-      clearRequestDraft()
+      clearSubmissionDraft('request')
       return result
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to submit request'

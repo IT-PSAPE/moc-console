@@ -17,15 +17,15 @@ export function PublicLayout({ children, className}: { children: ReactNode; clas
   }
 
   return (
-    <div className="min-h-dvh bg-primary flex flex-col">
+    <div className="min-h-dvh bg-primary flex flex-col isolate relative">
       <SkipLink />
       <header className="sticky top-0 z-30 border-b border-secondary bg-primary/95 backdrop-blur-sm">
         <div className="mx-auto flex h-14 w-full max-w-content-md items-center px-page-gutter">
           <Button.Unstyled type="button" className="flex items-center gap-2 cursor-pointer" onClick={handleHome}>
-            <div className="size-10 shrink-0 rounded-xl bg-linear-to-t from-utility-brand-600 to-utility-brand-400" >
+            <div className="size-10 shrink-0 rounded-xl bg-linear-to-t from-background-brand_solid to-border-brand" >
               <img src="/logo.svg" alt="" width="40" height="40" className="size-10" />
             </div>
-            <Label.bg>MOC Request</Label.bg>
+            <Label.bg>PE Church</Label.bg>
           </Button.Unstyled>
           {!isHome && (
             <Button.Icon variant="ghost" icon={<X className="size-6" />} onClick={handleHome} className="ml-auto" aria-label="Go to home page" />

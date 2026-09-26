@@ -34,22 +34,4 @@ export const STATUS_COLORS: Record<string, 'gray' | 'blue' | 'yellow' | 'green' 
   returned: 'green',
 }
 
-export const REQUEST_STEPS = [
-  { label: 'Basic Info' },
-  { label: 'Details' },
-  { label: 'Flow' },
-  { label: 'Review' },
-]
-
-export const BOOKING_STEPS = [
-  { label: 'Details' },
-  { label: 'Equipment' },
-  { label: 'Review' },
-]
-
-export const VENUE_STEPS = [
-  { label: 'Details' },
-  { label: 'Review' },
-]
-
 export const PRIORITIES: RequestPriority[] = ['low', 'medium', 'high', 'urgent']

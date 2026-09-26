@@ -8,7 +8,6 @@ import { RequestDetails } from '@/features/components/request-details'
 import { RequestFlow } from '@/features/components/request-flow'
 import { RequestReview } from '@/features/components/request-review'
 import { useRequestForm } from '@/features/hooks/use-request-form'
-import { REQUEST_STEPS } from '@/features/constants'
 import { routes } from '@/screens/console-routes'
 import { StepIndicatorBar } from '@/features/components/step-indicator-bar';
 import { FlowHeader } from '@/features/components/flow-header'
@@ -17,8 +16,6 @@ import { StepErrorSummary } from '@/features/components/step-error-summary'
 import { useRequestCategories } from '@/features/hooks/use-request-categories'
 import type { FormEvent } from 'react'
 import type { RequestCategoryOption } from '@/types/tracking'
-
-const requestStepLabels = REQUEST_STEPS.map((step) => step.label)
 
 function resolveCategoryName(categories: RequestCategoryOption[], value: string): string {
   return categories.find((category) => category.value === value)?.label ?? value
@@ -63,7 +60,7 @@ export function RequestScreen() {
 
       <PublicFlow as="form" noValidate onSubmit={handleSubmit}>
         <PublicFlow.Progress>
-          <StepIndicatorBar currentStep={state.step} totalSteps={4} labels={requestStepLabels} />
+          <StepIndicatorBar currentStep={state.step} totalSteps={4} />
         </PublicFlow.Progress>
 
         <StepErrorSummary errors={state.validationErrors} />

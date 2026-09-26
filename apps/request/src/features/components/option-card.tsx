@@ -9,13 +9,13 @@ export function OptionCard({ icon, title, description, onClick, className }: { i
   return (
     <Button.Surface
       className={cn(
-        'group flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-[background-color,border-color,box-shadow,transform] motion-reduce:transition-none',
-        'bg-secondary_alt hover:bg-secondary_hover active:scale-[0.98]',
+        'group flex items-center gap-4 rounded-xl p-2 cursor-pointer transition-[background-color border-color box-shadow transform] motion-reduce:transition-none',
+        'bg-secondary hover:bg-tertiary active:scale-[0.98]',
         className,
       )}
       onClick={onClick}
     >
-      <span className="flex shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+      <span className="flex shrink-0 items-center justify-center rounded-lg bg-border-brand/10 text-brand">
         {icon}
       </span>
       <div className="flex-1 min-w-0">

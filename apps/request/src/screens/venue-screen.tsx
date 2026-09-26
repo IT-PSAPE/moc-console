@@ -8,7 +8,6 @@ import { VenueBookingDetails } from '@/features/components/venue-booking-details
 import { VenueBookingReview } from '@/features/components/venue-booking-review'
 import { useVenueBookingForm } from '@/features/hooks/use-venue-booking-form'
 import { useVenueAvailability } from '@/features/hooks/use-venue-availability'
-import { VENUE_STEPS } from '@/features/constants'
 import { routes } from '@/screens/console-routes'
 import { StepIndicatorBar } from '@/features/components/step-indicator-bar'
 import { FlowHeader } from '@/features/components/flow-header'
@@ -17,8 +16,6 @@ import { StepErrorSummary } from '@/features/components/step-error-summary'
 import type { PublicVenueEvent } from '@moc/types/venues'
 import type { VenueBookingFormData } from '@/types/venue-booking'
 import type { FormEvent } from 'react'
-
-const venueStepLabels = VENUE_STEPS.map((step) => step.label)
 
 // What the booking will be called, resolved the same way the submit RPC
 // resolves it: the chosen event's name, or the description typed under
@@ -65,7 +62,7 @@ export function VenueScreen() {
 
       <PublicFlow as="form" noValidate onSubmit={handleSubmit}>
         <PublicFlow.Progress>
-          <StepIndicatorBar currentStep={state.step} totalSteps={meta.totalSteps} labels={venueStepLabels} />
+          <StepIndicatorBar currentStep={state.step} totalSteps={meta.totalSteps} />
         </PublicFlow.Progress>
 
         <StepErrorSummary errors={state.validationErrors} />

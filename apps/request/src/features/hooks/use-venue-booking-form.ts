@@ -1,6 +1,7 @@
-import { useReducer, useCallback } from 'react'
+import { useReducer, useCallback, useEffect, useState } from 'react'
 import { VENUE_SLOT_MINUTES, VENUE_EVENT_OTHER_ID } from '@moc/types/venues'
 import { submitPublicVenueBooking } from '@/data/submit-venue-booking'
+import { clearSubmissionDraft, getEmptyVenueBookingDraft, hasMeaningfulVenueBookingDraft, loadSubmissionDraft, saveSubmissionDraft } from '@/data/submission-draft-storage'
 import { getVenueBookingStepErrors } from '@/features/public-flow-validation'
 import { useStepValidation } from '@/features/hooks/use-step-validation'
 import { formatCalendarDateKey } from '@/lib/utils'
@@ -32,19 +33,11 @@ type VenueBookingFormAction =
 
 const LAST_STEP = 2
 
-// Today, not blank: with a date already chosen, picking a venue is enough for
-// the times to appear on their own. Nobody has to click a date — least of all
-// the date the calendar is already showing as selected — before the column
-// fills in.
-function getInitialData(): VenueBookingFormData {
-  return {
-    requestedBy: '',
-    venueId: '',
-    eventId: '',
-    eventOther: '',
-    bookingDate: formatCalendarDateKey(new Date()),
-    slotStarts: [],
-  }
+function getInitialState(initialData: VenueBookingFormData): VenueBookingFormState {
+  const savedDraft = loadSubmissionDraft('venue')
+  return savedDraft
+    ? { ...savedDraft, submitting: false, error: null }
+    : { step: 1, data: initialData, submitting: false, error: null }
 }
 
 // The booked window is derived from the selected (contiguous, chronological)
@@ -99,15 +92,15 @@ const errorIdByField: Record<VenueBookingTextField, string> = {
 }
 
 export function useVenueBookingForm() {
-  const [state, dispatch] = useReducer(reducer, undefined, () => ({
-    step: 1,
-    data: getInitialData(),
-    submitting: false,
-    error: null,
-  }))
+  const [initialData] = useState<VenueBookingFormData>(getEmptyVenueBookingDraft)
+  const [state, dispatch] = useReducer(reducer, initialData, getInitialState)
   const validation = useStepValidation()
   const { errors: validationErrors } = validation.state
   const { clearError, validate } = validation.actions
+
+  useEffect(() => {
+    saveSubmissionDraft('venue', { step: state.step, data: state.data }, hasMeaningfulVenueBookingDraft(state.data, initialData))
+  }, [initialData, state.data, state.step])
 
   const setField = useCallback((field: VenueBookingTextField, value: string) => {
     dispatch({ type: 'SET_FIELD', field, value })
@@ -153,6 +146,7 @@ export function useVenueBookingForm() {
     try {
       const result = await submitPublicVenueBooking(state.data)
       dispatch({ type: 'SUBMIT_SUCCESS' })
+      clearSubmissionDraft('venue')
       return result
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to submit venue booking'

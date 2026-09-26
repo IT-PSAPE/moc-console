@@ -1,5 +1,6 @@
-import { useReducer, useCallback } from 'react'
+import { useReducer, useCallback, useEffect } from 'react'
 import { submitPublicBookingBatch } from '@/data/submit-booking'
+import { clearSubmissionDraft, getEmptyBookingDraft, hasMeaningfulBookingDraft, loadSubmissionDraft, saveSubmissionDraft } from '@/data/submission-draft-storage'
 import { getBookingStepErrors } from '@/features/public-flow-validation'
 import { useStepValidation } from '@/features/hooks/use-step-validation'
 import type { BookingFormData, SubmitBookingResult } from '@/types/booking'
@@ -21,16 +22,11 @@ type BookingFormAction =
   | { type: 'SUBMIT_SUCCESS' }
   | { type: 'SUBMIT_ERROR'; error: string }
 
-const initialData: BookingFormData = {
-  title: '',
-  equipmentIds: [],
-  // TODO(equipment-inventory): STOPGAP — see BookingFormData / picker.
-  requestedEquipment: [],
-  otherEquipment: '',
-  bookedBy: '',
-  checkedOutAt: '',
-  expectedReturnAt: '',
-  notes: '',
+function getInitialState(): BookingFormState {
+  const savedDraft = loadSubmissionDraft('booking')
+  return savedDraft
+    ? { ...savedDraft, submitting: false, error: null }
+    : { step: 1, data: getEmptyBookingDraft(), submitting: false, error: null }
 }
 
 function reducer(state: BookingFormState, action: BookingFormAction): BookingFormState {
@@ -75,15 +71,14 @@ const errorIdByField: Partial<Record<keyof BookingFormData, string>> = {
 }
 
 export function useBookingForm() {
-  const [state, dispatch] = useReducer(reducer, {
-    step: 1,
-    data: initialData,
-    submitting: false,
-    error: null,
-  })
+  const [state, dispatch] = useReducer(reducer, undefined, getInitialState)
   const validation = useStepValidation()
   const { errors: validationErrors } = validation.state
   const { clearError, validate } = validation.actions
+
+  useEffect(() => {
+    saveSubmissionDraft('booking', { step: state.step, data: state.data }, hasMeaningfulBookingDraft(state.data))
+  }, [state.data, state.step])
 
   const toggleEquipment = useCallback((id: string) => {
     dispatch({ type: 'TOGGLE_EQUIPMENT', id })
@@ -122,6 +117,7 @@ export function useBookingForm() {
       }
       const result = await submitPublicBookingBatch(payload)
       dispatch({ type: 'SUBMIT_SUCCESS' })
+      clearSubmissionDraft('booking')
       return result
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to submit booking'

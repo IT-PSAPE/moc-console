@@ -9,9 +9,9 @@ const stepCircle = cv({
   base: ['flex size-7 items-center justify-center rounded-full text-xs font-semibold shrink-0 transition-colors'],
   variants: {
     state: {
-      active: ['bg-brand_primary text-brand_teriary'],
-      completed: ['bg-brand_solid text-white'],
-      upcoming: ['bg-disabled text-tertiary'],
+      active: ['bg-brand text-brand'],
+      completed: ['bg-brand_solid text-on-brand'],
+      upcoming: ['bg-tertiary text-tertiary'],
     },
   },
   defaultVariants: { state: 'upcoming' },
