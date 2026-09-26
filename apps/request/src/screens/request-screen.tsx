@@ -58,7 +58,7 @@ export function RequestScreen() {
     <PublicLayout className="py-8 sm:py-12">
       <FlowHeader title="New request" onBack={handleBack} />
 
-      <PublicFlow as="form" noValidate onSubmit={handleSubmit}>
+      <PublicFlow.Narrow as="form" noValidate onSubmit={handleSubmit}>
         <PublicFlow.Progress>
           <StepIndicatorBar currentStep={state.step} totalSteps={4} />
         </PublicFlow.Progress>
@@ -78,7 +78,7 @@ export function RequestScreen() {
             {state.submitting ? <Spinner size="sm" /> : isLastStep ? 'Submit' : 'Next'}
           </Button>
         </PublicFlow.Actions>
-      </PublicFlow>
+      </PublicFlow.Narrow>
     </PublicLayout>
   )
 }

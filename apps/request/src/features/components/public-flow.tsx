@@ -5,10 +5,18 @@ type PublicFlowRootProps<T extends ElementType> = {
   as?: T
 } & Omit<ComponentPropsWithoutRef<T>, 'as'>
 
+const rootClassName = 'mx-auto w-full'
+
 function PublicFlowRoot<T extends ElementType = 'div'>({ as, className, ...props }: PublicFlowRootProps<T>) {
   const Component = as ?? 'div'
 
-  return <Component className={cn("mx-auto w-full max-w-content", className)} {...props} />
+  return <Component className={cn(rootClassName, 'max-w-content', className)} {...props} />
+}
+
+function PublicFlowNarrow<T extends ElementType = 'div'>({ as, className, ...props }: PublicFlowRootProps<T>) {
+  const Component = as ?? 'div'
+
+  return <Component className={cn(rootClassName, 'max-w-2xl', className)} {...props} />
 }
 
 function PublicFlowProgress({ className, ...props }: ComponentPropsWithoutRef<'div'>) {
@@ -21,5 +29,6 @@ function PublicFlowActions({ className, ...props }: ComponentPropsWithoutRef<'di
 
 export const PublicFlow = Object.assign(PublicFlowRoot, {
   Actions: PublicFlowActions,
+  Narrow: PublicFlowNarrow,
   Progress: PublicFlowProgress,
 })
