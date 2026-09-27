@@ -16,8 +16,20 @@ export async function claimTelegramWebhookUpdate(updateId: number, payload: unkn
   })
 
   if (error) throw new Error(`Could not claim Telegram webhook update: ${error.message}`)
+  const claim = mapTelegramWebhookClaim(data)
+  if (!claim) throw new Error("Could not claim Telegram webhook update: invalid database response")
+  return claim
+}
+
+/**
+ * Maps the claim RPC's answer. An in-flight duplicate comes back as the row's
+ * stored status, 'processing', from databases without the
+ * 20260927130200 fix, so it is read as in_progress too.
+ */
+export function mapTelegramWebhookClaim(data: unknown): TelegramWebhookClaim | null {
   if (data === "claimed" || data === "processed" || data === "in_progress") return data
-  throw new Error("Could not claim Telegram webhook update: invalid database response")
+  if (data === "processing") return "in_progress"
+  return null
 }
 
 export async function completeTelegramWebhookUpdate(updateId: number): Promise<void> {
