@@ -1,7 +1,7 @@
 import type { Booking, BookingItem } from "@moc/types/equipment";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQrScanner } from "@/hooks/use-qr-scanner";
-import { areAllItemsScanned, findBookingItemFromScan } from "./booking-scan-helpers";
+import { areAllItemsScanned, findBookingItemFromScan } from "@moc/utils/equipment-scan";
 
 type UseBookingCollectionOptions = {
   booking: Booking;

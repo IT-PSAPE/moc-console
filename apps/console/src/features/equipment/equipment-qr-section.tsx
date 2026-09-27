@@ -4,7 +4,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { Download, Printer } from "lucide-react";
 import { useRef } from "react";
 import type { Equipment } from "@moc/types/equipment";
-import { buildEquipmentQrPayload } from "./equipment-qr";
+import { buildEquipmentQrPayload } from "@moc/utils/equipment-scan";
 
 function toFileSlug(value: string) {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "equipment";
