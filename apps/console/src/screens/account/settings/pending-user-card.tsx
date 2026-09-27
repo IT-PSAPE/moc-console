@@ -8,11 +8,16 @@ import { UserAvatar } from "@moc/ui/components/display/user-avatar"
 type PendingUserCardProps = {
   user: PendingWorkspaceUser
   onApprove: (requestId: string) => void
+  onReject: (requestId: string) => void
 }
 
-export function PendingUserCard({ user, onApprove }: PendingUserCardProps) {
+export function PendingUserCard({ user, onApprove, onReject }: PendingUserCardProps) {
   function approve() {
     onApprove(user.requestId)
+  }
+
+  function reject() {
+    onReject(user.requestId)
   }
 
   return (
@@ -28,7 +33,8 @@ export function PendingUserCard({ user, onApprove }: PendingUserCardProps) {
           </div>
           <ListItemCard.Subtitle>{user.email}</ListItemCard.Subtitle>
         </ListItemCard.Content>
-        <ListItemCard.Trailing className="ml-13 w-[calc(100%-3.25rem)] justify-start sm:ml-0 sm:w-auto sm:justify-end">
+        <ListItemCard.Trailing className="ml-13 w-[calc(100%-3.25rem)] justify-start gap-2 sm:ml-0 sm:w-auto sm:justify-end">
+          <Button className="min-h-9 px-3 py-1.5" variant="secondary" onClick={reject}>Reject</Button>
           <Button className="min-h-9 px-3 py-1.5" onClick={approve}>Accept</Button>
         </ListItemCard.Trailing>
       </ListItemCard.Root>

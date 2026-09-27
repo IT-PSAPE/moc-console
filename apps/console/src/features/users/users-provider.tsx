@@ -1,4 +1,4 @@
-import { approveWorkspaceJoinRequest, fetchPendingWorkspaceUsers, fetchUsersWithRoles, fetchAvailableRoles, updateUserProfile, assignUserRole } from "@/data/fetch-users";
+import { approveWorkspaceJoinRequest, rejectWorkspaceJoinRequest, fetchPendingWorkspaceUsers, fetchUsersWithRoles, fetchAvailableRoles, updateUserProfile, assignUserRole } from "@/data/fetch-users";
 import type { PendingWorkspaceUser, UserWithRole } from "@/data/fetch-users";
 import type { Role } from "@moc/types/requests/assignee";
 import { useWorkspace } from "@/lib/workspace-context";
@@ -16,6 +16,7 @@ type UsersContextValue = {
     updateProfile: (userId: string, fields: { name?: string; surname?: string }) => Promise<void>;
     changeRole: (userId: string, roleId: string) => Promise<void>;
     approveUser: (requestId: string) => Promise<void>;
+    rejectUser: (requestId: string) => Promise<void>;
   };
 };
 
@@ -102,12 +103,17 @@ export function UsersProvider({ children }: { children: ReactNode }) {
     }
   }, [currentWorkspaceId, pendingUsers, roles]);
 
+  const rejectUser = useCallback(async (requestId: string) => {
+    await rejectWorkspaceJoinRequest(requestId);
+    setPendingUsers((current) => current.filter((user) => user.requestId !== requestId));
+  }, []);
+
   const value = useMemo(
     () => ({
       state: { users, pendingUsers, roles, isLoading },
-      actions: { loadUsers, updateProfile, changeRole, approveUser },
+      actions: { loadUsers, updateProfile, changeRole, approveUser, rejectUser },
     }),
-    [users, pendingUsers, roles, isLoading, loadUsers, updateProfile, changeRole, approveUser],
+    [users, pendingUsers, roles, isLoading, loadUsers, updateProfile, changeRole, approveUser, rejectUser],
   );
 
   return <UsersContext.Provider value={value}>{children}</UsersContext.Provider>;

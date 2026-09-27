@@ -174,6 +174,11 @@ export async function approveWorkspaceJoinRequest(requestId: string): Promise<vo
   if (error) throw new Error(error.message);
 }
 
+export async function rejectWorkspaceJoinRequest(requestId: string): Promise<void> {
+  const { error } = await supabase.rpc("reject_workspace_join_request", { p_request_id: requestId });
+  if (error) throw new Error(error.message);
+}
+
 /** Create a one-time token for the Telegram bot deep-link flow. */
 export async function createTelegramLinkToken(userId: string): Promise<{ token: string }> {
   const bytes = new Uint8Array(32);
