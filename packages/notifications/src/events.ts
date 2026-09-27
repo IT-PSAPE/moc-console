@@ -20,7 +20,10 @@ export type NotificationEventKey =
   | "venue_booking.created"
   | "venue_booking.requester_updated"
   | "venue_booking.requester_deleted"
-  | "venue_booking.cancelled";
+  | "venue_booking.cancelled"
+  | "venue_booking.status_changed"
+  | "stream.updated"
+  | "meeting.updated";
 
 export type NotificationEventDefinition = {
   key: NotificationEventKey;
@@ -113,6 +116,21 @@ export const NOTIFICATION_EVENTS: readonly NotificationEventDefinition[] = [
     key: "venue_booking.cancelled",
     label: "Venue booking cancelled",
     description: "Fires when a venue booking is cancelled in the console. Booked, in progress and completed are read off the clock rather than stored, so they raise no event of their own.",
+  },
+  {
+    key: "venue_booking.status_changed",
+    label: "Venue booking decision changed",
+    description: "Fires when a venue booking is approved, rejected or restored in the console.",
+  },
+  {
+    key: "stream.updated",
+    label: "YouTube stream updated",
+    description: "Fires when a scheduled stream's details change after it was announced.",
+  },
+  {
+    key: "meeting.updated",
+    label: "Zoom meeting updated",
+    description: "Fires when a scheduled meeting's details change after it was announced.",
   },
 ] as const;
 

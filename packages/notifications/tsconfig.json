@@ -4,6 +4,7 @@
   "compilerOptions": {
     "target": "ES2023",
     "lib": ["ES2023"],
+    "types": [],
 
     /* Emitted for plain-Node consumers. The API's Vercel functions import this
        package at runtime, where nothing transpiles TypeScript and a `./x.js`
@@ -24,5 +25,7 @@
     "erasableSyntaxOnly": true,
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  /* Tests run under bun and are not part of the shipped JavaScript. */
+  "exclude": ["src/**/*.test.ts"]
 }
