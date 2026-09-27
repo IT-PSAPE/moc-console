@@ -14,7 +14,8 @@ WITH expected_tables(name) AS (
     ('notification_deliveries'), ('notification_ingest_replays'),
     ('notification_message_templates'), ('notification_outbox'),
     ('notification_recipients'), ('notification_routes'), ('notification_settings'),
-    ('request_activity'), ('request_assignees'), ('request_comments'), ('requests'),
+    ('request_activity'), ('request_assignees'), ('request_categories'),
+    ('request_comments'), ('requests'),
     ('roles'), ('streams'), ('telegram_group_topics'), ('telegram_groups'),
     ('telegram_link_tokens'), ('telegram_webhook_updates'), ('template_items'),
     ('template_sections'), ('users'), ('venue_booking_slots'), ('venue_bookings'),
@@ -55,7 +56,16 @@ expected_columns(table_schema, table_name, column_name, data_type, is_nullable) 
     ('public', 'api_rate_limit_windows', 'window_started_at', 'timestamp with time zone', false),
     ('public', 'api_rate_limit_windows', 'request_count', 'integer', false),
     ('public', 'venue_bookings', 'recurrence', 'jsonb', true),
-    ('public', 'venue_booking_slots', 'occurrence_index', 'integer', false)
+    ('public', 'venue_booking_slots', 'occurrence_index', 'integer', false),
+    ('public', 'venue_bookings', 'approved_at', 'timestamp with time zone', true),
+    ('public', 'venue_bookings', 'approved_by', 'uuid', true),
+    ('public', 'venue_bookings', 'rejected_at', 'timestamp with time zone', true),
+    ('public', 'venue_bookings', 'rejected_by', 'uuid', true),
+    ('public', 'notification_deliveries', 'reply_markup', 'jsonb', true),
+    ('public', 'notification_deliveries', 'entity_type', 'text', true),
+    ('public', 'notification_deliveries', 'entity_id', 'uuid', true),
+    ('public', 'notification_deliveries', 'parent_delivery_id', 'uuid', true),
+    ('public', 'notification_deliveries', 'telegram_deleted_at', 'timestamp with time zone', true)
 ),
 expected_indexes(schema_name, table_name, index_name) AS (
   VALUES
@@ -77,7 +87,9 @@ expected_indexes(schema_name, table_name, index_name) AS (
     ('public', 'telegram_webhook_updates', 'idx_telegram_webhook_updates_retry'),
     ('public', 'notification_ingest_replays', 'idx_notification_ingest_replays_expires_at'),
     ('public', 'api_rate_limit_windows', 'idx_api_rate_limit_windows_expiry'),
-    ('public', 'venue_booking_slots', 'idx_venue_booking_slots_booking_occurrence')
+    ('public', 'venue_booking_slots', 'idx_venue_booking_slots_booking_occurrence'),
+    ('public', 'notification_deliveries', 'notification_deliveries_entity_idx'),
+    ('public', 'notification_deliveries', 'notification_deliveries_telegram_message_idx')
 ),
 actual_indexes AS (
   SELECT namespace.nspname AS schema_name, relation.relname AS table_name,
@@ -180,7 +192,8 @@ expected_functions(signature) AS (
     ('public.purge_api_maintenance_data()'),
     ('public.public_submit_venue_booking(uuid,uuid,text,timestamptz[],uuid,text,text,jsonb)'),
     ('public.api_lookup_tracking_venue_booking(text)'),
-    ('public.api_update_tracking_venue_booking(text,timestamptz,jsonb)')
+    ('public.api_update_tracking_venue_booking(text,timestamptz,jsonb)'),
+    ('public.api_apply_telegram_action(text,text,uuid,text)')
 ),
 public_functions AS (
   SELECT function_row.oid, function_row.oid::regprocedure::text AS signature,
@@ -453,6 +466,9 @@ SELECT jsonb_build_object(
                      ORDER BY format('%I:%s', table_name, privilege_type))
     FROM information_schema.role_table_grants
     WHERE table_schema = 'public' AND grantee = 'anon'
+      -- Published broadcasts are deliberately world-readable (see
+      -- 20260904100000_broadcast_invariants_and_atomic_playlist_writes).
+      AND NOT (table_name IN ('broadcasts', 'broadcast_items') AND privilege_type = 'SELECT')
   ), '[]'::jsonb),
   'missing_tracked_reliability_migration', NOT EXISTS (
     SELECT 1 FROM supabase_migrations.schema_migrations

@@ -666,42 +666,8 @@ CREATE TRIGGER record_request_activity
 ALTER TABLE public.request_activity ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.request_comments ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "request_activity_select" ON public.request_activity;
-CREATE POLICY "request_activity_select" ON public.request_activity
-  FOR SELECT TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.requests
-      WHERE requests.id = request_activity.request_id
-        AND private.is_workspace_member(requests.workspace_id)
-        AND private.current_user_can(requests.workspace_id, 'can_read')
-    )
-  );
-
-DROP POLICY IF EXISTS "request_comments_select" ON public.request_comments;
-CREATE POLICY "request_comments_select" ON public.request_comments
-  FOR SELECT TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.requests
-      WHERE requests.id = request_comments.request_id
-        AND private.is_workspace_member(requests.workspace_id)
-        AND private.current_user_can(requests.workspace_id, 'can_read')
-    )
-  );
-
-DROP POLICY IF EXISTS "request_comments_insert" ON public.request_comments;
-CREATE POLICY "request_comments_insert" ON public.request_comments
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    actor_id = auth.uid()
-    AND EXISTS (
-      SELECT 1 FROM public.requests
-      WHERE requests.id = request_comments.request_id
-        AND private.is_workspace_member(requests.workspace_id)
-        AND private.current_user_can(requests.workspace_id, 'can_update')
-    )
-  );
+-- Their select/insert policies need the workspace permission helpers, so
+-- they are created after those helpers below.
 
 -- Workspace-scoped authorization and approval-only signup. The legacy
 -- user_roles table remains only long enough to backfill workspace roles and is
@@ -844,6 +810,44 @@ GRANT EXECUTE ON FUNCTION private.current_user_can(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION private.current_user_can(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION private.current_user_role_name(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION private.is_workspace_member(uuid) TO authenticated;
+
+-- Request history and comment policies (tables created above).
+DROP POLICY IF EXISTS "request_activity_select" ON public.request_activity;
+CREATE POLICY "request_activity_select" ON public.request_activity
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.requests
+      WHERE requests.id = request_activity.request_id
+        AND private.is_workspace_member(requests.workspace_id)
+        AND private.current_user_can(requests.workspace_id, 'can_read')
+    )
+  );
+
+DROP POLICY IF EXISTS "request_comments_select" ON public.request_comments;
+CREATE POLICY "request_comments_select" ON public.request_comments
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.requests
+      WHERE requests.id = request_comments.request_id
+        AND private.is_workspace_member(requests.workspace_id)
+        AND private.current_user_can(requests.workspace_id, 'can_read')
+    )
+  );
+
+DROP POLICY IF EXISTS "request_comments_insert" ON public.request_comments;
+CREATE POLICY "request_comments_insert" ON public.request_comments
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    actor_id = auth.uid()
+    AND EXISTS (
+      SELECT 1 FROM public.requests
+      WHERE requests.id = request_comments.request_id
+        AND private.is_workspace_member(requests.workspace_id)
+        AND private.current_user_can(requests.workspace_id, 'can_update')
+    )
+  );
 
 -- Signup creates the profile and a pending request, never an accepted
 -- membership. raw_user_meta_data is used only as user-supplied request data,

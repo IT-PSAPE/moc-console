@@ -463,8 +463,7 @@ CREATE TABLE IF NOT EXISTS public.youtube_connections (
   connected_by     uuid        NOT NULL REFERENCES public.users(id),
   created_at       timestamptz NOT NULL DEFAULT now(),
   updated_at       timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (workspace_id),
-  CONSTRAINT zoom_connections_id_workspace_id_key UNIQUE (id, workspace_id)
+  UNIQUE (workspace_id)
 );
 
 -- streams (phase-13; phase-14 advanced columns + phase-28 notified_at folded in)
@@ -513,7 +512,8 @@ CREATE TABLE IF NOT EXISTS public.zoom_connections (
   connected_by     uuid        NOT NULL REFERENCES public.users(id),
   created_at       timestamptz NOT NULL DEFAULT now(),
   updated_at       timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (workspace_id)
+  UNIQUE (workspace_id),
+  CONSTRAINT zoom_connections_id_workspace_id_key UNIQUE (id, workspace_id)
 );
 
 -- zoom_meetings (phase-13; phase-28 notified_at folded in)

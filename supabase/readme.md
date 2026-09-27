@@ -12,15 +12,22 @@ project (`jypshhgfuvwmtbbcxmhs`). Historical schema reconciliation completed on
   migration workflow, then run the verification report again. Do not apply a
   migration directly to production from this repository without a reviewed
   backup and deployment plan.
-- To converge an older or partially migrated MoC Console database, back it up
-  and run
-  [`patches/2026-08-04-moc-console-target-schema-cleanup.sql`](patches/2026-08-04-moc-console-target-schema-cleanup.sql).
-  It is atomic and accepts both the legacy schema and the already-clean target
-  schema. It permanently removes retired feature tables when they still exist.
-- For a blank project, run [`phase-01-schema.sql`](phase-01-schema.sql),
-  [`phase-02-logic.sql`](phase-02-logic.sql), and
-  [`phase-03-security.sql`](phase-03-security.sql), then run the target-schema
-  cleanup above to converge the historical baseline to the current product.
+- To converge an older or partially migrated MoC Console database (one that
+  predates the 2026-08-05 reconciliation), back it up and run
+  [`patches/2026-08-04-moc-console-target-schema-cleanup.sql`](patches/2026-08-04-moc-console-target-schema-cleanup.sql),
+  then apply every file in [`migrations/`](migrations/). The patch is atomic
+  and accepts both the legacy schema and the 2026-08-05 target. It permanently
+  removes retired feature tables when they still exist. Do not re-run it on a
+  database that already has later migrations: they replace functions it
+  references.
+- For a blank project, run
+  [`build-fresh-database.sh`](build-fresh-database.sh) with the project's
+  connection string. It applies `phase-01`..`phase-03`, the target-schema
+  cleanup and then every migration in order, and records each migration in
+  `supabase_migrations.schema_migrations` so the Supabase CLI treats them as
+  applied. Finish with `verify-current-schema.sql`, which should report no
+  issues. New migrations need no change to the script; it picks up everything
+  in `migrations/`.
 - [`phase-00-nuke.sql`](phase-00-nuke.sql) is development-only and destroys
   all application, Auth, Storage, and cron data. Never use it as an upgrade.
 
@@ -203,6 +210,42 @@ The first tracked reliability migration is:
     replace the projection in one transaction, shortening a series releases
     its removed future slots, and console calendars expand the indexed slots
     back into individual occurrences.
+
+20. `20260927120000_reject_workspace_join_request` — source:
+    [`migrations/20260927120000_reject_workspace_join_request.sql`](migrations/20260927120000_reject_workspace_join_request.sql).
+    It adds `reject_workspace_join_request(uuid)`, which lets a workspace
+    manager delete a pending access request without creating a membership.
+    Apply it before deploying the console that shows the Reject action.
+
+21. `20260927130000_venue_booking_approval_states` and
+    `20260927130100_venue_booking_approval_and_telegram_actions` — sources:
+    [`migrations/20260927130000_venue_booking_approval_states.sql`](migrations/20260927130000_venue_booking_approval_states.sql),
+    [`migrations/20260927130100_venue_booking_approval_and_telegram_actions.sql`](migrations/20260927130100_venue_booking_approval_and_telegram_actions.sql).
+    Apply them in order; the first only adds the `approved` and `rejected`
+    enum values because Postgres cannot use a new enum value in the
+    transaction that adds it. Venue bookings stay `auto` (booked, awaiting a
+    decision, holding their slots) until staff approve or reject them;
+    rejection releases the slots exactly like cancellation, and moving an
+    approved booking resets it to `auto`. Notification deliveries now record
+    the entity they announce, their inline keyboard, and the original a
+    follow-up replied to, so later events edit the original Telegram message
+    instead of posting a new one. `api_apply_telegram_action` (service role
+    only) applies Telegram inline-button transitions for linked users with
+    update permission, attributing the change to them. It also adds the
+    `telegram_mini_app` API rate-limit policy.
+
+22. `20260927130200_telegram_webhook_duplicate_claim` — source:
+    [`migrations/20260927130200_telegram_webhook_duplicate_claim.sql`](migrations/20260927130200_telegram_webhook_duplicate_claim.sql).
+    A duplicate Telegram update that arrives while the original is still
+    processing is now reported as `in_progress` (a retryable 503) instead of
+    the raw `processing` status, which the API did not recognise and which
+    made it mark the still-running original as failed.
+
+23. `20260927130300_broadcast_media_delete_policy_initplan` — source:
+    [`migrations/20260927130300_broadcast_media_delete_policy_initplan.sql`](migrations/20260927130300_broadcast_media_delete_policy_initplan.sql).
+    Recreates the `broadcast_media_bucket_delete` storage policy with
+    `(select auth.uid())` so it is evaluated once per statement. The rule
+    itself is unchanged.
 
 ## Script history
 
