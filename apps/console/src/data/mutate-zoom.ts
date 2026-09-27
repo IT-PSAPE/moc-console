@@ -5,7 +5,7 @@ import { zoomApiFetch, revokeZoomToken } from "@/lib/zoom-client"
 import { fetchZoomConnectionId, fetchZoomMeetingById } from "./fetch-zoom"
 import { formatUtcIsoForZoomApi } from "@moc/utils/zoned-date-time"
 import { randomId } from "@moc/utils/random-id"
-import { notifyMeetingCreated } from "./notify-event"
+import { notifyMeetingCreated, notifyMeetingUpdated } from "./notify-event"
 import type { NotifyDestination } from "@moc/types/streams"
 import { providerRequestError } from "@/lib/provider-request-error"
 import { syncZoomMeetingsWithinOperation } from "./zoom-meeting-sync"
@@ -306,6 +306,8 @@ async function updateZoomMeetingWithinOperation(meeting: ZoomMeeting): Promise<Z
   }
 
   const saved = await fetchZoomMeetingById(meeting.id).catch(() => undefined) ?? meeting
+
+  await notifyMeetingUpdated(saved.id)
 
   return { meeting: saved, reconciliationWarning: null }
 }

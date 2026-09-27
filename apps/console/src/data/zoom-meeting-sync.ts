@@ -142,6 +142,10 @@ export async function syncZoomMeetingsWithinOperation(workspaceId: string): Prom
   const syncedMeetings = await fetchZoomMeetings(workspaceId)
   // Only meetings first adopted by this sync are announced. Existing meetings
   // never enter adoptedMeetingIds, so a later sync cannot resend the backlog.
+  // A meeting this sync reconciled without adopting it was already tracked, so
+  // it is mirrored silently — a sync only mirrors Zoom, it never announces a
+  // change. Human edits made in the console go through updateZoomMeeting,
+  // which already notifies on its own.
   for (const meeting of syncedMeetings) {
     if (adoptedMeetingIds.has(meeting.zoomMeetingId)) void notifyMeetingCreated(meeting.id)
   }

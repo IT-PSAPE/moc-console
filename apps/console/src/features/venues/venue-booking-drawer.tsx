@@ -1,4 +1,4 @@
-import { Ban, EllipsisVertical, Maximize2, RotateCcw, X } from "lucide-react";
+import { Ban, Check, EllipsisVertical, Maximize2, RotateCcw, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { Dropdown } from "@moc/ui/components/overlays/dropdown";
@@ -13,7 +13,10 @@ import { VenueBookingMetaFields } from "./venue-booking-meta-fields";
 import { VenueBookingNotes } from "./venue-booking-notes";
 import { VenueBookingCancellationAudit } from "./venue-booking-cancellation-audit";
 import { VenueBookingCancelModal } from "./venue-booking-cancel-modal";
+import { VenueBookingRejectModal } from "./venue-booking-reject-modal";
 import { useVenueBookingCancel } from "./use-venue-booking-cancel";
+import { useVenueBookingDecision } from "./use-venue-booking-decision";
+import { getVenueBookingStatusFlags } from "./venue-booking-status-flags";
 import { useVenueBookings } from "./venue-bookings-provider";
 
 export type VenueBookingDrawerProps = {
@@ -42,7 +45,9 @@ type VenueBookingPanelContentProps = {
 export function VenueBookingPanelContent({ booking, onClose }: VenueBookingPanelContentProps) {
   const { state: { at } } = useVenueBookings();
   const cancel = useVenueBookingCancel();
+  const decision = useVenueBookingDecision();
   const isCancelled = booking.status === "cancelled";
+  const { canApprove, canReject, canRestore } = getVenueBookingStatusFlags(booking);
 
   function handleOpenCancel() {
     cancel.actions.openCancelModal(booking);
@@ -56,6 +61,22 @@ export function VenueBookingPanelContent({ booking, onClose }: VenueBookingPanel
     void cancel.actions.confirmCancel(reason);
   }
 
+  function handleApprove() {
+    void decision.actions.approveBooking(booking);
+  }
+
+  function handleOpenReject() {
+    decision.actions.openRejectModal(booking);
+  }
+
+  function handleRejectOpenChange(open: boolean) {
+    if (!open) decision.actions.closeRejectModal();
+  }
+
+  function handleRejectConfirm() {
+    void decision.actions.confirmReject();
+  }
+
   return (
     <>
       <SplitPanel.Header className="flex items-center gap-1">
@@ -67,16 +88,30 @@ export function VenueBookingPanelContent({ booking, onClose }: VenueBookingPanel
             <Button.Icon aria-label="More booking actions" variant="ghost" icon={<EllipsisVertical />} />
           </Dropdown.Trigger>
           <Dropdown.Panel>
-            {isCancelled ? (
+            {canRestore ? (
               <Dropdown.Item onSelect={handleRestore}>
                 <RotateCcw className="size-4" />
                 Restore booking
               </Dropdown.Item>
             ) : (
-              <Dropdown.Item onSelect={handleOpenCancel}>
-                <Ban className="size-4 text-error" />
-                <span className="text-error">Cancel booking</span>
-              </Dropdown.Item>
+              <>
+                {canApprove && (
+                  <Dropdown.Item onSelect={handleApprove}>
+                    <Check className="size-4 text-success" />
+                    <span className="text-success">Approve booking</span>
+                  </Dropdown.Item>
+                )}
+                {canReject && (
+                  <Dropdown.Item onSelect={handleOpenReject}>
+                    <X className="size-4 text-error" />
+                    <span className="text-error">Reject booking</span>
+                  </Dropdown.Item>
+                )}
+                <Dropdown.Item onSelect={handleOpenCancel}>
+                  <Ban className="size-4 text-error" />
+                  <span className="text-error">Cancel booking</span>
+                </Dropdown.Item>
+              </>
             )}
           </Dropdown.Panel>
         </Dropdown>
@@ -111,6 +146,12 @@ export function VenueBookingPanelContent({ booking, onClose }: VenueBookingPanel
         onCancel={cancel.actions.closeCancelModal}
         onConfirm={handleCancelConfirm}
         isCancelling={cancel.state.isSubmitting}
+      />
+      <VenueBookingRejectModal
+        open={decision.state.rejectTarget !== null}
+        isRejecting={decision.state.isSubmitting}
+        onOpenChange={handleRejectOpenChange}
+        onConfirm={handleRejectConfirm}
       />
     </>
   );

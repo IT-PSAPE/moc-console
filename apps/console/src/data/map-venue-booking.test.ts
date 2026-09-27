@@ -8,8 +8,10 @@ function row(): VenueBookingRow {
     starts_at: '2026-09-01T10:00:00.000Z', ends_at: '2026-09-01T11:00:00.000Z',
     recurrence: { custom: false, frequency: 'week', interval: 1, weekdays: [2], end: { type: 'count', count: 2 } },
     cancelled_at: null, cancelled_by: null, cancel_reason: null,
+    approved_at: null, approved_by: null, rejected_at: null, rejected_by: null,
     created_at: '2026-08-01T10:00:00.000Z', updated_at: '2026-08-01T10:00:00.000Z',
     venue: { name: 'Hall', location: null }, event: { name: 'Rehearsal' }, canceller: null,
+    approver: null, rejecter: null,
     slots: [
       { occurrence_index: 1, slot_start: '2026-09-08T10:30:00.000Z', slot_end: '2026-09-08T11:00:00.000Z' },
       { occurrence_index: 0, slot_start: '2026-09-01T10:00:00.000Z', slot_end: '2026-09-01T10:30:00.000Z' },

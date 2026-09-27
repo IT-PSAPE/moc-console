@@ -6,6 +6,7 @@ import { deriveVenueBookingSeriesPhase, venueBookingPhaseGroups } from "@moc/typ
 import { DraggableVenueBookingItem } from "./draggable-venue-booking-item";
 import { VenueBookingItem } from "./venue-booking-item";
 import { VenueBookingCancelModal } from "./venue-booking-cancel-modal";
+import { VenueBookingRejectModal } from "./venue-booking-reject-modal";
 import { useVenueBookingKanbanStatusChange } from "./use-venue-booking-kanban-status-change";
 import { useVenueBookings } from "./venue-bookings-provider";
 
@@ -13,9 +14,18 @@ export function VenueBookingKanbanView({ bookings }: { bookings: VenueBooking[] 
     const { state: { at } } = useVenueBookings();
     const drag = useVenueBookingKanbanStatusChange();
     const { cancelTarget, isSubmitting } = drag.state.cancelModal;
+    const { rejectTarget, isSubmitting: isRejecting } = drag.state.rejectModal;
 
     function handleCancelConfirm(reason: string) {
         void drag.actions.confirmCancel(reason);
+    }
+
+    function handleRejectOpenChange(open: boolean) {
+        if (!open) drag.actions.closeRejectModal();
+    }
+
+    function handleRejectConfirm() {
+        void drag.actions.confirmReject();
     }
 
     return (
@@ -49,6 +59,12 @@ export function VenueBookingKanbanView({ bookings }: { bookings: VenueBooking[] 
                 onCancel={drag.actions.closeCancelModal}
                 onConfirm={handleCancelConfirm}
                 isCancelling={isSubmitting}
+            />
+            <VenueBookingRejectModal
+                open={rejectTarget !== null}
+                isRejecting={isRejecting}
+                onOpenChange={handleRejectOpenChange}
+                onConfirm={handleRejectConfirm}
             />
         </>
     );

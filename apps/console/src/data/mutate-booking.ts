@@ -1,6 +1,7 @@
 import type { Booking, BookingStatus } from "@moc/types/equipment/booking";
 import { supabase } from "@moc/data/supabase";
 import { BOOKING_SELECT, type BookingRow, mapBookingRow } from "./booking-row";
+import { notifyEntityChanged } from "./notify-event";
 
 // Title is intentionally not in the update payload — bookings are owned by the
 // requester via MOC Request; the console can amend lifecycle/dates/notes but
@@ -39,6 +40,8 @@ export async function updateBookingStatus(id: string, status: BookingStatus): Pr
   if (error) {
     throw new Error(error.message);
   }
+
+  notifyEntityChanged("booking", id);
 }
 
 export async function deleteBooking(id: string): Promise<void> {

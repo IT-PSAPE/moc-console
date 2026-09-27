@@ -52,3 +52,21 @@ export function notifyMeetingCreated(meetingId: string, destinations?: NotifyDes
     ...(destinations?.length ? { destinations } : {}),
   });
 }
+
+export type NotifyEntityType = "request" | "booking" | "venue_booking";
+
+// Wakes the API so a console-made status change (or archive/unarchive,
+// cancel/restore/approve/reject) reaches Telegram immediately instead of at
+// the nightly cron. Fire-and-forget: callers do not need to await this, and
+// notify() never throws.
+export function notifyEntityChanged(entityType: NotifyEntityType, entityId: string): Promise<NotificationDispatchResult | null> {
+  return notify("/api/notifications/internal/entity-changed", { entityType, entityId });
+}
+
+export function notifyStreamUpdated(streamId: string): Promise<NotificationDispatchResult | null> {
+  return notify("/api/notifications/internal/stream-updated", { streamId });
+}
+
+export function notifyMeetingUpdated(meetingId: string): Promise<NotificationDispatchResult | null> {
+  return notify("/api/notifications/internal/meeting-updated", { meetingId });
+}

@@ -10,7 +10,7 @@ import {
 } from "@/lib/youtube-client"
 import { fetchStreamById } from "./fetch-streams"
 import { randomId } from "@moc/utils/random-id"
-import { notifyStreamCreated } from "./notify-event"
+import { notifyStreamCreated, notifyStreamUpdated } from "./notify-event"
 import { providerRequestError } from "@/lib/provider-request-error"
 import { describeThumbnailFailure, type ThumbnailSource } from "./stream-thumbnail"
 import {
@@ -351,6 +351,8 @@ export async function updateStream(
   }
 
   const saved = await fetchStreamById(stream.id).catch(() => undefined) ?? { ...stream, thumbnailUrl }
+
+  await notifyStreamUpdated(saved.id)
 
   return { stream: saved, thumbnailError, reconciliationWarning: null }
 }

@@ -2,7 +2,8 @@ import type { VenueBooking, VenueBookingStatus } from "@moc/types/venues";
 
 // venue:venue_id(...), event:event_id(...) and canceller:cancelled_by(...)
 // embed via the FK columns on venue_bookings, mirroring the
-// equipment:equipment_id(...) embed pattern in booking-row.ts.
+// equipment:equipment_id(...) embed pattern in booking-row.ts. approver and
+// rejecter embed the same way for the staff decision columns.
 export const VENUE_BOOKING_SELECT = `
   id,
   workspace_id,
@@ -20,17 +21,23 @@ export const VENUE_BOOKING_SELECT = `
   cancelled_at,
   cancelled_by,
   cancel_reason,
+  approved_at,
+  approved_by,
+  rejected_at,
+  rejected_by,
   created_at,
   updated_at,
   venue:venue_id(name, location),
   event:event_id(name),
   canceller:cancelled_by(name, surname),
+  approver:approved_by(name, surname),
+  rejecter:rejected_by(name, surname),
   slots:venue_booking_slots(occurrence_index, slot_start, slot_end)
 `;
 
 type VenueRelation = { name: string; location: string | null } | null;
 type EventRelation = { name: string } | null;
-type CancellerRelation = { name: string; surname: string } | null;
+type DecisionUserRelation = { name: string; surname: string } | null;
 type SlotRelation = { occurrence_index: number; slot_start: string; slot_end: string };
 
 export type VenueBookingRow = {
@@ -50,11 +57,17 @@ export type VenueBookingRow = {
   cancelled_at: string | null;
   cancelled_by: string | null;
   cancel_reason: string | null;
+  approved_at: string | null;
+  approved_by: string | null;
+  rejected_at: string | null;
+  rejected_by: string | null;
   created_at: string;
   updated_at: string;
   venue: VenueRelation;
   event: EventRelation;
-  canceller: CancellerRelation;
+  canceller: DecisionUserRelation;
+  approver: DecisionUserRelation;
+  rejecter: DecisionUserRelation;
   slots: SlotRelation[];
 };
 
@@ -71,9 +84,9 @@ function mapOccurrences(slots: SlotRelation[]): VenueBooking["occurrences"] {
   return [...grouped.values()].sort((left, right) => left.index - right.index);
 }
 
-function formatCancellerName(canceller: CancellerRelation): string | null {
-  if (!canceller) return null;
-  const fullName = `${canceller.name} ${canceller.surname}`.trim();
+function formatDecisionUserName(user: DecisionUserRelation): string | null {
+  if (!user) return null;
+  const fullName = `${user.name} ${user.surname}`.trim();
   return fullName || null;
 }
 
@@ -98,8 +111,12 @@ export function mapVenueBookingRow(row: VenueBookingRow): VenueBooking {
     recurrence: row.recurrence,
     occurrences: mapOccurrences(row.slots),
     cancelledAt: row.cancelled_at,
-    cancelledBy: formatCancellerName(row.canceller) ?? row.cancelled_by,
+    cancelledBy: formatDecisionUserName(row.canceller) ?? row.cancelled_by,
     cancelReason: row.cancel_reason,
+    approvedAt: row.approved_at,
+    approvedBy: formatDecisionUserName(row.approver) ?? row.approved_by,
+    rejectedAt: row.rejected_at,
+    rejectedBy: formatDecisionUserName(row.rejecter) ?? row.rejected_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

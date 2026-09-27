@@ -17,7 +17,7 @@ export type NotificationSettings = {
   staleThresholdDays: number;
   autoArchiveCompletedRequestsDays: number;
   autoArchiveReturnedBookingsDays: number;
-  // How dates render in Telegram messages — see notification-templates-core.
+  // How dates render in Telegram messages — see formatDateTokens in @moc/notifications.
   timezone: string;
   dateFormat: DateFormatPreset;
 };

@@ -2,6 +2,7 @@ import { supabase } from "@moc/data/supabase";
 import { getCurrentWorkspaceId } from "./current-workspace";
 import { mapRow, toRow } from "./map-request";
 import { notifyRequestAssignment } from "./notify-assignment";
+import { notifyEntityChanged } from "./notify-event";
 import type { Request, Status } from "@moc/types/requests";
 
 export async function updateRequest(request: Request): Promise<Request> {
@@ -44,6 +45,8 @@ export async function updateRequestStatus(id: string, status: Status): Promise<v
   if (error) {
     throw new Error(error.message);
   }
+
+  notifyEntityChanged("request", id);
 }
 
 export async function deleteRequest(id: string): Promise<void> {
