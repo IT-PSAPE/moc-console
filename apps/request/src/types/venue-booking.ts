@@ -1,3 +1,5 @@
+import type { VenueRecurrence } from '@moc/types/venues'
+
 // The text fields SET_FIELD/setField may touch directly. venueId, eventId,
 // bookingDate and slotStarts are each mutated through their own dedicated
 // action instead, since choosing a new venue or date invalidates the current
@@ -19,6 +21,7 @@ export type VenueBookingFormData = {
   bookingDate: string
   // ISO slot_start timestamps, chronological and contiguous.
   slotStarts: string[]
+  recurrence: VenueRecurrence | null
 }
 
 export type SubmitVenueBookingResult = {

@@ -1,6 +1,6 @@
 import type { BookingStatus, TrackingBookingItem } from "./booking"
 import type { RequestPriority, RequestStatus } from "./request"
-import type { VenueBookingPhase } from "@moc/types/venues"
+import type { VenueBookingOccurrence, VenueBookingPhase, VenueRecurrence } from "@moc/types/venues"
 
 type TrackingBase = {
   id: string
@@ -55,6 +55,8 @@ export type TrackingVenueBookingResult = TrackingBase & {
   startsAt: string
   endsAt: string
   slotStarts: string[]
+  recurrence: VenueRecurrence | null
+  occurrences: VenueBookingOccurrence[]
   notes: string | null
 }
 

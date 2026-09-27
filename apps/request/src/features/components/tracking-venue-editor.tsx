@@ -36,6 +36,7 @@ export function TrackingVenueEditor({ result, onSaved, onCancel }: TrackingVenue
         onEventChange={editor.actions.setEvent}
         onDateChange={editor.actions.setBookingDate}
         onSlotsChange={editor.actions.setSlots}
+        onRecurrenceChange={editor.actions.setRecurrence}
         errors={editor.state.validationErrors}
       />
       {availability.listsError && <Alert title="Could not load venues" description={availability.listsError} variant="error" style="filled" />}

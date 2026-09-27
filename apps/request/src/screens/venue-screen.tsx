@@ -80,6 +80,7 @@ export function VenueScreen() {
             onEventChange={actions.setEvent}
             onDateChange={actions.setBookingDate}
             onSlotsChange={actions.setSlots}
+            onRecurrenceChange={actions.setRecurrence}
             errors={state.validationErrors}
           />
         )}

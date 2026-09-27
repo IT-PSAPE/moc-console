@@ -104,6 +104,8 @@ describe("tracking result edit data", () => {
       startsAt: "2026-10-03T16:00:00.000Z",
       endsAt: "2026-10-03T18:00:00.000Z",
       slotStarts: ["2026-10-03T16:00:00.000Z"],
+      recurrence: null,
+      occurrences: [{ index: 0, startsAt: "2026-10-03T16:00:00.000Z", endsAt: "2026-10-03T18:00:00.000Z" }],
       notes: null,
       createdAt: "2026-09-19T08:00:00.000Z",
       updatedAt: "2026-09-19T08:00:00.000Z",
@@ -114,6 +116,7 @@ describe("tracking result edit data", () => {
       eventOther: "Youth night",
       bookingDate: "2026-10-03",
       slotStarts: ["2026-10-03T16:00:00.000Z"],
+      recurrence: null,
     })
   })
 })
@@ -135,7 +138,9 @@ describe("canRequesterModify", () => {
       type: "venue_booking" as const, status: "booked" as const, requestedBy: "Craig", venueId: "venue-1",
       venueName: "Auditorium", venueLocation: null, eventId: null, eventName: null,
       eventOther: "Youth night", timeZone: "Africa/Johannesburg", endsAt: "2026-10-03T18:00:00.000Z",
-      slotStarts: ["2026-10-03T16:00:00.000Z"], notes: null,
+      slotStarts: ["2026-10-03T16:00:00.000Z"], recurrence: null,
+      occurrences: [{ index: 0, startsAt: "2026-10-03T16:00:00.000Z", endsAt: "2026-10-03T18:00:00.000Z" }],
+      notes: null,
       createdAt: "2026-09-19T08:00:00.000Z", updatedAt: "2026-09-19T08:00:00.000Z",
     }
     assert.equal(canRequesterModify({ ...venue, startsAt: "2026-10-03T16:00:00.000Z" }, new Date("2026-10-03T15:59:59.000Z")), true)

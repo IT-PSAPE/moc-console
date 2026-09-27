@@ -5,6 +5,8 @@ import { DateSlotPicker } from '@moc/ui/components/form/date-slot-picker'
 import { VENUE_EVENT_OTHER_ID } from '@moc/types/venues'
 import { CalendarX } from 'lucide-react'
 import { FieldError } from '@/features/components/field-error'
+import { VenueRecurrenceFields } from '@/features/components/venue-recurrence-fields'
+import type { VenueRecurrenceAction } from '@/features/venue-recurrence'
 import { isPastCalendarDay, parseCalendarDateKey } from '@/lib/utils'
 import type { StepValidationErrors } from '@/features/hooks/use-step-validation'
 import type { VenueBookingFormData, VenueBookingTextField } from '@/types/venue-booking'
@@ -24,6 +26,7 @@ type VenueBookingDetailsProps = {
   onEventChange: (eventId: string) => void
   onDateChange: (date: Date) => void
   onSlotsChange: (slotStarts: string[]) => void
+  onRecurrenceChange: (action: VenueRecurrenceAction) => void
   errors: StepValidationErrors
 }
 
@@ -39,6 +42,7 @@ export function VenueBookingDetails({
   onEventChange,
   onDateChange,
   onSlotsChange,
+  onRecurrenceChange,
   errors,
 }: VenueBookingDetailsProps) {
   const selectedDate = parseCalendarDateKey(data.bookingDate)
@@ -127,6 +131,8 @@ export function VenueBookingDetails({
         </DateSlotPicker.Root>
         <FieldError id="venue-slots-error" message={errors['venue-slots']} />
       </div>
+
+      <VenueRecurrenceFields value={data.recurrence} bookingDate={data.bookingDate} errors={errors} onChange={onRecurrenceChange} />
     </div>
   )
 }

@@ -73,6 +73,19 @@ export function getVenueBookingStepErrors(step: number, data: VenueBookingFormDa
   if (step === 1) {
     const requestedByError = getRequiredTextError(data.requestedBy, 'Enter the requester’s name.')
     const isOtherEvent = data.eventId === VENUE_EVENT_OTHER_ID
+    const recurrence = data.recurrence
+    const recurrenceInvalid = recurrence && (
+      recurrence.interval < 1
+      || recurrence.interval > 365
+      || recurrence.weekdays.length > 7
+      || new Set(recurrence.weekdays).size !== recurrence.weekdays.length
+      || (recurrence.frequency === 'week' && recurrence.weekdays.length === 0)
+    )
+    const recurrenceEndInvalid = recurrence && (
+      !recurrence.end
+      || (recurrence.end.type === 'date' && (!recurrence.end.date || recurrence.end.date < data.bookingDate))
+      || (recurrence.end.type === 'count' && (recurrence.end.count < 2 || recurrence.end.count > 366))
+    )
 
     return {
       ...(requestedByError ? { 'requested-by': requestedByError } : {}),
@@ -80,6 +93,8 @@ export function getVenueBookingStepErrors(step: number, data: VenueBookingFormDa
       ...(!data.eventId ? { event: 'Choose an event.' } : {}),
       ...(isOtherEvent && !data.eventOther.trim() ? { 'event-other': 'Describe the event.' } : {}),
       ...(data.slotStarts.length === 0 ? { 'venue-slots': 'Choose at least one time slot.' } : {}),
+      ...(recurrenceInvalid ? { recurrence: 'Choose a valid repeat pattern.' } : {}),
+      ...(recurrenceEndInvalid ? { 'recurrence-end': 'Choose a valid end for the repeat pattern.' } : {}),
     }
   }
 

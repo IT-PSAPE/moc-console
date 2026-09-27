@@ -81,6 +81,7 @@ describe('meaningful submission drafts', () => {
     expect(hasMeaningfulVenueBookingDraft(empty, empty)).toBe(false)
     expect(hasMeaningfulVenueBookingDraft({ ...empty, venueId: 'main-hall' }, empty)).toBe(true)
     expect(hasMeaningfulVenueBookingDraft({ ...empty, bookingDate: '2026-09-27' }, empty)).toBe(true)
+    expect(hasMeaningfulVenueBookingDraft({ ...empty, recurrence: { custom: false, frequency: 'day', interval: 1, weekdays: [], end: { type: 'count', count: 2 } } }, empty)).toBe(true)
   })
 })
 
@@ -95,6 +96,16 @@ describe('submission draft storage', () => {
 
     expect(loadSubmissionDraft('request')).toBeNull()
     expect(loadSubmissionDraft('booking')).toEqual({ step: 2, data: bookingData })
+    expect(loadSubmissionDraft('venue')).toBeNull()
+  })
+
+  test('rejects malformed recurrence rules instead of restoring an unusable draft', () => {
+    const data = {
+      ...getEmptyVenueBookingDraft('2026-09-26'),
+      recurrence: { custom: true, frequency: 'week', interval: 1, weekdays: [1, 1], end: { type: 'count', count: 1 } },
+    }
+    storage.setItem('moc-request-public-draft-venue-v2', JSON.stringify({ step: 1, data }))
+
     expect(loadSubmissionDraft('venue')).toBeNull()
   })
 })

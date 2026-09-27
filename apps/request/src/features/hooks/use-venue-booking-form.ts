@@ -4,6 +4,7 @@ import { submitPublicVenueBooking } from '@/data/submit-venue-booking'
 import { clearSubmissionDraft, getEmptyVenueBookingDraft, hasMeaningfulVenueBookingDraft, loadSubmissionDraft, saveSubmissionDraft } from '@/data/submission-draft-storage'
 import { getVenueBookingStepErrors } from '@/features/public-flow-validation'
 import { useStepValidation } from '@/features/hooks/use-step-validation'
+import { reduceVenueRecurrence, updateVenueRecurrenceForDate, type VenueRecurrenceAction } from '@/features/venue-recurrence'
 import { formatCalendarDateKey } from '@/lib/utils'
 import type { VenueBookingFormData, VenueBookingTextField, SubmitVenueBookingResult } from '@/types/venue-booking'
 
@@ -25,6 +26,7 @@ type VenueBookingFormAction =
   | { type: 'SET_EVENT'; eventId: string }
   | { type: 'SET_BOOKING_DATE'; bookingDate: string }
   | { type: 'SET_SLOTS'; slotStarts: string[] }
+  | { type: 'SET_RECURRENCE'; action: VenueRecurrenceAction }
   | { type: 'NEXT_STEP' }
   | { type: 'PREV_STEP' }
   | { type: 'SUBMIT_START' }
@@ -70,9 +72,11 @@ function reducer(state: VenueBookingFormState, action: VenueBookingFormAction): 
         },
       }
     case 'SET_BOOKING_DATE':
-      return { ...state, data: { ...state.data, bookingDate: action.bookingDate, slotStarts: [] } }
+      return { ...state, data: { ...state.data, bookingDate: action.bookingDate, slotStarts: [], recurrence: updateVenueRecurrenceForDate(state.data.recurrence, state.data.bookingDate, action.bookingDate) } }
     case 'SET_SLOTS':
       return { ...state, data: { ...state.data, slotStarts: action.slotStarts } }
+    case 'SET_RECURRENCE':
+      return { ...state, data: { ...state.data, recurrence: reduceVenueRecurrence(state.data.recurrence, action.action, state.data.bookingDate) } }
     case 'NEXT_STEP':
       return { ...state, step: Math.min(state.step + 1, LAST_STEP) }
     case 'PREV_STEP':
@@ -129,6 +133,12 @@ export function useVenueBookingForm() {
     clearError('venue-slots')
   }, [clearError])
 
+  const setRecurrence = useCallback((action: VenueRecurrenceAction) => {
+    dispatch({ type: 'SET_RECURRENCE', action })
+    clearError('recurrence')
+    clearError('recurrence-end')
+  }, [clearError])
+
   const nextStep = useCallback(() => {
     dispatch({ type: 'NEXT_STEP' })
   }, [])
@@ -157,7 +167,7 @@ export function useVenueBookingForm() {
 
   return {
     state: { ...state, validationErrors, bookingWindow: deriveBookingWindow(state.data.slotStarts) },
-    actions: { setField, setVenue, setEvent, setBookingDate, setSlots, nextStep, prevStep, submit, validateCurrentStep },
+    actions: { setField, setVenue, setEvent, setBookingDate, setSlots, setRecurrence, nextStep, prevStep, submit, validateCurrentStep },
     meta: { isLastStep: state.step === LAST_STEP, totalSteps: LAST_STEP },
   }
 }

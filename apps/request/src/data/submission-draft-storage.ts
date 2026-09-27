@@ -46,6 +46,20 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string')
 }
 
+function isVenueRecurrence(value: unknown): boolean {
+  if (!isRecord(value)) return false
+  if (typeof value.custom !== 'boolean') return false
+  if (!['day', 'week', 'month'].includes(String(value.frequency))) return false
+  if (!Number.isInteger(value.interval) || Number(value.interval) < 1 || Number(value.interval) > 365) return false
+  if (!Array.isArray(value.weekdays) || value.weekdays.length > 7 || !value.weekdays.every((day) => Number.isInteger(day) && day >= 1 && day <= 7)) return false
+  if (new Set(value.weekdays).size !== value.weekdays.length || (value.frequency === 'week' && value.weekdays.length === 0)) return false
+  if (value.end === null) return false
+  if (!isRecord(value.end) || !['year_end', 'date', 'count'].includes(String(value.end.type))) return false
+  if (value.end.type === 'date') return typeof value.end.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.end.date)
+  if (value.end.type === 'count') return Number.isInteger(value.end.count) && Number(value.end.count) >= 2 && Number(value.end.count) <= 366
+  return true
+}
+
 function isRequestFormData(value: unknown): value is RequestFormData {
   if (!isRecord(value)) return false
 
@@ -71,6 +85,7 @@ function isVenueBookingFormData(value: unknown): value is VenueBookingFormData {
     && typeof value.eventOther === 'string'
     && typeof value.bookingDate === 'string'
     && isStringArray(value.slotStarts)
+    && (value.recurrence === undefined || value.recurrence === null || isVenueRecurrence(value.recurrence))
 }
 
 function readStoredValue(kind: SubmissionDraftKind): unknown {
@@ -93,7 +108,7 @@ export function loadSubmissionDraft(kind: SubmissionDraftKind): AnyStoredSubmiss
 
     if (kind === 'request' && isRequestFormData(value.data)) return { step: value.step, data: value.data }
     if (kind === 'booking' && isBookingFormData(value.data)) return { step: value.step, data: value.data }
-    if (kind === 'venue' && isVenueBookingFormData(value.data)) return { step: value.step, data: value.data }
+    if (kind === 'venue' && isVenueBookingFormData(value.data)) return { step: value.step, data: { ...value.data, recurrence: value.data.recurrence ?? null } }
     return null
   } catch {
     return null

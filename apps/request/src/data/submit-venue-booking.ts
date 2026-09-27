@@ -16,6 +16,7 @@ export async function submitPublicVenueBooking(data: VenueBookingFormData): Prom
     p_slot_starts: data.slotStarts,
     p_event_id: isOtherEvent ? null : data.eventId,
     p_event_other: isOtherEvent ? data.eventOther : null,
+    p_recurrence: data.recurrence,
   })
 
   if (error) throw new Error(error.message)

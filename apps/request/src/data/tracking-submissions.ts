@@ -90,6 +90,7 @@ export async function updateTrackedVenueBooking(result: TrackingVenueBookingResu
       eventId: data.eventId === "other" ? null : data.eventId,
       eventOther: data.eventId === "other" ? data.eventOther.trim() : null,
       slotStarts: data.slotStarts,
+      recurrence: data.recurrence,
     },
   })
   if (!response.ok) throw await parseError(response)

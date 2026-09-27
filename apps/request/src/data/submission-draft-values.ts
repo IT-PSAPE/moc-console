@@ -51,7 +51,7 @@ export function getEmptyBookingDraft(): BookingFormData {
 }
 
 export function getEmptyVenueBookingDraft(bookingDate = formatCalendarDateKey(new Date())): VenueBookingFormData {
-  return { requestedBy: '', venueId: '', eventId: '', eventOther: '', bookingDate, slotStarts: [] }
+  return { requestedBy: '', venueId: '', eventId: '', eventOther: '', bookingDate, slotStarts: [], recurrence: null }
 }
 
 export function hasMeaningfulRequestDraft(data: RequestFormData, defaultCategory: string): boolean {
@@ -74,4 +74,5 @@ export function hasMeaningfulVenueBookingDraft(data: VenueBookingFormData, initi
     || hasText(data.eventOther)
     || data.bookingDate !== initialData.bookingDate
     || data.slotStarts.length > 0
+    || data.recurrence !== null
 }

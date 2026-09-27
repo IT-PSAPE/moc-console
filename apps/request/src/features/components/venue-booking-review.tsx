@@ -1,6 +1,7 @@
 import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Label } from '@moc/ui/components/display/text'
-import { User, Target, Building2, CalendarClock } from 'lucide-react'
+import { User, Target, Building2, CalendarClock, Repeat2 } from 'lucide-react'
+import { formatVenueRecurrenceEndLabel, formatVenueRecurrenceLabel } from '@moc/types/venues'
 import { formatDateTime } from '@/lib/utils'
 import type { VenueBookingFormData } from '@/types/venue-booking'
 import type { VenueBookingWindow } from '@/features/hooks/use-venue-booking-form'
@@ -14,6 +15,8 @@ type VenueBookingReviewProps = {
 }
 
 export function VenueBookingReview({ data, venueName, eventLabel, bookingWindow, timeZone }: VenueBookingReviewProps) {
+  const recurrenceEndLabel = formatVenueRecurrenceEndLabel(data.recurrence)
+
   return (
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-3">
@@ -38,6 +41,12 @@ export function VenueBookingReview({ data, venueName, eventLabel, bookingWindow,
               </MetaRow>
             </>
           )}
+          <MetaRow icon={<Repeat2 />} label="Repeats">
+            <div className="flex flex-col">
+              <Label.sm>{formatVenueRecurrenceLabel(data.recurrence)}</Label.sm>
+              {recurrenceEndLabel && <Label.xs className="text-tertiary">{recurrenceEndLabel}</Label.xs>}
+            </div>
+          </MetaRow>
         </div>
       </section>
     </div>

@@ -6,6 +6,7 @@ import { toVenueEditData } from "@/features/tracking-submission"
 import { useStepValidation } from "@/features/hooks/use-step-validation"
 import { useVenueAvailability } from "@/features/hooks/use-venue-availability"
 import { formatCalendarDateKey } from "@/lib/utils"
+import { reduceVenueRecurrence, updateVenueRecurrenceForDate, type VenueRecurrenceAction } from "@/features/venue-recurrence"
 import type { TrackingResult, TrackingVenueBookingResult } from "@/types/tracking"
 import type { VenueBookingFormData, VenueBookingTextField } from "@/types/venue-booking"
 
@@ -36,12 +37,19 @@ export function useTrackingVenueEditor(result: TrackingVenueBookingResult, onSav
   }, [])
 
   const setBookingDate = useCallback((date: Date) => {
-    setData((current) => ({ ...current, bookingDate: formatCalendarDateKey(date), slotStarts: [] }))
+    const bookingDate = formatCalendarDateKey(date)
+    setData((current) => ({ ...current, bookingDate, slotStarts: [], recurrence: updateVenueRecurrenceForDate(current.recurrence, current.bookingDate, bookingDate) }))
   }, [])
 
   const setSlots = useCallback((slotStarts: string[]) => {
     setData((current) => ({ ...current, slotStarts }))
   }, [])
+
+  const setRecurrence = useCallback((action: VenueRecurrenceAction) => {
+    setData((current) => ({ ...current, recurrence: reduceVenueRecurrence(current.recurrence, action, current.bookingDate) }))
+    validation.actions.clearError('recurrence')
+    validation.actions.clearError('recurrence-end')
+  }, [validation.actions])
 
   const save = useCallback(async () => {
     if (!validation.actions.validate(getVenueBookingStepErrors(1, data))) return
@@ -59,6 +67,6 @@ export function useTrackingVenueEditor(result: TrackingVenueBookingResult, onSav
 
   return {
     state: { data, saving, error, validationErrors: validation.state.errors, availability: { ...availability.state, venues, events } },
-    actions: { setField, setVenue, setEvent, setBookingDate, setSlots, save },
+    actions: { setField, setVenue, setEvent, setBookingDate, setSlots, setRecurrence, save },
   }
 }

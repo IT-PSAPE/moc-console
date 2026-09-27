@@ -2,8 +2,8 @@ import { Badge } from '@moc/ui/components/display/badge'
 import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Divider } from '@moc/ui/components/display/divider'
 import { Label, Paragraph, Title } from '@moc/ui/components/display/text'
-import { Hash, Package, User, CalendarDays, Flag, Tag, CalendarCheck, StickyNote, Building2 } from 'lucide-react'
-import { venueBookingPhaseLabel, venueBookingPhaseColor } from '@moc/types/venues'
+import { Hash, Package, User, CalendarDays, Flag, Tag, CalendarCheck, StickyNote, Building2, Repeat2 } from 'lucide-react'
+import { formatVenueRecurrenceEndLabel, formatVenueRecurrenceLabel, venueBookingPhaseLabel, venueBookingPhaseColor } from '@moc/types/venues'
 import type { VenueBookingPhase } from '@moc/types/venues'
 import { PRIORITY_LABELS, PRIORITY_COLORS, STATUS_LABELS, STATUS_COLORS } from '../constants'
 import { formatDate, formatDateTime } from '@/lib/utils'
@@ -20,6 +20,7 @@ export function TrackingResult({ data }: { data: TrackingResultType }) {
   const isRequest = data.type === 'request'
   const isBooking = data.type === 'booking'
   const isVenueBooking = data.type === 'venue_booking'
+  const recurrenceEndLabel = isVenueBooking ? formatVenueRecurrenceEndLabel(data.recurrence) : null
 
   return (
     <div className="flex flex-col gap-5">
@@ -97,6 +98,12 @@ export function TrackingResult({ data }: { data: TrackingResultType }) {
               {data.endsAt && (
                 <MetaRow icon={<CalendarCheck />} label="Ends">{formatDateTime(data.endsAt)}</MetaRow>
               )}
+              <MetaRow icon={<Repeat2 />} label="Repeats">
+                <div className="flex flex-col">
+                  <Paragraph.sm>{formatVenueRecurrenceLabel(data.recurrence)}</Paragraph.sm>
+                  {recurrenceEndLabel && <Paragraph.xs className="text-tertiary">{data.occurrences.length} occurrences · {recurrenceEndLabel}</Paragraph.xs>}
+                </div>
+              </MetaRow>
               {data.notes && (
                 <MetaRow icon={<StickyNote />} label="Notes">{data.notes}</MetaRow>
               )}

@@ -80,5 +80,6 @@ export function toVenueEditData(result: TrackingVenueBookingResult): VenueBookin
     eventOther: result.eventOther ?? "",
     bookingDate: formatUtcIsoForDateTimeInput(result.startsAt, result.timeZone).slice(0, 10),
     slotStarts: result.slotStarts,
+    recurrence: result.recurrence,
   }
 }
