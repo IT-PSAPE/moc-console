@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto"
-import type { ApiRequest, ApiResponse } from "../../server/http.js"
-import { observeApiRequest } from "../../server/observability.js"
+
+import type { ApiRequest, ApiResponse } from "./http.js"
 import {
   RATE_LIMIT_POLICIES,
   consumeRateLimit,
@@ -8,14 +8,14 @@ import {
   hashRateLimitSubject,
   writeRateLimitExceeded,
   writeRateLimitUnavailable,
-} from "../../server/rate-limit.js"
+} from "./rate-limit.js"
 import {
   claimTelegramWebhookUpdate,
   completeTelegramWebhookUpdate,
   failTelegramWebhookUpdate,
   getTelegramUpdateId,
-} from "../../server/telegram-webhook-inbox.js"
-import { processTelegramUpdate, type TelegramUpdate } from "../../server/telegram-webhook-commands.js"
+} from "./telegram-webhook-inbox.js"
+import { processTelegramUpdate, type TelegramUpdate } from "./telegram-webhook-commands.js"
 
 function safeEqual(a: string, b: string): boolean {
   const expected = Buffer.from(a)
@@ -29,8 +29,15 @@ function secretHeader(request: ApiRequest): string | null {
   return Array.isArray(provided) ? provided[0] ?? null : provided ?? null
 }
 
+type TelegramWebhookRateLimitBody = {
+  message?: { chat?: { id?: unknown } }
+  edited_message?: { chat?: { id?: unknown } }
+  my_chat_member?: { chat?: { id?: unknown } }
+  callback_query?: { from?: { id?: unknown } }
+}
+
 export function telegramWebhookRateLimitSubject(request: ApiRequest): string {
-  const body = request.body as { message?: { chat?: { id?: unknown } }; edited_message?: { chat?: { id?: unknown } }; my_chat_member?: { chat?: { id?: unknown } } } | null
+  const body = request.body as TelegramWebhookRateLimitBody | null
   const chatId = body?.message?.chat?.id ?? body?.edited_message?.chat?.id ?? body?.my_chat_member?.chat?.id
   if (typeof chatId === "string" && chatId.length > 0 && chatId.length <= 64) {
     return hashRateLimitSubject(["telegram-webhook", `chat:${chatId}`])
@@ -38,10 +45,21 @@ export function telegramWebhookRateLimitSubject(request: ApiRequest): string {
   if (typeof chatId === "number" && Number.isSafeInteger(chatId)) {
     return hashRateLimitSubject(["telegram-webhook", `chat:${chatId}`])
   }
+
+  // callback_query updates have no `chat` at the top level; the tappable
+  // user (callback_query.from.id) is the stable subject instead.
+  const fromId = body?.callback_query?.from?.id
+  if (typeof fromId === "string" && fromId.length > 0 && fromId.length <= 64) {
+    return hashRateLimitSubject(["telegram-webhook", `user:${fromId}`])
+  }
+  if (typeof fromId === "number" && Number.isSafeInteger(fromId)) {
+    return hashRateLimitSubject(["telegram-webhook", `user:${fromId}`])
+  }
+
   return hashRateLimitRequestSubject(request, ["telegram-webhook"])
 }
 
-async function handleTelegramWebhook(request: ApiRequest, response: ApiResponse): Promise<void> {
+export async function handleTelegramWebhook(request: ApiRequest, response: ApiResponse): Promise<void> {
   response.setHeader("Content-Type", "application/json")
 
   if (request.method !== "POST") {
@@ -78,6 +96,9 @@ async function handleTelegramWebhook(request: ApiRequest, response: ApiResponse)
     return
   }
 
+  // Only an update this request claimed may be marked failed: a claim error
+  // or a duplicate must never fail the invocation that is still processing it.
+  let claimed = false
   try {
     const claim = await claimTelegramWebhookUpdate(updateId, request.body)
     if (claim === "processed") {
@@ -92,20 +113,15 @@ async function handleTelegramWebhook(request: ApiRequest, response: ApiResponse)
       return
     }
 
+    claimed = true
     await processTelegramUpdate(request.body as TelegramUpdate)
     await completeTelegramWebhookUpdate(updateId)
     response.status(200).json({ ok: true })
   } catch (error) {
     console.error("Telegram webhook error:", error)
-    await failTelegramWebhookUpdate(updateId, error)
+    if (claimed) await failTelegramWebhookUpdate(updateId, error)
     // Do not acknowledge a durable processing failure. Telegram retries
     // non-2xx updates, and the inbox claim makes those retries idempotent.
     response.status(500).json({ error: "Telegram webhook processing failed" })
   }
-}
-
-export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
-  await observeApiRequest("telegram.webhook", request, response, async () => {
-    await handleTelegramWebhook(request, response)
-  })
 }

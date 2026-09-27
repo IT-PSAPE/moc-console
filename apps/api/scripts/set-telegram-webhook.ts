@@ -15,7 +15,7 @@
  */
 
 const DEFAULT_API_BASE_URL = "https://api.psape.co.za"
-const ALLOWED_UPDATES = ["message", "edited_message", "my_chat_member"]
+const ALLOWED_UPDATES = ["message", "edited_message", "my_chat_member", "callback_query"]
 
 const token = process.env.TELEGRAM_BOT_TOKEN
 const secret = process.env.TELEGRAM_WEBHOOK_SECRET

@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "../supabase-admin.js"
-import { sendTelegramMessageDetailed } from "../telegram.js"
+import { sendTelegramRichMessage } from "../telegram.js"
+import { toRichHtml, type InlineKeyboardMarkup } from "@moc/notifications"
 
 const MAX_ATTEMPTS = 5
 const CLAIM_TIMEOUT_MS = 5 * 60_000
@@ -19,6 +20,10 @@ type DeliveryRow = {
   text: string
   payload: unknown
   attempt_count: number
+  entity_type: string | null
+  entity_id: string | null
+  reply_markup: InlineKeyboardMarkup | null
+  parent_delivery_id: string | null
 }
 
 export type DeliveryInput = {
@@ -32,6 +37,13 @@ export type DeliveryInput = {
   threadId?: number | null
   text: string
   payload: unknown
+  /** Set for an announcement delivery so a later follow-up can find its original. */
+  entityType?: string | null
+  entityId?: string | null
+  /** The rendered inline keyboard, or null when the message has none. */
+  replyMarkup?: InlineKeyboardMarkup | null
+  /** Set for a loud follow-up's reply — the original delivery it replies to. */
+  parentDeliveryId?: string | null
 }
 
 export type DeliveryRunResult = {
@@ -72,6 +84,10 @@ export async function enqueueDelivery(input: DeliveryInput): Promise<void> {
     thread_id: threadId,
     text: input.text,
     payload: input.payload,
+    entity_type: input.entityType ?? null,
+    entity_id: input.entityId ?? null,
+    reply_markup: input.replyMarkup ?? null,
+    parent_delivery_id: input.parentDeliveryId ?? null,
   }, { onConflict: "event_key,destination_key", ignoreDuplicates: true })
 
   if (error) throw new Error(error.message)
@@ -95,18 +111,36 @@ async function claimDelivery(id: string): Promise<DeliveryRow | null> {
     .update({ status: "processing", last_attempt_at: new Date().toISOString() })
     .eq("id", id)
     .eq("status", "pending")
-    .select("id, workspace_id, event_key, event_type, scope, route_id, recipient_user_id, destination_key, chat_id, thread_id, text, payload, attempt_count")
+    .select(
+      "id, workspace_id, event_key, event_type, scope, route_id, recipient_user_id, destination_key, chat_id, thread_id, text, payload, attempt_count, entity_type, entity_id, reply_markup, parent_delivery_id",
+    )
     .maybeSingle()
   if (error) throw new Error(error.message)
   return data as DeliveryRow | null
 }
 
+// A loud follow-up's reply carries parent_delivery_id — look up that
+// original's telegram_message_id so the reply actually threads under it.
+// Best-effort: if the parent has vanished or was never sent, the reply still
+// goes out, just without reply_parameters.
+async function replyToMessageId(parentDeliveryId: string | null): Promise<number | null> {
+  if (!parentDeliveryId) return null
+  const admin = getSupabaseAdmin()
+  const { data } = await admin
+    .from("notification_deliveries")
+    .select("telegram_message_id")
+    .eq("id", parentDeliveryId)
+    .maybeSingle()
+  return typeof data?.telegram_message_id === "number" ? data.telegram_message_id : null
+}
+
 async function sendClaimedDelivery(row: DeliveryRow): Promise<DeliveryRunResult> {
   const result = emptyResult()
   result.attempted = 1
-  const send = await sendTelegramMessageDetailed(row.chat_id, row.text, {
-    parseMode: "HTML",
-    ...(row.thread_id !== null ? { threadId: row.thread_id } : {}),
+  const send = await sendTelegramRichMessage(row.chat_id, toRichHtml(row.text), {
+    threadId: row.thread_id,
+    replyMarkup: row.reply_markup,
+    replyToMessageId: await replyToMessageId(row.parent_delivery_id),
   })
   const admin = getSupabaseAdmin()
 

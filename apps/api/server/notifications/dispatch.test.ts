@@ -3,6 +3,7 @@ import { describe, it } from "node:test"
 
 import {
   deriveVenueBookingPhase,
+  dispatchEvent,
   formatVenueBookingDuration,
   resolveDmRouteTarget,
   venueBookingSlotCount,
@@ -14,24 +15,33 @@ describe("deriveVenueBookingPhase", () => {
 
   it("reports booked before the window opens", () => {
     const now = new Date("2026-09-05T17:00:00.000Z")
-    assert.equal(deriveVenueBookingPhase(startsAt, endsAt, false, now), "booked")
+    assert.equal(deriveVenueBookingPhase("auto", startsAt, endsAt, now), "booked")
   })
 
   it("reports in_progress once the clock reaches the start", () => {
     const now = new Date("2026-09-05T19:00:00.000Z")
-    assert.equal(deriveVenueBookingPhase(startsAt, endsAt, false, now), "in_progress")
+    assert.equal(deriveVenueBookingPhase("auto", startsAt, endsAt, now), "in_progress")
   })
 
   it("reports completed once the window has passed, even long after send", () => {
     const now = new Date("2026-09-06T09:00:00.000Z")
-    assert.equal(deriveVenueBookingPhase(startsAt, endsAt, false, now), "completed")
+    assert.equal(deriveVenueBookingPhase("auto", startsAt, endsAt, now), "completed")
   })
 
   it("reports cancelled regardless of the clock — cancelled always wins", () => {
     const beforeStart = new Date("2026-09-05T10:00:00.000Z")
     const afterEnd = new Date("2026-09-07T00:00:00.000Z")
-    assert.equal(deriveVenueBookingPhase(startsAt, endsAt, true, beforeStart), "cancelled")
-    assert.equal(deriveVenueBookingPhase(startsAt, endsAt, true, afterEnd), "cancelled")
+    assert.equal(deriveVenueBookingPhase("cancelled", startsAt, endsAt, beforeStart), "cancelled")
+    assert.equal(deriveVenueBookingPhase("cancelled", startsAt, endsAt, afterEnd), "cancelled")
+  })
+
+  it("reports rejected regardless of the clock, same as cancelled", () => {
+    assert.equal(deriveVenueBookingPhase("rejected", startsAt, endsAt, new Date("2026-09-05T19:00:00.000Z")), "rejected")
+  })
+
+  it("reports the approval decision before the clock takes over", () => {
+    const now = new Date("2026-09-05T17:00:00.000Z")
+    assert.equal(deriveVenueBookingPhase("approved", startsAt, endsAt, now), "approved")
   })
 })
 
@@ -62,5 +72,21 @@ describe("resolveDmRouteTarget", () => {
       kind: "skip_unlinked",
       userId: "user-1",
     })
+  })
+})
+
+describe("dispatchEvent — announcement vs follow-up split", () => {
+  it("routes a follow-up event through the entity path, which no-ops (without touching the DB) when no entityId is supplied", async () => {
+    // request.status_changed is a follow-up event (not one of the five
+    // *.created announcements) — dispatchEvent must not fall through to
+    // group/route dispatch for it, and without an entityId (which the
+    // outbox always supplies in production) there is nothing to follow up.
+    const result = await dispatchEvent(
+      "workspace-1",
+      "request.status_changed",
+      { title: "Stage lighting", status: "in_progress", linkUrl: "" },
+      {},
+    )
+    assert.deepEqual(result, { attempted: 0, succeeded: 0, failed: 0 })
   })
 })

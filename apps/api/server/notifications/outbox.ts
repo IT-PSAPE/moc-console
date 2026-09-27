@@ -137,6 +137,7 @@ export function buildPayload(row: OutboxRow): EventPayloadMap[NotificationEventK
       startsAt,
       endsAt,
       ...(changeSummary ? { changeSummary } : {}),
+      ...(text(payload.decision) ? { decision: text(payload.decision) } : {}),
       venueBookingId: row.entity_id,
       linkUrl: deletedByRequester ? "" : `${baseUrl}/venues/${encodeURIComponent(row.entity_id)}`,
     } as EventPayloadMap[NotificationEventKey]
@@ -153,6 +154,14 @@ export function buildPayload(row: OutboxRow): EventPayloadMap[NotificationEventK
     } as EventPayloadMap[NotificationEventKey]
   }
 
+  if (row.event_type === "stream.updated") {
+    return {
+      title: text(payload.title),
+      streamId: row.entity_id,
+      changeSummary: text(payload.changeSummary),
+    } as EventPayloadMap[NotificationEventKey]
+  }
+
   if (row.event_type === "meeting.created") {
     const topic = text(payload.topic)
     if (!topic) throw new Error("Meeting notification is missing a topic")
@@ -161,6 +170,14 @@ export function buildPayload(row: OutboxRow): EventPayloadMap[NotificationEventK
       startTime: text(payload.startTime),
       joinUrl: text(payload.joinUrl),
       meetingId: row.entity_id,
+    } as EventPayloadMap[NotificationEventKey]
+  }
+
+  if (row.event_type === "meeting.updated") {
+    return {
+      topic: text(payload.topic),
+      meetingId: row.entity_id,
+      changeSummary: text(payload.changeSummary),
     } as EventPayloadMap[NotificationEventKey]
   }
 
@@ -190,6 +207,8 @@ async function dispatchClaimed(row: OutboxRow): Promise<OutboxRunResult> {
     await dispatchEvent(row.workspace_id, row.event_type, payload as never, {
       eventKey: row.event_key,
       destinations: destinations(row.payload.destinations),
+      entityType: row.entity_type,
+      entityId: row.entity_id,
     })
     const { error } = await admin
       .from("notification_outbox")
@@ -279,6 +298,33 @@ export async function processPendingOutboxForEntity(
     .eq("entity_type", entityType)
     .eq("entity_id", entityId)
     .eq("event_type", eventType)
+    .eq("status", "pending")
+    .lte("next_attempt_at", new Date().toISOString())
+  if (error) throw new Error(error.message)
+
+  const result = emptyResult()
+  for (const candidate of (data ?? []) as { id: string }[]) {
+    const row = await claimOutbox(candidate.id)
+    if (row) mergeResult(result, await dispatchClaimed(row))
+  }
+  return result
+}
+
+// Same as processPendingOutboxForEntity, but across every pending event type
+// for the entity — used by the "entity-changed" internal route so a console
+// status change reaches Telegram immediately (across whichever follow-up
+// event the mutation enqueued) instead of waiting for the 01:00 cron.
+export async function processPendingOutboxForEntityAcrossEventTypes(
+  entityType: string,
+  entityId: string,
+): Promise<OutboxRunResult> {
+  await releaseExpiredClaims()
+  const admin = getSupabaseAdmin()
+  const { data, error } = await admin
+    .from("notification_outbox")
+    .select("id")
+    .eq("entity_type", entityType)
+    .eq("entity_id", entityId)
     .eq("status", "pending")
     .lte("next_attempt_at", new Date().toISOString())
   if (error) throw new Error(error.message)

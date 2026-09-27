@@ -7,6 +7,7 @@ export type RateLimitPolicyName =
   | "provider_proxy_read"
   | "provider_proxy_write"
   | "telegram_webhook"
+  | "telegram_mini_app"
   | "authenticated_notification_mutation"
   | "public_submission_lookup"
   | "public_submission_mutation"
@@ -52,6 +53,12 @@ export const RATE_LIMIT_POLICIES = {
   telegramWebhook: {
     name: "telegram_webhook",
     limit: 100,
+    windowSeconds: 60,
+    failureMode: "closed",
+  },
+  telegramMiniApp: {
+    name: "telegram_mini_app",
+    limit: 60,
     windowSeconds: 60,
     failureMode: "closed",
   },

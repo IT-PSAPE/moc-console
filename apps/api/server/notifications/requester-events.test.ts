@@ -1,7 +1,12 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { DEFAULT_TEMPLATES, TEMPLATE_TOKENS, isNotificationEventKey } from "@moc/notifications"
+import {
+  isAnnouncementEvent,
+  isNotificationEventKey,
+  renderFollowUpNote,
+  type FollowUpEventKey,
+} from "@moc/notifications"
 
 const requesterEvents = [
   "request.requester_updated",
@@ -13,20 +18,26 @@ const requesterEvents = [
 ] as const
 
 describe("requester-originated notification events", () => {
-  it("registers every update and deletion event", () => {
+  it("registers every update and deletion event, as a follow-up rather than an announcement", () => {
     for (const event of requesterEvents) {
       assert.equal(isNotificationEventKey(event), true, `${event} is not registered`)
+      assert.equal(isAnnouncementEvent(event), false, `${event} is templatable — only *.created events should be`)
     }
   })
 
-  it("provides editable templates and change-summary tokens", () => {
-    const templates = DEFAULT_TEMPLATES as Record<string, string>
-    const tokens = TEMPLATE_TOKENS as Record<string, readonly { name: string }[]>
+  it("renders a change summary when the requester's own edit reported one, and a plain note otherwise", () => {
+    for (const event of requesterEvents.filter((e) => e.endsWith("_updated"))) {
+      const withSummary = renderFollowUpNote(event as FollowUpEventKey, { changeSummary: "venue, booking time" })
+      assert.ok(withSummary.includes("venue, booking time"), `${event} does not report what changed`)
+      const withoutSummary = renderFollowUpNote(event as FollowUpEventKey, {})
+      assert.ok(withoutSummary.length > 0, `${event} has no fallback note`)
+    }
+  })
 
-    for (const event of requesterEvents) {
-      assert.ok(templates[event], `${event} has no default template`)
-      assert.ok(tokens[event]?.some((token) => token.name === "changeSummary"), `${event} cannot report what changed`)
-      assert.equal(templates[event].includes("{{trackingCode}}"), false, `${event} exposes its bearer code by default`)
+  it("never leaks the tracking code (the bearer code) into a deletion's note", () => {
+    for (const event of requesterEvents.filter((e) => e.endsWith("_deleted"))) {
+      const note = renderFollowUpNote(event as FollowUpEventKey, { trackingCode: "REQ-SECRET1" })
+      assert.equal(note.includes("REQ-SECRET1"), false, `${event} exposes its bearer code`)
     }
   })
 })

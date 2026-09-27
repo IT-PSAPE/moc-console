@@ -24,4 +24,13 @@ describe("deriveVenueBookingSeriesStatus", () => {
     ]
     assert.equal(deriveVenueBookingSeriesStatus("auto", slots, startsAt, endsAt, new Date("2026-09-08T18:00:00.000Z")), "booked")
   })
+
+  it("lets a rejection win over the clock, like cancellation", () => {
+    assert.equal(deriveVenueBookingSeriesStatus("rejected", [], startsAt, endsAt, new Date("2026-09-05T18:30:00.000Z")), "rejected")
+  })
+
+  it("reports the approval decision before the clock takes over", () => {
+    assert.equal(deriveVenueBookingSeriesStatus("approved", [], startsAt, endsAt, new Date("2026-09-05T17:00:00.000Z")), "approved")
+    assert.equal(deriveVenueBookingSeriesStatus("approved", [], startsAt, endsAt, new Date("2026-09-05T18:30:00.000Z")), "in_progress")
+  })
 })

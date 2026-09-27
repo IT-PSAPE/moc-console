@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { telegramWebhookRateLimitSubject } from "../api/telegram/webhook.js"
+import { telegramWebhookRateLimitSubject } from "./telegram-webhook.js"
 
 describe("telegramWebhookRateLimitSubject", () => {
   it("uses the Telegram chat as the stable subject when present", () => {
@@ -15,6 +15,19 @@ describe("telegramWebhookRateLimitSubject", () => {
     })
 
     assert.equal(fromFirstRelay, fromSecondRelay)
+  })
+
+  it("uses the callback_query sender as the stable subject when there is no chat", () => {
+    const first = telegramWebhookRateLimitSubject({
+      body: { callback_query: { from: { id: 9001 } } },
+      headers: { "x-forwarded-for": "192.0.2.1" },
+    })
+    const second = telegramWebhookRateLimitSubject({
+      body: { callback_query: { from: { id: 9001 } } },
+      headers: { "x-forwarded-for": "192.0.2.2" },
+    })
+
+    assert.equal(first, second)
   })
 
   it("falls back to the request client hash for chatless updates", () => {

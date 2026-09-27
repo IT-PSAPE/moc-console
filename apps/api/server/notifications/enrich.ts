@@ -1,18 +1,18 @@
 // Server-side token enrichment. Given an entity id, read the full row
 // from the shared Supabase DB (service-role admin client, bypasses RLS)
 // and project it onto the composable token names declared in
-// notification-templates-core's category catalogs.
+// @moc/notifications' template token catalogs.
 //
 // Every function is best-effort: any failure or missing row returns {}
 // so the caller falls back to the event payload — a DB hiccup must
 // never silence a notification.
 
 import { getSupabaseAdmin } from "../supabase-admin.js";
-import type { TokenValues } from "@moc/notifications";
+import { telegramStatusLabel, type TokenValues } from "@moc/notifications";
 
 // Date tokens are emitted as raw ISO and localised at the render
 // boundary (dispatch/assignment) once the workspace's timezone + format
-// are known — see formatDateTokens in notification-templates-core.
+// are known — see formatDateTokens in @moc/notifications.
 function fmtDate(v: string | null | undefined): string {
   if (!v) return "";
   const d = new Date(v);
@@ -42,7 +42,7 @@ export async function enrichRequest(requestId: string, options?: { throwOnError?
     if (!data) return {};
     return {
       title: data.title,
-      status: data.status,
+      status: telegramStatusLabel("request", data.status),
       priority: data.priority,
       category: relatedName(data.request_categories) ?? data.category,
       requesterName: data.requested_by,
@@ -142,7 +142,7 @@ export async function enrichBooking(
     const first = rows[0];
     const names = rows.map((r) => r.equipment?.name).filter(Boolean) as string[];
     return {
-      status: first.status,
+      status: telegramStatusLabel("booking", first.status),
       requesterName: first.booked_by,
       bookedBy: first.booked_by,
       checkedOutAt: fmtDate(first.checked_out_at),
@@ -226,6 +226,9 @@ function venueRecurrenceSummary(value: unknown): string | undefined {
 
 type VenueBookingSlotWindow = { occurrence_index: number; slot_start: string; slot_end: string };
 
+// Mirrors packages/types/src/venues/phase.ts's deriveVenueBookingSeriesPhase:
+// cancelled/rejected are decisions that win outright, then the clock against
+// the concrete occurrences, then the approval decision, then "booked".
 export function deriveVenueBookingSeriesStatus(
   status: string,
   slots: VenueBookingSlotWindow[],
@@ -233,7 +236,7 @@ export function deriveVenueBookingSeriesStatus(
   endsAt: string,
   at: Date = new Date(),
 ): string {
-  if (status === "cancelled") return "cancelled";
+  if (status === "cancelled" || status === "rejected") return status;
   const occurrences = new Map<number, { startsAt: number; endsAt: number }>();
   for (const slot of slots) {
     const start = new Date(slot.slot_start).getTime();
@@ -245,11 +248,12 @@ export function deriveVenueBookingSeriesStatus(
   if (occurrences.size === 0) {
     if (now >= new Date(endsAt).getTime()) return "completed";
     if (now >= new Date(startsAt).getTime()) return "in_progress";
-    return "booked";
+    return status === "approved" ? "approved" : "booked";
   }
   if ([...occurrences.values()].some((occurrence) => occurrence.startsAt <= now && now < occurrence.endsAt)) return "in_progress";
   const lastEnd = Math.max(...[...occurrences.values()].map((occurrence) => occurrence.endsAt));
-  return now >= lastEnd ? "completed" : "booked";
+  if (now >= lastEnd) return "completed";
+  return status === "approved" ? "approved" : "booked";
 }
 
 // PostgREST returns an embedded row as an object or, for some relationship
@@ -295,6 +299,10 @@ export async function enrichVenueBooking(venueBookingId: string, options?: { thr
       cancelReason: row.cancel_reason,
       cancelledAt: fmtDate(row.cancelled_at),
       status: deriveVenueBookingSeriesStatus(row.status, row.venue_booking_slots, row.starts_at, row.ends_at),
+      // The raw stored value ('auto'|'approved'|'rejected'|'cancelled'), as
+      // opposed to `status` above (the reader-facing derived phase). Inline
+      // action keyboards key off this, never off the phase.
+      storedStatus: row.status,
       repeatPattern,
       occurrenceCount: row.recurrence ? String(occurrenceCount) : undefined,
     };

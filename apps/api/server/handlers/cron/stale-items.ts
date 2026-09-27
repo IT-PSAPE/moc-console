@@ -1,19 +1,18 @@
 import { getSupabaseAdmin } from "../../supabase-admin.js"
 import { requireAuthorizedCronGet } from "../../cron-auth.js"
 import { resolveBaseUrl } from "../../base-url.js"
-import {
-  dispatchEvent,
-  renderEventText,
-  type RequestStalePayload,
-  type BookingStalePayload,
-} from "../../notifications/dispatch.js"
+import { escapeHtml, isLoudFollowUp, renderFollowUpNote, type FollowUpEventKey } from "@moc/notifications"
+import type { RequestStalePayload, BookingStalePayload } from "../../notifications/dispatch.js"
+import { buildTokens, toNoteTokens } from "../../notifications/dispatch-tokens.js"
+import { publishEntityFollowUp } from "../../notifications/follow-ups.js"
 import { enqueueDelivery, processDeliveriesForEvent, type DeliveryRunResult } from "../../notifications/delivery-store.js"
 
 // Daily stale-item sweep — wired to a Vercel Cron (00:00 UTC, see
 // vercel.json). Finds requests/bookings that have gone past their
 // workspace stale threshold without being attended to and alerts the
 // configured recipients over Telegram:
-//   • group: existing event routing (notification_routes) via dispatchEvent
+//   • group: a loud follow-up reply on the item's own original announcement
+//     message(s) (never a new group post — see follow-ups.ts)
 //   • DM:    every enabled notification_recipients user with a linked
 //            telegram_chat_id, in that item's workspace
 //
@@ -137,6 +136,11 @@ async function completeStaleNotification(
   if (error) throw new Error(error.message)
 }
 
+// A DM has no original message to reply to, so it names the item itself.
+function staleDmText(title: string, note: string, reason?: string | null): string {
+  return [`<b>${escapeHtml(title)}</b>`, reason ? escapeHtml(reason) : null, note].filter(Boolean).join("\n")
+}
+
 async function queueDms(
   workspaceId: string,
   recipients: Map<string, Recipient[]>,
@@ -194,15 +198,19 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       staleDays: String(req.stale_days ?? daysSince(req.updated_at)),
     }
     const eventKey = staleEventKey(req.stale_notification_event_key, "request", req.id)
-    const group = await dispatchEvent(req.workspace_id, "request.stale", payload, { eventKey })
-    mergeDeliveryResult(requestDelivery, {
-      attempted: group.attempted,
-      sent: group.succeeded,
-      failed: group.failed,
-      pendingRetry: 0,
+    // Stale is a follow-up, not an announcement: the one-line note is the loud
+    // reply on the request's original message(s), and the DM wraps it with the
+    // request's title.
+    const followUpTokens = toNoteTokens(await buildTokens(req.workspace_id, "request.stale", payload))
+    const note = renderFollowUpNote("request.stale" as FollowUpEventKey, followUpTokens)
+    await publishEntityFollowUp({
+      entityType: "request",
+      entityId: req.id,
+      eventKey,
+      note,
+      loud: isLoudFollowUp("request.stale" as FollowUpEventKey),
     })
-    const text = await renderEventText(req.workspace_id, "dm", "request.stale", payload)
-    mergeDeliveryResult(requestDelivery, await queueDms(req.workspace_id, recipients, eventKey, "request.stale", text, payload))
+    mergeDeliveryResult(requestDelivery, await queueDms(req.workspace_id, recipients, `${eventKey}:dm`, "request.stale", staleDmText(req.title, note), payload))
     await completeStaleNotification("request", req.id, eventKey)
   }
 
@@ -226,15 +234,16 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       ),
     }
     const eventKey = staleEventKey(bk.stale_notification_event_key, "booking", bk.id)
-    const group = await dispatchEvent(bk.workspace_id, "booking.stale", payload, { eventKey })
-    mergeDeliveryResult(bookingDelivery, {
-      attempted: group.attempted,
-      sent: group.succeeded,
-      failed: group.failed,
-      pendingRetry: 0,
+    const followUpTokens = toNoteTokens(await buildTokens(bk.workspace_id, "booking.stale", payload))
+    const note = renderFollowUpNote("booking.stale" as FollowUpEventKey, followUpTokens)
+    await publishEntityFollowUp({
+      entityType: "booking",
+      entityId: bk.id,
+      eventKey,
+      note,
+      loud: isLoudFollowUp("booking.stale" as FollowUpEventKey),
     })
-    const text = await renderEventText(bk.workspace_id, "dm", "booking.stale", payload)
-    mergeDeliveryResult(bookingDelivery, await queueDms(bk.workspace_id, recipients, eventKey, "booking.stale", text, payload))
+    mergeDeliveryResult(bookingDelivery, await queueDms(bk.workspace_id, recipients, `${eventKey}:dm`, "booking.stale", staleDmText(bk.title, note, payload.staleReason), payload))
     await completeStaleNotification("booking", bk.id, eventKey)
   }
 

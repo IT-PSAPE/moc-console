@@ -1,3 +1,5 @@
+
+import { handleCallbackQuery, type TelegramCallbackQuery } from "./telegram-callback-query.js"
 import { getSupabaseAdmin } from "./supabase-admin.js"
 import {
   editTelegramMessageText,
@@ -35,6 +37,7 @@ export type TelegramUpdate = {
   message?: TelegramMessage
   edited_message?: TelegramMessage
   my_chat_member?: TelegramChatMemberUpdated
+  callback_query?: TelegramCallbackQuery
 }
 
 type ResolvedWorkspace = { id: string; slug: string }
@@ -320,6 +323,11 @@ async function handleStartCommand(message: TelegramMessage): Promise<void> {
 }
 
 export async function processTelegramUpdate(update: TelegramUpdate): Promise<void> {
+  if (update.callback_query) {
+    await handleCallbackQuery(update.callback_query)
+    return
+  }
+
   if (update.my_chat_member) {
     await handleMyChatMember(update.my_chat_member)
     return

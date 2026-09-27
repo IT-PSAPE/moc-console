@@ -78,6 +78,48 @@ describe("buildPayload — venue_booking.*", () => {
   })
 })
 
+describe("buildPayload — stream.updated / meeting.updated", () => {
+  it("builds a stream.updated follow-up payload keyed off the stream id", () => {
+    withConsoleBaseUrl("https://console.example.com", () => {
+      const row: OutboxRow = {
+        id: "outbox-2",
+        workspace_id: "workspace-1",
+        event_type: "stream.updated",
+        entity_type: "stream",
+        entity_id: "33333333-3333-3333-3333-333333333333",
+        event_key: "stream.updated:33333333-3333-3333-3333-333333333333:abc",
+        attempt_count: 0,
+        payload: { title: "Sunday Service", changeSummary: "Start time changed" },
+      }
+      assert.deepEqual(buildPayload(row), {
+        title: "Sunday Service",
+        streamId: "33333333-3333-3333-3333-333333333333",
+        changeSummary: "Start time changed",
+      })
+    })
+  })
+
+  it("builds a meeting.updated follow-up payload keyed off the meeting id", () => {
+    withConsoleBaseUrl("https://console.example.com", () => {
+      const row: OutboxRow = {
+        id: "outbox-3",
+        workspace_id: "workspace-1",
+        event_type: "meeting.updated",
+        entity_type: "meeting",
+        entity_id: "44444444-4444-4444-4444-444444444444",
+        event_key: "meeting.updated:44444444-4444-4444-4444-444444444444:abc",
+        attempt_count: 0,
+        payload: { topic: "Leadership sync", changeSummary: "Join link changed" },
+      }
+      assert.deepEqual(buildPayload(row), {
+        topic: "Leadership sync",
+        meetingId: "44444444-4444-4444-4444-444444444444",
+        changeSummary: "Join link changed",
+      })
+    })
+  })
+})
+
 describe("buildPayload — requester deletion", () => {
   it("builds a deleted request entirely from its snapshot without requiring a dead deep link", () => {
     withConsoleBaseUrl(undefined, () => {

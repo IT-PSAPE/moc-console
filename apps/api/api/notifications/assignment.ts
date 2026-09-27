@@ -4,11 +4,13 @@ import { resolveBaseUrl } from "../../server/base-url.js"
 import { resolveTemplate } from "../../server/notifications/templates.js"
 import { fetchFormatSettings } from "../../server/notifications/format-settings.js"
 import { enrichChecklistItem, enrichRequest } from "../../server/notifications/enrich.js"
+import { fetchEntityStoredStatus } from "../../server/notifications/entity-tokens.js"
 import { applyCors } from "../../server/cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../server/http.js"
 import { observeApiRequest } from "../../server/observability.js"
 import { enqueueDelivery, processDeliveriesForEvent } from "../../server/notifications/delivery-store.js"
 import { isUuid } from "../../server/notifications/signed-ingest.js"
+import { getTelegramBotUsername } from "../../server/telegram.js"
 import {
   RATE_LIMIT_POLICIES,
   RateLimitUnavailableError,
@@ -19,9 +21,11 @@ import {
 } from "../../server/rate-limit.js"
 import { requireWorkspacePermission, WorkspaceAccessError } from "../../server/workspace-access.js"
 import {
+  buildNotificationKeyboard,
   formatDateTokens,
   renderTemplate,
   type DmMessageType,
+  type InlineKeyboardMarkup,
   type TokenValues,
 } from "@moc/notifications"
 
@@ -40,6 +44,11 @@ type Resolved = {
   workspaceId: string
   messageType: DmMessageType
   tokens: TokenValues
+  /** Drives the rich keyboard: assignment.request gets the request's action
+   * buttons, assignment.checklist_item only ever gets an "Open checklist"
+   * link (buildNotificationKeyboard's checklist branch takes no status). */
+  entityType: "request" | "checklist"
+  entityId: string
 }
 
 type ParentContext =
@@ -101,6 +110,8 @@ async function buildRequest(
       assigneeName,
       linkUrl: `${baseUrl}/requests/${parentId}`,
     },
+    entityType: "request",
+    entityId: parentId,
   }
 }
 
@@ -120,6 +131,8 @@ async function buildChecklistItem(
       assigneeName,
       linkUrl: `${baseUrl}/checklists/${checklistId}`,
     },
+    entityType: "checklist",
+    entityId: checklistId,
   }
 }
 
@@ -136,6 +149,16 @@ async function buildAssignment(
   // pairs them, so a mismatch is a bug and the caller maps the throw to a 503.
   if (parent.kind !== "checklist_item") throw new Error("Assignment parent kind mismatch")
   return buildChecklistItem(parent.workspaceId, parent.checklistId, body.parentId, assigneeName, baseUrl)
+}
+
+async function buildAssignmentKeyboard(resolved: Resolved): Promise<InlineKeyboardMarkup | null> {
+  const botUsername = getTelegramBotUsername()
+  if (resolved.entityType === "checklist") {
+    return buildNotificationKeyboard({ entityType: "checklist", entityId: resolved.entityId }, { botUsername })
+  }
+  const status = await fetchEntityStoredStatus("request", resolved.entityId)
+  if (status === null) return null
+  return buildNotificationKeyboard({ entityType: "request", entityId: resolved.entityId, status }, { botUsername })
 }
 
 const CHECKLIST_ITEM_KEYS = new Set(["kind", "parentId", "userId"])
@@ -319,6 +342,7 @@ async function handleAssignment(request: ApiRequest, response: ApiResponse): Pro
   )
 
   const eventKey = assignmentEventKey(kind, assignment.id)
+  const replyMarkup = await buildAssignmentKeyboard(resolved)
   try {
     await enqueueDelivery({
       workspaceId: resolved.workspaceId,
@@ -329,6 +353,11 @@ async function handleAssignment(request: ApiRequest, response: ApiResponse): Pro
       chatId: user.telegram_chat_id,
       text,
       payload: { assignmentId: assignment.id, ...body },
+      // Deliberately NOT entityType/entityId: those columns mark a
+      // delivery as a follow-up-able "original" (see follow-ups.ts's
+      // fetchOriginals), and an assignment DM is never one — it has no
+      // *.created announcement counterpart to later edit or reply to.
+      replyMarkup,
     })
     const delivery = await processDeliveriesForEvent(eventKey)
     response.status(200).json({ ok: true, ...delivery })
