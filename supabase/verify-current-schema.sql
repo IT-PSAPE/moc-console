@@ -53,7 +53,9 @@ expected_columns(table_schema, table_name, column_name, data_type, is_nullable) 
     ('public', 'api_rate_limit_windows', 'policy', 'text', false),
     ('public', 'api_rate_limit_windows', 'subject_hash', 'text', false),
     ('public', 'api_rate_limit_windows', 'window_started_at', 'timestamp with time zone', false),
-    ('public', 'api_rate_limit_windows', 'request_count', 'integer', false)
+    ('public', 'api_rate_limit_windows', 'request_count', 'integer', false),
+    ('public', 'venue_bookings', 'recurrence', 'jsonb', true),
+    ('public', 'venue_booking_slots', 'occurrence_index', 'integer', false)
 ),
 expected_indexes(schema_name, table_name, index_name) AS (
   VALUES
@@ -74,7 +76,8 @@ expected_indexes(schema_name, table_name, index_name) AS (
     ('private', 'integration_oauth_tokens', 'idx_integration_oauth_tokens_workspace_id'),
     ('public', 'telegram_webhook_updates', 'idx_telegram_webhook_updates_retry'),
     ('public', 'notification_ingest_replays', 'idx_notification_ingest_replays_expires_at'),
-    ('public', 'api_rate_limit_windows', 'idx_api_rate_limit_windows_expiry')
+    ('public', 'api_rate_limit_windows', 'idx_api_rate_limit_windows_expiry'),
+    ('public', 'venue_booking_slots', 'idx_venue_booking_slots_booking_occurrence')
 ),
 actual_indexes AS (
   SELECT namespace.nspname AS schema_name, relation.relname AS table_name,
@@ -174,7 +177,10 @@ expected_functions(signature) AS (
     ('public.consume_telegram_link_token(text,text)'),
     ('public.claim_notification_ingest_nonce(text,timestamptz)'),
     ('public.consume_api_rate_limit(text,text)'),
-    ('public.purge_api_maintenance_data()')
+    ('public.purge_api_maintenance_data()'),
+    ('public.public_submit_venue_booking(uuid,uuid,text,timestamptz[],uuid,text,text,jsonb)'),
+    ('public.api_lookup_tracking_venue_booking(text)'),
+    ('public.api_update_tracking_venue_booking(text,timestamptz,jsonb)')
 ),
 public_functions AS (
   SELECT function_row.oid, function_row.oid::regprocedure::text AS signature,

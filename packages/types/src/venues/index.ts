@@ -4,7 +4,9 @@ export { VENUE_EVENT_OTHER_ID } from "./venue-event";
 export type { VenueBookingStatus, VenueBookingPhase } from "./status";
 export type { VenueBooking, VenueBookingSlot } from "./venue-booking";
 export { venueBookingEventLabel, isOtherVenueBookingEvent } from "./venue-booking";
-export { deriveVenueBookingPhase } from "./phase";
+export type { VenueBookingOccurrence, VenueRecurrence, VenueRecurrenceEnd, VenueRecurrenceFrequency } from "./recurrence";
+export { formatVenueRecurrenceEndLabel, formatVenueRecurrenceLabel, getVenueBookingSeriesBounds } from "./recurrence";
+export { deriveVenueBookingPhase, deriveVenueBookingSeriesPhase } from "./phase";
 export {
   VENUE_SLOT_MINUTES,
   VENUE_DAY_START_HOUR,

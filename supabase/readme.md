@@ -194,6 +194,16 @@ The first tracked reliability migration is:
     and the `bug_report_status` enum. Back up any reports that must be retained
     before applying it.
 
+19. `20260927002902_venue_booking_recurrence` — source:
+    [`migrations/20260927002902_venue_booking_recurrence.sql`](migrations/20260927002902_venue_booking_recurrence.sql).
+    It keeps each repeated venue booking as one parent record with a compact
+    recurrence rule, while materialising every occurrence into
+    `venue_booking_slots`. The existing active-slot unique index therefore
+    rejects a clash anywhere in the series atomically. Tracking updates
+    replace the projection in one transaction, shortening a series releases
+    its removed future slots, and console calendars expand the indexed slots
+    back into individual occurrences.
+
 ## Script history
 
 The phase files are the consolidated historical baseline:

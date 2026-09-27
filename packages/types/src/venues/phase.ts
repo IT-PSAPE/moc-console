@@ -1,4 +1,5 @@
 import type { VenueBookingPhase, VenueBookingStatus } from "./status";
+import { getVenueBookingSeriesBounds, type VenueBookingOccurrence } from "./recurrence";
 
 /**
  * The reader-facing status of a venue booking.
@@ -23,5 +24,22 @@ export function deriveVenueBookingPhase(
   const now = at.getTime();
   if (now >= new Date(endsAt).getTime()) return "completed";
   if (now >= new Date(startsAt).getTime()) return "in_progress";
+  return "booked";
+}
+
+export function deriveVenueBookingSeriesPhase(
+  status: VenueBookingStatus,
+  occurrences: VenueBookingOccurrence[],
+  at = new Date(),
+  fallback?: { startsAt: string; endsAt: string },
+): VenueBookingPhase {
+  if (status === "cancelled") return "cancelled";
+  if (occurrences.length === 0 && fallback) {
+    const bounds = getVenueBookingSeriesBounds(occurrences, fallback.startsAt, fallback.endsAt);
+    return deriveVenueBookingPhase(status, bounds.startsAt, bounds.endsAt, at);
+  }
+  if (occurrences.some((occurrence) => new Date(occurrence.startsAt) <= at && at < new Date(occurrence.endsAt))) return "in_progress";
+  const lastOccurrence = occurrences[occurrences.length - 1];
+  if (lastOccurrence && at >= new Date(lastOccurrence.endsAt)) return "completed";
   return "booked";
 }

@@ -1,4 +1,5 @@
 import type { VenueBookingStatus } from "./status";
+import type { VenueBookingOccurrence, VenueRecurrence } from "./recurrence";
 
 /** One booked 30-minute slot. A booking always holds a continuous run of them. */
 export type VenueBookingSlot = {
@@ -33,6 +34,8 @@ export type VenueBooking = {
   status: VenueBookingStatus;
   startsAt: string;
   endsAt: string;
+  recurrence: VenueRecurrence | null;
+  occurrences: VenueBookingOccurrence[];
   cancelledAt: string | null;
   cancelledBy: string | null;
   cancelReason: string | null;
