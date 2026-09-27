@@ -4,7 +4,7 @@ import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
 import { Label } from "../display/text";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "danger-secondary";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "success" | "danger" | "danger-secondary";
 
 // React 19 passes `ref` as an ordinary prop, so it rides along in `...props`
 // onto the underlying element — it only has to be declared to be typed.
@@ -44,6 +44,11 @@ const buttonVariants = cv({
                 "border-transparent bg-transparent text-secondary",
                 "hover:bg-tertiary active:bg-tertiary",
                 "disabled:text-quaternary",
+            ],
+            success: [
+                "border-transparent bg-success text-success",
+                "hover:bg-success/80 active:bg-success/80",
+                "disabled:border-primary disabled:bg-tertiary disabled:text-quaternary",
             ],
             danger: [
                 "border-error bg-error_solid text-on-brand",

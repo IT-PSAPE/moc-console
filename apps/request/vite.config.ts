@@ -5,9 +5,16 @@ import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 import { tailscaleDevServer } from '../../scripts/vite-tailscale'
 
-const aliasEntries = {
-  '@': fileURLToPath(new URL('./src', import.meta.url)),
-}
+const aliasEntries = [
+  {
+    find: '@moc/notifications',
+    replacement: fileURLToPath(new URL('../../packages/notifications/src', import.meta.url)),
+  },
+  {
+    find: '@',
+    replacement: fileURLToPath(new URL('./src', import.meta.url)),
+  },
+]
 
 // https://vite.dev/config/
 export default defineConfig({

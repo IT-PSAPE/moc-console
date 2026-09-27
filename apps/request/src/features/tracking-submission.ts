@@ -38,7 +38,11 @@ export function buildTrackingShareData(trackingCode: string, origin: string): Tr
 export function canRequesterModify(result: TrackingRequestResult | TrackingBookingResult | TrackingVenueBookingResult, now = new Date()): boolean {
   if (result.type === "request") return result.status !== "completed" && result.status !== "archived"
   if (result.type === "booking") return result.status === "booked" && new Date(result.checkedOutAt) > now
-  return result.status === "booked" && new Date(result.startsAt) > now
+  // A rejected booking is locked like a cancelled one; an approved one stays
+  // editable until it starts, same as an unreviewed ("booked") one — editing
+  // an approved booking resets it to awaiting a fresh decision (see the
+  // reset_venue_booking_approval_on_reschedule trigger).
+  return (result.status === "booked" || result.status === "approved") && new Date(result.startsAt) > now
 }
 
 export function toRequestEditData(result: TrackingRequestResult): RequestFormData {

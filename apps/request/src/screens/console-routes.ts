@@ -5,4 +5,5 @@ export const routes = {
   publicVenue: '/venue',
   publicConfirmation: '/confirmation',
   publicTrack: '/track',
+  telegramMiniApp: '/tg',
 }

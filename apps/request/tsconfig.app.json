@@ -16,6 +16,8 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
+      "@moc/notifications": ["../../packages/notifications/src/index.ts"],
+      "@moc/notifications/*": ["../../packages/notifications/src/*"],
       "@/*": ["./src/*"]
     },
 

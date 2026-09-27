@@ -10,6 +10,7 @@ const BookingScreen = lazy(() => import('@/screens/booking-screen').then((module
 const VenueScreen = lazy(() => import('@/screens/venue-screen').then((module) => ({ default: module.VenueScreen })))
 const ConfirmationScreen = lazy(() => import('@/screens/confirmation-screen').then((module) => ({ default: module.ConfirmationScreen })))
 const TrackScreen = lazy(() => import('@/screens/track-screen').then((module) => ({ default: module.TrackScreen })))
+const MiniAppScreen = lazy(() => import('@/screens/telegram/mini-app-screen').then((module) => ({ default: module.MiniAppScreen })))
 const NotFoundScreen = lazy(() => import('@/screens/not-found-screen').then((module) => ({ default: module.NotFoundScreen })))
 const ErrorScreen = lazy(() => import('@/screens/error-screen').then((module) => ({ default: module.ErrorScreen })))
 
@@ -20,6 +21,8 @@ const router = createBrowserRouter([
     { path: routes.publicVenue, element: <VenueScreen />, errorElement: <ErrorScreen /> },
     { path: routes.publicConfirmation, element: <ConfirmationScreen />, errorElement: <ErrorScreen /> },
     { path: routes.publicTrack, element: <TrackScreen />, errorElement: <ErrorScreen /> },
+    { path: routes.telegramMiniApp, element: <MiniAppScreen />, errorElement: <ErrorScreen /> },
+    { path: `${routes.telegramMiniApp}/*`, element: <MiniAppScreen />, errorElement: <ErrorScreen /> },
     { path: '*', element: <NotFoundScreen /> },
 ])
 
