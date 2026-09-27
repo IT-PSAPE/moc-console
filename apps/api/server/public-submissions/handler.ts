@@ -16,6 +16,7 @@ import { parseDeleteBody, parseLookupBody, parseUpdateBody, type SubmissionType 
 import {
   getPublicSubmissionStore,
   SubmissionInvalidError,
+  SubmissionConflictError,
   SubmissionLockedError,
   SubmissionNotFoundError,
   SubmissionStaleError,
@@ -88,6 +89,7 @@ function writeMutationError(response: ApiResponse, error: unknown): void {
   if (error instanceof SubmissionStaleError) return writeError(response, 409, "This submission changed elsewhere. Refresh it and try again.")
   if (error instanceof SubmissionLockedError) return writeError(response, 409, "This submission can no longer be changed.")
   if (error instanceof SubmissionInvalidError) return writeError(response, 400, "The submission details are invalid.")
+  if (error instanceof SubmissionConflictError) return writeError(response, 409, "One or more repeated times have already been booked. Choose a different pattern or time.")
   writeError(response, 500, "The submission could not be changed.")
 }
 

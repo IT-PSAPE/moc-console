@@ -17,6 +17,10 @@ export class SubmissionInvalidError extends Error {
   constructor() { super("Submission details are invalid"); this.name = "SubmissionInvalidError" }
 }
 
+export class SubmissionConflictError extends Error {
+  constructor() { super("Submission conflicts with an existing booking"); this.name = "SubmissionConflictError" }
+}
+
 export type UpdateSubmissionResult = { entityId: string; submission: PublicSubmission }
 export type DeleteSubmissionResult = { entityId: string }
 
@@ -45,6 +49,7 @@ function throwMutationError(result: Record<string, unknown>): void {
   if (result.error === "stale") throw new SubmissionStaleError()
   if (result.error === "locked") throw new SubmissionLockedError()
   if (result.error === "invalid") throw new SubmissionInvalidError()
+  if (result.error === "conflict") throw new SubmissionConflictError()
 }
 
 function parseUpdateResult(value: unknown): UpdateSubmissionResult {
@@ -66,17 +71,20 @@ function parseDeleteResult(value: unknown): DeleteSubmissionResult {
 function createProductionStore(): PublicSubmissionStore {
   return {
     async lookup(trackingCode) {
+      if (trackingCode.startsWith("VEN-")) {
+        const { data, error } = await getSupabaseAdmin().rpc("api_lookup_tracking_venue_booking", { p_tracking_code: trackingCode })
+        if (error) throw new Error("Venue tracking lookup failed")
+        return data === null ? null : parseSubmission(data)
+      }
       const { data, error } = await getSupabaseAdmin().rpc("api_lookup_tracking_submission", { p_tracking_code: trackingCode })
       if (error) throw new Error("Tracking lookup failed")
-      return data === null ? null : parseSubmission(data)
+      if (data === null) return null
+      return parseSubmission(data)
     },
     async update(trackingCode, type, updatedAt, data) {
-      const result = await getSupabaseAdmin().rpc("api_update_tracking_submission", {
-        p_tracking_code: trackingCode,
-        p_type: type,
-        p_updated_at: updatedAt,
-        p_data: data,
-      })
+      const result = type === "venue_booking"
+        ? await getSupabaseAdmin().rpc("api_update_tracking_venue_booking", { p_tracking_code: trackingCode, p_updated_at: updatedAt, p_data: data })
+        : await getSupabaseAdmin().rpc("api_update_tracking_submission", { p_tracking_code: trackingCode, p_type: type, p_updated_at: updatedAt, p_data: data })
       if (result.error) throw new Error("Tracking update failed")
       return parseUpdateResult(result.data)
     },

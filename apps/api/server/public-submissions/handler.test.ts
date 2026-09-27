@@ -8,6 +8,7 @@ import type { RateLimitDecision, RateLimitPolicy } from "../rate-limit.js"
 import { handlePublicSubmission, type PublicSubmissionHandlerDeps } from "./handler.js"
 import { parseDeleteBody, parseLookupBody, parseUpdateBody, type PublicSubmission } from "./input.js"
 import {
+  SubmissionConflictError,
   SubmissionInvalidError,
   SubmissionLockedError,
   SubmissionNotFoundError,
@@ -121,6 +122,7 @@ function venueUpdateData(): Record<string, unknown> {
     eventId: "a0cced0a-13e7-4f38-82ee-c437de61fe35",
     eventOther: null,
     slotStarts: ["2030-09-25T10:00:00.000Z"],
+    recurrence: null,
   }
 }
 
@@ -150,6 +152,16 @@ describe("public submission input", () => {
       data: { ...venueUpdateData(), eventId: null, eventOther: "Youth night" },
     })
     assert.notEqual(typeof customVenue, "string")
+    const recurringVenue = parseUpdateBody({
+      trackingCode: "VEN-ABC123",
+      type: "venue_booking",
+      updatedAt,
+      data: {
+        ...venueUpdateData(),
+        recurrence: { custom: true, frequency: "week", interval: 1, weekdays: [2], end: { type: "count", count: 6 } },
+      },
+    })
+    assert.notEqual(typeof recurringVenue, "string")
   })
 
   it("rejects mismatched prefixes, partial data, unknown fields, and oversized text", () => {
@@ -160,6 +172,7 @@ describe("public submission input", () => {
     assert.equal(typeof parseUpdateBody({ trackingCode: "BKG-ABC123", type: "booking", updatedAt, data: { ...bookingUpdateData(), checkedOutAt: "2020-01-01T10:00:00.000Z" } }), "string")
     assert.equal(typeof parseUpdateBody({ trackingCode: "VEN-ABC123", type: "venue_booking", updatedAt, data: { ...venueUpdateData(), eventId: null, eventOther: null } }), "string")
     assert.equal(typeof parseUpdateBody({ trackingCode: "VEN-ABC123", type: "venue_booking", updatedAt, data: { ...venueUpdateData(), eventOther: "Also custom" } }), "string")
+    assert.equal(typeof parseUpdateBody({ trackingCode: "VEN-ABC123", type: "venue_booking", updatedAt, data: { ...venueUpdateData(), recurrence: { custom: true, frequency: "week", interval: 1, weekdays: [], end: { type: "count", count: 1 } } } }), "string")
   })
 
   it("requires exact delete fields", () => {
@@ -250,11 +263,12 @@ describe("public submission handler", () => {
     assert.equal(result.status, 200)
   })
 
-  it("maps stale, locked, invalid, and missing mutations", async () => {
+  it("maps stale, locked, invalid, conflicting, and missing mutations", async () => {
     for (const [error, status] of [
       [new SubmissionStaleError(), 409],
       [new SubmissionLockedError(), 409],
       [new SubmissionInvalidError(), 400],
+      [new SubmissionConflictError(), 409],
       [new SubmissionNotFoundError(), 404],
     ] as const) {
       const result = createResponse()

@@ -421,7 +421,7 @@ async function buildTokens<K extends NotificationEventKey>(
         venueName: p.venueName,
         startsAt: p.startsAt,
         endsAt: p.endsAt,
-        status: deriveVenueBookingPhase(p.startsAt, p.endsAt, cancelled),
+        status: cancelled ? "cancelled" : typeof enriched.status === "string" ? enriched.status : deriveVenueBookingPhase(p.startsAt, p.endsAt, false),
         slotCount: String(venueBookingSlotCount(p.startsAt, p.endsAt)),
         duration: formatVenueBookingDuration(p.startsAt, p.endsAt),
         changeSummary: requesterMutation.changeSummary,

@@ -80,6 +80,7 @@ const VENUE_BOOKING_TOKENS = specs(
   "title", "status", "requesterName",
   "venueName", "venueLocation", "eventName",
   "startsAt", "endsAt", "slotCount", "duration", "notes",
+  "repeatPattern", "occurrenceCount",
   "trackingCode",
   // cancelReason / cancelledAt — populated for venue_booking.cancelled only.
   "cancelReason", "cancelledAt", "changeSummary",
@@ -161,7 +162,7 @@ export const DEFAULT_TEMPLATES: Record<MessageType, string> = {
   "booking.stale":
     "⏰ <b>Booking needs attention</b>\n\n📌 <b>Title:</b> {{title}} — {{itemCount}} item(s)\n🔄 <b>Status:</b> <i>{{status}}</i>\n⚠️ {{staleReason}}\n⏳ Outstanding for {{staleDays}} day(s)\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "venue_booking.created":
-    "✨ <b>New venue booking</b>\n\n📌 <b>Title:</b> {{title}}\n🏛 <b>Venue:</b> {{venueName}}\n🎯 <b>Event:</b> {{eventName}}\n🗓 <b>When:</b> {{startsAt}} → {{endsAt}}\n🙋 <b>From:</b> {{requesterName}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
+    "✨ <b>New venue booking</b>\n\n📌 <b>Title:</b> {{title}}\n🏛 <b>Venue:</b> {{venueName}}\n🎯 <b>Event:</b> {{eventName}}\n🗓 <b>When:</b> {{startsAt}} → {{endsAt}}\n🔁 <b>Repeat:</b> {{repeatPattern}} · {{occurrenceCount}} occurrences\n🙋 <b>From:</b> {{requesterName}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "venue_booking.requester_updated":
     "✏️ <b>Venue booking updated by requester</b>\n\n📌 <b>Title:</b> {{title}}\n🏛 <b>Venue:</b> {{venueName}}\n🗓 <b>When:</b> {{startsAt}} → {{endsAt}}\n🙋 <b>From:</b> {{requesterName}}\n📝 <b>Changed:</b> {{changeSummary}}\n\n🔗 <a href=\"{{linkUrl}}\">Open the booking</a>",
   "venue_booking.requester_deleted":
@@ -389,6 +390,8 @@ const VENUE_BOOKING_SAMPLE: TokenValues = {
   endsAt: "22 May, 8:00 PM",
   slotCount: "4",
   duration: "2h",
+  repeatPattern: "Every week until 31 December 2026",
+  occurrenceCount: "32",
   notes: "Need the stage cleared of the conference chairs",
   trackingCode: "VEN-3B81D0",
   cancelReason: "",

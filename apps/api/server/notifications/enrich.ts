@@ -199,13 +199,58 @@ type VenueBookingRow = {
   tracking_code: string;
   event_other: string | null;
   notes: string | null;
+  status: string;
   starts_at: string;
   ends_at: string;
   cancel_reason: string | null;
   cancelled_at: string | null;
+  recurrence: unknown;
+  venue_booking_slots: Array<{ occurrence_index: number; slot_start: string; slot_end: string }>;
   venues: VenueBookingRelation<{ name: string; location: string | null }>;
   venue_events: VenueBookingRelation<{ name: string }>;
 };
+
+function venueRecurrenceSummary(value: unknown): string | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const recurrence = value as Record<string, unknown>;
+  const interval = Number(recurrence.interval);
+  const frequency = typeof recurrence.frequency === "string" ? recurrence.frequency : "";
+  const end = recurrence.end && typeof recurrence.end === "object" && !Array.isArray(recurrence.end) ? recurrence.end as Record<string, unknown> : null;
+  if (!Number.isInteger(interval) || interval < 1 || !["day", "week", "month"].includes(frequency) || !end) return undefined;
+  const unit = interval === 1 ? frequency : `${frequency}s`;
+  const base = interval === 1 ? `Every ${unit}` : `Every ${interval} ${unit}`;
+  if (end.type === "count") return `${base}, ${String(end.count)} times`;
+  if (end.type === "date") return `${base} until ${String(end.date)}`;
+  return `${base} until the end of the year`;
+}
+
+type VenueBookingSlotWindow = { occurrence_index: number; slot_start: string; slot_end: string };
+
+export function deriveVenueBookingSeriesStatus(
+  status: string,
+  slots: VenueBookingSlotWindow[],
+  startsAt: string,
+  endsAt: string,
+  at: Date = new Date(),
+): string {
+  if (status === "cancelled") return "cancelled";
+  const occurrences = new Map<number, { startsAt: number; endsAt: number }>();
+  for (const slot of slots) {
+    const start = new Date(slot.slot_start).getTime();
+    const end = new Date(slot.slot_end).getTime();
+    const current = occurrences.get(slot.occurrence_index);
+    occurrences.set(slot.occurrence_index, { startsAt: Math.min(current?.startsAt ?? start, start), endsAt: Math.max(current?.endsAt ?? end, end) });
+  }
+  const now = at.getTime();
+  if (occurrences.size === 0) {
+    if (now >= new Date(endsAt).getTime()) return "completed";
+    if (now >= new Date(startsAt).getTime()) return "in_progress";
+    return "booked";
+  }
+  if ([...occurrences.values()].some((occurrence) => occurrence.startsAt <= now && now < occurrence.endsAt)) return "in_progress";
+  const lastEnd = Math.max(...[...occurrences.values()].map((occurrence) => occurrence.endsAt));
+  return now >= lastEnd ? "completed" : "booked";
+}
 
 // PostgREST returns an embedded row as an object or, for some relationship
 // shapes, a one-element array. Both mean the same single related row.
@@ -215,16 +260,15 @@ function firstRelated<T>(relation: VenueBookingRelation<T>): T | null {
 }
 
 // Looked up by id (venue_bookings.id === notification_outbox.entity_id),
-// the same identifier enrichRequest uses. `status` is deliberately not
-// returned here: dispatch.ts's buildTokens derives it from startsAt/endsAt
-// and the event that fired, which already wins over anything this would add.
+// the same identifier enrichRequest uses. Series status is derived from the
+// concrete occurrences so gaps between repeat dates remain "booked".
 export async function enrichVenueBooking(venueBookingId: string, options?: { throwOnError?: boolean }): Promise<TokenValues> {
   try {
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
       .from("venue_bookings")
       .select(
-        "title, requested_by, tracking_code, event_other, notes, starts_at, ends_at, cancel_reason, cancelled_at, venues:venue_id(name, location), venue_events:event_id(name)",
+        "title, requested_by, tracking_code, event_other, notes, status, starts_at, ends_at, recurrence, cancel_reason, cancelled_at, venue_booking_slots(occurrence_index, slot_start, slot_end), venues:venue_id(name, location), venue_events:event_id(name)",
       )
       .eq("id", venueBookingId)
       .maybeSingle();
@@ -233,6 +277,8 @@ export async function enrichVenueBooking(venueBookingId: string, options?: { thr
     const row = data as unknown as VenueBookingRow;
     const venue = firstRelated(row.venues);
     const event = firstRelated(row.venue_events);
+    const occurrenceCount = new Set(row.venue_booking_slots.map((slot) => slot.occurrence_index)).size;
+    const repeatPattern = venueRecurrenceSummary(row.recurrence);
     return {
       title: row.title,
       requesterName: row.requested_by,
@@ -248,6 +294,9 @@ export async function enrichVenueBooking(venueBookingId: string, options?: { thr
       notes: row.notes,
       cancelReason: row.cancel_reason,
       cancelledAt: fmtDate(row.cancelled_at),
+      status: deriveVenueBookingSeriesStatus(row.status, row.venue_booking_slots, row.starts_at, row.ends_at),
+      repeatPattern,
+      occurrenceCount: row.recurrence ? String(occurrenceCount) : undefined,
     };
   } catch (error) {
     if (options?.throwOnError) throw error;

@@ -80,10 +80,25 @@ function validBookingData(data: Record<string, unknown>): boolean {
 }
 
 function validVenueData(data: Record<string, unknown>): boolean {
-  const keys = ["requestedBy", "venueId", "eventId", "eventOther", "slotStarts"]
+  const keys = ["requestedBy", "venueId", "eventId", "eventOther", "slotStarts", "recurrence"]
   if (!hasExactKeys(data, keys) || !isText(data.requestedBy, 200) || !isUuid(data.venueId) || !isDateArray(data.slotStarts, 48)) return false
   if (!(data.eventId === null || isUuid(data.eventId)) || !isNullableText(data.eventOther, 120)) return false
   return (data.eventId === null) === (typeof data.eventOther === "string" && data.eventOther.trim().length > 0)
+    && validVenueRecurrence(data.recurrence)
+}
+
+function validVenueRecurrence(value: unknown): boolean {
+  if (value === null) return true
+  if (!isRecord(value) || !hasExactKeys(value, ["custom", "frequency", "interval", "weekdays", "end"]) || typeof value.custom !== "boolean") return false
+  if (typeof value.frequency !== "string" || !["day", "week", "month"].includes(value.frequency)) return false
+  if (!Number.isInteger(value.interval) || Number(value.interval) < 1 || Number(value.interval) > 365) return false
+  if (!Array.isArray(value.weekdays) || value.weekdays.length > 7 || !value.weekdays.every((day) => Number.isInteger(day) && day >= 1 && day <= 7)) return false
+  if (new Set(value.weekdays).size !== value.weekdays.length || (value.frequency === "week" && value.weekdays.length === 0)) return false
+  if (!isRecord(value.end) || typeof value.end.type !== "string") return false
+  if (value.end.type === "year_end") return hasExactKeys(value.end, ["type"])
+  if (value.end.type === "date") return hasExactKeys(value.end, ["type", "date"]) && typeof value.end.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value.end.date)
+  return value.end.type === "count" && hasExactKeys(value.end, ["type", "count"])
+    && Number.isInteger(value.end.count) && Number(value.end.count) >= 2 && Number(value.end.count) <= 366
 }
 
 function validUpdateData(type: SubmissionType, data: Record<string, unknown>): boolean {
