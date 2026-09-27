@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import type { VenueBooking, VenueBookingPhase } from "@moc/types/venues";
-import { deriveVenueBookingPhase } from "@moc/types/venues";
+import { deriveVenueBookingSeriesPhase } from "@moc/types/venues";
 import { areSetsEqual } from "@/utils/sets";
 import { useQueryText } from "@/hooks/use-query-text";
 import { useVenueBookings } from "./venue-bookings-provider";
+import { venueBookingOverlapsDateRange } from "./venue-booking-date-range";
 
 // ─── Filter / Sort state ───────────────────────────────
 
@@ -49,15 +50,10 @@ export function useVenueBookingFilters(bookings: VenueBooking[]) {
             );
         }
 
-        // Date range (against the booked window's start)
-        if (filters.dateRange.start) {
-            const start = new Date(filters.dateRange.start);
-            result = result.filter((b) => new Date(b.startsAt) >= start);
-        }
-        if (filters.dateRange.end) {
-            const end = new Date(filters.dateRange.end);
-            result = result.filter((b) => new Date(b.startsAt) <= end);
-        }
+        // A recurring series belongs in a range when any concrete occurrence
+        // overlaps it. Legacy rows without embedded slots fall back to the
+        // parent booking window.
+        result = result.filter((booking) => venueBookingOverlapsDateRange(booking, filters.dateRange));
 
         // Sort
         const dir = filters.sortDirection === "asc" ? 1 : -1;
@@ -76,7 +72,7 @@ export function useVenueBookingFilters(bookings: VenueBooking[]) {
 
         return {
             calendarFiltered: result,
-            filtered: result.filter((booking) => filters.phases.has(deriveVenueBookingPhase(booking.status, booking.startsAt, booking.endsAt, at))),
+            filtered: result.filter((booking) => filters.phases.has(deriveVenueBookingSeriesPhase(booking.status, booking.occurrences, at, booking))),
         };
     }, [at, bookings, filters]);
 

@@ -2,7 +2,7 @@ import { GroupedList } from "@moc/ui/components/display/grouped-list";
 import { Indicator } from "@moc/ui/components/display/indicator";
 import { Label } from "@moc/ui/components/display/text";
 import type { VenueBooking } from "@moc/types/venues";
-import { deriveVenueBookingPhase, venueBookingPhaseGroups } from "@moc/types/venues";
+import { deriveVenueBookingSeriesPhase, venueBookingPhaseGroups } from "@moc/types/venues";
 import { ResponsiveDetailAction } from "@/features/responsive-detail-action";
 import { routes } from "@/screens/console-routes";
 import { VenueBookingItemContent } from "./venue-booking-item-content";
@@ -26,7 +26,7 @@ export function VenueBookingListView({ onSelect, bookings }: { onSelect: (bookin
     return (
         <GroupedList>
             {venueBookingPhaseGroups.map((group) => {
-                const items = bookings.filter((booking) => deriveVenueBookingPhase(booking.status, booking.startsAt, booking.endsAt, at) === group.key);
+                const items = bookings.filter((booking) => deriveVenueBookingSeriesPhase(booking.status, booking.occurrences, at, booking) === group.key);
                 if (items.length === 0) return null;
                 return (
                     <GroupedList.Group key={group.key}>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import type { VenueBooking, VenueBookingPhase } from "@moc/types/venues";
-import { deriveVenueBookingPhase } from "@moc/types/venues";
+import { deriveVenueBookingSeriesPhase } from "@moc/types/venues";
 import { useVenueBookingCancel } from "./use-venue-booking-cancel";
 import { useVenueBookings } from "./venue-bookings-provider";
 
@@ -34,7 +34,7 @@ export function useVenueBookingKanbanStatusChange() {
         if (!booking || !event.over) return;
 
         const targetPhase = event.over.id as VenueBookingPhase;
-        const currentPhase = deriveVenueBookingPhase(booking.status, booking.startsAt, booking.endsAt, at);
+        const currentPhase = deriveVenueBookingSeriesPhase(booking.status, booking.occurrences, at, booking);
         if (targetPhase === currentPhase) return;
 
         if (targetPhase === "cancelled") {

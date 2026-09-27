@@ -16,6 +16,7 @@ export const VENUE_BOOKING_SELECT = `
   status,
   starts_at,
   ends_at,
+  recurrence,
   cancelled_at,
   cancelled_by,
   cancel_reason,
@@ -23,12 +24,14 @@ export const VENUE_BOOKING_SELECT = `
   updated_at,
   venue:venue_id(name, location),
   event:event_id(name),
-  canceller:cancelled_by(name, surname)
+  canceller:cancelled_by(name, surname),
+  slots:venue_booking_slots(occurrence_index, slot_start, slot_end)
 `;
 
 type VenueRelation = { name: string; location: string | null } | null;
 type EventRelation = { name: string } | null;
 type CancellerRelation = { name: string; surname: string } | null;
+type SlotRelation = { occurrence_index: number; slot_start: string; slot_end: string };
 
 export type VenueBookingRow = {
   id: string;
@@ -43,6 +46,7 @@ export type VenueBookingRow = {
   status: VenueBookingStatus;
   starts_at: string;
   ends_at: string;
+  recurrence: VenueBooking["recurrence"];
   cancelled_at: string | null;
   cancelled_by: string | null;
   cancel_reason: string | null;
@@ -51,7 +55,21 @@ export type VenueBookingRow = {
   venue: VenueRelation;
   event: EventRelation;
   canceller: CancellerRelation;
+  slots: SlotRelation[];
 };
+
+function mapOccurrences(slots: SlotRelation[]): VenueBooking["occurrences"] {
+  const grouped = new Map<number, { index: number; startsAt: string; endsAt: string }>();
+  for (const slot of slots) {
+    const current = grouped.get(slot.occurrence_index);
+    grouped.set(slot.occurrence_index, {
+      index: slot.occurrence_index,
+      startsAt: !current || slot.slot_start < current.startsAt ? slot.slot_start : current.startsAt,
+      endsAt: !current || slot.slot_end > current.endsAt ? slot.slot_end : current.endsAt,
+    });
+  }
+  return [...grouped.values()].sort((left, right) => left.index - right.index);
+}
 
 function formatCancellerName(canceller: CancellerRelation): string | null {
   if (!canceller) return null;
@@ -77,6 +95,8 @@ export function mapVenueBookingRow(row: VenueBookingRow): VenueBooking {
     status: row.status,
     startsAt: row.starts_at,
     endsAt: row.ends_at,
+    recurrence: row.recurrence,
+    occurrences: mapOccurrences(row.slots),
     cancelledAt: row.cancelled_at,
     cancelledBy: formatCancellerName(row.canceller) ?? row.cancelled_by,
     cancelReason: row.cancel_reason,

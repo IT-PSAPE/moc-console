@@ -2,7 +2,7 @@ import { Indicator } from "@moc/ui/components/display/indicator";
 import { KanbanBoard } from "@moc/ui/components/display/kanban-board";
 import { Label } from "@moc/ui/components/display/text";
 import type { VenueBooking } from "@moc/types/venues";
-import { deriveVenueBookingPhase, venueBookingPhaseGroups } from "@moc/types/venues";
+import { deriveVenueBookingSeriesPhase, venueBookingPhaseGroups } from "@moc/types/venues";
 import { DraggableVenueBookingItem } from "./draggable-venue-booking-item";
 import { VenueBookingItem } from "./venue-booking-item";
 import { VenueBookingCancelModal } from "./venue-booking-cancel-modal";
@@ -23,7 +23,7 @@ export function VenueBookingKanbanView({ bookings }: { bookings: VenueBooking[] 
             <KanbanBoard onDragStart={drag.actions.handleDragStart} onDragEnd={drag.actions.handleDragEnd}>
                 <KanbanBoard.Columns>
                     {venueBookingPhaseGroups.map((group) => {
-                        const items = bookings.filter((booking) => deriveVenueBookingPhase(booking.status, booking.startsAt, booking.endsAt, at) === group.key);
+                        const items = bookings.filter((booking) => deriveVenueBookingSeriesPhase(booking.status, booking.occurrences, at, booking) === group.key);
                         return (
                             <KanbanBoard.Column key={group.key} id={group.key}>
                                 <KanbanBoard.ColumnHeader>

@@ -1,13 +1,14 @@
-import { Building2, CalendarClock, CircleDot, Clock, History, MapPin, Target, Ticket, User } from "lucide-react";
+import { Building2, CalendarClock, CircleDot, Clock, History, MapPin, Repeat2, Target, Ticket, User } from "lucide-react";
 import { Badge } from "@moc/ui/components/display/badge";
 import { MetaRow } from "@moc/ui/components/display/meta-row";
 import { Paragraph } from "@moc/ui/components/display/text";
 import type { VenueBooking } from "@moc/types/venues";
-import { deriveVenueBookingPhase, isOtherVenueBookingEvent, venueBookingEventLabel, venueBookingPhaseColor, venueBookingPhaseLabel } from "@moc/types/venues";
+import { deriveVenueBookingSeriesPhase, formatVenueRecurrenceEndLabel, formatVenueRecurrenceLabel, isOtherVenueBookingEvent, venueBookingEventLabel, venueBookingPhaseColor, venueBookingPhaseLabel } from "@moc/types/venues";
 import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
 
 export function VenueBookingMetaFields({ booking, at }: { booking: VenueBooking; at: Date }) {
-  const phase = deriveVenueBookingPhase(booking.status, booking.startsAt, booking.endsAt, at);
+  const phase = deriveVenueBookingSeriesPhase(booking.status, booking.occurrences, at, booking);
+  const recurrenceEndLabel = formatVenueRecurrenceEndLabel(booking.recurrence);
 
   return (
     <div className="space-y-3">
@@ -24,6 +25,12 @@ export function VenueBookingMetaFields({ booking, at }: { booking: VenueBooking;
       </MetaRow>
       <MetaRow icon={<CalendarClock />} label="Booked for">
         <Paragraph.sm>{formatUtcIsoInBrowserTimeZone(booking.startsAt)} – {formatUtcIsoInBrowserTimeZone(booking.endsAt, { hour: "2-digit", minute: "2-digit" })}</Paragraph.sm>
+      </MetaRow>
+      <MetaRow icon={<Repeat2 />} label="Repeats">
+        <div className="flex flex-col">
+          <Paragraph.sm>{formatVenueRecurrenceLabel(booking.recurrence)}</Paragraph.sm>
+          {recurrenceEndLabel && <Paragraph.xs className="text-tertiary">{booking.occurrences.length} occurrences · {recurrenceEndLabel}</Paragraph.xs>}
+        </div>
       </MetaRow>
       <MetaRow icon={<Ticket />} label="Tracking code"><Paragraph.sm>{booking.trackingCode}</Paragraph.sm></MetaRow>
       <MetaRow icon={<User />} label="Requested by"><Paragraph.sm>{booking.requestedBy}</Paragraph.sm></MetaRow>
