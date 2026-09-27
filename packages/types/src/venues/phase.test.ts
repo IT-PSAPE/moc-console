@@ -22,4 +22,10 @@ describe('deriveVenueBookingSeriesPhase', () => {
     expect(deriveVenueBookingSeriesPhase('auto', [], new Date('2026-09-08T10:30:00.000Z'), fallback)).toBe('in_progress')
     expect(deriveVenueBookingSeriesPhase('auto', [], new Date('2026-09-09T10:30:00.000Z'), fallback)).toBe('completed')
   })
+
+  test('shows the approval decision before the clock takes over', () => {
+    expect(deriveVenueBookingSeriesPhase('approved', occurrences, new Date('2026-08-30T10:00:00.000Z'))).toBe('approved')
+    expect(deriveVenueBookingSeriesPhase('approved', occurrences, new Date('2026-09-01T10:30:00.000Z'))).toBe('in_progress')
+    expect(deriveVenueBookingSeriesPhase('rejected', occurrences, new Date('2026-09-01T10:30:00.000Z'))).toBe('rejected')
+  })
 })

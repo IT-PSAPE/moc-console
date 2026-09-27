@@ -27,7 +27,7 @@ export type VenueBooking = {
   requestedBy: string;
   notes: string | null;
   /**
-   * The stored state, which is only ever 'auto' or 'cancelled'. For the
+   * The stored state: 'auto', 'approved', 'rejected' or 'cancelled'. For the
    * status a reader should see, call deriveVenueBookingPhase — do not branch
    * on this field in UI.
    */
@@ -39,6 +39,10 @@ export type VenueBooking = {
   cancelledAt: string | null;
   cancelledBy: string | null;
   cancelReason: string | null;
+  approvedAt: string | null;
+  approvedBy: string | null;
+  rejectedAt: string | null;
+  rejectedBy: string | null;
   createdAt: string;
   updatedAt: string;
 };

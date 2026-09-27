@@ -16,8 +16,10 @@ export const VENUE_SLOTS_PER_DAY =
 
 export const venueBookingPhaseLabel: Record<VenueBookingPhase, string> = {
   booked: "Booked",
+  approved: "Approved",
   in_progress: "In Progress",
   completed: "Completed",
+  rejected: "Rejected",
   cancelled: "Cancelled",
 };
 
@@ -25,18 +27,22 @@ export const venueBookingPhaseLabel: Record<VenueBookingPhase, string> = {
 
 export const venueBookingPhaseColor = {
   booked: "blue",
+  approved: "purple",
   in_progress: "yellow",
   completed: "green",
+  rejected: "red",
   cancelled: "gray",
 } as const satisfies Record<VenueBookingPhase, string>;
 
 // ─── Groups ────────────────────────────────────────────
-// Kanban columns. Only the Cancelled column is a real destination: the other
-// three are derived from the clock, so a card cannot be dragged between them.
+// Kanban columns. Approved, Rejected and Cancelled are real destinations; the
+// others are derived from the clock, so a card cannot be dragged into them.
 
 export const venueBookingPhaseGroups = [
   { key: "booked", label: "Booked", color: "blue" },
+  { key: "approved", label: "Approved", color: "purple" },
   { key: "in_progress", label: "In Progress", color: "yellow" },
   { key: "completed", label: "Completed", color: "green" },
+  { key: "rejected", label: "Rejected", color: "red" },
   { key: "cancelled", label: "Cancelled", color: "gray" },
 ] as const;

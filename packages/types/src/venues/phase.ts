@@ -19,12 +19,12 @@ export function deriveVenueBookingPhase(
   endsAt: string,
   at: Date = new Date(),
 ): VenueBookingPhase {
-  if (status === "cancelled") return "cancelled";
+  if (status === "cancelled" || status === "rejected") return status;
 
   const now = at.getTime();
   if (now >= new Date(endsAt).getTime()) return "completed";
   if (now >= new Date(startsAt).getTime()) return "in_progress";
-  return "booked";
+  return status === "approved" ? "approved" : "booked";
 }
 
 export function deriveVenueBookingSeriesPhase(
@@ -33,7 +33,7 @@ export function deriveVenueBookingSeriesPhase(
   at = new Date(),
   fallback?: { startsAt: string; endsAt: string },
 ): VenueBookingPhase {
-  if (status === "cancelled") return "cancelled";
+  if (status === "cancelled" || status === "rejected") return status;
   if (occurrences.length === 0 && fallback) {
     const bounds = getVenueBookingSeriesBounds(occurrences, fallback.startsAt, fallback.endsAt);
     return deriveVenueBookingPhase(status, bounds.startsAt, bounds.endsAt, at);
@@ -41,5 +41,5 @@ export function deriveVenueBookingSeriesPhase(
   if (occurrences.some((occurrence) => new Date(occurrence.startsAt) <= at && at < new Date(occurrence.endsAt))) return "in_progress";
   const lastOccurrence = occurrences[occurrences.length - 1];
   if (lastOccurrence && at >= new Date(lastOccurrence.endsAt)) return "completed";
-  return "booked";
+  return status === "approved" ? "approved" : "booked";
 }
