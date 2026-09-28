@@ -15,9 +15,9 @@ type TrackingShareData = {
 export function buildTrackingShareData(trackingCode: string, origin: string): TrackingShareData {
   const url = `${origin.replace(/\/$/, "")}/track`
   return {
-    title: "MOC request tracking details",
+    title: "PE Church request tracking details",
     text: [
-      "MOC REQUEST TRACKING DETAILS",
+      "PE CHURCH REQUEST TRACKING DETAILS",
       "",
       "IMPORTANT: Keep this tracking code safe and private.",
       "",

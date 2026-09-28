@@ -7,10 +7,10 @@ describe("buildTrackingShareData", () => {
   it("separates the private tracking code and tracking page into scannable sections", () => {
     const share = buildTrackingShareData("REQ-123456789ABC", "https://requests.example.com")
 
-    assert.equal(share.title, "MOC request tracking details")
+    assert.equal(share.title, "PE Church request tracking details")
     assert.equal(share.url, "https://requests.example.com/track")
     assert.equal(share.text, [
-      "MOC REQUEST TRACKING DETAILS",
+      "PE CHURCH REQUEST TRACKING DETAILS",
       "",
       "IMPORTANT: Keep this tracking code safe and private.",
       "",
