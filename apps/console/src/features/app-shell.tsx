@@ -44,8 +44,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </Sidebar.Panel>
                 )}
 
-                <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-2">
-                    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl bg-primary">
+                <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:p-2">
+                    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-primary md:rounded-xl">
                         <TopBar />
                         <ScrollArea id="main-content" tabIndex={-1} className="flex-1 min-h-0 overflow-y-auto overscroll-contain focus-visible:outline-2 focus-visible:outline-border-brand">
                             <ScrollArea.Viewport>
