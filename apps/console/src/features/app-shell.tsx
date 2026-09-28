@@ -5,7 +5,8 @@ import { EditProfileModal } from './account/edit-profile-modal'
 import { Drawer } from '@moc/ui/components/overlays/drawer'
 import { useIsMobile } from '@moc/ui/hooks/use-is-mobile'
 import { AppNavigation } from './app-navigation'
-import { ScrollArea } from '@moc/ui/components/display/scroll-area';
+import { ScrollArea } from '@moc/ui/components/display/scroll-area'
+import { TopBar } from './topbar'
 
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -44,13 +45,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 )}
 
                 <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-2">
-                    <ScrollArea id="main-content" tabIndex={-1} className="flex-1 min-h-0 rounded-xl overflow-y-auto overscroll-contain bg-primary focus-visible:outline-2 focus-visible:outline-border-brand">
-                        <ScrollArea.Viewport>
-                            <ScrollArea.Content className="h-full">
-                                {children}
-                            </ScrollArea.Content>
-                        </ScrollArea.Viewport>
-                    </ScrollArea>
+                    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl bg-primary">
+                        <TopBar />
+                        <ScrollArea id="main-content" tabIndex={-1} className="flex-1 min-h-0 overflow-y-auto overscroll-contain focus-visible:outline-2 focus-visible:outline-border-brand">
+                            <ScrollArea.Viewport>
+                                {/* Vertical scrolling only: Base UI sizes content to fit-content, which lets one long line widen the whole page. */}
+                                <ScrollArea.Content className="h-full w-full min-w-0!">
+                                    {children}
+                                </ScrollArea.Content>
+                            </ScrollArea.Viewport>
+                        </ScrollArea>
+                    </div>
                 </main>
             </div>
 
