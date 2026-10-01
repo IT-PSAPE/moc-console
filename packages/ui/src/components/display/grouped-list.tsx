@@ -1,3 +1,4 @@
+import { ListSurfaceContext } from "./list-surface-context";
 import { cn } from "@moc/utils/cn";
 import type { HTMLAttributes } from "react";
 
@@ -14,7 +15,7 @@ function GroupedListHeader({ children, className, ...props }: HTMLAttributes<HTM
 }
 
 function GroupedListContent({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-col gap-1.5", className)} {...props}>{children}</div>;
+  return <ListSurfaceContext.Provider value={true}><div className={cn("flex flex-col overflow-hidden rounded-md border border-secondary bg-primary divide-y divide-secondary", className)} {...props}>{children}</div></ListSurfaceContext.Provider>;
 }
 
 export const GroupedList = Object.assign(GroupedListRoot, {

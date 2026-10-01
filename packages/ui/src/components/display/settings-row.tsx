@@ -18,7 +18,7 @@ export function SettingsRow({ label, description, children, className }: Setting
                     <Paragraph.xs className="text-tertiary pt-1">{description}</Paragraph.xs>
                 )}
             </div>
-            <div className="flex-1 min-w-0">{children}</div>
+            <div className="flex min-w-0 flex-1 justify-end">{children}</div>
         </div>
     )
 }

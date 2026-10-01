@@ -1,4 +1,6 @@
 import { Button as BaseButton } from '@base-ui/react/button'
+import { useContext } from 'react'
+import { ListSurfaceContext } from '../display/list-surface-context'
 import { cn } from '@moc/utils/cn'
 import type { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react'
 
@@ -35,14 +37,18 @@ function InteractiveSurfaceLink({ children, className, render, ...props }: Inter
     )
 }
 
+const rowClassName = 'w-full transition-colors hover:bg-tertiary active:bg-tertiary'
+
 const cardClassName = 'w-full rounded-lg border border-secondary bg-primary shadow-xs transition-colors hover:bg-tertiary active:bg-tertiary'
 
 function InteractiveSurfaceCard({ className, ...props }: InteractiveSurfaceProps) {
-    return <InteractiveSurfaceRoot className={cn(cardClassName, className)} {...props} />
+    const isListRow = useContext(ListSurfaceContext)
+    return <InteractiveSurfaceRoot className={cn(isListRow ? rowClassName : cardClassName, className)} {...props} />
 }
 
 function InteractiveSurfaceCardLink({ className, ...props }: InteractiveSurfaceLinkProps) {
-    return <InteractiveSurfaceLink className={cn(cardClassName, className)} {...props} />
+    const isListRow = useContext(ListSurfaceContext)
+    return <InteractiveSurfaceLink className={cn(isListRow ? rowClassName : cardClassName, className)} {...props} />
 }
 
 export const InteractiveSurface = Object.assign(InteractiveSurfaceRoot, {

@@ -1,5 +1,6 @@
 import type { ChangeEvent } from 'react'
 import { ListChecks, Plus, Search } from 'lucide-react'
+import { DividedList } from '@moc/ui/components/display/divided-list'
 import { Button } from '@moc/ui/components/controls/button'
 import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import { Input } from '@moc/ui/components/form/input'
@@ -50,7 +51,7 @@ export function ChecklistTemplatesScreen() {
                         />
                     </Decision.Empty>
                     <Decision.Data>
-                        {meta.templates.map(renderTemplate)}
+                        <DividedList>{meta.templates.map(renderTemplate)}</DividedList>
                     </Decision.Data>
                 </Decision>
             </Page.Content>

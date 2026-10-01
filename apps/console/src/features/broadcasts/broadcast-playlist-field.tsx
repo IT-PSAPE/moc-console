@@ -1,3 +1,4 @@
+import { DividedList } from "@moc/ui/components/display/divided-list"
 import type { BroadcastKind } from "@moc/types/broadcast/broadcast"
 import { BROADCAST_FILE_ACCEPT, BROADCAST_KIND_LABELS, BROADCAST_MAX_FILE_BYTES, BROADCAST_MIN_FILE_BYTES } from "@moc/types/broadcast/broadcast-constants"
 import { Paragraph } from "@moc/ui/components/display/text"
@@ -59,7 +60,7 @@ export function BroadcastPlaylistField({ error, isChecking, isLocked, items, kin
         <BroadcastRejectedFiles rejections={rejections} onDismiss={onRejectionsDismiss} />
         {error ? <Paragraph.xs role="alert" aria-live="polite" className="text-error">{error}</Paragraph.xs> : null}
         {items.length > 0 ? (
-          <div className="flex flex-col gap-1.5">{items.map(renderItem)}</div>
+          <DividedList>{items.map(renderItem)}</DividedList>
         ) : (
           <Paragraph.xs className="text-quaternary">Files play top to bottom. Reorder them before saving.</Paragraph.xs>
         )}

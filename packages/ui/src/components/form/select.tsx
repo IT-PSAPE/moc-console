@@ -49,6 +49,7 @@ type SelectTriggerProps = Omit<ComponentProps<typeof BaseSelect.Trigger>, "child
     children?: ReactNode
     className?: string
     placeholder?: ReactNode
+    size?: "sm" | "md"
     state?: "active" | "inactive"
     style?: "outline" | "ghost"
 };
@@ -71,16 +72,21 @@ const triggerVariants = cv({
             ],
             ghost: ["rounded-md px-2 py-1.5"],
         },
+        size: {
+            sm: ["min-h-9 px-3 py-1.5 text-sm"],
+            md: [],
+        },
     },
     defaultVariants: {
+        size: "md",
         state: "inactive",
         style: "outline",
     },
 });
 
-function SelectTrigger({ children, className, placeholder, state, style = "outline", ...props }: SelectTriggerProps) {
+function SelectTrigger({ children, className, placeholder, size, state, style = "outline", ...props }: SelectTriggerProps) {
     return (
-        <BaseSelect.Trigger data-ui-control className={cn(triggerVariants({ state, style }), className)} {...props}>
+        <BaseSelect.Trigger data-ui-control className={cn(triggerVariants({ size, state, style }), className)} {...props}>
             {children ?? (
                 <>
                     <BaseSelect.Value className="min-w-0 flex-1 truncate" placeholder={placeholder} />
@@ -137,7 +143,7 @@ function SelectContent({ children, className }: { children: ReactNode; className
     );
 }
 
-function SelectItem({ children, className, ...props }: Styled<ComponentProps<typeof BaseSelect.Item>>) {
+function SelectItem({ children, className, description, ...props }: Styled<ComponentProps<typeof BaseSelect.Item>> & { description?: string | null }) {
     return (
         <BaseSelect.Item
             className={cn(
@@ -147,7 +153,10 @@ function SelectItem({ children, className, ...props }: Styled<ComponentProps<typ
             )}
             {...props}
         >
-            <BaseSelect.ItemText className="min-w-0 flex-1 truncate">{children}</BaseSelect.ItemText>
+            <span className="flex min-w-0 flex-1 flex-col">
+                <BaseSelect.ItemText className="truncate">{children}</BaseSelect.ItemText>
+                {description && <span className="paragraph-xs whitespace-normal text-tertiary">{description}</span>}
+            </span>
             <span className="flex size-4 shrink-0 items-center justify-center rounded-full border border-secondary group-data-[selected]:border-brand">
                 <BaseSelect.ItemIndicator keepMounted className="flex size-full items-center justify-center opacity-0 group-data-[selected]:opacity-100">
                     <span className="size-2 rounded-full bg-brand_solid" />

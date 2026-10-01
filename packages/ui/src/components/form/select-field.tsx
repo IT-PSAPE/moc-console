@@ -1,6 +1,6 @@
 import { Select } from "./select"
 
-export type SelectFieldItem<Value extends string> = { label: string; value: Value }
+export type SelectFieldItem<Value extends string> = { label: string; value: Value; description?: string | null }
 
 type SelectFieldProps<Value extends string> = {
   items: SelectFieldItem<Value>[]
@@ -16,7 +16,7 @@ export function SelectField<Value extends string>({ items, label, name, value, o
   }
 
   function renderItem(item: SelectFieldItem<Value>) {
-    return <Select.Item key={item.value} value={item.value}>{item.label}</Select.Item>
+    return <Select.Item key={item.value} value={item.value} description={item.description}>{item.label}</Select.Item>
   }
 
   return (

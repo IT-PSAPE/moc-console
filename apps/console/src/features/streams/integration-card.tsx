@@ -1,7 +1,7 @@
 import { Button } from "@moc/ui/components/controls/button"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Badge } from "@moc/ui/components/display/badge"
-import { Card } from "@moc/ui/components/display/card"
+import { ListItemCard } from "@moc/ui/components/display/list-item-card"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { Link2, RefreshCw, Unlink } from "lucide-react"
 import type { ReactNode } from "react"
@@ -23,11 +23,11 @@ type IntegrationCardProps = {
 
 export function IntegrationCard({ icon, name, isLoading, isConnected, accountLabel, canManage, onConnect, onDisconnect, isDisconnecting, needsReauth = false }: IntegrationCardProps) {
   if (isLoading) {
-    return <Card.Content><LoadingSpinner className="py-6" /></Card.Content>
+    return <ListItemCard.Root><LoadingSpinner className="py-6" /></ListItemCard.Root>
   }
 
   return (
-    <Card.Content className="flex flex-col items-stretch justify-between gap-4 p-4 sm:flex-row sm:items-center">
+    <ListItemCard.Root className="flex flex-col items-stretch justify-between gap-4 p-4 sm:flex-row sm:items-center">
       <div className="flex items-center gap-3">
         <div className="size-10 shrink-0 rounded-lg bg-secondary flex items-center justify-center overflow-hidden border border-secondary ring-2 ring-border-secondary/40">
           {icon}
@@ -87,6 +87,6 @@ export function IntegrationCard({ icon, name, isLoading, isConnected, accountLab
       {!canManage && !isConnected && (
         <Paragraph.xs className="text-quaternary shrink-0">Admin required</Paragraph.xs>
       )}
-    </Card.Content>
+    </ListItemCard.Root>
   )
 }

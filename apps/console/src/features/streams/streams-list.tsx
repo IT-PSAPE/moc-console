@@ -1,4 +1,4 @@
-import { Card } from "@moc/ui/components/display/card"
+import { DividedList } from "@moc/ui/components/display/divided-list"
 import type { Stream } from "@moc/types/streams/stream"
 import type { ZoomMeeting } from "@moc/types/streams/zoom"
 import { MeetingListItem } from "./meeting-list-item"
@@ -20,10 +20,8 @@ export function StreamsList({ entries, onSelectStream, onSelectMeeting }: Stream
   }
 
   return (
-    <Card>
-      <Card.Content ghost className="flex flex-col gap-1.5">
+    <DividedList>
         {entries.map(renderEntry)}
-      </Card.Content>
-    </Card>
+      </DividedList>
   )
 }
