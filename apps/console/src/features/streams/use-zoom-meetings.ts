@@ -6,26 +6,25 @@ import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { getErrorMessage } from "@moc/utils/get-error-message"
 import type { ZoomMeeting } from "@moc/types/streams/zoom"
 import { useStreams } from "./streams-provider"
+import { useProviderSync } from "./use-provider-sync"
 import { useProviderFailure } from "./use-provider-failure"
 import { useZoomMeetingFilters } from "./use-zoom-meeting-filters"
 import { canCreateZoomMeetings, canReconcileZoomMeetings } from "@/data/zoom-meeting-reconciliation"
 
 export function useZoomMeetings(searchQuery: string) {
   const navigate = useNavigate()
-  const { role } = useWorkspace()
+  const { role, currentWorkspaceId } = useWorkspace()
   const { toast } = useFeedback()
   const {
-    state: { zoomConnection, zoomMeetings, isLoadingZoomConnection, isLoadingZoomMeetings },
+    state: { zoomConnection, zoomMeetings, isLoadingZoomConnection, isLoadingZoomMeetings, zoomConnectionError, zoomMeetingsError },
     actions: { loadZoomConnection, loadZoomMeetings, syncMeeting, removeMeeting, setZoomMeetings, setZoomConnection },
   } = useStreams()
   const filters = useZoomMeetingFilters(zoomMeetings)
   const { setSearch } = filters
   const [modalOpen, setModalOpen] = useState(false)
   const [editingMeeting, setEditingMeeting] = useState<ZoomMeeting | null>(null)
-  const [isSyncing, setIsSyncing] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [syncError, setSyncError] = useState<string | null>(null)
   const providerFailure = useProviderFailure(zoomConnection, setZoomConnection)
   const connectionNeedsReauth = zoomConnection?.status === "reauth_required"
   const needsReauth = connectionNeedsReauth || providerFailure.meta.needsConnection
@@ -35,6 +34,19 @@ export function useZoomMeetings(searchQuery: string) {
   const actionableErrorMessage = useCallback((error: unknown, fallback: string): string => {
     return providerFailure.actions.record(error)?.message ?? getErrorMessage(error, fallback)
   }, [providerFailure.actions])
+
+  const { state: { isSyncing, syncError }, actions: { sync: syncResource } } = useProviderSync({
+    workspaceId: currentWorkspaceId,
+    enabled: Boolean(zoomConnection) && canSync,
+    ready: !isLoadingZoomMeetings && !isLoadingZoomConnection && !zoomConnectionError,
+    request: syncZoomMeetings,
+    applyResult: setZoomMeetings,
+    clearFailure: providerFailure.actions.clear,
+    describeFailure: actionableErrorMessage,
+    successTitle: "Meetings synced from Zoom",
+    errorTitle: "Failed to sync meetings",
+    errorMessage: "Meetings could not be synced from Zoom.",
+  })
 
   const load = useCallback(async () => {
     try {
@@ -46,7 +58,7 @@ export function useZoomMeetings(searchQuery: string) {
   }, [loadZoomConnection, loadZoomMeetings])
 
   useEffect(() => {
-    void load()
+    void Promise.resolve().then(load)
   }, [load])
 
   useEffect(() => {
@@ -126,21 +138,8 @@ export function useZoomMeetings(searchQuery: string) {
       })
       return
     }
-    setIsSyncing(true)
-    setSyncError(null)
-    try {
-      const meetings = await syncZoomMeetings()
-      setZoomMeetings(meetings)
-      providerFailure.actions.clear()
-      toast({ title: "Meetings synced from Zoom", variant: "success" })
-    } catch (error) {
-      const message = actionableErrorMessage(error, "Meetings could not be synced from Zoom.")
-      setSyncError(message)
-      toast({ title: "Failed to sync meetings", description: message, variant: "error" })
-    } finally {
-      setIsSyncing(false)
-    }
-  }, [actionableErrorMessage, canSync, guardReauthentication, providerFailure.actions, setZoomMeetings, toast])
+    await syncResource()
+  }, [canSync, guardReauthentication, syncResource, toast])
 
   function openFilters() {
     setFilterOpen(true)
@@ -156,7 +155,7 @@ export function useZoomMeetings(searchQuery: string) {
   }
 
   return {
-    state: { modalOpen, editingMeeting, isSyncing, filterOpen, loadError, syncError },
+    state: { modalOpen, editingMeeting, isSyncing, filterOpen, loadError: loadError ?? zoomMeetingsError?.message ?? zoomConnectionError?.message ?? null, syncError },
     actions: { setModalOpen, setFilterOpen, openFilters, edit, create, update, remove, sync, retryLoad: load, openSettings },
     meta: {
       filters,

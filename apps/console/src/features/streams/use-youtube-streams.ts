@@ -6,6 +6,7 @@ import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { getErrorMessage } from "@moc/utils/get-error-message"
 import type { Stream } from "@moc/types/streams/stream"
 import type { StreamFormData } from "./use-stream-form"
+import { useProviderSync } from "./use-provider-sync"
 import { useProviderFailure } from "./use-provider-failure"
 import { useStreamFilters } from "./use-stream-filters"
 import { useStreams } from "./streams-provider"
@@ -20,27 +21,39 @@ async function getPresetThumbnailUrl(thumbnail: StreamFormData["thumbnail"]): Pr
 
 export function useYouTubeStreams(searchQuery: string) {
   const navigate = useNavigate()
-  const { role } = useWorkspace()
+  const { role, currentWorkspaceId } = useWorkspace()
   const { toast } = useFeedback()
   const {
-    state: { streams, youtubeConnection, isLoadingStreams, isLoadingConnection },
+    state: { streams, youtubeConnection, isLoadingStreams, isLoadingConnection, streamsError, youtubeConnectionError },
     actions: { loadStreams, loadYouTubeConnection, syncStream, removeStream, setStreams, setYouTubeConnection },
   } = useStreams()
   const filters = useStreamFilters(streams)
   const { setSearch } = filters
   const [modalOpen, setModalOpen] = useState(false)
   const [editingStream, setEditingStream] = useState<Stream | null>(null)
-  const [isSyncing, setIsSyncing] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [syncError, setSyncError] = useState<string | null>(null)
   const providerFailure = useProviderFailure(youtubeConnection, setYouTubeConnection)
   const connectionNeedsReauth = youtubeConnection?.status === "reauth_required"
   const needsReauth = connectionNeedsReauth || providerFailure.meta.needsConnection
+  const canSync = role?.can_read === true && role.can_create && role.can_update && role.can_delete && !needsReauth
 
   const actionableErrorMessage = useCallback((error: unknown, fallback: string): string => {
     return providerFailure.actions.record(error)?.message ?? getErrorMessage(error, fallback)
   }, [providerFailure.actions])
+
+  const { state: { isSyncing, syncError }, actions: { sync: syncResource } } = useProviderSync({
+    workspaceId: currentWorkspaceId,
+    enabled: Boolean(youtubeConnection) && canSync,
+    ready: !isLoadingStreams && !isLoadingConnection && !youtubeConnectionError,
+    request: syncStreamsFromYouTube,
+    applyResult: setStreams,
+    clearFailure: providerFailure.actions.clear,
+    describeFailure: actionableErrorMessage,
+    successTitle: "Streams synced from YouTube",
+    errorTitle: "Failed to sync streams",
+    errorMessage: "Streams could not be synced from YouTube.",
+  })
 
   const load = useCallback(async () => {
     try {
@@ -52,7 +65,7 @@ export function useYouTubeStreams(searchQuery: string) {
   }, [loadStreams, loadYouTubeConnection])
 
   useEffect(() => {
-    void load()
+    void Promise.resolve().then(load)
   }, [load])
 
   useEffect(() => {
@@ -140,21 +153,8 @@ export function useYouTubeStreams(searchQuery: string) {
 
   const sync = useCallback(async () => {
     if (guardReauthentication()) return
-    setIsSyncing(true)
-    setSyncError(null)
-    try {
-      const synced = await syncStreamsFromYouTube()
-      setStreams(synced)
-      providerFailure.actions.clear()
-      toast({ title: "Streams synced from YouTube", variant: "success" })
-    } catch (error) {
-      const message = actionableErrorMessage(error, "Streams could not be synced from YouTube.")
-      setSyncError(message)
-      toast({ title: "Failed to sync streams", description: message, variant: "error" })
-    } finally {
-      setIsSyncing(false)
-    }
-  }, [actionableErrorMessage, guardReauthentication, providerFailure.actions, setStreams, toast])
+    await syncResource()
+  }, [guardReauthentication, syncResource])
 
   function openFilters() {
     setFilterOpen(true)
@@ -170,13 +170,14 @@ export function useYouTubeStreams(searchQuery: string) {
   }
 
   return {
-    state: { modalOpen, editingStream, isSyncing, filterOpen, loadError, syncError },
+    state: { modalOpen, editingStream, isSyncing, filterOpen, loadError: loadError ?? streamsError?.message ?? youtubeConnectionError?.message ?? null, syncError },
     actions: { setModalOpen, setFilterOpen, openFilters, edit, create, update, remove, sync, retryLoad: load, openSettings },
     meta: {
       connection: youtubeConnection,
       filters,
       isConnected: Boolean(youtubeConnection),
       needsReauth,
+      canSync,
       providerFailure: providerFailure.state.failure,
       canCreate: role?.can_create === true && !needsReauth,
       isLoading: isLoadingStreams || isLoadingConnection,

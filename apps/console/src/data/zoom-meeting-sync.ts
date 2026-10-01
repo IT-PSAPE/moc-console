@@ -41,8 +41,8 @@ type ZoomMeetingLookup =
  * expired token or a bad deployment must never be read as a cancellation, or a
  * sync would delete the workspace's meetings.
  */
-async function lookUpZoomMeeting(zoomMeetingId: number): Promise<ZoomMeetingLookup> {
-  const response = await zoomApiFetch(`/meetings/${zoomMeetingId}`)
+async function lookUpZoomMeeting(zoomMeetingId: number, workspaceId: string): Promise<ZoomMeetingLookup> {
+  const response = await zoomApiFetch(`/meetings/${zoomMeetingId}`, { headers: { "X-MOC-Workspace": workspaceId } })
   if (response.ok) {
     return { status: "present", meeting: await response.json() as ZoomMeetingSyncRow }
   }
@@ -69,8 +69,8 @@ function toUpsertRow(meeting: ZoomMeetingSyncRow, workspaceId: string, zoomConne
 
 type ZoomMeetingUpsertRow = ReturnType<typeof toUpsertRow>
 
-export async function syncZoomMeetings(): Promise<ZoomMeeting[]> {
-  const workspaceId = await getCurrentWorkspaceId()
+export async function syncZoomMeetings(requestedWorkspaceId?: string): Promise<ZoomMeeting[]> {
+  const workspaceId = requestedWorkspaceId ?? await getCurrentWorkspaceId()
   return queueZoomMeetingOperation(workspaceId, () => syncZoomMeetingsWithinOperation(workspaceId))
 }
 
@@ -83,7 +83,7 @@ export async function syncZoomMeetingsWithinOperation(workspaceId: string): Prom
   let pageToken: string | undefined
   do {
     const pageParam = pageToken ? `&next_page_token=${encodeURIComponent(pageToken)}` : ""
-    const response = await zoomApiFetch(`/users/me/meetings?type=upcoming&page_size=300${pageParam}`)
+    const response = await zoomApiFetch(`/users/me/meetings?type=upcoming&page_size=300${pageParam}`, { headers: { "X-MOC-Workspace": workspaceId } })
     if (!response.ok) throw await providerRequestError(response, "Failed to fetch Zoom meetings")
     const data = await response.json() as { meetings?: ZoomMeetingSyncRow[]; next_page_token?: string }
     meetings.push(...(data.meetings ?? []))
@@ -106,7 +106,7 @@ export async function syncZoomMeetingsWithinOperation(workspaceId: string): Prom
   const cancelledMeetingIds: string[] = []
   const verifiedMeetings: ZoomMeetingSyncRow[] = []
   for (const target of getZoomMeetingsToVerify(localMeetings, meetings.map((meeting) => meeting.id))) {
-    const lookup = await lookUpZoomMeeting(target.zoomMeetingId)
+    const lookup = await lookUpZoomMeeting(target.zoomMeetingId, workspaceId)
     if (lookup.status === "absent") cancelledMeetingIds.push(target.id)
     else if (lookup.status === "present") verifiedMeetings.push(lookup.meeting)
   }

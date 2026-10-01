@@ -64,8 +64,8 @@ export async function uploadThumbnail(videoId: string, file: Blob): Promise<void
  * points at the channel the workspace recorded, so a connection repointed at
  * another Google account is not mistaken for the workspace's own channel.
  */
-export async function fetchAuthenticatedChannelId(): Promise<string | null> {
-  const response = await youtubeApiFetch("/channels?part=id&mine=true")
+export async function fetchAuthenticatedChannelId(workspaceId?: string): Promise<string | null> {
+  const response = await youtubeApiFetch("/channels?part=id&mine=true", workspaceId ? { headers: { "X-MOC-Workspace": workspaceId } } : {})
   if (!response.ok) return null
 
   const data = await response.json() as { items?: Array<{ id?: string }> }

@@ -44,14 +44,14 @@ const ID_FILTER_LIMIT = 50
  * The broadcasts the channel is running now or is about to run. These are the
  * only ones a sync may adopt as new streams.
  */
-async function fetchCurrentBroadcasts(): Promise<YouTubeBroadcastSyncRow[]> {
+async function fetchCurrentBroadcasts(workspaceId: string): Promise<YouTubeBroadcastSyncRow[]> {
   const broadcasts: YouTubeBroadcastSyncRow[] = []
   const statuses = ["upcoming", "active"] as const
   for (const broadcastStatus of statuses) {
     let pageToken: string | undefined
     do {
       const pageParam = pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ""
-      const response = await youtubeApiFetch(`/liveBroadcasts?part=${BROADCAST_PART}&broadcastStatus=${broadcastStatus}&broadcastType=all&maxResults=50${pageParam}`)
+      const response = await youtubeApiFetch(`/liveBroadcasts?part=${BROADCAST_PART}&broadcastStatus=${broadcastStatus}&broadcastType=all&maxResults=50${pageParam}`, { headers: { "X-MOC-Workspace": workspaceId } })
       if (!response.ok) throw await providerRequestError(response, "Failed to fetch broadcasts")
       const data = await response.json() as { items?: YouTubeBroadcastSyncRow[]; nextPageToken?: string }
       broadcasts.push(...(data.items ?? []))
@@ -71,13 +71,13 @@ async function fetchCurrentBroadcasts(): Promise<YouTubeBroadcastSyncRow[]> {
  * A broadcast that has been deleted on YouTube is simply absent from the
  * response; the local row is left as it is.
  */
-async function fetchBroadcastsByIds(broadcastIds: string[]): Promise<YouTubeBroadcastSyncRow[]> {
+async function fetchBroadcastsByIds(broadcastIds: string[], workspaceId: string): Promise<YouTubeBroadcastSyncRow[]> {
   const broadcasts: YouTubeBroadcastSyncRow[] = []
   for (let start = 0; start < broadcastIds.length; start += ID_FILTER_LIMIT) {
     const batch = broadcastIds.slice(start, start + ID_FILTER_LIMIT)
     // `broadcastType` and `maxResults` are only valid alongside a
     // `broadcastStatus` or `mine` filter, so an id lookup sends neither.
-    const response = await youtubeApiFetch(`/liveBroadcasts?part=${BROADCAST_PART}&id=${batch.map(encodeURIComponent).join(",")}`)
+    const response = await youtubeApiFetch(`/liveBroadcasts?part=${BROADCAST_PART}&id=${batch.map(encodeURIComponent).join(",")}`, { headers: { "X-MOC-Workspace": workspaceId } })
     if (!response.ok) throw await providerRequestError(response, "Failed to fetch broadcasts")
     const data = await response.json() as { items?: YouTubeBroadcastSyncRow[] }
     broadcasts.push(...(data.items ?? []))
@@ -98,7 +98,7 @@ async function fetchBroadcastsByIds(broadcastIds: string[]): Promise<YouTubeBroa
 async function isConnectedToRecordedChannel(workspaceId: string): Promise<boolean> {
   const [connectionResult, authenticatedChannelId] = await Promise.all([
     supabase.from("youtube_connections").select("channel_id").eq("workspace_id", workspaceId).maybeSingle(),
-    fetchAuthenticatedChannelId(),
+    fetchAuthenticatedChannelId(workspaceId),
   ])
   if (connectionResult.error || !authenticatedChannelId) return false
   return connectionResult.data?.channel_id === authenticatedChannelId
@@ -131,13 +131,13 @@ function toUpsertRow(broadcast: YouTubeBroadcastSyncRow, workspaceId: string, cr
 
 type StreamUpsertRow = ReturnType<typeof toUpsertRow>
 
-export async function syncStreamsFromYouTube(): Promise<Stream[]> {
-  const workspaceId = await getCurrentWorkspaceId()
+export async function syncStreamsFromYouTube(requestedWorkspaceId?: string): Promise<Stream[]> {
+  const workspaceId = requestedWorkspaceId ?? await getCurrentWorkspaceId()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
   const [currentBroadcasts, existingStreams] = await Promise.all([
-    fetchCurrentBroadcasts(),
+    fetchCurrentBroadcasts(workspaceId),
     fetchStreams(workspaceId),
   ])
   const trackedStreams: Array<StreamReconciliationRow & { created_by: string }> = existingStreams.map((stream) => ({
@@ -149,7 +149,7 @@ export async function syncStreamsFromYouTube(): Promise<Stream[]> {
   const existingCreators = new Map(trackedStreams.map((row) => [row.youtube_broadcast_id, row.created_by]))
 
   const unfinishedIds = getUnfinishedTrackedBroadcastIds(trackedStreams, currentBroadcasts.map((broadcast) => broadcast.id))
-  const lookedUpBroadcasts = unfinishedIds.length > 0 ? await fetchBroadcastsByIds(unfinishedIds) : []
+  const lookedUpBroadcasts = unfinishedIds.length > 0 ? await fetchBroadcastsByIds(unfinishedIds, workspaceId) : []
   const broadcasts = [...currentBroadcasts, ...lookedUpBroadcasts]
   const deletedIds = getDeletedBroadcastIds(unfinishedIds, lookedUpBroadcasts.map((broadcast) => broadcast.id))
 
