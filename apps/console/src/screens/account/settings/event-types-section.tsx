@@ -1,5 +1,5 @@
 import { Section } from "@moc/ui/components/display/section"
-import { Card } from "@moc/ui/components/display/card"
+import { DividedList } from "@moc/ui/components/display/divided-list"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Decision } from "@moc/ui/components/display/decision"
@@ -11,7 +11,7 @@ import { useVenueEventsSettings } from "./use-venue-events-settings"
 import { VenueEventRow } from "./venue-event-row"
 import { VenueEventFormModal } from "./venue-event-form-modal"
 
-export function EventsTab() {
+export function EventTypesSection() {
     const { state, actions } = useVenueEventsSettings()
 
     function renderEvent(event: VenueEvent) {
@@ -21,6 +21,7 @@ export function EventsTab() {
                 event={event}
                 pending={state.pendingId === event.id}
                 onEdit={actions.openEdit}
+                onDuplicate={actions.openDuplicate}
                 onToggleActive={actions.toggleActive}
                 onDelete={actions.openDelete}
             />
@@ -35,7 +36,7 @@ export function EventsTab() {
         <div className="flex flex-col gap-10">
             <Section>
                 <div className="flex items-start justify-between gap-3">
-                    <Section.Header className="flex-1" title="Events" description="The events people choose from when booking a venue. Anything not on this list is submitted as “Other”." />
+                    <Section.Header className="flex-1" title="Event types" description="The events people choose from when booking a venue. Anything not on this list is submitted as “Other”." />
                     <Button icon={<Plus />} onClick={actions.openCreate}>Add event</Button>
                 </div>
 
@@ -48,7 +49,7 @@ export function EventsTab() {
                             <EmptyState icon={<CalendarHeart />} title="No events yet" description="Add an event so people can pick it when booking a venue." />
                         </Decision.Empty>
                         <Decision.Data>
-                            <Card>{state.events.map(renderEvent)}</Card>
+                            <DividedList>{state.events.map(renderEvent)}</DividedList>
                         </Decision.Data>
                     </Decision>
                 </Section.Body>

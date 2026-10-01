@@ -8,7 +8,7 @@ export function VenueBookingItemContent({ booking }: { booking: VenueBooking }) 
         <ListItemCard.Root>
             <ListItemCard.Content>
                 <ListItemCard.Title>{booking.title}</ListItemCard.Title>
-                <ListItemCard.Subtitle>{booking.venueLocation ? `${booking.venueName} · ${booking.venueLocation}` : booking.venueName}</ListItemCard.Subtitle>
+                <ListItemCard.Subtitle>{booking.venueDescription ? `${booking.venueName} · ${booking.venueDescription}` : booking.venueName}</ListItemCard.Subtitle>
                 <ListItemCard.Meta>
                     <ListItemCard.MetaItem icon={<CalendarClock />}>
                         {formatUtcIsoInBrowserTimeZone(booking.startsAt, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}

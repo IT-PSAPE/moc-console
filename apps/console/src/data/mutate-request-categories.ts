@@ -7,7 +7,7 @@ const FOREIGN_KEY_VIOLATION = "23503";
 
 export type RequestCategoryDraft = {
   name: string;
-  active: boolean;
+  description: string | null;
 };
 
 function createCategoryKey(): string {
@@ -22,7 +22,7 @@ export async function createRequestCategory(draft: RequestCategoryDraft, workspa
       workspace_id: resolvedWorkspaceId,
       key: createCategoryKey(),
       name: draft.name,
-      active: draft.active,
+      description: draft.description,
     })
     .select(REQUEST_CATEGORY_SELECT)
     .single();
@@ -39,7 +39,7 @@ export async function updateRequestCategory(id: string, draft: RequestCategoryDr
     .from("request_categories")
     .update({
       name: draft.name,
-      active: draft.active,
+      description: draft.description,
     })
     .eq("id", id)
     .select(REQUEST_CATEGORY_SELECT)

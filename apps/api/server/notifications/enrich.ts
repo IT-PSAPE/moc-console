@@ -206,7 +206,7 @@ type VenueBookingRow = {
   cancelled_at: string | null;
   recurrence: unknown;
   venue_booking_slots: Array<{ occurrence_index: number; slot_start: string; slot_end: string }>;
-  venues: VenueBookingRelation<{ name: string; location: string | null }>;
+  venues: VenueBookingRelation<{ name: string; description: string | null }>;
   venue_events: VenueBookingRelation<{ name: string }>;
 };
 
@@ -272,7 +272,7 @@ export async function enrichVenueBooking(venueBookingId: string, options?: { thr
     const { data, error } = await admin
       .from("venue_bookings")
       .select(
-        "title, requested_by, tracking_code, event_other, notes, status, starts_at, ends_at, recurrence, cancel_reason, cancelled_at, venue_booking_slots(occurrence_index, slot_start, slot_end), venues:venue_id(name, location), venue_events:event_id(name)",
+        "title, requested_by, tracking_code, event_other, notes, status, starts_at, ends_at, recurrence, cancel_reason, cancelled_at, venue_booking_slots(occurrence_index, slot_start, slot_end), venues:venue_id(name, description), venue_events:event_id(name)",
       )
       .eq("id", venueBookingId)
       .maybeSingle();
@@ -288,7 +288,7 @@ export async function enrichVenueBooking(venueBookingId: string, options?: { thr
       requesterName: row.requested_by,
       trackingCode: row.tracking_code,
       venueName: venue?.name,
-      venueLocation: venue?.location,
+      venueDescription: venue?.description,
       // A booking either points at a workspace event or carries the
       // submitter's own "Other" description. Both answer "what is this for",
       // so one token reports whichever is set.

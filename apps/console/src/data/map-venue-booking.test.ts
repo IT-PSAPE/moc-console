@@ -10,7 +10,7 @@ function row(): VenueBookingRow {
     cancelled_at: null, cancelled_by: null, cancel_reason: null,
     approved_at: null, approved_by: null, rejected_at: null, rejected_by: null,
     created_at: '2026-08-01T10:00:00.000Z', updated_at: '2026-08-01T10:00:00.000Z',
-    venue: { name: 'Hall', location: null }, event: { name: 'Rehearsal' }, canceller: null,
+    venue: { name: 'Hall', description: null }, event: { name: 'Rehearsal' }, canceller: null,
     approver: null, rejecter: null,
     slots: [
       { occurrence_index: 1, slot_start: '2026-09-08T10:30:00.000Z', slot_end: '2026-09-08T11:00:00.000Z' },
@@ -22,6 +22,12 @@ function row(): VenueBookingRow {
 }
 
 describe('mapVenueBookingRow', () => {
+  test('maps venue descriptions into booking details', () => {
+    const source = row()
+    source.venue = { name: 'Hall', description: 'Main auditorium' }
+    expect(mapVenueBookingRow(source).venueDescription).toBe('Main auditorium')
+  })
+
   test('groups materialized slots into ordered occurrences', () => {
     expect(mapVenueBookingRow(row()).occurrences).toEqual([
       { index: 0, startsAt: '2026-09-01T10:00:00.000Z', endsAt: '2026-09-01T11:00:00.000Z' },

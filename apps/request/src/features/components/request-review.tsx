@@ -64,7 +64,7 @@ export function RequestReview({ data, categoryName }: { data: RequestFormData; c
         <>
           <Divider />
           <section className="flex flex-col gap-3">
-            <Label.xs className="text-tertiary uppercase tracking-wider">Flow</Label.xs>
+            <Label.xs className="text-tertiary uppercase tracking-wider">Flow of events</Label.xs>
             <div className="flex items-start gap-2">
               <GitBranch className="size-4 text-tertiary mt-0.5 shrink-0" />
               <Paragraph.sm className="whitespace-pre-wrap">{data.flow}</Paragraph.sm>

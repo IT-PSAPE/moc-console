@@ -89,7 +89,7 @@ export function TrackingResult({ data }: { data: TrackingResultType }) {
               <MetaRow icon={<User />} label="Requested by">{data.requestedBy}</MetaRow>
               {data.venueName && (
                 <MetaRow icon={<Building2 />} label="Venue">
-                  {data.venueName}{data.venueLocation ? ` · ${data.venueLocation}` : ''}
+                  {data.venueName}{data.venueDescription ? ` · ${data.venueDescription}` : ''}
                 </MetaRow>
               )}
               {data.startsAt && (

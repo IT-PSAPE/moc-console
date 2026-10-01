@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { useWorkspace } from '@/lib/workspace-context'
-import { DEFAULT_DATE_FORMAT, DEFAULT_TIMEZONE, type DateFormatPreset } from '@moc/notifications'
+import { DEFAULT_DATE_FORMAT, DEFAULT_TIMEZONE, type DateFormatPreset, DATE_FORMAT_OPTIONS, formatInstant } from '@moc/notifications'
 import { fetchNotificationSettings, updateMessageFormat } from '@/data/notification-settings'
+
+const COMMON_TIMEZONES = ['Africa/Harare', 'Africa/Johannesburg', 'Africa/Lagos', 'Africa/Nairobi', 'Europe/London', 'Europe/Berlin', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Asia/Dubai', 'Asia/Shanghai', 'Asia/Tokyo', 'Australia/Sydney', 'UTC']
+const EXAMPLE_INSTANT = '2026-05-21T17:00:00Z'
 
 export function useMessageFormat() {
     const { toast } = useFeedback()
@@ -53,5 +56,9 @@ export function useMessageFormat() {
         void save(timezone, next)
     }, [save, timezone])
 
-    return { state: { timezone, dateFormat, isLoading }, actions: { changeTimezone, changeDateFormat } }
+    const timezoneOptions = COMMON_TIMEZONES.includes(timezone) ? COMMON_TIMEZONES : [timezone, ...COMMON_TIMEZONES]
+    const timezoneItems = timezoneOptions.map(value => ({ label: value, value }))
+    const dateFormatItems = DATE_FORMAT_OPTIONS.map(option => ({ label: formatInstant(EXAMPLE_INSTANT, timezone, option.value), value: option.value }))
+
+    return { state: { timezone, dateFormat, isLoading, timezoneItems, dateFormatItems }, actions: { changeTimezone, changeDateFormat } }
 }

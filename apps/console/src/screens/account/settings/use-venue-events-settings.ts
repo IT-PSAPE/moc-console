@@ -6,7 +6,7 @@ import { fetchVenueEvents } from "@/data/fetch-venue-events"
 import { createVenueEvent, deleteVenueEvent, setVenueEventActive, updateVenueEvent, type VenueEventDraft } from "@/data/mutate-venue-events"
 import { useWorkspace } from "@/lib/workspace-context"
 
-export type VenueEventFormTarget = { mode: "create" } | { mode: "edit"; event: VenueEvent }
+export type VenueEventFormTarget = { mode: "create"; draft?: { name: string; description: string | null } } | { mode: "edit"; event: VenueEvent }
 
 export function useVenueEventsSettings() {
     const { toast } = useFeedback()
@@ -43,6 +43,10 @@ export function useVenueEventsSettings() {
 
     function openEdit(event: VenueEvent) {
         setFormTarget({ mode: "edit", event })
+    }
+
+    function openDuplicate(event: VenueEvent): void {
+        setFormTarget({ mode: "create", draft: { name: `${event.name} (copy)`, description: event.description } })
     }
 
     function closeForm() {
@@ -108,6 +112,6 @@ export function useVenueEventsSettings() {
 
     return {
         state: { events, isLoading, formTarget, deleteTarget, isSaving, isDeleting, pendingId },
-        actions: { openCreate, openEdit, closeForm, submitForm, toggleActive, openDelete, closeDelete, confirmDelete },
+        actions: { openCreate, openEdit, openDuplicate, closeForm, submitForm, toggleActive, openDelete, closeDelete, confirmDelete },
     }
 }

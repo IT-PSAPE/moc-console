@@ -5,6 +5,7 @@ import type { RequestCategoryOption } from "@/types/tracking"
 type PublicRequestCategoryRow = {
   key: string
   name: string
+  description: string | null
 }
 
 export async function fetchPublicRequestCategories(): Promise<RequestCategoryOption[]> {
@@ -17,5 +18,6 @@ export async function fetchPublicRequestCategories(): Promise<RequestCategoryOpt
   return ((data ?? []) as PublicRequestCategoryRow[]).map((category) => ({
     value: category.key,
     label: category.name,
+    description: category.description,
   }))
 }

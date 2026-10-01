@@ -4,7 +4,7 @@ import { venueBookingOverlapsDateRange } from "./venue-booking-date-range";
 
 function booking(occurrences: VenueBooking["occurrences"]): VenueBooking {
   return {
-    id: "booking", workspaceId: "workspace", venueId: "venue", venueName: "Hall", venueLocation: null,
+    id: "booking", workspaceId: "workspace", venueId: "venue", venueName: "Hall", venueDescription: null,
     eventId: null, eventName: null, eventOther: "Rehearsal", trackingCode: "VEN-ABC123", title: "Rehearsal",
     requestedBy: "Craig", notes: null, status: "auto", startsAt: "2026-09-01T10:00:00.000Z",
     endsAt: "2026-09-01T11:00:00.000Z", recurrence: null, occurrences, cancelledAt: null,

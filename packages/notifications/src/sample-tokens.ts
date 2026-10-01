@@ -77,7 +77,7 @@ export const SAMPLE_TOKENS: Record<MessageType, TokenValues> = {
     status: "booked",
     requesterName: "Tapiwa N.",
     venueName: "Main Auditorium",
-    venueLocation: "Ground floor, east wing",
+    venueDescription: "Ground floor, east wing",
     eventName: "Youth rehearsal",
     startsAt: "22 May, 6:00 PM",
     endsAt: "22 May, 8:00 PM",

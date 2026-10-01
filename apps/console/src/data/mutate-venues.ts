@@ -5,9 +5,7 @@ import { VENUE_SELECT, mapVenueRow, type VenueRow } from "./fetch-venues";
 
 export type VenueDraft = {
   name: string;
-  location: string | null;
-  capacity: number | null;
-  notes: string | null;
+  description: string | null;
 };
 
 // venue_bookings.venue_id is ON DELETE RESTRICT, so a venue that has ever
@@ -22,9 +20,7 @@ export async function createVenue(draft: VenueDraft, workspaceId?: string): Prom
     .insert({
       workspace_id: resolvedWorkspaceId,
       name: draft.name,
-      location: draft.location,
-      capacity: draft.capacity,
-      notes: draft.notes,
+      description: draft.description,
     })
     .select(VENUE_SELECT)
     .single();
@@ -41,9 +37,7 @@ export async function updateVenue(id: string, draft: VenueDraft): Promise<Venue>
     .from("venues")
     .update({
       name: draft.name,
-      location: draft.location,
-      capacity: draft.capacity,
-      notes: draft.notes,
+      description: draft.description,
     })
     .eq("id", id)
     .select(VENUE_SELECT)

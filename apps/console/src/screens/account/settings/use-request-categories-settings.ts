@@ -7,7 +7,7 @@ import { createRequestCategory, deleteRequestCategory, setRequestCategoryActive,
 import { invalidateWorkspaceResource } from "@/data/workspace-resource-cache"
 import { useWorkspace } from "@/lib/workspace-context"
 
-export type RequestCategoryFormTarget = { mode: "create" } | { mode: "edit"; category: RequestCategoryDefinition }
+export type RequestCategoryFormTarget = { mode: "create"; draft?: { name: string; description: string | null } } | { mode: "edit"; category: RequestCategoryDefinition }
 
 function invalidateRequestResources(workspaceId: string): void {
     invalidateWorkspaceResource(workspaceId, "request-categories")
@@ -50,6 +50,10 @@ export function useRequestCategoriesSettings() {
 
     function openEdit(category: RequestCategoryDefinition) {
         setFormTarget({ mode: "edit", category })
+    }
+
+    function openDuplicate(category: RequestCategoryDefinition): void {
+        setFormTarget({ mode: "create", draft: { name: `${category.name} (copy)`, description: category.description } })
     }
 
     function closeForm() {
@@ -118,6 +122,6 @@ export function useRequestCategoriesSettings() {
 
     return {
         state: { categories, isLoading, formTarget, deleteTarget, isSaving, isDeleting, pendingId },
-        actions: { openCreate, openEdit, closeForm, submitForm, toggleActive, openDelete, closeDelete, confirmDelete },
+        actions: { openCreate, openEdit, openDuplicate, closeForm, submitForm, toggleActive, openDelete, closeDelete, confirmDelete },
     }
 }

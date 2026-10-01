@@ -13,7 +13,7 @@ export type VenueBooking = {
   workspaceId: string;
   venueId: string;
   venueName: string;
-  venueLocation: string | null;
+  venueDescription: string | null;
   /**
    * The chosen event, or null when the submitter picked "Other" and typed
    * their own description into eventOther. Exactly one of the two is set —

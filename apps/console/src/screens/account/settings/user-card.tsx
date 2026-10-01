@@ -1,10 +1,12 @@
+import { Button } from "@moc/ui/components/controls/button"
+import { useMemberNotifications } from "./member-notification-context"
 import type { UserWithRole } from "@/data/fetch-users"
+import { TelegramIcon } from "@moc/ui/components/display/telegram-icon"
 import { Badge } from "@moc/ui/components/display/badge"
-import { Card } from "@moc/ui/components/display/card"
 import { ListItemCard } from "@moc/ui/components/display/list-item-card"
 import { UserAvatar } from "@moc/ui/components/display/user-avatar"
 import type { Role } from "@moc/types/requests/assignee"
-import { MessagesSquare, Shield } from "lucide-react"
+import { Link2, Shield } from "lucide-react"
 import { UserRoleSelect } from "./user-role-select"
 
 const roleColor: Record<string, "blue" | "purple" | "green" | "gray"> = {
@@ -20,37 +22,36 @@ function getRoleColor(name: string | undefined) {
 type UserCardProps = {
   user: UserWithRole
   roles: Role[]
-  currentUserId?: string
   canManage: boolean
   onRoleChange: (userId: string, roleId: string) => void
 }
 
-export function UserCard({ user, roles, currentUserId, canManage, onRoleChange }: UserCardProps) {
+export function UserCard({ user, roles, canManage, onRoleChange }: UserCardProps) {
+  const { actions } = useMemberNotifications()
+
+  function handleOpenConnect(): void {
+    actions.openConnectUser(user)
+  }
+
   return (
-    <Card.Content>
-      <ListItemCard.Root className="flex-wrap sm:flex-nowrap">
-        <ListItemCard.Leading className="bg-transparent">
-          <UserAvatar user={user} size="md" />
-        </ListItemCard.Leading>
-        <ListItemCard.Content>
-          <div className="flex min-w-0 items-center gap-2">
-            <ListItemCard.Title>{user.name} {user.surname}</ListItemCard.Title>
-            {user.id === currentUserId && <Badge label="You" color="blue" />}
-          </div>
-          <ListItemCard.Subtitle>{user.email}</ListItemCard.Subtitle>
-          <ListItemCard.Meta>
-            <ListItemCard.MetaItem icon={<Shield />}>{user.role?.name ?? "No role"}</ListItemCard.MetaItem>
-            <ListItemCard.MetaItem className={user.telegramChatId ? "text-success" : undefined} icon={<MessagesSquare />}>
-              Telegram {user.telegramChatId ? "connected" : "not connected"}
-            </ListItemCard.MetaItem>
-          </ListItemCard.Meta>
-        </ListItemCard.Content>
-        <ListItemCard.Trailing className="ml-13 w-[calc(100%-3.25rem)] justify-start sm:ml-0 sm:w-auto sm:justify-end">
-          {canManage
-            ? <UserRoleSelect userId={user.id} role={user.role} roles={roles} onChange={onRoleChange} />
-            : <Badge label={user.role?.name ?? "No role"} color={getRoleColor(user.role?.name)} icon={<Shield />} />}
-        </ListItemCard.Trailing>
-      </ListItemCard.Root>
-    </Card.Content>
+    <ListItemCard.Root className="flex-wrap sm:flex-nowrap">
+      <ListItemCard.Leading className="bg-transparent">
+        <UserAvatar user={user} size="md" />
+      </ListItemCard.Leading>
+      <ListItemCard.Content>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <ListItemCard.Title>{user.name} {user.surname}</ListItemCard.Title>
+          <Badge label={user.telegramChatId ? "Linked" : "Not linked"} color="gray" className={user.telegramChatId ? "[&_svg]:size-3 bg-[#229ED9]/10 text-[#229ED9]" : "[&_svg]:size-3"} icon={<TelegramIcon />} />
+        </div>
+        <ListItemCard.Subtitle>{user.email}</ListItemCard.Subtitle>
+
+      </ListItemCard.Content>
+      <ListItemCard.Trailing className="ml-13 w-[calc(100%-3.25rem)] justify-start sm:ml-0 sm:w-auto sm:justify-end">
+        {canManage && user.telegramChatId && <Button.Icon variant="ghost" icon={<Link2 />} onClick={handleOpenConnect} aria-label={`Connect events to ${user.name} ${user.surname}`} />}
+        {canManage
+          ? <UserRoleSelect userId={user.id} role={user.role} roles={roles} onChange={onRoleChange} />
+          : <Badge label={user.role?.name ?? "No role"} color={getRoleColor(user.role?.name)} icon={<Shield />} />}
+      </ListItemCard.Trailing>
+    </ListItemCard.Root>
   )
 }

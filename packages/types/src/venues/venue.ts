@@ -2,9 +2,7 @@ export type Venue = {
   id: string;
   workspaceId: string;
   name: string;
-  location: string | null;
-  capacity: number | null;
-  notes: string | null;
+  description: string | null;
   active: boolean;
   sortOrder: number;
   createdAt: string;
@@ -15,6 +13,5 @@ export type Venue = {
 export type PublicVenue = {
   id: string;
   name: string;
-  location: string | null;
-  capacity: number | null;
+  description: string | null;
 };

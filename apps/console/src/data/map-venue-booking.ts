@@ -27,7 +27,7 @@ export const VENUE_BOOKING_SELECT = `
   rejected_by,
   created_at,
   updated_at,
-  venue:venue_id(name, location),
+  venue:venue_id(name, description),
   event:event_id(name),
   canceller:cancelled_by(name, surname),
   approver:approved_by(name, surname),
@@ -35,7 +35,7 @@ export const VENUE_BOOKING_SELECT = `
   slots:venue_booking_slots(occurrence_index, slot_start, slot_end)
 `;
 
-type VenueRelation = { name: string; location: string | null } | null;
+type VenueRelation = { name: string; description: string | null } | null;
 type EventRelation = { name: string } | null;
 type DecisionUserRelation = { name: string; surname: string } | null;
 type SlotRelation = { occurrence_index: number; slot_start: string; slot_end: string };
@@ -97,7 +97,7 @@ export function mapVenueBookingRow(row: VenueBookingRow): VenueBooking {
     workspaceId: row.workspace_id,
     venueId: row.venue_id,
     venueName: row.venue?.name ?? "Unknown venue",
-    venueLocation: row.venue?.location ?? null,
+    venueDescription: row.venue?.description ?? null,
     eventId: row.event_id,
     eventName: row.event?.name ?? null,
     eventOther: row.event_other,

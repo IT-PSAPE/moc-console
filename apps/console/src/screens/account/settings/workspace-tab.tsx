@@ -1,9 +1,11 @@
 import type { ChangeEvent } from "react"
 import { Button } from "@moc/ui/components/controls/button"
+import { DividedList } from "@moc/ui/components/display/divided-list"
 import { Section } from "@moc/ui/components/display/section"
 import { SettingsRow } from "@moc/ui/components/display/settings-row"
 import { Paragraph } from "@moc/ui/components/display/text"
 import { Input } from "@moc/ui/components/form/input"
+import { DateTimeSection } from "./date-time-section"
 import { useWorkspaceSettings } from "./use-workspace-settings"
 
 export function WorkspaceTab() {
@@ -18,11 +20,13 @@ export function WorkspaceTab() {
   }
 
   return (
+    <div className="flex flex-col gap-10">
     <Section>
       <Section.Header title="General" description="Update the name shown across this workspace." />
 
-      <Section.Body className="gap-2">
-        <SettingsRow label="Name">
+      <Section.Body>
+        <DividedList>
+        <SettingsRow label="Name" className="px-3 py-3 md:px-4">
           <Input
             aria-label="Workspace name"
             autoComplete="off"
@@ -30,13 +34,15 @@ export function WorkspaceTab() {
             value={state.name}
             onChange={handleNameChange}
             placeholder="Workspace name"
+            className="max-w-md"
             disabled={!meta.canManage}
           />
         </SettingsRow>
 
-        <SettingsRow label="Slug" description="Assigned when the workspace is created.">
-          <Input aria-label="Workspace slug" autoCapitalize="none" autoComplete="off" name="workspace-slug" spellCheck={false} value={meta.workspace.slug} disabled readOnly />
+        <SettingsRow label="Slug" className="px-3 py-3 md:px-4">
+          <Input aria-label="Workspace slug" autoCapitalize="none" autoComplete="off" name="workspace-slug" spellCheck={false} value={meta.workspace.slug} className="max-w-md" disabled readOnly />
         </SettingsRow>
+              </DividedList>
       </Section.Body>
 
       {meta.canManage && (
@@ -46,5 +52,7 @@ export function WorkspaceTab() {
         </div>
       )}
     </Section>
+    {meta.canManage && <DateTimeSection />}
+    </div>
   )
 }

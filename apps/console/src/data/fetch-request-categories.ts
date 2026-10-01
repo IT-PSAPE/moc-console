@@ -2,13 +2,14 @@ import type { RequestCategoryDefinition } from "@moc/types/requests";
 import { supabase } from "@moc/data/supabase";
 import { getCurrentWorkspaceId } from "./current-workspace";
 
-export const REQUEST_CATEGORY_SELECT = "id, workspace_id, key, name, active, sort_order, created_at, updated_at";
+export const REQUEST_CATEGORY_SELECT = "id, workspace_id, key, name, description, active, sort_order, created_at, updated_at";
 
 export type RequestCategoryRow = {
   id: string;
   workspace_id: string;
   key: string;
   name: string;
+  description: string | null;
   active: boolean;
   sort_order: number;
   created_at: string;
@@ -21,6 +22,7 @@ export function mapRequestCategoryRow(row: RequestCategoryRow): RequestCategoryD
     workspaceId: row.workspace_id,
     key: row.key,
     name: row.name,
+    description: row.description,
     active: row.active,
     sortOrder: row.sort_order,
     createdAt: row.created_at,

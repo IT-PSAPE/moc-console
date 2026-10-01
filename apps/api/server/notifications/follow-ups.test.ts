@@ -109,7 +109,7 @@ describe("publishEntityFollowUp", () => {
 
   it("is idempotent by construction: the same eventKey against the same original always yields the same destination fields", async () => {
     const { io, calls } = fakeIo()
-    const input = { entityType: "request" as const, entityId: "req-1", eventKey: "request.stale:req-1:day-3", note: "⚠️ Stale for 3 days", loud: true }
+    const input = { entityType: "request" as const, entityId: "req-1", eventKey: "request.requester_updated:req-1:edit-3", note: "✏️ Updated by requester", loud: true }
     await publishEntityFollowUp(input, io)
     await publishEntityFollowUp(input, io)
     assert.equal(calls.enqueueDelivery.length, 2)

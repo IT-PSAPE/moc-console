@@ -1,42 +1,41 @@
 import { useSearchParams } from "react-router-dom"
 import { useWorkspace } from "@/lib/workspace-context"
-import { useIsMobile } from "@moc/ui/hooks/use-is-mobile"
 
-export type SettingsTab = "general" | "members" | "venues" | "events" | "request-categories" | "telegram" | "streams" | "automation"
+export type SettingsTab = "general" | "members" | "request-options" | "telegram" | "streams" | "automation"
 
 export const settingsTabLabel: Record<SettingsTab, string> = {
   automation: "Automation",
-  events: "Events",
   general: "General",
   members: "Members",
-  "request-categories": "Request categories",
+  "request-options": "Request options",
   streams: "Streaming",
   telegram: "Telegram",
-  venues: "Venues",
-}
-
-export function getSettingsHref(tab: SettingsTab): string {
-  return `/account/settings?tab=${tab}`
 }
 
 export function useSettingsScreen() {
   const { role } = useWorkspace()
-  const [searchParams] = useSearchParams()
-  const isMobile = useIsMobile()
+  const [searchParams, setSearchParams] = useSearchParams()
   const canManage = role?.can_manage_roles === true
-  const tabs: SettingsTab[] = canManage ? ["general", "members", "venues", "events", "request-categories", "telegram", "streams", "automation"] : ["general"]
+  const tabs: SettingsTab[] = canManage ? ["general", "members", "request-options", "telegram", "streams", "automation"] : ["general"]
   const tabParam = searchParams.get("tab")
-  const requestedTab = (tabParam === "workspace" ? "general" : tabParam) as SettingsTab | null
+  // Keep existing bookmarks for these settings pointing at the combined view.
+  const resolvedTab = ["venues", "events", "request-categories"].includes(tabParam ?? "") ? "request-options" : tabParam
+  const requestedTab = (resolvedTab === "workspace" ? "general" : resolvedTab) as SettingsTab | null
   const requestedTabIsAvailable = requestedTab !== null && tabs.includes(requestedTab)
   const activeTab: SettingsTab = requestedTabIsAvailable ? requestedTab : "general"
 
+  function selectTab(value: string): void {
+    if (!tabs.includes(value as SettingsTab)) return
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.set("tab", value)
+    setSearchParams(nextParams)
+  }
+
   return {
+    actions: { selectTab },
     meta: {
       activeTab,
       canManage,
-      isMobile,
-      requestedTabIsAvailable,
-      showMobileIndex: isMobile && !requestedTabIsAvailable,
       tabs,
     },
   }

@@ -1,5 +1,5 @@
 import { Section } from "@moc/ui/components/display/section"
-import { Card } from "@moc/ui/components/display/card"
+import { DividedList } from "@moc/ui/components/display/divided-list"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Decision } from "@moc/ui/components/display/decision"
@@ -11,7 +11,7 @@ import { useVenuesSettings } from "./use-venues-settings"
 import { VenueRow } from "./venue-row"
 import { VenueFormModal } from "./venue-form-modal"
 
-export function VenuesTab() {
+export function VenuesSection() {
     const { state, actions } = useVenuesSettings()
 
     function renderVenue(venue: Venue) {
@@ -21,6 +21,7 @@ export function VenuesTab() {
                 venue={venue}
                 pending={state.pendingId === venue.id}
                 onEdit={actions.openEdit}
+                onDuplicate={actions.openDuplicate}
                 onToggleActive={actions.toggleActive}
                 onDelete={actions.openDelete}
             />
@@ -48,7 +49,7 @@ export function VenuesTab() {
                             <EmptyState icon={<Building2 />} title="No venues yet" description="Add a venue so people can book it from the request app." />
                         </Decision.Empty>
                         <Decision.Data>
-                            <Card>{state.venues.map(renderVenue)}</Card>
+                            <DividedList>{state.venues.map(renderVenue)}</DividedList>
                         </Decision.Data>
                     </Decision>
                 </Section.Body>

@@ -1,5 +1,5 @@
 import type { NotificationEventDefinition, NotificationEventKey } from '@moc/notifications'
-import { SettingsRow } from '@moc/ui/components/display/settings-row'
+import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import { Toggle } from '@moc/ui/components/form/toggle'
 
 type ConnectEventRowProps = {
@@ -15,8 +15,14 @@ export function ConnectEventRow({ event, connected, disabled, onToggle }: Connec
     }
 
     return (
-        <SettingsRow label={event.label}>
-            <Toggle aria-label={`${connected ? 'Disconnect' : 'Connect'} ${event.label}`} checked={connected} disabled={disabled} onChange={handleChange} />
-        </SettingsRow>
+        <ListItemCard.Root className="items-start gap-3 px-0 py-3 md:px-0">
+            <ListItemCard.Leading className="h-auto w-auto overflow-visible bg-transparent pt-0.5">
+                <Toggle aria-label={`${connected ? 'Disconnect' : 'Connect'} ${event.label}`} checked={connected} disabled={disabled} onChange={handleChange} />
+            </ListItemCard.Leading>
+            <ListItemCard.Content>
+                <ListItemCard.Title>{event.label}</ListItemCard.Title>
+                <ListItemCard.Subtitle className="whitespace-normal">{event.description}</ListItemCard.Subtitle>
+            </ListItemCard.Content>
+        </ListItemCard.Root>
     )
 }

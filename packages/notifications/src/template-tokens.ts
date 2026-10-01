@@ -62,7 +62,7 @@ const BOOKING_TOKENS = specs(
 
 const VENUE_BOOKING_TOKENS = specs(
   "title", "status", "requesterName",
-  "venueName", "venueLocation", "eventName",
+  "venueName", "venueDescription", "eventName",
   "startsAt", "endsAt", "slotCount", "duration", "notes",
   "repeatPattern", "occurrenceCount",
   "trackingCode",

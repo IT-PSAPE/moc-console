@@ -1,3 +1,5 @@
+import { MemberNotificationContext } from "./member-notification-context"
+import { ConnectEventsModal } from "./connect-events-modal"
 import { Section } from "@moc/ui/components/display/section"
 import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
@@ -9,6 +11,7 @@ export function UsersTabContent() {
   const { actions, meta } = useUsersSettings()
 
   return (
+    <MemberNotificationContext value={{ state: {}, actions: { openConnectUser: actions.openConnectUser }, meta: {} }}>
     <div className="space-y-8">
       {meta.canManage && meta.pendingUsers.length > 0 ? (
         <Section>
@@ -23,7 +26,7 @@ export function UsersTabContent() {
         <Section.Body>
           {meta.isLoading
             ? <LoadingSpinner className="py-16" />
-            : <UsersList users={meta.users} roles={meta.roles} currentUserId={meta.currentUserId} canManage={meta.canManage} onRoleChange={actions.updateRole} />}
+            : <UsersList users={meta.users} roles={meta.roles} canManage={meta.canManage} onRoleChange={actions.updateRole} />}
         </Section.Body>
       </Section>
       <ConfirmationDialog
@@ -35,6 +38,8 @@ export function UsersTabContent() {
         isConfirming={meta.isRejecting}
         onConfirm={actions.confirmReject}
       />
+      <ConnectEventsModal target={meta.connectTarget} onClose={actions.closeConnect} />
     </div>
+    </MemberNotificationContext>
   )
 }

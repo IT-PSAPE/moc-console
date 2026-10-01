@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
-import type { NotificationEventKey } from '@moc/notifications'
+import type { NotificationEventDefinition, NotificationEventKey } from '@moc/notifications'
 import { createNotificationRoute, createUserNotificationRoute, deleteNotificationRoute, fetchNotificationRoutesForTarget, fetchNotificationRoutesForUser, type NotificationRoute } from '@/data/notification-routes'
 import type { ConnectEventsTarget } from './connect-events-modal'
+
+const NOTIFICATION_OPTIONS = [
+    { key: 'stream.created', label: 'YouTube stream', trigger: 'a YouTube stream is created or first found during sync.' },
+    { key: 'meeting.created', label: 'Zoom meeting', trigger: 'a Zoom meeting is created or first found during sync.' },
+    { key: 'request.created', label: 'Requests', trigger: 'a new request is submitted.' },
+    { key: 'booking.created', label: 'Equipment booking', trigger: 'a new equipment booking is submitted.' },
+    { key: 'venue_booking.created', label: 'Venue booking', trigger: 'a new venue booking is submitted.' },
+] as const
 
 function fetchRoutesForTarget(target: ConnectEventsTarget): Promise<NotificationRoute[]> {
     return target.kind === 'group'
@@ -75,5 +83,12 @@ export function useConnectEvents(target: ConnectEventsTarget | null, onClose: ()
         if (!open) onClose()
     }
 
-    return { state: { isOpen: target !== null, isLoading, pendingKey, routeByEvent, destinationLabel: labelForTarget(target) }, actions: { toggle, changeOpen } }
+    const messageAction = target?.kind === 'user' ? 'Send this person a direct message when' : 'Send a message to this group or topic when'
+    const notificationOptions: NotificationEventDefinition[] = NOTIFICATION_OPTIONS.map(option => ({
+        key: option.key,
+        label: option.label,
+        description: `${messageAction} ${option.trigger}`,
+    }))
+
+    return { state: { notificationOptions, isOpen: target !== null, isLoading, pendingKey, routeByEvent, destinationLabel: labelForTarget(target) }, actions: { toggle, changeOpen } }
 }

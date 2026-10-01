@@ -5,6 +5,7 @@ export type RequestCategoryDefinition = {
   workspaceId: string;
   key: string;
   name: string;
+  description: string | null;
   active: boolean;
   sortOrder: number;
   createdAt: string;

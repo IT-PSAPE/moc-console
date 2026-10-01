@@ -14,7 +14,7 @@ export function VenueBookingMetaFields({ booking, at }: { booking: VenueBooking;
     <div className="space-y-3">
       <MetaRow icon={<CircleDot />} label="Status"><Badge label={venueBookingPhaseLabel[phase]} color={venueBookingPhaseColor[phase]} /></MetaRow>
       <MetaRow icon={<Building2 />} label="Venue"><Paragraph.sm>{booking.venueName}</Paragraph.sm></MetaRow>
-      {booking.venueLocation && <MetaRow icon={<MapPin />} label="Location"><Paragraph.sm>{booking.venueLocation}</Paragraph.sm></MetaRow>}
+      {booking.venueDescription && <MetaRow icon={<MapPin />} label="Description"><Paragraph.sm>{booking.venueDescription}</Paragraph.sm></MetaRow>}
       <MetaRow icon={<Target />} label="Event">
         <div className="flex min-w-0 items-center gap-2">
           <Paragraph.sm>{venueBookingEventLabel(booking)}</Paragraph.sm>

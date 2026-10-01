@@ -1,5 +1,5 @@
 import type { PendingWorkspaceUser } from "@/data/fetch-users"
-import { Card } from "@moc/ui/components/display/card"
+import { DividedList } from "@moc/ui/components/display/divided-list"
 import { PendingUserCard } from "./pending-user-card"
 
 type PendingUsersListProps = {
@@ -14,5 +14,5 @@ export function PendingUsersList({ users, onApprove, onReject }: PendingUsersLis
   }
 
   if (users.length === 0) return null
-  return <Card>{users.map(renderUser)}</Card>
+  return <DividedList>{users.map(renderUser)}</DividedList>
 }

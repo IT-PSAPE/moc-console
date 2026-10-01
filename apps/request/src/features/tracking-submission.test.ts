@@ -96,7 +96,7 @@ describe("tracking result edit data", () => {
       requestedBy: "Tapiwa",
       venueId: "venue-1",
       venueName: "Auditorium",
-      venueLocation: null,
+      venueDescription: null,
       eventId: null,
       eventName: null,
       eventOther: "Youth night",
@@ -136,7 +136,7 @@ describe("canRequesterModify", () => {
     const venue = {
       id: "venue-booking-1", trackingCode: "VEN-123456789ABC", title: "Youth night",
       type: "venue_booking" as const, status: "booked" as const, requestedBy: "Craig", venueId: "venue-1",
-      venueName: "Auditorium", venueLocation: null, eventId: null, eventName: null,
+      venueName: "Auditorium", venueDescription: null, eventId: null, eventName: null,
       eventOther: "Youth night", timeZone: "Africa/Johannesburg", endsAt: "2026-10-03T18:00:00.000Z",
       slotStarts: ["2026-10-03T16:00:00.000Z"], recurrence: null,
       occurrences: [{ index: 0, startsAt: "2026-10-03T16:00:00.000Z", endsAt: "2026-10-03T18:00:00.000Z" }],

@@ -1,5 +1,5 @@
 import { Section } from "@moc/ui/components/display/section"
-import { Card } from "@moc/ui/components/display/card"
+import { DividedList } from "@moc/ui/components/display/divided-list"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Decision } from "@moc/ui/components/display/decision"
@@ -11,7 +11,7 @@ import { useRequestCategoriesSettings } from "./use-request-categories-settings"
 import { RequestCategoryRow } from "./request-category-row"
 import { RequestCategoryFormModal } from "./request-category-form-modal"
 
-export function RequestCategoriesTab() {
+export function RequestCategoriesSection() {
     const { state, actions } = useRequestCategoriesSettings()
 
     function renderCategory(category: RequestCategoryDefinition) {
@@ -21,6 +21,7 @@ export function RequestCategoriesTab() {
                 category={category}
                 pending={state.pendingId === category.id}
                 onEdit={actions.openEdit}
+                onDuplicate={actions.openDuplicate}
                 onToggleActive={actions.toggleActive}
                 onDelete={actions.openDelete}
             />
@@ -48,7 +49,7 @@ export function RequestCategoriesTab() {
                             <EmptyState icon={<ListTree />} title="No categories yet" description="Add a category so people can assign it to requests." />
                         </Decision.Empty>
                         <Decision.Data>
-                            <Card>{state.categories.map(renderCategory)}</Card>
+                            <DividedList>{state.categories.map(renderCategory)}</DividedList>
                         </Decision.Data>
                     </Decision>
                 </Section.Body>

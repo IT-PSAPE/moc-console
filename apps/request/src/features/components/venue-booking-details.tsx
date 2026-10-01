@@ -69,11 +69,11 @@ export function VenueBookingDetails({
   }
 
   function renderVenueOption(venue: PublicVenue) {
-    return <Select.Item key={venue.id} value={venue.id}>{venue.name}</Select.Item>
+    return <Select.Item key={venue.id} value={venue.id} description={venue.description}>{venue.name}</Select.Item>
   }
 
   function renderEventOption(event: PublicVenueEvent) {
-    return <Select.Item key={event.id} value={event.id}>{event.name}</Select.Item>
+    return <Select.Item key={event.id} value={event.id} description={event.description}>{event.name}</Select.Item>
   }
 
   function renderSlot(slot: VenueSlotOption) {

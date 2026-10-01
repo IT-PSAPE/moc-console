@@ -16,8 +16,8 @@ export function RequestFlow({ data, onChange }: RequestFlowProps) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
-        <FormLabel label="Flow" optional />
-        <TextArea aria-label="Flow" name="flow" placeholder="Describe the sequence or flow of events…" value={data.flow} onChange={handleChange} rows={6} />
+        <FormLabel label="Flow of events" optional />
+        <TextArea aria-label="Flow of events" name="flow" placeholder="Describe the sequence or flow of events…" value={data.flow} onChange={handleChange} rows={6} />
       </div>
     </div>
   )

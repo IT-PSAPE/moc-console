@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useState } from "react"
-import type { PendingWorkspaceUser } from "@/data/fetch-users"
+import type { ConnectEventsTarget } from "./connect-events-modal"
+import type { PendingWorkspaceUser, UserWithRole } from "@/data/fetch-users"
 import { useUsers } from "@/features/users/users-provider"
-import { useAuth } from "@/lib/auth-context"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 
 export function useUsersSettings() {
-  const { profile } = useAuth()
   const {
     state: { users, pendingUsers, roles, isLoading },
     actions: { loadUsers, changeRole, approveUser, rejectUser },
   } = useUsers()
-  const { role } = useWorkspace()
+  const { role, currentWorkspaceId } = useWorkspace()
+  const canManage = role?.can_manage_roles === true
+  const [connectTarget, setConnectTarget] = useState<ConnectEventsTarget | null>(null)
   const { toast } = useFeedback()
   const [rejectTarget, setRejectTarget] = useState<PendingWorkspaceUser | null>(null)
   const [isRejecting, setIsRejecting] = useState(false)
@@ -71,11 +72,20 @@ export function useUsersSettings() {
     }
   }, [rejectTarget, rejectUser, toast])
 
+  function openConnectUser(user: UserWithRole): void {
+    if (!canManage || !currentWorkspaceId || !user.telegramChatId) return
+    setConnectTarget({ kind: 'user', workspaceId: currentWorkspaceId, userId: user.id, userName: `${user.name} ${user.surname}`.trim() })
+  }
+
+  function closeConnect(): void {
+    setConnectTarget(null)
+  }
+
   const rejectName = rejectTarget ? `${rejectTarget.name} ${rejectTarget.surname}`.trim() : ""
   const rejectDescription = `${rejectName || "This person"} will not be added to this workspace.`
 
   return {
-    actions: { approve, updateRole, requestReject, handleRejectOpenChange, confirmReject },
-    meta: { users, pendingUsers, roles, isLoading, rejectTarget, rejectDescription, isRejecting, canManage: role?.can_manage_roles === true, currentUserId: profile?.id },
+    actions: { openConnectUser, closeConnect, approve, updateRole, requestReject, handleRejectOpenChange, confirmReject },
+    meta: { connectTarget: canManage ? connectTarget : null, users, pendingUsers, roles, isLoading, rejectTarget, rejectDescription, isRejecting, canManage },
   }
 }

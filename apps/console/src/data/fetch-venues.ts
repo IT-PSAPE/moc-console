@@ -2,15 +2,13 @@ import type { Venue } from "@moc/types/venues";
 import { supabase } from "@moc/data/supabase";
 import { getCurrentWorkspaceId } from "./current-workspace";
 
-export const VENUE_SELECT = "id, workspace_id, name, location, capacity, notes, active, sort_order, created_at, updated_at";
+export const VENUE_SELECT = "id, workspace_id, name, description, active, sort_order, created_at, updated_at";
 
 export type VenueRow = {
   id: string;
   workspace_id: string;
   name: string;
-  location: string | null;
-  capacity: number | null;
-  notes: string | null;
+  description: string | null;
   active: boolean;
   sort_order: number;
   created_at: string;
@@ -22,9 +20,7 @@ export function mapVenueRow(row: VenueRow): Venue {
     id: row.id,
     workspaceId: row.workspace_id,
     name: row.name,
-    location: row.location,
-    capacity: row.capacity,
-    notes: row.notes,
+    description: row.description,
     active: row.active,
     sortOrder: row.sort_order,
     createdAt: row.created_at,

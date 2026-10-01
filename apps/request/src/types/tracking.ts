@@ -47,7 +47,7 @@ export type TrackingVenueBookingResult = TrackingBase & {
   requestedBy: string
   venueId: string
   venueName: string
-  venueLocation: string | null
+  venueDescription: string | null
   eventId: string | null
   eventName: string | null
   eventOther: string | null
@@ -67,4 +67,5 @@ export type SubmissionType = TrackingResult["type"]
 export type RequestCategoryOption = {
   value: string
   label: string
+  description?: string | null
 }

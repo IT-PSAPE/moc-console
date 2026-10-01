@@ -19,7 +19,7 @@ export function useTrackingVenueEditor(result: TrackingVenueBookingResult, onSav
   const availability = useVenueAvailability(data.venueId, data.bookingDate, reservedSlotStarts)
   const venues = availability.state.venues.some((venue) => venue.id === result.venueId)
     ? availability.state.venues
-    : [{ id: result.venueId, name: result.venueName, location: result.venueLocation, capacity: null }, ...availability.state.venues]
+    : [{ id: result.venueId, name: result.venueName, description: result.venueDescription }, ...availability.state.venues]
   const events = !result.eventId || availability.state.events.some((event) => event.id === result.eventId)
     ? availability.state.events
     : [{ id: result.eventId, name: result.eventName ?? result.title, description: null }, ...availability.state.events]
