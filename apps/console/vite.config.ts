@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
@@ -48,13 +48,11 @@ const aliasEntries = [
   },
 ]
 
-// Server-side code now lives in the MOC API app (apps/api). This config used
-// to host a dev-only middleware that proxied /api/zoom/* so Zoom OAuth worked
-// under `vite dev`; that duplicated the real handlers. For local Zoom work,
-// run the API app (`bun run dev:api`) and point VITE_API_BASE_URL at it.
-
 // https://vite.dev/config/
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+  const environment = loadEnv(mode, fileURLToPath(new URL('.', import.meta.url)), '')
+  const apiTarget = environment.MOC_API_PROXY_TARGET?.trim() || 'http://localhost:3001'
+
   return {
     plugins: [
       react(),
@@ -73,6 +71,11 @@ export default defineConfig(() => {
     server: {
       port: 5173,
       strictPort: true,
+      // Forward to the real API handlers instead of Vite's HTML fallback.
+      // This also keeps local browser requests on the Console's own origin.
+      proxy: {
+        '/api': { target: apiTarget, changeOrigin: true },
+      },
     },
   }
 })

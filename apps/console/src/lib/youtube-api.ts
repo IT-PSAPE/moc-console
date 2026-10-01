@@ -1,6 +1,6 @@
 import { buildSessionHeaders } from "./api-auth"
 import { providerProxyPath } from "./provider-proxy-path"
-import { providerRequestError } from "./provider-request-error"
+import { checkProviderApiResponse, providerRequestError } from "./provider-request-error"
 import { getCurrentWorkspaceId } from "@/data/current-workspace"
 import { apiUrl } from "@moc/utils/api-url"
 
@@ -10,7 +10,7 @@ export async function youtubeApiFetch(
 ): Promise<Response> {
   const [sessionHeaders, workspaceId] = await Promise.all([buildSessionHeaders(), getCurrentWorkspaceId()])
 
-  return fetch(apiUrl(`/api/youtube/v3${providerProxyPath(path)}`), {
+  const response = await fetch(apiUrl(`/api/youtube/v3${providerProxyPath(path)}`), {
     ...options,
     headers: {
       // Only declare a payload type when there is a payload: the proxy rejects a
@@ -22,6 +22,7 @@ export async function youtubeApiFetch(
       ...options.headers,
     },
   })
+  return checkProviderApiResponse(response)
 }
 
 /** Reads a blob as base64, without the `data:…;base64,` prefix. */

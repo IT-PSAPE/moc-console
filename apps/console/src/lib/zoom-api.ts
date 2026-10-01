@@ -1,6 +1,6 @@
 import { buildSessionHeaders } from "./api-auth"
 import { providerProxyPath } from "./provider-proxy-path"
-import { providerRequestError } from "./provider-request-error"
+import { checkProviderApiResponse, providerRequestError } from "./provider-request-error"
 import { apiUrl } from "@moc/utils/api-url"
 import { getCurrentWorkspaceId } from "@/data/current-workspace"
 
@@ -11,7 +11,7 @@ export async function zoomApiFetch(
 ): Promise<Response> {
   const [sessionHeaders, workspaceId] = await Promise.all([buildSessionHeaders(), getCurrentWorkspaceId()])
 
-  return fetch(apiUrl(`/api/zoom/v2${providerProxyPath(path)}`), {
+  const response = await fetch(apiUrl(`/api/zoom/v2${providerProxyPath(path)}`), {
     ...options,
     headers: {
       // Only declare a payload type when there is a payload: the proxy rejects a
@@ -23,6 +23,7 @@ export async function zoomApiFetch(
       ...options.headers,
     },
   })
+  return checkProviderApiResponse(response)
 }
 
 /** Revoke Zoom OAuth token. */

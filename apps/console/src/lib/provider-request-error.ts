@@ -84,8 +84,30 @@ export function providerFailureTitle(provider: string, failure: ProviderRequestE
   return fallback
 }
 
+function htmlResponseError(response: Response): ProviderRequestError | null {
+  if (!response.ok) return null
+  const mediaType = response.headers.get("content-type")?.split(";")[0].trim().toLowerCase()
+  if (mediaType !== "text/html" && mediaType !== "application/xhtml+xml") return null
+
+  return new ProviderRequestError(
+    "The stream service returned a web page. Check the API server address and connection.",
+    "misconfigured",
+    response.status,
+  )
+}
+
+/** Rejects a successful HTML app fallback before a caller attempts JSON parsing. */
+export function checkProviderApiResponse(response: Response): Response {
+  const error = htmlResponseError(response)
+  if (error) throw error
+  return response
+}
+
 /** Builds a typed error from a failed proxy response, reading it only once. */
 export async function providerRequestError(response: Response, fallback: string): Promise<ProviderRequestError> {
+  const htmlError = htmlResponseError(response)
+  if (htmlError) return htmlError
+
   const raw = await response.text()
   let message = fallback
   let code: ProviderFailureCode | null = null
