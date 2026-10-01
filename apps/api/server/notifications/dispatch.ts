@@ -36,7 +36,6 @@ export { resolveDmRouteTarget, type DmRouteResolution } from "./dispatch-targets
 export type {
   BookingCreatedPayload,
   BookingRequesterMutationPayload,
-  BookingStalePayload,
   BookingStatusChangedPayload,
   EventPayloadMap,
   MeetingCreatedPayload,
@@ -44,7 +43,6 @@ export type {
   RequestArchivedPayload,
   RequestCreatedPayload,
   RequestRequesterMutationPayload,
-  RequestStalePayload,
   RequestStatusChangedPayload,
   StreamCreatedPayload,
   StreamUpdatedPayload,

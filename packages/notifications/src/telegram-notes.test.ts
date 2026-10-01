@@ -25,10 +25,6 @@ describe("renderFollowUpNote", () => {
     assert.equal(renderFollowUpNote("request.status_changed", { status: "in progress" }), "🔄 Status changed to in progress")
   })
 
-  it("reports stale duration", () => {
-    assert.equal(renderFollowUpNote("booking.stale", { staleDays: "4" }), "⚠️ Stale for 4 day(s)")
-  })
-
   it("reports the cancellation reason", () => {
     assert.equal(
       renderFollowUpNote("venue_booking.cancelled", { cancelReason: "Clashes with elders' meeting" }),

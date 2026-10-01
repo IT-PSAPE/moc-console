@@ -11,12 +11,10 @@ export type NotificationEventKey =
   | "request.requester_deleted"
   | "request.status_changed"
   | "request.archived"
-  | "request.stale"
   | "booking.created"
   | "booking.requester_updated"
   | "booking.requester_deleted"
   | "booking.status_changed"
-  | "booking.stale"
   | "venue_booking.created"
   | "venue_booking.requester_updated"
   | "venue_booking.requester_deleted"
@@ -68,11 +66,6 @@ export const NOTIFICATION_EVENTS: readonly NotificationEventDefinition[] = [
     description: "Fires when a request is archived.",
   },
   {
-    key: "request.stale",
-    label: "Request not attended to",
-    description: "Fires from the daily sweep when a request goes longer than the stale threshold without being updated.",
-  },
-  {
     key: "booking.created",
     label: "Equipment booking created",
     description: "Fires when a new equipment booking is made in the requests/bookings app.",
@@ -91,11 +84,6 @@ export const NOTIFICATION_EVENTS: readonly NotificationEventDefinition[] = [
     key: "booking.status_changed",
     label: "Equipment booking status changed",
     description: "Fires whenever an equipment booking changes status.",
-  },
-  {
-    key: "booking.stale",
-    label: "Booking not attended to",
-    description: "Fires from the daily sweep when a booking is overdue for return or goes longer than the stale threshold without being updated.",
   },
   {
     key: "venue_booking.created",

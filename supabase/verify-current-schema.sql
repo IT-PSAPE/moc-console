@@ -13,7 +13,7 @@ WITH expected_tables(name) AS (
     ('checklist_templates'), ('checklists'), ('equipment'),
     ('notification_deliveries'), ('notification_ingest_replays'),
     ('notification_message_templates'), ('notification_outbox'),
-    ('notification_recipients'), ('notification_routes'), ('notification_settings'),
+    ('notification_routes'), ('notification_settings'),
     ('request_activity'), ('request_assignees'), ('request_categories'),
     ('request_comments'), ('requests'),
     ('roles'), ('streams'), ('telegram_group_topics'), ('telegram_groups'),
@@ -41,10 +41,6 @@ expected_columns(table_schema, table_name, column_name, data_type, is_nullable) 
     ('public', 'youtube_connections', 'status', 'USER-DEFINED', false),
     ('public', 'zoom_connections', 'status', 'USER-DEFINED', false),
     ('public', 'zoom_meetings', 'zoom_connection_id', 'uuid', false),
-    ('public', 'requests', 'stale_notification_claimed_at', 'timestamp with time zone', true),
-    ('public', 'requests', 'stale_notification_event_key', 'text', true),
-    ('public', 'bookings', 'stale_notification_claimed_at', 'timestamp with time zone', true),
-    ('public', 'bookings', 'stale_notification_event_key', 'text', true),
     ('public', 'telegram_webhook_updates', 'update_id', 'bigint', false),
     ('public', 'telegram_webhook_updates', 'payload', 'jsonb', false),
     ('public', 'telegram_webhook_updates', 'status', 'text', false),
@@ -71,7 +67,6 @@ expected_indexes(schema_name, table_name, index_name) AS (
   VALUES
     ('public', 'checklist_item_assignees', 'idx_checklist_item_assignees_user_id'),
     ('public', 'checklist_item_assignees', 'checklist_item_assignees_checklist_item_id_user_id_key'),
-    ('public', 'notification_recipients', 'idx_notification_recipients_user_id'),
     ('public', 'notification_routes', 'idx_notification_routes_group_chat_id'),
     ('public', 'notification_outbox', 'idx_notification_outbox_workspace_id'),
     ('public', 'notification_deliveries', 'idx_notification_deliveries_route_id'),
@@ -178,10 +173,6 @@ expected_functions(signature) AS (
     ('public.mark_integration_oauth_reauth_required_if_refresh_token_matches(text,uuid,text)'),
     ('public.delete_integration_oauth_connection(text,uuid)'),
     ('public.delete_zoom_integrations_for_user(text)'),
-    ('public.claim_stale_requests()'),
-    ('public.claim_stale_bookings()'),
-    ('public.complete_stale_request_notification(uuid,text)'),
-    ('public.complete_stale_booking_notification(uuid,text)'),
     ('public.enqueue_notification_outbox_event(uuid,text,text,uuid,text,jsonb)'),
     ('public.claim_telegram_webhook_update(bigint,jsonb)'),
     ('public.complete_telegram_webhook_update(bigint)'),
@@ -328,9 +319,23 @@ SELECT jsonb_build_object(
     LEFT JOIN actual_triggers AS actual USING (table_name, trigger_name)
     WHERE actual.trigger_name IS NULL
   ), '[]'::jsonb),
-  'stale_marker_updates_touch_activity', coalesce((
-    SELECT jsonb_agg('public.set_updated_at'::text)
-    WHERE pg_get_functiondef(to_regprocedure('public.set_updated_at()')) NOT LIKE '%stale_notification_claimed_at%'
+  'retired_stale_alert_columns', coalesce((
+    SELECT jsonb_agg(format('%I.%I.%I', table_schema, table_name, column_name))
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND ((table_name = 'notification_settings' AND column_name = 'stale_threshold_days')
+        OR (table_name IN ('requests', 'bookings') AND column_name IN (
+          'stale_notified_at', 'stale_notification_claimed_at', 'stale_notification_event_key'
+        )))
+  ), '[]'::jsonb),
+  'retired_stale_alert_functions', coalesce((
+    SELECT jsonb_agg(signature)
+    FROM (VALUES
+      ('public.claim_stale_requests()'), ('public.claim_stale_bookings()'),
+      ('public.complete_stale_request_notification(uuid,text)'),
+      ('public.complete_stale_booking_notification(uuid,text)')
+    ) AS retired(signature)
+    WHERE to_regprocedure(signature) IS NOT NULL
   ), '[]'::jsonb),
   'missing_required_functions', coalesce((
     SELECT jsonb_agg(expected.signature ORDER BY expected.signature)

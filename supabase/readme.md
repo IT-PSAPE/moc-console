@@ -37,7 +37,7 @@ playlist, or cue-sheet objects that later patches intentionally remove.
 
 ## Post-migration target
 
-After the reliability migration, the target has 41 public application tables,
+After the reliability migration, the target has 40 public application tables,
 all with RLS enabled. Authorization is workspace-scoped through
 `workspace_users.role_id`; new accounts create `workspace_join_requests` and
 remain pending until approved. OAuth secrets live only in
@@ -63,8 +63,7 @@ The first tracked reliability migration is:
    [`migrations/20260805120000_api_reliability_hardening.sql`](migrations/20260805120000_api_reliability_hardening.sql).
    It must be applied after the two historical migration entries above. It adds
    atomic OAuth connection/token RPCs, rotating-refresh leases, durable
-   notification and Telegram boundaries, fixed-window API rate limits, stale
-   notification completion semantics, and missing foreign-key indexes.
+   notification and Telegram boundaries, fixed-window API rate limits, and missing foreign-key indexes.
 4. `20260805130000_zoom_marketplace_deauthorization` — source:
    [`migrations/20260805130000_zoom_marketplace_deauthorization.sql`](migrations/20260805130000_zoom_marketplace_deauthorization.sql).
    It removes Zoom host start URLs, handles verified Marketplace deauthorization,
@@ -297,3 +296,9 @@ service-role-only and sit behind the MoC API's origin checks and rate limits.
 Maintenance RPCs and OAuth-token RPCs are service-role-only. The notification
 queue tables intentionally have RLS without client policies because they are
 also service-role-only.
+
+Stale-item alerts are retired by
+[`20260930190000_remove_stale_item_alerts.sql`](migrations/20260930190000_remove_stale_item_alerts.sql).
+It removes the alert recipient table, threshold and bookkeeping columns, claim
+and completion RPCs, and stale-event routes and deliveries. Auto-archive and
+message-format settings remain. The API deployment removes the stale-items cron.

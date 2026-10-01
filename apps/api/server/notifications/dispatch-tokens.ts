@@ -25,11 +25,9 @@ import type {
   RequestCreatedPayload,
   RequestStatusChangedPayload,
   RequestArchivedPayload,
-  RequestStalePayload,
   RequestRequesterMutationPayload,
   BookingCreatedPayload,
   BookingStatusChangedPayload,
-  BookingStalePayload,
   BookingRequesterMutationPayload,
   VenueBookingCreatedPayload,
   VenueBookingCancelledPayload,
@@ -163,18 +161,15 @@ export async function buildTokens<K extends NotificationEventKey>(
     case "request.requester_updated":
     case "request.requester_deleted":
     case "request.status_changed":
-    case "request.archived":
-    case "request.stale": {
+    case "request.archived": {
       const p = payload as RequestCreatedPayload &
         RequestStatusChangedPayload &
-        RequestArchivedPayload &
-        RequestStalePayload
+        RequestArchivedPayload
       const requesterMutation = p as Partial<RequestRequesterMutationPayload>
       const base: TokenValues = {
         title: p.title,
         status: p.status ? telegramStatusLabel("request", p.status) : undefined,
         requesterName: p.requesterName,
-        staleDays: p.staleDays,
         trackingCode: requesterMutation.trackingCode,
         changeSummary: requesterMutation.changeSummary,
         linkUrl: p.linkUrl,
@@ -186,18 +181,14 @@ export async function buildTokens<K extends NotificationEventKey>(
     case "booking.created":
     case "booking.requester_updated":
     case "booking.requester_deleted":
-    case "booking.status_changed":
-    case "booking.stale": {
+    case "booking.status_changed": {
       const p = payload as BookingCreatedPayload &
-        BookingStatusChangedPayload &
-        BookingStalePayload
+        BookingStatusChangedPayload
       const requesterMutation = p as Partial<BookingRequesterMutationPayload>
       const base: TokenValues = {
         title: p.title,
         status: p.status ? telegramStatusLabel("booking", p.status) : undefined,
         requesterName: p.requesterName,
-        staleDays: p.staleDays,
-        staleReason: p.staleReason,
         changeSummary: requesterMutation.changeSummary,
         linkUrl: p.linkUrl,
       }

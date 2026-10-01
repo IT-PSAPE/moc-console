@@ -52,8 +52,6 @@ const LOUD_FOLLOW_UP_KEYS = new Set<FollowUpEventKey>([
   "venue_booking.requester_updated",
   "stream.updated",
   "meeting.updated",
-  "request.stale",
-  "booking.stale",
 ]);
 
 export function isLoudFollowUp(eventType: FollowUpEventKey): boolean {

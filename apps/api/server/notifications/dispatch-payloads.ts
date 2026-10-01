@@ -52,15 +52,6 @@ export type RequestArchivedPayload = {
   requestId?: string | null
 }
 
-export type RequestStalePayload = {
-  title: string
-  status?: string | null
-  requesterName?: string | null
-  linkUrl: string
-  requestId?: string | null
-  staleDays?: string | null
-}
-
 export type RequestRequesterMutationPayload = RequestCreatedPayload & {
   trackingCode: string
   changeSummary: string
@@ -79,15 +70,6 @@ export type BookingStatusChangedPayload = {
   status: string
   linkUrl: string
   trackingCode?: string | null
-}
-
-export type BookingStalePayload = {
-  title: string
-  status?: string | null
-  linkUrl: string
-  trackingCode?: string | null
-  staleDays?: string | null
-  staleReason?: string | null
 }
 
 export type BookingRequesterMutationPayload = BookingCreatedPayload & {
@@ -132,12 +114,10 @@ export type EventPayloadMap = {
   "request.requester_deleted": RequestRequesterMutationPayload
   "request.status_changed": RequestStatusChangedPayload
   "request.archived": RequestArchivedPayload
-  "request.stale": RequestStalePayload
   "booking.created": BookingCreatedPayload
   "booking.requester_updated": BookingRequesterMutationPayload
   "booking.requester_deleted": BookingRequesterMutationPayload
   "booking.status_changed": BookingStatusChangedPayload
-  "booking.stale": BookingStalePayload
   "venue_booking.created": VenueBookingCreatedPayload
   "venue_booking.requester_updated": VenueBookingRequesterMutationPayload
   "venue_booking.requester_deleted": VenueBookingRequesterMutationPayload

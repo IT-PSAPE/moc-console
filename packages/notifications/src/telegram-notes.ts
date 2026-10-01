@@ -44,11 +44,6 @@ export function renderFollowUpNote(eventType: FollowUpEventKey, tokens: NoteToke
     }
     case "request.archived":
       return "🗄️ Archived";
-    case "request.stale":
-    case "booking.stale": {
-      const staleDays = tokenValue(tokens, "staleDays");
-      return staleDays ? `⚠️ Stale for ${staleDays} day(s)` : "⚠️ Stale — needs attention";
-    }
     case "venue_booking.cancelled": {
       const cancelReason = tokenValue(tokens, "cancelReason");
       return cancelReason ? `🚫 Cancelled — ${cancelReason}` : "🚫 Cancelled";

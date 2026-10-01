@@ -35,7 +35,7 @@ describe("isAnnouncementEvent", () => {
 describe("eventEntityType", () => {
   it("maps every event family to its entity type", () => {
     assert.equal(eventEntityType("request.created"), "request")
-    assert.equal(eventEntityType("request.stale"), "request")
+    assert.equal(eventEntityType("request.status_changed"), "request")
     assert.equal(eventEntityType("booking.status_changed"), "booking")
     assert.equal(eventEntityType("venue_booking.cancelled"), "venue_booking")
     assert.equal(eventEntityType("stream.updated"), "stream")
@@ -44,15 +44,13 @@ describe("eventEntityType", () => {
 })
 
 describe("isLoudFollowUp", () => {
-  it("is loud for requester updates, stale sweeps and stream/meeting updates", () => {
+  it("is loud for requester updates and stream/meeting updates", () => {
     const loud: FollowUpEventKey[] = [
       "request.requester_updated",
       "booking.requester_updated",
       "venue_booking.requester_updated",
       "stream.updated",
       "meeting.updated",
-      "request.stale",
-      "booking.stale",
     ]
     for (const key of loud) assert.equal(isLoudFollowUp(key), true)
   })
@@ -68,5 +66,15 @@ describe("isLoudFollowUp", () => {
       "venue_booking.requester_deleted",
     ]
     for (const key of quiet) assert.equal(isLoudFollowUp(key), false)
+  })
+})
+
+
+describe("retired stale alerts", () => {
+  it("rejects stale event keys while retaining other request and booking events", () => {
+    assert.equal(isNotificationEventKey("request.stale"), false)
+    assert.equal(isNotificationEventKey("booking.stale"), false)
+    assert.equal(isNotificationEventKey("request.status_changed"), true)
+    assert.equal(isNotificationEventKey("booking.status_changed"), true)
   })
 })

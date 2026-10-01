@@ -5,16 +5,11 @@ import {
   type DateFormatPreset,
 } from "@moc/notifications";
 
-// Per-workspace stale-item config. The threshold controls when an activity
-// period is flagged; notification bookkeeping does not create new activity.
-// Default matches the DB default.
-export const DEFAULT_STALE_THRESHOLD_DAYS = 3;
 export const DEFAULT_AUTO_ARCHIVE_COMPLETED_REQUESTS_DAYS = 7;
 export const DEFAULT_AUTO_ARCHIVE_RETURNED_BOOKINGS_DAYS = 7;
 
 export type NotificationSettings = {
   workspaceId: string;
-  staleThresholdDays: number;
   autoArchiveCompletedRequestsDays: number;
   autoArchiveReturnedBookingsDays: number;
   // How dates render in Telegram messages — see formatDateTokens in @moc/notifications.
@@ -25,14 +20,13 @@ export type NotificationSettings = {
 export async function fetchNotificationSettings(workspaceId: string): Promise<NotificationSettings> {
   const { data, error } = await supabase
     .from("notification_settings")
-    .select("stale_threshold_days, auto_archive_completed_requests_days, auto_archive_returned_bookings_days, timezone, date_format")
+    .select("auto_archive_completed_requests_days, auto_archive_returned_bookings_days, timezone, date_format")
     .eq("workspace_id", workspaceId)
     .maybeSingle();
 
   if (error) throw new Error(error.message);
   return {
     workspaceId,
-    staleThresholdDays: data?.stale_threshold_days ?? DEFAULT_STALE_THRESHOLD_DAYS,
     autoArchiveCompletedRequestsDays:
       data?.auto_archive_completed_requests_days ?? DEFAULT_AUTO_ARCHIVE_COMPLETED_REQUESTS_DAYS,
     autoArchiveReturnedBookingsDays:
@@ -40,16 +34,6 @@ export async function fetchNotificationSettings(workspaceId: string): Promise<No
     timezone: data?.timezone ?? DEFAULT_TIMEZONE,
     dateFormat: (data?.date_format as DateFormatPreset) ?? DEFAULT_DATE_FORMAT,
   };
-}
-
-export async function updateStaleThresholdDays(workspaceId: string, days: number): Promise<void> {
-  const { error } = await supabase
-    .from("notification_settings")
-    .upsert(
-      { workspace_id: workspaceId, stale_threshold_days: days },
-      { onConflict: "workspace_id" },
-    );
-  if (error) throw new Error(error.message);
 }
 
 export async function updateAutoArchiveDays(
@@ -70,8 +54,7 @@ export async function updateAutoArchiveDays(
   if (error) throw new Error(error.message);
 }
 
-// Upsert only the formatting columns so the stale threshold (and its DB
-// default on first insert) is left untouched.
+// Update formatting independently of the auto-archive settings.
 export async function updateMessageFormat(
   workspaceId: string,
   timezone: string,

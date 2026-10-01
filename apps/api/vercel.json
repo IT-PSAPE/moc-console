@@ -3,7 +3,6 @@
   "buildCommand": "npm run build",
   "crons": [
     { "path": "/api/cron/weekly-archive", "schedule": "0 0 * * 1" },
-    { "path": "/api/cron/stale-items", "schedule": "0 0 * * *" },
     { "path": "/api/cron/notification-deliveries", "schedule": "0 1 * * *" },
     { "path": "/api/cron/stream-sync", "schedule": "0 9 * * *" }
   ],

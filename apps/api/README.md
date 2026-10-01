@@ -28,7 +28,6 @@ See [ADR-0008](../../docs/adr/0008-extract-moc-api-app.md) for why this exists.
 | `POST /api/telegram/webhook` | Telegram | webhook secret |
 | `GET /api/health` | deployment monitor | none |
 | `GET /api/cron/weekly-archive` | Vercel Cron, Mondays 00:00 | `CRON_SECRET` |
-| `GET /api/cron/stale-items` | Vercel Cron, daily 00:00 | `CRON_SECRET` |
 | `GET /api/cron/notification-deliveries` | Vercel Cron, daily 01:00 fallback retry | `CRON_SECRET` |
 Telegram calls exactly one webhook URL per bot, and that registration lives in
 Telegram, not in this repo or in Vercel. After the API changes host, or when
