@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, ty
 import { useBlocker, useNavigate } from 'react-router-dom'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { useWorkspace } from '@/lib/workspace-context'
-import { DEFAULT_TEMPLATES, SAMPLE_TOKENS, renderTemplate, validateTemplate, type MessageType } from '@moc/notifications'
+import { DEFAULT_TEMPLATES, validateTemplate, type MessageType } from '@moc/notifications'
 import { deleteNotificationTemplate, fetchNotificationTemplates, upsertNotificationTemplate } from '@/data/notification-templates'
 import { routes } from '@/screens/console-routes'
 import { messageTypeMeta } from '../meta'
+import { editorHtmlToTemplate, templateToEditorHtml, unsupportedTemplateTags, templateHasContent } from './template-editor-html'
 
 const SETTINGS_TELEGRAM = `/${routes.settings}?tab=telegram`
 
@@ -19,7 +20,7 @@ export function useMessageTemplateEditor(messageType: MessageType) {
     const [hasCustom, setHasCustom] = useState(false)
     const [savedBody, setSavedBody] = useState<string | null>(null)
     const [body, setBody] = useState(defaultBody)
-    const [view, setView] = useState<'source' | 'preview'>('source')
+    const [view, setView] = useState<'source' | 'preview'>('preview')
     const [saving, setSaving] = useState(false)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -45,9 +46,11 @@ export function useMessageTemplateEditor(messageType: MessageType) {
     }, [currentWorkspaceId, defaultBody, messageType, toast])
 
     const unknown = useMemo(() => validateTemplate(messageType, body), [body, messageType])
-    const preview = useMemo(() => renderTemplate(body, SAMPLE_TOKENS[messageType]), [body, messageType])
+    const editorHtml = useMemo(() => templateToEditorHtml(body), [body])
+    const unsupportedTags = useMemo(() => unsupportedTemplateTags(body), [body])
+    const unknownMessage = unknown.length ? `Unknown placeholder${unknown.length > 1 ? 's' : ''} for this message: ${unknown.map(name => `{{${name}}}`).join(', ')}` : ''
     const dirty = body !== (savedBody ?? defaultBody)
-    const canSave = dirty && unknown.length === 0 && body.trim() !== '' && !saving
+    const canSave = dirty && unknown.length === 0 && templateHasContent(body) && !saving
     const blocker = useBlocker(dirty)
 
     useEffect(() => {
@@ -132,13 +135,17 @@ export function useMessageTemplateEditor(messageType: MessageType) {
         setView(value as 'source' | 'preview')
     }
 
+    function changeRichBody(html: string): void {
+        setBody(editorHtmlToTemplate(html))
+    }
+
     function changeBody(event: ChangeEvent<HTMLTextAreaElement>) {
         setBody(event.target.value)
     }
 
     return {
-        state: { isLoading, hasCustom, body, view, saving, unknown, preview, dirty, canSave, navigationBlocked: blocker.state === 'blocked' },
-        actions: { back, insertTokenFromButton, save, saveAndProceed, discardAndProceed, cancelNavigation, restoreDefault, changeView, changeBody },
+        state: { isLoading, hasCustom, body, view, saving, unknown, unknownMessage, editorHtml, unsupportedTags, dirty, canSave, navigationBlocked: blocker.state === 'blocked' },
+        actions: { back, insertTokenFromButton, save, saveAndProceed, discardAndProceed, cancelNavigation, restoreDefault, changeView, changeBody, changeRichBody },
         templateMeta,
         textareaRef,
     }
