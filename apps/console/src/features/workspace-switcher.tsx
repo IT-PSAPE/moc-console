@@ -1,45 +1,67 @@
-import { Check, ChevronsUpDown } from 'lucide-react'
-import { Button } from '@moc/ui/components/controls/button'
+import { ChevronDown, LogOut, Settings, UserRound } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Avatar } from '@moc/ui/components/display/avatar'
 import { Label } from '@moc/ui/components/display/text'
+import { ListItemCard } from '@moc/ui/components/display/list-item-card'
+import { NavigationList } from '@moc/ui/components/navigation/navigation-list'
 import { Dropdown } from '@moc/ui/components/overlays/dropdown'
 import { cn } from '@moc/utils/cn'
+import { WorkspaceMenuItems } from './workspace-menu-items'
 import { useWorkspaceSwitcher } from './use-workspace-switcher'
 
-export function WorkspaceSwitcher() {
-    const { actions, meta } = useWorkspaceSwitcher()
+type WorkspaceSwitcherProps = {
+    isSigningOut: boolean
+    onEditProfile: () => void
+    onSignOut: () => void
+}
+
+const menuItemClassName = 'min-h-11 gap-2 px-2 py-1.5 md:min-h-9 md:py-1.5'
+
+export function WorkspaceSwitcher({ isSigningOut, onEditProfile, onSignOut }: WorkspaceSwitcherProps) {
+    const { meta } = useWorkspaceSwitcher()
+
 
     return (
-        <Dropdown placement="bottom-start">
+        <Dropdown placement="top-start">
             <Dropdown.Trigger>
-                <Button
-                    aria-label={`Switch workspace. Current workspace: ${meta.workspaceName}`}
-                    variant="ghost"
-                    className={cn('w-full justify-start !px-1', meta.isCollapsed && 'justify-center')}
-                >
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand_solid">
-                        <img src="/logo.svg" alt="" width="32" height="32" />
-                    </span>
+                <NavigationList.Item aria-label={`Account menu for ${meta.displayName}. Current workspace: ${meta.workspaceName}`} className={cn('gap-1.5 px-2 py-1', meta.isCollapsed && 'justify-center px-1')}>
+                    <Avatar src={meta.avatarUrl} name={meta.initials} size="xs" />
                     {!meta.isCollapsed && (
                         <>
-                            <span className="flex min-w-0 flex-1 flex-col items-start">
-                                <Label.sm className="max-w-full truncate">{meta.workspaceName}</Label.sm>
-                                <Label.xs className="text-quaternary">Workspace</Label.xs>
-                            </span>
-                            <ChevronsUpDown className="size-4 shrink-0 text-tertiary" aria-hidden="true" />
+                            <Label.sm className="min-w-0 truncate text-inherit">{meta.firstName}</Label.sm>
+                            {meta.roleName && <Label.xs className="min-w-0 truncate text-tertiary">{meta.roleName}</Label.xs>}
+                            <ChevronDown className="ml-auto size-4 shrink-0 text-tertiary" aria-hidden="true" />
                         </>
                     )}
-                </Button>
+                </NavigationList.Item>
             </Dropdown.Trigger>
-            <Dropdown.Panel className="min-w-64">
-                <div className="px-2 py-1.5">
-                    <Label.xs className="uppercase tracking-wide text-quaternary">Workspaces</Label.xs>
-                </div>
-                {meta.workspaces.map((workspace) => (
-                    <Dropdown.Item key={workspace.id} data-workspace-id={workspace.id} onClick={actions.selectWorkspace}>
-                        <span className="min-w-0 flex-1 truncate">{workspace.name}</span>
-                        {workspace.id === meta.currentWorkspaceId && <Check className="size-4 text-brand" aria-hidden="true" />}
-                    </Dropdown.Item>
-                ))}
+            <Dropdown.Panel className="w-72 p-1.5">
+                <ListItemCard.Root className="items-center gap-2 px-2 py-2 md:px-2">
+                    <Avatar src={meta.avatarUrl} name={meta.initials} size="sm" />
+                    <ListItemCard.Content>
+                        <div className="flex min-w-0 items-center gap-2">
+                            <ListItemCard.Title>{meta.displayName}</ListItemCard.Title>
+                            {meta.roleName && <Label.xs className="shrink-0 text-tertiary">{meta.roleName}</Label.xs>}
+                        </div>
+                        <ListItemCard.Subtitle>{meta.email}</ListItemCard.Subtitle>
+                    </ListItemCard.Content>
+                </ListItemCard.Root>
+                <Dropdown.Separator />
+                <Dropdown.Link render={<Link to="/account/settings" />} className={menuItemClassName}>
+                    <Settings className="size-6 shrink-0 p-1" aria-hidden="true" />
+                    Settings
+                </Dropdown.Link>
+                <Dropdown.Item onSelect={onEditProfile} className={menuItemClassName}>
+                    <UserRound className="size-6 shrink-0 p-1" aria-hidden="true" />
+                    Edit profile
+                </Dropdown.Item>
+                <Dropdown.Separator />
+                <WorkspaceMenuItems />
+                <Dropdown.Separator />
+                <Dropdown.Item onSelect={onSignOut} disabled={isSigningOut} className={menuItemClassName}>
+                    <LogOut className="size-6 shrink-0 p-1 text-error" aria-hidden="true" />
+                    <span className="text-error">{isSigningOut ? 'Logging out…' : 'Log out'}</span>
+                </Dropdown.Item>
             </Dropdown.Panel>
         </Dropdown>
     )
