@@ -1,8 +1,9 @@
-import { useEffect, useId, useState, type ChangeEvent } from "react";
+import { useId } from "react";
 import { cn } from "@moc/utils/cn";
 import { Paragraph } from "@moc/ui/components/display/text";
 import { FormLabel } from "./form-label";
 import { Input } from "./input";
+import { useDateTimeFields } from "./use-date-time-fields";
 
 type DateTimeFieldsProps = {
     value: string
@@ -24,19 +25,8 @@ type DateTimeFieldsProps = {
     fieldsClassName?: string
 }
 
-function splitDateTime(value: string): { date: string; time: string } {
-    const [date = "", time = ""] = value.split("T");
-    return { date, time: time.slice(0, 5) };
-}
-
-function combineDateTime(date: string, time: string): string {
-    return date && time ? `${date}T${time}` : "";
-}
-
 export function DateTimeFields({ value, onChange, label, ariaLabel, name, dateLabel = "Date", timeLabel = "Time", required, optional, disabled, helperText, errorText, incompleteText, style = "outline", fieldLabels = "visible", className, fieldsClassName }: DateTimeFieldsProps) {
-    const [date, setDate] = useState(splitDateTime(value).date);
-    const [time, setTime] = useState(splitDateTime(value).time);
-    const isIncomplete = Boolean(date || time) && !(date && time);
+    const { state: { date, time, isIncomplete }, actions: { handleDateChange, handleTimeChange } } = useDateTimeFields(value, onChange);
     const resolvedIncompleteText = incompleteText ?? (required ? "Date and time are both required." : "Choose both date and time, or clear both.");
     const accessibleLabel = ariaLabel ?? label;
     const fieldLabelClassName = fieldLabels === "hidden" ? "sr-only" : undefined;
@@ -47,24 +37,6 @@ export function DateTimeFields({ value, onChange, label, ariaLabel, name, dateLa
     const feedbackId = `${fieldIdBase}-feedback`;
     const feedbackText = errorText ?? (isIncomplete ? resolvedIncompleteText : helperText);
     const hasError = Boolean(errorText || isIncomplete);
-
-    useEffect(() => {
-        const next = splitDateTime(value);
-        setDate(next.date);
-        setTime(next.time);
-    }, [value]);
-
-    function handleDateChange(event: ChangeEvent<HTMLInputElement>) {
-        const nextDate = event.target.value;
-        setDate(nextDate);
-        onChange(combineDateTime(nextDate, time));
-    }
-
-    function handleTimeChange(event: ChangeEvent<HTMLInputElement>) {
-        const nextTime = event.target.value;
-        setTime(nextTime);
-        onChange(combineDateTime(date, nextTime));
-    }
 
     return (
         <div className={cn("flex w-full min-w-0 flex-col gap-1.5", className)}>
