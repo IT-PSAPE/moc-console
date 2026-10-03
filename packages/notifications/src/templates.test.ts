@@ -41,9 +41,9 @@ describe("DEFAULT_TEMPLATES", () => {
     assert.ok(DEFAULT_TEMPLATES["meeting.created"].includes("{{joinUrl}}"))
   })
 
-  it("puts notes in a blockquote and the tracking code in a footer", () => {
+  it("puts notes in a blockquote and the tracking code in a native paragraph", () => {
     assert.ok(DEFAULT_TEMPLATES["request.created"].includes("<blockquote>{{notes}}</blockquote>"))
-    assert.ok(DEFAULT_TEMPLATES["request.created"].includes("<footer>{{trackingCode}}</footer>"))
+    assert.ok(DEFAULT_TEMPLATES["request.created"].includes("<p>{{trackingCode}}</p>"))
   })
 
   it("drops the checklist DM's link line but keeps linkUrl as a valid token", () => {

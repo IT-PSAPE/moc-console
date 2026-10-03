@@ -17,7 +17,6 @@ export function RichTextEditorToolbar() {
                 <RichTextEditorMenuCommand command="h4">Heading 4</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="h5">Heading 5</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="h6">Heading 6</RichTextEditorMenuCommand>
-                <RichTextEditorMenuCommand command="footer">Footer</RichTextEditorMenuCommand>
             </Dropdown.Panel></Dropdown>
             <RichTextEditorCommand command="bold" label="Bold" icon={<Bold />} />
             <RichTextEditorCommand command="italic" label="Italic" icon={<Italic />} />
@@ -30,14 +29,10 @@ export function RichTextEditorToolbar() {
                 <RichTextEditorMenuCommand command="bulletList">Bullet list</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="orderedList">Numbered list</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="blockquote">Quote</RichTextEditorMenuCommand>
-                <RichTextEditorMenuCommand command="expandableQuote">Expandable quote</RichTextEditorMenuCommand>
-                <RichTextEditorMenuCommand command="pullQuote">Pull quote</RichTextEditorMenuCommand>
-                <RichTextEditorMenuCommand command="details">Collapsible details</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="codeBlock">Code block</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="divider">Divider</RichTextEditorMenuCommand>
                 <Dropdown.Separator />
                 <RichTextEditorMenuCommand command="highlight">Highlight</RichTextEditorMenuCommand>
-                <RichTextEditorMenuCommand command="spoiler">Spoiler</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="subscript">Subscript</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="superscript">Superscript</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="unlink">Remove link</RichTextEditorMenuCommand>
