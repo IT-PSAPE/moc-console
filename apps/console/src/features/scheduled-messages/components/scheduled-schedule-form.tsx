@@ -20,7 +20,7 @@ import { useScheduledMessagesContext } from '../scheduled-messages-context'
 export function ScheduledScheduleForm() {
     const { state, actions, meta } = useScheduledMessagesContext()
     function renderField(field: ScheduledFieldDefinition) {
-        return <FormField key={field.key} label={field.label}>{field.key === 'instructions' ? <TextArea name={field.key} aria-label={`Message ${field.label}`} value={state.schedule.fields[field.key] ?? ''} maxLength={field.maxLength} onChange={actions.changeScheduleField} /> : <Input name={field.key} aria-label={`Message ${field.label}`} type={field.input === 'time' ? 'time' : 'text'} value={state.schedule.fields[field.key] ?? ''} maxLength={field.maxLength} onChange={actions.changeScheduleField} />}</FormField>
+        return <FormField key={field.key} label={field.label}>{field.key === 'instructions' ? <TextArea name={field.key} aria-label={`Message ${field.label}`} value={state.schedule.fields[field.key] ?? ''} maxLength={field.maxLength} onChange={actions.changeScheduleField} /> : <Input name={field.key} aria-label={`Message ${field.label}`} type="text" value={state.schedule.fields[field.key] ?? ''} maxLength={field.maxLength} onChange={actions.changeScheduleField} />}</FormField>
     }
     if (state.loading) return <LoadingSpinner className="py-16" />
     if (state.loadError) return <Alert variant="error" title="Couldn't load message setup" description={state.loadError} action={<Button variant="secondary" onClick={actions.reload}>Retry</Button>} />

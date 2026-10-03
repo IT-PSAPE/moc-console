@@ -61,7 +61,7 @@
 
 - [ ] Write tests that each type exposes only declared fields, fixed/generated fields reject mutations, escaped replacements render safely, and attendee output is generated separately from administrator text.
 - [ ] Run tests to observe failure, implement the registry and two types, then rerun.
-- [ ] Test changing expected arrival while preserving individual arrival values and acknowledged revisions; expired output has no actionable keyboard.
+- [ ] Test changing arrival guidance in instructions while preserving individual arrival values and acknowledged revisions; expired output has no actionable keyboard.
 - [ ] Confirm existing notification renderer/template tests still pass.
 
 ## Task 4: Authorized Telegram menu and native confirmed input

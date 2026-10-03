@@ -20,7 +20,8 @@ test/supabase/tests/run-local.sh \
   supabase/migrations/2026-10-03b-scheduled-messages.sql \
   supabase/migrations/2026-10-03c-scheduled-message-actions.sql \
   supabase/migrations/2026-10-03d-scheduled-message-composition.sql \
-  supabase/migrations/2026-10-03e-scheduled-template-management.sql
+  supabase/migrations/2026-10-03e-scheduled-template-management.sql \
+  supabase/migrations/2026-10-03f-remove-expected-arrival.sql
 ```
 
 The assertion script checks migration backfills and defaults; Editor and
@@ -40,3 +41,8 @@ database state are discarded after each run.
 `template-management.sql` checks stable creation IDs, retry-safe deletion,
 permission/workspace checks, rejection of deleted templates for editing or
 new schedules, and preservation of already-created schedules and occurrences.
+
+The arrival-field migration is wrapped with legacy fixtures and post-migration
+checks. These verify instruction backfills, future recurring overrides beyond
+the materialization horizon, attendee response retention, original Telegram
+message IDs, queued edits, and removal of obsolete admin input sessions.

@@ -58,21 +58,7 @@ COMMIT;
 
 -- Service-role-only scheduled-message actions still authorize the named
 -- workspace actor, because the API uses its service credential for RPCs.
-CREATE FUNCTION pg_temp.assert_rejected(p_sql text, p_message text)
-RETURNS void
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  BEGIN
-    EXECUTE p_sql;
-  EXCEPTION WHEN OTHERS THEN
-    IF position(p_message IN SQLERRM) > 0 THEN
-      RETURN;
-    END IF;
-    RAISE EXCEPTION 'Expected error containing "%", got "%" while running: %', p_message, SQLERRM, p_sql;
-  END;
-  RAISE EXCEPTION 'Expected error containing "%" but statement succeeded: %', p_message, p_sql;
-END $$;
+\ir assert-rejected.sql
 
 BEGIN;
 SET LOCAL ROLE authenticated;
@@ -172,7 +158,7 @@ BEGIN
   -- be edited before sending while the saved template remains unchanged.
   v_template := public.save_scheduled_template(v_editor, v_workspace,
     jsonb_build_object('name','One-off attendance','messageType','pre_attendance','body','{{title}}','fields',
-      jsonb_build_object('title','Morning service','instructions','Meet at the entrance','expectedArrival','09:00'),
+      jsonb_build_object('title','Morning service','instructions','Meet at the entrance'),
       'audience',v_audience,'requireArrival',true));
   v_schedule := public.create_scheduled_schedule(v_editor, v_workspace,
     jsonb_build_object('templateId',v_template,'groupChatId','-1000000000001','threadId',42,'startsOn',v_today,
@@ -202,7 +188,7 @@ BEGIN
   );
   v_updated_template := public.save_scheduled_template(v_editor,v_workspace,
     jsonb_build_object('id',v_template,'name','Updated attendance','messageType','pre_attendance','body','Updated {{title}}','fields',
-      jsonb_build_object('title','Updated morning','instructions','Updated entrance','expectedArrival','09:15'),
+      jsonb_build_object('title','Updated morning','instructions','Updated entrance'),
       'audience',v_audience,'requireArrival',true));
   IF v_updated_template<>v_template THEN
     RAISE EXCEPTION 'editing a template must preserve its identity';
@@ -221,7 +207,6 @@ BEGIN
       'frequency','once','autoSend',false,'fields',jsonb_build_object('title','Schedule-only title')));
   IF (SELECT fields->>'title' FROM public.scheduled_message_schedules WHERE id=v_override_schedule)<>'Schedule-only title'
      OR (SELECT fields->>'instructions' FROM public.scheduled_message_schedules WHERE id=v_override_schedule)<>'Updated entrance'
-     OR (SELECT fields->>'expectedArrival' FROM public.scheduled_message_schedules WHERE id=v_override_schedule)<>'09:15'
      OR (SELECT fields->>'title' FROM public.scheduled_message_templates WHERE id=v_template)<>'Updated morning' THEN
     RAISE EXCEPTION 'schedule field overrides must be merged independently of template defaults';
   END IF;
@@ -257,7 +242,7 @@ BEGIN
   PERFORM pg_temp.assert_rejected(
     format('SELECT public.create_scheduled_schedule(%L,%L,%L::jsonb)',v_editor,v_workspace,
       jsonb_build_object('templateId',v_other_template,'groupChatId','-1000000000001','startsOn',v_today,'frequency','once')::text),
-    'query returned no rows'
+    'Template unavailable in this workspace'
   );
   PERFORM pg_temp.assert_rejected(
     format('SELECT public.create_scheduled_schedule(%L,%L,%L::jsonb)',v_editor,v_workspace,
@@ -361,7 +346,7 @@ BEGIN
   -- A recurring series supports occurrence, future, and entire-series scopes.
   v_recurring_template := public.save_scheduled_template(v_editor,v_workspace,
     jsonb_build_object('name','Recurring attendance','messageType','pre_attendance','body','{{title}}',
-      'fields',jsonb_build_object('title','Weekly gathering','instructions','Initial instruction','expectedArrival','10:00'),
+      'fields',jsonb_build_object('title','Weekly gathering','instructions','Initial instruction'),
       'audience',v_audience,'requireArrival',true));
   v_recurring_schedule := public.create_scheduled_schedule(v_editor,v_workspace,
     jsonb_build_object('templateId',v_recurring_template,'groupChatId','-1000000000001','threadId',42,
@@ -391,7 +376,7 @@ BEGIN
   END IF;
   SELECT revision INTO v_revision FROM public.scheduled_message_occurrences
     WHERE schedule_id=v_recurring_schedule AND occurrence_on=v_today+5;
-  PERFORM public.change_scheduled_occurrence(v_editor,v_unknown_delivery,v_revision,'expectedArrival','10:30','future');
+  PERFORM public.change_scheduled_occurrence(v_editor,v_unknown_delivery,v_revision,'instructions','Another future instruction','future');
 
   -- Manually send an upcoming occurrence; whole-series edits update its sent
   -- content and queue an edit while retaining the original Telegram ID.
@@ -409,7 +394,7 @@ BEGIN
      OR NOT EXISTS(SELECT 1 FROM public.notification_deliveries WHERE scheduled_occurrence_id=v_expiring_occurrence AND scheduled_operation='edit') THEN
     RAISE EXCEPTION 'series scope must update sent and future content without replacing the Telegram message';
   END IF;
-  IF (SELECT fields->>'expectedArrival' FROM public.scheduled_message_occurrences WHERE schedule_id=v_recurring_schedule AND occurrence_on=v_today+6)<>'10:30' THEN
+  IF (SELECT fields->>'instructions' FROM public.scheduled_message_occurrences WHERE schedule_id=v_recurring_schedule AND occurrence_on=v_today+6)<>'Another future instruction' THEN
     RAISE EXCEPTION 'series edit lost an unrelated future-field patch';
   END IF;
   UPDATE public.scheduled_message_occurrences SET expires_at=clock_timestamp()-interval '1 second'
@@ -518,7 +503,7 @@ BEGIN
     WHERE schedule.template_id=(SELECT id FROM public.scheduled_message_templates WHERE name='Recurring attendance')
       AND occurrence.occurrence_on=(clock_timestamp() AT TIME ZONE schedule.timezone)::date+40
       AND occurrence.fields->>'instructions'='After day 32'
-      AND occurrence.fields->>'expectedArrival'='10:00'
+      AND occurrence.fields->>'title'='Weekly gathering'
   ) THEN
     RAISE EXCEPTION 'materializer did not apply the future patch to a previously unmaterialized date beyond day 32';
   END IF;

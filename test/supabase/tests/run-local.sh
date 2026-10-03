@@ -36,7 +36,13 @@ run_sql "$TEST_ROOT/fixture.sql"
 run_sql "$TEST_ROOT/seed.sql"
 for file in "$@"; do
   echo "→ $(basename "$file")"
+  if [[ "$(basename "$file")" == *-remove-expected-arrival.sql ]]; then
+    run_sql "$TEST_ROOT/remove-expected-arrival-before.sql"
+  fi
   run_sql "$file"
+  if [[ "$(basename "$file")" == *-remove-expected-arrival.sql ]]; then
+    run_sql "$TEST_ROOT/remove-expected-arrival-after.sql"
+  fi
 done
 run_sql "$TEST_ROOT/assertions.sql"
 run_sql "$TEST_ROOT/template-management.sql"

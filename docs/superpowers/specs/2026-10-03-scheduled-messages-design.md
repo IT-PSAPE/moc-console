@@ -26,7 +26,7 @@ This maps repository code and tracked migrations. It does not certify the deploy
 
 The underlying representation should separate queryable lifecycle/ownership data from validated template field values. A message-type registry owns field definitions and rendering. The Telegram menu lists declared editable fields; it never discovers arbitrary database columns or lets an administrator edit generated attendance rows.
 
-The first two types are an ordinary announcement and pre-attendance. A pre-attendance template can expose title, instructions, and expected arrival time. These are examples of the registry, not columns that every future type must support. Attendance rows and buttons are generated from response records.
+The first two types are an ordinary announcement and pre-attendance. A pre-attendance template can expose title and instructions (including any arrival guidance). These are examples of the registry, not columns that every future type must support. Attendance rows and buttons are generated from response records.
 
 ## Member types and roster selection
 
@@ -53,7 +53,7 @@ The user approved the classification model together with the architecture readba
 - Expiry is not deletion. Preserve the record, message identity, revisions, and attendance history. Expired occurrences are not revived by changing the series.
 - Delivery failure and synchronization failure remain visible separately from lifecycle. Cancellation controls are outside the first version.
 
-Expiry initially resolves as configured hours after the local send-date midnight, separately for each occurrence. One-off and recurring occurrences can also receive an explicit expiry timestamp. The send time, expected arrival time, and expiry must remain independent. Validate that an occurrence expires after its send time.
+Expiry initially resolves as configured hours after the local send-date midnight, separately for each occurrence. One-off and recurring occurrences can also receive an explicit expiry timestamp. Send time and expiry remain independent of arrival guidance in instructions and each attendee’s own arrival time. Validate that an occurrence expires after its send time.
 
 ## Editing and recurrence scopes
 
@@ -92,7 +92,7 @@ The original group pre-attendance message exposes Attending, Not attending, and 
 
 When arrival time is required, open an ephemeral flow in the group, show the current response, and ask for the time using ForceReply. Save the response for that occurrence and participant, then rerender the original group message. Provide Back to pre-attendance using a topic-aware original-message link when the chat supports it. Basic groups lack a supported original-message link, so the first version omits that return button there.
 
-Participant eligibility is separate from Admin/Editor permissions: a Viewer may respond as an eligible attendee while having no administrative access. Changing the title, instructions, or expected arrival must retain all responses and personal arrival times. Store the occurrence revision acknowledged by a response so the UI can identify responses made before a material event change; do not reset them or automatically send bulk reminders.
+Participant eligibility is separate from Admin/Editor permissions: a Viewer may respond as an eligible attendee while having no administrative access. Changing the title or instructions must retain all responses and personal arrival times. Store the occurrence revision acknowledged by a response so the UI can identify responses made before a material event change; do not reset them or automatically send bulk reminders.
 
 The roster/eligibility source is the user-selected member types described above. Do not open participation to arbitrary group members. The member's linked identity must map to the occurrence's roster and a current workspace membership.
 

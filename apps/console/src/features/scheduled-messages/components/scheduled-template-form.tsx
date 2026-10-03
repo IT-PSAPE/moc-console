@@ -22,7 +22,7 @@ import { useScheduledTemplateContext } from '../scheduled-template-context'
 export function ScheduledTemplateForm() {
     const { state, actions, meta } = useScheduledTemplateContext()
     function renderField(field: ScheduledFieldDefinition) {
-        return <FormField key={field.key} label={field.label}>{field.key === 'instructions' ? <TextArea disabled={state.busy} name={field.key} aria-label={`Default ${field.label}`} value={state.draft.fields[field.key] ?? ''} maxLength={field.maxLength} onChange={actions.changeField} /> : <Input disabled={state.busy} name={field.key} aria-label={`Default ${field.label}`} type={field.input === 'time' ? 'time' : 'text'} value={state.draft.fields[field.key] ?? ''} maxLength={field.maxLength} onChange={actions.changeField} />}</FormField>
+        return <FormField key={field.key} label={field.label}>{field.key === 'instructions' ? <TextArea disabled={state.busy} name={field.key} aria-label={`Default ${field.label}`} value={state.draft.fields[field.key] ?? ''} maxLength={field.maxLength} onChange={actions.changeField} /> : <Input disabled={state.busy} name={field.key} aria-label={`Default ${field.label}`} type="text" value={state.draft.fields[field.key] ?? ''} maxLength={field.maxLength} onChange={actions.changeField} />}</FormField>
     }
     function renderAudience(type: MemberType) {
         return <Checkbox disabled={state.busy} key={type.id} value={type.id} checked={state.draft.audience.includes(type.id)} onChange={actions.changeAudience}>{type.name}{type.is_default ? <Badge label="Default" color="gray" /> : null}</Checkbox>

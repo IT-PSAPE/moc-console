@@ -14,6 +14,22 @@ this order before deploying the API and Console code:
 3. `supabase/migrations/2026-10-03c-scheduled-message-actions.sql`
 4. `supabase/migrations/2026-10-03d-scheduled-message-composition.sql`
 5. `supabase/migrations/2026-10-03e-scheduled-template-management.sql`
+6. `supabase/migrations/2026-10-03f-remove-expected-arrival.sql`
+
+Apply only scripts that are not already applied. The fifth adds retry-safe
+template creation and deletion; the sixth removes expected arrival from the
+editable fields. If the first five are applied, only the sixth is needed.
+Readable filenames retain the original versions in `supabase/migrations/manifest.tsv`;
+renaming is not a reason to reapply an upgrade. Historical scripts in that folder
+are not part of this feature's rollout.
+
+The sixth migration preserves legacy arrival guidance in instructions for standard
+layouts, or as literal text for custom layouts, and folds recurring arrival
+changes into instructions. It retains attendee responses and original Telegram
+message IDs, queues edits of active sent occurrences, and cancels only admin
+sessions editing the retired field. If adding legacy guidance would exceed the
+2000-character instruction limit, the transaction stops without partial changes;
+shorten the affected instructions and retry.
 
 The first migration backfills every workspace with a renameable Members default
 type and assigns existing memberships to it. Security roles are unchanged.
@@ -41,8 +57,8 @@ changing template defaults. Attendance options appear only for pre-attendance;
 last recurring date appears only for repeating schedules. Preview and expiry/
 timezone details use progressive disclosure.
 
-The layout uses the declared `{{title}}`, `{{instructions}}`,
-and, for pre-attendance, `{{expectedArrival}}` fields. Attendance lines and
+The layout uses the declared `{{title}}` and `{{instructions}}` fields.
+Arrival guidance belongs in instructions, not a separate template variable. Attendance lines and
 controls are generated separately. A schedule copies the template, audience and
 arrival requirement; later templates do not retroactively rewrite occurrences.
 

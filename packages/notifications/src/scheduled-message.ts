@@ -6,14 +6,14 @@ export type ScheduledMessageType = 'announcement' | 'pre_attendance'
 export type ScheduledFields = Record<string, string>
 export type ScheduledResponse = { name: string; status: 'awaiting' | 'attending' | 'not_attending'; arrivalTime: string | null }
 export type ScheduledRenderInput = { id: string; messageType: ScheduledMessageType; body: string; fields: ScheduledFields; requireArrival: boolean }
-export type ScheduledFieldDefinition = { key: string; label: string; input: 'text' | 'time'; maxLength: number }
+export type ScheduledFieldDefinition = { key: string; label: string; maxLength: number }
 export const SCHEDULED_FIELDS: Record<ScheduledMessageType, readonly ScheduledFieldDefinition[]> = {
- announcement: [{ key:'title',label:'Title',input:'text',maxLength:120 },{ key:'instructions',label:'Message',input:'text',maxLength:2000 }],
- pre_attendance: [{ key:'title',label:'Title',input:'text',maxLength:120 },{ key:'instructions',label:'Instructions',input:'text',maxLength:2000 },{ key:'expectedArrival',label:'Expected arrival',input:'time',maxLength:5 }],
+ announcement: [{ key:'title',label:'Title',maxLength:120 },{ key:'instructions',label:'Message',maxLength:2000 }],
+ pre_attendance: [{ key:'title',label:'Title',maxLength:120 },{ key:'instructions',label:'Instructions',maxLength:2000 }],
 }
 export const SCHEDULED_DEFAULT_BODIES: Record<ScheduledMessageType,string> = {
  announcement: '<b>{{title}}</b>\n{{instructions}}',
- pre_attendance: '<b>{{title}}</b>\n{{instructions}}\nPlease arrive by {{expectedArrival}}.',
+ pre_attendance: '<b>{{title}}</b>\n{{instructions}}',
 }
 export const ARRIVAL_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
 
@@ -23,7 +23,6 @@ export function validateScheduledFields(type: ScheduledMessageType, fields: unkn
  for (const [key,value] of Object.entries(fields)) {
   const definition = SCHEDULED_FIELDS[type].find(field => field.key === key)
   if (!definition || typeof value !== 'string' || value.length > definition.maxLength) throw new Error(`Invalid message field: ${key}`)
-  if (definition.input === 'time' && value !== '' && !ARRIVAL_TIME_PATTERN.test(value)) throw new Error('Use an arrival time such as 07:30')
   result[key]=value.trim()
  }
  if (!result.title) throw new Error('A title is required')
