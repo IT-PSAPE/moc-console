@@ -25,7 +25,5 @@
     "erasableSyntaxOnly": true,
     "skipLibCheck": true
   },
-  "include": ["src"],
-  /* Tests run under bun and are not part of the shipped JavaScript. */
-  "exclude": ["src/**/*.test.ts"]
+  "include": ["src"]
 }

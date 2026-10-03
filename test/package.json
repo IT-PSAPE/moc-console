@@ -1,0 +1,21 @@
+{
+  "name": "moc-tests",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "bun test .",
+    "lint": "eslint --config eslint.config.js ."
+  },
+  "devDependencies": {
+    "@moc/notifications": "*",
+    "@moc/types": "*",
+    "@types/node": "^24.12.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.4",
+    "globals": "^17.4.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  }
+}

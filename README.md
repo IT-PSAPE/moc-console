@@ -165,6 +165,10 @@ The repo is a bun-workspaces monorepo:
 - `apps/api` — every serverless function and the `server/` library behind it; see [apps/api/README.md](apps/api/README.md)
 - `apps/broadcast` — the public continuous-playback audio/video app
 - `packages/{ui,types,utils,data,notifications}` — shared code
+- `test/{apps,packages,scripts,supabase}` — automated tests and fixtures, mirroring the source tree; see [test/README.md](test/README.md)
+
+Run the full test suite with `bun run test`, or the API suite with
+`bun run test:api`. New tests belong in `test/`, outside production folders.
 
 Inside a frontend app:
 

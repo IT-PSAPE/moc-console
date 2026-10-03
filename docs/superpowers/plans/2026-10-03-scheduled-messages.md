@@ -31,7 +31,7 @@
 
 ## Task 1: Domain persistence, permissions, and occurrence rules
 
-**Files:** Create `supabase/migrations/20261003160000_scheduled_messages.sql`, `apps/api/server/scheduled-messages/types.ts`, `lifecycle.ts`, `lifecycle.test.ts`, `store.ts`, and `store.test.ts` in that server folder. Create an isolated-database regression script `supabase/tests/scheduled-messages.sql` using the existing database build workflow. Add smaller migration files if separating functions makes review clearer.
+**Files:** Create `supabase/migrations/20261003160000_scheduled_messages.sql`, `apps/api/server/scheduled-messages/types.ts`, `lifecycle.ts`, `lifecycle.test.ts`, `store.ts`, and `store.test.ts` in that server folder. Create an isolated-database regression script `test/supabase/tests/scheduled-messages.sql` using the existing database build workflow. Add smaller migration files if separating functions makes review clearer.
 
 **Interfaces:** `EditScope = "occurrence" | "future" | "series"`; store methods `listActive(actor, destination, now)`, `materialize(scheduleId, through)`, and `applyChange(actor, proposal, expectedRevision)`; proposal identifies one occurrence, one declared field/lifecycle change, and its scope. Actor resolves to a linked Telegram user or authenticated Console user plus workspace membership. Database transactions own scope resolution and atomic revision/edit-job creation.
 
@@ -97,7 +97,7 @@
 - [ ] Build named template/preset editing and schedule composition: registered group/topic, declared fields, member-type audience, timezone, one-off/recurrence, expiry, preview, and upcoming/sent/expired history. Expose confirmed sent-occurrence edits through the same backend as Telegram.
 - [ ] Verify Admin/Editor access and Viewer restrictions through server requests and Console navigation; integration controls remain restricted to their current permissions.
 - [ ] Run the requested lifecycle matrix through isolated database + fake Telegram HTTP integration: one-off, recurring, before-send edit, after-send edit, single occurrence, future occurrences, entire series, exact expiry, unauthorized callers, and attendance before/after admin edits. Include failure/retry and concurrency cases from prior tasks.
-- [ ] Run `bun run test:api`, `bun test packages/notifications/src`, API/Console builds and their lint commands; investigate failures in the changed area. Verify desktop/mobile flows and unsaved-change behavior in a browser.
+- [ ] Run `bun run test:api`, `bun test test/packages/notifications`, API/Console builds and their lint commands; investigate failures in the changed area. Verify desktop/mobile flows and unsaved-change behavior in a browser.
 - [ ] Check dead imports/exports, obsolete paths, component/hook/utility limits, and all references to replaced editor code. Update `apps/api/README.md` and schema verification for the new domain.
 - [ ] Report tests actually run, operational timer requirements, and Telegram limits. Keep live bot, production migration, deployment, branch creation, push, and commit outside the authorized local implementation scope.
 
@@ -107,7 +107,7 @@ The design was reviewed and then implementation authorized by the user. Sent-edi
 
 ## Task 0: Workspace member types and limited classification management
 
-**Files:** Create `supabase/migrations/20261003150000_workspace_member_types.sql`, `apps/console/src/data/member-types.ts`, `apps/console/src/features/users/use-member-types.ts`, and focused data tests. Extend `apps/console/src/data/fetch-users.ts`, `apps/console/src/features/users/users-provider.tsx`, the existing user card/list, and settings access/composition. Inspect the existing provider filename before changing it; use the actual feature context, never a parallel user store. Add `supabase/tests/workspace-member-types.sql` for database authorization/invariant assertions.
+**Files:** Create `supabase/migrations/20261003150000_workspace_member_types.sql`, `apps/console/src/data/member-types.ts`, `apps/console/src/features/users/use-member-types.ts`, and focused data tests. Extend `apps/console/src/data/fetch-users.ts`, `apps/console/src/features/users/users-provider.tsx`, the existing user card/list, and settings access/composition. Inspect the existing provider filename before changing it; use the actual feature context, never a parallel user store. Add `test/supabase/tests/workspace-member-types.sql` for database authorization/invariant assertions.
 
 **Interfaces:** `MemberType = { id: string; workspaceId: string; name: string; isDefault: boolean }`; each workspace membership exposes `memberTypeId`. Services list/create/rename member types and assign membership types. Narrow server/RPC mutations authorize workspace Admin/Editor and cannot mutate `role_id` or membership approval state. These interfaces supply Task 1 roster resolution.
 

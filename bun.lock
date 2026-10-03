@@ -192,6 +192,21 @@
         "tailwind-merge": "^3.5.0",
       },
     },
+    "test": {
+      "name": "moc-tests",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@moc/notifications": "*",
+        "@moc/types": "*",
+        "@types/node": "^24.12.0",
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "eslint": "^9.39.4",
+        "globals": "^17.4.0",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+      },
+    },
   },
   "packages": {
     "@babel/code-frame": ["@babel/code-frame@7.29.0", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.28.5", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw=="],
@@ -685,6 +700,8 @@
     "moc-console": ["moc-console@workspace:apps/console"],
 
     "moc-request": ["moc-request@workspace:apps/request"],
+
+    "moc-tests": ["moc-tests@workspace:test"],
 
     "ms": ["ms@2.1.3", "", {}, "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA=="],
 

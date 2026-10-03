@@ -113,9 +113,9 @@ large rosters must be split by member type or their template shortened.
 
 ## Local verification
 
-No real bot or hosted database is required. `supabase/tests/run-local.sh` creates
+No real bot or hosted database is required. `test/supabase/tests/run-local.sh` creates
 a disposable PostgreSQL database with minimal Supabase auth fixtures and applies
 these migrations before checking lifecycle/RLS behavior. API tests use fake
-PostgREST and Telegram responses. See `supabase/tests/README.md` for the commands
+PostgREST and Telegram responses. See `test/supabase/tests/README.md` for the commands
 and [the verification report](scheduled-messages-verification.md) for results
 and the boundary between local tests and live integration.

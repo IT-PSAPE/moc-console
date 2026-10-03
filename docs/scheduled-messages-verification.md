@@ -12,9 +12,8 @@ patterns, then a bounded desktop/mobile review and confirmation pass with Luna.
 
 - Pre-push repository suite: **485 passed, 0 failed**, across 86 files.
 - Pre-push builds for every workspace: passed.
-- API: **302 passed, 0 failed**, across 49 files (`bun test` in `apps/api`).
-- Shared notifications: **60 passed, 0 failed**, across 6 files (`bun test` in
-  `packages/notifications`).
+- API: **302 passed, 0 failed**, across 49 files (`bun test test/apps/api` from the repository root).
+- Shared notifications: **60 passed, 0 failed**, across 6 files (`bun test test/packages/notifications` from the repository root).
 - TypeScript builds for notifications, API and Console: passed.
 - Console production build: passed. Vite reported a plugin timing warning.
 - Targeted ESLint for the changed Console files and new API files: passed.
@@ -71,5 +70,5 @@ database matches the local fixture. Apply the migrations through the project's
 normal Supabase process, deploy the code, then verify one controlled message in
 the intended group before enabling production schedules.
 
-Run the SQL checks with the command in [the SQL test README](../supabase/tests/README.md).
+Run the SQL checks with the command in [the SQL test README](../test/supabase/tests/README.md).
 Migration order and operational limits are in [the rollout guide](scheduled-messages-rollout.md).
