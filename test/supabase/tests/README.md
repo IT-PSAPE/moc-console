@@ -19,7 +19,8 @@ test/supabase/tests/run-local.sh \
   supabase/migrations/2026-10-03a-workspace-member-types.sql \
   supabase/migrations/2026-10-03b-scheduled-messages.sql \
   supabase/migrations/2026-10-03c-scheduled-message-actions.sql \
-  supabase/migrations/2026-10-03d-scheduled-message-composition.sql
+  supabase/migrations/2026-10-03d-scheduled-message-composition.sql \
+  supabase/migrations/2026-10-03e-scheduled-template-management.sql
 ```
 
 The assertion script checks migration backfills and defaults; Editor and
@@ -35,3 +36,7 @@ Editor permissions, reject read-only fields, and merge schedule-specific field
 overrides without changing template defaults. It invokes service RPCs under
 `service_role` and changes to `authenticated` for RLS checks. Fixture data and
 database state are discarded after each run.
+
+`template-management.sql` checks stable creation IDs, retry-safe deletion,
+permission/workspace checks, rejection of deleted templates for editing or
+new schedules, and preservation of already-created schedules and occurrences.

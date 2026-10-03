@@ -26,3 +26,4 @@
 20261003160000	scheduled_messages	2026-10-03b-scheduled-messages.sql
 20261003170000	scheduled_message_actions	2026-10-03c-scheduled-message-actions.sql
 20261003180000	scheduled_message_composition	2026-10-03d-scheduled-message-composition.sql
+20261003230000	scheduled_template_management	2026-10-03e-scheduled-template-management.sql

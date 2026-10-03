@@ -7,11 +7,12 @@ type SelectFieldProps<Value extends string> = {
   label: string
   name: string
   className?: string
+  disabled?: boolean
   value: Value
   onValueChange: (value: Value) => void
 }
 
-export function SelectField<Value extends string>({ items, label, name, className, value, onValueChange }: SelectFieldProps<Value>) {
+export function SelectField<Value extends string>({ items, label, name, className, disabled, value, onValueChange }: SelectFieldProps<Value>) {
   function handleChange(nextValue: Value | null) {
     if (nextValue !== null) onValueChange(nextValue)
   }
@@ -21,7 +22,7 @@ export function SelectField<Value extends string>({ items, label, name, classNam
   }
 
   return (
-    <Select.Root name={name} items={items} value={value} onValueChange={handleChange}>
+    <Select.Root name={name} items={items} disabled={disabled} value={value} onValueChange={handleChange}>
       <Select.Trigger aria-label={label} className={className}/>
       <Select.Content>{items.map(renderItem)}</Select.Content>
     </Select.Root>

@@ -1,4 +1,5 @@
-import { useState, type ChangeEvent } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
+import { flushSync } from 'react-dom'
 import { useNavigate, useParams } from 'react-router-dom'
 import { SCHEDULED_DEFAULT_BODIES, SCHEDULED_FIELDS, validateScheduledBody, validateScheduledFields, type ScheduledMessageType, type ScheduledTemplate } from '@moc/notifications'
 import { useTemplateBodyEditor } from '@/hooks/use-template-body-editor'
@@ -18,6 +19,8 @@ export function useScheduledTemplateEditor() {
     const row = messages.snapshot.templates.find(t => t.id === id)
     const [draft, setDraft] = useState<TemplateDraft>(() => initialDraft(row))
     const [saved, setSaved] = useState(() => JSON.stringify(initialDraft(row)))
+    const [creationId] = useState(() => crypto.randomUUID())
+    const saving = useRef(false)
     const [error, setError] = useState('')
     function changeBody(body: string): void { setDraft(current => ({ ...current, body })) }
     const bodyEditor = useTemplateBodyEditor(draft.body, changeBody)
@@ -37,19 +40,25 @@ export function useScheduledTemplateEditor() {
     }
     function changeArrival(event: ChangeEvent<HTMLInputElement>): void { setDraft(current => ({ ...current, requireArrival: event.target.checked })) }
     async function save(): Promise<boolean> {
+        if (saving.current || messages.busy) return false
         try { validateScheduledBody(draft.messageType, draft.body); validateScheduledFields(draft.messageType, draft.fields) }
         catch (e) { setError(e instanceof Error ? e.message : 'Check the template'); return false }
         if (!draft.name.trim()) { setError('Enter a template name'); return false }
         if (draft.messageType === 'pre_attendance' && !draft.audience.length) { setError('Select at least one member type'); return false }
         setError('')
-        if (!await messageActions.mutate('template.save', draft)) return false
-        setSaved(JSON.stringify(draft))
-        return true
+        saving.current = true
+        try {
+            if (!await messageActions.mutate('template.save', draft.id ? draft : { ...draft, creationId })) return false
+            const persisted = { ...draft, id: draft.id ?? creationId }
+            // The router must see a clean draft before successful-save navigation.
+            flushSync(() => { setDraft(persisted); setSaved(JSON.stringify(persisted)) })
+            return true
+        } finally { saving.current = false }
     }
     function discard(): void { setDraft(JSON.parse(saved) as TemplateDraft) }
     const guard = useUnsavedNavigationGuard({ isDirty: JSON.stringify(draft) !== saved, save, discard })
     async function saveAndBack(): Promise<void> {
-        if (await save()) { messageActions.setTab('templates'); requestAnimationFrame(() => navigate(`/${routes.scheduledMessages}`)) }
+        if (await save()) { messageActions.setTab('templates'); navigate(`/${routes.scheduledMessages}`) }
     }
     return {
         state: { draft, busy: messages.busy, loading: messages.loading, error: error || messages.error, missing: Boolean(id && !messages.loading && !row), navigationBlocked: guard.state.isBlocked, ...bodyEditor.state },

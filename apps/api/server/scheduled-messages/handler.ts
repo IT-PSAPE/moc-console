@@ -26,7 +26,7 @@ async function snapshot(workspace: string): Promise<unknown> {
   const admin=getSupabaseAdmin()
   const occurrences=await listActive(workspace)
   const results=await Promise.all([
-    admin.from('scheduled_message_templates').select('*').eq('workspace_id',workspace).order('name'),
+    admin.from('scheduled_message_templates').select('*').eq('workspace_id',workspace).is('deleted_at',null).order('name'),
     admin.from('scheduled_message_schedules').select('*').eq('workspace_id',workspace),
     admin.from('workspace_member_types').select('*').eq('workspace_id',workspace).order('name'),
     admin.from('telegram_groups').select('chat_id,title,telegram_group_topics(thread_id,name,closed)').eq('workspace_id',workspace).eq('active',true).is('removed_at',null),
@@ -38,11 +38,14 @@ async function mutate(actor: string,workspace: string,body: Record<string,unknow
   const data=object(body.data)
   if(body.op==='template.save') {
     if(data.id!==undefined) uuid(data.id)
+    if(data.creationId!==undefined) uuid(data.creationId)
     const messageType=string(data.messageType) as ScheduledMessageType
     if(!['announcement','pre_attendance'].includes(messageType)) throw new Error('Invalid message type')
     validateScheduledFields(messageType,data.fields)
     validateScheduledBody(messageType,string(data.body))
     await scheduledRpc('save_scheduled_template',{p_actor:actor,p_workspace:workspace,p_data:data})
+  } else if(body.op==='template.delete') {
+    await scheduledRpc('delete_scheduled_template',{p_actor:actor,p_workspace:workspace,p_id:uuid(data.id)})
   } else if(body.op==='schedule.create') {
     uuid(data.templateId)
     await scheduledRpc('create_scheduled_schedule',{p_actor:actor,p_workspace:workspace,p_data:data})

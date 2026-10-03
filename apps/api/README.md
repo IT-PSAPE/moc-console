@@ -205,7 +205,7 @@ themselves live in `@moc/notifications`, shared with the console's settings UI.
 
 `GET/POST /api/telegram/scheduled-messages` uses the Console session and current
 workspace `can_update` permission. It returns named templates, schedules and
-unexpired occurrences, or accepts `template.save`, `schedule.create`,
+unexpired occurrences, or accepts `template.save`, `template.delete`, `schedule.create`,
 `occurrence.edit`, `occurrence.send`, and `commands.sync`. Telegram management
 and attendance use the same service-only transactional RPCs. Participant
 responses require the sender's linked identity and snapshotted roster membership.

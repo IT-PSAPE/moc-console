@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ChangeEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SCHEDULED_FIELDS, renderScheduledMessage, scheduledOccurrenceSummary, validateScheduledFields, type ScheduledEditScope, type ScheduledOccurrence, type ScheduledSnapshot } from '@moc/notifications'
 import { useWorkspace } from '@/lib/workspace-context'
@@ -22,6 +22,7 @@ export function useScheduledMessages() {
     const [snapshot, setSnapshot] = useState(empty)
     const [loading, setLoading] = useState(true)
     const [busy, setBusy] = useState(false)
+    const mutating = useRef(false)
     const [error, setError] = useState('')
     const [loadError, setLoadError] = useState('')
     const [tab, setTab] = useState('active')
@@ -42,11 +43,12 @@ export function useScheduledMessages() {
         return () => window.clearInterval(timer)
     }, [])
     async function mutate(op: string, data: unknown): Promise<boolean> {
-        if (!currentWorkspaceId || busy) return false
+        if (!currentWorkspaceId || mutating.current) return false
+        mutating.current = true
         setBusy(true); setError('')
         try { setSnapshot(await mutateScheduledMessage(currentWorkspaceId, op, data)); return true }
         catch (e) { setError(e instanceof Error ? e.message : 'Operation failed'); return false }
-        finally { setBusy(false) }
+        finally { mutating.current = false; setBusy(false) }
     }
     const startSchedule = useCallback((templateId: string) => {
         const template = snapshot.templates.find(t => t.id === templateId)
@@ -96,6 +98,12 @@ export function useScheduledMessages() {
     function changeScope(scope: string): void { setEdit(current => ({ ...current, scope: scope as ScheduledEditScope })) }
     function requestEdit(): void { setConfirmation({ op: 'occurrence.edit', title: 'Apply this change?', label: 'Apply change', data: edit, description: `Apply ${edit.field}: ${edit.value || '(empty)'} to ${edit.scope === 'occurrence' ? 'this occurrence' : edit.scope === 'future' ? 'this and future occurrences' : 'the entire series'}? Attendance responses will be retained.` }) }
     function requestSend(id: string): void { setError(''); setConfirmation({ op: 'occurrence.send', title: 'Send this message now?', label: 'Send now', data: { id }, description: 'This will post the occurrence to its Telegram group.' }) }
+    function requestTemplateDelete(event: MouseEvent<HTMLButtonElement>): void {
+        const template = snapshot.templates.find(row => row.id === event.currentTarget.dataset.templateId)
+        if (!template || busy) return
+        setError('')
+        setConfirmation({ op: 'template.delete', title: 'Delete template?', label: 'Delete template', data: { id: template.id }, description: `Delete “${template.name}” from your template library? Existing scheduled messages and attendance responses will be kept. This cannot be undone.` })
+    }
     function changeEditorOpen(open: boolean): void { if (!open && !busy) setEditing(null) }
     function changeConfirmationOpen(open: boolean): void { if (!open && !busy) setConfirmation(null) }
     async function confirm(): Promise<void> {
@@ -127,7 +135,7 @@ export function useScheduledMessages() {
     const topicItems = [{ value: 'main', label: 'General' }, ...topics.filter(t => !t.closed).map(t => ({ value: String(t.thread_id), label: t.name }))]
     return {
         state: { snapshot, schedule, editing, edit, confirmation, error, loadError, loading, busy, tab },
-        actions: { reload, mutate, setTab, startSchedule, changeSchedule, changeScheduleField, setTemplateId, setGroup, setTopic, setFrequency, changeAutoSend, requestSchedule, selectOccurrence, changeEditField, changeEditValue, changeScope, requestEdit, requestSend, changeEditorOpen, changeConfirmationOpen, confirm, syncCommands, ignorePreviewChange },
+        actions: { reload, mutate, setTab, startSchedule, changeSchedule, changeScheduleField, setTemplateId, setGroup, setTopic, setFrequency, changeAutoSend, requestSchedule, selectOccurrence, changeEditField, changeEditValue, changeScope, requestEdit, requestSend, requestTemplateDelete, changeEditorOpen, changeConfirmationOpen, confirm, syncCommands, ignorePreviewChange },
         meta: { frequencyItems, scopeItems, fieldItems, topicItems, selectedTemplate, templateRows, previewHtml, previewError, isAttendance: selectedTemplate?.message_type === 'pre_attendance', scheduleFields: selectedTemplate ? SCHEDULED_FIELDS[selectedTemplate.message_type] : [], hasTopics: topicItems.length > 1, isRecurring: schedule.frequency !== 'once', occurrences: snapshot.occurrences.map(occurrenceRow), templateItems: snapshot.templates.map(t => ({ value: t.id, label: t.name })), groupItems: snapshot.groups.map(g => ({ value: g.chat_id, label: g.title })), showScope: selectedSchedule?.frequency !== 'once' && !['sendOn', 'expiresAt'].includes(edit.field) },
     }
 }

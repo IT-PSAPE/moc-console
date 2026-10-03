@@ -13,6 +13,7 @@ this order before deploying the API and Console code:
 2. `supabase/migrations/2026-10-03b-scheduled-messages.sql`
 3. `supabase/migrations/2026-10-03c-scheduled-message-actions.sql`
 4. `supabase/migrations/2026-10-03d-scheduled-message-composition.sql`
+5. `supabase/migrations/2026-10-03e-scheduled-template-management.sql`
 
 The first migration backfills every workspace with a renameable Members default
 type and assigns existing memberships to it. Security roles are unchanged.
@@ -29,6 +30,10 @@ Open **Scheduled messages** from the sidebar. Active messages and Templates
 have separate views. Use Create template to open the shared rich-text/variable
 editor; Source is available for advanced markup. Templates can be edited in
 place, and their changes apply to schedules created afterward.
+Delete opens a confirmation naming the template. Deleted templates cannot be
+edited or used for new schedules. Existing schedules, sent messages and attendance
+responses continue unchanged; their template record is retained internally.
+Each new draft has a stable creation ID so retries cannot insert a second copy.
 
 Use New message or Use template, fill in the variable values, and choose the
 group and schedule. Message-specific values are copied into the schedule without

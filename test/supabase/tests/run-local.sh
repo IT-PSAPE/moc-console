@@ -39,4 +39,5 @@ for file in "$@"; do
   run_sql "$file"
 done
 run_sql "$TEST_ROOT/assertions.sql"
+run_sql "$TEST_ROOT/template-management.sql"
 "$TEST_ROOT/concurrency-local.sh" "$SOCKET_DIR"
