@@ -2,7 +2,7 @@
 --
 -- 20260904140000_venue_booking_domain created `venues`, `venue_bookings` and
 -- `venue_booking_slots` with RLS and policies, but granted only EXECUTE on its
--- functions. Since patches/2026-08-04-moc-console-target-schema-cleanup.sql
+-- functions. Since migrations/2026-08-04-moc-console-target-schema-cleanup.sql
 -- adopted deny-by-default Data API privileges — it revoked the schema-wide
 -- ALTER DEFAULT PRIVILEGES for anon, authenticated AND service_role — a newly
 -- created public table starts with no table privileges for anyone. PostgREST

@@ -2,9 +2,9 @@
 # Builds a blank MoC Console database up to the current schema:
 #   1. the consolidated baseline (phase-01..03),
 #   2. the target-schema cleanup, which converges that baseline,
-#   3. every file in migrations/, in filename order,
+#   3. upgrade files in migrations/manifest.tsv order,
 # and records each migration in supabase_migrations.schema_migrations so the
-# Supabase CLI treats them as already applied.
+# original numeric database history IDs survive readable filename changes.
 #
 # Usage: supabase/build-fresh-database.sh "postgresql://…"
 # Only for an empty project. Never point it at a database with data.
@@ -26,7 +26,7 @@ run() {
 run "$DIR/phase-01-schema.sql"
 run "$DIR/phase-02-logic.sql"
 run "$DIR/phase-03-security.sql"
-run "$DIR/patches/2026-08-04-moc-console-target-schema-cleanup.sql"
+run "$DIR/migrations/2026-08-04-moc-console-target-schema-cleanup.sql"
 
 psql "$DATABASE_URL" --quiet --no-psqlrc -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
 CREATE SCHEMA IF NOT EXISTS supabase_migrations;
@@ -37,10 +37,9 @@ CREATE TABLE IF NOT EXISTS supabase_migrations.schema_migrations (
 );
 SQL
 
-for file in "$DIR"/migrations/*.sql; do
-  base="$(basename "$file" .sql)"
-  version="${base%%_*}"
-  name="${base#*_}"
+# The manifest excludes historical scripts, which must not be replayed.
+while IFS=$'\t' read -r version name filename; do
+  file="$DIR/migrations/$filename"
   run "$file"
   psql "$DATABASE_URL" --quiet --no-psqlrc -v ON_ERROR_STOP=1 \
     -v version="$version" -v name="$name" >/dev/null <<'SQL'
@@ -48,6 +47,6 @@ INSERT INTO supabase_migrations.schema_migrations (version, name)
 VALUES (:'version', :'name')
 ON CONFLICT (version) DO NOTHING;
 SQL
-done
+done < "$DIR/migrations/manifest.tsv"
 
 echo "Done. Run verify-current-schema.sql to confirm the result."

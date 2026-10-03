@@ -9,10 +9,10 @@ These are PostgreSQL scripts for **Supabase**, not Telegram scripts. Review and
 back up the target database under the existing migration process, then apply in
 this order before deploying the API and Console code:
 
-1. `supabase/migrations/20261003150000_workspace_member_types.sql`
-2. `supabase/migrations/20261003160000_scheduled_messages.sql`
-3. `supabase/migrations/20261003170000_scheduled_message_actions.sql`
-4. `supabase/migrations/20261003180000_scheduled_message_composition.sql`
+1. `supabase/migrations/2026-10-03a-workspace-member-types.sql`
+2. `supabase/migrations/2026-10-03b-scheduled-messages.sql`
+3. `supabase/migrations/2026-10-03c-scheduled-message-actions.sql`
+4. `supabase/migrations/2026-10-03d-scheduled-message-composition.sql`
 
 The first migration backfills every workspace with a renameable Members default
 type and assigns existing memberships to it. Security roles are unchanged.

@@ -16,10 +16,10 @@ Example after the migrations are present:
 
 ```sh
 test/supabase/tests/run-local.sh \
-  supabase/migrations/20261003150000_workspace_member_types.sql \
-  supabase/migrations/20261003160000_scheduled_messages.sql \
-  supabase/migrations/20261003170000_scheduled_message_actions.sql \
-  supabase/migrations/20261003180000_scheduled_message_composition.sql
+  supabase/migrations/2026-10-03a-workspace-member-types.sql \
+  supabase/migrations/2026-10-03b-scheduled-messages.sql \
+  supabase/migrations/2026-10-03c-scheduled-message-actions.sql \
+  supabase/migrations/2026-10-03d-scheduled-message-composition.sql
 ```
 
 The assertion script checks migration backfills and defaults; Editor and

@@ -42,7 +42,7 @@ service-role-only tracking RPCs. The browser never calls the retired
 
 The current signatures, grants, stronger tracking codes, requester mutation
 functions, and managed categories are defined in
-[20260920120000_public_submission_management.sql](../../supabase/migrations/20260920120000_public_submission_management.sql).
+[2026-09-20-public-submission-management.sql](../../supabase/migrations/2026-09-20-public-submission-management.sql).
 
 ## Outbound notifications
 

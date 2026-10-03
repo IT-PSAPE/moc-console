@@ -13,7 +13,7 @@
 --                                    tables, indexes, the ONLY seed)
 --   phase-02-logic.sql             — functions, triggers, RPCs
 --   phase-03-security.sql          — RLS, policies, storage, grants
---   patches/2026-08-04-moc-console-target-schema-cleanup.sql
+--   migrations/2026-08-04-moc-console-target-schema-cleanup.sql
 --                                  — converge to the current product
 --
 -- The SEED block at the end of this file is the ONLY data inserted.
@@ -58,7 +58,7 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 -- For existing databases the 'archived' value is added by
--- patches/2026-06-16a-booking-status-archived.sql (ALTER TYPE ... ADD VALUE).
+-- migrations/2026-06-16a-booking-status-archived.sql (ALTER TYPE ... ADD VALUE).
 
 DO $$ BEGIN
   CREATE TYPE public.media_type AS ENUM ('image', 'audio', 'video');
@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS public.workspaces (
 
 -- users (id matches auth.users.id — no default uuid)
 -- avatar_url folded in from phase-26.
--- current_duty + status_message folded in from patches/2026-05-23-user-profile-fields.
+-- current_duty + status_message folded in from migrations/2026-05-23-user-profile-fields.
 -- current_duty is the user's persistent duty title; distinct from the per-assignment
 -- `duty` columns on *_assignees join tables below.
 CREATE TABLE IF NOT EXISTS public.users (
@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS public.equipment (
 -- A Booking is the user-level submission: one tracking_code, one title,
 -- one date range, one lifecycle. A Booking Item is a pure join to the
 -- equipment reserved by that booking; it has no lifecycle of its own.
--- Folded in from patches/2026-05-27-booking-as-batch.sql (see ADR-0006).
+-- Folded in from migrations/2026-05-27-booking-as-batch.sql (see ADR-0006).
 CREATE TABLE IF NOT EXISTS public.bookings (
   id                 uuid                  PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id       uuid                  NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
@@ -239,7 +239,7 @@ CREATE TABLE IF NOT EXISTS public.booking_items (
 -- media
 -- duration_seconds/width/height: intrinsic media metadata probed client-side
 -- on upload (no server ffprobe). NULL = not yet measured; the playlist's
--- default_image_duration is the fallback. Folded in from patches/.
+-- default_image_duration is the fallback. Folded in from the historical scripts now in migrations/.
 CREATE TABLE IF NOT EXISTS public.media (
   id               uuid              PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id     uuid              NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
@@ -299,7 +299,7 @@ CREATE TABLE IF NOT EXISTS public.queue (
   -- start_sec: explicit timeline position (NULL = legacy gapless append).
   -- in_point/out_point: non-destructive video/audio trim into the source.
   -- muted: per-clip video audio (default off — videos play their sound).
-  -- Folded in from patches/.
+  -- Folded in from the historical scripts now in migrations/.
   start_sec   numeric NULL,
   in_point    numeric NOT NULL DEFAULT 0,
   out_point   numeric NULL,

@@ -31,7 +31,7 @@
 
 ## Task 1: Domain persistence, permissions, and occurrence rules
 
-**Files:** Create `supabase/migrations/20261003160000_scheduled_messages.sql`, `apps/api/server/scheduled-messages/types.ts`, `lifecycle.ts`, `lifecycle.test.ts`, `store.ts`, and `store.test.ts` in that server folder. Create an isolated-database regression script `test/supabase/tests/scheduled-messages.sql` using the existing database build workflow. Add smaller migration files if separating functions makes review clearer.
+**Files:** Create `supabase/migrations/2026-10-03b-scheduled-messages.sql`, `apps/api/server/scheduled-messages/types.ts`, `lifecycle.ts`, `lifecycle.test.ts`, `store.ts`, and `store.test.ts` in that server folder. Create an isolated-database regression script `test/supabase/tests/scheduled-messages.sql` using the existing database build workflow. Add smaller migration files if separating functions makes review clearer.
 
 **Interfaces:** `EditScope = "occurrence" | "future" | "series"`; store methods `listActive(actor, destination, now)`, `materialize(scheduleId, through)`, and `applyChange(actor, proposal, expectedRevision)`; proposal identifies one occurrence, one declared field/lifecycle change, and its scope. Actor resolves to a linked Telegram user or authenticated Console user plus workspace membership. Database transactions own scope resolution and atomic revision/edit-job creation.
 
@@ -107,7 +107,7 @@ The design was reviewed and then implementation authorized by the user. Sent-edi
 
 ## Task 0: Workspace member types and limited classification management
 
-**Files:** Create `supabase/migrations/20261003150000_workspace_member_types.sql`, `apps/console/src/data/member-types.ts`, `apps/console/src/features/users/use-member-types.ts`, and focused data tests. Extend `apps/console/src/data/fetch-users.ts`, `apps/console/src/features/users/users-provider.tsx`, the existing user card/list, and settings access/composition. Inspect the existing provider filename before changing it; use the actual feature context, never a parallel user store. Add `test/supabase/tests/workspace-member-types.sql` for database authorization/invariant assertions.
+**Files:** Create `supabase/migrations/2026-10-03a-workspace-member-types.sql`, `apps/console/src/data/member-types.ts`, `apps/console/src/features/users/use-member-types.ts`, and focused data tests. Extend `apps/console/src/data/fetch-users.ts`, `apps/console/src/features/users/users-provider.tsx`, the existing user card/list, and settings access/composition. Inspect the existing provider filename before changing it; use the actual feature context, never a parallel user store. Add `test/supabase/tests/workspace-member-types.sql` for database authorization/invariant assertions.
 
 **Interfaces:** `MemberType = { id: string; workspaceId: string; name: string; isDefault: boolean }`; each workspace membership exposes `memberTypeId`. Services list/create/rename member types and assign membership types. Narrow server/RPC mutations authorize workspace Admin/Editor and cannot mutate `role_id` or membership approval state. These interfaces supply Task 1 roster resolution.
 

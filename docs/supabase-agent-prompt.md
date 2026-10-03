@@ -44,7 +44,7 @@ If repo files are available to you, read these first and treat them as authorita
 - `docs/data-flow-reference.md`
 - `supabase/readme.md`
 - `supabase/phase-01-schema.sql`
-- `supabase/patches/2026-08-04-moc-console-target-schema-cleanup.sql`
+- `supabase/migrations/2026-08-04-moc-console-target-schema-cleanup.sql`
 - `src/lib/auth-context.tsx`
 - `src/data/current-workspace.ts`
 - `src/data/fetch-users.ts`

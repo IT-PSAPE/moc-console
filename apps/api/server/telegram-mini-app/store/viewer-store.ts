@@ -2,7 +2,7 @@
 // permissions in one workspace. Authorization is workspace-scoped via
 // workspace_users.role_id (public.user_roles is kept only as a read-only
 // legacy table post-2026-08-04 — see
-// supabase/patches/2026-08-04-consolidated-live-schema-update.sql and
+// supabase/migrations/2026-08-04-consolidated-live-schema-update.sql and
 // .../2026-08-04-workspace-access-hardening.sql), mirroring
 // private.current_user_can(workspace_id, permission) and matching the join
 // api_apply_telegram_action uses.
