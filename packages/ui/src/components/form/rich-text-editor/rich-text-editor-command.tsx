@@ -6,5 +6,5 @@ export function RichTextEditorCommand({ command, label, icon }: { command: RichT
     const { state, actions } = useRichTextEditorContext()
     function execute(): void { actions.command(command) }
     const active = state.selection?.activeCommands.includes(command) ?? false
-    return <Button.Icon variant="ghost" aria-label={label} title={label} aria-pressed={active} icon={icon} onClick={execute} onMouseDown={actions.preserveSelection} disabled={state.disabled || !state.editor} className={active ? 'bg-tertiary text-brand' : undefined} />
+    return <Button.Icon variant="ghost" aria-label={label} title={label} aria-pressed={active} icon={icon} onClick={execute} onMouseDown={actions.preserveSelection} disabled={state.disabled || !state.editor || state.selection?.disabledCommands.includes(command)} className={active ? 'bg-tertiary text-brand' : undefined} />
 }

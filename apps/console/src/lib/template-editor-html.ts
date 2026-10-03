@@ -3,9 +3,16 @@ import { toRichHtml } from '@moc/notifications'
 const EDITABLE_TAGS = new Set(['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'ins', 's', 'strike', 'del', 'code', 'pre', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'blockquote', 'ul', 'ol', 'li', 'table', 'tbody', 'thead', 'tr', 'th', 'td', 'mark', 'sub', 'sup', 'span', 'colgroup', 'col'])
 const TOKEN_RE = /{{\s*(\w+)\s*}}/g
 
+function isNativeTableWrapper(element: Element): boolean {
+    return element.matches('div.tableWrapper')
+        && element.children.length === 1
+        && element.firstElementChild?.tagName === 'TABLE'
+        && [...element.childNodes].every(node => node.nodeType !== 3 || !node.textContent?.trim())
+}
+
 export function unsupportedTemplateTags(source: string): string[] {
     const document = new DOMParser().parseFromString(source, 'text/html')
-    const unsupported = [...document.body.querySelectorAll('*')].map(element => element.tagName.toLowerCase()).filter(tag => !EDITABLE_TAGS.has(tag))
+    const unsupported = [...document.body.querySelectorAll('*')].filter(element => !EDITABLE_TAGS.has(element.tagName.toLowerCase()) && !isNativeTableWrapper(element)).map(element => element.tagName.toLowerCase())
     if (document.querySelector('blockquote[expandable]')) unsupported.push('expandable quote')
     if (document.querySelector('span.tg-spoiler, [data-spoiler]')) unsupported.push('spoiler')
     return [...new Set(unsupported)]
@@ -16,15 +23,20 @@ export function templateHasContent(source: string): boolean {
 }
 
 export function templateToEditorHtml(source: string): string {
-    const document = new DOMParser().parseFromString(toRichHtml(source), 'text/html')
+    const sourceDocument = new DOMParser().parseFromString(source, 'text/html')
+    // Tiptap's table view container is layout metadata, not message content.
+    for (const wrapper of sourceDocument.querySelectorAll('div.tableWrapper')) {
+        if (isNativeTableWrapper(wrapper)) wrapper.replaceWith(...wrapper.childNodes)
+    }
+    const document = new DOMParser().parseFromString(toRichHtml(sourceDocument.body.innerHTML), 'text/html')
     function replaceTokens(node: globalThis.Node): void {
         if (node instanceof Element && node.tagName === 'PRE') return
-        // Read templates saved by the previous editor without treating a
-        // placeholder's temporary code styling as message formatting.
-        if (node instanceof Element && node.tagName === 'CODE' && /^{{\s*\w+\s*}}$/.test(node.textContent ?? '')) {
-            const text = document.createTextNode(node.textContent ?? '')
-            node.replaceWith(text)
-            replaceTokens(text)
+        if (node instanceof Element && node.tagName === 'CODE') {
+            const token = /^{{\s*(\w+)\s*}}$/.exec(node.textContent ?? '')
+            if (token) {
+                node.setAttribute('data-variable', '')
+                node.textContent = token[1]
+            }
             return
         }
         if (node.nodeType === 3) {
@@ -35,8 +47,8 @@ export function templateToEditorHtml(source: string): string {
             let offset = 0
             for (const match of matches) {
                 fragment.append(document.createTextNode(text.slice(offset, match.index)))
-                const variable = document.createElement('span')
-                variable.dataset.variable = match[1]
+                const variable = document.createElement('code')
+                variable.setAttribute('data-variable', '')
                 variable.textContent = match[1]
                 fragment.append(variable)
                 offset = match.index + match[0].length
@@ -53,8 +65,8 @@ export function templateToEditorHtml(source: string): string {
 
 export function editorHtmlToTemplate(html: string): string {
     const document = new DOMParser().parseFromString(html, 'text/html')
-    for (const variable of document.querySelectorAll('span[data-variable]')) {
-        variable.replaceWith(document.createTextNode(`{{${variable.getAttribute('data-variable') ?? ''}}}`))
+    for (const variable of document.querySelectorAll('code[data-variable]')) {
+        variable.replaceWith(document.createTextNode(`{{${variable.textContent ?? ''}}}`))
     }
     // Column widths are editor metadata, not Telegram message content.
     for (const metadata of document.querySelectorAll('colgroup, col')) metadata.remove()

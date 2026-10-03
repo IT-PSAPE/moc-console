@@ -22,6 +22,7 @@ export function useMessageTemplateEditor(messageType: MessageType) {
     const [savedBody, setSavedBody] = useState<string | null>(null)
     const [body, setBody] = useState(defaultBody)
     const [saving, setSaving] = useState(false)
+    const variables = TEMPLATE_TOKENS[messageType].map(token => token.name)
     const bodyEditor = useTemplateBodyEditor(body, setBody)
 
     useEffect(() => {
@@ -116,6 +117,6 @@ export function useMessageTemplateEditor(messageType: MessageType) {
         actions: { back, ...bodyEditor.actions, save, saveAndProceed, discardAndProceed, cancelNavigation, restoreDefault },
         templateMeta,
         textareaRef: bodyEditor.meta.textareaRef,
-        variables: TEMPLATE_TOKENS[messageType].map(token => token.name),
+        variables,
     }
 }

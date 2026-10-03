@@ -23,6 +23,7 @@ export function useScheduledTemplateEditor() {
     const saving = useRef(false)
     const [error, setError] = useState('')
     function changeBody(body: string): void { setDraft(current => ({ ...current, body })) }
+    const variables = SCHEDULED_FIELDS[draft.messageType].map(field => field.key)
     const bodyEditor = useTemplateBodyEditor(draft.body, changeBody)
     function changeName(event: ChangeEvent<HTMLInputElement>): void { setDraft(current => ({ ...current, name: event.target.value })) }
     function changeType(value: string): void {
@@ -63,6 +64,6 @@ export function useScheduledTemplateEditor() {
     return {
         state: { draft, busy: messages.busy, loading: messages.loading, error: error || messages.error, missing: Boolean(id && !messages.loading && !row), navigationBlocked: guard.state.isBlocked, ...bodyEditor.state },
         actions: { changeName, changeType, changeField, changeAudience, changeArrival, saveAndBack, ...bodyEditor.actions, ...guard.actions },
-        meta: { typeItems, fields: SCHEDULED_FIELDS[draft.messageType], variables: SCHEDULED_FIELDS[draft.messageType].map(f => f.key), memberTypes: messages.snapshot.memberTypes, isAttendance: draft.messageType === 'pre_attendance', textareaRef: bodyEditor.meta.textareaRef },
+        meta: { typeItems, fields: SCHEDULED_FIELDS[draft.messageType], variables, memberTypes: messages.snapshot.memberTypes, isAttendance: draft.messageType === 'pre_attendance', textareaRef: bodyEditor.meta.textareaRef },
     }
 }

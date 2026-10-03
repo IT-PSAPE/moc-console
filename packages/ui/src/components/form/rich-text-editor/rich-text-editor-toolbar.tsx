@@ -23,7 +23,7 @@ export function RichTextEditorToolbar() {
             <RichTextEditorCommand command="underline" label="Underline" icon={<Underline />} />
             <RichTextEditorCommand command="strike" label="Strikethrough" icon={<Strikethrough />} />
             <RichTextEditorCommand command="code" label="Inline code" icon={<Code />} />
-            <Button.Icon variant="ghost" icon={<Link2 />} aria-label="Edit link" title="Edit link" onMouseDown={actions.preserveSelection} onClick={actions.openLink} disabled={state.disabled} />
+            <Button.Icon variant="ghost" icon={<Link2 />} aria-label="Edit link" title="Edit link" onMouseDown={actions.preserveSelection} onClick={actions.openLink} disabled={state.disabled || state.selection?.activeCommands.includes('code')} />
             <Dropdown><Dropdown.Trigger><Button variant="ghost" icon={<Plus />}>Insert</Button></Dropdown.Trigger><Dropdown.Panel>
                 <RichTextEditorMenuCommand command="table">Table</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="bulletList">Bullet list</RichTextEditorMenuCommand>

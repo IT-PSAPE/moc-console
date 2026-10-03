@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { useEditor, useEditorState, type Editor } from '@tiptap/react'
 import { DOMParser as SchemaDOMParser } from '@tiptap/pm/model'
+import { formatSelectedVariable, selectedVariable } from './rich-text-variable'
 import { richTextExtensions } from './rich-text-extensions'
 
 export type RichTextCommand = 'bold' | 'italic' | 'underline' | 'strike' | 'code' | 'highlight' | 'subscript' | 'superscript' | 'paragraph' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'blockquote' | 'bulletList' | 'orderedList' | 'codeBlock' | 'divider' | 'table' | 'addRow' | 'addColumn' | 'deleteRow' | 'deleteColumn' | 'deleteTable' | 'undo' | 'redo' | 'clear' | 'unlink'
 
 function runCommand(editor: Editor, command: RichTextCommand): void {
+    if (formatSelectedVariable(editor, command)) { editor.commands.focus(); return }
     const chain = editor.chain().focus()
     if (/^h[1-6]$/.test(command)) {
         chain.toggleHeading({ level: Number(command[1]) as 1 | 2 | 3 | 4 | 5 | 6 }).run()
@@ -39,9 +41,14 @@ function runCommand(editor: Editor, command: RichTextCommand): void {
     }
 }
 
-function readSelectionState({ editor }: { editor: Editor | null }) {
+function readSelectionState({ editor }: { editor: Editor | null }): { activeCommands: RichTextCommand[]; disabledCommands: RichTextCommand[]; inTable: boolean } {
     const commands: RichTextCommand[] = ['bold', 'italic', 'underline', 'strike', 'code', 'highlight', 'subscript', 'superscript']
-    return { activeCommands: commands.filter(command => editor?.isActive(command)), inTable: editor?.isActive('table') ?? false }
+    const variable = editor ? selectedVariable(editor) : null
+    return {
+        activeCommands: commands.filter(command => editor?.isActive(command) || variable?.node.marks.some(mark => mark.type.name === command)),
+        disabledCommands: editor?.isActive('code') ? commands.filter(command => command !== 'code') : variable ? ['code'] : [],
+        inTable: editor?.isActive('table') ?? false,
+    }
 }
 
 export function useRichTextEditor({ value, onChange, disabled = false }: { value: string; onChange: (html: string) => void; disabled?: boolean }) {
@@ -51,6 +58,7 @@ export function useRichTextEditor({ value, onChange, disabled = false }: { value
     const editor = useEditor({
         extensions: richTextExtensions,
         content: value,
+        parseOptions: { preserveWhitespace: true },
         editable: !disabled,
         editorProps: { attributes: { role: 'textbox', 'aria-multiline': 'true', 'aria-label': 'Rich text editor', class: 'min-h-72 p-4 outline-none' } },
         onUpdate({ editor: current }) {
@@ -63,8 +71,8 @@ export function useRichTextEditor({ value, onChange, disabled = false }: { value
     useEffect(() => {
         if (editor && value !== lastEmitted.current) {
             const document = new DOMParser().parseFromString(value, 'text/html')
-            const nextDocument = SchemaDOMParser.fromSchema(editor.schema).parse(document.body)
-            if (!editor.state.doc.eq(nextDocument)) editor.commands.setContent(value, { emitUpdate: false })
+            const nextDocument = SchemaDOMParser.fromSchema(editor.schema).parse(document.body, { preserveWhitespace: true })
+            if (!editor.state.doc.eq(nextDocument)) editor.commands.setContent(value, { emitUpdate: false, parseOptions: { preserveWhitespace: true } })
             lastEmitted.current = value
         }
     }, [editor, value])
@@ -73,8 +81,19 @@ export function useRichTextEditor({ value, onChange, disabled = false }: { value
     function command(value: RichTextCommand): void { if (editor && !disabled) runCommand(editor, value) }
     function insertVariable(name: string): void {
         if (disabled) return
-        const content = editor?.isActive('codeBlock') ? { type: 'text', text: `{{${name}}}` } : { type: 'variable', attrs: { name } }
-        editor?.chain().focus().insertContent(content).run()
+        if (editor?.isActive('codeBlock')) {
+            editor.chain().focus().insertContent({ type: 'text', text: `{{${name}}}` }).run()
+            return
+        }
+        if (!editor) return
+        const variable = selectedVariable(editor)
+        const marks = (variable?.node.marks ?? editor.state.storedMarks ?? editor.state.selection.$from.marks()).filter(mark => mark.type.name !== 'code').map(mark => mark.toJSON())
+        if (variable) editor.commands.setTextSelection({ from: variable.position, to: variable.position + variable.node.nodeSize })
+        editor.chain().focus().insertContent([
+            ...(editor.isActive('code') && editor.state.selection.empty ? [{ type: 'text', text: ' ', marks: [] }] : []),
+            { type: 'variable', marks, content: [{ type: 'text', text: name }] },
+            { type: 'text', text: ' ', marks: [] },
+        ]).unsetCode().run()
     }
     function preserveSelection(event: MouseEvent): void { event.preventDefault() }
     function openLink(): void {
