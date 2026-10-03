@@ -8,6 +8,7 @@ type ConfirmationDialogProps = {
     cancelLabel?: string
     confirmLabel: string
     description: string
+    errorText?: string
     isConfirming?: boolean
     onConfirm: () => void
     onOpenChange: (open: boolean) => void
@@ -15,7 +16,7 @@ type ConfirmationDialogProps = {
     title: string
 }
 
-export function ConfirmationDialog({ cancelLabel = 'Cancel', confirmLabel, description, isConfirming = false, onConfirm, onOpenChange, open, title }: ConfirmationDialogProps) {
+export function ConfirmationDialog({ cancelLabel = 'Cancel', confirmLabel, description, errorText, isConfirming = false, onConfirm, onOpenChange, open, title }: ConfirmationDialogProps) {
     const { state: overlayState } = useOverlayStack()
 
     return (
@@ -39,6 +40,7 @@ export function ConfirmationDialog({ cancelLabel = 'Cancel', confirmLabel, descr
                                 <BaseAlertDialog.Description className="paragraph-sm pt-1.5 text-pretty text-secondary">
                                     {description}
                                 </BaseAlertDialog.Description>
+                                {errorText ? <p role="alert" className="paragraph-sm pt-2 text-error">{errorText}</p> : null}
                             </div>
                         </div>
                         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

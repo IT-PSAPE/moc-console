@@ -2,6 +2,8 @@ import { requireAuthorizedCronGet } from "../../cron-auth.js"
 import { purgeApiMaintenanceData } from "../../maintenance-cleanup.js"
 import { processPendingDeliveries } from "../../notifications/delivery-store.js"
 import { processPendingOutbox } from "../../notifications/outbox.js"
+import { prepareScheduledMessages } from '../../scheduled-messages/worker.js'
+import { syncManagementCommands } from '../../scheduled-messages/commands.js'
 
 type ApiRequest = {
   method?: string
@@ -19,10 +21,12 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   if (!requireAuthorizedCronGet(request, response)) return
 
   try {
+    await prepareScheduledMessages()
+    const commands = await syncManagementCommands()
     const outbox = await processPendingOutbox()
     const deliveries = await processPendingDeliveries()
     const maintenance = await purgeApiMaintenanceData()
-    response.status(200).json({ ok: true, outbox, deliveries, maintenance })
+    response.status(200).json({ ok: true, outbox, deliveries, maintenance, commands })
   } catch (error) {
     response.status(500).json({ error: error instanceof Error ? error.message : "Failed to process notification deliveries" })
   }

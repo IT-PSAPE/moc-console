@@ -1,6 +1,8 @@
 import { getSupabaseAdmin } from "../supabase-admin.js"
 import { sendTelegramRichMessage } from "../telegram.js"
 import { toRichHtml, type InlineKeyboardMarkup } from "@moc/notifications"
+import { deliverScheduledMessage } from '../scheduled-messages/delivery.js'
+import { scheduledRpc } from '../scheduled-messages/store.js'
 
 const MAX_ATTEMPTS = 5
 const CLAIM_TIMEOUT_MS = 5 * 60_000
@@ -24,6 +26,7 @@ type DeliveryRow = {
   entity_id: string | null
   reply_markup: InlineKeyboardMarkup | null
   parent_delivery_id: string | null
+  scheduled_operation: 'send' | 'edit' | 'expire' | null
 }
 
 export type DeliveryInput = {
@@ -94,6 +97,7 @@ export async function enqueueDelivery(input: DeliveryInput): Promise<void> {
 }
 
 async function releaseExpiredClaims(): Promise<void> {
+  await scheduledRpc('recover_scheduled_deliveries')
   const admin = getSupabaseAdmin()
   const expiredBefore = new Date(Date.now() - CLAIM_TIMEOUT_MS).toISOString()
   const { error } = await admin
@@ -112,7 +116,7 @@ async function claimDelivery(id: string): Promise<DeliveryRow | null> {
     .eq("id", id)
     .eq("status", "pending")
     .select(
-      "id, workspace_id, event_key, event_type, scope, route_id, recipient_user_id, destination_key, chat_id, thread_id, text, payload, attempt_count, entity_type, entity_id, reply_markup, parent_delivery_id",
+      "id, workspace_id, event_key, event_type, scope, route_id, recipient_user_id, destination_key, chat_id, thread_id, text, payload, attempt_count, entity_type, entity_id, reply_markup, parent_delivery_id, scheduled_operation",
     )
     .maybeSingle()
   if (error) throw new Error(error.message)
@@ -135,6 +139,7 @@ async function replyToMessageId(parentDeliveryId: string | null): Promise<number
 }
 
 async function sendClaimedDelivery(row: DeliveryRow): Promise<DeliveryRunResult> {
+  if (row.scheduled_operation) return deliverScheduledMessage({...row,scheduled_operation:row.scheduled_operation})
   const result = emptyResult()
   result.attempted = 1
   const send = await sendTelegramRichMessage(row.chat_id, toRichHtml(row.text), {

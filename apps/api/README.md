@@ -200,3 +200,25 @@ server/      handlers and shared library: supabase-admin, auth-guard, cors, http
 `server/http.ts` holds the `ApiRequest`/`ApiResponse` shapes every handler is
 written against, plus `headerValue`/`normaliseHeaders`. The message templates
 themselves live in `@moc/notifications`, shared with the console's settings UI.
+
+## Scheduled messages
+
+`GET/POST /api/telegram/scheduled-messages` uses the Console session and current
+workspace `can_update` permission. It returns named templates, schedules and
+unexpired occurrences, or accepts `template.save`, `schedule.create`,
+`occurrence.edit`, `occurrence.send`, and `commands.sync`. Telegram management
+and attendance use the same service-only transactional RPCs. Participant
+responses require the sender's linked identity and snapshotted roster membership.
+
+The existing daily notification-deliveries cron materializes a 32-day future
+window, queues due calendar-date sends, cleans expired keyboards and retries
+edits. It does not offer time-of-day scheduling. Telegram bots cannot use
+Telegram's scheduled-message queue; use authorized Send now between cron runs.
+Expiry is checked on every read/write and does not wait for cron cleanup.
+
+Deploy only after the reviewed migrations in
+[the rollout guide](../../docs/scheduled-messages-rollout.md) have been applied
+to Supabase. No new function entrypoint, library, hosting plan or cron frequency
+is required. Groups should have the bot as an administrator for reliable
+command-origin ephemeral replies. Management and time input have **no DM
+fallback**; users restart disappeared ephemeral sessions.

@@ -8,6 +8,8 @@ import { UserAvatar } from "@moc/ui/components/display/user-avatar"
 import type { Role } from "@moc/types/requests/assignee"
 import { Link2, Shield } from "lucide-react"
 import { UserRoleSelect } from "./user-role-select"
+import { useUserMemberType } from '@/features/users/use-user-member-type'
+import { SelectField } from '@moc/ui/components/form/select-field'
 
 const roleColor: Record<string, "blue" | "purple" | "green" | "gray"> = {
   admin: "purple",
@@ -28,6 +30,7 @@ type UserCardProps = {
 
 export function UserCard({ user, roles, canManage, onRoleChange }: UserCardProps) {
   const { actions } = useMemberNotifications()
+  const memberType = useUserMemberType(user)
 
   function handleOpenConnect(): void {
     actions.openConnectUser(user)
@@ -47,6 +50,7 @@ export function UserCard({ user, roles, canManage, onRoleChange }: UserCardProps
 
       </ListItemCard.Content>
       <ListItemCard.Trailing className="ml-13 w-[calc(100%-3.25rem)] justify-start sm:ml-0 sm:w-auto sm:justify-end">
+        {memberType.meta.canEdit ? <SelectField name={`type-${user.id}`} label={`Member type for ${user.name}`} value={user.memberTypeId} items={memberType.meta.items} onValueChange={memberType.actions.change} /> : <Badge label={memberType.meta.name} color="gray" />}
         {canManage && user.telegramChatId && <Button.Icon variant="ghost" icon={<Link2 />} onClick={handleOpenConnect} aria-label={`Connect events to ${user.name} ${user.surname}`} />}
         {canManage
           ? <UserRoleSelect userId={user.id} role={user.role} roles={roles} onChange={onRoleChange} />

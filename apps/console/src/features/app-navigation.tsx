@@ -1,6 +1,6 @@
 import { routes } from '@/screens/console-routes'
 import { Sidebar } from '@moc/ui/components/navigation/sidebar'
-import { Boxes, Building2, CalendarClock, ClipboardList, Inbox, Megaphone, Radio } from 'lucide-react'
+import { Boxes, Building2, CalendarClock, ClipboardList, Inbox, Megaphone, MessageSquare, Radio } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { WorkspaceSwitcher } from './workspace-switcher'
 import { WorkspaceNavigationHeader } from './workspace-navigation-header'
@@ -8,12 +8,13 @@ import { WorkspaceNavigationHeader } from './workspace-navigation-header'
 type AppNavigationProps = {
     isRouteActive: (route: string) => boolean
     isSigningOut: boolean
+    canManageScheduledMessages: boolean
     onCloseMobileNavigation: () => void
     onEditProfile: () => void
     onSignOut: () => void
 }
 
-export function AppNavigation({ isRouteActive, isSigningOut, onCloseMobileNavigation, onEditProfile, onSignOut }: AppNavigationProps) {
+export function AppNavigation({ isRouteActive, isSigningOut, canManageScheduledMessages, onCloseMobileNavigation, onEditProfile, onSignOut }: AppNavigationProps) {
     return (
         <>
             <WorkspaceNavigationHeader onCloseMobileNavigation={onCloseMobileNavigation} />
@@ -26,6 +27,7 @@ export function AppNavigation({ isRouteActive, isSigningOut, onCloseMobileNaviga
                         <Sidebar.MenuItem title="Equipment bookings" icon={<CalendarClock />} active={isRouteActive(routes.bookings)} render={<Link to={`/${routes.bookings}`} />} />
                         <Sidebar.MenuItem title="Venues" icon={<Building2 />} active={isRouteActive(routes.venues)} render={<Link to={`/${routes.venues}`} />} />
                         <Sidebar.MenuItem title="Broadcast" icon={<Megaphone />} active={isRouteActive(routes.broadcasts)} render={<Link to={`/${routes.broadcasts}`} />} />
+                        {canManageScheduledMessages ? <Sidebar.MenuItem title="Scheduled messages" icon={<MessageSquare />} active={isRouteActive(routes.scheduledMessages)} render={<Link to={`/${routes.scheduledMessages}`} />} /> : null}
                         <Sidebar.MenuItem title="Checklists" icon={<ClipboardList />} active={isRouteActive(routes.checklists)} render={<Link to={`/${routes.checklists}`} />} />
                         <Sidebar.MenuItem title="Equipment" icon={<Boxes />} active={isRouteActive(routes.equipment)} render={<Link to={`/${routes.equipment}`} />} />
                     </Sidebar.GroupContent>

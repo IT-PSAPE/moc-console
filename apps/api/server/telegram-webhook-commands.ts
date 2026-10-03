@@ -1,6 +1,8 @@
 
 import { handleCallbackQuery, type TelegramCallbackQuery } from "./telegram-callback-query.js"
 import { getSupabaseAdmin } from "./supabase-admin.js"
+import { handleScheduledCallback, handleScheduledMessage } from './scheduled-messages/telegram-flow.js'
+import { syncManagementCommands } from './scheduled-messages/commands.js'
 import {
   editTelegramMessageText,
   sendTelegramMessage,
@@ -15,8 +17,9 @@ type TelegramChat = {
   is_forum?: boolean
 }
 
-type TelegramMessage = {
+export type TelegramMessage = {
   message_id?: number
+  ephemeral_message_id?: number
   chat?: TelegramChat
   text?: string
   from?: { id?: number | string; username?: string }
@@ -320,10 +323,13 @@ async function handleStartCommand(message: TelegramMessage): Promise<void> {
 
   const handle = message.from?.username ? `@${message.from.username}` : "your account"
   await sendMessage(chatId, `Linked! ${handle} will now receive MOC Console notifications here.`)
+  const {data:linked}=await admin.from('users').select('id').eq('telegram_chat_id',String(chatId)).maybeSingle()
+  if(linked) await syncManagementCommands(undefined,linked.id)
 }
 
 export async function processTelegramUpdate(update: TelegramUpdate): Promise<void> {
   if (update.callback_query) {
+    if (await handleScheduledCallback(update.callback_query)) return
     await handleCallbackQuery(update.callback_query)
     return
   }
@@ -335,6 +341,7 @@ export async function processTelegramUpdate(update: TelegramUpdate): Promise<voi
 
   const message = update.message ?? update.edited_message
   if (!message) return
+  if (await handleScheduledMessage(message)) return
   if (await handleForumTopicMessage(message)) return
   if (await handleRegisterGroupCommand(message)) return
   if (await handleRegisterTopicCommand(message)) return

@@ -13,3 +13,6 @@ export * from './telegram-rich.js'
 export * from './telegram-keyboard.js'
 export * from './telegram-notes.js'
 export * from './telegram-mini-app.js'
+
+export * from './scheduled-message.js'
+export * from './scheduled-contract.js'

@@ -3,6 +3,7 @@ import type { PendingWorkspaceUser, UserWithRole } from "@/data/fetch-users";
 import type { Role } from "@moc/types/requests/assignee";
 import { useWorkspace } from "@/lib/workspace-context";
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemberTypes } from './use-member-types';
 
 type UsersContextValue = {
   state: {
@@ -10,6 +11,7 @@ type UsersContextValue = {
     pendingUsers: PendingWorkspaceUser[];
     roles: Role[];
     isLoading: boolean;
+    memberTypes: ReturnType<typeof useMemberTypes>['state'];
   };
   actions: {
     loadUsers: () => Promise<void>;
@@ -17,7 +19,9 @@ type UsersContextValue = {
     changeRole: (userId: string, roleId: string) => Promise<void>;
     approveUser: (requestId: string) => Promise<void>;
     rejectUser: (requestId: string) => Promise<void>;
+    memberTypes: ReturnType<typeof useMemberTypes>['actions'];
   };
+  meta: {memberTypes: ReturnType<typeof useMemberTypes>['meta']};
 };
 
 const UsersContext = createContext<UsersContextValue | null>(null);
@@ -27,6 +31,10 @@ export function UsersProvider({ children }: { children: ReactNode }) {
   const [pendingUsers, setPendingUsers] = useState<PendingWorkspaceUser[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const onTypeAssigned = useCallback((userId:string,typeId:string) => {
+    setUsers(current => current.map(user => user.id===userId ? {...user,memberTypeId:typeId} : user));
+  }, []);
+  const memberTypes = useMemberTypes(onTypeAssigned);
 
   const loadedWorkspaceRef = useRef<string | null>(null);
   const promiseRef = useRef<Promise<void> | null>(null);
@@ -84,24 +92,10 @@ export function UsersProvider({ children }: { children: ReactNode }) {
   const approveUser = useCallback(async (requestId: string) => {
     if (!currentWorkspaceId) throw new Error("No workspace selected");
     await approveWorkspaceJoinRequest(requestId);
-    const pendingUser = pendingUsers.find((user) => user.requestId === requestId);
-    const viewerRole = roles.find((role) => role.name.toLowerCase() === "viewer") ?? null;
+    const acceptedUsers = await fetchUsersWithRoles(currentWorkspaceId);
     setPendingUsers((current) => current.filter((user) => user.requestId !== requestId));
-    if (pendingUser) {
-      setUsers((current) => [...current, {
-        id: pendingUser.id,
-        name: pendingUser.name,
-        surname: pendingUser.surname,
-        email: pendingUser.email,
-        telegramChatId: pendingUser.telegramChatId,
-        avatarUrl: pendingUser.avatarUrl,
-        currentDuty: pendingUser.currentDuty,
-        statusMessage: pendingUser.statusMessage,
-        workspaceIds: [currentWorkspaceId],
-        role: viewerRole,
-      }]);
-    }
-  }, [currentWorkspaceId, pendingUsers, roles]);
+    setUsers(acceptedUsers);
+  }, [currentWorkspaceId]);
 
   const rejectUser = useCallback(async (requestId: string) => {
     await rejectWorkspaceJoinRequest(requestId);
@@ -110,10 +104,11 @@ export function UsersProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
-      state: { users, pendingUsers, roles, isLoading },
-      actions: { loadUsers, updateProfile, changeRole, approveUser, rejectUser },
+      state: { users, pendingUsers, roles, isLoading, memberTypes: memberTypes.state },
+      actions: { loadUsers, updateProfile, changeRole, approveUser, rejectUser, memberTypes: memberTypes.actions },
+      meta: {memberTypes: memberTypes.meta},
     }),
-    [users, pendingUsers, roles, isLoading, loadUsers, updateProfile, changeRole, approveUser, rejectUser],
+    [users, pendingUsers, roles, isLoading, loadUsers, updateProfile, changeRole, approveUser, rejectUser, memberTypes],
   );
 
   return <UsersContext.Provider value={value}>{children}</UsersContext.Provider>;

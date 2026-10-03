@@ -9,6 +9,7 @@ const MESSAGE_NOT_MODIFIED = "message is not modified"
 
 export type TelegramSendResult = {
   message_id?: number
+  ephemeral_message_id?: number
   reply_to_message?: {
     forum_topic_created?: { name?: string }
   }
@@ -23,7 +24,7 @@ export type SendMessageOptions = {
 
 export type TelegramSendDetailed =
   | { ok: true; result: TelegramSendResult | null }
-  | { ok: false; errorCode: number | null; description: string; retryAfterSeconds: number | null }
+  | { ok: false; errorCode: number | null; description: string; retryAfterSeconds: number | null; requestStarted?: boolean }
 
 export type SendRichMessageOptions = {
   threadId?: number | null
@@ -39,6 +40,8 @@ type TelegramMethod =
   | "editMessageReplyMarkup"
   | "deleteMessage"
   | "answerCallbackQuery"
+  | "editEphemeralMessageText"
+  | "setMyCommands"
 
 async function callTelegramApi(method: TelegramMethod, body: Record<string, unknown>): Promise<ProviderResponse> {
   const token = process.env.TELEGRAM_BOT_TOKEN
@@ -64,7 +67,7 @@ async function callTelegramApi(method: TelegramMethod, body: Record<string, unkn
 // API-level failures into the same detailed result shape.
 async function requestTelegramApi(method: TelegramMethod, body: Record<string, unknown>): Promise<TelegramSendDetailed> {
   const token = process.env.TELEGRAM_BOT_TOKEN
-  if (!token) return { ok: false, errorCode: null, description: "TELEGRAM_BOT_TOKEN not configured", retryAfterSeconds: null }
+  if (!token) return { ok: false, errorCode: null, description: "TELEGRAM_BOT_TOKEN not configured", retryAfterSeconds: null, requestStarted: false }
   try {
     const res = await callTelegramApi(method, body)
     const json = (await res.json()) as {
@@ -236,4 +239,40 @@ export function getTelegramBotUsername(): string | null {
   const raw = process.env.TELEGRAM_BOT_USERNAME?.trim()
   if (!raw) return null
   return raw.startsWith("@") ? raw.slice(1) : raw
+}
+
+export type EphemeralMessageOptions = {
+  callbackQueryId?: string
+  replyToEphemeralId?: number
+  threadId?: number | null
+  replyMarkup?: InlineKeyboardMarkup
+  forceReply?: boolean
+}
+
+/** Ephemeral-only: failures never turn an administrative prompt into a public or DM message. */
+export async function sendTelegramEphemeralMessage(chatId: string, receiverUserId: string, text: string, options: EphemeralMessageOptions = {}): Promise<TelegramSendDetailed> {
+  const body: Record<string, unknown> = {
+    chat_id: chatId, text,
+    ephemeral_message_parameters: {receiver_user_id: Number(receiverUserId), ...(options.callbackQueryId ? {callback_query_id: options.callbackQueryId} : {})},
+  }
+  if (options.threadId !== undefined && options.threadId !== null) body.message_thread_id = options.threadId
+  if (options.replyToEphemeralId !== undefined) body.reply_parameters = {ephemeral_message_id: options.replyToEphemeralId}
+  if (options.replyMarkup) body.reply_markup = options.replyMarkup
+  else if (options.forceReply) body.reply_markup = {force_reply: true, input_field_placeholder: 'Enter the replacement value'}
+  return requestTelegramApi('sendMessage', body)
+}
+
+export async function editTelegramEphemeralMessage(chatId: string, receiverUserId: string, ephemeralMessageId: number, text: string, replyMarkup?: InlineKeyboardMarkup): Promise<TelegramSendDetailed> {
+  const result = await requestTelegramApi('editEphemeralMessageText', {
+    chat_id: chatId, receiver_user_id: Number(receiverUserId), ephemeral_message_id: ephemeralMessageId,
+    text, reply_markup: replyMarkup ?? {inline_keyboard: []},
+  })
+  return isNotModified(result) ? {ok: true, result: null} : result
+}
+
+export async function setTelegramManagementCommands(chatId: string, telegramUserId: string, allowed: boolean): Promise<TelegramSendDetailed> {
+  return requestTelegramApi('setMyCommands', {
+    scope: {type: 'chat_member', chat_id: chatId, user_id: Number(telegramUserId)},
+    commands: allowed ? [{command: 'manage_messages', description: 'Manage active MOC messages', is_ephemeral: true}] : [],
+  })
 }

@@ -23,6 +23,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             <Drawer.Backdrop />
                             <Drawer.Panel aria-label="Navigation" className="!w-[min(88%,24rem)] !max-w-none !p-0 [&>div]:rounded-none">
                                 <AppNavigation
+                                    canManageScheduledMessages={state.canManageScheduledMessages}
                                     isRouteActive={actions.isRouteActive}
                                     isSigningOut={state.isSigningOut}
                                     onCloseMobileNavigation={actions.closeMobileSidebar}
@@ -35,6 +36,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 ) : (
                     <Sidebar.Panel className="shrink-0">
                         <AppNavigation
+                            canManageScheduledMessages={state.canManageScheduledMessages}
                             isRouteActive={actions.isRouteActive}
                             isSigningOut={state.isSigningOut}
                             onCloseMobileNavigation={actions.closeMobileSidebar}

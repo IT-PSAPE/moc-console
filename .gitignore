@@ -32,6 +32,7 @@ apps/api/.env
 .idea
 .DS_Store
 .playwright-cli
+.superpowers/
 .claude
 *.suo
 *.ntvs*

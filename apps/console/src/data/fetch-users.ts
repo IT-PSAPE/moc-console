@@ -12,9 +12,10 @@ export type UserWithRole = {
   statusMessage: string | null;
   workspaceIds: string[];
   role: Role | null;
+  memberTypeId: string;
 };
 
-export type PendingWorkspaceUser = Omit<UserWithRole, "role" | "workspaceIds"> & {
+export type PendingWorkspaceUser = Omit<UserWithRole, "role" | "workspaceIds" | "memberTypeId"> & {
   requestId: string;
   requestedAt: string;
 };
@@ -31,6 +32,7 @@ type UserRow = {
 };
 
 type WorkspaceUserRow = {
+  member_type_id: string;
   users: UserRow | UserRow[] | null;
   roles: Role | Role[] | null;
 };
@@ -49,7 +51,7 @@ function first<T>(value: T | T[] | null): T | null {
 export async function fetchUsersWithRoles(workspaceId: string): Promise<UserWithRole[]> {
   const { data, error } = await supabase
     .from("workspace_users")
-    .select("users(id, name, surname, email, telegram_chat_id, avatar_url, current_duty, status_message), roles(id, name, can_create, can_read, can_update, can_delete, can_manage_roles)")
+    .select("member_type_id, users(id, name, surname, email, telegram_chat_id, avatar_url, current_duty, status_message), roles(id, name, can_create, can_read, can_update, can_delete, can_manage_roles)")
     .eq("workspace_id", workspaceId);
 
   if (error) throw new Error(error.message);
@@ -68,6 +70,7 @@ export async function fetchUsersWithRoles(workspaceId: string): Promise<UserWith
       statusMessage: user.status_message,
       workspaceIds: [workspaceId],
       role: first(membership.roles),
+      memberTypeId: membership.member_type_id,
     }];
   });
 }

@@ -43,6 +43,10 @@ const ZoomDocsScreen = lazy(() => import('./screens/public/zoom-docs').then((m) 
 const ZoomReviewTestPlanScreen = lazy(() => import('./screens/public/zoom-review-test-plan').then((m) => ({ default: m.ZoomReviewTestPlanScreen })))
 const SettingsScreen = lazy(() => import('./screens/account/settings/page').then((m) => ({ default: m.SettingsScreen })))
 const MessageTemplateDetailScreen = lazy(() => import('./screens/account/settings/message-templates/detail/page').then((m) => ({ default: m.MessageTemplateDetailScreen })))
+const ScheduledMessagesLayout = lazy(() => import('./screens/scheduled-messages/layout').then((m) => ({ default: m.ScheduledMessagesLayout })))
+const ScheduledMessagesScreen = lazy(() => import('./screens/scheduled-messages/page').then((m) => ({ default: m.ScheduledMessagesScreen })))
+const ScheduledMessageComposeScreen = lazy(() => import('./screens/scheduled-messages/compose/page').then((m) => ({ default: m.ScheduledMessageComposeScreen })))
+const ScheduledTemplateScreen = lazy(() => import('./screens/scheduled-messages/templates/page').then((m) => ({ default: m.ScheduledTemplateScreen })))
 
 function FullScreenSpinner() {
     return (
@@ -169,6 +173,12 @@ const router = createBrowserRouter([
             { index: true, element: <Navigate to={`/${routes.requests}`} replace /> },
             { path: routes.settings, element: <SettingsScreen /> },
             { path: routes.messageTemplateDetail, element: <MessageTemplateDetailScreen /> },
+            { path: routes.scheduledMessages, element: <ScheduledMessagesLayout />, children: [
+                { index: true, element: <ScheduledMessagesScreen /> },
+                { path: 'new', element: <ScheduledMessageComposeScreen /> },
+                { path: 'templates/new', element: <ScheduledTemplateScreen /> },
+                { path: 'templates/:id', element: <ScheduledTemplateScreen /> },
+            ] },
             { path: routes.requests, element: <RequestsScreen /> },
             { path: routes.requestsDetail, element: <RequestDetailScreen /> },
             { path: routes.equipment, element: <EquipmentScreen /> },

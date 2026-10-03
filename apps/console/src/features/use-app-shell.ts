@@ -4,8 +4,10 @@ import { useAuth } from "@/lib/auth-context"
 import { routes } from "@/screens/console-routes"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { useSidebar } from "@moc/ui/components/navigation/sidebar"
+import { useScheduledMessageAccess } from './scheduled-messages/use-scheduled-message-access'
 
 export function useAppShell() {
+  const canManageScheduledMessages = useScheduledMessageAccess()
   const { pathname } = useLocation()
   const sidebar = useSidebar()
   const { closeMobile, setMobileOpen } = sidebar.actions
@@ -40,7 +42,7 @@ export function useAppShell() {
   }
 
   return {
-    state: { isSigningOut, profileOpen, mobileSidebarOpen: sidebar.state.isMobileOpen },
+    state: { isSigningOut, profileOpen, mobileSidebarOpen: sidebar.state.isMobileOpen, canManageScheduledMessages },
     actions: { isRouteActive, signOut: signOutUser, openProfile, setProfileOpen, closeMobileSidebar: closeMobile, setMobileSidebarOpen: setMobileOpen },
   }
 }

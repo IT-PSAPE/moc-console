@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type MouseEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useBlocker, useNavigate } from 'react-router-dom'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { useWorkspace } from '@/lib/workspace-context'
-import { DEFAULT_TEMPLATES, validateTemplate, type MessageType } from '@moc/notifications'
+import { DEFAULT_TEMPLATES, TEMPLATE_TOKENS, validateTemplate, type MessageType } from '@moc/notifications'
 import { deleteNotificationTemplate, fetchNotificationTemplates, upsertNotificationTemplate } from '@/data/notification-templates'
 import { routes } from '@/screens/console-routes'
 import { messageTypeMeta } from '../meta'
-import { editorHtmlToTemplate, templateToEditorHtml, unsupportedTemplateTags, templateHasContent } from './template-editor-html'
+import { templateHasContent } from '@/lib/template-editor-html'
+import { useTemplateBodyEditor } from '@/hooks/use-template-body-editor'
 
 const SETTINGS_TELEGRAM = `/${routes.settings}?tab=telegram`
 
@@ -20,9 +21,8 @@ export function useMessageTemplateEditor(messageType: MessageType) {
     const [hasCustom, setHasCustom] = useState(false)
     const [savedBody, setSavedBody] = useState<string | null>(null)
     const [body, setBody] = useState(defaultBody)
-    const [view, setView] = useState<'source' | 'preview'>('preview')
     const [saving, setSaving] = useState(false)
-    const textareaRef = useRef<HTMLTextAreaElement>(null)
+    const bodyEditor = useTemplateBodyEditor(body, setBody)
 
     useEffect(() => {
         if (!currentWorkspaceId) return
@@ -46,8 +46,7 @@ export function useMessageTemplateEditor(messageType: MessageType) {
     }, [currentWorkspaceId, defaultBody, messageType, toast])
 
     const unknown = useMemo(() => validateTemplate(messageType, body), [body, messageType])
-    const editorHtml = useMemo(() => templateToEditorHtml(body), [body])
-    const unsupportedTags = useMemo(() => unsupportedTemplateTags(body), [body])
+    const { editorHtml, unsupportedTags } = bodyEditor.state
     const unknownMessage = unknown.length ? `Unknown placeholder${unknown.length > 1 ? 's' : ''} for this message: ${unknown.map(name => `{{${name}}}`).join(', ')}` : ''
     const dirty = body !== (savedBody ?? defaultBody)
     const canSave = dirty && unknown.length === 0 && templateHasContent(body) && !saving
@@ -64,25 +63,6 @@ export function useMessageTemplateEditor(messageType: MessageType) {
 
     function back() {
         navigate(SETTINGS_TELEGRAM)
-    }
-
-    const insertToken = useCallback((name: string) => {
-        const element = textareaRef.current
-        const token = `{{${name}}}`
-        if (!element) return setBody((current) => current + token)
-        const start = element.selectionStart ?? body.length
-        const end = element.selectionEnd ?? body.length
-        setBody(body.slice(0, start) + token + body.slice(end))
-        requestAnimationFrame(() => {
-            element.focus()
-            const caret = start + token.length
-            element.setSelectionRange(caret, caret)
-        })
-    }, [body])
-
-    function insertTokenFromButton(event: MouseEvent<HTMLButtonElement>) {
-        const token = event.currentTarget.dataset.token
-        if (token) insertToken(token)
     }
 
     const save = useCallback(async () => {
@@ -131,22 +111,11 @@ export function useMessageTemplateEditor(messageType: MessageType) {
         }
     }, [currentWorkspaceId, defaultBody, messageType, templateMeta.scope, toast])
 
-    function changeView(value: string) {
-        setView(value as 'source' | 'preview')
-    }
-
-    function changeRichBody(html: string): void {
-        setBody(editorHtmlToTemplate(html))
-    }
-
-    function changeBody(event: ChangeEvent<HTMLTextAreaElement>) {
-        setBody(event.target.value)
-    }
-
     return {
-        state: { isLoading, hasCustom, body, view, saving, unknown, unknownMessage, editorHtml, unsupportedTags, dirty, canSave, navigationBlocked: blocker.state === 'blocked' },
-        actions: { back, insertTokenFromButton, save, saveAndProceed, discardAndProceed, cancelNavigation, restoreDefault, changeView, changeBody, changeRichBody },
+        state: { isLoading, hasCustom, body, saving, unknown, unknownMessage, editorHtml, unsupportedTags, dirty, canSave, navigationBlocked: blocker.state === 'blocked' },
+        actions: { back, ...bodyEditor.actions, save, saveAndProceed, discardAndProceed, cancelNavigation, restoreDefault },
         templateMeta,
-        textareaRef,
+        textareaRef: bodyEditor.meta.textareaRef,
+        variables: TEMPLATE_TOKENS[messageType].map(token => token.name),
     }
 }

@@ -4,6 +4,7 @@ import type { PendingWorkspaceUser, UserWithRole } from "@/data/fetch-users"
 import { useUsers } from "@/features/users/users-provider"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
+import { mutateScheduledMessage } from '@/features/scheduled-messages/services/scheduled-message-service'
 
 export function useUsersSettings() {
   const {
@@ -24,6 +25,10 @@ export function useUsersSettings() {
     try {
       await changeRole(userId, roleId)
       toast({ title: "Role updated", variant: "success" })
+      if(currentWorkspaceId) {
+        try {await mutateScheduledMessage(currentWorkspaceId,'commands.sync',{})}
+        catch {toast({title:'Telegram command menus will refresh on the daily run',variant:'error'})}
+      }
     } catch (error) {
       toast({
         title: "Could not update role",
@@ -31,7 +36,7 @@ export function useUsersSettings() {
         variant: "error",
       })
     }
-  }, [changeRole, toast])
+  }, [changeRole, toast, currentWorkspaceId])
 
   const approve = useCallback(async (requestId: string) => {
     try {

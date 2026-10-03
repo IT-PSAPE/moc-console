@@ -1,29 +1,18 @@
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { Divider } from "@moc/ui/components/display/divider";
-import { RichTextEditor } from "@moc/ui/components/form/rich-text-editor";
-import { TextArea } from "@moc/ui/components/form/text-area";
+import { VariableTextEditor } from "@moc/ui/components/form/variable-text-editor";
 import { Button } from "@moc/ui/components/controls/button";
-import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
 import { Spinner } from "@moc/ui/components/feedback/spinner";
 import { ArrowLeft } from "lucide-react";
 import {
-    TEMPLATE_TOKENS,
     type MessageType,
-    type TokenSpec,
 } from "@moc/notifications";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { Page } from "@moc/ui/components/layout/page";
 import { useMessageTemplateEditor } from "./use-message-template-editor";
 
 export function MessageTemplateEditor({ messageType }: { messageType: MessageType }) {
-    const { state, actions, templateMeta, textareaRef } = useMessageTemplateEditor(messageType);
-
-    function renderSourceToken(token: TokenSpec) {
-        return <Button.Unstyled key={token.name} type="button" data-token={token.name} onClick={actions.insertTokenFromButton} title={`Insert ${token.name}`} className="cursor-pointer rounded bg-secondary px-2 py-1 font-mono text-secondary hover:bg-tertiary focus-visible:outline-2 focus-visible:outline-offset-2"><Label.xs className="text-inherit">{`{{${token.name}}}`}</Label.xs></Button.Unstyled>;
-    }
-    function renderRichToken(token: TokenSpec) {
-        return <RichTextEditor.Variable key={token.name} name={token.name} />;
-    }
+    const { state, actions, templateMeta, textareaRef, variables } = useMessageTemplateEditor(messageType);
 
     return (
         <Page>
@@ -42,13 +31,6 @@ export function MessageTemplateEditor({ messageType }: { messageType: MessageTyp
                 </Page.Heading>
             </Page.Header>
 
-            <Page.Toolbar width="standard" className="justify-end">
-                <SegmentedControl value={state.view} onValueChange={actions.changeView}>
-                    <SegmentedControl.Item value="preview">Preview</SegmentedControl.Item>
-                    <SegmentedControl.Item value="source">Source</SegmentedControl.Item>
-                </SegmentedControl>
-            </Page.Toolbar>
-
             <Page.Content width="standard" className="flex flex-col gap-3">
                 {state.isLoading ? (
                     <div className="flex justify-center py-16">
@@ -56,38 +38,11 @@ export function MessageTemplateEditor({ messageType }: { messageType: MessageTyp
                     </div>
                 ) : (
                     <>
-                        {state.view === "source" ? (
-                                <>
-                                    <TextArea
-                                        aria-label="Message template source"
-                                        name="message-template-source"
-                                        ref={textareaRef}
-                                        value={state.body}
-                                        onChange={actions.changeBody}
-                                        rows={14}
-                                        className="font-mono"
-                                    />
-                                    <div className="flex flex-wrap items-center gap-1.5" aria-label="Insert a variable">
-                                        <Label.xs className="mr-1 text-tertiary">Insert variable</Label.xs>
-                                        {TEMPLATE_TOKENS[messageType].map(renderSourceToken)}
-                                    </div>
-                                </>
-                            ) : (
-                                state.unsupportedTags.length > 0 ? (
-                                    <Paragraph.sm className="text-secondary">This template uses advanced blocks ({state.unsupportedTags.join(", ")}). Edit these in Source to preserve their formatting.</Paragraph.sm>
-                                ) : (
-                                    <RichTextEditor.Root value={state.editorHtml} onChange={actions.changeRichBody} disabled={state.saving}>
-                                        <div>
-                                            <RichTextEditor.Toolbar />
-                                            <RichTextEditor.Content />
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-1.5" aria-label="Insert a variable">
-                                            <Label.xs className="mr-1 text-tertiary">Insert variable</Label.xs>
-                                            {TEMPLATE_TOKENS[messageType].map(renderRichToken)}
-                                        </div>
-                                    </RichTextEditor.Root>
-                                )
-                            )}
+                        <VariableTextEditor.Root source={state.body} html={state.editorHtml} variables={variables} disabled={state.saving} textareaRef={textareaRef} onSourceChange={actions.changeBody} onRichChange={actions.changeRichBody} onInsertVariable={actions.insertTokenFromButton} richFallback={state.unsupportedTags.length ? <Paragraph.sm>This template uses advanced blocks ({state.unsupportedTags.join(', ')}). Edit these in Source to preserve their formatting.</Paragraph.sm> : null}>
+                            <div className="flex justify-end"><VariableTextEditor.ViewSwitch /></div>
+                            <VariableTextEditor.Rich />
+                            <VariableTextEditor.Source />
+                        </VariableTextEditor.Root>
 
                         {state.unknownMessage && <Paragraph.xs className="text-error">{state.unknownMessage}</Paragraph.xs>}
                         <Divider />

@@ -16,7 +16,8 @@ export function useSettingsScreen() {
   const { role } = useWorkspace()
   const [searchParams, setSearchParams] = useSearchParams()
   const canManage = role?.can_manage_roles === true
-  const tabs: SettingsTab[] = canManage ? ["general", "members", "request-options", "telegram", "streams", "automation"] : ["general"]
+  const canEdit = role?.can_update === true
+  const tabs: SettingsTab[] = canManage ? ["general", "members", "request-options", "telegram", "streams", "automation"] : canEdit ? ['general','members'] : ["general"]
   const tabParam = searchParams.get("tab")
   // Keep existing bookmarks for these settings pointing at the combined view.
   const resolvedTab = ["venues", "events", "request-categories"].includes(tabParam ?? "") ? "request-options" : tabParam

@@ -12,7 +12,7 @@ export type TelegramCallbackQuery = {
   id: string
   from?: { id?: number | string }
   data?: string
-  message?: { chat?: TelegramChat; message_id?: number; message_thread_id?: number }
+  message?: { chat?: TelegramChat; message_id?: number; message_thread_id?: number; ephemeral_message_id?: number }
 }
 
 export async function handleCallbackQuery(callbackQuery: TelegramCallbackQuery): Promise<void> {
