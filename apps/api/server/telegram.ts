@@ -22,9 +22,17 @@ export type SendMessageOptions = {
   disableLinkPreview?: boolean
 }
 
-export type TelegramSendDetailed =
-  | { ok: true; result: TelegramSendResult | null }
+type TelegramApiDetailed<T> =
+  | { ok: true; result: T | null }
   | { ok: false; errorCode: number | null; description: string; retryAfterSeconds: number | null; requestStarted?: boolean }
+
+export type TelegramSendDetailed = TelegramApiDetailed<TelegramSendResult>
+
+export type TelegramCommand = { command: string; description: string; is_ephemeral?: boolean }
+export type TelegramCommandScope =
+  | { type: 'default' | 'all_group_chats' | 'all_chat_administrators' }
+  | { type: 'chat' | 'chat_administrators'; chat_id: string }
+  | { type: 'chat_member'; chat_id: string; user_id: number }
 
 export type SendRichMessageOptions = {
   threadId?: number | null
@@ -42,6 +50,7 @@ type TelegramMethod =
   | "answerCallbackQuery"
   | "editEphemeralMessageText"
   | "setMyCommands"
+  | "getMyCommands"
 
 async function callTelegramApi(method: TelegramMethod, body: Record<string, unknown>): Promise<ProviderResponse> {
   const token = process.env.TELEGRAM_BOT_TOKEN
@@ -65,14 +74,14 @@ async function callTelegramApi(method: TelegramMethod, body: Record<string, unkn
 // Shared low-level request/response handling for every Telegram method: builds
 // the fetch call, parses the JSON envelope, and normalises both transport and
 // API-level failures into the same detailed result shape.
-async function requestTelegramApi(method: TelegramMethod, body: Record<string, unknown>): Promise<TelegramSendDetailed> {
+async function requestTelegramApi<T = TelegramSendResult>(method: TelegramMethod, body: Record<string, unknown>): Promise<TelegramApiDetailed<T>> {
   const token = process.env.TELEGRAM_BOT_TOKEN
   if (!token) return { ok: false, errorCode: null, description: "TELEGRAM_BOT_TOKEN not configured", retryAfterSeconds: null, requestStarted: false }
   try {
     const res = await callTelegramApi(method, body)
     const json = (await res.json()) as {
       ok?: boolean
-      result?: TelegramSendResult
+      result?: T
       error_code?: number
       description?: string
       parameters?: { retry_after?: number }
@@ -270,9 +279,10 @@ export async function editTelegramEphemeralMessage(chatId: string, receiverUserI
   return isNotModified(result) ? {ok: true, result: null} : result
 }
 
-export async function setTelegramManagementCommands(chatId: string, telegramUserId: string, allowed: boolean): Promise<TelegramSendDetailed> {
-  return requestTelegramApi('setMyCommands', {
-    scope: {type: 'chat_member', chat_id: chatId, user_id: Number(telegramUserId)},
-    commands: allowed ? [{command: 'manage_messages', description: 'Manage active MOC messages', is_ephemeral: true}] : [],
-  })
+export async function getTelegramCommands(scope: TelegramCommandScope): Promise<TelegramApiDetailed<TelegramCommand[]>> {
+  return requestTelegramApi<TelegramCommand[]>('getMyCommands', { scope })
+}
+
+export async function setTelegramCommands(scope: TelegramCommandScope, commands: TelegramCommand[]): Promise<TelegramApiDetailed<boolean>> {
+  return requestTelegramApi<boolean>('setMyCommands', { scope, commands })
 }

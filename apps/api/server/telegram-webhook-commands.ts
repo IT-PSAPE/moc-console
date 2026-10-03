@@ -3,6 +3,7 @@ import { handleCallbackQuery, type TelegramCallbackQuery } from "./telegram-call
 import { getSupabaseAdmin } from "./supabase-admin.js"
 import { handleScheduledCallback, handleScheduledMessage } from './scheduled-messages/telegram-flow.js'
 import { syncManagementCommands } from './scheduled-messages/commands.js'
+import { syncTelegramGroupCommands } from './telegram-command-menu.js'
 import {
   editTelegramMessageText,
   sendTelegramMessage,
@@ -33,6 +34,8 @@ export type TelegramMessage = {
 
 type TelegramChatMemberUpdated = {
   chat?: TelegramChat
+  from?: TelegramMessage['from']
+  old_chat_member?: { status?: string }
   new_chat_member?: { status?: string }
 }
 
@@ -90,20 +93,22 @@ async function getRegisteredGroup(chatId: string): Promise<RegisteredGroup | nul
   return { workspaceId: row.workspace_id, workspaceSlug: workspace?.slug ?? null }
 }
 
-async function senderCanManageWorkspace(message: TelegramMessage, workspaceId: string): Promise<boolean> {
-  const telegramUserId = message.from?.id
-  if (telegramUserId === undefined) return false
-
-  const admin = getSupabaseAdmin()
-  const { data: user, error: userError } = await admin
+async function findLinkedTelegramUser(telegramUserId: number | string | undefined): Promise<{ id: string } | null> {
+  if (telegramUserId === undefined) return null
+  const { data: user, error: userError } = await getSupabaseAdmin()
     .from("users")
     .select("id")
     .eq("telegram_chat_id", String(telegramUserId))
     .maybeSingle()
   throwIfError(userError, "Could not resolve linked Telegram user")
+  return user
+}
+
+async function senderCanManageWorkspace(message: TelegramMessage, workspaceId: string): Promise<boolean> {
+  const user = await findLinkedTelegramUser(message.from?.id)
   if (!user) return false
 
-  const { data: membership, error: membershipError } = await admin
+  const { data: membership, error: membershipError } = await getSupabaseAdmin()
     .from("workspace_users")
     .select("roles(can_manage_roles)")
     .eq("workspace_id", workspaceId)
@@ -130,7 +135,15 @@ function slugErrorText(providedSlug: string | null, command: string): string {
 async function handleMyChatMember(update: TelegramChatMemberUpdated): Promise<void> {
   const chat = update.chat
   const status = update.new_chat_member?.status
-  if (!chat?.id || !isGroup(chat) || !status || !ABSENT_STATUSES.has(status)) return
+  if (!chat?.id || !isGroup(chat) || !status) return
+
+  if (!ABSENT_STATUSES.has(status)) {
+    if (!['member', 'administrator'].includes(status) || update.old_chat_member?.status === status) return
+    const group = await getRegisteredGroup(String(chat.id))
+    const user = group ? null : await findLinkedTelegramUser(update.from?.id)
+    await refreshGroupCommands(String(chat.id), group?.workspaceId, user?.id)
+    return
+  }
 
   const admin = getSupabaseAdmin()
   const { error } = await admin
@@ -138,6 +151,16 @@ async function handleMyChatMember(update: TelegramChatMemberUpdated): Promise<vo
     .update({ removed_at: new Date().toISOString() })
     .eq("chat_id", String(chat.id))
   throwIfError(error, "Could not mark Telegram group as removed")
+}
+
+async function refreshGroupCommands(chatId: string, workspaceId?: string, userId?: string): Promise<void> {
+  try {
+    const result = await syncTelegramGroupCommands(chatId, workspaceId, userId)
+    if (result.failed) console.warn(`Telegram could not refresh ${result.failed} command menus for group ${chatId}.`)
+  } catch (error) {
+    // Menu delivery must not undo a successful registration; Console sync can retry.
+    console.warn('Telegram command-menu refresh failed:', error instanceof Error ? error.message : String(error))
+  }
 }
 
 async function handleRegisterGroupCommand(message: TelegramMessage): Promise<boolean> {
@@ -181,6 +204,7 @@ async function handleRegisterGroupCommand(message: TelegramMessage): Promise<boo
   }, { onConflict: "chat_id" })
   throwIfError(error, "Could not register Telegram group")
 
+  await refreshGroupCommands(String(chatId), workspace.id)
   await sendMessage(chatId, `✅ Registered "${chat.title ?? "this group"}" to workspace "${workspace.slug}".`, { threadId })
   return true
 }
@@ -286,6 +310,7 @@ async function handleRegisterTopicCommand(message: TelegramMessage): Promise<boo
   }, { onConflict: "group_chat_id,thread_id" })
   throwIfError(error, "Could not register Telegram topic")
 
+  await refreshGroupCommands(groupChatId, workspace.id)
   if (sent?.message_id !== undefined) {
     const finalText = resolvedName
       ? `✅ Registered "${resolvedName}" in workspace "${workspace.slug}".`
@@ -323,7 +348,7 @@ async function handleStartCommand(message: TelegramMessage): Promise<void> {
 
   const handle = message.from?.username ? `@${message.from.username}` : "your account"
   await sendMessage(chatId, `Linked! ${handle} will now receive MOC Console notifications here.`)
-  const {data:linked}=await admin.from('users').select('id').eq('telegram_chat_id',String(chatId)).maybeSingle()
+  const linked = await findLinkedTelegramUser(chatId)
   if(linked) await syncManagementCommands(undefined,linked.id)
 }
 

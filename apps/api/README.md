@@ -222,3 +222,20 @@ to Supabase. No new function entrypoint, library, hosting plan or cron frequency
 is required. Groups should have the bot as an administrator for reliable
 command-origin ephemeral replies. Management and time input have **no DM
 fallback**; users restart disappeared ephemeral sessions.
+
+Telegram command menus include the configured public commands plus the sender's
+permitted commands. `register_group` and `register_topic` require workspace
+`can_manage_roles` (Admin); `manage_messages` requires `can_update` (Admin/Editor).
+Every handler rechecks permissions, including manually typed commands. Telegram
+administrator status alone grants no MOC permissions. Restricted command
+definitions live in `server/telegram-command-menu.ts`; other configured commands
+remain public. Sync also removes legacy public registrations of these restricted
+commands, preserving unrelated commands. It updates the default-language menus;
+separately configured Telegram language-specific menus are not managed here.
+
+Use **Sync Telegram commands** after deploying to refresh existing groups. The
+daily worker and account linking also refresh menus, as do group/topic registration
+and adding the bot. Before a group is registered, the linked MOC Admin adding the
+bot gets the registration commands; message management appears after registration.
+In older unregistered groups without a new bot-membership event, an Admin can type
+`/register_group <workspace-slug>` directly to register and refresh the menu.

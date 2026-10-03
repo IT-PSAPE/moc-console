@@ -4,7 +4,7 @@ import { describe, it } from "node:test"
 import {
   editTelegramEphemeralMessage,
   sendTelegramEphemeralMessage,
-  setTelegramManagementCommands,
+  setTelegramCommands,
 } from "../../../../apps/api/server/telegram.js"
 
 async function withTelegramFetch<T>(run: (calls: Array<{ url: string; body: Record<string, unknown> }>) => Promise<T>): Promise<T> {
@@ -115,7 +115,7 @@ describe("ephemeral Telegram message transport", () => {
 
   it("keeps command registration scoped to one Telegram member and marks the command ephemeral", async () => {
     await withTelegramFetch(async calls => {
-      await setTelegramManagementCommands("-100123", "456", true)
+      await setTelegramCommands({ type: 'chat_member', chat_id: '-100123', user_id: 456 }, [{ command: 'manage_messages', description: 'Manage active MOC messages', is_ephemeral: true }])
 
       assert.equal(calls.length, 1)
       assert.equal(calls[0]?.url.endsWith("/setMyCommands"), true)
@@ -128,7 +128,7 @@ describe("ephemeral Telegram message transport", () => {
 
   it("removes only the specified member's scoped management commands", async () => {
     await withTelegramFetch(async calls => {
-      await setTelegramManagementCommands("-100123", "456", false)
+      await setTelegramCommands({ type: 'chat_member', chat_id: '-100123', user_id: 456 }, [])
 
       assert.equal(calls.length, 1)
       assert.equal(calls[0]?.url.endsWith("/setMyCommands"), true)
