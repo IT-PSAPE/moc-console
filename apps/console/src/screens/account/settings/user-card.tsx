@@ -50,11 +50,15 @@ export function UserCard({ user, roles, canManage, onRoleChange }: UserCardProps
 
       </ListItemCard.Content>
       <ListItemCard.Trailing className="ml-13 w-[calc(100%-3.25rem)] justify-start sm:ml-0 sm:w-auto sm:justify-end">
-        {memberType.meta.canEdit ? <SelectField name={`type-${user.id}`} label={`Member type for ${user.name}`} value={user.memberTypeId} items={memberType.meta.items} onValueChange={memberType.actions.change} /> : <Badge label={memberType.meta.name} color="gray" />}
         {canManage && user.telegramChatId && <Button.Icon variant="ghost" icon={<Link2 />} onClick={handleOpenConnect} aria-label={`Connect events to ${user.name} ${user.surname}`} />}
         {canManage
           ? <UserRoleSelect userId={user.id} role={user.role} roles={roles} onChange={onRoleChange} />
-          : <Badge label={user.role?.name ?? "No role"} color={getRoleColor(user.role?.name)} icon={<Shield />} />}
+          : <Badge label={user.role?.name ?? "No role"} color={getRoleColor(user.role?.name)} icon={<Shield />} />
+        }
+        {memberType.meta.canEdit
+          ? <SelectField name={`type-${user.id}`} label={`Member type for ${user.name}`} value={user.memberTypeId} items={memberType.meta.items} onValueChange={memberType.actions.change} className="w-48 capitalize" />
+          : <Badge label={memberType.meta.name} color="gray" />
+        }
       </ListItemCard.Trailing>
     </ListItemCard.Root>
   )
