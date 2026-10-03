@@ -67,7 +67,10 @@ async function mutate(actor: string,workspace: string,body: Record<string,unknow
 export async function handleScheduledMessages(request: ApiRequest,response: ApiResponse): Promise<void> {
   response.setHeader('Cache-Control','no-store')
   if(applyCors(request,response)) return
-  if(!isAllowedOrigin(headerValue(request.headers,'origin'))) return response.status(403).json({error:'Forbidden origin'})
+  const origin=headerValue(request.headers,'origin')
+  // Same-origin browser GETs omit Origin. Reads still require a session and
+  // workspace management permission; writes always require an allowed origin.
+  if((origin!==null || request.method!=='GET') && !isAllowedOrigin(origin)) return response.status(403).json({error:'Forbidden origin'})
   if(!['GET','POST'].includes(request.method??'')) return response.status(405).json({error:'Method not allowed'})
   try {
     if(JSON.stringify(request.body??null).length>16000) return response.status(413).json({error:'Request too large'})
