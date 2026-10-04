@@ -44,6 +44,9 @@ export async function changeOccurrence(actor: string, id: string, revision: numb
 export async function sendOccurrence(actor: string,id: string): Promise<void> {
   await scheduledRpc('request_scheduled_send',{p_actor:actor,p_id:id})
 }
+export async function resendOccurrence(actor: string,id: string,revision: number): Promise<void> {
+  await scheduledRpc('request_scheduled_resend',{p_actor:actor,p_id:id,p_revision:revision})
+}
 export async function respondAttendance(actor: string,o: Occurrence,status: 'attending'|'not_attending',arrival: string|null,groupId: string|null): Promise<void> {
   await scheduledRpc('respond_scheduled_attendance',{p_actor:actor,p_id:o.id,p_revision:o.revision,p_status:status,p_arrival:arrival,p_group:groupId})
 }

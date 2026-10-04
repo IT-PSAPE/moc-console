@@ -26,7 +26,7 @@ type DeliveryRow = {
   entity_id: string | null
   reply_markup: InlineKeyboardMarkup | null
   parent_delivery_id: string | null
-  scheduled_operation: 'send' | 'edit' | 'expire' | null
+  scheduled_operation: 'send' | 'resend' | 'edit' | 'expire' | null
 }
 
 export type DeliveryInput = {

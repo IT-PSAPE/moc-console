@@ -3,7 +3,7 @@ import { describe, it } from "node:test"
 
 import { processPendingDeliveries } from "../../../../../apps/api/server/notifications/delivery-store.js"
 
-type Scenario = "removed-destination-and-valid-row" | "ambiguous-send" | "network-throw" | "missing-token" | "expire-edit"
+type Scenario = "removed-destination-and-valid-row" | "ambiguous-send" | "network-throw" | "missing-token" | "expire-edit" | "resend" | "ambiguous-resend"
 type Call = { url: string; method: string; body: Record<string, unknown> | null }
 
 function makeOccurrence(id: string, messageId: number | null) {
@@ -57,7 +57,7 @@ async function runQueueScenario(scenario: Scenario) {
     entity_id: null,
     reply_markup: null,
     parent_delivery_id: null,
-    scheduled_operation: scenario === "expire-edit" ? "expire" : "send",
+    scheduled_operation: scenario.includes("resend") ? "resend" : scenario === "expire-edit" ? "expire" : "send",
     scheduled_occurrence_id: id.replace("delivery", "occurrence"),
     index,
   }]))
@@ -72,7 +72,7 @@ async function runQueueScenario(scenario: Scenario) {
       const telegramMethod = url.split("/").pop()
       if (telegramMethod === "sendRichMessage") {
         if (scenario === "network-throw") throw new Error("connection reset after request started")
-        return new Response(JSON.stringify(scenario === "ambiguous-send"
+        return new Response(JSON.stringify((scenario === "ambiguous-send" || scenario === "ambiguous-resend")
           ? { ok: true, result: { message_id: undefined } }
           : { ok: true, result: { message_id: 920 } }), { status: 200 })
       }
@@ -90,8 +90,8 @@ async function runQueueScenario(scenario: Scenario) {
       }
       const isExpiry = scenario === "expire-edit"
       return new Response(JSON.stringify({
-        occurrence: makeOccurrence(isExpiry ? "occurrence-expiry" : `occurrence-${id}`, isExpiry ? 905 : null),
-        responses: [{ name: "Alex Member", status: "awaiting", arrival_time: null }],
+        occurrence: { ...makeOccurrence(isExpiry ? "occurrence-expiry" : `occurrence-${id}`, isExpiry || scenario.includes("resend") ? 905 : null), attendance_groups: scenario.includes("resend") ? [{ id: "00000000-0000-4000-8000-000000000011", label: "Noon" }, { id: "00000000-0000-4000-8000-000000000012", label: "Evening" }] : [] },
+        responses: [{ name: "Alex Member", status: scenario.includes("resend") ? "attending" : "awaiting", arrival_time: scenario.includes("resend") ? "07:30" : null, group_id: scenario.includes("resend") ? "00000000-0000-4000-8000-000000000011" : null }],
         expired: isExpiry,
       }), { status: 200 })
     }
@@ -128,6 +128,28 @@ async function runQueueScenario(scenario: Scenario) {
 }
 
 describe("scheduled delivery failure and expiry edges", () => {
+  it("resends the current content and saved attendance to a new Telegram message", async () => {
+    const { result, calls } = await runQueueScenario("resend")
+    assert.deepEqual(result, { attempted: 1, sent: 1, failed: 0, pendingRetry: 0 })
+    const telegram = calls.filter(call => call.url.startsWith("https://api.telegram.org/"))
+    assert.deepEqual(telegram.map(call => call.url.split("/").pop()), ["sendRichMessage"])
+    assert.equal(telegram[0]?.body?.message_thread_id, 22)
+    assert.match(JSON.stringify(telegram[0]?.body), /Service briefing/)
+    assert.match(JSON.stringify(telegram[0]?.body), /Noon/)
+    assert.match(JSON.stringify(telegram[0]?.body), /✅ Alex Member — 07:30/)
+    const finish = calls.find(call => call.url.endsWith("/rpc/finish_scheduled_delivery"))
+    assert.equal(finish?.body?.p_message, 920)
+    assert.equal(finish?.body?.p_ambiguous, false)
+  })
+
+  it("does not automatically retry a resend without a returned message ID", async () => {
+    const { result, calls } = await runQueueScenario("ambiguous-resend")
+    assert.deepEqual(result, { attempted: 1, sent: 0, failed: 1, pendingRetry: 0 })
+    const finish = calls.find(call => call.url.endsWith("/rpc/finish_scheduled_delivery"))
+    assert.equal(finish?.body?.p_ambiguous, true)
+    assert.match(String(finish?.body?.p_error), /without a message ID/)
+  })
+
   it("records a removed destination as failed and continues processing the next queued row", async () => {
     const { result, calls } = await runQueueScenario("removed-destination-and-valid-row")
 

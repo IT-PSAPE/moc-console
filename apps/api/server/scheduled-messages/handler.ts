@@ -4,7 +4,7 @@ import { applyCors, isAllowedOrigin } from '../cors.js'
 import { headerValue, normaliseHeaders, type ApiRequest, type ApiResponse } from '../http.js'
 import { getSupabaseAdmin } from '../supabase-admin.js'
 import { WorkspaceAccessError } from '../workspace-access.js'
-import { authorizeManagement, changeOccurrence, getOccurrence, listActive, scheduledRpc, sendOccurrence } from './store.js'
+import { authorizeManagement, changeOccurrence, getOccurrence, listActive, scheduledRpc, sendOccurrence, resendOccurrence } from './store.js'
 import { syncOccurrence, syncWorkspace } from './worker.js'
 import { syncManagementCommands } from './commands.js'
 import type { EditScope } from './types.js'
@@ -64,6 +64,10 @@ async function mutate(actor: string,workspace: string,body: Record<string,unknow
     const occurrence=await getOccurrence(id)
     if(occurrence.workspace_id!==workspace) throw new WorkspaceAccessError('Message belongs to another workspace')
     if(body.op==='occurrence.send') await sendOccurrence(actor,id)
+    else if(body.op==='occurrence.resend') {
+      if(!Number.isInteger(data.revision)) throw new Error('Invalid revision')
+      await resendOccurrence(actor,id,data.revision as number)
+    }
     else if(body.op==='occurrence.edit') {
       if(!Number.isInteger(data.revision)) throw new Error('Invalid revision')
       const scope=string(data.scope) as EditScope
