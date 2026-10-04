@@ -19,11 +19,18 @@ this order before deploying the API and Console code:
 8. `supabase/migrations/2026-10-04b-scheduled-attendance-groups.sql`
 9. `supabase/migrations/2026-10-04c-scheduled-message-resend.sql`
 10. `supabase/migrations/2026-10-04d-scheduled-message-timestamps.sql`
+11. `supabase/migrations/2026-10-04e-scheduled-attendance-telegram-roster.sql`
+12. `supabase/migrations/2026-10-04f-scheduled-message-deletion.sql`
 
 Apply only scripts that are not already applied. The fifth adds retry-safe
 template creation and deletion; the sixth removes expected arrival from the
 editable fields. The seventh adds the optional date variable; the eighth adds
-attendee-selected groups. The ninth adds explicit resend support. The tenth replaces the independent message date with expiry-derived date/time and enables send timestamps. Apply only the
+attendee-selected groups. The ninth adds explicit resend support. The tenth replaces
+the independent message date with expiry-derived date/time and enables send timestamps.
+The eleventh filters pre-attendance rosters to members with Telegram connected,
+removes unlinked unanswered entries from active cards, and queues their refresh
+without removing saved responses or expired history. The twelfth adds confirmed
+message deletion, recurrence cancellation and queued Telegram cleanup. Apply only the
 remaining scripts if earlier migrations have already been applied.
 Readable filenames retain the original versions in `supabase/migrations/manifest.tsv`;
 renaming is not a reason to reapply an upgrade. Historical scripts in that folder
@@ -109,8 +116,10 @@ interactions. If Telegram loses the ephemeral message, restart the flow; there
 is no private-chat fallback. Sessions expire after 15 minutes and restarting
 invalidates earlier controls in that group.
 
-Pre-attendance selects one or more member types. The roster is resolved and
-frozen at send, includes matching unlinked members, and deduplicates identities.
+Pre-attendance selects one or more member types. The preview includes matching
+members with Telegram connected. The roster is resolved and frozen at send using
+current connections, and deduplicates identities. Each recurring occurrence
+resolves its own roster. Resending retains the frozen roster and saved responses.
 Current workspace membership is checked when responding; removing a member
 blocks new responses. Changing a type after send retains that occurrence's
 roster and existing response. When arrival time is required, users enter HH:mm
@@ -187,3 +196,23 @@ edits, and passes actual database response rows through the production message
 renderer. Telegram HTTP calls remain simulated. The isolated browser fixture
 also covers group controls, save/reload, previews, recurring scopes and mobile
 layout through `test/scripts/scheduled-groups.browser-test.js`.
+
+## Deleting scheduled messages
+
+Delete appears beside Manage. One-off messages go directly to a confirmation.
+Recurring messages first offer This occurrence, This and future occurrences or
+Entire series. A single deleted occurrence remains as a cancelled tombstone so
+materialization cannot recreate it. Future deletion ends the series before the
+selected occurrence; entire-series deletion disables its schedule. Existing
+expired history and attendance responses are retained. New responses and sends
+are blocked as soon as deletion is committed. In-flight deliveries block deletion
+until they finish, avoiding a message appearing after cancellation.
+
+Unsent queued sends/edits are cancelled. For sent occurrences the existing queue
+attempts to delete the currently tracked Telegram message. Already-missing messages
+count as successful cleanup. Telegram refuses deletion of messages older than 48
+hours; the fallback reuses the deleted-notification presentation with the title
+and no buttons. If both delete and edit fail, Console reports the cleanup error
+and lets the same confirmed operation retry; cancellation remains committed.
+Temporary provider failures are retried by the hourly worker. Earlier copies
+from resending are not tracked as the current occurrence card and can remain.
