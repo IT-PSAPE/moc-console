@@ -11,12 +11,12 @@ Use it with:
 
 | Domain | App shape | Current source | Important note |
 | --- | --- | --- | --- |
-| Requests | Mostly row-shaped | Supabase | `dueDate` is now treated as required in the app model. |
-| Auth | Profile plus role | Supabase Auth + Supabase | User profiles now include `telegramChatId`, and password recovery completes on a dedicated route. |
-| Workspace | Membership-filtered directory views | Supabase with runtime fallback | Users can belong to multiple workspaces; runtime can fall back to the seeded default workspace for unresolved scope. |
-| Equipment | Denormalized inventory and booking objects | Supabase | `bookedBy` stays a runtime convenience field. |
-| Venues | Venue list plus booking objects with a DERIVED status | Supabase | The stored `status` is only `auto` or `cancelled`; `booked`/`in_progress`/`completed` are derived from the clock and never written. |
-| Streams | YouTube live streams with workspace-level OAuth | Supabase + Edge Functions | Local `streams` table caches YouTube broadcast data. All YouTube API calls are proxied through Supabase Edge Functions to keep OAuth secrets server-side. |
+| Requests | Mostly row-shaped | Neon PostgreSQL through MOC API and `@moc/sdk` | `dueDate` is required in the app model. |
+| Auth | Profile plus role | Better Auth in Neon Functions; sessions verified by MOC API | Profiles include `telegramChatId`; password recovery completes on a dedicated route. |
+| Workspace | Membership-filtered directory views | Neon PostgreSQL through MOC API and `@moc/sdk` | Membership controls selected workspace access; pending join requests do not grant workspace access. |
+| Equipment | Normalized rows with booking-derived display data | Neon PostgreSQL through MOC API and `@moc/sdk` | `bookedBy` stays a runtime convenience field. |
+| Venues | Venue list plus booking objects with a DERIVED status | Neon PostgreSQL through MOC API and `@moc/sdk` | The stored `status` is only `auto` or `cancelled`; `booked`/`in_progress`/`completed` are derived from the clock and never written. |
+| Streams | YouTube live streams with workspace-level OAuth | Neon PostgreSQL and MOC API | Local `streams` rows cache provider state. YouTube and Zoom calls go through server-side API routes; provider credentials stay server-side. |
 
 ## Global Rules
 
@@ -25,7 +25,7 @@ Use it with:
 - Database ids should be `uuid`.
 - Frontend ids remain strings.
 - The app should treat ids as opaque strings.
-- `users.id` should match the Supabase Auth id.
+- `users.id` is the stable identity used by MOC authentication and domain records.
 
 ### Dates
 
@@ -86,8 +86,8 @@ Runtime expectations:
 
 Runtime expectations:
 
-- `resetPassword()` should send a Supabase email with `redirectTo` pointing at `/password-recovery`
-- the recovery screen should accept either the Supabase recovery hash or a `code` query param exchange
+- `resetPassword()` sends recovery mail through the configured server-side mail transport with a link to `/password-recovery`
+- the recovery screen consumes the signed MOC recovery token through the typed SDK
 - auth state should clear the cached workspace scope whenever the session changes
 - `updatePassword()` should complete inside the recovery route, not by overloading the login screen
 
@@ -184,8 +184,8 @@ Current runtime shape:
 - `sortOrder`
 
 The public request app sees a narrower shape (`PublicVenue`: `id`, `name`,
-`location`, `capacity`) returned by `public_list_venues`, which only ever
-returns active venues.
+`location`, `capacity`) returned by the named public catalog API operation, which
+only returns active venues.
 
 ### Venue event read model
 
@@ -198,8 +198,8 @@ Current runtime shape:
 - `sortOrder`
 
 The public request app sees a narrower shape (`PublicVenueEvent`: `id`,
-`name`, `description`) returned by `public_list_venue_events`, which only ever
-returns active events.
+`name`, `description`) returned by the named public catalog API operation, which
+only returns active events.
 
 "Other" is not an event. It is the sentinel `VENUE_EVENT_OTHER_ID` in a
 picker, and it submits no event id at all — just free text. Nothing may create
@@ -232,7 +232,7 @@ Important rules:
   `isOtherVenueBookingEvent` when it matters that the submitter wrote it
   themselves. Bookings made before events existed have neither and fall back to
   their title.
-- `title` is derived by the submit RPC from whichever of the two is set; no
+- `title` is derived by the public submission operation from whichever of the two is set; no
   client supplies it.
 - `requestedBy` is free text in storage and the runtime model.
 - **`status` is not the status a reader should see.** It is the stored state and
@@ -255,7 +255,7 @@ Runtime expectations:
 - one connection per workspace, managed by admins only
 - the connection carries the YouTube channel ID and display name
 - OAuth tokens are stored server-side and never exposed to the client
-- token refresh is handled automatically by the Edge Function before each API call
+- token refresh is handled automatically by MOC API before each provider call
 
 Runtime read model:
 
@@ -300,22 +300,22 @@ Runtime read model:
 
 ### Stream data flow
 
-1. **Create**: Client sends form data to `mutate-streams.ts` -> Edge Function creates YouTube broadcast + stream -> binds them -> returns IDs -> client inserts into local `streams` table
-2. **Sync**: Client calls `syncStreamsFromYouTube()` -> the proxy reads the live and upcoming broadcasts, then looks up by id only those tracked streams that are still in flight but have dropped off both lists (so a finished stream settles without paging YouTube's entire history) -> client upserts every broadcast it already tracks, plus any untracked one that is live or still upcoming. A finished or never-started broadcast is not adopted, so it cannot raise a late "stream created" notification
-3. **Update**: Client sends changes to Edge Function -> YouTube API updates -> local DB updated
-4. **Delete**: Edge Function deletes on YouTube -> local row deleted
+1. **Create**: Client calls the typed stream capability -> MOC API creates the YouTube broadcast and stream, binds them, and stores the resulting domain record in Neon PostgreSQL.
+2. **Sync**: Client requests synchronization through MOC API. The server reads live and upcoming broadcasts, then looks up only tracked streams still in flight but absent from both lists. It updates tracked rows and adopts only live or upcoming broadcasts, preventing a late "stream created" notification for finished or never-started broadcasts.
+3. **Update**: Client sends an explicit typed operation -> MOC API updates YouTube -> API persists the local record.
+4. **Delete**: Client sends an explicit typed operation -> MOC API deletes on YouTube -> API removes the local row.
 
-### Edge Function architecture
+### Authentication and provider boundary
 
-The project uses two Supabase Edge Functions for YouTube integration:
-
-- `youtube-oauth-callback` — handles the Google OAuth redirect, exchanges auth code for tokens, stores in `youtube_connections`, redirects back to the SPA
-- `youtube-api` — proxies all YouTube Data API calls, validates Supabase JWT, auto-refreshes expired tokens, supports actions: `list-streams`, `create-stream`, `update-stream`, `delete-stream`, `get-connection`, `disconnect`
-
-Environment secrets (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`) are set via `supabase secrets set` and never exposed to the client. Only `VITE_GOOGLE_CLIENT_ID` is available client-side for constructing the OAuth consent URL.
+The Console completes the Google authorization redirect and exchanges the
+authorization code through MOC API. API routes validate the signed-in user and
+workspace permission, keep OAuth tokens in Neon PostgreSQL, refresh tokens as
+needed, and proxy only the supported YouTube and Zoom operations. Client
+configuration contains public OAuth client identifiers only; provider secrets
+and access tokens never enter frontend bundles.
 
 ## Current Implementation Gaps
 
 - Workspace membership is only surfaced explicitly in the users screen today. Other domains resolve one active workspace at fetch time rather than exposing a workspace switcher everywhere.
 
-That gap is acceptable for now as long as the schema doc remains the source of truth for storage and the runtime layer keeps the conversions explicit.
+That gap is acceptable for now as long as the schema reference remains the source of truth for storage and the SDK/API layer keeps the conversions explicit.

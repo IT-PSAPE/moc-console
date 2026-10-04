@@ -1,7 +1,7 @@
 # Schema Reference
 
-This document describes the current relational schema after the checked-in
-migration ledger has been applied.
+This document describes the current relational schema installed by the
+standalone Neon baseline.
 
 It is the database view only:
 
@@ -16,13 +16,12 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 
 ## Tracking Source
 
-- Storage target: Supabase Postgres
+- Storage target: Neon PostgreSQL
 - Naming convention: `snake_case`
 - ID strategy: `uuid` in storage, string in JSON/API responses
-- Source of truth: [`supabase/`](../supabase/readme.md). The phase files are a
-  historical baseline; the target-schema cleanup is the current convergence
-  script. Do not apply every historical patch wholesale.
-- Credential boundary: `private.integration_oauth_tokens` is server-only
+- Source of truth: [`neon/database`](../neon/database/README.md). Bootstrap the
+  standalone baseline into an empty database and verify its catalog.
+- Credential boundary: `moc_private.integration_oauth_tokens` is server-only
   storage. It is intentionally excluded from client schema generation and
   must never be queried by browser code.
 
@@ -30,7 +29,7 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 
 | Table | Purpose | Primary key | Key relations |
 | --- | --- | --- | --- |
-| `users` | App user profiles aligned to Supabase Auth | `id` | `id -> auth.users.id` |
+| `users` | App user profiles aligned to MoC authentication | `id` | `id -> moc_auth.user.id` |
 | `workspaces` | Workspace containers for operational data | `id` | Referenced by `workspace_users.workspace_id` and workspace-scoped domain tables |
 | `workspace_users` | Accepted membership and workspace-scoped role | `id` | `workspace_id -> workspaces.id`, `user_id -> users.id`, `role_id -> roles.id` |
 | `workspace_join_requests` | Pending workspace access requests | `id` | `workspace_id -> workspaces.id`, `user_id -> users.id` |
@@ -73,7 +72,7 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 
 | Column | Postgres type | Default | Nullable | Unique | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `id` | `uuid` | None | No | Yes | Primary key. Should match `auth.users.id`. |
+| `id` | `uuid` | None | No | Yes | Primary key. Should match `moc_auth.user.id`. |
 | `name` | `text` | None | No | No | Given name. |
 | `surname` | `text` | None | No | No | Family name. |
 | `email` | `text` | None | No | Yes | Login/profile email. |
@@ -384,9 +383,9 @@ Important notes:
 
 - Each broadcast contains only one media kind: all items must be audio when `kind = 'audio'`, or video when `kind = 'video'`.
 - `broadcast_items` are ordered by `sort_order`; the public player continuously loops the playlist and automatically preloads the next item.
-- Broadcast metadata and assets are publicly readable by design. Public assets live in the `broadcast-media` storage bucket so the player can preload the next item without signed URLs.
-- Broadcast and item changes are included in the `supabase_realtime` publication so an open player can refresh its queue without a reload.
-- Broadcast deletion uses `delete_broadcast_with_items` to remove the playlist rows and return every Storage path; the console then deletes those now-unreferenced objects from `broadcast-media`.
+- Broadcast metadata and linked assets are publicly readable through the API. The `broadcast-media` bucket itself is private; the API checks object references and streams playback responses.
+- Broadcast and item changes create durable revisions. The API serves these through SSE, and the SDK reconnects with its last revision cursor.
+- Broadcast deletion removes the playlist rows and returns object paths through the API; the SDK requests deletion of the now-unreferenced assets.
 
 ## Integrations
 
@@ -408,13 +407,13 @@ Important notes:
 Important notes:
 
 - One YouTube connection per workspace, enforced by `unique (workspace_id)`.
-- OAuth access and refresh tokens are in `private.integration_oauth_tokens`,
+- OAuth access and refresh tokens are in `moc_private.integration_oauth_tokens`,
   never in this public metadata table. Only the API service role can execute
   the private-storage RPCs.
 - Browser clients call the authenticated `/api/youtube/v3/*` proxy with an
   explicit workspace context; the API refreshes credentials server-side.
 
-### `private.integration_oauth_tokens`
+### `moc_private.integration_oauth_tokens`
 
 This private-schema table is not exposed through the client data API.
 

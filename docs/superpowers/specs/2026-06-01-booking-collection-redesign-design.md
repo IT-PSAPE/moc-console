@@ -9,11 +9,10 @@
 Commit `22acb12` ("feat(bookings): add QR collection flow") introduced per-item
 collection: scanning a QR stamped `booking_items.collected_at`, and the shared
 `BOOKING_SELECT` query was changed to read that column. The column was only ever
-added via a manual SQL patch (`supabase/migrations/2026-05-31-booking-item-collected-at.sql`)
-that was never applied to the live database. Because `BOOKING_SELECT` is shared
-by every booking read, the missing column made all booking queries fail with
-`42703 column booking_items.collected_at does not exist`, so **no bookings were
-visible in the console at all.**
+added in a local SQL patch that was not present in the deployed database.
+Because `BOOKING_SELECT` is shared by every booking read, the missing column
+made all booking queries fail with `42703 column booking_items.collected_at
+does not exist`, so **no bookings were visible in the console at all.**
 
 This redesign removes per-item collection entirely and moves the notion of
 "collected" up to the booking level, which also makes that bug disappear with no
@@ -86,9 +85,8 @@ database migration.
     `→ checked_out` transition.
 
 **Schema:**
-- `supabase/phase-01-schema.sql` — remove the `collected_at` column from
-  `booking_items`.
-- Delete `supabase/migrations/2026-05-31-booking-item-collected-at.sql`.
+- Update the canonical PostgreSQL schema to omit `booking_items.collected_at`.
+- Remove the unapplied local patch from the schema history.
 
 ## Bug-fix note
 

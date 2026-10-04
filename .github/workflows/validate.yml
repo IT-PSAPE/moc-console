@@ -16,10 +16,28 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: moc_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d moc_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      MOC_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/moc_test
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
+      - run: bash neon/database/build-fresh-database.sh "$MOC_TEST_DATABASE_URL"
       - run: bun run build
-      - run: bun run lint
       - run: bun run test
+      - run: psql "$MOC_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c 'CREATE DATABASE moc_auth_test'
+      - run: bun test test/packages/backend/auth-flow.integration.test.ts
+        env:
+          MOC_AUTH_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/moc_auth_test
+      - run: bun run lint

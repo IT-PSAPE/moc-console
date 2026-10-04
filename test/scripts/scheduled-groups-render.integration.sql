@@ -4,7 +4,7 @@ DO $$
 DECLARE
   actor uuid := '20000000-0000-4000-8000-000000000002';
   attendee uuid := '20000000-0000-4000-8000-000000000003';
-  workspace uuid := '10000000-0000-4000-8000-000000000001';
+  workspace uuid := (SELECT id FROM public.workspaces WHERE slug = 'default-workspace');
   audience uuid[];
   groups jsonb := '[{"id":"00000000-0000-4000-8000-000000000011","label":"North side"},{"id":"00000000-0000-4000-8000-000000000012","label":"South side"}]';
   template uuid;

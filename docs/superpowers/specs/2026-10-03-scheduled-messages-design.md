@@ -16,7 +16,7 @@ Status: approved for implementation on 3 October 2026, with the amendments below
 | Timing | `apps/api/vercel.json` invokes the delivery worker daily at `0 1 * * *`; retries are at least 24 hours apart. Venue bookings have recurrence and a clock-derived lifecycle, but no scheduled-message domain exists. | Extend the existing worker with calendar-date eligibility and manual Send now; retain its daily frequency. Do not confuse delivery retries with recurrence. Reuse recurrence concepts after separating venue-specific assumptions. |
 | Pre-attendance | No attendance records, participant callbacks, arrival-time sessions, or roster were found. | This flow must be implemented; the screenshots describe a proposed experience, not an existing feature. |
 
-This maps repository code and tracked migrations. It does not certify the deployed database, hosting plan, bot permissions, or client behavior.
+This records the approved product and workflow design. It does not certify the deployed database, bot permissions, or client behavior.
 
 ## Product model
 
@@ -48,7 +48,7 @@ The user approved the classification model together with the architecture readba
 - A scheduled occurrence exists and is manageable before sending. A one-off has one occurrence; a recurring schedule materializes a bounded future window, extended by the worker and when an authorized user requests upcoming occurrences.
 - At send time the worker locks/claims the occurrence, validates its destination and expiry, renders its latest revision, and sends through the existing delivery pipeline. It records the Telegram chat/message ID and thread context.
 - A sent occurrence remains active until its separate expiry. Its historical send time is not rescheduled; changing event/arrival time edits the original content. Changes to future delivery times affect unsent occurrences only.
-- `now >= expiresAt` makes an occurrence inactive immediately in queries and all mutation paths, independent of cron. An unsent expired occurrence is never delivered, including on retry.
+- `now >= expiresAt` makes an occurrence inactive immediately in queries and all mutation paths, independent of worker cadence. An unsent expired occurrence is never delivered, including on retry.
 - Expiry excludes the occurrence from Telegram management and rejects participant callbacks, old deep links, pending replies, and pending confirmations. The worker removes its keyboard and can mark it closed. Telegram failure may leave old buttons visible temporarily; server rejection still applies.
 - Expiry is not deletion. Preserve the record, message identity, revisions, and attendance history. Expired occurrences are not revived by changing the series.
 - Delivery failure and synchronization failure remain visible separately from lifecycle. Cancellation controls are outside the first version.
@@ -98,8 +98,7 @@ The roster/eligibility source is the user-selected member types described above.
 
 ## Operational and Telegram limits
 
-- Retain the free-plan daily worker. Calendar dates determine which automatic messages are eligible when it runs. Send now is available for other times; arbitrary time-of-day delivery is not promised. Bots cannot preload Telegram scheduled messages (`SCHEDULE_BOT_NOT_ALLOWED`): https://core.telegram.org/method/messages.sendMessage .
-- Vercel documents daily-only, hour-window cron on Hobby and minute-level cron on Pro/Enterprise: https://vercel.com/docs/cron-jobs/usage-and-pricing . The actual account plan was not inspected.
+- A Neon scheduled worker runs hourly. Calendar dates determine which automatic messages are eligible when it runs. Send now is available for other times; arbitrary time-of-day delivery is not promised. Bots cannot preload Telegram scheduled messages (`SCHEDULE_BOT_NOT_ALLOWED`): https://core.telegram.org/method/messages.sendMessage . Production schedules remain disabled until cutover explicitly enables them.
 - Current Telegram supports ephemeral commands/messages and dedicated ephemeral edit methods: https://core.telegram.org/bots/api#ephemeral-messages-and-commands and https://core.telegram.org/bots/api#editephemeralmessagetext . They can disappear and delivery is not guaranteed; non-admin bots have action-window restrictions. Test the deployed bot and clients.
 - ForceReply provides native text input; it does not itself guarantee privacy. Use a verified ephemeral reply context: https://core.telegram.org/bots/api#forcereply .
 - Original-message links support public/private supergroups and topics: https://core.telegram.org/api/links#message-links . Navigation requires a user action.
@@ -111,10 +110,10 @@ The roster/eligibility source is the user-selected member types described above.
 2. Confirmed: rosters use member types; Members is the renameable default, and Admin/Editor can manage classifications.
 3. The architecture readback was completed; implementation was subsequently authorized.
 4. Review the recommendations for workspace-scoped single member types, selecting one or more audience types, and freezing the roster when sent.
-5. Delivery timer: the existing daily cron is retained. No hosting upgrade, live bot configuration, production migration, or real test message is performed locally.
+5. Delivery timer: use the hourly Neon scheduled worker. No hosting upgrade, live bot configuration, production migration, or real test message is performed locally.
 
 ## Implementation constraints
 
 - Ephemeral-only management and participant input; no private-chat fallback. Disappearing interactions restart.
-- Keep the existing daily free-plan cron. Automatic calendar-date messages send when it runs; daily/weekly/monthly rules decide eligibility. Add Send now for manually triggered occurrences. No time-of-day guarantee and no native Telegram bot scheduling.
-- Implementation is authorized; migration SQL is prepared locally for the user to apply to Supabase, not Telegram.
+- Keep the hourly Neon worker. Automatic calendar-date messages send when it runs; daily/weekly/monthly rules decide eligibility. Add Send now for manually triggered occurrences. No time-of-day guarantee and no native Telegram bot scheduling.
+- Implementation is authorized. Schema, API operations, and worker functions are checked into the repository; this design does not claim that production cutover or a real test message has occurred.

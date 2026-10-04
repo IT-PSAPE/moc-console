@@ -2,7 +2,7 @@
 
 > **Superseded by [ADR-0007](./0007-simplify-console-to-five-features.md) (2026-07-28).** The system described below was removed from the repo. Kept as history — do not treat it as current design.
 
-The existing cue-sheet timeline (`apps/console/src/components/timeline`) is good but coupled: `TimelineRoot` hard-codes its sidebar/canvas, threads a `readOnly` boolean through context, and bakes a Supabase controller/follower clock into the component. We need the same surface for two unrelated domains — Cue sheets (events) and the Broadcasts section (playlists) — so we are extracting a single domain-agnostic **Timeline** primitive into `@moc/ui`. It speaks only **Lane** and **Block** (see CONTEXT.md); each domain maps its own `Track`/`Cue` onto those and renders Block contents as real children. The domain `Cue` types are deliberately *not* unified.
+The former cue-sheet timeline (`apps/console/src/components/timeline`) was coupled: `TimelineRoot` hard-coded its sidebar/canvas, threaded a `readOnly` boolean through context, and included a controller/follower clock. The proposal was to provide the same surface for two unrelated domains — Cue sheets (events) and the retired playlist-based Broadcasts section — with a domain-agnostic **Timeline** primitive in `@moc/ui`. It spoke only **Lane** and **Block** (see CONTEXT.md); each domain mapped its own `Track`/`Cue` and rendered Block contents as children. The domain `Cue` types were deliberately *not* unified.
 
 ## Considered options
 
@@ -15,7 +15,7 @@ The existing cue-sheet timeline (`apps/console/src/components/timeline`) is good
 
 ## Consequences
 
-- **`@moc/ui` gains a pure primitive.** The Supabase-coupled `use-playback-sync` does not move with it; it becomes a console-side ClockTransport adapter. The primitive imports no `@moc/data`. Follower state arrives *through* the ClockTransport, not as a prop, so the controller/follower model is preserved without coupling.
+- **`@moc/ui` gains a pure primitive.** The backend-coupled `use-playback-sync` does not move with it; it becomes a Console-side ClockTransport adapter. The primitive imports no data client. Follower state arrives *through* the ClockTransport, not as a prop, so the controller/follower model is preserved without coupling.
 - **Two injected ports at the root:** `transport` (time in) and a persist port (committed mutations out). Everything else — zoom, drag, selection, playhead position, working data — is provider-owned context state; no prop drilling below the root.
 - **The tree is the documentation.** `Timeline` → `Timeline.Toolbar` / `Timeline.Ruler` / `Timeline.Sidebar` (`Timeline.LaneHeader`) / `Timeline.Canvas` (`Timeline.Lane` → `Timeline.Block` → `Block.*` handles; `Timeline.Playhead`/`PlayheadMarker`; `Timeline.Preview`). Presence = rendered; order = layout/stack order.
 - **`Timeline.Preview` is an empty composition slot** in the primitive — the domain fills it (see ADR-0004 for the playlist compositor). Cue sheets simply omit it.

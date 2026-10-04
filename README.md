@@ -19,7 +19,7 @@ The UI is built with React, TypeScript, Vite, and Tailwind CSS v4.
 - Vite
 - Tailwind CSS v4
 - React Router
-- Supabase Auth and data access
+- MoC SDK and API on Vercel; PostgreSQL, authentication, storage and workers in Neon
 
 ## Feature Areas
 
@@ -56,18 +56,14 @@ Navigation is flat: one sidebar item per feature, no nested sections.
 
 ## Authentication
 
-The app uses Supabase Auth for login, signup, reset password, and session handling.
+The apps use `@moc/sdk` through same-origin `/api/*` rewrites. The API validates
+host-only HttpOnly sessions backed by Better Auth running in a Neon Function.
+User UUIDs and bcrypt password hashes are preserved during import; existing
+sessions must sign in again. Signup still creates a pending workspace request.
 
-Required environment variables:
-
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`
-
-The console also uses `VITE_BROADCAST_APP_URL` to build public-player links. For
-local development, set it to `http://localhost:5174`; the console is pinned to
-port 5173 and the broadcast player to port 5174.
-
-These are read in [src/lib/supabase.ts](/Users/Craig/Developer/Projects/moc-console/src/lib/supabase.ts).
+Configure each app from its `.env.example`; browser bundles have no database,
+auth-provider or storage credentials. See [migration runbook](docs/vercel-neon-migration.md)
+for server configuration, imports, verification and cutover gates.
 
 ## Getting Started
 
@@ -129,26 +125,16 @@ API over one. Front it with `tailscale serve` if you need HTTPS on the tailnet.
 
 ## Database setup
 
-The SQL source of truth now lives at [`supabase/`](supabase/). See its
-[`readme.md`](supabase/readme.md) before running anything; the patch directory
-is a historical ledger and must not be applied wholesale.
-
-For a blank project, run `phase-01-schema.sql`, `phase-02-logic.sql`, and
-`phase-03-security.sql`, followed by the current target-schema convergence
-script. For the existing MoC Console project, run
-[`verify-current-schema.sql`](supabase/verify-current-schema.sql) first and
-apply no SQL when the drift report is clean.
-
-New signups create a pending workspace access request. An owner or admin must
-approve that request before the account gains normal member access. Roles are
-stored per workspace in `workspace_users.role_id`.
-
-`supabase/phase-00-nuke.sql` is development-only, destructive, and has no undo.
-Never use it as an upgrade script.
+The standalone Neon baseline is in `neon/database`, with MoC runtime roles,
+authentication, storage metadata and domain routines. Run
+`neon/database/build-fresh-database.sh` only against an empty destination.
+Deployment and verification steps are in the
+[deployment guide](docs/vercel-neon-migration.md).
 
 Configure each app (`apps/console`, `apps/request`, `apps/broadcast`, `apps/api`) from its
-`.env.example`. The frontends use the Supabase URL, publishable key, and
-`VITE_API_BASE_URL`; server secrets live only in `apps/api`.
+`.env.example`. Frontends call the API through same-origin `/api/*` routes.
+Local Vite servers use `MOC_API_PROXY_TARGET`. Server secrets live only in
+`apps/api`.
 
 **External integrations.** The schema is complete on its own. Optional
 features — Telegram bot linking/notifications, YouTube and Zoom
@@ -164,8 +150,8 @@ The repo is a bun-workspaces monorepo:
 - `apps/request` — the public submission PWA
 - `apps/api` — every serverless function and the `server/` library behind it; see [apps/api/README.md](apps/api/README.md)
 - `apps/broadcast` — the public continuous-playback audio/video app
-- `packages/{ui,types,utils,data,notifications}` — shared code
-- `test/{apps,packages,scripts,supabase}` — automated tests and fixtures, mirroring the source tree; see [test/README.md](test/README.md)
+- `packages/{ui,types,utils,sdk,backend,notifications}` — shared code
+- `test/{apps,packages,scripts,neon}` — automated tests and fixtures, mirroring the source tree; see [test/README.md](test/README.md)
 
 Run the full test suite with `bun run test`, or the API suite with
 `bun run test:api`. New tests belong in `test/`, outside production folders.
@@ -175,9 +161,9 @@ Inside a frontend app:
 - `src/screens` for route-level screens
 - `src/features` for domain-specific state and UI
 - `src/components` for shared UI primitives and composed components
-- `src/data` for Supabase reads, writes and mappers
+- `src/data` for SDK adapters and domain mappers
 - `src/types` for domain models
-- `src/lib` for app infrastructure such as Supabase and auth context
+- `src/lib` for app infrastructure such as the SDK singleton and auth context
 - `docs` for project documentation
 
 ## Data Model Documentation
@@ -192,30 +178,15 @@ Use them together:
 - `schema-reference.md` describes fields, types, nullability, relationships, and enum values.
 - `value-guide.md` explains what values should actually be used in practice and calls out current implementation conventions.
 
-Important caveat:
-
-- This schema documentation is inferred from the current TypeScript models and Supabase queries in the repository.
-- There are no checked-in SQL migrations or generated database types in this repo at the moment.
-
-## Current Data Backing
-
-### Supabase-backed
-
-- auth users
-- users
-- user roles
-- roles
-- auth sessions
-- request duty role presets
-
-### Not backed by mocks
-
-Nothing is mock-backed any more — every operational domain reads and
-writes Supabase directly.
+The domain model remains the existing MoC model. Apps call typed SDK capabilities;
+the API executes parameterized PostgreSQL operations in verified actor/workspace
+transactions. Neon Functions own scheduled work, and private Neon object storage
+is streamed through the API. Broadcast changes use durable database revisions
+and an API SSE stream.
 
 ## Routing Summary
 
-Protected routes are mounted in [src/App.tsx](/Users/Craig/Developer/Projects/moc-console/src/App.tsx) and defined in [src/screens/console-routes.ts](/Users/Craig/Developer/Projects/moc-console/src/screens/console-routes.ts).
+Protected routes are defined in [console-routes.ts](apps/console/src/screens/console-routes.ts).
 
 Main app sections:
 

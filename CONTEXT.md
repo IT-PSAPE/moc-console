@@ -1,6 +1,6 @@
 # MOC Platform
 
-The MOC platform is three deployments sharing one Supabase backend: an authenticated admin console for staff, a public PWA for end users to submit and track requests, and a headless API that owns every server-side function for both.
+The MOC platform has four Vercel deployments: an authenticated staff Console, the public Request PWA, the public Broadcast player, and the application-facing API. All frontend access goes through `@moc/sdk` and the API. Neon hosts PostgreSQL, private object storage, authentication functions and scheduled workers.
 
 ## Language
 
@@ -13,8 +13,11 @@ The public, anonymous PWA where end users submit booking and culture requests an
 _Avoid_: "the request portal", "the public site"
 
 **MOC API**:
-The headless third deployment (`apps/api`, api.psape.co.za). It owns every serverless function on the platform — Telegram webhook and dispatch, YouTube and Zoom OAuth, the Zoom REST proxy, notification ingest, and the scheduled jobs — plus the `server/` library behind them. Neither frontend ships server code, and no server secret is configured on a frontend project.
-_Avoid_: "the backend" (Supabase is also a backend); "the notification service" (it is not only notifications).
+The headless application boundary (`apps/api`, api.psape.co.za). It owns application data operations, authentication and storage proxies, Telegram webhooks, YouTube and Zoom OAuth/proxies, and notification ingest. Neon Functions own authentication execution and scheduled work. No frontend ships server code or server secrets.
+_Avoid_: "the notification service" (it is not only notifications).
+
+**MOC Broadcast**:
+The public player app (`apps/broadcast`) for the current broadcast queues managed in Console. This is separate from the retired playlist authoring and playback model below.
 
 **Requests portal**:
 A feature *inside* MOC Console for staff to view and act on requests submitted via MOC Request. Distinct from the MOC Request app itself.
@@ -24,8 +27,7 @@ Not a feature — a *filter*. Archived requests are hidden from the Requests pag
 _Avoid_: "the archive page"; treating archived bookings as part of it — a Booking's `archived` status belongs to the Bookings feature.
 
 **Streams**:
-The MOC Console feature for YouTube live streams and Zoom meetings — creating them, syncing their state from the provider, and holding the workspace-level OAuth connections. The only broadcast-adjacent feature that remains.
-_Avoid_: "Broadcast" / "Broadcasts section" — that area was removed (see Removed features).
+The MOC Console feature for YouTube live streams and Zoom meetings — creating them, syncing their state from the provider, and holding the workspace-level OAuth connections.
 
 **Notification route**:
 A workspace-level rule in Settings binding one notification event to one Telegram destination. An event with no route sends nothing. Many routes per event are allowed.
@@ -39,7 +41,7 @@ A tenancy boundary inside MOC Console. Every authenticated console operation is 
 _Avoid_: "tenant", "org", "account"
 
 **Public flow**:
-An anonymous operation from MOC Request: against Supabase — submit a booking, submit a request, look up a request by tracking code, fetch the public equipment catalogue — or against **MOC API**'s unauthenticated `/api/notify/*`, to announce a submission.
+An anonymous operation from MOC Request through the SDK and API: submit a booking or request, look up a request by tracking code, or fetch the public equipment catalogue. The API applies public authorization and rate limits and owns submission notifications.
 
 **Authenticated flow**:
 A workspace-scoped operation from MOC Console requiring a signed-in user: managing assignees, streams, telegram routes, zoom credentials, workspace members, etc. **MOC Console does not create Requests or Bookings** — those are created exclusively by end users via MOC Request. The console can only view, edit, and act on what was submitted.
@@ -63,8 +65,8 @@ _Avoid_: "the maintenance page"
 
 - A **Workspace** owns many **Requests**, **Bookings**, **Equipment**, **Checklists**, and **Streams**.
 - A **Request** is created via a **Public flow** (MOC Request) and managed via the **Requests portal** (MOC Console); once archived it stays on the same page, behind the status filter.
-- **MOC Console** and **MOC Request** share the same Supabase project; RLS distinguishes **Public flow** access from **Authenticated flow** access.
-- Both frontends reach **MOC API** by absolute URL (`VITE_API_BASE_URL`), so every browser call to it is cross-origin and gated by that app's `ALLOWED_ORIGINS` allow-list.
+- All apps share the API contract and Neon database. API actor context and PostgreSQL RLS distinguish **Public flow** access from **Authenticated flow** access.
+- Console, Request, and Broadcast call the MOC API through same-origin `/api/*` routes. Vercel rewrites those routes to the API deployment; local Vite servers use the server-only `MOC_API_PROXY_TARGET` setting.
 
 ## Console navigation
 
@@ -87,22 +89,22 @@ Two things that read like features but are filters: **Archive** (a request statu
 Removed features are kept here so the terms are recognised as *gone*, not merely undocumented — do not reintroduce them without a new ADR.
 
 - **Dashboard** — the combined requests and equipment-bookings summary. Removed 2026-09-26 after user testing showed that the individual sections were the useful destinations; see [ADR-0011](./docs/adr/0011-remove-dashboard-and-use-section-landing.md).
-- **Broadcasts section** — the Console playlist authoring area (playlist editor, media library). Removed with its `playlists`, `playlist_lanes`, `queue` and `media` tables.
-- **MOC Broadcast** — the public player app (`apps/broadcast`) and the shared playback engine (`@moc/player`). Nothing plays playlists any more.
+- **Legacy playlist authoring** — the old Console playlist editor and media library, removed with its `playlists`, `playlist_lanes`, `queue` and `media` tables. Current broadcast queues and the MOC Broadcast app use the later domain model.
+- **Legacy playback engine** — the shared `@moc/player` playlist engine.
 - **Cue Sheet (QSheets)** — events, tracks, cues, public event shares and playhead sync. Checklists were restored as a standalone feature on 2026-07-31; see [ADR-0009](./docs/adr/0009-restore-checklists-as-standalone-feature.md).
 - **Timeline** — the shared domain-agnostic time-axis primitive, along with **Lane**, **Block**, **Transport**, **Program** and **Playhead**. It existed only to serve the two domains above.
-- **Media library** — the `media` table. The `media` *storage bucket* is retained: stream thumbnails still upload to it under `<workspace_id>/stream-thumbnails/`.
+- **Media library** — the `media` table. The private `media` storage bucket remains for stream thumbnails, with access through the API.
 - **Maintenance page** — folded into the Equipment page's status filter.
 - **Archive page** — folded into the Requests page's status filter (removed 2026-07-28, after briefly existing as its own route).
 - Section **overview pages** for Requests, Equipment, Broadcast and Cue Sheet — the flat sidebar has no section landings.
 - **Per-frontend server code** — `apps/console/api`, `apps/console/server` and `apps/request/api` all moved to **MOC API**. See [ADR-0008](./docs/adr/0008-extract-moc-api-app.md).
 
-See [ADR-0007](./docs/adr/0007-simplify-console-to-five-features.md) and [`supabase/migrations/2026-07-28-remove-playlists-media-and-cue-sheet.sql`](./supabase/migrations/2026-07-28-remove-playlists-media-and-cue-sheet.sql).
+See [ADR-0007](./docs/adr/0007-simplify-console-to-five-features.md) for the removal decision and the [schema reference](./docs/schema-reference.md) for the current database model.
 
 ## Flagged ambiguities
 
 - "MOC Request" used to refer to both the standalone public app *and* the Requests feature inside Console. Resolved: **MOC Request** = the public PWA; **Requests portal** = the feature in MOC Console.
 - Design primitives (button, input, base CSS tokens) drifted between the two apps after the original split. Resolved (2026-05-15): **MOC Console**'s primitives are canonical; MOC Request adopts them via shared `@moc/ui`. See [ADR-0001](./docs/adr/0001-reunify-moc-request-as-monorepo.md).
-- "Broadcast" was overloaded across the Console authoring section, the act of publishing, and the public player app. Resolved (2026-07-28) by deletion: none of those exist. The word now only appears where YouTube's own API uses it (`liveBroadcasts`, `youtube_broadcast_id`) — that is a vendor term, not a domain one. See [ADR-0007](./docs/adr/0007-simplify-console-to-five-features.md).
+- "Broadcast" referred to the retired playlist domain and also YouTube's vendor terminology. The later broadcast queue domain and MOC Broadcast app are present in the current repository; do not restore the retired playlist tables or engine. See [ADR-0007](./docs/adr/0007-simplify-console-to-five-features.md) for the historical removal.
 - "Cue" and "Track" were used in two unrelated domains (Cue sheet vs playlists). Resolved (2026-07-28) by deletion: both domains are gone, and so is the shared Timeline primitive that reconciled them.
 - "Booking" was overloaded: the user-level submission (1 tracking code, N equipment) vs. a per-equipment DB row. Resolved (2026-05-27): **Booking** is the submission (header); **Booking item** is the per-equipment row. Schema split into header + items table. See [ADR-0006](./docs/adr/0006-booking-as-batch.md).

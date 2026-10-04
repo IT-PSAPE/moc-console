@@ -1,196 +1,40 @@
 # Data Flow Reference
 
-This document explains how the current Supabase reads, writes, and runtime mappers map into the app-facing entities.
+This document describes how the current MOC applications reach application data and shape API results for display. The [schema reference](./schema-reference.md) documents the Neon PostgreSQL model; this page focuses on the API and runtime boundaries.
 
-It separates:
+## Request paths
 
-- storage tables
-- checked-in seed SQL
-- frontend read models
-
-## Source Map
-
-| Domain | Current source | Key files | Notes |
+| Domain | Client entry points | Server boundary | Notes |
 | --- | --- | --- | --- |
-| Requests | Supabase + MoC API | `apps/console/src/data/fetch-requests.ts`, `apps/console/src/data/mutate-requests.ts`, `apps/console/src/data/fetch-request-categories.ts`, `apps/request/src/data/tracking-submissions.ts` | Request categories are workspace-managed rows. Public tracking lookup, update, and deletion cross the API boundary rather than exposing mutation RPCs to browser roles. |
-| Auth | Supabase Auth + Supabase | `src/lib/auth-context.tsx`, `src/screens/auth/reset-password.tsx`, `src/screens/auth/password-recovery.tsx` | `users` reads now include `telegram_chat_id`, and password recovery completes through the dedicated recovery route. |
-| Workspace | Supabase membership + approval queue | `apps/console/src/data/current-workspace.ts`, `apps/console/src/data/fetch-workspaces.ts` | Pending accounts cannot resolve an accepted workspace until an owner or admin approves them. |
-| Equipment | Supabase | `src/data/fetch-equipment.ts`, `src/data/mutate-equipment.ts` | Equipment rows remain normalized; booking-derived display fields are added in the mapper. |
-| Streams | Supabase + MoC API | `apps/console/src/data/fetch-streams.ts`, `apps/console/src/data/mutate-streams.ts`, `apps/api/api/youtube/` | Provider calls and OAuth secrets stay behind the dedicated API app. Local `streams` is a cache of provider state. |
-| Venues | Supabase | `apps/console/src/data/fetch-venues.ts`, `mutate-venues.ts`, `fetch-venue-events.ts`, `mutate-venue-events.ts`, `fetch-venue-bookings.ts`, `mutate-venue-bookings.ts`, `map-venue-booking.ts`; `apps/request/src/data/submit-venue-booking.ts`, `fetch-venues.ts`, `fetch-venue-events.ts`, `fetch-venue-availability.ts` | The console reads and cancels only; submissions come from MOC Request through `public_submit_venue_booking`. The booking status shown anywhere is derived by `deriveVenueBookingPhase`, never read from the row. |
-| Public submission tracking | MoC API + service-role RPCs | `apps/api/server/public-submissions/`, `apps/request/src/data/tracking-submissions.ts` | `POST`, `PATCH`, and `DELETE /api/public/submissions` use the tracking code as a bearer secret, enforce allowed origins and fail-closed rate limits, apply optimistic concurrency, and enqueue requester-specific notification events transactionally. |
-| Structural seed | Checked-in SQL | `supabase/phase-01-schema.sql` | Seeds only the roles and default workspace required for bootstrap. |
+| Requests | `apps/console/src/data/fetch-requests.ts`, `mutate-requests.ts`; `apps/request/src/data/submit-request.ts`, `tracking-submissions.ts` | `packages/sdk/src/requests.ts`, `public-submissions.ts`; `apps/api/server/platform/requests.ts`, `platform/public.ts`, `server/public-submissions/store.ts` | Public submit and tracking are explicit operations. Tracking codes are bearer secrets; lookup and mutation keep rate limiting, optimistic concurrency, and requester notification writes on the server. |
+| Authentication | `apps/console/src/lib/auth-context.tsx` | `packages/sdk/src/auth.ts`; `neon/functions/auth.ts`; MOC API auth routes | Better Auth validates credentials in a Neon Function. The API verifies its signed response and owns app session cookies and workspace authorization. |
+| Workspace and users | `apps/console/src/data/current-workspace.ts`, `fetch-workspaces.ts`, `fetch-users.ts` | `packages/sdk/src/workspaces.ts`, `users.ts`; `apps/api/server/platform/workspaces.ts`, `users.ts` | Memberships and approval state are checked server-side. A selected workspace header is only context; the API verifies membership and permission. |
+| Equipment and bookings | `apps/console/src/data/fetch-equipment.ts`, `mutate-equipment.ts`, `mutate-booking.ts`; `apps/request/src/data/submit-booking.ts` | `packages/sdk/src/equipment.ts`, `bookings.ts`; `apps/api/server/platform/equipment.ts`, `bookings.ts`, `public.ts` | The API performs workspace-scoped SQL operations. Booking display fields such as equipment name and duration are joined or derived at the application boundary. |
+| Venues | Console and Request data modules under `apps/console/src/data/` and `apps/request/src/data/` | `packages/sdk/src/venues.ts`, `venue-bookings.ts`; `apps/api/server/platform/venues.ts`, `venue-bookings.ts`, `public.ts` | Public venue submissions are explicit API operations. Booking lifecycle phase is derived from the start/end timestamps, not written as a separate phase. |
+| Streams and integrations | `apps/console/src/data/fetch-streams.ts`, `mutate-streams.ts`, `fetch-zoom.ts` | `packages/sdk/src/streams.ts`, `integrations.ts`; `apps/api/server/platform/streams.ts`, `apps/api/server/routes/youtube-proxy.ts`, `zoom-proxy.ts` | OAuth credentials remain server-side. The API calls YouTube and Zoom, and Neon scheduled workers reconcile provider state. Local stream records cache provider state for the application. |
+| Notifications | Console notification settings and event data modules | `packages/sdk/src/notifications.ts`, `notification-settings.ts`; `apps/api/server/notifications/` | Notification delivery uses a transactional outbox. Requester events are created in the same PostgreSQL transaction as the source mutation and retried by the Neon notification worker. |
+| Public tracking | `apps/request/src/data/tracking-submissions.ts` | `packages/sdk/src/public-submissions.ts`; `apps/api/server/public-submissions/store.ts` | `POST`, `PATCH`, and `DELETE /api/public/submissions` keep the tracking secret, exact input checks, allowed-origin policy, rate limits, and concurrency checks on the API. |
 
-## Current Live Code Changes
+All frontend data access uses typed `@moc/sdk` capabilities over same-origin `/api/*` routes. Vercel rewrites forward those requests to MOC API. The SDK exposes domain operations and typed models; it does not expose a generic SQL, table, or RPC endpoint.
 
-The codebase was updated in this pass to align the runtime layer with the documented schema:
+## Storage and read models
 
-- removed the mock JSON stores and normalization scripts for operational domains
-- removed the `request_roles` Supabase dependency
-- moved request duty presets into code constants
-- removed `can_manage_assignees` from the role model and user-management permission checks
-- added `telegramChatId` to the user profile read model
-- made request `dueDate` required in the app model
-- added a workspace directory layer plus current-workspace caching and reset hooks around auth changes
-- added the email-reset plus recovery-route password update flow
+The database stores normalized rows with `snake_case` fields and UUID identifiers. Server-side API operations join the related rows required by each contract and return typed domain data. Runtime mapping keeps `camelCase` application names and adds display fields only where needed.
 
-## Managed Request Categories
+For example, a booking is stored with `equipment_id`, `booked_by`, `checked_out_at`, and `expected_return_at`. A booking list result can include `equipmentName`; duration and the venue booking phase are derived for display. Keep those convenience values out of the normalized rows unless they become durable domain state.
 
-`request_categories` is the workspace-scoped source of truth for the normal
-request form and console filters. The initial five categories are seeded for
-each existing workspace during migration and for future workspaces at creation,
-while settings users can add,
-rename, deactivate, or delete unused categories without a code
-deployment. Requests store the stable category key and join the current name
-for display. Categories already referenced by requests cannot be deleted.
+## Authorization boundary
 
-The public form reads only active categories through
-`public_list_request_categories`. Tracking an older request still returns its
-joined category name even when that category is inactive, so editing does not
-silently remap historical data.
+The MOC API derives the authenticated user from a verified session and verifies workspace membership and permission before performing an application operation. The API uses parameterized SQL and transaction-local actor context. Public Request operations have explicit schemas and rate limits and accept workspace IDs only through the named public operation contract. Browser-provided identifiers never establish actor identity or membership.
 
-## Storage Model vs Read Model
+## Public request categories
 
-### Storage model
+`request_categories` is workspace-scoped. The public form can read active categories, while tracking an older request returns its stored category and joined current label even if the category is inactive. Settings can add, rename, deactivate, or delete unused categories; categories referenced by requests cannot be deleted.
 
-This is the normalized schema in `schema-reference.md`.
+## Mapping conventions
 
-Examples:
-
-- `bookings.equipment_id`
-- `bookings.booked_by`
-- `requests.workspace_id`
-
-### Read model
-
-This is the frontend object shape after joins and derivations.
-
-Examples:
-
-- `Booking.equipmentName`
-- `Equipment.bookedBy`
-- `UserWithRole.workspaceIds`
-
-## Equipment Example
-
-### Preferred storage rows
-
-`equipment`
-
-- `id`
-- `name`
-- `serial_number`
-- `category`
-- `status`
-- `location`
-- `notes`
-- `last_active_on`
-- `thumbnail_url`
-
-`bookings`
-
-- `id`
-- `equipment_id`
-- `booked_by`
-- `checked_out_at`
-- `expected_return_at`
-- `returned_at`
-- `notes`
-- `status`
-
-### Runtime read model
-
-```ts
-type BookingListItem = {
-  id: string;
-  equipmentId: string;
-  equipmentName: string;
-  bookedBy: string;
-  checkedOutDate: string;
-  expectedReturnAt: string;
-  returnedDate: string | null;
-  duration: string;
-  notes: string;
-  status: string;
-};
-```
-
-Boundary:
-
-- `equipmentName` is derived after fetch
-- `duration` is derived after fetch
-
-## Supabase Strategy
-
-The main Supabase guidance relevant here is:
-
-- foreign keys drive nested joins automatically
-- `select()` supports aliasing
-- generated database types should come from the actual schema
-- workspace-scoped reads should resolve `workspace_id` from membership first, then fall back to the seeded `default-workspace`
-
-Official references:
-
-- https://supabase.com/docs/guides/database/joins-and-nesting
-- https://supabase.com/docs/reference/javascript/select
-- https://supabase.com/docs/guides/api/rest/generating-types
-- https://supabase.com/docs/guides/database/extensions/uuid-ossp
-
-### Recommended pattern
-
-1. Keep the database normalized.
-2. Fetch rows with joined relations.
-3. Rename storage fields into app-friendly fields.
-4. Derive convenience fields in the mapper.
-
-## User Profile Mapping
-
-Storage fields:
-
-- `id`
-- `name`
-- `surname`
-- `email`
-- `telegram_chat_id`
-
-Runtime fields:
-
-- `id`
-- `name`
-- `surname`
-- `email`
-- `telegramChatId`
-
-## Workspace Mapping
-
-Storage fields:
-
-- `workspaces.id`
-- `workspaces.name`
-- `workspaces.slug`
-- `workspace_users.workspace_id`
-- `workspace_users.user_id`
-
-Runtime fields:
-
-- `Workspace.id`
-- `Workspace.name`
-- `Workspace.slug`
-- `UserWithRole.workspaceIds`
-
-Current rollout rule:
-
-1. top-level operational rows should eventually store `workspace_id`
-2. user membership should come from `workspace_users`
-3. screens should filter by workspace membership or parent record `workspaceId`
-4. when membership is pending, the app blocks member activity until an owner or admin approves the join request
-
-## Seed Data Guidance
-
-There is no operational sample-data migration. Structural bootstrap data lives
-in `supabase/phase-01-schema.sql`; the current authorization and approval shape
-is converged by the target-schema cleanup linked from `supabase/readme.md`.
-Keep the mapping layer responsible for joins, aliases, and convenience fields
-instead of denormalizing the schema.
-
-That is why the schema doc and the value guide stay separate even though the app now reads directly from Supabase.
+- Database identifiers are UUIDs; frontend identifiers remain opaque strings.
+- Database fields use `snake_case`; API and application fields use `camelCase`.
+- Keep foreign-key relationships normalized and perform joins in server operations.
+- Resolve workspace-scoped data through verified membership, then map results to the smallest domain shape the client needs.
+- Keep convenience fields, formatting, and time-derived phases in the application layer unless they are durable domain state.

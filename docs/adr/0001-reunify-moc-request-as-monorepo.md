@@ -1,6 +1,6 @@
 # Reunify MOC Request into MOC Console as a bun-workspaces monorepo
 
-MOC Request was split out of MOC Console previously and has since drifted on shared primitives (button, input, index.css tokens) while sharing very little new code. To restore a single design system and shared data layer without forcing the apps to merge, we are converting this repo into a bun-workspaces monorepo with `apps/console` + `apps/request` and four shared packages (`@moc/ui`, `@moc/data`, `@moc/utils`, `@moc/types`). MOC Request's git history is preserved via `git subtree add --prefix=apps/request`.
+MOC Request was split out of MOC Console previously and had drifted on shared primitives (button, input, index.css tokens). To restore a single design system without forcing the apps to merge, the repository became a Bun workspaces monorepo with `apps/console` and `apps/request`. Shared packages now include `@moc/ui`, `@moc/sdk`, `@moc/utils`, and `@moc/types`. MOC Request's git history was preserved when it joined the monorepo.
 
 ## Considered options
 
@@ -13,11 +13,11 @@ MOC Request was split out of MOC Console previously and has since drifted on sha
 ## Consequences
 
 - **Canonical design lives in `@moc/ui`** — MOC Request's diverged button/input/index.css are overwritten with MOC Console's variants. Intentional UI differences (e.g. MOC Request's fixed-height inputs for touch) must be re-expressed as props/variants on the canonical components, not separate components.
-- **`@moc/data` exports only the bare Supabase client.** The original plan was to bundle all fetchers here as a flat layer, but in practice MOC Console's data files transitively depend on console-only libs (`api-auth`, `youtube-client`, `zoom-client`) and MOC Request's public-flow operations (`public_browse_equipment` RPC, tracking-code lookups, HMAC-signed notify forwarders) are fundamentally different operations — not drift. Each app keeps its own `data/` directory; `@moc/data` is the shared foundation, not a shared façade.
-- **OAuth side-effects** (YouTube + Zoom redirect interceptors) moved out of `lib/supabase.ts` into `apps/console/src/lib/oauth-interceptors.ts`, imported as the first line of `main.tsx` so they run before the Supabase client is constructed.
+- **`@moc/sdk` is the typed application boundary.** It exposes named public and authenticated capabilities over the MOC API. Apps retain small `src/data/` service modules for feature-specific orchestration and local drafts; database access and provider credentials stay server-side.
+- **OAuth side effects** for YouTube and Zoom remain in the Console callback flow and exchange credentials through the MOC API. The browser never receives provider tokens.
 - **`@moc/ui` owns shared CSS tokens + base + component styles.** App-specific overrides (PWA tap-highlight, mobile root font-size, overscroll behaviour) stay in each app's own `app.css`, layered on top of `@moc/ui/styles.css`.
-- **Some "primitives" had data dependencies** and had to stay app-local: the timeline component (uses Supabase realtime via `use-playback-sync`), the error boundary (renders console's report-bug modal), and a handful of data fetchers that reach into console-only auth libs. These live in `apps/console/src/components/` and `apps/console/src/data/`, not in packages.
-- **`@moc/types` is shared but only console's domain types live there for now.** MOC Request keeps its own narrower types (`PublicEquipmentItem`, `RequestFormData`, `TrackingResult`) app-local because they are public-flow specific. If the two diverge further, consider an `@moc/types/public` namespace.
-- **Vercel projects need rework.** Each app keeps its own `vercel.json`, but Vercel project settings must be updated to set `rootDirectory` to `apps/console` and `apps/request` respectively. The existing MOC Request Vercel project (if pointed at `craig-ckc/moc-request`) needs to be repointed at the monorepo with the new root directory.
+- **Feature-specific orchestration stays app-local.** Screens and hooks use shared UI and SDK capabilities, while presentation mappers, local drafts, and Console-only error reporting remain with their owning app.
+- **`@moc/types` holds shared domain models used by both frontends.** Keep public request input and result types close to their SDK operation when their security or transport shape differs from the broader domain model.
+- **Each deployable app has its own project root.** Console and Request use their app directories; the shared API is deployed separately and owns all server execution. Public frontends route application requests through same-origin API rewrites.
 - **`craig-ckc/moc-request` is archived** after the monorepo lands. `IT-PSAPE/moc-console` becomes the monorepo home.
 - **CONTEXT.md evolves.** The root `CONTEXT.md` covers shared language. Once both apps stabilise, consider promoting to `CONTEXT-MAP.md` if each app develops enough app-specific terminology to warrant its own glossary.
