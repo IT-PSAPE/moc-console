@@ -23,7 +23,8 @@ test/supabase/tests/run-local.sh \
   supabase/migrations/2026-10-03e-scheduled-template-management.sql \
   supabase/migrations/2026-10-03f-remove-expected-arrival.sql \
   supabase/migrations/2026-10-04a-scheduled-message-date.sql \
-  supabase/migrations/2026-10-04b-scheduled-attendance-groups.sql
+  supabase/migrations/2026-10-04b-scheduled-attendance-groups.sql \
+  supabase/migrations/2026-10-04c-scheduled-message-resend.sql
 ```
 
 The assertion script checks migration backfills and defaults; Editor and
@@ -50,3 +51,10 @@ the materialization horizon, attendee response retention, original Telegram
 message IDs, queued edits, and removal of obsolete admin input sessions.
 
 The attendance-groups suite checks group shape and labels, template and schedule snapshots, one-off and recurring sends, atomic attendee group/status/time updates, forged IDs, unlinked and expired responses, declining cleanup, occurrence/future/series edits, used-group removal protection, beyond-horizon patch materialization, fresh awaiting responses, and preservation of sent Telegram message identity.
+
+## Resend coverage
+
+Include `supabase/migrations/2026-10-04c-scheduled-message-resend.sql` after the
+attendance-groups migration when using `run-local.sh`. `scheduled-resend.sql`
+checks permissions, duplicate requests, frozen response retention, replacement
+message identity, failed/ambiguous/crashed resends and expiry.

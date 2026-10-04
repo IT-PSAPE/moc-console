@@ -316,7 +316,7 @@ It removes the pre-attendance expected-arrival field, preserves existing guidanc
 in instructions or custom body text, converts recurring overrides, and queues
 edits for active sent occurrences. Personal attendee arrival times are untouched.
 
-The latest upgrade is
+The date-variable upgrade is
 [`migrations/2026-10-04a-scheduled-message-date.sql`](migrations/2026-10-04a-scheduled-message-date.sql).
 It permits an optional date-only variable for announcements and pre-attendance,
 validates Gregorian `YYYY-MM-DD` values, and keeps existing templates unchanged.
@@ -325,3 +325,5 @@ from the year: `2026-10-04` becomes `431004`. This content date is independent o
 
 
 The attendance-groups upgrade is [`migrations/2026-10-04b-scheduled-attendance-groups.sql`](migrations/2026-10-04b-scheduled-attendance-groups.sql). It stores validated ordered group snapshots on templates, schedules and occurrences, adds nullable response group IDs, and extends attendance/admin RPCs while retaining the existing authorization grants and occurrence revisions. Group removal is rejected atomically when an affected live response uses that group.
+
+The resend upgrade is [`migrations/2026-10-04c-scheduled-message-resend.sql`](migrations/2026-10-04c-scheduled-message-resend.sql). It adds a revision-checked, service-role-only resend RPC and extends the existing delivery queue. Resends retain the occurrence and responses, store the new Telegram message ID on success, and prevent automatic retry after an ambiguous outcome.
