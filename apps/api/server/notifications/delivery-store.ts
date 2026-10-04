@@ -218,17 +218,21 @@ export async function processDeliveriesForEvent(eventKey: string): Promise<Deliv
   return processRows((data ?? []) as { id: string }[])
 }
 
-export async function processPendingDeliveries(limit = 100): Promise<DeliveryRunResult> {
+async function processDueDeliveries(limit: number, scheduledOnly: boolean): Promise<DeliveryRunResult> {
   await releaseExpiredClaims()
   const admin = getSupabaseAdmin()
   const now = new Date().toISOString()
-  const { data, error } = await admin
-    .from("notification_deliveries")
-    .select("id")
-    .eq("status", "pending")
-    .lte("next_attempt_at", now)
-    .order("created_at", { ascending: true })
-    .limit(limit)
+  let query = admin.from("notification_deliveries").select("id").eq("status", "pending").lte("next_attempt_at", now)
+  if (scheduledOnly) query = query.not("scheduled_occurrence_id", "is", null)
+  const { data, error } = await query.order("created_at", { ascending: true }).limit(limit)
   if (error) throw new Error(error.message)
   return processRows((data ?? []) as { id: string }[])
+}
+
+export async function processPendingDeliveries(limit = 100): Promise<DeliveryRunResult> {
+  return processDueDeliveries(limit, false)
+}
+
+export async function processPendingScheduledDeliveries(limit = 100): Promise<DeliveryRunResult> {
+  return processDueDeliveries(limit, true)
 }
