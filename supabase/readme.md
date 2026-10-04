@@ -322,3 +322,6 @@ It permits an optional date-only variable for announcements and pre-attendance,
 validates Gregorian `YYYY-MM-DD` values, and keeps existing templates unchanged.
 The renderer displays year, month, day without separators, subtracting 1983
 from the year: `2026-10-04` becomes `431004`. This content date is independent of delivery and expiry.
+
+
+The attendance-groups upgrade is [`migrations/2026-10-04b-scheduled-attendance-groups.sql`](migrations/2026-10-04b-scheduled-attendance-groups.sql). It stores validated ordered group snapshots on templates, schedules and occurrences, adds nullable response group IDs, and extends attendance/admin RPCs while retaining the existing authorization grants and occurrence revisions. Group removal is rejected atomically when an affected live response uses that group.
