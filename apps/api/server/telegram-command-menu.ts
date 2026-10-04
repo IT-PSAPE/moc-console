@@ -1,4 +1,5 @@
-import { getSupabaseAdmin } from './supabase-admin.js'
+import { queryRows } from '@moc/backend/database'
+import type { QueryResultRow } from 'pg'
 import { getTelegramCommands, setTelegramCommands, type TelegramCommand, type TelegramCommandScope } from './telegram.js'
 
 type CommandPermission = 'can_manage_roles' | 'can_update'
@@ -39,23 +40,21 @@ export async function syncTelegramGroupCommands(chatId: string, workspaceId?: st
   const publicMenu = await publicGroupCommands(chatId)
   if (!publicMenu) return { failed: 1 }
   const publicCommands = publicMenu.commands
-  let query = getSupabaseAdmin().from('workspace_users').select('users(telegram_chat_id),roles(can_update,can_manage_roles)')
-  if (workspaceId) query = query.eq('workspace_id', workspaceId)
-  if (userId) query = query.eq('user_id', userId)
-  const { data: members, error } = workspaceId || userId ? await query : { data: [], error: null }
-  if (error) throw new Error(error.message)
+  const members = workspaceId || userId ? await queryRows<QueryResultRow & { telegram_chat_id:string|null;can_update:boolean;can_manage_roles:boolean }>(
+    `SELECT u.telegram_chat_id,r.can_update,r.can_manage_roles FROM public.workspace_users w
+     JOIN public.users u ON u.id=w.user_id JOIN public.roles r ON r.id=w.role_id
+     WHERE ($1::uuid IS NULL OR w.workspace_id=$1) AND ($2::uuid IS NULL OR w.user_id=$2)`,[workspaceId??null,userId??null],
+  ) : []
 
   // An unregistered group can only offer registration, based on the adding user's
   // workspace memberships. Message management needs a registered workspace.
   const permissions = new Map<string, CommandPermissions>()
-  for (const member of members ?? []) {
-    const user = Array.isArray(member.users) ? member.users[0] : member.users
-    const role = Array.isArray(member.roles) ? member.roles[0] : member.roles
-    if (!user?.telegram_chat_id) continue
-    const previous = permissions.get(user.telegram_chat_id)
-    permissions.set(user.telegram_chat_id, {
-      can_manage_roles: previous?.can_manage_roles === true || role?.can_manage_roles === true,
-      can_update: Boolean(workspaceId) && (previous?.can_update === true || role?.can_update === true),
+  for (const member of members) {
+    if (!member.telegram_chat_id) continue
+    const previous = permissions.get(member.telegram_chat_id)
+    permissions.set(member.telegram_chat_id, {
+      can_manage_roles: previous?.can_manage_roles === true || member.can_manage_roles === true,
+      can_update: Boolean(workspaceId) && (previous?.can_update === true || member.can_update === true),
     })
   }
 

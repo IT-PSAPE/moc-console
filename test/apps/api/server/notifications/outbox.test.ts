@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { buildPayload, type OutboxRow } from "../../../../../apps/api/server/notifications/outbox.js"
+import { buildPayload, claimPendingOutboxRow, outboxRetryAt, type OutboxRow } from "../../../../../apps/api/server/notifications/outbox.js"
 import type { VenueBookingCreatedPayload } from "../../../../../apps/api/server/notifications/dispatch.js"
 
 function venueBookingRow(overrides: Partial<OutboxRow["payload"]> = {}): OutboxRow {
@@ -149,5 +149,43 @@ describe("buildPayload — requester deletion", () => {
         linkUrl: "",
       })
     })
+  })
+})
+
+describe("outboxRetryAt", () => {
+  it("uses the existing exponential retry schedule and exponent bound", () => {
+    const now = Date.UTC(2026, 7, 5, 12, 0, 0)
+    assert.equal(outboxRetryAt(1, now), "2026-08-05T12:00:02.000Z")
+    assert.equal(outboxRetryAt(4, now), "2026-08-05T12:00:16.000Z")
+    assert.equal(outboxRetryAt(10, now), "2026-08-05T12:17:04.000Z")
+    assert.equal(outboxRetryAt(11, now), "2026-08-05T12:17:04.000Z")
+    assert.equal(outboxRetryAt(12, now), "2026-08-05T12:17:04.000Z")
+  })
+})
+
+describe("claimPendingOutboxRow", () => {
+  it("claims a pending event with one guarded update and returns no row when another worker won", async () => {
+    const statements: Array<{ sql: string; values?: readonly unknown[] }> = []
+    const pendingRow: OutboxRow = {
+      id: "outbox-1",
+      workspace_id: "workspace-1",
+      event_type: "stream.created",
+      entity_type: "stream",
+      entity_id: "stream-1",
+      event_key: "stream.created:stream-1",
+      payload: { title: "Sunday Service" },
+      attempt_count: 0,
+    }
+    const runQuery = async (sql: string, values?: readonly unknown[]) => {
+      statements.push({ sql, values })
+      return statements.length === 1 ? [pendingRow] : []
+    }
+
+    assert.deepEqual(await claimPendingOutboxRow("outbox-1", runQuery), pendingRow)
+    assert.equal(await claimPendingOutboxRow("outbox-1", runQuery), null)
+    assert.match(statements[0]?.sql ?? "", /UPDATE public\.notification_outbox/)
+    assert.match(statements[0]?.sql ?? "", /WHERE id = \$1 AND status = 'pending'/)
+    assert.match(statements[0]?.sql ?? "", /RETURNING id, workspace_id, event_type/)
+    assert.deepEqual(statements[0]?.values, ["outbox-1"])
   })
 })

@@ -1,5 +1,6 @@
 import { getIntegrationTokens } from "../integration-oauth-store.js"
-import { getSupabaseAdmin } from "../supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
 import { classifySyncFailure, type SyncFailureReason } from "./sync-failure.js"
 
 type ActiveConnectionRow = {
@@ -44,13 +45,13 @@ export type ConnectionGateDependencies<Row> = {
 }
 
 /**
- * Only `active` connections are candidates. `public.youtube_connection_status`
- * has exactly two values, so filtering on it is both the allow-list and the
+ * Only active connections are candidates. Filtering on status is both the
+ * allow-list and the
  * skip-list: a workspace mid-reconnect drops out here and never appears as a
  * failure.
  *
  * Stored credentials are then probed before any provider request, because the
- * token RPC ignores the public status and a public row can outlive its private
+ * credential lookup can fail independently of the public status, and a public row can outlive its private
  * credentials. Without the probe the first YouTube call would spend quota, and
  * the token resolver would enter its lock-and-refresh path, for a connection
  * that cannot succeed. The probe is a probe only — the proxies resolve and
@@ -77,35 +78,16 @@ async function collectUsableConnections<Row extends ActiveConnectionRow, Connect
   return usable
 }
 
-/**
- * The slice of the admin client the readers below use. Injectable so the
- * `status = 'active'` filter — the one thing keeping a workspace mid-reconnect
- * out of the sweep — is asserted rather than assumed.
- */
-export type ConnectionTableReader = (table: string) => {
-  select: (columns: string) => {
-    eq: (column: string, value: string) => PromiseLike<{ data: unknown; error: { message: string } | null }>
-  }
+export function readActiveYouTubeConnections(): Promise<YouTubeConnectionRow[]> {
+  return queryRows<QueryResultRow & YouTubeConnectionRow>(
+    "SELECT workspace_id, channel_id, connected_by FROM public.youtube_connections WHERE status='active'",
+  )
 }
 
-const supabaseTable: ConnectionTableReader = (table) => ({
-  select: (columns) => ({
-    eq: async (column, value) => await getSupabaseAdmin().from(table).select(columns).eq(column, value),
-  }),
-})
-
-async function readActiveConnectionRows<Row>(from: ConnectionTableReader, table: string, columns: string): Promise<Row[]> {
-  const { data, error } = await from(table).select(columns).eq("status", "active")
-  if (error) throw new Error(error.message)
-  return (data ?? []) as Row[]
-}
-
-export function readActiveYouTubeConnections(from: ConnectionTableReader = supabaseTable): Promise<YouTubeConnectionRow[]> {
-  return readActiveConnectionRows(from, "youtube_connections", "workspace_id, channel_id, connected_by")
-}
-
-export function readActiveZoomConnections(from: ConnectionTableReader = supabaseTable): Promise<ZoomConnectionRow[]> {
-  return readActiveConnectionRows(from, "zoom_connections", "workspace_id, id, connected_by")
+export function readActiveZoomConnections(): Promise<ZoomConnectionRow[]> {
+  return queryRows<QueryResultRow & ZoomConnectionRow>(
+    "SELECT workspace_id, id, connected_by FROM public.zoom_connections WHERE status='active'",
+  )
 }
 
 const youTubeConnectionGate: ConnectionGateDependencies<YouTubeConnectionRow> = {

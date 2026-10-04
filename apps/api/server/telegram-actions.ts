@@ -1,6 +1,6 @@
 import type { TelegramAction, TelegramActionEntityType } from "@moc/notifications"
-
-import { getSupabaseAdmin } from "./supabase-admin.js"
+import { queryRows } from '@moc/backend/database'
+import type { QueryResultRow } from 'pg'
 
 export type ApplyTelegramActionInput = {
   telegramUserId: string
@@ -53,13 +53,10 @@ export function mapApplyTelegramActionResult(data: unknown): ApplyTelegramAction
 }
 
 export async function applyTelegramAction(input: ApplyTelegramActionInput): Promise<ApplyTelegramActionResult> {
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin.rpc("api_apply_telegram_action", {
-    p_telegram_user_id: input.telegramUserId,
-    p_entity_type: input.entityType,
-    p_entity_id: input.entityId,
-    p_action: input.action,
-  })
-  if (error) throw new Error(`Could not apply Telegram action: ${error.message}`)
-  return mapApplyTelegramActionResult(data)
+  const [row] = await queryRows<QueryResultRow & { result: unknown }>(
+    'SELECT public.api_apply_telegram_action($1::text,$2::text,$3::uuid,$4::text) AS result',
+    [input.telegramUserId, input.entityType, input.entityId, input.action],
+  )
+  if (!row) throw new Error('Could not apply Telegram action: empty database response')
+  return mapApplyTelegramActionResult(row.result)
 }

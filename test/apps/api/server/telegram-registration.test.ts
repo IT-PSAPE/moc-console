@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
-import { processTelegramUpdate } from '../../../../apps/api/server/telegram-webhook-commands.js'
+import { describe, it as bunIt } from 'bun:test'
+import { runWithSqlFixture } from './sql-fixture.js'
 import { createTelegramCommandFixture } from './telegram-command-fixture.js'
+function it(name:string,test:()=>Promise<void>):void { bunIt(name,()=>runWithSqlFixture(test)) }
+const { processTelegramUpdate } = await import('../../../../apps/api/server/telegram-webhook-commands.js')
 
 describe('Telegram registration permissions', () => {
   for (const command of ['register_group example', 'register_topic'] as const) {

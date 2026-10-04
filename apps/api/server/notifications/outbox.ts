@@ -1,6 +1,7 @@
 import { isNotificationEventKey, type NotificationEventKey } from "@moc/notifications"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
 import { resolveBaseUrl } from "../base-url.js"
-import { getSupabaseAdmin } from "../supabase-admin.js"
 import { dispatchEvent, type EventPayloadMap, type NotifyDestination } from "./dispatch.js"
 
 const MAX_ATTEMPTS = 5
@@ -17,6 +18,10 @@ export type OutboxRow = {
   attempt_count: number
 }
 
+type DbOutboxRow = QueryResultRow & OutboxRow
+type OutboxIdRow = QueryResultRow & { id: string }
+type OutboxClaimQuery = (sql: string, values?: readonly unknown[]) => Promise<DbOutboxRow[]>
+
 export type OutboxRunResult = {
   attempted: number
   dispatched: number
@@ -28,9 +33,9 @@ function emptyResult(): OutboxRunResult {
   return { attempted: 0, dispatched: 0, failed: 0, pendingRetry: 0 }
 }
 
-function retryAt(attempt: number): string {
+export function outboxRetryAt(attempt: number, now = Date.now()): string {
   const seconds = Math.min(60 * 30, 2 ** Math.min(attempt, 10))
-  return new Date(Date.now() + seconds * 1_000).toISOString()
+  return new Date(now + seconds * 1_000).toISOString()
 }
 
 export async function enqueueOutboxEvent(args: {
@@ -41,40 +46,51 @@ export async function enqueueOutboxEvent(args: {
   eventKey: string
   payload: Record<string, unknown>
 }): Promise<void> {
-  const admin = getSupabaseAdmin()
-  const { error } = await admin.rpc("enqueue_notification_outbox_event", {
-    p_workspace_id: args.workspaceId,
-    p_event_type: args.eventType,
-    p_entity_type: args.entityType,
-    p_entity_id: args.entityId,
-    p_event_key: args.eventKey,
-    p_payload: args.payload,
-  })
-  if (error) throw new Error(error.message)
+  if (
+    !args.workspaceId ||
+    !args.eventType.trim() ||
+    !args.entityType.trim() ||
+    !args.entityId ||
+    !args.eventKey.trim() ||
+    typeof args.payload !== "object" ||
+    args.payload === null ||
+    Array.isArray(args.payload)
+  ) {
+    throw new Error("Invalid notification outbox event")
+  }
+  await queryRows(
+    `INSERT INTO public.notification_outbox
+       (workspace_id, event_type, entity_type, entity_id, event_key, payload)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+     ON CONFLICT (event_key) DO UPDATE
+       SET payload = public.notification_outbox.payload || EXCLUDED.payload`,
+    [args.workspaceId, args.eventType, args.entityType, args.entityId, args.eventKey, JSON.stringify(args.payload)],
+  )
 }
 
 async function releaseExpiredClaims(): Promise<void> {
-  const admin = getSupabaseAdmin()
   const expiredBefore = new Date(Date.now() - CLAIM_TIMEOUT_MS).toISOString()
-  const { error } = await admin
-    .from("notification_outbox")
-    .update({ status: "pending" })
-    .eq("status", "processing")
-    .lt("last_attempt_at", expiredBefore)
-  if (error) throw new Error(error.message)
+  await queryRows(
+    `UPDATE public.notification_outbox SET status = 'pending'
+     WHERE status = 'processing' AND last_attempt_at < $1::timestamptz`,
+    [expiredBefore],
+  )
 }
 
-async function claimOutbox(id: string): Promise<OutboxRow | null> {
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from("notification_outbox")
-    .update({ status: "processing", last_attempt_at: new Date().toISOString() })
-    .eq("id", id)
-    .eq("status", "pending")
-    .select("id, workspace_id, event_type, entity_type, entity_id, event_key, payload, attempt_count")
-    .maybeSingle()
-  if (error) throw new Error(error.message)
-  return data as OutboxRow | null
+const queryOutboxClaim: OutboxClaimQuery = (sql, values) => queryRows<DbOutboxRow>(sql, values)
+
+export async function claimPendingOutboxRow(
+  id: string,
+  runQuery: OutboxClaimQuery = queryOutboxClaim,
+): Promise<OutboxRow | null> {
+  const [row] = await runQuery(
+    `UPDATE public.notification_outbox
+     SET status = 'processing', last_attempt_at = now()
+     WHERE id = $1 AND status = 'pending'
+     RETURNING id, workspace_id, event_type, entity_type, entity_id, event_key, payload, attempt_count`,
+    [id],
+  )
+  return row ?? null
 }
 
 function text(value: unknown): string | null {
@@ -200,7 +216,6 @@ function destinations(value: unknown): NotifyDestination[] | undefined {
 async function dispatchClaimed(row: OutboxRow): Promise<OutboxRunResult> {
   const result = emptyResult()
   result.attempted = 1
-  const admin = getSupabaseAdmin()
   try {
     if (!isNotificationEventKey(row.event_type)) throw new Error(`Unknown notification event: ${row.event_type}`)
     const payload = buildPayload(row)
@@ -210,29 +225,24 @@ async function dispatchClaimed(row: OutboxRow): Promise<OutboxRunResult> {
       entityType: row.entity_type,
       entityId: row.entity_id,
     })
-    const { error } = await admin
-      .from("notification_outbox")
-      .update({ status: "dispatched", dispatched_at: new Date().toISOString(), last_error: null })
-      .eq("id", row.id)
-      .eq("status", "processing")
-    if (error) throw new Error(error.message)
+    await queryRows(
+      `UPDATE public.notification_outbox
+       SET status = 'dispatched', dispatched_at = now(), last_error = NULL
+       WHERE id = $1 AND status = 'processing'`,
+      [row.id],
+    )
     result.dispatched = 1
     return result
   } catch (error) {
     const nextAttempt = row.attempt_count + 1
     const terminal = nextAttempt >= MAX_ATTEMPTS
     const message = error instanceof Error ? error.message : String(error)
-    const { error: updateError } = await admin
-      .from("notification_outbox")
-      .update({
-        status: terminal ? "failed" : "pending",
-        attempt_count: nextAttempt,
-        next_attempt_at: terminal ? new Date().toISOString() : retryAt(nextAttempt),
-        last_error: message.slice(0, 2_000),
-      })
-      .eq("id", row.id)
-      .eq("status", "processing")
-    if (updateError) throw new Error(updateError.message)
+    await queryRows(
+      `UPDATE public.notification_outbox
+       SET status = $2, attempt_count = $3, next_attempt_at = $4::timestamptz, last_error = $5
+       WHERE id = $1 AND status = 'processing'`,
+      [row.id, terminal ? "failed" : "pending", nextAttempt, terminal ? new Date().toISOString() : outboxRetryAt(nextAttempt), message.slice(0, 2_000)],
+    )
     result.failed = 1
     if (!terminal) result.pendingRetry = 1
     return result
@@ -248,19 +258,16 @@ function mergeResult(total: OutboxRunResult, next: OutboxRunResult): void {
 
 export async function processPendingOutbox(limit = 100): Promise<OutboxRunResult> {
   await releaseExpiredClaims()
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from("notification_outbox")
-    .select("id")
-    .eq("status", "pending")
-    .lte("next_attempt_at", new Date().toISOString())
-    .order("created_at", { ascending: true })
-    .limit(limit)
-  if (error) throw new Error(error.message)
+  const data = await queryRows<OutboxIdRow>(
+    `SELECT id FROM public.notification_outbox
+     WHERE status = 'pending' AND next_attempt_at <= now()
+     ORDER BY created_at ASC LIMIT $1`,
+    [limit],
+  )
 
   const result = emptyResult()
-  for (const candidate of (data ?? []) as { id: string }[]) {
-    const row = await claimOutbox(candidate.id)
+  for (const candidate of data) {
+    const row = await claimPendingOutboxRow(candidate.id)
     if (row) mergeResult(result, await dispatchClaimed(row))
   }
   return result
@@ -268,18 +275,15 @@ export async function processPendingOutbox(limit = 100): Promise<OutboxRunResult
 
 export async function processOutboxEvent(eventKey: string): Promise<OutboxRunResult> {
   await releaseExpiredClaims()
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from("notification_outbox")
-    .select("id")
-    .eq("event_key", eventKey)
-    .eq("status", "pending")
-    .lte("next_attempt_at", new Date().toISOString())
-  if (error) throw new Error(error.message)
+  const data = await queryRows<OutboxIdRow>(
+    `SELECT id FROM public.notification_outbox
+     WHERE event_key = $1 AND status = 'pending' AND next_attempt_at <= now()`,
+    [eventKey],
+  )
 
   const result = emptyResult()
-  for (const candidate of (data ?? []) as { id: string }[]) {
-    const row = await claimOutbox(candidate.id)
+  for (const candidate of data) {
+    const row = await claimPendingOutboxRow(candidate.id)
     if (row) mergeResult(result, await dispatchClaimed(row))
   }
   return result
@@ -291,20 +295,16 @@ export async function processPendingOutboxForEntity(
   eventType: NotificationEventKey,
 ): Promise<OutboxRunResult> {
   await releaseExpiredClaims()
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from("notification_outbox")
-    .select("id")
-    .eq("entity_type", entityType)
-    .eq("entity_id", entityId)
-    .eq("event_type", eventType)
-    .eq("status", "pending")
-    .lte("next_attempt_at", new Date().toISOString())
-  if (error) throw new Error(error.message)
+  const data = await queryRows<OutboxIdRow>(
+    `SELECT id FROM public.notification_outbox
+     WHERE entity_type = $1 AND entity_id = $2 AND event_type = $3
+       AND status = 'pending' AND next_attempt_at <= now()`,
+    [entityType, entityId, eventType],
+  )
 
   const result = emptyResult()
-  for (const candidate of (data ?? []) as { id: string }[]) {
-    const row = await claimOutbox(candidate.id)
+  for (const candidate of data) {
+    const row = await claimPendingOutboxRow(candidate.id)
     if (row) mergeResult(result, await dispatchClaimed(row))
   }
   return result
@@ -319,19 +319,15 @@ export async function processPendingOutboxForEntityAcrossEventTypes(
   entityId: string,
 ): Promise<OutboxRunResult> {
   await releaseExpiredClaims()
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from("notification_outbox")
-    .select("id")
-    .eq("entity_type", entityType)
-    .eq("entity_id", entityId)
-    .eq("status", "pending")
-    .lte("next_attempt_at", new Date().toISOString())
-  if (error) throw new Error(error.message)
+  const data = await queryRows<OutboxIdRow>(
+    `SELECT id FROM public.notification_outbox
+     WHERE entity_type = $1 AND entity_id = $2 AND status = 'pending' AND next_attempt_at <= now()`,
+    [entityType, entityId],
+  )
 
   const result = emptyResult()
-  for (const candidate of (data ?? []) as { id: string }[]) {
-    const row = await claimOutbox(candidate.id)
+  for (const candidate of data) {
+    const row = await claimPendingOutboxRow(candidate.id)
     if (row) mergeResult(result, await dispatchClaimed(row))
   }
   return result

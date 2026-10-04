@@ -1,148 +1,65 @@
-import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, expect, test as bunTest } from 'bun:test'
+import type { QueryResultRow } from 'pg'
+import type { MessageSession } from '../../../../../apps/api/server/scheduled-messages/types'
+import { runWithSqlFixture, setSqlFixture } from '../sql-fixture.js'
 
-import { ownedSession } from "../../../../../apps/api/server/scheduled-messages/sessions.js"
+function test(name:string,body:()=>Promise<void>):void { bunTest(name,()=>runWithSqlFixture(body)) }
 
-type RestCall = { url: URL; method: string }
+const sql: string[] = []
+let session: MessageSession | null = null
+let linkedId = 'user-1'
+let canUpdate = true
+let permissionReads = 0
 
-function makeSession(overrides: Record<string, unknown> = {}): Record<string, unknown> {
-  return {
-    id: "session-1",
-    user_id: "user-1",
-    telegram_user_id: "456",
-    workspace_id: "workspace-1",
-    chat_id: "-100123",
-    thread_id: 22,
-    ephemeral_message_id: 81,
-    occurrence_id: "occurrence-1",
-    kind: "admin",
-    data: {},
-    expires_at: new Date(Date.now() + 60_000).toISOString(),
-    ...overrides,
+function configureSqlFixture():void {
+  const queryRows=async(text:string):Promise<QueryResultRow[]>=>{
+    sql.push(text)
+    if (text.includes('FROM public.scheduled_message_sessions')) return session ? [session] : []
+    if (text.includes('FROM public.users')) return [{ id: linkedId }]
+    return []
   }
+  const queryActor=async(text:string):Promise<QueryResultRow[]>=>{sql.push(text);permissionReads++;return [{allowed:canUpdate}]}
+  setSqlFixture({queryRows,queryActor})
 }
 
-async function withRest<T>(
-  responder: (call: RestCall) => Response | Promise<Response>,
-  run: (calls: RestCall[]) => Promise<T>,
-): Promise<T> {
-  const previousFetch = globalThis.fetch
-  const previousUrl = process.env.VITE_SUPABASE_URL
-  const previousKey = process.env.SUPABASE_SECRET_KEY
-  process.env.VITE_SUPABASE_URL = "https://supabase.test"
-  process.env.SUPABASE_SECRET_KEY = "test-service-key"
-  const calls: RestCall[] = []
-  globalThis.fetch = async (input, init) => {
-    const call = { url: new URL(String(input)), method: init?.method ?? "GET" }
-    calls.push(call)
-    return responder(call)
-  }
-  try {
-    return await run(calls)
-  } finally {
-    globalThis.fetch = previousFetch
-    if (previousUrl === undefined) delete process.env.VITE_SUPABASE_URL
-    else process.env.VITE_SUPABASE_URL = previousUrl
-    if (previousKey === undefined) delete process.env.SUPABASE_SECRET_KEY
-    else process.env.SUPABASE_SECRET_KEY = previousKey
-  }
+const { ownedSession } = await import('../../../../../apps/api/server/scheduled-messages/sessions')
+
+function makeSession(overrides: Partial<MessageSession> = {}): MessageSession {
+  return { id:'session-1',user_id:'user-1',telegram_user_id:'456',workspace_id:'workspace-1',chat_id:'-100123',thread_id:22,ephemeral_message_id:81,occurrence_id:'occurrence-1',kind:'admin',data:{},expires_at:new Date(Date.now()+60_000).toISOString(),...overrides }
 }
+function reset(next = makeSession()): void { configureSqlFixture();sql.length=0; session=next; linkedId='user-1'; canUpdate=true; permissionReads=0 }
 
-function json(value: unknown, status = 200): Response {
-  return new Response(JSON.stringify(value), { status, headers: { "Content-Type": "application/json" } })
-}
-
-function restResponse(call: RestCall, session = makeSession(), canUpdate = true): Response {
-  if (call.url.pathname.endsWith("/scheduled_message_sessions")) return json(session)
-  if (call.url.pathname.endsWith("/users")) return json({ id: "user-1" })
-  if (call.url.pathname.endsWith("/workspace_users")) return json({ roles: { can_update: canUpdate } })
-  return json({ message: `Unexpected REST request: ${call.url.pathname}` }, 500)
-}
-
-describe("ownedSession", () => {
-  it("scopes the database lookup to its owner and origin chat", async () => {
-    await withRest(call => {
-      if (call.url.pathname.endsWith("/scheduled_message_sessions")) return json({ message: "no rows" }, 406)
-      return json({ message: "The linked identity must not be checked for a non-owner" }, 500)
-    }, async calls => {
-      await assert.rejects(ownedSession("session-1", "999", "-100999", 81), /This flow has ended/)
-
-      const lookup = calls[0]?.url
-      assert.ok(lookup)
-      assert.equal(lookup.searchParams.get("id"), "eq.session-1")
-      assert.equal(lookup.searchParams.get("telegram_user_id"), "eq.999")
-      assert.equal(lookup.searchParams.get("chat_id"), "eq.-100999")
-      assert.ok(lookup.searchParams.has("expires_at"), "expired sessions must not be returned by the lookup")
-      assert.equal(calls.length, 1)
-    })
+describe('scheduled session SQL boundary', () => {
+  test('scopes the lookup to owner and origin chat and checks expiry in SQL', async () => {
+    reset(null)
+    await expect(ownedSession('session-1','999','-100999',81)).rejects.toThrow(/This flow has ended/)
+    expect(sql[0]).toContain('id=$1 AND telegram_user_id=$2 AND chat_id=$3 AND expires_at>now()')
+    expect(sql).toHaveLength(1)
   })
-
-  it("rejects an expired session before it can resolve identity or permissions", async () => {
-    await withRest(call => {
-      if (call.url.pathname.endsWith("/scheduled_message_sessions")) return json({ message: "no active row" }, 406)
-      return json({ message: "No later authorization lookup should run" }, 500)
-    }, async calls => {
-      await assert.rejects(ownedSession("session-1", "456", "-100123", 81), /This flow has ended/)
-
-      assert.match(calls[0]?.url.searchParams.get("expires_at") ?? "", /^gt\./)
-      assert.equal(calls.length, 1)
-    })
+  test('rejects stale controls before resolving Telegram identity', async () => {
+    reset()
+    await expect(ownedSession('session-1','456','-100123',999)).rejects.toThrow(/belongs to another interaction/)
+    expect(sql).toHaveLength(1)
   })
-
-  it("rejects a stale or forged ephemeral message control before authorizing the linked account", async () => {
-    await withRest(call => restResponse(call), async calls => {
-      await assert.rejects(ownedSession("session-1", "456", "-100123", 999), /belongs to another interaction/)
-
-      assert.equal(calls.length, 1)
-      assert.ok(calls[0]?.url.pathname.endsWith("/scheduled_message_sessions"))
-    })
+  test('normalizes PostgreSQL bigint Telegram message IDs before comparing controls', async () => {
+    reset(makeSession({ephemeral_message_id:'81' as unknown as number}))
+    await expect(ownedSession('session-1','456','-100123',81)).resolves.toMatchObject({ephemeral_message_id:81})
   })
-
-  it("rejects a session after the Telegram account is linked to a different MOC user", async () => {
-    await withRest(call => {
-      if (call.url.pathname.endsWith("/users")) return json({ id: "different-user" })
-      return restResponse(call)
-    }, async calls => {
-      await assert.rejects(ownedSession("session-1", "456", "-100123", 81), /Telegram link has changed/)
-
-      assert.equal(calls.length, 2)
-      assert.ok(calls[1]?.url.pathname.endsWith("/users"))
-      assert.equal(calls[1]?.url.searchParams.get("telegram_chat_id"), "eq.456")
-    })
+  test('rejects sessions after Telegram linking changes', async () => {
+    reset(); linkedId='different-user'
+    await expect(ownedSession('session-1','456','-100123',81)).rejects.toThrow(/Telegram link has changed/)
+    expect(sql[1]).toContain('FROM public.users WHERE telegram_chat_id=$1')
   })
-
-  it("rechecks management permission for every admin interaction instead of trusting the session", async () => {
-    let permissionCheckCount = 0
-    await withRest(call => {
-      if (call.url.pathname.endsWith("/workspace_users")) {
-        const isSecondCheck = permissionCheckCount++ > 0
-        return json({ roles: { can_update: !isSecondCheck } })
-      }
-      return restResponse(call)
-    }, async calls => {
-      await ownedSession("session-1", "456", "-100123", 81)
-      await assert.rejects(ownedSession("session-1", "456", "-100123", 81), /Insufficient workspace permission/)
-
-      const permissionChecks = calls.filter(call => call.url.pathname.endsWith("/workspace_users"))
-      assert.equal(permissionChecks.length, 2)
-      assert.ok(permissionChecks.every(call => call.url.searchParams.get("workspace_id") === "eq.workspace-1"))
-      assert.ok(permissionChecks.every(call => call.url.searchParams.get("user_id") === "eq.user-1"))
-      assert.equal(permissionCheckCount, 2)
-    })
+  test('rechecks management permission for each admin interaction', async () => {
+    reset()
+    await ownedSession('session-1','456','-100123',81)
+    canUpdate=false
+    await expect(ownedSession('session-1','456','-100123',81)).rejects.toThrow(/Not authorised/)
+    expect(permissionReads).toBe(2)
   })
-
-  it("allows an eligible participant session without requiring manager permission", async () => {
-    await withRest(call => {
-      const participant = makeSession({ kind: "attendance" })
-      if (call.url.pathname.endsWith("/workspace_users")) {
-        return json({ message: "Participants do not need management permission" }, 500)
-      }
-      return restResponse(call, participant)
-    }, async calls => {
-      const session = await ownedSession("session-1", "456", "-100123", 81)
-
-      assert.equal(session.kind, "attendance")
-      assert.equal(calls.some(call => call.url.pathname.endsWith("/workspace_users")), false)
-    })
+  test('attendance sessions need membership and identity without manager permission', async () => {
+    reset(makeSession({kind:'attendance'}))
+    await expect(ownedSession('session-1','456','-100123',81)).resolves.toMatchObject({kind:'attendance'})
+    expect(permissionReads).toBe(0)
   })
 })

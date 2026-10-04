@@ -1,8 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import publicNotificationWake from "../../../../apps/api/api/notify/[kind].js"
-import youTubeProxy from "../../../../apps/api/api/youtube/v3/[...path].js"
 import type { ApiRequest, ApiResponse } from "../../../../apps/api/server/http.js"
+import { writeCorsHeaders } from "../../../../apps/api/server/cors.js"
 import { getRuntimeReadiness, startApiRequest } from "../../../../apps/api/server/observability.js"
 
 type CapturedResponse = ApiResponse & {
@@ -59,9 +58,11 @@ describe("observability", () => {
   it("runtime readiness does not expose configuration values", () => {
     const readiness = getRuntimeReadiness({
       ALLOWED_ORIGINS: "https://console.example.com",
-      SUPABASE_SECRET_KEY: "secret-value",
+      DATABASE_URL: "postgres://moc:secret-value@localhost/moc",
+      MOC_AUTH_SERVICE_SECRET: "secret-value",
+      MOC_AUTH_TRUSTED_ORIGINS: "https://console.example.com",
+      NEON_AUTH_FUNCTION_URL: "https://auth.example.com",
       VERCEL_GIT_COMMIT_SHA: "abcdef1234567890",
-      VITE_SUPABASE_URL: "https://project.supabase.co",
     })
 
     assert.deepEqual(readiness, { deployment: "abcdef123456", ready: true })
@@ -91,17 +92,14 @@ describe("observability", () => {
     assert.match(context.requestId, /^[A-Za-z0-9._-]{1,128}$/)
   })
 
-  it("adds correlation headers before a CORS preflight finishes", async () => {
+  it("exposes request correlation and range headers to allowed browser origins", () => {
     const previousAllowedOrigins = process.env.ALLOWED_ORIGINS
     process.env.ALLOWED_ORIGINS = "https://console.example.com"
     const response = createResponse()
 
     try {
-      await publicNotificationWake({
-        headers: { origin: "https://console.example.com", "x-request-id": "preflight-123" },
-        method: "OPTIONS",
-        query: { kind: "request" },
-      }, response)
+      writeCorsHeaders({ origin: "https://console.example.com" }, response, { preflight: true })
+      startApiRequest({ headers: { "x-request-id": "preflight-123" } }, response)
     } finally {
       if (previousAllowedOrigins === undefined) {
         delete process.env.ALLOWED_ORIGINS
@@ -110,23 +108,22 @@ describe("observability", () => {
       }
     }
 
-    assert.equal(response.statusCode, 204)
     assert.equal(response.headers["Access-Control-Allow-Origin"], "https://console.example.com")
-    assert.equal(response.headers["Access-Control-Expose-Headers"], "X-Request-Id, Retry-After")
+    assert.equal(
+      response.headers["Access-Control-Expose-Headers"],
+      "X-Request-Id, Retry-After, Content-Range, Accept-Ranges, Content-Length, ETag",
+    )
     assert.equal(response.headers["Cache-Control"], "no-store, max-age=0, must-revalidate")
     assert.equal(response.headers["X-Request-Id"], "preflight-123")
   })
 
-  it("also observes provider-proxy preflights", async () => {
+  it("includes browser range headers in the shared preflight contract", () => {
     const previousAllowedOrigins = process.env.ALLOWED_ORIGINS
     process.env.ALLOWED_ORIGINS = "https://console.example.com"
     const response = createProviderResponse()
 
     try {
-      await youTubeProxy({
-        headers: { origin: "https://console.example.com", "x-request-id": "youtube-options-123" },
-        method: "OPTIONS",
-      }, response)
+      writeCorsHeaders({ origin: "https://console.example.com" }, response, { preflight: true })
     } finally {
       if (previousAllowedOrigins === undefined) {
         delete process.env.ALLOWED_ORIGINS
@@ -135,10 +132,11 @@ describe("observability", () => {
       }
     }
 
-    assert.equal(response.statusCode, 204)
     assert.equal(response.headers["Access-Control-Allow-Origin"], "https://console.example.com")
-    assert.equal(response.headers["Access-Control-Expose-Headers"], "X-Request-Id, Retry-After")
-    assert.equal(response.headers["Cache-Control"], "no-store, max-age=0, must-revalidate")
-    assert.equal(response.headers["X-Request-Id"], "youtube-options-123")
+    assert.equal(
+      response.headers["Access-Control-Expose-Headers"],
+      "X-Request-Id, Retry-After, Content-Range, Accept-Ranges, Content-Length, ETag",
+    )
+    assert.match(response.headers["Access-Control-Allow-Headers"], /range/)
   })
 })

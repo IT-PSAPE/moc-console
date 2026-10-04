@@ -8,7 +8,8 @@ import {
   writeRateLimitUnavailable,
   type RateLimitDecision,
 } from "../rate-limit.js"
-import { getSupabaseAdmin } from "../supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
 import { hasBoundedPublicWakeBody, parsePublicNotificationWake, type PublicNotificationWakeOptions } from "./public-wake-input.js"
 import type { ApiRequest, ApiResponse } from "../http.js"
 
@@ -39,15 +40,11 @@ async function lookupPublicWakeEntity(
   trackingCode: string,
 ): Promise<string | null> {
   const table = ENTITY_TABLES[entityType]
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from(table)
-    .select("id")
-    .eq("id", entityId)
-    .eq("tracking_code", trackingCode)
-    .maybeSingle()
-  if (error) throw new Error(error.message)
-  return typeof data?.id === "string" ? data.id : null
+  const [row] = await queryRows<QueryResultRow & { id: string }>(
+    `SELECT id FROM public.${table} WHERE id = $1 AND tracking_code = $2 LIMIT 1`,
+    [entityId, trackingCode],
+  )
+  return typeof row?.id === "string" ? row.id : null
 }
 
 async function dispatchPublicWake(

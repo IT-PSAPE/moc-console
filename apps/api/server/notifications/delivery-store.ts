@@ -1,4 +1,5 @@
-import { getSupabaseAdmin } from "../supabase-admin.js"
+import { queryRows } from '@moc/backend/database'
+import type { QueryResultRow } from 'pg'
 import { sendTelegramRichMessage } from "../telegram.js"
 import { toRichHtml, type InlineKeyboardMarkup } from "@moc/notifications"
 import { deliverScheduledMessage } from '../scheduled-messages/delivery.js'
@@ -73,54 +74,26 @@ export function deliveryRetryAt(retryAfterSeconds: number | null, now = new Date
 }
 
 export async function enqueueDelivery(input: DeliveryInput): Promise<void> {
-  const admin = getSupabaseAdmin()
   const threadId = input.threadId ?? null
-  const { error } = await admin.from("notification_deliveries").upsert({
-    workspace_id: input.workspaceId,
-    event_key: input.eventKey,
-    event_type: input.eventType,
-    scope: input.scope,
-    route_id: input.routeId ?? null,
-    recipient_user_id: input.recipientUserId ?? null,
-    destination_key: destinationKey(input.scope, input.chatId, threadId),
-    chat_id: input.chatId,
-    thread_id: threadId,
-    text: input.text,
-    payload: input.payload,
-    entity_type: input.entityType ?? null,
-    entity_id: input.entityId ?? null,
-    reply_markup: input.replyMarkup ?? null,
-    parent_delivery_id: input.parentDeliveryId ?? null,
-  }, { onConflict: "event_key,destination_key", ignoreDuplicates: true })
-
-  if (error) throw new Error(error.message)
+  await queryRows(
+    `INSERT INTO public.notification_deliveries
+      (workspace_id,event_key,event_type,scope,route_id,recipient_user_id,destination_key,chat_id,thread_id,text,payload,entity_type,entity_id,reply_markup,parent_delivery_id)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12,$13,$14::jsonb,$15) ON CONFLICT (event_key,destination_key) DO NOTHING`,
+    [input.workspaceId,input.eventKey,input.eventType,input.scope,input.routeId??null,input.recipientUserId??null,destinationKey(input.scope,input.chatId,threadId),input.chatId,threadId,input.text,JSON.stringify(input.payload),input.entityType??null,input.entityId??null,input.replyMarkup===null||input.replyMarkup===undefined?null:JSON.stringify(input.replyMarkup),input.parentDeliveryId??null],
+  )
 }
 
 async function releaseExpiredClaims(): Promise<void> {
   await scheduledRpc('recover_scheduled_deliveries')
-  const admin = getSupabaseAdmin()
-  const expiredBefore = new Date(Date.now() - CLAIM_TIMEOUT_MS).toISOString()
-  const { error } = await admin
-    .from("notification_deliveries")
-    .update({ status: "pending" })
-    .eq("status", "processing")
-    .lt("last_attempt_at", expiredBefore)
-  if (error) throw new Error(error.message)
+  await queryRows("UPDATE public.notification_deliveries SET status='pending' WHERE status='processing' AND last_attempt_at < now() - ($1::bigint * interval '1 millisecond')",[CLAIM_TIMEOUT_MS])
 }
 
 async function claimDelivery(id: string): Promise<DeliveryRow | null> {
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from("notification_deliveries")
-    .update({ status: "processing", last_attempt_at: new Date().toISOString() })
-    .eq("id", id)
-    .eq("status", "pending")
-    .select(
-      "id, workspace_id, event_key, event_type, scope, route_id, recipient_user_id, destination_key, chat_id, thread_id, text, payload, attempt_count, entity_type, entity_id, reply_markup, parent_delivery_id, scheduled_operation",
-    )
-    .maybeSingle()
-  if (error) throw new Error(error.message)
-  return data as DeliveryRow | null
+  const [row] = await queryRows<QueryResultRow & DeliveryRow>(
+    `UPDATE public.notification_deliveries SET status='processing',last_attempt_at=now() WHERE id=$1 AND status='pending'
+     RETURNING id,workspace_id,event_key,event_type,scope,route_id,recipient_user_id,destination_key,chat_id,thread_id,text,payload,attempt_count,entity_type,entity_id,reply_markup,parent_delivery_id,scheduled_operation`,[id],
+  )
+  return row ?? null
 }
 
 // A loud follow-up's reply carries parent_delivery_id — look up that
@@ -129,13 +102,10 @@ async function claimDelivery(id: string): Promise<DeliveryRow | null> {
 // goes out, just without reply_parameters.
 async function replyToMessageId(parentDeliveryId: string | null): Promise<number | null> {
   if (!parentDeliveryId) return null
-  const admin = getSupabaseAdmin()
-  const { data } = await admin
-    .from("notification_deliveries")
-    .select("telegram_message_id")
-    .eq("id", parentDeliveryId)
-    .maybeSingle()
-  return typeof data?.telegram_message_id === "number" ? data.telegram_message_id : null
+  const [row] = await queryRows<QueryResultRow & { telegram_message_id: number | null }>(
+    'SELECT telegram_message_id FROM public.notification_deliveries WHERE id=$1',[parentDeliveryId],
+  )
+  return typeof row?.telegram_message_id === 'number' ? row.telegram_message_id : null
 }
 
 async function sendClaimedDelivery(row: DeliveryRow): Promise<DeliveryRunResult> {
@@ -147,41 +117,15 @@ async function sendClaimedDelivery(row: DeliveryRow): Promise<DeliveryRunResult>
     replyMarkup: row.reply_markup,
     replyToMessageId: await replyToMessageId(row.parent_delivery_id),
   })
-  const admin = getSupabaseAdmin()
-
   if (send.ok) {
-    const { error } = await admin
-      .from("notification_deliveries")
-      .update({
-        status: "sent",
-        attempt_count: row.attempt_count + 1,
-        sent_at: new Date().toISOString(),
-        telegram_message_id: send.result?.message_id ?? null,
-        last_error: null,
-      })
-      .eq("id", row.id)
-      .eq("status", "processing")
-    if (error) throw new Error(error.message)
+    await queryRows("UPDATE public.notification_deliveries SET status='sent',attempt_count=$2,sent_at=now(),telegram_message_id=$3,last_error=NULL WHERE id=$1 AND status='processing'",[row.id,row.attempt_count+1,send.result?.message_id??null])
     result.sent = 1
     return result
   }
 
   const nextAttempt = row.attempt_count + 1
   const terminal = nextAttempt >= MAX_ATTEMPTS
-  const { error } = await admin
-    .from("notification_deliveries")
-    .update({
-      status: terminal ? "failed" : "pending",
-      attempt_count: nextAttempt,
-      // The only guaranteed worker is Vercel's daily cron. A sub-day timestamp
-      // would promise a retry no worker will perform; event-triggered sends are
-      // still attempted immediately when their delivery is first enqueued.
-      next_attempt_at: terminal ? new Date().toISOString() : deliveryRetryAt(send.retryAfterSeconds),
-      last_error: send.description.slice(0, 2_000),
-    })
-    .eq("id", row.id)
-    .eq("status", "processing")
-  if (error) throw new Error(error.message)
+  await queryRows("UPDATE public.notification_deliveries SET status=$2,attempt_count=$3,next_attempt_at=$4,last_error=$5 WHERE id=$1 AND status='processing'",[row.id,terminal?'failed':'pending',nextAttempt,terminal?new Date().toISOString():deliveryRetryAt(send.retryAfterSeconds),send.description.slice(0,2_000)])
   result.failed = 1
   if (!terminal) result.pendingRetry = 1
   return result
@@ -206,27 +150,17 @@ async function processRows(rows: { id: string }[]): Promise<DeliveryRunResult> {
 
 export async function processDeliveriesForEvent(eventKey: string): Promise<DeliveryRunResult> {
   await releaseExpiredClaims()
-  const admin = getSupabaseAdmin()
-  const now = new Date().toISOString()
-  const { data, error } = await admin
-    .from("notification_deliveries")
-    .select("id")
-    .eq("event_key", eventKey)
-    .eq("status", "pending")
-    .lte("next_attempt_at", now)
-  if (error) throw new Error(error.message)
-  return processRows((data ?? []) as { id: string }[])
+  const rows = await queryRows<QueryResultRow & { id: string }>("SELECT id FROM public.notification_deliveries WHERE event_key=$1 AND status='pending' AND next_attempt_at<=now()",[eventKey])
+  return processRows(rows)
 }
 
 async function processDueDeliveries(limit: number, scheduledOnly: boolean): Promise<DeliveryRunResult> {
   await releaseExpiredClaims()
-  const admin = getSupabaseAdmin()
-  const now = new Date().toISOString()
-  let query = admin.from("notification_deliveries").select("id").eq("status", "pending").lte("next_attempt_at", now)
-  if (scheduledOnly) query = query.not("scheduled_occurrence_id", "is", null)
-  const { data, error } = await query.order("created_at", { ascending: true }).limit(limit)
-  if (error) throw new Error(error.message)
-  return processRows((data ?? []) as { id: string }[])
+  const rows = await queryRows<QueryResultRow & { id: string }>(
+    `SELECT id FROM public.notification_deliveries WHERE status='pending' AND next_attempt_at<=now()
+     AND (NOT $2::boolean OR scheduled_occurrence_id IS NOT NULL) ORDER BY created_at LIMIT $1`,[limit,scheduledOnly],
+  )
+  return processRows(rows)
 }
 
 export async function processPendingDeliveries(limit = 100): Promise<DeliveryRunResult> {

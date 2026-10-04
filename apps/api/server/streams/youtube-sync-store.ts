@@ -1,5 +1,5 @@
 import { announceStreamCreated } from "../notifications/created-announcement.js"
-import { getSupabaseAdmin } from "../supabase-admin.js"
+import { queryRows, withActor } from "@moc/backend/database"
 import { proxyYouTubeApiRequest } from "../youtube-api.js"
 import type { StreamReconciliationRow } from "./broadcast-reconciliation.js"
 import type { StreamUpsertRow, YouTubeBroadcastSyncRow } from "./broadcast-row.js"
@@ -87,12 +87,8 @@ export const youTubeSyncStore: YouTubeSyncDependencies = {
     })
   },
   deleteStreams: async (workspaceId, broadcastIds) => {
-    const { error } = await getSupabaseAdmin()
-      .from("streams")
-      .delete()
-      .eq("workspace_id", workspaceId)
-      .in("youtube_broadcast_id", broadcastIds)
-    if (error) throw new Error(error.message)
+    if (broadcastIds.length === 0) return
+    await queryRows("DELETE FROM public.streams WHERE workspace_id=$1 AND youtube_broadcast_id=ANY($2::text[])", [workspaceId, broadcastIds])
   },
   fetchAuthenticatedChannelId: async (workspaceId) => {
     const response = await proxyYouTubeApiRequest({ method: "GET", path: "/channels?part=id&mine=true", workspaceId })
@@ -103,26 +99,37 @@ export const youTubeSyncStore: YouTubeSyncDependencies = {
   fetchCurrentBroadcasts,
   now: () => new Date(),
   readAdoptedStreams: async (workspaceId, broadcastIds) => {
-    const { data, error } = await getSupabaseAdmin()
-      .from("streams")
-      .select("id, youtube_broadcast_id, title, scheduled_start_time, stream_url, notified_at")
-      .eq("workspace_id", workspaceId)
-      .in("youtube_broadcast_id", broadcastIds)
-    if (error) throw new Error(error.message)
-    return (data ?? []) as AdoptedStreamRow[]
+    if (broadcastIds.length === 0) return []
+    return queryRows<AdoptedStreamRow & import("pg").QueryResultRow>(
+      "SELECT id,youtube_broadcast_id,title,scheduled_start_time,stream_url,notified_at FROM public.streams WHERE workspace_id=$1 AND youtube_broadcast_id=ANY($2::text[])",
+      [workspaceId, broadcastIds],
+    )
   },
   readTrackedStreams: async (workspaceId) => {
-    const { data, error } = await getSupabaseAdmin()
-      .from("streams")
-      .select("youtube_broadcast_id, created_by, stream_status, actual_end_time")
-      .eq("workspace_id", workspaceId)
-    if (error) throw new Error(error.message)
-    return (data ?? []) as TrackedStreamRow[]
+    return queryRows<TrackedStreamRow & import("pg").QueryResultRow>(
+      "SELECT youtube_broadcast_id,created_by,stream_status,actual_end_time FROM public.streams WHERE workspace_id=$1", [workspaceId],
+    )
   },
   upsertStreams: async (rows) => {
-    const { error } = await getSupabaseAdmin()
-      .from("streams")
-      .upsert(rows, { onConflict: "workspace_id,youtube_broadcast_id" })
-    if (error) throw new Error(error.message)
+    if (rows.length === 0) return
+    const columns = ["workspace_id", "youtube_broadcast_id", "youtube_stream_id", "title", "description", "thumbnail_url", "privacy_status", "is_for_kids", "scheduled_start_time", "actual_start_time", "actual_end_time", "stream_status", "stream_url", "enable_dvr", "enable_embed", "enable_auto_start", "enable_auto_stop", "latency_preference", "created_by"] as const
+    await withActor({ userId: null, workspaceId: null, role: "moc_worker" }, async (client) => {
+      for (const row of rows) {
+        const values = [row.workspace_id, row.youtube_broadcast_id, row.youtube_stream_id, row.title, row.description, row.thumbnail_url,
+          row.privacy_status, row.is_for_kids, row.scheduled_start_time, row.actual_start_time, row.actual_end_time, row.stream_status,
+          row.stream_url, row.enable_dvr, row.enable_embed, row.enable_auto_start, row.enable_auto_stop, row.latency_preference, row.created_by]
+        const placeholders = values.map((_, index) => `$${index + 1}`).join(",")
+        await client.query(
+          `INSERT INTO public.streams (${columns.join(",")}) VALUES (${placeholders})
+           ON CONFLICT(workspace_id,youtube_broadcast_id) DO UPDATE SET youtube_stream_id=EXCLUDED.youtube_stream_id,
+           title=EXCLUDED.title,description=EXCLUDED.description,thumbnail_url=EXCLUDED.thumbnail_url,privacy_status=EXCLUDED.privacy_status,
+           is_for_kids=EXCLUDED.is_for_kids,scheduled_start_time=EXCLUDED.scheduled_start_time,actual_start_time=EXCLUDED.actual_start_time,
+           actual_end_time=EXCLUDED.actual_end_time,stream_status=EXCLUDED.stream_status,stream_url=EXCLUDED.stream_url,
+           enable_dvr=EXCLUDED.enable_dvr,enable_embed=EXCLUDED.enable_embed,enable_auto_start=EXCLUDED.enable_auto_start,
+           enable_auto_stop=EXCLUDED.enable_auto_stop,latency_preference=EXCLUDED.latency_preference,updated_at=now()`,
+          values,
+        )
+      }
+    })
   },
 }

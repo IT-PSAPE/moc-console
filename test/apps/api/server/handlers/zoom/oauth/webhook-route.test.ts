@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { createZoomOAuthHandler } from "../../../../../../../apps/api/api/zoom/oauth/[action].js"
+import { createZoomOAuthHandler } from "../../../../../../../apps/api/server/routes/zoom-oauth.js"
 import { handleZoomWebhook } from "../../../../../../../apps/api/server/handlers/zoom/oauth/webhook.js"
 import { zoomValidationEncryptedToken, zoomWebhookSignature } from "../../../../../../../apps/api/server/zoom-webhook.js"
 

@@ -4,7 +4,7 @@
 // every field except `hash`, sorted by key, "key=value" joined by "\n"; the
 // hex HMAC_SHA256(key=secret, msg=data_check_string) must equal `hash`.
 //
-// Pure and fully unit-tested — no Supabase, no network.
+// Pure and fully unit-tested — no database or network access.
 
 import { createHmac, timingSafeEqual } from "node:crypto"
 

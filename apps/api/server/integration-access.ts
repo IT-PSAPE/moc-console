@@ -9,7 +9,7 @@ import {
   type IntegrationProvider,
   type StoredIntegrationTokens,
 } from "./integration-oauth-store.js"
-import { getSupabaseAdmin } from "./supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
 import { refreshYouTubeToken, resolveYouTubeOAuthConfig, YouTubeReauthRequiredError } from "./youtube-oauth.js"
 import { refreshZoomToken, resolveZoomOAuthConfig, ZoomReauthRequiredError } from "./zoom-oauth.js"
 
@@ -40,11 +40,14 @@ function connectionTable(provider: IntegrationProvider): "youtube_connections" |
 }
 
 async function syncPublicConnection(provider: IntegrationProvider, workspaceId: string, tokenExpiresAt: string): Promise<void> {
-  const { error } = await getSupabaseAdmin()
-    .from(connectionTable(provider))
-    .update({ status: "active", token_expires_at: tokenExpiresAt })
-    .eq("workspace_id", workspaceId)
-  if (error) console.error(`Unable to update ${provider} connection metadata:`, error)
+  try {
+    await queryRows(
+      `UPDATE public.${connectionTable(provider)} SET status='active',token_expires_at=$2 WHERE workspace_id=$1`,
+      [workspaceId, tokenExpiresAt],
+    )
+  } catch (error) {
+    console.error(`Unable to update ${provider} connection metadata:`, error)
+  }
 }
 
 export type IntegrationReauthDependencies = {

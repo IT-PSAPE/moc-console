@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto"
 import { requireWorkspaceCreateOrEntityOwnership } from "../../../notifications/authorization.js"
 import { allowAuthenticatedNotificationMutation } from "../../../notifications/mutation-rate-limit.js"
 import { enqueueOutboxEvent, processOutboxEvent } from "../../../notifications/outbox.js"
-import { getSupabaseAdmin } from "../../../supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
 import { requireAuthenticatedUser } from "../../../auth-guard.js"
 import { applyCors } from "../../../cors.js"
 import { normaliseHeaders } from "../../../http.js"
@@ -38,13 +39,13 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from("streams")
-    .select("id, workspace_id, title, created_by")
-    .eq("id", body.streamId)
-    .maybeSingle()
-  if (error) {
+  let data: (QueryResultRow & { id: string; workspace_id: string; title: string; created_by: string }) | undefined
+  try {
+    ;[data] = await queryRows<QueryResultRow & { id: string; workspace_id: string; title: string; created_by: string }>(
+      "SELECT id, workspace_id, title, created_by FROM public.streams WHERE id = $1 LIMIT 1",
+      [body.streamId],
+    )
+  } catch (error) {
     console.error("Stream update notification lookup failed:", error)
     response.status(503).json({ error: "Stream lookup is temporarily unavailable" })
     return

@@ -1,5 +1,6 @@
 import { processPendingOutboxForEntityAcrossEventTypes } from "../../../notifications/outbox.js"
-import { getSupabaseAdmin } from "../../../supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
 import { requireAuthenticatedUser } from "../../../auth-guard.js"
 import { applyCors } from "../../../cors.js"
 import { normaliseHeaders } from "../../../http.js"
@@ -50,13 +51,13 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   }
   const { entityType, entityId } = body as { entityType: EntityType; entityId: string }
 
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from(TABLE_BY_ENTITY_TYPE[entityType])
-    .select("workspace_id")
-    .eq("id", entityId)
-    .maybeSingle()
-  if (error) {
+  let data: (QueryResultRow & { workspace_id: string }) | undefined
+  try {
+    ;[data] = await queryRows<QueryResultRow & { workspace_id: string }>(
+      `SELECT workspace_id FROM public.${TABLE_BY_ENTITY_TYPE[entityType]} WHERE id = $1 LIMIT 1`,
+      [entityId],
+    )
+  } catch (error) {
     console.error("Entity-changed workspace lookup failed:", error)
     response.status(503).json({ error: "Lookup is temporarily unavailable" })
     return

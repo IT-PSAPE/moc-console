@@ -7,7 +7,7 @@
 //
 // IO is injected (see FollowUpIO) so the publish/delete/refresh flows —
 // quiet vs loud, the delete fallback, idempotent reply keys — are directly
-// unit-testable against a fake original instead of a live Supabase + Telegram
+// unit-testable against a fake original instead of a live PostgreSQL + Telegram
 // round trip. See follow-ups.test.ts.
 
 import {
@@ -21,7 +21,8 @@ import {
   type NotificationEntityType,
   type TokenValues,
 } from "@moc/notifications"
-import { getSupabaseAdmin } from "../supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
 import { deleteTelegramMessage, editTelegramRichMessage, getTelegramBotUsername, type TelegramSendDetailed } from "../telegram.js"
 import { resolveTemplate } from "./templates.js"
 import { fetchFormatSettings, type FormatSettings } from "./format-settings.js"
@@ -30,7 +31,7 @@ import { enqueueDelivery, processDeliveriesForEvent } from "./delivery-store.js"
 
 export type NotificationEntityRef = { entityType: NotificationEntityType; entityId: string }
 
-export type OriginalRow = {
+export type OriginalRow = QueryResultRow & {
   id: string
   workspace_id: string
   event_type: string
@@ -76,20 +77,15 @@ function logFollowUpFailure(action: string, ref: NotificationEntityRef, error: u
 // filtering by isAnnouncementEvent is needed once entity_type/entity_id and
 // parent_delivery_id are pinned down.
 async function fetchOriginals(entityType: NotificationEntityType, entityId: string): Promise<OriginalRow[]> {
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from("notification_deliveries")
-    .select(
-      "id, workspace_id, event_type, scope, route_id, recipient_user_id, chat_id, thread_id, text, telegram_message_id",
-    )
-    .eq("entity_type", entityType)
-    .eq("entity_id", entityId)
-    .eq("status", "sent")
-    .is("telegram_deleted_at", null)
-    .is("parent_delivery_id", null)
-    .not("telegram_message_id", "is", null)
-  if (error) throw new Error(error.message)
-  return (data ?? []) as OriginalRow[]
+  return queryRows<OriginalRow>(
+    `SELECT id, workspace_id, event_type, scope, route_id, recipient_user_id,
+       chat_id, thread_id, text, telegram_message_id
+     FROM public.notification_deliveries
+     WHERE entity_type = $1 AND entity_id = $2 AND status = 'sent'
+       AND telegram_deleted_at IS NULL AND parent_delivery_id IS NULL
+       AND telegram_message_id IS NOT NULL`,
+    [entityType, entityId],
+  )
 }
 
 async function buildKeyboard(entityType: NotificationEntityType, entityId: string): Promise<InlineKeyboardMarkup | null> {
@@ -103,18 +99,14 @@ async function buildKeyboard(entityType: NotificationEntityType, entityId: strin
 }
 
 async function persistKeyboard(deliveryId: string, keyboard: InlineKeyboardMarkup | null): Promise<void> {
-  const admin = getSupabaseAdmin()
-  const { error } = await admin.from("notification_deliveries").update({ reply_markup: keyboard }).eq("id", deliveryId)
-  if (error) throw new Error(error.message)
+  await queryRows(
+    "UPDATE public.notification_deliveries SET reply_markup = $2::jsonb WHERE id = $1",
+    [deliveryId, keyboard === null ? null : JSON.stringify(keyboard)],
+  )
 }
 
 async function markDeleted(deliveryId: string): Promise<void> {
-  const admin = getSupabaseAdmin()
-  const { error } = await admin
-    .from("notification_deliveries")
-    .update({ telegram_deleted_at: new Date().toISOString() })
-    .eq("id", deliveryId)
-  if (error) throw new Error(error.message)
+  await queryRows("UPDATE public.notification_deliveries SET telegram_deleted_at = now() WHERE id = $1", [deliveryId])
 }
 
 export const defaultFollowUpIO: FollowUpIO = {

@@ -1,6 +1,7 @@
 
 import { handleCallbackQuery, type TelegramCallbackQuery } from "./telegram-callback-query.js"
-import { getSupabaseAdmin } from "./supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
 import { handleScheduledCallback, handleScheduledMessage } from './scheduled-messages/telegram-flow.js'
 import { syncManagementCommands } from './scheduled-messages/commands.js'
 import { syncTelegramGroupCommands } from './telegram-command-menu.js'
@@ -59,66 +60,36 @@ async function sendMessage(chatId: number | string, text: string, options: SendM
   return sendTelegramMessage(chatId, text, options)
 }
 
-function throwIfError(error: { message: string } | null, action: string): void {
-  if (error) throw new Error(`${action}: ${error.message}`)
-}
-
 function isGroup(chat: TelegramChat | undefined): boolean {
   return chat?.type === "group" || chat?.type === "supergroup"
 }
 
-function first<T>(value: T | T[] | null): T | null {
-  return Array.isArray(value) ? value[0] ?? null : value
-}
-
 async function resolveWorkspaceBySlug(slug: string): Promise<ResolvedWorkspace | null> {
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin.from("workspaces").select("id, slug").eq("slug", slug).maybeSingle()
-  throwIfError(error, "Could not resolve workspace")
-  return data
+  const [row] = await queryRows<QueryResultRow & ResolvedWorkspace>("SELECT id,slug FROM public.workspaces WHERE slug=$1",[slug])
+  return row ?? null
 }
 
 async function getRegisteredGroup(chatId: string): Promise<RegisteredGroup | null> {
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from("telegram_groups")
-    .select("workspace_id, workspaces(slug)")
-    .eq("chat_id", chatId)
-    .maybeSingle()
-  throwIfError(error, "Could not load Telegram group")
-
-  if (!data) return null
-  const row = data as { workspace_id: string; workspaces: { slug: string } | { slug: string }[] | null }
-  const workspace = Array.isArray(row.workspaces) ? row.workspaces[0] : row.workspaces
-  return { workspaceId: row.workspace_id, workspaceSlug: workspace?.slug ?? null }
+  const [row] = await queryRows<QueryResultRow & { workspace_id:string;slug:string|null }>(
+    "SELECT g.workspace_id,w.slug FROM public.telegram_groups g LEFT JOIN public.workspaces w ON w.id=g.workspace_id WHERE g.chat_id=$1",[chatId],
+  )
+  return row ? {workspaceId:row.workspace_id,workspaceSlug:row.slug} : null
 }
 
 async function findLinkedTelegramUser(telegramUserId: number | string | undefined): Promise<{ id: string } | null> {
   if (telegramUserId === undefined) return null
-  const { data: user, error: userError } = await getSupabaseAdmin()
-    .from("users")
-    .select("id")
-    .eq("telegram_chat_id", String(telegramUserId))
-    .maybeSingle()
-  throwIfError(userError, "Could not resolve linked Telegram user")
-  return user
+  const [user] = await queryRows<QueryResultRow & {id:string}>("SELECT id FROM public.users WHERE telegram_chat_id=$1",[String(telegramUserId)])
+  return user ?? null
 }
 
 async function senderCanManageWorkspace(message: TelegramMessage, workspaceId: string): Promise<boolean> {
   const user = await findLinkedTelegramUser(message.from?.id)
   if (!user) return false
 
-  const { data: membership, error: membershipError } = await getSupabaseAdmin()
-    .from("workspace_users")
-    .select("roles(can_manage_roles)")
-    .eq("workspace_id", workspaceId)
-    .eq("user_id", user.id)
-    .maybeSingle()
-  throwIfError(membershipError, "Could not check workspace permission")
-
-  type MembershipRow = { roles: ManagerRole | ManagerRole[] | null }
-  const roles = first((membership as MembershipRow | null)?.roles ?? null)
-  return roles?.can_manage_roles === true
+  const [membership] = await queryRows<QueryResultRow & ManagerRole>(
+    "SELECT r.can_manage_roles FROM public.workspace_users w JOIN public.roles r ON r.id=w.role_id WHERE w.workspace_id=$1 AND w.user_id=$2",[workspaceId,user.id],
+  )
+  return membership?.can_manage_roles === true
 }
 
 async function rejectUnauthorizedSender(message: TelegramMessage, workspaceId: string, chatId: number | string, threadId?: number): Promise<boolean> {
@@ -145,12 +116,7 @@ async function handleMyChatMember(update: TelegramChatMemberUpdated): Promise<vo
     return
   }
 
-  const admin = getSupabaseAdmin()
-  const { error } = await admin
-    .from("telegram_groups")
-    .update({ removed_at: new Date().toISOString() })
-    .eq("chat_id", String(chat.id))
-  throwIfError(error, "Could not mark Telegram group as removed")
+  await queryRows("UPDATE public.telegram_groups SET active=false,removed_at=now(),updated_at=now() WHERE chat_id=$1",[String(chat.id)])
 }
 
 async function refreshGroupCommands(chatId: string, workspaceId?: string, userId?: string): Promise<void> {
@@ -193,16 +159,11 @@ async function handleRegisterGroupCommand(message: TelegramMessage): Promise<boo
   if (await rejectUnauthorizedSender(message, workspace.id, chatId, threadId)) return true
   if (existing && existing.workspaceId !== workspace.id && await rejectUnauthorizedSender(message, existing.workspaceId, chatId, threadId)) return true
 
-  const admin = getSupabaseAdmin()
-  const { error } = await admin.from("telegram_groups").upsert({
-    chat_id: String(chatId),
-    title: chat.title ?? "",
-    type: chat.type,
-    is_forum: chat.is_forum ?? false,
-    workspace_id: workspace.id,
-    removed_at: null,
-  }, { onConflict: "chat_id" })
-  throwIfError(error, "Could not register Telegram group")
+  await queryRows(
+    `INSERT INTO public.telegram_groups(chat_id,title,type,is_forum,workspace_id,removed_at,active)
+     VALUES($1,$2,$3,$4,$5,NULL,false) ON CONFLICT(chat_id) DO UPDATE SET title=EXCLUDED.title,type=EXCLUDED.type,is_forum=EXCLUDED.is_forum,workspace_id=EXCLUDED.workspace_id,removed_at=NULL,updated_at=now()`,
+    [String(chatId),chat.title??"",chat.type,chat.is_forum??false,workspace.id],
+  )
 
   await refreshGroupCommands(String(chatId), workspace.id)
   await sendMessage(chatId, `✅ Registered "${chat.title ?? "this group"}" to workspace "${workspace.slug}".`, { threadId })
@@ -217,28 +178,20 @@ async function handleForumTopicMessage(message: TelegramMessage): Promise<boolea
 
   const groupChatId = String(chat.id)
   if (!await getRegisteredGroup(groupChatId)) return true
-  const admin = getSupabaseAdmin()
-
   if (message.forum_topic_created) {
-    const { error } = await admin.from("telegram_group_topics").upsert({
-      group_chat_id: groupChatId,
-      thread_id: threadId,
-      name: message.forum_topic_created.name ?? "",
-      closed: false,
-    }, { onConflict: "group_chat_id,thread_id" })
-    throwIfError(error, "Could not record Telegram topic")
+    await queryRows(
+      `INSERT INTO public.telegram_group_topics(group_chat_id,thread_id,name,closed) VALUES($1,$2,$3,false)
+       ON CONFLICT(group_chat_id,thread_id) DO UPDATE SET name=EXCLUDED.name,closed=false,updated_at=now()`,
+      [groupChatId,threadId,message.forum_topic_created.name??""],
+    )
     return true
   }
 
-  const update = message.forum_topic_edited
-    ? { name: message.forum_topic_edited.name ?? "" }
-    : { closed: !message.forum_topic_reopened }
-  const { error } = await admin
-    .from("telegram_group_topics")
-    .update(update)
-    .eq("group_chat_id", groupChatId)
-    .eq("thread_id", threadId)
-  throwIfError(error, "Could not update Telegram topic")
+  if (message.forum_topic_edited) {
+    await queryRows("UPDATE public.telegram_group_topics SET name=$3,updated_at=now() WHERE group_chat_id=$1 AND thread_id=$2",[groupChatId,threadId,message.forum_topic_edited.name??""])
+  } else {
+    await queryRows("UPDATE public.telegram_group_topics SET closed=$3,updated_at=now() WHERE group_chat_id=$1 AND thread_id=$2",[groupChatId,threadId,!message.forum_topic_reopened])
+  }
   return true
 }
 
@@ -287,28 +240,17 @@ async function handleRegisterTopicCommand(message: TelegramMessage): Promise<boo
     registerParentGroup = true
   }
 
-  const admin = getSupabaseAdmin()
   if (registerParentGroup) {
-    const { error } = await admin.from("telegram_groups").insert({
-      chat_id: groupChatId,
-      title: chat.title ?? "",
-      type: chat.type,
-      is_forum: chat.is_forum ?? true,
-      workspace_id: workspace.id,
-      removed_at: null,
-    })
-    throwIfError(error, "Could not register Telegram group")
+    await queryRows("INSERT INTO public.telegram_groups(chat_id,title,type,is_forum,workspace_id,active) VALUES($1,$2,$3,$4,$5,false)",[groupChatId,chat.title??"",chat.type,chat.is_forum??true,workspace.id])
   }
 
   const sent = await sendMessage(chatId, "Registering topic…", { threadId, replyToMessageId: threadId })
   const resolvedName = sent?.reply_to_message?.forum_topic_created?.name?.trim()
-  const { error } = await admin.from("telegram_group_topics").upsert({
-    group_chat_id: groupChatId,
-    thread_id: threadId,
-    name: resolvedName || `Topic #${threadId}`,
-    closed: false,
-  }, { onConflict: "group_chat_id,thread_id" })
-  throwIfError(error, "Could not register Telegram topic")
+  await queryRows(
+    `INSERT INTO public.telegram_group_topics(group_chat_id,thread_id,name,closed) VALUES($1,$2,$3,false)
+     ON CONFLICT(group_chat_id,thread_id) DO UPDATE SET name=EXCLUDED.name,closed=false,updated_at=now()`,
+    [groupChatId,threadId,resolvedName||`Topic #${threadId}`],
+  )
 
   await refreshGroupCommands(groupChatId, workspace.id)
   if (sent?.message_id !== undefined) {
@@ -331,17 +273,20 @@ async function handleStartCommand(message: TelegramMessage): Promise<void> {
     return
   }
 
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin.rpc("consume_telegram_link_token", {
-    p_token: token,
-    p_telegram_chat_id: String(chatId),
-  })
-  if (error?.code === "23505") {
-    await sendMessage(chatId, "This Telegram account is already linked to another MOC Console user. Unlink it there first.")
-    return
+  let linkedResult: string | null
+  try {
+    const [result] = await queryRows<QueryResultRow & { result:string }>(
+      "SELECT public.consume_telegram_link_token($1::text,$2::text) AS result",[token,String(chatId)],
+    )
+    linkedResult=result?.result??null
+  } catch (error) {
+    if (error && typeof error==='object' && 'code' in error && error.code==='23505') {
+      await sendMessage(chatId, "This Telegram account is already linked to another MOC Console user. Unlink it there first.")
+      return
+    }
+    throw error
   }
-  throwIfError(error, "Could not link Telegram account")
-  if (data !== "linked") {
+  if (linkedResult !== "linked") {
     await sendMessage(chatId, "That link is invalid or has already been used. Open MOC Console and click \"Link Telegram\" again.")
     return
   }

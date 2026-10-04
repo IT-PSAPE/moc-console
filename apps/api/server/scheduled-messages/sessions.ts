@@ -1,33 +1,49 @@
 import type { InlineKeyboardButton, InlineKeyboardMarkup } from '@moc/notifications'
-import { getSupabaseAdmin } from '../supabase-admin.js'
+import { queryRows } from '@moc/backend/database'
+import type { QueryResultRow } from 'pg'
 import { deleteTelegramEphemeralMessage, editTelegramEphemeralMessage, sendTelegramEphemeralMessage } from '../telegram.js'
 import { authorizeManagement, linkedUser } from './store.js'
 import type { MessageSession, SessionData } from './types.js'
 
+type DatabaseSession = QueryResultRow & Omit<MessageSession,'ephemeral_message_id'> & {ephemeral_message_id:number|string|null}
+
+function mapSession(row:DatabaseSession):MessageSession {
+  const messageId=row.ephemeral_message_id===null?null:Number(row.ephemeral_message_id)
+  if(messageId!==null&&!Number.isSafeInteger(messageId)) throw new Error('Scheduled message session contains an invalid Telegram message ID')
+  return {...row,ephemeral_message_id:messageId}
+}
+
 export async function createSession(input: Omit<MessageSession,'id'|'expires_at'|'ephemeral_message_id'>): Promise<MessageSession> {
   // One atomic upsert rotates the session ID, invalidating old controls even
   // when two flow starts race in the same chat.
-  const admin=getSupabaseAdmin()
-  const previous=await admin.from('scheduled_message_sessions').select('*').eq('telegram_user_id',input.telegram_user_id).eq('chat_id',input.chat_id).maybeSingle()
-  if(previous.error) throw new Error(previous.error.message)
-  if(previous.data) await clearSession(previous.data as MessageSession)
-  const retained=(previous.data as MessageSession | null)?.data.transientMessageIds??[]
-  const {data,error}=await admin.from('scheduled_message_sessions').upsert({...input,data:{...input.data,transientMessageIds:retained},id:crypto.randomUUID(),ephemeral_message_id:null,expires_at:new Date(Date.now()+15*60_000).toISOString()},{onConflict:'telegram_user_id,chat_id'}).select('*').single()
-  if(error) throw new Error(error.message)
-  return data as MessageSession
+  const [previousRow]=await queryRows<DatabaseSession>("SELECT * FROM public.scheduled_message_sessions WHERE telegram_user_id=$1 AND chat_id=$2",[input.telegram_user_id,input.chat_id])
+  const previous=previousRow?mapSession(previousRow):undefined
+  if(previous) await clearSession(previous)
+  const retained=previous?.data.transientMessageIds??[]
+  const [row]=await queryRows<DatabaseSession>(
+    `INSERT INTO public.scheduled_message_sessions (id,user_id,telegram_user_id,workspace_id,chat_id,thread_id,ephemeral_message_id,occurrence_id,kind,data,expires_at)
+     VALUES ($1,$2,$3,$4,$5,$6,NULL,$7,$8,$9::jsonb,now()+interval '15 minutes')
+     ON CONFLICT (telegram_user_id,chat_id) DO UPDATE SET id=EXCLUDED.id,user_id=EXCLUDED.user_id,workspace_id=EXCLUDED.workspace_id,thread_id=EXCLUDED.thread_id,ephemeral_message_id=NULL,occurrence_id=EXCLUDED.occurrence_id,kind=EXCLUDED.kind,data=EXCLUDED.data,expires_at=EXCLUDED.expires_at
+     RETURNING *`,[crypto.randomUUID(),input.user_id,input.telegram_user_id,input.workspace_id,input.chat_id,input.thread_id,input.occurrence_id,input.kind,JSON.stringify({...input.data,transientMessageIds:retained})])
+  if(!row) throw new Error('Could not create scheduled message session')
+  return mapSession(row)
 }
 export async function ownedSession(id: string,telegramId: string,chatId: string,ephemeralId: number|undefined): Promise<MessageSession> {
-  const {data,error}=await getSupabaseAdmin().from('scheduled_message_sessions').select('*').eq('id',id).eq('telegram_user_id',telegramId).eq('chat_id',chatId).gt('expires_at',new Date().toISOString()).single()
-  if(error || !data) throw new Error('This flow has ended. Restart it from the group message or /manage_messages.')
-  const s=data as MessageSession
+  const [row]=await queryRows<DatabaseSession>("SELECT * FROM public.scheduled_message_sessions WHERE id=$1 AND telegram_user_id=$2 AND chat_id=$3 AND expires_at>now()",[id,telegramId,chatId])
+  if(!row) throw new Error('This flow has ended. Restart it from the group message or /manage_messages.')
+  const s=mapSession(row)
   if(s.ephemeral_message_id===null || s.ephemeral_message_id!==ephemeralId) throw new Error('This control belongs to another interaction.')
   if(await linkedUser(telegramId)!==s.user_id) throw new Error('Your Telegram link has changed. Restart the flow.')
   if(s.kind==='admin') await authorizeManagement(s.user_id,s.workspace_id)
   return s
 }
 export async function saveSession(s: MessageSession,changes: Partial<Pick<MessageSession,'data'|'occurrence_id'|'ephemeral_message_id'>>): Promise<void> {
-  const {error}=await getSupabaseAdmin().from('scheduled_message_sessions').update(changes).eq('id',s.id)
-  if(error) throw new Error(error.message)
+  await queryRows(
+    `UPDATE public.scheduled_message_sessions SET data=coalesce($2::jsonb,data),
+     occurrence_id=CASE WHEN $3::boolean THEN $4::uuid ELSE occurrence_id END,
+     ephemeral_message_id=CASE WHEN $5::boolean THEN $6::bigint ELSE ephemeral_message_id END WHERE id=$1`,
+    [s.id,changes.data===undefined?null:JSON.stringify(changes.data),changes.occurrence_id!==undefined,changes.occurrence_id??null,changes.ephemeral_message_id!==undefined,changes.ephemeral_message_id??null],
+  )
   Object.assign(s,changes)
 }
 export function sessionButton(s: MessageSession,text: string,action: string): InlineKeyboardButton {
@@ -51,15 +67,14 @@ export async function promptSession(s: MessageSession,current: string,field: str
   await saveSession(s,{data:{...s.data,transientMessageIds:[...(s.data.transientMessageIds??[]),sent.result.ephemeral_message_id],stage:'input',promptId:sent.result.ephemeral_message_id}})
 }
 export async function replySession(telegramId: string,chatId: string,promptId: number): Promise<MessageSession> {
-  const {data,error}=await getSupabaseAdmin().from('scheduled_message_sessions').select('*').eq('telegram_user_id',telegramId).eq('chat_id',chatId).gt('expires_at',new Date().toISOString()).contains('data',{promptId,stage:'input'}).single()
-  if(error || !data) throw new Error('This input has expired. Restart the flow.')
-  const s=data as MessageSession
+  const [row]=await queryRows<DatabaseSession>("SELECT * FROM public.scheduled_message_sessions WHERE telegram_user_id=$1 AND chat_id=$2 AND expires_at>now() AND data @> $3::jsonb",[telegramId,chatId,JSON.stringify({promptId,stage:'input'})])
+  if(!row) throw new Error('This input has expired. Restart the flow.')
+  const s=mapSession(row)
   return ownedSession(s.id,telegramId,chatId,s.ephemeral_message_id??undefined)
 }
 export async function finishSession(s: MessageSession,text: string,rows: InlineKeyboardButton[][]=[]): Promise<void> {
   await showSession(s,text,rows)
-  const {error}=await getSupabaseAdmin().from('scheduled_message_sessions').delete().eq('id',s.id)
-  if(error) throw new Error(error.message)
+  await queryRows('DELETE FROM public.scheduled_message_sessions WHERE id=$1',[s.id])
 }
 export async function setDraft(s: MessageSession,data: SessionData): Promise<void> {
   await saveSession(s,{data:{...data,transientMessageIds:s.data.transientMessageIds}})
@@ -83,7 +98,6 @@ export async function clearSession(s: MessageSession): Promise<void> {
     await saveSession(s,{ephemeral_message_id:null,data:{transientMessageIds:remaining}})
     return
   }
-  const {error}=await getSupabaseAdmin().from('scheduled_message_sessions').delete().eq('id',s.id)
-  if(error) throw new Error(error.message)
+  await queryRows('DELETE FROM public.scheduled_message_sessions WHERE id=$1',[s.id])
   Object.assign(s,{ephemeral_message_id:null,data:{}})
 }

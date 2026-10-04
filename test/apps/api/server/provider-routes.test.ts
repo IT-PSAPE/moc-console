@@ -1,8 +1,8 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { YOUTUBE_ROUTES } from "../../../../apps/api/api/youtube/v3/[...path].js"
-import { ZOOM_ROUTES } from "../../../../apps/api/api/zoom/v2/[...path].js"
+import { YOUTUBE_ROUTES } from "../../../../apps/api/server/routes/youtube-proxy.js"
+import { ZOOM_ROUTES } from "../../../../apps/api/server/routes/zoom-proxy.js"
 import { authorizeProviderRoute } from "../../../../apps/api/server/provider-route-policy.js"
 
 // The shapes the console actually sends, checked against the real rule tables.

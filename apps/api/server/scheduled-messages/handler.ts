@@ -2,7 +2,8 @@ import { validateScheduledBody, validateScheduledFields, validateScheduledAttend
 import { requireAuthenticatedUser, AuthError } from '../auth-guard.js'
 import { applyCors, isAllowedOrigin } from '../cors.js'
 import { headerValue, normaliseHeaders, type ApiRequest, type ApiResponse } from '../http.js'
-import { getSupabaseAdmin } from '../supabase-admin.js'
+import { queryRows } from '@moc/backend/database'
+import type { PoolClient, QueryResultRow } from 'pg'
 import { WorkspaceAccessError } from '../workspace-access.js'
 import { authorizeManagement, changeOccurrence, deleteOccurrence, getOccurrence, listActive, scheduledRpc, sendOccurrence, resendOccurrence } from './store.js'
 import { syncOccurrence, syncWorkspace } from './worker.js'
@@ -22,26 +23,25 @@ function uuid(value: unknown): string {
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw new Error('Invalid ID')
   return id
 }
-async function snapshot(workspace: string): Promise<unknown> {
-  const admin=getSupabaseAdmin()
-  const occurrences=await listActive(workspace)
-  const results=await Promise.all([
-    admin.from('scheduled_message_templates').select('*').eq('workspace_id',workspace).is('deleted_at',null).order('name'),
-    admin.from('scheduled_message_schedules').select('*').eq('workspace_id',workspace),
-    admin.from('workspace_member_types').select('*').eq('workspace_id',workspace).order('name'),
-    admin.from('telegram_groups').select('chat_id,title,telegram_group_topics(thread_id,name,closed)').eq('workspace_id',workspace).eq('active',true).is('removed_at',null),
-    admin.from('workspace_users').select('user_id,member_type_id,users!inner(name,surname,telegram_chat_id)').eq('workspace_id',workspace).not('users.telegram_chat_id','is',null),
+export async function scheduledSnapshot(workspace: string,client?:PoolClient,materialize=true): Promise<unknown> {
+  const occurrences=await listActive(workspace,undefined,client,materialize)
+  const [templates,schedules,memberTypes,groups,members]=await Promise.all([
+    queryRows<QueryResultRow>('SELECT * FROM public.scheduled_message_templates WHERE workspace_id=$1 AND deleted_at IS NULL ORDER BY name',[workspace],client),
+    queryRows<QueryResultRow>('SELECT * FROM public.scheduled_message_schedules WHERE workspace_id=$1',[workspace],client),
+    queryRows<QueryResultRow>('SELECT * FROM public.workspace_member_types WHERE workspace_id=$1 ORDER BY name',[workspace],client),
+    queryRows<QueryResultRow & { topics: unknown[] }>(
+      `SELECT g.chat_id,g.title,coalesce(jsonb_agg(jsonb_build_object('thread_id',t.thread_id,'name',t.name,'closed',t.closed)) FILTER (WHERE t.thread_id IS NOT NULL),'[]'::jsonb) AS topics
+       FROM public.telegram_groups g LEFT JOIN public.telegram_group_topics t ON t.group_chat_id=g.chat_id
+       WHERE g.workspace_id=$1 AND g.active AND g.removed_at IS NULL GROUP BY g.chat_id,g.title`,[workspace],client),
+    queryRows<QueryResultRow & { user_id:string;member_type_id:string;name:string;surname:string }>(
+      `SELECT w.user_id,w.member_type_id,u.name,u.surname FROM public.workspace_users w JOIN public.users u ON u.id=w.user_id
+       WHERE w.workspace_id=$1 AND nullif(btrim(u.telegram_chat_id),'') IS NOT NULL`,[workspace],client),
   ])
-  for(const r of results) if(r.error) throw new Error(r.error.message)
-  type MemberProfile = {name:string;surname:string;telegram_chat_id:string|null}
-  type MemberRow = {user_id:string;member_type_id:string;users:MemberProfile|MemberProfile[]|null}
-  const members=((results[4].data ?? []) as unknown as MemberRow[]).flatMap(row => {
-    const user=Array.isArray(row.users)?row.users[0]:row.users
-    return user?.telegram_chat_id?.trim()?[{id:row.user_id,memberTypeId:row.member_type_id,name:`${user.name} ${user.surname}`.trim()}]:[]
-  })
-  return {occurrences,templates:results[0].data,schedules:results[1].data,memberTypes:results[2].data,groups:results[3].data,members}
+  const normalizedGroups=groups.map(({ topics,...group })=>({...group,telegram_group_topics:topics}))
+  const normalizedMembers=members.map(row=>({id:row.user_id,memberTypeId:row.member_type_id,name:`${row.name} ${row.surname}`.trim()}))
+  return {occurrences,templates,schedules,memberTypes,groups:normalizedGroups,members:normalizedMembers}
 }
-async function mutate(actor: string,workspace: string,body: Record<string,unknown>): Promise<void> {
+export async function mutateScheduledMessages(actor: string,workspace: string,body: Record<string,unknown>,client?:PoolClient): Promise<void> {
   const data=object(body.data)
   if(body.op==='template.save') {
     if(data.id!==undefined) uuid(data.id)
@@ -51,41 +51,41 @@ async function mutate(actor: string,workspace: string,body: Record<string,unknow
     validateScheduledFields(messageType,data.fields)
     validateScheduledBody(messageType,string(data.body))
     const attendanceGroups=validateScheduledAttendanceGroups(messageType,data.attendanceGroups??[])
-    await scheduledRpc('save_scheduled_template',{p_actor:actor,p_workspace:workspace,p_data:{...data,attendanceGroups}})
+    await scheduledRpc('save_scheduled_template',{p_actor:actor,p_workspace:workspace,p_data:{...data,attendanceGroups}},client)
   } else if(body.op==='template.delete') {
-    await scheduledRpc('delete_scheduled_template',{p_actor:actor,p_workspace:workspace,p_id:uuid(data.id)})
+    await scheduledRpc('delete_scheduled_template',{p_actor:actor,p_workspace:workspace,p_id:uuid(data.id)},client)
   } else if(body.op==='schedule.create') {
     uuid(data.templateId)
-    await scheduledRpc('create_scheduled_schedule',{p_actor:actor,p_workspace:workspace,p_data:data})
+    await scheduledRpc('create_scheduled_schedule',{p_actor:actor,p_workspace:workspace,p_data:data},client)
   } else if(body.op==='commands.sync') {
     const result=await syncManagementCommands(workspace)
     if(result.failed) throw new Error(`Telegram could not update ${result.failed} command menus. The daily worker will retry.`)
   } else {
     const id=uuid(data.id)
-    const occurrence=await getOccurrence(id)
+    const occurrence=await getOccurrence(id,client)
     if(occurrence.workspace_id!==workspace) throw new WorkspaceAccessError('Message belongs to another workspace')
     if(body.op==='occurrence.delete') {
       if(!Number.isInteger(data.revision)) throw new Error('Invalid revision')
       const scope=string(data.scope) as EditScope
       if(!['occurrence','future','series'].includes(scope)) throw new Error('Invalid delete scope')
-      const deleted=await deleteOccurrence(actor,id,data.revision as number,scope)
+      const deleted=await deleteOccurrence(actor,id,data.revision as number,scope,client)
       for(const target of deleted) await syncOccurrence(target)
       for(const target of deleted) {
-        const result=await getOccurrence(target)
+        const result=await getOccurrence(target,client)
         if(result.last_sync_error) throw new Error(`Message cancelled in Console; Telegram cleanup failed: ${result.last_sync_error}. Retry deletion.`)
       }
       return
     }
-    if(body.op==='occurrence.send') await sendOccurrence(actor,id)
+    if(body.op==='occurrence.send') await sendOccurrence(actor,id,client)
     else if(body.op==='occurrence.resend') {
       if(!Number.isInteger(data.revision)) throw new Error('Invalid revision')
-      await resendOccurrence(actor,id,data.revision as number)
+      await resendOccurrence(actor,id,data.revision as number,client)
     }
     else if(body.op==='occurrence.edit') {
       if(!Number.isInteger(data.revision)) throw new Error('Invalid revision')
       const scope=string(data.scope) as EditScope
       if(!['occurrence','future','series'].includes(scope)) throw new Error('Invalid edit scope')
-      await changeOccurrence(actor,id,data.revision as number,string(data.field),typeof data.value==='string'?data.value:string(data.value),scope)
+      await changeOccurrence(actor,id,data.revision as number,string(data.field),typeof data.value==='string'?data.value:string(data.value),scope,client)
     } else throw new Error('Unknown operation')
     await syncOccurrence(id)
     if(body.op==='occurrence.edit' && data.scope!=='occurrence') await syncWorkspace(workspace)
@@ -105,10 +105,10 @@ export async function handleScheduledMessages(request: ApiRequest,response: ApiR
     const body=request.method==='POST'?object(request.body):{}
     const workspace=uuid(request.method==='GET'?request.query?.workspaceId:body.workspaceId)
     await authorizeManagement(actor.userId,workspace)
-    if(request.method==='POST') await mutate(actor.userId,workspace,body)
-    response.status(200).json(await snapshot(workspace))
+    if(request.method==='POST') await mutateScheduledMessages(actor.userId,workspace,body)
+    response.status(200).json(await scheduledSnapshot(workspace))
   } catch(error) {
-    const status=error instanceof AuthError?401:error instanceof WorkspaceAccessError?403:400
+    const status=error instanceof AuthError?401:error instanceof WorkspaceAccessError||(error instanceof Error&&error.message==='Not authorised')?403:400
     response.status(status).json({error:error instanceof Error?error.message:'Scheduled message operation failed'})
   }
 }

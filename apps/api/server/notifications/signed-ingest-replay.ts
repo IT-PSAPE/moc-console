@@ -6,13 +6,18 @@ import {
   writeRateLimitExceeded,
   writeRateLimitUnavailable,
 } from "../rate-limit.js"
-import { getSupabaseAdmin } from "../supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
 import type { ApiRequest, ApiResponse } from "../http.js"
 import { isUuid } from "./signed-ingest.js"
 
 const MAX_SIGNATURE_AGE_SECONDS = 5 * 60
 const REPLAY_TTL_SECONDS = 10 * 60
 const UNIX_TIMESTAMP_PATTERN = /^\d{10}$/
+
+export type SignedIngestReplayStore = {
+  claim: (metadata: SignedIngestMetadata) => Promise<boolean>
+}
 
 export type SignedIngestMetadata = {
   nonce: string
@@ -38,14 +43,35 @@ export function parseSignedIngestMetadata(
   }
 }
 
-export async function claimSignedIngestNonce(metadata: SignedIngestMetadata): Promise<boolean> {
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin.rpc("claim_notification_ingest_nonce", {
-    p_nonce: metadata.nonce,
-    p_expires_at: metadata.expiresAt,
-  })
-  if (error) throw new Error("Notification replay claim failed")
-  return data === true
+const postgresReplayStore: SignedIngestReplayStore = {
+  async claim(metadata): Promise<boolean> {
+    const rows = await queryRows<QueryResultRow & { claimed: boolean }>(
+      `WITH expired AS (
+         DELETE FROM public.notification_ingest_replays
+         WHERE nonce = $1 AND expires_at <= now()
+         RETURNING nonce
+       ), inserted AS (
+         INSERT INTO public.notification_ingest_replays (nonce, expires_at)
+         SELECT $1, $2::timestamptz
+         WHERE (SELECT count(*) FROM expired) >= 0
+         ON CONFLICT (nonce) DO NOTHING
+         RETURNING true AS claimed
+       )
+       SELECT coalesce((SELECT claimed FROM inserted), false) AS claimed`,
+      [metadata.nonce, metadata.expiresAt],
+    )
+    if (rows.length !== 1 || typeof rows[0]?.claimed !== "boolean") {
+      throw new Error("Notification replay claim failed")
+    }
+    return rows[0].claimed
+  },
+}
+
+export async function claimSignedIngestNonce(
+  metadata: SignedIngestMetadata,
+  store: SignedIngestReplayStore = postgresReplayStore,
+): Promise<boolean> {
+  return store.claim(metadata)
 }
 
 export function signedIngestRateLimitSubject(request: ApiRequest, entityType: "booking" | "request"): string {

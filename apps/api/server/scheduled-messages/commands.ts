@@ -1,14 +1,13 @@
-import { getSupabaseAdmin } from '../supabase-admin.js'
+import { queryRows } from '@moc/backend/database'
+import type { QueryResultRow } from 'pg'
 import { syncTelegramGroupCommands } from '../telegram-command-menu.js'
 
 export async function syncManagementCommands(workspaceId?:string,userId?:string): Promise<{failed: number}> {
-  const admin=getSupabaseAdmin()
-  let groupQuery=admin.from('telegram_groups').select('chat_id,workspace_id').eq('active',true).is('removed_at',null)
-  if(workspaceId) groupQuery=groupQuery.eq('workspace_id',workspaceId)
-  const {data:groups,error}=await groupQuery
-  if(error) throw new Error(error.message)
+  const groups=await queryRows<QueryResultRow & { chat_id: string; workspace_id: string }>(
+    'SELECT chat_id,workspace_id FROM public.telegram_groups WHERE active AND removed_at IS NULL AND ($1::uuid IS NULL OR workspace_id=$1)',[workspaceId??null],
+  )
   let failed=0
-  for(const group of groups??[]) {
+  for(const group of groups) {
     failed += (await syncTelegramGroupCommands(group.chat_id, group.workspace_id, userId)).failed
   }
   return {failed}

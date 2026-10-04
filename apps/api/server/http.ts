@@ -9,13 +9,17 @@ export type ApiRequest = {
   url?: string
   query?: Record<string, string | string[] | undefined>
   headers?: Record<string, string | string[] | undefined>
+  [Symbol.asyncIterator]?: () => AsyncIterator<Uint8Array | string>
 }
 
 export type ApiResponse = {
   status: (code: number) => ApiResponse
   json: (body: unknown) => void
-  setHeader: (name: string, value: string) => void
+  setHeader: (name: string, value: string | string[]) => void
   end?: (body?: unknown) => void
+  write?: (chunk: Uint8Array | string) => boolean
+  once?: (event: "drain" | "close", listener: () => void) => unknown
+  statusCode?: number
 }
 
 export function headerValue(

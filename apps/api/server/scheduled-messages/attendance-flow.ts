@@ -1,5 +1,6 @@
 import { ARRIVAL_TIME_PATTERN, validateScheduledAttendanceGroups } from '@moc/notifications'
-import { getSupabaseAdmin } from '../supabase-admin.js'
+import { queryRows } from '@moc/backend/database'
+import type { QueryResultRow } from 'pg'
 import { assertActive, getOccurrence, getResponses, respondAttendance } from './store.js'
 import { clearSession, promptSession, sessionButton, setDraft, showSession } from './sessions.js'
 import { syncOccurrence } from './worker.js'
@@ -9,8 +10,8 @@ export async function attendanceOccurrence(s: MessageSession): Promise<Occurrenc
   const o=await getOccurrence(s.occurrence_id!)
   assertActive(o)
   if(o.state!=='sent' || o.message_type!=='pre_attendance') throw new Error('Attendance is closed')
-  const {data,error}=await getSupabaseAdmin().from('workspace_users').select('user_id').eq('workspace_id',o.workspace_id).eq('user_id',s.user_id).single()
-  if(error || !data || o.workspace_id!==s.workspace_id) throw new Error('You are not a member of this workspace')
+  const [membership]=await queryRows<QueryResultRow & { user_id: string }>('SELECT user_id FROM public.workspace_users WHERE workspace_id=$1 AND user_id=$2',[o.workspace_id,s.user_id])
+  if(!membership || o.workspace_id!==s.workspace_id) throw new Error('You are not a member of this workspace')
   if(!(await getResponses(o.id)).some(r=>r.user_id===s.user_id)) throw new Error('You are not in this attendance roster')
   if(s.data.revision !== undefined && s.data.revision !== o.revision) throw new Error('The message changed. Restart your response before submitting.')
   validateScheduledAttendanceGroups(o.message_type,o.attendance_groups??[])

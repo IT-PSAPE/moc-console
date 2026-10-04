@@ -1,38 +1,23 @@
-import { getSupabaseAdmin } from "./supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
 
 export type WorkspacePermission = "can_create" | "can_read" | "can_update" | "can_delete" | "can_manage_roles"
+export type WorkspaceWritePermission = WorkspacePermission | "can_write"
+type RoleRow = Record<WorkspacePermission, boolean>
+type WorkspacePermissionQuery = <Row extends QueryResultRow>(text: string, values: readonly unknown[]) => Promise<Row[]>
 
-type RoleRow = {
-  roles: Record<WorkspacePermission, boolean> | Record<WorkspacePermission, boolean>[] | null
-}
-
-function first<T>(value: T | T[] | null): T | null {
-  return Array.isArray(value) ? value[0] ?? null : value
-}
-
-export async function requireWorkspacePermission(
-  userId: string,
-  workspaceId: string,
-  permission: WorkspacePermission,
-): Promise<void> {
-  const admin = getSupabaseAdmin()
-  const { data: membership, error: membershipError } = await admin
-    .from("workspace_users")
-    .select("roles(can_create, can_read, can_update, can_delete, can_manage_roles)")
-    .eq("workspace_id", workspaceId)
-    .eq("user_id", userId)
-    .maybeSingle()
-
-  if (membershipError) throw new Error(membershipError.message)
-  if (!membership) throw new WorkspaceAccessError("Not a member of this workspace")
-
-  const role = first((membership as RoleRow | null)?.roles ?? null)
-  if (!role?.[permission]) throw new WorkspaceAccessError("Insufficient workspace permission")
+export async function requireWorkspacePermission(userId: string, workspaceId: string, permission: WorkspaceWritePermission, query: WorkspacePermissionQuery = queryRows): Promise<void> {
+  const [role] = await query<RoleRow>(
+    `SELECT r.can_create, r.can_read, r.can_update, r.can_delete, r.can_manage_roles
+     FROM public.workspace_users m JOIN public.roles r ON r.id = m.role_id
+     WHERE m.workspace_id = $1::uuid AND m.user_id = $2::uuid`, [workspaceId, userId],
+  )
+  if (!role) throw new WorkspaceAccessError("Not a member of this workspace")
+  // The operation transaction still applies distinct INSERT/UPDATE RLS policies.
+  const allowed = permission === "can_write" ? role.can_create || role.can_update : role[permission]
+  if (!allowed) throw new WorkspaceAccessError("Insufficient workspace permission")
 }
 
 export class WorkspaceAccessError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = "WorkspaceAccessError"
-  }
+  constructor(message: string) { super(message); this.name = "WorkspaceAccessError" }
 }

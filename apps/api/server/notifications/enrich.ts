@@ -1,5 +1,5 @@
 // Server-side token enrichment. Given an entity id, read the full row
-// from the shared Supabase DB (service-role admin client, bypasses RLS)
+// from the shared PostgreSQL database
 // and project it onto the composable token names declared in
 // @moc/notifications' template token catalogs.
 //
@@ -7,7 +7,8 @@
 // so the caller falls back to the event payload — a DB hiccup must
 // never silence a notification.
 
-import { getSupabaseAdmin } from "../supabase-admin.js";
+import { queryRows } from "@moc/backend/database";
+import type { QueryResultRow } from "pg";
 import { telegramStatusLabel, type TokenValues } from "@moc/notifications";
 
 // Date tokens are emitted as raw ISO and localised at the render
@@ -23,28 +24,31 @@ function yesNo(v: boolean | null | undefined): string {
   return v ? "Yes" : "No";
 }
 
-function relatedName(value: { name: unknown } | { name: unknown }[] | null): string | null {
-  const relation = Array.isArray(value) ? value[0] : value;
-  return typeof relation?.name === "string" ? relation.name : null;
-}
-
 export async function enrichRequest(requestId: string, options?: { throwOnError?: boolean }): Promise<TokenValues> {
   try {
-    const admin = getSupabaseAdmin();
-    const { data, error } = await admin
-      .from("requests")
-      .select(
-        "title, status, priority, category, requested_by, due_date, created_at, updated_at, tracking_code, who, what, when_text, where_text, why, how, notes, flow, request_categories!requests_workspace_category_fkey(name)",
-      )
-      .eq("id", requestId)
-      .maybeSingle();
-    if (error) throw new Error("Request enrichment failed");
+    type RequestRow = QueryResultRow & {
+      title: string; status: string; priority: string | null; category: string | null; requested_by: string | null;
+      due_date: string | null; created_at: string; updated_at: string; tracking_code: string | null; who: string | null;
+      what: string | null; when_text: string | null; where_text: string | null; why: string | null; how: string | null;
+      notes: string | null; flow: string | null; category_name: string | null;
+    };
+    const [data] = await queryRows<RequestRow>(
+      `SELECT request.title, request.status, request.priority, request.category, request.requested_by,
+         request.due_date, request.created_at, request.updated_at, request.tracking_code, request.who,
+         request.what, request.when_text, request.where_text, request.why, request.how, request.notes,
+         request.flow, category.name AS category_name
+       FROM public.requests AS request
+       LEFT JOIN public.request_categories AS category
+         ON category.workspace_id = request.workspace_id AND category.key = request.category
+       WHERE request.id = $1 LIMIT 1`,
+      [requestId],
+    );
     if (!data) return {};
     return {
       title: data.title,
       status: telegramStatusLabel("request", data.status),
       priority: data.priority,
-      category: relatedName(data.request_categories) ?? data.category,
+      category: data.category_name ?? data.category,
       requesterName: data.requested_by,
       requestedBy: data.requested_by,
       dueDate: fmtDate(data.due_date),
@@ -68,41 +72,28 @@ export async function enrichRequest(requestId: string, options?: { throwOnError?
 
 export async function enrichChecklistItem(itemId: string, options?: { throwOnError?: boolean }): Promise<TokenValues> {
   try {
-    const admin = getSupabaseAdmin();
-    const { data: item, error: itemError } = await admin
-      .from("checklist_items")
-      .select("label, checked, checklist_id, section_id")
-      .eq("id", itemId)
-      .maybeSingle();
-    if (itemError) throw new Error("Checklist item enrichment failed");
-    if (!item) return {};
-
-    const { data: checklist, error: checklistError } = await admin
-      .from("checklists")
-      .select("name, description, scheduled_at")
-      .eq("id", item.checklist_id)
-      .maybeSingle();
-    if (checklistError) throw new Error("Checklist enrichment failed");
-    if (!checklist) return {};
-
-    let sectionName = "";
-    if (item.section_id) {
-      const { data: section, error: sectionError } = await admin
-        .from("checklist_sections")
-        .select("name")
-        .eq("id", item.section_id)
-        .maybeSingle();
-      if (sectionError) throw new Error("Checklist section enrichment failed");
-      sectionName = section?.name ?? "";
-    }
+    type ChecklistRow = QueryResultRow & {
+      label: string; checked: boolean; checklist_name: string; checklist_description: string | null;
+      scheduled_at: string | null; section_name: string | null;
+    };
+    const [row] = await queryRows<ChecklistRow>(
+      `SELECT item.label, item.checked, checklist.name AS checklist_name,
+         checklist.description AS checklist_description, checklist.scheduled_at, section.name AS section_name
+       FROM public.checklist_items AS item
+       JOIN public.checklists AS checklist ON checklist.id = item.checklist_id
+       LEFT JOIN public.checklist_sections AS section ON section.id = item.section_id
+       WHERE item.id = $1 LIMIT 1`,
+      [itemId],
+    );
+    if (!row) return {};
 
     return {
-      title: item.label,
-      checklistName: checklist.name,
-      checklistDescription: checklist.description,
-      checklistScheduledAt: fmtDate(checklist.scheduled_at),
-      sectionName,
-      itemChecked: yesNo(item.checked),
+      title: row.label,
+      checklistName: row.checklist_name,
+      checklistDescription: row.checklist_description,
+      checklistScheduledAt: fmtDate(row.scheduled_at),
+      sectionName: row.section_name ?? "",
+      itemChecked: yesNo(row.checked),
     };
   } catch (error) {
     if (options?.throwOnError) throw error;
@@ -110,7 +101,7 @@ export async function enrichChecklistItem(itemId: string, options?: { throwOnErr
   }
 }
 
-type BookingRow = {
+type BookingRow = QueryResultRow & {
   booked_by: string;
   status: string;
   checked_out_at: string | null;
@@ -118,7 +109,11 @@ type BookingRow = {
   returned_at: string | null;
   notes: string | null;
   tracking_code: string;
-  equipment: { name: string; category: string; location: string; serial_number: string } | null;
+  equipment_name: string | null;
+  equipment_category: string | null;
+  equipment_location: string | null;
+  equipment_serial_number: string | null;
+  equipment_names: string[] | null;
 };
 
 // A tracking_code can cover a batch of bookings (non-unique by design),
@@ -129,18 +124,28 @@ export async function enrichBooking(
   workspaceId: string,
 ): Promise<TokenValues> {
   try {
-    const admin = getSupabaseAdmin();
-    const { data } = await admin
-      .from("bookings")
-      .select(
-        "booked_by, status, checked_out_at, expected_return_at, returned_at, notes, tracking_code, equipment:equipment_id(name, category, location, serial_number)",
-      )
-      .eq("workspace_id", workspaceId)
-      .eq("tracking_code", trackingCode);
-    const rows = (data ?? []) as unknown as BookingRow[];
+    const rows = await queryRows<BookingRow>(
+       `SELECT booking.booked_by, booking.status, booking.checked_out_at, booking.expected_return_at,
+         booking.returned_at, booking.notes, booking.tracking_code, equipment.name AS equipment_name,
+         equipment.category AS equipment_category, equipment.location AS equipment_location,
+         equipment.serial_number AS equipment_serial_number, equipment.names AS equipment_names
+       FROM public.bookings AS booking
+       LEFT JOIN LATERAL (
+         SELECT min(item.name) AS name, (array_agg(item.category::text ORDER BY item.name))[1] AS category,
+           min(item.location) AS location,
+           min(item.serial_number) AS serial_number,
+           array_agg(item.name ORDER BY item.name) FILTER (WHERE item.name IS NOT NULL) AS names
+         FROM public.booking_items AS booking_item
+         JOIN public.equipment AS item ON item.id = booking_item.equipment_id
+         WHERE booking_item.booking_id = booking.id
+       ) AS equipment ON true
+       WHERE booking.workspace_id = $1 AND booking.tracking_code = $2
+       ORDER BY booking.created_at ASC`,
+      [workspaceId, trackingCode],
+    );
     if (rows.length === 0) return {};
     const first = rows[0];
-    const names = rows.map((r) => r.equipment?.name).filter(Boolean) as string[];
+    const names = rows.flatMap((row) => row.equipment_names ?? []);
     return {
       status: telegramStatusLabel("booking", first.status),
       requesterName: first.booked_by,
@@ -151,11 +156,11 @@ export async function enrichBooking(
       notes: first.notes,
       trackingCode: first.tracking_code,
       itemCount: String(rows.length),
-      equipmentName: first.equipment?.name ?? "",
+      equipmentName: first.equipment_name ?? "",
       equipmentNames: names.join(", "),
-      equipmentCategory: first.equipment?.category ?? "",
-      equipmentLocation: first.equipment?.location ?? "",
-      equipmentSerial: first.equipment?.serial_number ?? "",
+      equipmentCategory: first.equipment_category ?? "",
+      equipmentLocation: first.equipment_location ?? "",
+      equipmentSerial: first.equipment_serial_number ?? "",
     };
   } catch {
     return {};
@@ -164,14 +169,17 @@ export async function enrichBooking(
 
 export async function enrichStream(streamId: string): Promise<TokenValues> {
   try {
-    const admin = getSupabaseAdmin();
-    const { data } = await admin
-      .from("streams")
-      .select(
-        "title, description, scheduled_start_time, actual_start_time, stream_status, privacy_status, is_for_kids, latency_preference, tags, created_at, stream_url",
-      )
-      .eq("id", streamId)
-      .maybeSingle();
+    type StreamRow = QueryResultRow & {
+      title: string; description: string | null; scheduled_start_time: string | null; actual_start_time: string | null;
+      stream_status: string | null; privacy_status: string | null; is_for_kids: boolean | null;
+      latency_preference: string | null; tags: string[] | null; created_at: string; stream_url: string | null;
+    };
+    const [data] = await queryRows<StreamRow>(
+      `SELECT title, description, scheduled_start_time, actual_start_time, stream_status, privacy_status,
+         is_for_kids, latency_preference, tags, created_at, stream_url
+       FROM public.streams WHERE id = $1 LIMIT 1`,
+      [streamId],
+    );
     if (!data) return {};
     return {
       title: data.title,
@@ -191,9 +199,7 @@ export async function enrichStream(streamId: string): Promise<TokenValues> {
   }
 }
 
-type VenueBookingRelation<T> = T | T[] | null;
-
-type VenueBookingRow = {
+type VenueBookingRow = QueryResultRow & {
   title: string;
   requested_by: string;
   tracking_code: string;
@@ -206,8 +212,9 @@ type VenueBookingRow = {
   cancelled_at: string | null;
   recurrence: unknown;
   venue_booking_slots: Array<{ occurrence_index: number; slot_start: string; slot_end: string }>;
-  venues: VenueBookingRelation<{ name: string; description: string | null }>;
-  venue_events: VenueBookingRelation<{ name: string }>;
+  venue_name: string | null;
+  venue_description: string | null;
+  event_name: string | null;
 };
 
 function venueRecurrenceSummary(value: unknown): string | undefined {
@@ -256,43 +263,43 @@ export function deriveVenueBookingSeriesStatus(
   return status === "approved" ? "approved" : "booked";
 }
 
-// PostgREST returns an embedded row as an object or, for some relationship
-// shapes, a one-element array. Both mean the same single related row.
-function firstRelated<T>(relation: VenueBookingRelation<T>): T | null {
-  if (Array.isArray(relation)) return relation[0] ?? null;
-  return relation;
-}
-
 // Looked up by id (venue_bookings.id === notification_outbox.entity_id),
 // the same identifier enrichRequest uses. Series status is derived from the
 // concrete occurrences so gaps between repeat dates remain "booked".
 export async function enrichVenueBooking(venueBookingId: string, options?: { throwOnError?: boolean }): Promise<TokenValues> {
   try {
-    const admin = getSupabaseAdmin();
-    const { data, error } = await admin
-      .from("venue_bookings")
-      .select(
-        "title, requested_by, tracking_code, event_other, notes, status, starts_at, ends_at, recurrence, cancel_reason, cancelled_at, venue_booking_slots(occurrence_index, slot_start, slot_end), venues:venue_id(name, description), venue_events:event_id(name)",
-      )
-      .eq("id", venueBookingId)
-      .maybeSingle();
-    if (error) throw new Error("Venue booking enrichment failed");
+    const [data] = await queryRows<VenueBookingRow>(
+      `SELECT booking.title, booking.requested_by, booking.tracking_code, booking.event_other, booking.notes,
+         booking.status, booking.starts_at, booking.ends_at, booking.recurrence, booking.cancel_reason,
+         booking.cancelled_at, venue.name AS venue_name, venue.description AS venue_description,
+         event.name AS event_name,
+         coalesce(slots.rows, '[]'::jsonb) AS venue_booking_slots
+       FROM public.venue_bookings AS booking
+       LEFT JOIN public.venues AS venue ON venue.id = booking.venue_id
+       LEFT JOIN public.venue_events AS event ON event.id = booking.event_id
+       LEFT JOIN LATERAL (
+         SELECT jsonb_agg(jsonb_build_object('occurrence_index', slot.occurrence_index,
+           'slot_start', slot.slot_start, 'slot_end', slot.slot_end)
+           ORDER BY slot.occurrence_index, slot.slot_start) AS rows
+         FROM public.venue_booking_slots AS slot WHERE slot.venue_booking_id = booking.id
+       ) AS slots ON true
+       WHERE booking.id = $1 LIMIT 1`,
+      [venueBookingId],
+    );
     if (!data) return {};
-    const row = data as unknown as VenueBookingRow;
-    const venue = firstRelated(row.venues);
-    const event = firstRelated(row.venue_events);
+    const row = data;
     const occurrenceCount = new Set(row.venue_booking_slots.map((slot) => slot.occurrence_index)).size;
     const repeatPattern = venueRecurrenceSummary(row.recurrence);
     return {
       title: row.title,
       requesterName: row.requested_by,
       trackingCode: row.tracking_code,
-      venueName: venue?.name,
-      venueDescription: venue?.description,
+      venueName: row.venue_name ?? undefined,
+      venueDescription: row.venue_description ?? undefined,
       // A booking either points at a workspace event or carries the
       // submitter's own "Other" description. Both answer "what is this for",
       // so one token reports whichever is set.
-      eventName: event?.name ?? row.event_other ?? undefined,
+      eventName: row.event_name ?? row.event_other ?? undefined,
       startsAt: fmtDate(row.starts_at),
       endsAt: fmtDate(row.ends_at),
       notes: row.notes,
@@ -314,14 +321,16 @@ export async function enrichVenueBooking(venueBookingId: string, options?: { thr
 
 export async function enrichMeeting(meetingId: string): Promise<TokenValues> {
   try {
-    const admin = getSupabaseAdmin();
-    const { data } = await admin
-      .from("zoom_meetings")
-      .select(
-        "topic, description, start_time, duration, timezone, meeting_type, waiting_room, recurrence_type, created_at, join_url",
-      )
-      .eq("id", meetingId)
-      .maybeSingle();
+    type MeetingRow = QueryResultRow & {
+      topic: string; description: string | null; start_time: string | null; duration: number | null;
+      timezone: string | null; meeting_type: string | null; waiting_room: boolean | null;
+      recurrence_type: string | null; created_at: string; join_url: string | null;
+    };
+    const [data] = await queryRows<MeetingRow>(
+      `SELECT topic, description, start_time, duration, timezone, meeting_type, waiting_room,
+         recurrence_type, created_at, join_url FROM public.zoom_meetings WHERE id = $1 LIMIT 1`,
+      [meetingId],
+    );
     if (!data) return {};
     return {
       topic: data.topic,

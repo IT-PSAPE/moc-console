@@ -2,13 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
 import { IntegrationStoreError } from "../../../../../apps/api/server/integration-oauth-store.js"
-import {
-  listUsableYouTubeConnections,
-  listUsableZoomConnections,
-  readActiveYouTubeConnections,
-  readActiveZoomConnections,
-  type ConnectionTableReader,
-} from "../../../../../apps/api/server/streams/provider-connections.js"
+import { listUsableYouTubeConnections, listUsableZoomConnections } from "../../../../../apps/api/server/streams/provider-connections.js"
 
 describe("listUsableYouTubeConnections", () => {
   it("yields the channel and connecting user a sweep needs, without a second read", async () => {
@@ -63,53 +57,5 @@ describe("listUsableZoomConnections", () => {
     })
 
     assert.deepEqual(usable.connections, [{ connectedBy: "user-1", workspaceId: "workspace-1", zoomConnectionId: "zoom-connection-1" }])
-  })
-})
-
-/**
- * Stands in for the admin client so the filter the readers apply is observable.
- * Rows are stored with every column, including the `status` a caller is meant to
- * filter on, so a reader that stopped filtering would return them all.
- */
-function tableReader(rowsByTable: Record<string, Array<Record<string, string>>>): ConnectionTableReader {
-  return (table) => ({
-    select: () => ({
-      eq: async (column, value) => ({
-        data: (rowsByTable[table] ?? []).filter((row) => row[column] === value),
-        error: null,
-      }),
-    }),
-  })
-}
-
-describe("readActiveYouTubeConnections", () => {
-  it("leaves a workspace that needs to reconnect out of the sweep entirely", async () => {
-    const rows = await readActiveYouTubeConnections(tableReader({
-      youtube_connections: [
-        { workspace_id: "workspace-1", channel_id: "channel-1", connected_by: "user-1", status: "active" },
-        { workspace_id: "workspace-2", channel_id: "channel-2", connected_by: "user-2", status: "reauth_required" },
-      ],
-    }))
-
-    assert.deepEqual(rows.map((row) => row.workspace_id), ["workspace-1"])
-  })
-
-  it("surfaces a failed read instead of reporting an empty estate", async () => {
-    await assert.rejects(readActiveYouTubeConnections(() => ({
-      select: () => ({ eq: async () => ({ data: null, error: { message: "connection list unavailable" } }) }),
-    })), /connection list unavailable/)
-  })
-})
-
-describe("readActiveZoomConnections", () => {
-  it("leaves a workspace that needs to reconnect out of the sweep entirely", async () => {
-    const rows = await readActiveZoomConnections(tableReader({
-      zoom_connections: [
-        { workspace_id: "workspace-1", id: "zoom-connection-1", connected_by: "user-1", status: "active" },
-        { workspace_id: "workspace-2", id: "zoom-connection-2", connected_by: "user-2", status: "reauth_required" },
-      ],
-    }))
-
-    assert.deepEqual(rows.map((row) => row.workspace_id), ["workspace-1"])
   })
 })

@@ -20,7 +20,7 @@ export function hashRateLimitSubject(parts: readonly string[]): string {
 
 /**
  * Hashes request-derived and domain identifiers together. Raw IP addresses are
- * kept in-process only and never sent to Supabase or logged by this module.
+ * kept in-process only and never sent to the database or logged by this module.
  */
 export function hashRateLimitRequestSubject(request: ApiRequest, parts: readonly string[]): string {
   const forwardedFor = headerValue(request.headers, "x-forwarded-for")

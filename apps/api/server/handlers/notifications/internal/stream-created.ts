@@ -2,7 +2,8 @@ import { announceStreamCreated, NotificationStateError } from "../../../notifica
 import { requireWorkspaceCreateOrEntityOwnership } from "../../../notifications/authorization.js"
 import { DestinationInputError, parseNotificationDestinations } from "../../../notifications/destination-input.js"
 import { allowAuthenticatedNotificationMutation } from "../../../notifications/mutation-rate-limit.js"
-import { getSupabaseAdmin } from "../../../supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
 import { requireAuthenticatedUser } from "../../../auth-guard.js"
 import { applyCors } from "../../../cors.js"
 import { normaliseHeaders } from "../../../http.js"
@@ -33,13 +34,14 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from("streams")
-    .select("id, workspace_id, title, scheduled_start_time, stream_url, created_by")
-    .eq("id", body.streamId)
-    .maybeSingle()
-  if (error) {
+  let data: (QueryResultRow & { id: string; workspace_id: string; title: string; scheduled_start_time: string | null; stream_url: string | null; created_by: string }) | undefined
+  try {
+    ;[data] = await queryRows<QueryResultRow & { id: string; workspace_id: string; title: string; scheduled_start_time: string | null; stream_url: string | null; created_by: string }>(
+      `SELECT id, workspace_id, title, scheduled_start_time, stream_url, created_by
+       FROM public.streams WHERE id = $1 LIMIT 1`,
+      [body.streamId],
+    )
+  } catch (error) {
     console.error("Stream notification lookup failed:", error)
     response.status(503).json({ error: "Stream lookup is temporarily unavailable" })
     return

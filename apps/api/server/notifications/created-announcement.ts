@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from "../supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
 import type { NotifyDestination } from "./dispatch.js"
 import { enqueueOutboxEvent, processOutboxEvent, type OutboxRunResult } from "./outbox.js"
 
@@ -54,12 +54,15 @@ async function announceCreatedEntity({ entityId, entityType, eventType, payload,
   const eventKey = `${eventType}:${entityId}`
   await enqueueOutboxEvent({ workspaceId, eventType, entityType, entityId, eventKey, payload })
 
-  const { error } = await getSupabaseAdmin()
-    .from(table)
-    .update({ notified_at: new Date().toISOString() })
-    .eq("id", entityId)
-    .is("notified_at", null)
-  if (error) throw new NotificationStateError(error)
+  try {
+    await queryRows(
+      `UPDATE public.${table} SET notified_at = now()
+       WHERE id = $1 AND workspace_id = $2 AND notified_at IS NULL`,
+      [entityId, workspaceId],
+    )
+  } catch (error) {
+    throw new NotificationStateError(error)
+  }
 
   return processOutboxEvent(eventKey)
 }

@@ -8,6 +8,14 @@ export function routeParameterValue(request: ApiRequest, name: string): string |
   return Array.isArray(value) ? value[0] ?? null : value
 }
 
+export function routeParameterSegments(request: ApiRequest, name: string): string[] {
+  const value = request.query?.[name]
+  if (Array.isArray(value)) return value.flatMap((segment) => segment.split("/")).filter(Boolean)
+  if (typeof value === "string") return value.split("/").filter(Boolean)
+  const pathname = new URL(request.url ?? "/", "http://localhost").pathname
+  return pathname.split("/").filter(Boolean)
+}
+
 export async function dispatchNamedRoute(
   request: ApiRequest,
   response: ApiResponse,

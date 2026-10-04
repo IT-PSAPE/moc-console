@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from "../supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
 import { getTelegramBotUsername } from "../telegram.js"
 import {
   buildNotificationKeyboard,
@@ -138,15 +138,23 @@ async function resolveAnnouncementTargets<K extends NotificationEventKey>(
     return targets
   }
 
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from("notification_routes")
-    .select("id, group_chat_id, thread_id, user_id, telegram_groups(active, removed_at), users(telegram_chat_id)")
-    .eq("workspace_id", workspaceId)
-    .eq("event_type", eventType)
-    .eq("enabled", true)
-
-  if (error) {
+  let data: RouteRow[]
+  try {
+    data = await queryRows<RouteRow>(
+      `SELECT route.id, route.group_chat_id, route.thread_id, route.user_id,
+         CASE WHEN groups.chat_id IS NULL THEN NULL
+           ELSE jsonb_build_object('active', groups.active, 'removed_at', groups.removed_at) END AS telegram_groups,
+         CASE WHEN target_user.id IS NULL THEN NULL
+           ELSE jsonb_build_object('telegram_chat_id', target_user.telegram_chat_id) END AS users
+       FROM public.notification_routes AS route
+       LEFT JOIN public.telegram_groups AS groups
+         ON groups.workspace_id = route.workspace_id AND groups.chat_id = route.group_chat_id
+       LEFT JOIN public.users AS target_user ON target_user.id = route.user_id
+       WHERE route.workspace_id = $1 AND route.event_type = $2 AND route.enabled = true`,
+      [workspaceId, eventType],
+    )
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
     await logDeliveryFailure({
       workspaceId,
       eventType,
@@ -154,14 +162,14 @@ async function resolveAnnouncementTargets<K extends NotificationEventKey>(
       groupChatId: "",
       threadId: null,
       errorCode: null,
-      description: `Route lookup failed: ${error.message}`,
+      description: `Route lookup failed: ${message}`,
       payload,
     })
-    throw new Error(`Route lookup failed: ${error.message}`)
+    throw new Error(`Route lookup failed: ${message}`)
   }
 
   const targets: Target[] = []
-  for (const r of (data ?? []) as unknown as RouteRow[]) {
+  for (const r of data) {
     if (r.group_chat_id !== null) {
       const group = Array.isArray(r.telegram_groups) ? r.telegram_groups[0] : r.telegram_groups
       if (group?.active === true && !group.removed_at) {

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { assignmentEventKey } from "../../../../apps/api/api/notifications/assignment.js"
+import { assignmentEventKey } from "../../../../apps/api/server/routes/notifications/assignment.js"
 import {
   DEFAULT_TEMPLATES,
   DM_MESSAGE_TYPES,

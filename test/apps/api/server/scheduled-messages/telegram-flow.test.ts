@@ -1,18 +1,19 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it as bunIt } from "bun:test"
+import type { QueryResultRow } from 'pg'
+import { runWithSqlFixture, setSqlFixture } from '../sql-fixture.js'
 
-import { handleScheduledCallback, handleScheduledMessage } from "../../../../../apps/api/server/scheduled-messages/telegram-flow.js"
+function it(name: string, test: () => Promise<void>): void {
+  bunIt(name, () => runWithSqlFixture(test))
+}
+const { handleScheduledCallback, handleScheduledMessage } = await import('../../../../../apps/api/server/scheduled-messages/telegram-flow.js')
 
 type RecordedCall = { url: string; method: string; body: Record<string, unknown> | null }
 type FixtureOptions = { frequency?: string; state?: string; expiresAt?: string; messageType?: string; requireArrival?: boolean; withEditDelivery?: boolean; attendanceGroups?: Array<{ id: string; label: string }>; failDeletion?: boolean }
 
 function createFixture(options: FixtureOptions = {}) {
   const previousFetch = globalThis.fetch
-  const previousUrl = process.env.VITE_SUPABASE_URL
-  const previousKey = process.env.SUPABASE_SECRET_KEY
   const previousTelegramToken = process.env.TELEGRAM_BOT_TOKEN
-  process.env.VITE_SUPABASE_URL = "https://supabase.test"
-  process.env.SUPABASE_SECRET_KEY = "test-service-key"
   process.env.TELEGRAM_BOT_TOKEN = "test-bot-token"
 
   const calls: RecordedCall[] = []
@@ -56,7 +57,60 @@ function createFixture(options: FixtureOptions = {}) {
   let nextRegularMessageId = 800
   let activeDeliveryMode = options.withEditDelivery === true
 
-  const noRows = () => new Response(JSON.stringify({ code: "PGRST116", message: "No rows" }), { status: 406 })
+  const sqlQuery = async (text:string,values:readonly unknown[]):Promise<QueryResultRow[]> => {
+    if(text.includes('public.scheduled_message_sessions')) {
+      if(text.startsWith('INSERT')) {
+        const session:Record<string,unknown>={id:values[0],user_id:values[1],telegram_user_id:values[2],workspace_id:values[3],chat_id:values[4],thread_id:values[5],ephemeral_message_id:null,occurrence_id:values[6],kind:values[7],data:JSON.parse(String(values[8])),expires_at:new Date(Date.now()+15*60_000).toISOString()}
+        for(const [id,old] of sessions) if(old.telegram_user_id===session.telegram_user_id&&old.chat_id===session.chat_id) sessions.delete(id)
+        sessions.set(String(session.id),session);return [session as QueryResultRow]
+      }
+      if(text.startsWith('UPDATE')) {
+        const current=sessions.get(String(values[0]));if(!current)return []
+        if(values[2]===true)current.occurrence_id=values[3]
+        if(values[4]===true)current.ephemeral_message_id=values[5]
+        if(values[1]!==null)current.data=JSON.parse(String(values[1]))
+        return []
+      }
+      if(text.startsWith('DELETE')) { sessions.delete(String(values[0]));return [] }
+      let current:Record<string,unknown>|undefined
+      if(text.includes('data @>')) {
+        const filter=JSON.parse(String(values[2])) as Record<string,unknown>
+        current=[...sessions.values()].find(item=>item.telegram_user_id===values[0]&&item.chat_id===values[1]&&Date.parse(String(item.expires_at))>Date.now()&&Object.entries(filter).every(([key,value])=>(item.data as Record<string,unknown>)[key]===value))
+      } else if(text.includes('WHERE telegram_user_id=$1')) current=[...sessions.values()].find(item=>item.telegram_user_id===values[0]&&item.chat_id===values[1])
+      else current=sessions.get(String(values[0]))
+      if(!text.includes('data @>') && !text.includes('WHERE telegram_user_id=$1') && current&&(current.telegram_user_id!==values[1]||current.chat_id!==values[2]))return []
+      return current&&Date.parse(String(current.expires_at))>Date.now()?[current as QueryResultRow]:[]
+    }
+    if(text.includes('FROM public.users WHERE telegram_chat_id'))return [{id:'user-1'} as QueryResultRow]
+    if(text.includes('FROM public.telegram_groups'))return [{workspace_id:'workspace-1'} as QueryResultRow]
+    if(text.includes('FROM public.workspace_users'))return [{user_id:'user-1',allowed:true} as QueryResultRow]
+    if(text.includes('FROM public.scheduled_message_occurrences'))return [{...occurrence} as QueryResultRow]
+    if(text.includes('FROM public.scheduled_message_schedules'))return [{...schedule} as QueryResultRow]
+    if(text.includes('FROM public.scheduled_message_responses'))return responses as QueryResultRow[]
+    if(text.startsWith('UPDATE public.notification_deliveries')&&text.includes('RETURNING id,workspace_id'))return activeDeliveryMode?[{id:'delivery-edit',workspace_id:'workspace-1',event_key:'edit-event',event_type:null,scope:'group',route_id:null,recipient_user_id:null,destination_key:'group:-100123:22',chat_id:'-100123',thread_id:22,text:'ignored',payload:{},attempt_count:0,entity_type:null,entity_id:null,reply_markup:null,parent_delivery_id:null,scheduled_operation:'edit'} as QueryResultRow]:[]
+    if(text.includes('FROM public.notification_deliveries'))return activeDeliveryMode?[{id:'delivery-edit',event_key:'edit-event'} as QueryResultRow]:[]
+    return []
+  }
+  const sqlRpc = async(text:string,values:readonly unknown[]):Promise<QueryResultRow[]> => {
+    if(text.includes('SELECT EXISTS(SELECT 1 FROM public.workspace_users'))return [{allowed:true} as QueryResultRow]
+    const name=text.match(/public\.([a-z_]+)\s*\(/)?.[1]??'unknown'
+    const body:Record<string,unknown>={}
+    const argumentNames:Record<string,string[]>={
+      begin_scheduled_delivery:['p_delivery'],finish_scheduled_delivery:['p_delivery','p_revision','p_message','p_error','p_ambiguous'],
+      respond_scheduled_attendance:['p_actor','p_id','p_revision','p_status','p_arrival','p_group'],
+      change_scheduled_occurrence:['p_actor','p_id','p_revision','p_field','p_value','p_scope'],
+      request_scheduled_send:['p_actor','p_id'],request_scheduled_resend:['p_actor','p_id','p_revision'],
+      delete_scheduled_occurrence:['p_actor','p_id','p_revision','p_scope'],
+    }
+    for(const [index,key] of (argumentNames[name]??[]).entries())body[key]=values[index]
+    rpcCalls.push({name,body})
+    if(name==='begin_scheduled_delivery')return [{result:{timezone:schedule.timezone,occurrence:{...occurrence},responses:responses.map(response=>({...response})),expired:Date.parse(String(occurrence.expires_at))<=Date.now()}} as QueryResultRow]
+    if(name==='respond_scheduled_attendance') {const selected=responses.find(response=>response.user_id===values[0]);if(selected){selected.status=String(values[3]);selected.arrival_time=typeof values[4]==='string'?String(values[4]):null;selected.group_id=typeof values[5]==='string'?String(values[5]):null}}
+    if(name==='change_scheduled_occurrence') {const fields=occurrence.fields as Record<string,string>;if(values[3]==='expiresAt')occurrence.expires_at=String(values[4]);else fields[String(values[3])]=String(values[4]);occurrence.revision=Number(occurrence.revision)+1}
+    return [{[name]:null} as QueryResultRow]
+  }
+  setSqlFixture({queryRows:sqlQuery,queryActor:sqlRpc})
+
   const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { "Content-Type": "application/json" } })
 
   globalThis.fetch = async (input, init) => {
@@ -78,109 +132,7 @@ function createFixture(options: FixtureOptions = {}) {
       return json({ ok: false, error_code: 500, description: `Unexpected Telegram method ${telegramMethod}` }, 500)
     }
 
-    const requestUrl = new URL(url)
-    const path = requestUrl.pathname
-    if (path.includes("/rpc/")) {
-      const name = path.split("/").pop() ?? ""
-      rpcCalls.push({ name, body: body ?? {} })
-      if (name === "begin_scheduled_delivery") {
-        return json({
-          timezone: schedule.timezone,
-          occurrence: { ...occurrence },
-          responses: responses.map(response => ({ ...response })),
-          expired: Date.parse(String(occurrence.expires_at)) <= Date.now(),
-        })
-      }
-      if (name === "respond_scheduled_attendance") {
-        const selected = responses.find(response => response.user_id === body?.p_actor)
-        if (selected) {
-          selected.status = String(body?.p_status)
-          selected.arrival_time = typeof body?.p_arrival === "string" ? body.p_arrival : null
-          selected.group_id = typeof body?.p_group === "string" ? body.p_group : null
-        }
-      }
-      if (name === "change_scheduled_occurrence") {
-        const fields = occurrence.fields as Record<string, string>
-        if (body?.p_field === 'expiresAt') occurrence.expires_at = String(body?.p_value)
-        else fields[String(body?.p_field)] = String(body?.p_value)
-        occurrence.revision = Number(occurrence.revision) + 1
-      }
-      if (name === "materialize_scheduled_messages" || name === "recover_scheduled_deliveries") return new Response("null", { status: 200 })
-      return new Response("null", { status: 200 })
-    }
-
-    if (path.endsWith("/scheduled_message_sessions")) {
-      if (method === "POST") {
-        const input = body ?? {}
-        for (const [id, existing] of sessions) {
-          if (existing.telegram_user_id === input.telegram_user_id && existing.chat_id === input.chat_id) sessions.delete(id)
-        }
-        const session: Record<string, unknown> = {
-          ...input,
-          ephemeral_message_id: null,
-        }
-        sessions.set(String(session.id), session)
-        return json(session)
-      }
-      if (method === "DELETE") {
-        for (const [id, session] of sessions) {
-          if (id === requestUrl.searchParams.get("id")?.replace("eq.", "") || session.telegram_user_id === requestUrl.searchParams.get("telegram_user_id")?.replace("eq.", "")
-            && session.chat_id === requestUrl.searchParams.get("chat_id")?.replace("eq.", "")) sessions.delete(id)
-        }
-        return new Response(null, { status: 204 })
-      }
-      if (method === "PATCH") {
-        const id = requestUrl.searchParams.get("id")?.replace("eq.", "")
-        const session = id ? sessions.get(id) : null
-        if (!session) return noRows()
-        Object.assign(session, body)
-        return new Response(null, { status: 204 })
-      }
-      const telegramId = requestUrl.searchParams.get("telegram_user_id")?.replace("eq.", "")
-      const chatId = requestUrl.searchParams.get("chat_id")?.replace("eq.", "")
-      const sessionId = requestUrl.searchParams.get("id")?.replace("eq.", "")
-      const promptFilter = requestUrl.searchParams.get("data")
-      const session = sessionId
-        ? sessions.get(sessionId)
-        : [...sessions.values()].find(candidate => candidate.telegram_user_id === telegramId
-          && candidate.chat_id === chatId
-          && (!promptFilter || ((candidate.data as Record<string, unknown>)?.stage === "input"
-          && promptFilter.includes(String((candidate.data as Record<string, unknown>).promptId)))))
-      if (!session && !promptFilter && !sessionId) return json(null)
-      if (!session || session.telegram_user_id !== telegramId || session.chat_id !== chatId || Date.parse(String(session.expires_at)) <= Date.now()) return noRows()
-      return json(session)
-    }
-    if (path.endsWith("/users")) return json({ id: "user-1" })
-    if (path.endsWith("/telegram_groups")) return json({ workspace_id: "workspace-1" })
-    if (path.endsWith("/workspace_users")) {
-      const select = requestUrl.searchParams.get("select") ?? ""
-      return json(select.includes("user_id") && !select.includes("roles") ? { user_id: "user-1" } : { roles: { can_update: true } })
-    }
-    if (path.endsWith("/scheduled_message_schedules")) {
-      return requestUrl.searchParams.has("id") ? json(schedule) : json([{ id: "schedule-1" }])
-    }
-    if (path.endsWith("/scheduled_message_occurrences")) {
-      return requestUrl.searchParams.has("id") ? json(occurrence) : json([{ ...occurrence }])
-    }
-    if (path.endsWith("/scheduled_message_responses")) return json(responses)
-    if (path.endsWith("/notification_deliveries")) {
-      const eventKey = requestUrl.searchParams.get("event_key")?.replace("eq.", "")
-      if (method === "GET" && activeDeliveryMode && requestUrl.searchParams.has("scheduled_occurrence_id")) return json([{ event_key: "edit-event" }])
-      if (method === "GET" && activeDeliveryMode && eventKey) return json([{ id: "delivery-edit" }])
-      if (method === "GET") return json([])
-      if (method === "PATCH" && requestUrl.searchParams.has("select")) {
-        const scheduledDelivery = {
-          id: "delivery-edit", workspace_id: "workspace-1", event_key: "scheduled-edit",
-          event_type: null, scope: "group", route_id: null, recipient_user_id: null,
-          destination_key: "group:-100123:22", chat_id: "-100123", thread_id: 22,
-          text: "ignored", payload: {}, attempt_count: 0, entity_type: null, entity_id: null,
-          reply_markup: null, parent_delivery_id: null, scheduled_operation: "edit",
-        }
-        return json([scheduledDelivery])
-      }
-      return new Response(null, { status: 204 })
-    }
-    return json({ message: `Unexpected request ${method} ${url}` }, 500)
+    return json({ error: `Unexpected request ${method} ${url}` }, 500)
   }
 
   function session() {
@@ -226,11 +178,8 @@ function createFixture(options: FixtureOptions = {}) {
     return calls.filter(call => call.url.startsWith("https://api.telegram.org/") && call.url.endsWith(`/${method}`))
   }
   function teardown() {
+    setSqlFixture({queryRows:async()=>[]})
     globalThis.fetch = previousFetch
-    if (previousUrl === undefined) delete process.env.VITE_SUPABASE_URL
-    else process.env.VITE_SUPABASE_URL = previousUrl
-    if (previousKey === undefined) delete process.env.SUPABASE_SECRET_KEY
-    else process.env.SUPABASE_SECRET_KEY = previousKey
     if (previousTelegramToken === undefined) delete process.env.TELEGRAM_BOT_TOKEN
     else process.env.TELEGRAM_BOT_TOKEN = previousTelegramToken
   }

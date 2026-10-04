@@ -1,4 +1,5 @@
-import { getSupabaseAdmin } from "../supabase-admin.js";
+import { queryRows } from "@moc/backend/database";
+import type { QueryResultRow } from "pg";
 import {
   DEFAULT_TEMPLATES,
   type MessageType,
@@ -15,17 +16,15 @@ export async function resolveTemplate(
 ): Promise<string> {
   const fallback = DEFAULT_TEMPLATES[messageType];
   try {
-    const admin = getSupabaseAdmin();
-    const { data, error } = await admin
-      .from("notification_message_templates")
-      .select("body")
-      .eq("workspace_id", workspaceId)
-      .eq("scope", scope)
-      .eq("message_type", messageType)
-      .maybeSingle();
+    const [data] = await queryRows<QueryResultRow & { body: string | null }>(
+      `SELECT body FROM public.notification_message_templates
+       WHERE workspace_id = $1 AND scope = $2 AND message_type = $3
+       LIMIT 1`,
+      [workspaceId, scope, messageType],
+    );
 
-    if (error || !data?.body) return fallback;
-    return data.body as string;
+    if (!data?.body) return fallback;
+    return data.body;
   } catch {
     return fallback;
   }

@@ -300,7 +300,7 @@ describe("venue-booking wake", () => {
   // dependencies above) to prove "venue-booking" is actually wired to the
   // venue_booking_id-shaped options, not just that a same-shaped options
   // object works in isolation. A wrong-field body 400s before touching the
-  // database, so this needs no Supabase credentials.
+  // database, so this needs no database credentials.
   it("wires the 'venue-booking' route kind to venue_booking_id, not request_id", async () => {
     const result = createResponse()
     await publicNotificationWake(

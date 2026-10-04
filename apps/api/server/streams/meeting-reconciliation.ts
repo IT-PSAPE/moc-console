@@ -1,7 +1,7 @@
 /**
  * Mirrors the provider-agnostic half of
  * apps/console/src/data/zoom-meeting-reconciliation.ts — the console file also
- * holds role-permission helpers, which a cron running as the service role has
+ * holds role-permission helpers, which a cron running as the worker role has
  * no use for. The copy exists because that module depends on @moc/types, which
  * ships raw TypeScript a Vercel function cannot resolve at runtime.
  *

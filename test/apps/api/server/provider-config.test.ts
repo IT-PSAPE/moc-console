@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { ProviderConfigError, resolveOAuthConfig } from "../../../../apps/api/server/provider-config.js"
+import { ProviderConfigError, providerRequestBody, resolveOAuthConfig } from "../../../../apps/api/server/provider-config.js"
 
 const ID_NAMES = ["GOOGLE_CLIENT_ID", "VITE_GOOGLE_CLIENT_ID"] as const
 const SECRET_NAMES = ["GOOGLE_CLIENT_SECRET"] as const
@@ -38,5 +38,17 @@ describe("resolveOAuthConfig", () => {
       () => resolve({ GOOGLE_CLIENT_ID: "   ", GOOGLE_CLIENT_SECRET: "secret" }),
       ProviderConfigError,
     )
+  })
+})
+
+describe("providerRequestBody", () => {
+  it("copies the exact byte view into a Fetch-compatible ArrayBuffer", () => {
+    const backing = Buffer.from([10, 20, 30, 40])
+    const body = backing.subarray(1, 3)
+    const result = providerRequestBody(body)
+
+    assert.ok(result instanceof ArrayBuffer)
+    assert.deepEqual([...new Uint8Array(result)], [20, 30])
+    assert.equal(providerRequestBody(undefined), undefined)
   })
 })

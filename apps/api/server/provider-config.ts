@@ -39,6 +39,13 @@ export class ProviderRequestTimeoutError extends Error {
   }
 }
 
+export function providerRequestBody(body: Buffer | undefined): ArrayBuffer | undefined {
+  if (!body) return undefined
+  const copy = new ArrayBuffer(body.byteLength)
+  new Uint8Array(copy).set(body)
+  return copy
+}
+
 function firstConfigured(env: Record<string, string | undefined>, names: readonly string[]): string | null {
   for (const name of names) {
     const value = env[name]?.trim()

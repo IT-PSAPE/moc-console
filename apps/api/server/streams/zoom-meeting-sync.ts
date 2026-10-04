@@ -65,9 +65,9 @@ async function verifyMissingMeetings(
 /**
  * Server-side counterpart of the console's manual sync
  * (apps/console/src/data/zoom-meeting-sync.ts) with the same adopt, reconcile
- * and delete rules. It runs as the service role with no signed-in user, so RLS
- * scopes nothing: every read, write and delete names the workspace explicitly,
- * and deletes are narrowed to the local row ids this run confirmed as cancelled.
+ * and delete rules. It runs under the restricted worker database actor, so every
+ * read, write and delete names the workspace explicitly, and deletes are
+ * narrowed to the local row ids this run confirmed as cancelled.
  */
 export async function syncWorkspaceZoomMeetings(
   connection: ZoomSyncConnection,

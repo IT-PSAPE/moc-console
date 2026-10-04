@@ -1,125 +1,138 @@
-import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { expect, test as bunTest } from 'bun:test'
+import type { QueryResultRow } from 'pg'
+import { runWithSqlFixture, setSqlFixture } from '../sql-fixture.js'
 
-import { processPendingDeliveries } from "../../../../../apps/api/server/notifications/delivery-store.js"
+function test(name:string,body:()=>Promise<void>):void { bunTest(name,()=>runWithSqlFixture(body)) }
 
-type RecordedRequest = { url: string; method: string; body: Record<string, unknown> | null }
+type SqlCall = { text: string; values: readonly unknown[] }
+const calls: SqlCall[] = []
+let deliveryRow: Record<string, unknown>
+let beginSnapshot: Record<string, unknown>
 
-function occurrence(id: string, messageId: number | null) {
-  return {
-    id,
-    workspace_id: "workspace-1",
-    schedule_id: "schedule-1",
-    occurrence_on: "2026-10-03",
-    send_on: "2026-10-03T08:00:00.000Z",
-    expires_at: "2026-10-03T12:00:00.000Z",
-    fields: { title: `Title ${id}`, instructions: "Please join" },
-    body: "<b>{{title}}</b>\n{{instructions}}",
-    message_type: "announcement",
-    require_arrival: false,
-    state: messageId === null ? "sending" : "sent",
-    revision: 3,
-    synced_revision: 2,
-    telegram_message_id: messageId,
-    last_sync_error: null,
+function configureSqlFixture():void {
+  const queryRows = async (text: string, values: readonly unknown[] = []):Promise<QueryResultRow[]> => {
+    calls.push({ text, values })
+    if (text.includes("SELECT id FROM public.notification_deliveries")) return [{ id: deliveryRow.id }]
+    if (text.includes("UPDATE public.notification_deliveries SET status='processing'")) return [deliveryRow]
+    return []
+  }
+  const queryActor = async(text:string,values:readonly unknown[]=[])=>{
+    calls.push({text,values})
+    if(text.includes('begin_scheduled_delivery'))return [{result:beginSnapshot}]
+    if(text.includes('finish_scheduled_delivery'))return [{finish_scheduled_delivery:null}]
+    return []
+  }
+  setSqlFixture({queryRows,queryActor})
+}
+
+const { processPendingScheduledDeliveries } = await import('../../../../../apps/api/server/notifications/delivery-store.js')
+
+function setup(): void {
+  configureSqlFixture()
+  calls.length = 0
+  deliveryRow = {
+    id:'delivery-1',workspace_id:'workspace-1',event_key:'scheduled:occurrence-1',event_type:null,scope:'group',route_id:null,
+    recipient_user_id:null,destination_key:'group:-1001:42',chat_id:'-1001',thread_id:42,text:'unused',payload:{},attempt_count:0,
+    entity_type:null,entity_id:null,reply_markup:null,parent_delivery_id:null,scheduled_operation:'send',
+  }
+  beginSnapshot = {
+    occurrence:{id:'occurrence-1',workspace_id:'workspace-1',schedule_id:'schedule-1',occurrence_on:'2026-10-04',send_on:'2026-10-04T08:00:00Z',expires_at:'2026-10-04T12:00:00Z',fields:{title:'Service briefing'},body:'<b>{{title}}</b>',message_type:'announcement',require_arrival:false,attendance_groups:[],state:'scheduled',revision:3,telegram_message_id:null,last_sync_error:null},
+    responses:[],expired:false,timezone:'UTC',
   }
 }
 
-describe("scheduled delivery through the shared notification queue", () => {
-  it("sends new occurrences and edits sent occurrences in place", async () => {
-    const previousFetch = globalThis.fetch
-    const previousUrl = process.env.VITE_SUPABASE_URL
-    const previousKey = process.env.SUPABASE_SECRET_KEY
-    const previousTelegramToken = process.env.TELEGRAM_BOT_TOKEN
-    process.env.VITE_SUPABASE_URL = "https://supabase.test"
-    process.env.SUPABASE_SECRET_KEY = "test-service-key"
-    process.env.TELEGRAM_BOT_TOKEN = "test-bot-token"
-    const requests: RecordedRequest[] = []
-    const claimedRows = new Map([
-      ["delivery-send", {
-        id: "delivery-send", workspace_id: "workspace-1", event_key: "scheduled:send", event_type: null,
-        scope: "group", route_id: null, recipient_user_id: null, destination_key: "group:-1001:55",
-        chat_id: "-1001", thread_id: 55, text: "ignored snapshot text", payload: {}, attempt_count: 0,
-        entity_type: null, entity_id: null, reply_markup: null, parent_delivery_id: null, scheduled_operation: "send",
-      }],
-      ["delivery-edit", {
-        id: "delivery-edit", workspace_id: "workspace-1", event_key: "scheduled:edit", event_type: null,
-        scope: "group", route_id: null, recipient_user_id: null, destination_key: "group:-1002:77",
-        chat_id: "-1002", thread_id: 77, text: "ignored snapshot text", payload: {}, attempt_count: 0,
-        entity_type: null, entity_id: null, reply_markup: null, parent_delivery_id: null, scheduled_operation: "edit",
-      }],
-    ])
+test('scheduled send with no returned Telegram message ID is marked ambiguous and terminal', async () => {
+  setup()
+  const previousFetch=globalThis.fetch
+  const previousToken=process.env.TELEGRAM_BOT_TOKEN
+  process.env.TELEGRAM_BOT_TOKEN='test-token'
+  globalThis.fetch=async()=>new Response(JSON.stringify({ok:true,result:{}}),{status:200})
+  try {
+    await expect(processPendingScheduledDeliveries()).resolves.toEqual({attempted:1,sent:0,failed:1,pendingRetry:0})
+    const finish=calls.find(call=>call.text.includes('finish_scheduled_delivery'))
+    expect(finish?.values[4]).toBe(true)
+    const update=calls.find(call=>call.text.includes("UPDATE public.notification_deliveries SET status=$2"))
+    expect(update?.values[1]).toBe('failed')
+  } finally {
+    globalThis.fetch=previousFetch
+    if(previousToken===undefined) delete process.env.TELEGRAM_BOT_TOKEN
+    else process.env.TELEGRAM_BOT_TOKEN=previousToken
+  }
+})
 
-    globalThis.fetch = async (input, init) => {
-      const url = String(input)
-      const method = init?.method ?? "GET"
-      const body = typeof init?.body === "string" ? JSON.parse(init.body) as Record<string, unknown> : null
-      requests.push({ url, method, body })
+test('scheduled send claims and finalizes through named SQL functions with the occurrence revision', async () => {
+  setup()
+  const previousFetch=globalThis.fetch
+  const previousToken=process.env.TELEGRAM_BOT_TOKEN
+  process.env.TELEGRAM_BOT_TOKEN='test-token'
+  globalThis.fetch=async()=>new Response(JSON.stringify({ok:true,result:{message_id:901}}),{status:200})
+  try {
+    await expect(processPendingScheduledDeliveries()).resolves.toEqual({attempted:1,sent:1,failed:0,pendingRetry:0})
+    expect(calls.some(call=>call.text.includes('UPDATE public.notification_deliveries SET status=\'processing\'') && call.text.includes('RETURNING'))).toBe(true)
+    const begin=calls.find(call=>call.text.includes('begin_scheduled_delivery'))
+    const finish=calls.find(call=>call.text.includes('finish_scheduled_delivery'))
+    expect(begin?.values).toEqual(['delivery-1'])
+    expect(finish?.values.slice(0,3)).toEqual(['delivery-1',3,901])
+  } finally {
+    globalThis.fetch=previousFetch
+    if(previousToken===undefined) delete process.env.TELEGRAM_BOT_TOKEN
+    else process.env.TELEGRAM_BOT_TOKEN=previousToken
+  }
+})
 
-      if (url.startsWith("https://api.telegram.org/")) {
-        const telegramMethod = url.split("/").pop()
-        if (telegramMethod === "sendRichMessage") {
-          return new Response(JSON.stringify({ ok: true, result: { message_id: 901 } }), { status: 200 })
-        }
-        if (telegramMethod === "editMessageText") {
-          return new Response(JSON.stringify({ ok: true, result: true }), { status: 200 })
-        }
-        return new Response(JSON.stringify({ ok: false, error_code: 500, description: `Unexpected Telegram method ${telegramMethod}` }), { status: 500 })
-      }
+test('resend renders the current message and saved attendance into a new Telegram post', async () => {
+  setup()
+  deliveryRow.scheduled_operation='resend'
+  const occurrence=beginSnapshot.occurrence as Record<string,unknown>
+  occurrence.state='sent'
+  occurrence.message_type='pre_attendance'
+  occurrence.telegram_message_id=700
+  occurrence.body='<b>{{title}}</b>\n{{date}} {{time}}\n{{instructions}}'
+  occurrence.fields={title:'Service briefing',instructions:'Meet at the entrance'}
+  occurrence.require_arrival=true
+  occurrence.attendance_groups=[{id:'10000000-0000-4000-8000-000000000001',label:'Noon'},{id:'10000000-0000-4000-8000-000000000002',label:'Evening'}]
+  beginSnapshot.responses=[{name:'Alex Member',status:'attending',arrival_time:'07:30',group_id:'10000000-0000-4000-8000-000000000001'}]
+  let body:Record<string,unknown>|null=null
+  const previousFetch=globalThis.fetch
+  const previousToken=process.env.TELEGRAM_BOT_TOKEN
+  process.env.TELEGRAM_BOT_TOKEN='test-token'
+  globalThis.fetch=async(_input,init)=>{body=JSON.parse(String(init?.body)) as Record<string,unknown>;return new Response(JSON.stringify({ok:true,result:{message_id:902}}),{status:200})}
+  try {
+    const result=await processPendingScheduledDeliveries()
+    expect(result).toEqual({attempted:1,sent:1,failed:0,pendingRetry:0})
+    expect(body?.message_id).toBeUndefined()
+    expect(JSON.stringify(body)).toContain('Service briefing')
+    expect(JSON.stringify(body)).toContain('Noon')
+    expect(JSON.stringify(body)).toContain('✅ Alex Member — 07:30')
+    const finish=calls.find(call=>call.text.includes('finish_scheduled_delivery'))
+    expect(finish?.values.slice(0,3)).toEqual(['delivery-1',3,902])
+    expect(finish?.values[4]).toBe(false)
+  } finally {
+    globalThis.fetch=previousFetch
+    if(previousToken===undefined)delete process.env.TELEGRAM_BOT_TOKEN
+    else process.env.TELEGRAM_BOT_TOKEN=previousToken
+  }
+})
 
-      const path = new URL(url).pathname
-      if (path.endsWith("/rpc/recover_scheduled_deliveries")) return new Response("null", { status: 200 })
-      if (path.endsWith("/rpc/begin_scheduled_delivery")) {
-        const deliveryId = body?.p_delivery
-        const editing = deliveryId === "delivery-edit"
-        return new Response(JSON.stringify({
-          occurrence: occurrence(editing ? "occurrence-edit" : "occurrence-send", editing ? 902 : null),
-          responses: [],
-          expired: false,
-        }), { status: 200 })
-      }
-      if (path.endsWith("/rpc/finish_scheduled_delivery")) return new Response("null", { status: 200 })
-      if (path.endsWith("/notification_deliveries") && method === "GET") {
-        return new Response(JSON.stringify([{ id: "delivery-send" }, { id: "delivery-edit" }]), { status: 200 })
-      }
-      if (path.endsWith("/notification_deliveries") && method === "PATCH" && url.includes("select=")) {
-        const selectedId = new URL(url).searchParams.get("id")?.replace("eq.", "")
-        const row = selectedId ? claimedRows.get(selectedId) : null
-        return new Response(JSON.stringify(row ? [row] : []), { status: 200, headers: { "Content-Type": "application/json" } })
-      }
-      if (path.endsWith("/notification_deliveries") && method === "PATCH") return new Response(null, { status: 204 })
-      return new Response(JSON.stringify({ message: `Unexpected request ${method} ${url}` }), { status: 500 })
-    }
-
-    try {
-      const result = await processPendingDeliveries(10)
-
-      assert.deepEqual(result, { attempted: 2, sent: 2, failed: 0, pendingRetry: 0 })
-      const telegramRequests = requests.filter(request => request.url.startsWith("https://api.telegram.org/"))
-      assert.deepEqual(telegramRequests.map(request => request.url.split("/").pop()), ["sendRichMessage", "editMessageText"])
-      assert.deepEqual(telegramRequests[0]?.body, {
-        chat_id: "-1001",
-        rich_message: { html: "<p><b>Title occurrence-send</b><br>Please join</p>" },
-        message_thread_id: 55,
-      })
-      assert.equal(telegramRequests[1]?.body?.chat_id, "-1002")
-      assert.equal(telegramRequests[1]?.body?.message_id, 902)
-      assert.deepEqual(
-        requests.filter(request => request.url.endsWith("/rpc/finish_scheduled_delivery")).map(request => request.body?.p_message),
-        [901, null],
-      )
-      assert.deepEqual(
-        requests.filter(request => new URL(request.url).pathname.endsWith("/notification_deliveries") && request.method === "PATCH" && request.body?.status === "sent").map(request => request.body?.telegram_message_id),
-        [901, 902],
-      )
-    } finally {
-      globalThis.fetch = previousFetch
-      if (previousUrl === undefined) delete process.env.VITE_SUPABASE_URL
-      else process.env.VITE_SUPABASE_URL = previousUrl
-      if (previousKey === undefined) delete process.env.SUPABASE_SECRET_KEY
-      else process.env.SUPABASE_SECRET_KEY = previousKey
-      if (previousTelegramToken === undefined) delete process.env.TELEGRAM_BOT_TOKEN
-      else process.env.TELEGRAM_BOT_TOKEN = previousTelegramToken
-    }
-  })
+test('a resend with an ambiguous Telegram result is terminal and never queued for automatic retry', async () => {
+  setup()
+  deliveryRow.scheduled_operation='resend'
+  const occurrence=beginSnapshot.occurrence as Record<string,unknown>
+  occurrence.state='sent'
+  occurrence.telegram_message_id=700
+  const previousFetch=globalThis.fetch
+  const previousToken=process.env.TELEGRAM_BOT_TOKEN
+  process.env.TELEGRAM_BOT_TOKEN='test-token'
+  globalThis.fetch=async()=>new Response(JSON.stringify({ok:true,result:{}}),{status:200})
+  try {
+    await expect(processPendingScheduledDeliveries()).resolves.toEqual({attempted:1,sent:0,failed:1,pendingRetry:0})
+    const finish=calls.find(call=>call.text.includes('finish_scheduled_delivery'))
+    expect(finish?.values[4]).toBe(true)
+    const update=calls.find(call=>call.text.includes('UPDATE public.notification_deliveries SET status=$2'))
+    expect(update?.values[1]).toBe('failed')
+  } finally {
+    globalThis.fetch=previousFetch
+    if(previousToken===undefined)delete process.env.TELEGRAM_BOT_TOKEN
+    else process.env.TELEGRAM_BOT_TOKEN=previousToken
+  }
 })

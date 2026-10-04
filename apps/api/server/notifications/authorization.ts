@@ -1,15 +1,6 @@
-import { getSupabaseAdmin } from "../supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
 import { WorkspaceAccessError } from "../workspace-access.js"
-
-type WorkspaceRole = { can_create: boolean }
-
-type WorkspaceMembership = {
-  roles: WorkspaceRole | WorkspaceRole[] | null
-}
-
-function first<T>(value: T | T[] | null): T | null {
-  return Array.isArray(value) ? value[0] ?? null : value
-}
 
 /**
  * A creation notification may only be requested by the entity creator or a
@@ -20,20 +11,23 @@ export async function requireWorkspaceCreateOrEntityOwnership(
   userId: string,
   workspaceId: string,
   entityCreatedBy: string,
+  lookupMembership: (userId: string, workspaceId: string) => Promise<{ can_create: boolean } | null> = findWorkspaceMembership,
 ): Promise<void> {
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin
-    .from("workspace_users")
-    .select("roles(can_create)")
-    .eq("workspace_id", workspaceId)
-    .eq("user_id", userId)
-    .maybeSingle()
-  if (error) throw new Error(error.message)
-  if (!data) throw new WorkspaceAccessError("You do not have access to this workspace")
-
-  const membership = data as WorkspaceMembership
-  const role = first(membership.roles)
-  if (entityCreatedBy !== userId && !role?.can_create) {
+  const membership = await lookupMembership(userId, workspaceId)
+  if (!membership) throw new WorkspaceAccessError("You do not have access to this workspace")
+  if (entityCreatedBy !== userId && !membership.can_create) {
     throw new WorkspaceAccessError("Insufficient workspace permission")
   }
+}
+
+async function findWorkspaceMembership(userId: string, workspaceId: string): Promise<{ can_create: boolean } | null> {
+  const memberships = await queryRows<QueryResultRow & { can_create: boolean }>(
+    `SELECT role.can_create
+     FROM public.workspace_users AS membership
+     JOIN public.roles AS role ON role.id = membership.role_id
+     WHERE membership.workspace_id = $1 AND membership.user_id = $2
+     LIMIT 1`,
+    [workspaceId, userId],
+  )
+  return memberships[0] ?? null
 }

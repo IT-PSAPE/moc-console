@@ -1,4 +1,5 @@
-import { getSupabaseAdmin } from "../supabase-admin.js"
+import type { QueryResultRow } from "pg"
+import { queryRows, withActor } from "@moc/backend/database"
 import type { PublicSubmission, SubmissionType } from "./input.js"
 
 export class SubmissionNotFoundError extends Error {
@@ -29,6 +30,8 @@ export type PublicSubmissionStore = {
   update: (trackingCode: string, type: SubmissionType, updatedAt: string, data: Record<string, unknown>) => Promise<UpdateSubmissionResult>
   delete: (trackingCode: string, type: SubmissionType, updatedAt: string) => Promise<DeleteSubmissionResult>
 }
+
+export type PublicSubmissionQuery = <Row extends QueryResultRow>(sql: string, values?: readonly unknown[]) => Promise<Row[]>
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : null
@@ -68,34 +71,27 @@ function parseDeleteResult(value: unknown): DeleteSubmissionResult {
   return { entityId: result.entityId }
 }
 
-function createProductionStore(): PublicSubmissionStore {
+async function queryAsPublicActor<Row extends QueryResultRow>(sql: string, values: readonly unknown[] = []): Promise<Row[]> {
+  return withActor({ userId: null, workspaceId: null, role: "moc_public" }, (client) => queryRows<Row>(sql, values, client))
+}
+
+export function createPublicSubmissionStore(query: PublicSubmissionQuery = queryAsPublicActor): PublicSubmissionStore {
   return {
     async lookup(trackingCode) {
-      if (trackingCode.startsWith("VEN-")) {
-        const { data, error } = await getSupabaseAdmin().rpc("api_lookup_tracking_venue_booking", { p_tracking_code: trackingCode })
-        if (error) throw new Error("Venue tracking lookup failed")
-        return data === null ? null : parseSubmission(data)
-      }
-      const { data, error } = await getSupabaseAdmin().rpc("api_lookup_tracking_submission", { p_tracking_code: trackingCode })
-      if (error) throw new Error("Tracking lookup failed")
-      if (data === null) return null
-      return parseSubmission(data)
+      const functionName = trackingCode.startsWith("VEN-") ? "api_lookup_tracking_venue_booking" : "api_lookup_tracking_submission"
+      const rows = await query<{ result: unknown }>(`SELECT public.${functionName}($1::text) AS result`, [trackingCode])
+      const value = rows[0]?.result
+      return value === null || value === undefined ? null : parseSubmission(value)
     },
     async update(trackingCode, type, updatedAt, data) {
-      const result = type === "venue_booking"
-        ? await getSupabaseAdmin().rpc("api_update_tracking_venue_booking", { p_tracking_code: trackingCode, p_updated_at: updatedAt, p_data: data })
-        : await getSupabaseAdmin().rpc("api_update_tracking_submission", { p_tracking_code: trackingCode, p_type: type, p_updated_at: updatedAt, p_data: data })
-      if (result.error) throw new Error("Tracking update failed")
-      return parseUpdateResult(result.data)
+      const rows = type === "venue_booking"
+        ? await query<{ result: unknown }>("SELECT public.api_update_tracking_venue_booking($1::text, $2::timestamptz, $3::jsonb) AS result", [trackingCode, updatedAt, data])
+        : await query<{ result: unknown }>("SELECT public.api_update_tracking_submission($1::text, $2::text, $3::timestamptz, $4::jsonb) AS result", [trackingCode, type, updatedAt, data])
+      return parseUpdateResult(rows[0]?.result)
     },
     async delete(trackingCode, type, updatedAt) {
-      const result = await getSupabaseAdmin().rpc("api_delete_tracking_submission", {
-        p_tracking_code: trackingCode,
-        p_type: type,
-        p_updated_at: updatedAt,
-      })
-      if (result.error) throw new Error("Tracking deletion failed")
-      return parseDeleteResult(result.data)
+      const rows = await query<{ result: unknown }>("SELECT public.api_delete_tracking_submission($1::text, $2::text, $3::timestamptz) AS result", [trackingCode, type, updatedAt])
+      return parseDeleteResult(rows[0]?.result)
     },
   }
 }
@@ -103,6 +99,6 @@ function createProductionStore(): PublicSubmissionStore {
 let cachedStore: PublicSubmissionStore | null = null
 
 export function getPublicSubmissionStore(): PublicSubmissionStore {
-  cachedStore ??= createProductionStore()
+  cachedStore ??= createPublicSubmissionStore()
   return cachedStore
 }

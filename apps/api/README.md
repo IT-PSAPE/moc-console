@@ -10,6 +10,10 @@ See [ADR-0008](../../docs/adr/0008-extract-moc-api-app.md) for why this exists.
 
 | Path | Caller | Auth |
 | --- | --- | --- |
+| `POST /api/platform/{capability}` | MoC SDK | operation-specific public/session/workspace permission |
+| `/api/auth/*` | MoC SDK | signed proxy + host-only session cookie |
+| `/api/storage/*` | MoC SDK/media player | object ownership or intentional public broadcast reference |
+| `GET /api/public/broadcasts/{id}/events` | Broadcast SDK | scoped public revision stream |
 | `POST /api/notify/request` | MOC Request (browser) | stored request ID + tracking code |
 | `POST /api/notify/booking` | MOC Request (browser) | stored booking ID + tracking code |
 | `POST /api/notify/venue-booking` | MOC Request (browser) | stored venue booking ID + tracking code |
@@ -18,17 +22,20 @@ See [ADR-0008](../../docs/adr/0008-extract-moc-api-app.md) for why this exists.
 | `DELETE /api/public/submissions` | MOC Request tracking page | tracking code + optimistic version (delete) |
 | `POST /api/notifications/requests` | external senders | HMAC `X-Signature` |
 | `POST /api/notifications/bookings` | external senders | HMAC `X-Signature` |
-| `POST /api/notifications/assignment` | MOC Console (browser) | Supabase session (`x-moc-session`) |
-| `POST /api/notifications/internal/stream-created` | MOC Console (browser) | Supabase session |
-| `POST /api/notifications/internal/meeting-created` | MOC Console (browser) | Supabase session |
-| `POST /api/youtube/oauth/{exchange,refresh,revoke}` | MOC Console (browser) | Supabase session + workspace permission |
-| `* /api/youtube/v3/*` | MOC Console (browser) | Supabase session + workspace permission |
-| `POST /api/zoom/oauth/{exchange,refresh,revoke}` | MOC Console (browser) | Supabase session |
-| `* /api/zoom/v2/*` | MOC Console (browser) | Supabase session + workspace permission |
+| `POST /api/notifications/assignment` | MOC Console (browser) | HttpOnly MoC session cookie |
+| `POST /api/notifications/internal/stream-created` | MOC Console (browser) | HttpOnly MoC session cookie |
+| `POST /api/notifications/internal/meeting-created` | MOC Console (browser) | HttpOnly MoC session cookie |
+| `POST /api/youtube/oauth/{exchange,refresh,revoke}` | MOC Console (browser) | HttpOnly MoC session cookie + workspace permission |
+| `* /api/youtube/v3/*` | MOC Console (browser) | HttpOnly MoC session cookie + workspace permission |
+| `POST /api/zoom/oauth/{exchange,refresh,revoke}` | MOC Console (browser) | HttpOnly MoC session cookie |
+| `* /api/zoom/v2/*` | MOC Console (browser) | HttpOnly MoC session cookie + workspace permission |
 | `POST /api/telegram/webhook` | Telegram | webhook secret |
 | `GET /api/health` | deployment monitor | none |
-| `GET /api/cron/weekly-archive` | Vercel Cron, Mondays 00:00 | `CRON_SECRET` |
-| `GET /api/cron/notification-deliveries` | Vercel Cron, daily 01:00 fallback retry | `CRON_SECRET` |
+
+Neon schedules the weekly archive (Mondays 00:00 UTC), notification delivery
+retry (daily 01:00 UTC), provider sync (daily 09:00 UTC), and scheduled-message
+delivery (hourly). These schedules stay disabled until `MOC_ENABLE_PRODUCTION_JOBS`
+is enabled during cutover.
 Telegram calls exactly one webhook URL per bot, and that registration lives in
 Telegram, not in this repo or in Vercel. After the API changes host, or when
 the bot stops answering `/start` and group commands, re-register it from
@@ -46,8 +53,8 @@ endpoints have the same record-derived boundary.
 
 Tracking codes are bearer secrets: anyone holding a code can view, update, or
 delete that submission until its work has started or it reaches a terminal
-state. The public browser calls the dedicated API domain; it never receives a
-Supabase service credential and cannot execute the tracking mutation RPCs
+state. The public browser calls same-origin SDK routes; it never receives a
+backend service credential and cannot execute the tracking mutation RPCs
 directly. New codes contain 12 hexadecimal characters while existing
 6-character codes remain valid.
 
@@ -56,7 +63,7 @@ shapes, a 32 KiB body limit, exact-origin CORS, fail-closed rate limiting, and
 type/prefix matching. Mutations use `updatedAt` for optimistic concurrency, so
 an older browser cannot overwrite a newer change. Each update or deletion and
 its requester-originated notification outbox row commit in the same database
-transaction; an immediate delivery failure is retried by the outbox cron.
+transaction; an immediate delivery failure is retried by the scheduled Neon notification worker.
 
 The public URL is rewritten internally to the existing `/api/notify/[kind]`
 function. This keeps the deployment within the Vercel function budget without
@@ -126,9 +133,9 @@ consolidated to keep routing and authorization policy in one place.
 ## CORS
 
 Browser calls arrive cross-origin and carry a session plus workspace context in
-headers (`x-moc-session`, `x-moc-workspace`), so `ALLOWED_ORIGINS` is an exact allow-list
+cookies and workspace headers (`x-moc-workspace`), so `ALLOWED_ORIGINS` is an exact allow-list
 and the API echoes the caller's origin — never `*`. Unset means no browser
-origin is allowed. Telegram and Vercel Cron send no `Origin` and are unaffected.
+origin is allowed. Telegram and Neon workers send no `Origin` and are unaffected.
 Public submission management additionally requires an allowed `Origin`; it is
 intentionally a browser-only bearer-code boundary.
 
@@ -137,14 +144,10 @@ frontends at it**, or every call fails preflight.
 
 ## Environment
 
-See [.env.example](.env.example). The Supabase URL retains its historical
-`VITE_`-prefixed name, but the API app does not bundle it; no server secret is
-shipped to a browser.
-
-One trap worth knowing: `resolveBaseUrl()` does **not** fall back to
-`VERCEL_URL`. On this project that is the API's own host, and a "View request"
-link built from it would 404. Set `CONSOLE_BASE_URL` or link-bearing
-notifications are skipped.
+See [.env.example](.env.example) and the [migration runbook](../../docs/vercel-neon-migration.md).
+The API uses server-only PostgreSQL/S3 credentials and the signed Neon auth
+Function boundary. Backend credentials stay in server-only environment variables.
+Authentication uses opaque host-only HttpOnly cookies through app-origin rewrites.
 
 ## Local development
 
@@ -152,17 +155,18 @@ notifications are skipped.
 bun run dev:api
 ```
 
-Runs `vercel dev` on port 3001. Point a frontend at it by setting
-`VITE_API_BASE_URL=http://localhost:3001` in that app's `.env.local`, and add
-`http://localhost:5173` to `ALLOWED_ORIGINS` here.
+Runs `vercel dev` on port 3001. Frontend Vite servers proxy same-origin
+`/api/*` requests here. Set `MOC_API_PROXY_TARGET=http://localhost:3001` in
+the frontend app's `.env.local`, and add that app's origin to `ALLOWED_ORIGINS`.
+Deployed frontends use their Vercel `/api/*` rewrites.
 
 Vercel CLI reads `.env` in local-only mode, while this repository keeps local
 configuration in the ignored `.env.local`. The launcher creates a temporary
 symlink for the dev process and removes it on shutdown; it never copies or
 prints the values.
 
-Creating a request or booking still uses the narrow public Supabase RPCs.
-Tracking-code lookup, update, and deletion require the API to be running.
+Creating and managing requests, equipment bookings and venue bookings use
+the shared SDK and API. The API must be running for all application data access.
 
 The root command pins the Vercel CLI version and deliberately avoids an
 API-local `dev` script: Vercel treats that script as its application
@@ -193,7 +197,7 @@ dashboard before production rollout.
 ```
 api/         deployable Vercel entrypoints; related routes share dynamic routers
 public/      minimal static output required by Vercel's Other preset
-server/      handlers and shared library: supabase-admin, auth-guard, cors, http,
+server/      handlers and shared library: platform operations, auth-guard, cors, http,
              telegram, zoom/youtube oauth, notifications/{dispatch,enrich,…}
 ```
 
@@ -210,16 +214,15 @@ unexpired occurrences, or accepts `template.save`, `template.delete`, `schedule.
 and attendance use the same service-only transactional RPCs. Participant
 responses require the sender's linked identity and snapshotted roster membership.
 
-The existing daily notification-deliveries cron materializes a 32-day future
+The Neon scheduled-message worker runs hourly and materializes a 32-day future
 window, queues due calendar-date sends, cleans expired keyboards and retries
 edits. It does not offer time-of-day scheduling. Telegram bots cannot use
 Telegram's scheduled-message queue; use authorized Send now between cron runs.
 Expiry is checked on every read/write and does not wait for cron cleanup.
 
-Deploy only after the reviewed migrations in
-[the rollout guide](../../docs/scheduled-messages-rollout.md) have been applied
-to Supabase. No new function entrypoint, library, hosting plan or cron frequency
-is required. Groups should have the bot as an administrator for reliable
+Deploy only after the standalone Neon schema and worker configuration in
+[the deployment guide](../../docs/vercel-neon-migration.md) have been verified.
+Groups should have the bot as an administrator for reliable
 command-origin ephemeral replies. Management and time input have **no DM
 fallback**; users restart disappeared ephemeral sessions.
 

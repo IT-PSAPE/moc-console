@@ -29,5 +29,5 @@
      JavaScript on disk before the functions that import it are bundled. The
      API build uses --force because Vercel can restore tsbuildinfo without the
      referenced package's ignored dist directory. */
-  "references": [{ "path": "../../packages/notifications" }]
+  "references": [{ "path": "../../packages/notifications" }, { "path": "../../packages/backend" }]
 }

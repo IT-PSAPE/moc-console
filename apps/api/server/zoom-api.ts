@@ -1,5 +1,5 @@
 import { getIntegrationAccessToken, markIntegrationReauthRequiredForStoredToken } from "./integration-access.js"
-import { fetchProvider, type ProviderResponse } from "./provider-config.js"
+import { fetchProvider, providerRequestBody, type ProviderResponse } from "./provider-config.js"
 import { ProviderUpstreamError, type ProviderUpstreamFailureKind } from "./provider-failure.js"
 
 const ZOOM_API = "https://api.zoom.us/v2"
@@ -55,7 +55,7 @@ function buildRequestInit(body: Buffer | undefined, contentType: string | null |
   return {
     method,
     headers,
-    body: hasBody ? new Uint8Array(body.buffer, body.byteOffset, body.byteLength) : undefined,
+    body: hasBody ? providerRequestBody(body) : undefined,
   }
 }
 

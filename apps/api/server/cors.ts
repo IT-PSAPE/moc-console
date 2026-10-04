@@ -1,20 +1,10 @@
 import { headerValue, type ApiRequest, type ApiResponse } from "./http.js"
 
-// The API is deployed on its own origin (api.psape.co.za), so every browser
-// call from MOC Console and MOC Request is cross-origin. Console integration
-// calls carry a session header plus an explicit workspace context, which makes
-// them preflighted requests.
-//
-// Allowed origins come from ALLOWED_ORIGINS (comma-separated). We echo the
-// caller's origin rather than replying `*` because these requests carry
-// credentials-in-headers, and `*` would let any site read the responses.
-// An unset ALLOWED_ORIGINS allows nothing (fail closed) — server-to-server
-// callers like Telegram webhooks and Vercel Cron send no Origin and are
-// unaffected.
-
-const ALLOWED_HEADERS = "content-type, authorization, x-moc-session, x-moc-workspace, x-request-id, x-signature"
-const ALLOWED_METHODS = "GET, POST, PATCH, PUT, DELETE, OPTIONS"
-const EXPOSED_HEADERS = "X-Request-Id, Retry-After"
+// Browser requests use host-only API session cookies through app-origin rewrites.
+// Exact configured origins authorize credentialed requests; an unset list denies all.
+const ALLOWED_HEADERS = "content-type, authorization, range, last-event-id, x-moc-workspace, x-request-id, x-signature"
+const ALLOWED_METHODS = "GET, HEAD, POST, PATCH, PUT, DELETE, OPTIONS"
+const EXPOSED_HEADERS = "X-Request-Id, Retry-After, Content-Range, Accept-Ranges, Content-Length, ETag"
 
 function allowedOrigins(): string[] {
   return (process.env.ALLOWED_ORIGINS ?? "")

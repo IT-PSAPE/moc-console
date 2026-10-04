@@ -1,5 +1,5 @@
 // Pure formatting: turns store records into the MiniAppDetail shapes the
-// Mini App renders as-is. No Supabase, no network — unit-testable in
+// Mini App renders as-is. No database or network access — unit-testable in
 // isolation from the ops that load the data.
 
 import { formatInstant, type DateFormatPreset, type MiniAppAction, type MiniAppChecklistDetail, type MiniAppChecklistItem, type MiniAppEntityDetail, type MiniAppField } from "@moc/notifications"

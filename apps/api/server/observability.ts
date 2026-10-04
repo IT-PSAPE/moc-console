@@ -4,8 +4,10 @@ import type { ApiRequest } from "./http.js"
 const REQUEST_ID_HEADER = "x-request-id"
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9._-]{1,128}$/
 const REQUIRED_RUNTIME_ENVIRONMENT = [
-  "VITE_SUPABASE_URL",
-  "SUPABASE_SECRET_KEY",
+  "DATABASE_URL",
+  "NEON_AUTH_FUNCTION_URL",
+  "MOC_AUTH_SERVICE_SECRET",
+  "MOC_AUTH_TRUSTED_ORIGINS",
   "ALLOWED_ORIGINS",
 ] as const
 

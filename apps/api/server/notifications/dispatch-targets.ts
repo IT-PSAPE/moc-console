@@ -2,9 +2,10 @@
 // the workspace's configured notification_routes, or a caller-supplied
 // override. Split out of dispatch.ts to keep that file under the size limit.
 
-import { getSupabaseAdmin } from "../supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
 
-export type RouteRow = {
+export type RouteRow = QueryResultRow & {
   id: string
   group_chat_id: string | null
   thread_id: number | null
@@ -73,28 +74,27 @@ export async function resolveOverrideTargets(
   workspaceId: string,
   destinations: readonly NotifyDestination[],
 ): Promise<Target[]> {
-  const admin = getSupabaseAdmin()
   const chatIds = [...new Set(destinations.map((d) => d.groupChatId))]
-
-  const { data, error } = await admin
-    .from("telegram_groups")
-    .select("chat_id, active, removed_at, telegram_group_topics(thread_id, closed)")
-    .eq("workspace_id", workspaceId)
-    .in("chat_id", chatIds)
-
-  if (error) {
-    throw new Error(`Notification destination lookup failed: ${error.message}`)
-  }
-
-  type GroupRow = {
+  if (chatIds.length === 0) return []
+  type GroupRow = QueryResultRow & {
     chat_id: string
     active: boolean
     removed_at: string | null
     telegram_group_topics: { thread_id: number; closed: boolean }[] | null
   }
+  const data = await queryRows<GroupRow>(
+    `SELECT groups.chat_id, groups.active, groups.removed_at,
+       coalesce(jsonb_agg(jsonb_build_object('thread_id', topics.thread_id, 'closed', topics.closed))
+         FILTER (WHERE topics.thread_id IS NOT NULL), '[]'::jsonb) AS telegram_group_topics
+     FROM public.telegram_groups AS groups
+     LEFT JOIN public.telegram_group_topics AS topics ON topics.group_chat_id = groups.chat_id
+     WHERE groups.workspace_id = $1 AND groups.chat_id = ANY($2::text[])
+     GROUP BY groups.chat_id, groups.active, groups.removed_at`,
+    [workspaceId, chatIds],
+  )
 
   const groups = new Map<string, GroupRow>()
-  for (const row of (data ?? []) as GroupRow[]) {
+  for (const row of data) {
     if (row.active !== true || row.removed_at) continue
     groups.set(row.chat_id, row)
   }

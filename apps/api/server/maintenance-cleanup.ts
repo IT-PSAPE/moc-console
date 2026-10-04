@@ -1,6 +1,7 @@
-import { getSupabaseAdmin } from "./supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
 
-type CleanupRpcResult = {
+type CleanupRpcResult = QueryResultRow & {
   rate_limit_windows: unknown
   notification_ingest_replays: unknown
   telegram_webhook_updates: unknown
@@ -22,7 +23,7 @@ function isNonNegativeInteger(value: unknown): value is number {
 
 function parseCleanupResult(data: unknown): MaintenanceCleanupResult {
   if (!Array.isArray(data) || data.length !== 1) {
-    throw new Error("Maintenance cleanup RPC returned an invalid result")
+    throw new Error("Maintenance cleanup returned an invalid result")
   }
 
   const result = data[0] as CleanupRpcResult
@@ -33,7 +34,7 @@ function parseCleanupResult(data: unknown): MaintenanceCleanupResult {
     !isNonNegativeInteger(result.notification_ingest_replays) ||
     !isNonNegativeInteger(result.telegram_webhook_updates)
   ) {
-    throw new Error("Maintenance cleanup RPC returned an invalid result")
+    throw new Error("Maintenance cleanup returned an invalid result")
   }
 
   return {
@@ -43,18 +44,35 @@ function parseCleanupResult(data: unknown): MaintenanceCleanupResult {
   }
 }
 
-function getSupabaseMaintenanceCleanupStore(): MaintenanceCleanupStore {
+function getPostgresMaintenanceCleanupStore(): MaintenanceCleanupStore {
   return {
     async purge(): Promise<unknown> {
-      const { data, error } = await getSupabaseAdmin().rpc("purge_api_maintenance_data")
-      if (error) throw new Error("Maintenance cleanup failed")
-      return data
+      return queryRows<CleanupRpcResult>(
+        `WITH rate_limits AS (
+           DELETE FROM public.api_rate_limit_windows
+           WHERE window_started_at < now() - interval '7 days'
+           RETURNING 1
+         ), ingest_replays AS (
+           DELETE FROM public.notification_ingest_replays
+           WHERE expires_at <= now()
+           RETURNING 1
+         ), webhook_updates AS (
+           DELETE FROM public.telegram_webhook_updates
+           WHERE status IN ('processed', 'failed')
+             AND coalesce(processed_at, received_at) < now() - interval '30 days'
+           RETURNING 1
+         )
+         SELECT
+           (SELECT count(*)::integer FROM rate_limits) AS rate_limit_windows,
+           (SELECT count(*)::integer FROM ingest_replays) AS notification_ingest_replays,
+           (SELECT count(*)::integer FROM webhook_updates) AS telegram_webhook_updates`,
+      )
     },
   }
 }
 
 export async function purgeApiMaintenanceData(
-  store: MaintenanceCleanupStore = getSupabaseMaintenanceCleanupStore(),
+  store: MaintenanceCleanupStore = getPostgresMaintenanceCleanupStore(),
 ): Promise<MaintenanceCleanupResult> {
   return parseCleanupResult(await store.purge())
 }

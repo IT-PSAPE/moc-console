@@ -5,7 +5,8 @@
 
 import type { NotificationEntityType } from "@moc/notifications"
 import type { TokenValues } from "@moc/notifications"
-import { getSupabaseAdmin } from "../supabase-admin.js"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
 import { resolveBaseUrl } from "../base-url.js"
 import {
   enrichBooking,
@@ -28,9 +29,11 @@ function entityLinkUrl(entityType: NotificationEntityType, entityId: string): st
 }
 
 async function bookingTrackingCode(bookingId: string): Promise<string | null> {
-  const admin = getSupabaseAdmin()
-  const { data } = await admin.from("bookings").select("tracking_code").eq("id", bookingId).maybeSingle()
-  return data?.tracking_code ?? null
+  const [row] = await queryRows<QueryResultRow & { tracking_code: string | null }>(
+    "SELECT tracking_code FROM public.bookings WHERE id = $1 LIMIT 1",
+    [bookingId],
+  )
+  return row?.tracking_code ?? null
 }
 
 /**
@@ -89,10 +92,12 @@ export async function fetchEntityStoredStatus(
   const table = STATUS_TABLE[entityType]
   if (!table) return null
   try {
-    const admin = getSupabaseAdmin()
-    const { data, error } = await admin.from(table).select("status").eq("id", entityId).maybeSingle()
-    if (error || !data) return null
-    return typeof data.status === "string" ? data.status : null
+    const rows = table === "requests"
+      ? await queryRows<QueryResultRow & { status: string }>("SELECT status FROM public.requests WHERE id = $1 LIMIT 1", [entityId])
+      : table === "bookings"
+        ? await queryRows<QueryResultRow & { status: string }>("SELECT status FROM public.bookings WHERE id = $1 LIMIT 1", [entityId])
+        : await queryRows<QueryResultRow & { status: string }>("SELECT status FROM public.venue_bookings WHERE id = $1 LIMIT 1", [entityId])
+    return typeof rows[0]?.status === "string" ? rows[0].status : null
   } catch {
     return null
   }

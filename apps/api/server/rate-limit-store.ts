@@ -1,8 +1,15 @@
-import { getSupabaseAdmin } from "./supabase-admin.js"
-import type { RateLimitDecision, RateLimitPolicy, RateLimitPolicyName, RateLimitStore } from "./rate-limit-policy.js"
-import { RateLimitUnavailableError } from "./rate-limit-policy.js"
+import { queryRows } from "@moc/backend/database"
+import type { QueryResultRow } from "pg"
+import {
+  RATE_LIMIT_POLICIES,
+  RateLimitUnavailableError,
+  type RateLimitDecision,
+  type RateLimitPolicy,
+  type RateLimitPolicyName,
+  type RateLimitStore,
+} from "./rate-limit-policy.js"
 
-type RateLimitRpcResult = {
+type RateLimitStorageRow = QueryResultRow & {
   allowed: unknown
   limit_value: unknown
   remaining: unknown
@@ -15,12 +22,12 @@ function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0
 }
 
-function parseRateLimitRpcResult(data: unknown, policy: RateLimitPolicy): RateLimitDecision {
+function parseRateLimitResult(data: unknown, policy: RateLimitPolicy): RateLimitDecision {
   if (!Array.isArray(data) || data.length !== 1) {
-    throw new Error("Rate limit RPC returned an invalid result")
+    throw new Error("Rate limit storage returned an invalid result")
   }
 
-  const result = data[0] as RateLimitRpcResult
+  const result = data[0] as RateLimitStorageRow
   if (
     typeof result !== "object" ||
     result === null ||
@@ -29,11 +36,11 @@ function parseRateLimitRpcResult(data: unknown, policy: RateLimitPolicy): RateLi
     !isNonNegativeInteger(result.remaining) ||
     !isNonNegativeInteger(result.retry_after_seconds)
   ) {
-    throw new Error("Rate limit RPC returned an invalid result")
+    throw new Error("Rate limit storage returned an invalid result")
   }
 
   if (result.limit_value !== policy.limit || result.remaining > result.limit_value) {
-    throw new Error("Rate limit RPC returned a policy mismatch")
+    throw new Error("Rate limit storage returned a policy mismatch")
   }
 
   return {
@@ -45,15 +52,33 @@ function parseRateLimitRpcResult(data: unknown, policy: RateLimitPolicy): RateLi
   }
 }
 
-function getSupabaseRateLimitStore(): RateLimitStore {
+function getPostgresRateLimitStore(): RateLimitStore {
   return {
     async consume(policy: RateLimitPolicyName, subjectHash: string): Promise<unknown> {
-      const { data, error } = await getSupabaseAdmin().rpc("consume_api_rate_limit", {
-        p_policy: policy,
-        p_subject_hash: subjectHash,
-      })
-      if (error) throw new Error("Rate limit storage request failed")
-      return data
+      const configured = Object.values(RATE_LIMIT_POLICIES).find((candidate) => candidate.name === policy)
+      if (!configured) throw new Error("Rate limit policy is not configured")
+      const windowStartSeconds = Math.floor(Date.now() / 1_000 / configured.windowSeconds) * configured.windowSeconds
+      const claimed = await queryRows<RateLimitStorageRow>(
+        `INSERT INTO public.api_rate_limit_windows (policy, subject_hash, window_started_at, request_count)
+         VALUES ($1, $2, to_timestamp($3), 1)
+         ON CONFLICT (policy, subject_hash, window_started_at) DO UPDATE
+         SET request_count = public.api_rate_limit_windows.request_count + 1,
+             updated_at = now()
+         WHERE public.api_rate_limit_windows.request_count < $4
+         RETURNING true AS allowed, $4::integer AS limit_value,
+           greatest($4 - request_count, 0)::integer AS remaining, 0::integer AS retry_after_seconds`,
+        [policy, subjectHash, windowStartSeconds, configured.limit],
+      )
+      if (claimed.length > 0) return claimed
+
+      return queryRows<RateLimitStorageRow>(
+        `SELECT false AS allowed, $4::integer AS limit_value,
+           greatest($4 - request_count, 0)::integer AS remaining,
+           greatest(1, ceil(extract(epoch FROM (to_timestamp($3) + make_interval(secs => $5) - now()))))::integer AS retry_after_seconds
+         FROM public.api_rate_limit_windows
+         WHERE policy = $1 AND subject_hash = $2 AND window_started_at = to_timestamp($3)`,
+        [policy, subjectHash, windowStartSeconds, configured.limit, configured.windowSeconds],
+      )
     },
   }
 }
@@ -61,7 +86,7 @@ function getSupabaseRateLimitStore(): RateLimitStore {
 export async function consumeRateLimit(
   policy: RateLimitPolicy,
   subjectHash: string,
-  store: RateLimitStore = getSupabaseRateLimitStore(),
+  store: RateLimitStore = getPostgresRateLimitStore(),
 ): Promise<RateLimitDecision> {
   if (!SUBJECT_HASH_PATTERN.test(subjectHash)) {
     throw new Error("Rate limit subject hash is invalid")
@@ -83,5 +108,5 @@ export async function consumeRateLimit(
     throw new RateLimitUnavailableError()
   }
 
-  return parseRateLimitRpcResult(data, policy)
+  return parseRateLimitResult(data, policy)
 }

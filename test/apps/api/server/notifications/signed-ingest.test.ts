@@ -8,7 +8,7 @@ import {
   parseSignedIngestBody,
   verifyNotificationIngestSignature,
 } from "../../../../../apps/api/server/notifications/signed-ingest.js"
-import { parseSignedIngestMetadata, signedIngestRateLimitSubject } from "../../../../../apps/api/server/notifications/signed-ingest-replay.js"
+import { claimSignedIngestNonce, parseSignedIngestMetadata, signedIngestRateLimitSubject } from "../../../../../apps/api/server/notifications/signed-ingest-replay.js"
 
 const REQUEST_EVENTS = ["request.created", "request.status_changed", "request.archived"] as const
 const REQUEST_ID = "99447b5b-3f84-4ad8-a310-c257637a4a97"
@@ -81,6 +81,28 @@ describe("signed notification ingest", () => {
     const retry = parseSignedIngestMetadata("1785931200", NONCE, now)
     assert.ok(first)
     assert.deepEqual(retry, first)
+  })
+
+  it("claims a signed nonce once and reuses its bounded expiry metadata", async () => {
+    const metadata = parseSignedIngestMetadata("1785931200", NONCE, Date.UTC(2026, 7, 5, 12, 0, 0))
+    assert.ok(metadata)
+    const seen: string[] = []
+    let claimed = false
+    const store = {
+      async claim(value: typeof metadata): Promise<boolean> {
+        seen.push(`${value.nonce}:${value.expiresAt}`)
+        if (claimed) return false
+        claimed = true
+        return true
+      },
+    }
+
+    assert.equal(await claimSignedIngestNonce(metadata, store), true)
+    assert.equal(await claimSignedIngestNonce(metadata, store), false)
+    assert.deepEqual(seen, [
+      `${NONCE}:2026-08-05T12:10:00.000Z`,
+      `${NONCE}:2026-08-05T12:10:00.000Z`,
+    ])
   })
 
   it("finds signature headers regardless of the runtime header casing", () => {
