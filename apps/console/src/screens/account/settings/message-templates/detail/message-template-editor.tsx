@@ -39,7 +39,7 @@ export function MessageTemplateEditor({ messageType }: { messageType: MessageTyp
                 ) : (
                     <>
                         <VariableTextEditor.Root source={state.body} html={state.editorHtml} variables={variables} disabled={state.saving} textareaRef={textareaRef} onSourceChange={actions.changeBody} onRichChange={actions.changeRichBody} onInsertVariable={actions.insertTokenFromButton} richFallback={state.unsupportedTags.length ? <Paragraph.sm>This template uses advanced blocks ({state.unsupportedTags.join(', ')}). Edit these in Source to preserve their formatting.</Paragraph.sm> : null}>
-                            <div className="flex justify-end"><VariableTextEditor.ViewSwitch /></div>
+                            <VariableTextEditor.Toolbar className="justify-between"><VariableTextEditor.ViewSwitch /><VariableTextEditor.Formatting /></VariableTextEditor.Toolbar>
                             <VariableTextEditor.Rich />
                             <VariableTextEditor.Source />
                         </VariableTextEditor.Root>

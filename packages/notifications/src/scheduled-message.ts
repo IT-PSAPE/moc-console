@@ -38,8 +38,9 @@ export function validateScheduledBody(type: ScheduledMessageType, body: string):
 export function renderScheduledMessage(input: ScheduledRenderInput, responses: ScheduledResponse[], expired: boolean): { text: string; replyMarkup: InlineKeyboardMarkup | null } {
  const body=renderTemplate(input.body,input.fields)
  const lines=responses.map(response => {
-  const status=response.status === 'attending' ? `✅ Attending${response.arrivalTime ? ` · ${response.arrivalTime}` : input.requireArrival ? ' · time not set' : ''}` : response.status === 'not_attending' ? '❌ Not attending' : '⏳ Awaiting response'
-  return `${escapeHtml(response.name)} — ${status}`
+  const icon=response.status === 'attending' ? '✅' : response.status === 'not_attending' ? '❌' : '🔁'
+  const arrival=response.status === 'attending' && response.arrivalTime ? ` — ${escapeHtml(response.arrivalTime)}` : ''
+  return `${icon} ${escapeHtml(response.name)}${arrival}`
  })
  const text=[body,input.messageType === 'pre_attendance' ? lines.join('\n') : '',expired ? 'Closed' : ''].filter(Boolean).join('\n\n')
  if (text.replace(/<[^>]*>/g,'').length > 4096) throw new Error('Message exceeds Telegram’s text limit; shorten the template or audience')

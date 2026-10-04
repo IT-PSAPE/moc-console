@@ -9,11 +9,11 @@ export function VariableTextEditorRich() {
     }
     if (state.view !== 'editor') return null
     if (meta.richFallback) return meta.richFallback
-    return <RichTextEditor.Root value={meta.html} onChange={meta.onRichChange} disabled={meta.disabled}>
-        <div><RichTextEditor.Toolbar /><RichTextEditor.Content /></div>
-        <div className="flex flex-wrap items-center gap-1.5" aria-label="Insert a variable">
+    return <>
+        <RichTextEditor.Content />
+        <div className="mt-3 flex flex-wrap items-center gap-1.5" aria-label="Insert a variable">
             <Label.xs className="mr-1 text-tertiary">Insert variable</Label.xs>
             {meta.variables.map(renderVariable)}
         </div>
-    </RichTextEditor.Root>
+    </>
 }

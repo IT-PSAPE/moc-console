@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { SCHEDULED_FIELDS, renderScheduledMessage, scheduledOccurrenceSummary, validateScheduledFields, type ScheduledEditScope, type ScheduledOccurrence, type ScheduledSnapshot } from '@moc/notifications'
+import { SCHEDULED_FIELDS, scheduledOccurrenceSummary, validateScheduledFields, type ScheduledEditScope, type ScheduledOccurrence, type ScheduledSnapshot } from '@moc/notifications'
 import { useWorkspace } from '@/lib/workspace-context'
 import { routes } from '@/screens/console-routes'
-import { templateToEditorHtml } from '@/lib/template-editor-html'
 import { formatUtcIsoInTimezone } from '@moc/utils/zoned-date-time'
 import { fetchScheduledMessages, mutateScheduledMessage } from './services/scheduled-message-service'
+import { scheduledMessagePreview } from './scheduled-message-preview'
 
-const empty: ScheduledSnapshot = { templates: [], schedules: [], occurrences: [], memberTypes: [], groups: [] }
+const empty: ScheduledSnapshot = { templates: [], schedules: [], occurrences: [], memberTypes: [], groups: [], members: [] }
 const frequencyItems = [{ value: 'once', label: 'Does not repeat' }, { value: 'daily', label: 'Daily' }, { value: 'weekdays', label: 'Weekdays' }, { value: 'weekly', label: 'Weekly' }, { value: 'monthly', label: 'Monthly' }]
 const scopeItems = [{ value: 'occurrence', label: 'This occurrence' }, { value: 'future', label: 'This and future occurrences' }, { value: 'series', label: 'Entire series' }]
 type ScheduleDraft = { templateId: string; fields: Record<string, string>; groupChatId: string; threadId: string; startsOn: string; untilOn: string; frequency: string; timezone: string; expiryHours: string; autoSend: boolean }
@@ -123,12 +123,7 @@ export function useScheduledMessages() {
     }
     const selectedSchedule = snapshot.schedules.find(s => s.id === editing?.schedule_id)
     const selectedTemplate = snapshot.templates.find(t => t.id === schedule.templateId)
-    let previewHtml = ''
-    let previewError = ''
-    if (selectedTemplate) {
-        try { previewHtml = templateToEditorHtml(renderScheduledMessage({ id: selectedTemplate.id, messageType: selectedTemplate.message_type, body: selectedTemplate.body, fields: schedule.fields, requireArrival: selectedTemplate.require_arrival }, [], false).text) }
-        catch (e) { previewError = e instanceof Error ? e.message : 'Check message values' }
-    }
+    const preview = selectedTemplate ? scheduledMessagePreview({ id: selectedTemplate.id, messageType: selectedTemplate.message_type, body: selectedTemplate.body, fields: schedule.fields, requireArrival: selectedTemplate.require_arrival, audience: selectedTemplate.audience }, snapshot.members) : { html: '', error: '', attendeeCount: 0 }
     const templateRows = snapshot.templates.map(t => ({ ...t, label: t.message_type === 'pre_attendance' ? 'Pre-attendance' : 'Announcement', editPath: `/${routes.scheduledTemplateDetail.replace(':id', t.id)}`, usePath: `/${routes.scheduledMessageNew}?template=${encodeURIComponent(t.id)}` }))
     const fieldItems = editing ? [...SCHEDULED_FIELDS[editing.message_type].map(f => ({ value: f.key, label: f.label })), ...(editing.state === 'scheduled' ? [{ value: 'sendOn', label: 'Send date' }] : []), { value: 'expiresAt', label: 'Expiry date (ISO timestamp)' }, { value: 'expiryHours', label: 'Expiry hours from send date' }] : []
     const topics = snapshot.groups.find(g => g.chat_id === schedule.groupChatId)?.telegram_group_topics ?? []
@@ -136,6 +131,6 @@ export function useScheduledMessages() {
     return {
         state: { snapshot, schedule, editing, edit, confirmation, error, loadError, loading, busy, tab },
         actions: { reload, mutate, setTab, startSchedule, changeSchedule, changeScheduleField, setTemplateId, setGroup, setTopic, setFrequency, changeAutoSend, requestSchedule, selectOccurrence, changeEditField, changeEditValue, changeScope, requestEdit, requestSend, requestTemplateDelete, changeEditorOpen, changeConfirmationOpen, confirm, syncCommands, ignorePreviewChange },
-        meta: { frequencyItems, scopeItems, fieldItems, topicItems, selectedTemplate, templateRows, previewHtml, previewError, isAttendance: selectedTemplate?.message_type === 'pre_attendance', scheduleFields: selectedTemplate ? SCHEDULED_FIELDS[selectedTemplate.message_type] : [], hasTopics: topicItems.length > 1, isRecurring: schedule.frequency !== 'once', occurrences: snapshot.occurrences.map(occurrenceRow), templateItems: snapshot.templates.map(t => ({ value: t.id, label: t.name })), groupItems: snapshot.groups.map(g => ({ value: g.chat_id, label: g.title })), showScope: selectedSchedule?.frequency !== 'once' && !['sendOn', 'expiresAt'].includes(edit.field) },
+        meta: { frequencyItems, scopeItems, fieldItems, topicItems, selectedTemplate, templateRows, previewHtml: preview.html, previewError: preview.error, isAttendance: selectedTemplate?.message_type === 'pre_attendance', scheduleFields: selectedTemplate ? SCHEDULED_FIELDS[selectedTemplate.message_type] : [], hasTopics: topicItems.length > 1, isRecurring: schedule.frequency !== 'once', occurrences: snapshot.occurrences.map(occurrenceRow), templateItems: snapshot.templates.map(t => ({ value: t.id, label: t.name })), groupItems: snapshot.groups.map(g => ({ value: g.chat_id, label: g.title })), showScope: selectedSchedule?.frequency !== 'once' && !['sendOn', 'expiresAt'].includes(edit.field) },
     }
 }

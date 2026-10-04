@@ -11,7 +11,7 @@ export function VariableTextEditorSource() {
     }
     if (state.view !== 'source') return null
     return <>
-        <TextArea aria-label="Message template source" ref={textareaRef} value={source} onChange={onSourceChange} disabled={disabled} rows={12} className="font-mono" />
-        <div className="flex flex-wrap items-center gap-1.5" aria-label="Insert a variable"><Label.xs className="mr-1 text-tertiary">Insert variable</Label.xs>{variables.map(renderVariable)}</div>
+        <TextArea aria-label="Message template source" ref={textareaRef} value={source} onChange={onSourceChange} disabled={disabled} rows={12} className="rounded-t-none font-mono" />
+        <div className="mt-3 flex flex-wrap items-center gap-1.5" aria-label="Insert a variable"><Label.xs className="mr-1 text-tertiary">Insert variable</Label.xs>{variables.map(renderVariable)}</div>
     </>
 }

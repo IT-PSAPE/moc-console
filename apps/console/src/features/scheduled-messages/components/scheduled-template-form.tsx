@@ -9,6 +9,8 @@ import { FormField } from '@moc/ui/components/form/form-field'
 import { Checkbox } from '@moc/ui/components/form/checkbox'
 import { SelectField } from '@moc/ui/components/form/select-field'
 import { VariableTextEditor } from '@moc/ui/components/form/variable-text-editor'
+import { RichTextEditor } from '@moc/ui/components/form/rich-text-editor'
+import { SegmentedControl } from '@moc/ui/components/controls/segmented-control'
 import { Badge } from '@moc/ui/components/display/badge'
 import { Paragraph } from '@moc/ui/components/display/text'
 import { Alert } from '@moc/ui/components/feedback/alert'
@@ -40,8 +42,12 @@ export function ScheduledTemplateForm() {
                     <FormField label="Message type"><SelectField disabled={state.busy} name="message-type" label="Message type" value={state.draft.messageType} items={meta.typeItems} onValueChange={actions.changeType} /></FormField>
                 </div>
                 <VariableTextEditor.Root source={state.draft.body} html={state.editorHtml} variables={meta.variables} disabled={state.busy} textareaRef={meta.textareaRef} onSourceChange={actions.changeBody} onRichChange={actions.changeRichBody} onInsertVariable={actions.insertTokenFromButton} richFallback={state.unsupportedTags.length ? <Paragraph.sm>Edit advanced blocks in Source to preserve their formatting.</Paragraph.sm> : null}>
-                    <div className="flex justify-end"><VariableTextEditor.ViewSwitch /></div>
+                    <VariableTextEditor.Toolbar className="justify-between"><VariableTextEditor.ViewSwitch><SegmentedControl.Item value="preview">Preview</SegmentedControl.Item></VariableTextEditor.ViewSwitch><VariableTextEditor.Formatting /></VariableTextEditor.Toolbar>
                     <VariableTextEditor.Rich /><VariableTextEditor.Source />
+                    <VariableTextEditor.Preview role="region" aria-label="Message preview">
+                        {meta.preview.error ? <Alert variant="error" title="Couldn't preview message" description={meta.preview.error} /> : <RichTextEditor.Root value={meta.preview.html} onChange={actions.ignorePreviewChange} disabled><RichTextEditor.Content className="border-0 [&_.ProseMirror]:min-h-0 [&_.ProseMirror]:p-0" /></RichTextEditor.Root>}
+                        {meta.isAttendance && !meta.preview.attendeeCount ? <Paragraph.sm className="text-tertiary">No attendees match the selected member types.</Paragraph.sm> : null}
+                    </VariableTextEditor.Preview>
                 </VariableTextEditor.Root>
                 <Section><Section.Header title="Default values" description="These prefill the message when you use this template." /><Section.Body className="gap-4">{meta.fields.map(renderField)}</Section.Body></Section>
                 {meta.isAttendance ? <Section><Section.Header title="Attendance" /><Section.Body className="gap-4"><FormField label="Who should respond?">{meta.memberTypes.map(renderAudience)}</FormField><Checkbox disabled={state.busy} checked={state.draft.requireArrival} onChange={actions.changeArrival}>Ask attendees for their arrival time</Checkbox></Section.Body></Section> : null}

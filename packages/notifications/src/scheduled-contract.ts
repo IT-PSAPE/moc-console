@@ -12,8 +12,9 @@ export type ScheduledSchedule = {
 }
 export type ScheduledTemplate = {id:string;name:string;message_type:ScheduledMessageType;body:string;fields:ScheduledFields;audience:string[];require_arrival:boolean}
 export type MemberType = {id:string;name:string;is_default:boolean}
+export type ScheduledMember = {id:string;name:string;memberTypeId:string}
 export type ScheduledSnapshot = {
- occurrences:ScheduledOccurrence[];schedules:ScheduledSchedule[];templates:ScheduledTemplate[];memberTypes:MemberType[];
+ occurrences:ScheduledOccurrence[];schedules:ScheduledSchedule[];templates:ScheduledTemplate[];memberTypes:MemberType[];members:ScheduledMember[];
  groups:{chat_id:string;title:string;telegram_group_topics:{thread_id:number;name:string;closed:boolean}[]}[];
 }
 export type ScheduledEditScope = 'occurrence'|'future'|'series'

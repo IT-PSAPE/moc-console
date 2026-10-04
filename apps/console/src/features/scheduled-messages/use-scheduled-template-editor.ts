@@ -6,6 +6,7 @@ import { useTemplateBodyEditor } from '@/hooks/use-template-body-editor'
 import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard'
 import { routes } from '@/screens/console-routes'
 import { useScheduledMessagesContext } from './scheduled-messages-context'
+import { scheduledMessagePreview } from './scheduled-message-preview'
 
 type TemplateDraft = { id?: string; name: string; messageType: ScheduledMessageType; body: string; fields: Record<string, string>; audience: string[]; requireArrival: boolean }
 const typeItems = [{ value: 'announcement', label: 'Announcement' }, { value: 'pre_attendance', label: 'Pre-attendance' }]
@@ -25,6 +26,8 @@ export function useScheduledTemplateEditor() {
     function changeBody(body: string): void { setDraft(current => ({ ...current, body })) }
     const variables = SCHEDULED_FIELDS[draft.messageType].map(field => field.key)
     const bodyEditor = useTemplateBodyEditor(draft.body, changeBody)
+    const preview = scheduledMessagePreview({ ...draft, id: draft.id ?? 'preview' }, messages.snapshot.members)
+    function ignorePreviewChange(): void { /* Generated attendees are not editable template content. */ }
     function changeName(event: ChangeEvent<HTMLInputElement>): void { setDraft(current => ({ ...current, name: event.target.value })) }
     function changeType(value: string): void {
         const messageType = value as ScheduledMessageType
@@ -63,7 +66,7 @@ export function useScheduledTemplateEditor() {
     }
     return {
         state: { draft, busy: messages.busy, loading: messages.loading, error: error || messages.error, missing: Boolean(id && !messages.loading && !row), navigationBlocked: guard.state.isBlocked, ...bodyEditor.state },
-        actions: { changeName, changeType, changeField, changeAudience, changeArrival, saveAndBack, ...bodyEditor.actions, ...guard.actions },
-        meta: { typeItems, fields: SCHEDULED_FIELDS[draft.messageType], variables, memberTypes: messages.snapshot.memberTypes, isAttendance: draft.messageType === 'pre_attendance', textareaRef: bodyEditor.meta.textareaRef },
+        actions: { changeName, changeType, changeField, changeAudience, changeArrival, saveAndBack, ignorePreviewChange, ...bodyEditor.actions, ...guard.actions },
+        meta: { typeItems, fields: SCHEDULED_FIELDS[draft.messageType], variables, memberTypes: messages.snapshot.memberTypes, preview, isAttendance: draft.messageType === 'pre_attendance', textareaRef: bodyEditor.meta.textareaRef },
     }
 }

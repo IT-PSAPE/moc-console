@@ -9,7 +9,7 @@ async (page) => {
   let holdSave = false;
   let releaseSave;
   await page.setViewportSize({ width: 1280, height: 800 });
-  const snapshot = () => ({ templates, schedules: [], occurrences: [], memberTypes: [{ id: '30000000-0000-4000-8000-000000000001', name: 'Members', is_default: true }], groups: [] });
+  const snapshot = () => ({ templates, schedules: [], occurrences: [], members: [], memberTypes: [{ id: '30000000-0000-4000-8000-000000000001', name: 'Members', is_default: true }], groups: [] });
   await page.route('**/fixture-api', async route => {
     const body = route.request().postDataJSON();
     if (body?.op === 'template.save') {

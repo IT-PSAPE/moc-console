@@ -30,9 +30,15 @@ async function snapshot(workspace: string): Promise<unknown> {
     admin.from('scheduled_message_schedules').select('*').eq('workspace_id',workspace),
     admin.from('workspace_member_types').select('*').eq('workspace_id',workspace).order('name'),
     admin.from('telegram_groups').select('chat_id,title,telegram_group_topics(thread_id,name,closed)').eq('workspace_id',workspace).eq('active',true).is('removed_at',null),
+    admin.from('workspace_users').select('user_id,member_type_id,users!inner(name,surname)').eq('workspace_id',workspace),
   ])
   for(const r of results) if(r.error) throw new Error(r.error.message)
-  return {occurrences,templates:results[0].data,schedules:results[1].data,memberTypes:results[2].data,groups:results[3].data}
+  type MemberRow = {user_id:string;member_type_id:string;users:{name:string;surname:string}|{name:string;surname:string}[]|null}
+  const members=((results[4].data ?? []) as unknown as MemberRow[]).flatMap(row => {
+    const user=Array.isArray(row.users)?row.users[0]:row.users
+    return user?[{id:row.user_id,memberTypeId:row.member_type_id,name:`${user.name} ${user.surname}`.trim()}]:[]
+  })
+  return {occurrences,templates:results[0].data,schedules:results[1].data,memberTypes:results[2].data,groups:results[3].data,members}
 }
 async function mutate(actor: string,workspace: string,body: Record<string,unknown>): Promise<void> {
   const data=object(body.data)
