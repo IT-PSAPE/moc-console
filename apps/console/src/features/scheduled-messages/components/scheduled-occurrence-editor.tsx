@@ -2,7 +2,7 @@ import { Button } from '@moc/ui/components/controls/button'
 import { FormField } from '@moc/ui/components/form/form-field'
 import { SelectField } from '@moc/ui/components/form/select-field'
 import { TextArea } from '@moc/ui/components/form/text-area'
-import { Input } from '@moc/ui/components/form/input'
+import { DateTimeFields } from '@moc/ui/components/form/date-time-fields'
 import { Modal } from '@moc/ui/components/overlays/modal'
 import { ConfirmationDialog } from '@moc/ui/components/overlays/confirmation-dialog'
 import { Label } from '@moc/ui/components/display/text'
@@ -18,7 +18,7 @@ export function ScheduledOccurrenceEditor() {
         <Modal.Header><Label.md>Manage {state.editing?.fields.title}</Label.md></Modal.Header>
         <Modal.Content><div className="flex flex-col gap-4 p-4">
           <FormField label="Field"><SelectField name="edit-field" label="Field" items={meta.fieldItems} value={state.edit.field} onValueChange={actions.changeEditField}/></FormField>
-          {state.edit.field==='attendanceGroups' ? <FormField label="Group choices"><ScheduledAttendanceGroupFields groups={meta.editGroups} disabled={state.busy} onChange={actions.changeAttendanceGroup} onAdd={actions.addAttendanceGroup} onEnable={actions.enableAttendanceGroups} onClear={actions.clearAttendanceGroups} onRemove={actions.removeAttendanceGroup}/></FormField> : <FormField label="Replacement value">{state.edit.field==='date' ? <Input type="date" aria-label="Replacement value" value={state.edit.value} onChange={actions.changeEditValue}/> : <TextArea aria-label="Replacement value" value={state.edit.value} onChange={actions.changeEditValue}/>}</FormField>}
+          {state.edit.field==='attendanceGroups' ? <FormField label="Group choices"><ScheduledAttendanceGroupFields groups={meta.editGroups} disabled={state.busy} onChange={actions.changeAttendanceGroup} onAdd={actions.addAttendanceGroup} onEnable={actions.enableAttendanceGroups} onClear={actions.clearAttendanceGroups} onRemove={actions.removeAttendanceGroup}/></FormField> : <FormField label="Replacement value">{['sendOn','expiresAt'].includes(state.edit.field) ? <DateTimeFields ariaLabel="Replacement value" value={state.edit.value} onChange={actions.setEditTimestamp} required/> : <TextArea aria-label="Replacement value" value={state.edit.value} onChange={actions.changeEditValue}/>}</FormField>}
           {meta.showScope?<FormField label="Apply to"><SelectField name="edit-scope" label="Apply to" items={meta.scopeItems} value={state.edit.scope} onValueChange={actions.changeScope}/></FormField>:null}
           {state.error?<Alert variant="error" title="Couldn't apply change" description={state.error}/>:null}
         </div></Modal.Content>

@@ -2,21 +2,12 @@ import { describe, expect, test } from 'bun:test'
 import { renderScheduledMessage, validateScheduledFields, validateScheduledBody, SCHEDULED_DEFAULT_BODIES } from '../../../../packages/notifications/src/scheduled-message'
 
 describe('scheduled message fields and rendering', () => {
- test.each(['announcement','pre_attendance'] as const)('renders %s dates with the converted year without changing stored values', messageType => {
-  const fields=validateScheduledFields(messageType,{title:'Service',date:'2026-10-04'})
-  validateScheduledBody(messageType,'{{title}}\n{{date}}')
-  const result=renderScheduledMessage({id:'abc',messageType,body:'{{title}}\n{{date}}',fields,requireArrival:false},[],false)
-  expect(result.text).toBe('Service\n431004')
-  expect(fields.date).toBe('2026-10-04')
- })
- test.each(['2026-02-29','2026-04-31','2026-13-04','04/10/43','2026-10-04T07:30','0000-01-01'])('rejects invalid date-only field %s', date => {
-  expect(() => validateScheduledFields('announcement',{title:'Service',date})).toThrow()
- })
- test('allows an optional empty date and valid leap day', () => {
-  const input={id:'abc',messageType:'announcement' as const,body:'{{title}}\n{{date}}',fields:{title:'Service',date:''},requireArrival:false}
-  expect(renderScheduledMessage({...input,fields:validateScheduledFields(input.messageType,input.fields)},[],false).text).toBe('Service')
-  expect(renderScheduledMessage({...input,fields:validateScheduledFields(input.messageType,{title:'Service',date:'2028-02-29'})},[],false).text).toBe('Service\n450229')
-  expect(renderScheduledMessage({...input,fields:validateScheduledFields(input.messageType,{title:'Service',date:'1984-01-04'})},[],false).text).toBe('Service\n010104')
+ test.each(['announcement','pre_attendance'] as const)('renders %s expiry without adding independently editable fields', messageType => {
+  const fields=validateScheduledFields(messageType,{title:'Service'})
+  validateScheduledBody(messageType,'{{title}}\n{{date}} {{time}}')
+  const result=renderScheduledMessage({id:'abc',messageType,body:'{{title}}\n{{date}} {{time}}',fields,requireArrival:false,expiresAt:'2026-10-04T05:30:00Z',timezone:'Africa/Johannesburg'},[],false)
+  expect(result.text).toBe('Service\n431004 07:30')
+  expect(fields).toEqual({title:'Service'})
  })
  test('rejects generated fields and the retired expected arrival field', () => {
   expect(() => validateScheduledFields('pre_attendance', { title: 'Service', attendeeList: 'Fake' })).toThrow()

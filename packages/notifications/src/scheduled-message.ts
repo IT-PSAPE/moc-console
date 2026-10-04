@@ -1,5 +1,5 @@
 import { renderTemplate } from './render-template.js'
-import { formatScheduledDate } from './scheduled-date.js'
+import { scheduledLifecycleVariables } from './scheduled-date.js'
 import type { InlineKeyboardMarkup } from './telegram-keyboard.js'
 import { validateScheduledAttendanceGroups, type ScheduledAttendanceGroup } from './scheduled-attendance-groups.js'
 import { renderScheduledAttendanceRoster } from './scheduled-attendance-roster.js'
@@ -7,15 +7,16 @@ import { renderScheduledAttendanceRoster } from './scheduled-attendance-roster.j
 export type ScheduledMessageType = 'announcement' | 'pre_attendance'
 export type ScheduledFields = Record<string, string>
 export type ScheduledResponse = { name: string; status: 'awaiting' | 'attending' | 'not_attending'; arrivalTime: string | null; groupId?: string | null }
-export type ScheduledRenderInput = { id: string; messageType: ScheduledMessageType; body: string; fields: ScheduledFields; requireArrival: boolean; attendanceGroups?: ScheduledAttendanceGroup[] }
-export type ScheduledFieldDefinition = { key: string; label: string; maxLength: number; inputType?: 'date' }
+export type ScheduledRenderInput = { id: string; messageType: ScheduledMessageType; body: string; fields: ScheduledFields; requireArrival: boolean; attendanceGroups?: ScheduledAttendanceGroup[]; expiresAt?: string; timezone?: string }
+export type ScheduledFieldDefinition = { key: string; label: string; maxLength: number }
 export const SCHEDULED_FIELDS: Record<ScheduledMessageType, readonly ScheduledFieldDefinition[]> = {
- announcement: [{ key:'title',label:'Title',maxLength:120 },{ key:'instructions',label:'Message',maxLength:2000 },{ key:'date',label:'Date',maxLength:10,inputType:'date' }],
- pre_attendance: [{ key:'title',label:'Title',maxLength:120 },{ key:'instructions',label:'Instructions',maxLength:2000 },{ key:'date',label:'Date',maxLength:10,inputType:'date' }],
+ announcement: [{ key:'title',label:'Title',maxLength:120 },{ key:'instructions',label:'Message',maxLength:2000 }],
+ pre_attendance: [{ key:'title',label:'Title',maxLength:120 },{ key:'instructions',label:'Instructions',maxLength:2000 }],
 }
+export const SCHEDULED_VARIABLES = ['title', 'instructions', 'date', 'time'] as const
 export const SCHEDULED_DEFAULT_BODIES: Record<ScheduledMessageType,string> = {
- announcement: '<b>{{title}}</b>\n{{date}}\n{{instructions}}',
- pre_attendance: '<b>{{title}}</b>\n{{date}}\n{{instructions}}',
+ announcement: '<b>{{title}}</b>\n{{date}} {{time}}\n{{instructions}}',
+ pre_attendance: '<b>{{title}}</b>\n{{date}} {{time}}\n{{instructions}}',
 }
 export const ARRIVAL_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
 
@@ -26,7 +27,6 @@ export function validateScheduledFields(type: ScheduledMessageType, fields: unkn
   const definition = SCHEDULED_FIELDS[type].find(field => field.key === key)
   if (!definition || typeof value !== 'string' || value.length > definition.maxLength) throw new Error(`Invalid message field: ${key}`)
   result[key]=value.trim()
-  if (definition.inputType==='date') formatScheduledDate(result[key])
  }
  if (!result.title) throw new Error('A title is required')
  return result
@@ -34,12 +34,13 @@ export function validateScheduledFields(type: ScheduledMessageType, fields: unkn
 
 export function validateScheduledBody(type: ScheduledMessageType, body: string): void {
  if (!body.trim() || body.length > 3000) throw new Error('Template must contain 1–3000 characters')
- const allowed = new Set(SCHEDULED_FIELDS[type].map(field => field.key))
+ const allowed: ReadonlySet<string> = new Set(SCHEDULED_VARIABLES)
+ if (!SCHEDULED_FIELDS[type]) throw new Error('Invalid message type')
  for (const token of body.matchAll(/{{(\w+)}}/g)) if (!allowed.has(token[1])) throw new Error(`Unknown template field: ${token[1]}`)
 }
 
 export function renderScheduledMessage(input: ScheduledRenderInput, responses: ScheduledResponse[], expired: boolean): { text: string; replyMarkup: InlineKeyboardMarkup | null } {
- const body=renderTemplate(input.body,{...input.fields,date:formatScheduledDate(input.fields.date ?? '')})
+ const body=renderTemplate(input.body,{...input.fields,...scheduledLifecycleVariables(input.expiresAt, input.timezone ?? 'Africa/Johannesburg')})
  const groups=validateScheduledAttendanceGroups(input.messageType,input.attendanceGroups??[])
  const roster=input.messageType === 'pre_attendance' ? renderScheduledAttendanceRoster(groups,responses) : ''
  const text=[body,roster,expired ? 'Closed' : ''].filter(Boolean).join('\n\n')

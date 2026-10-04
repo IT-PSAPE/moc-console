@@ -85,6 +85,7 @@ function createFixture(options: FixtureOptions = {}) {
       rpcCalls.push({ name, body: body ?? {} })
       if (name === "begin_scheduled_delivery") {
         return json({
+          timezone: schedule.timezone,
           occurrence: { ...occurrence },
           responses: responses.map(response => ({ ...response })),
           expired: Date.parse(String(occurrence.expires_at)) <= Date.now(),
@@ -100,7 +101,8 @@ function createFixture(options: FixtureOptions = {}) {
       }
       if (name === "change_scheduled_occurrence") {
         const fields = occurrence.fields as Record<string, string>
-        fields[String(body?.p_field)] = String(body?.p_value)
+        if (body?.p_field === 'expiresAt') occurrence.expires_at = String(body?.p_value)
+        else fields[String(body?.p_field)] = String(body?.p_value)
         occurrence.revision = Number(occurrence.revision) + 1
       }
       if (name === "materialize_scheduled_messages" || name === "recover_scheduled_deliveries") return new Response("null", { status: 200 })
@@ -237,26 +239,26 @@ function createFixture(options: FixtureOptions = {}) {
 }
 
 describe("scheduled Telegram flows", () => {
-  it("edits a Gregorian content date and renders its converted year on the original attendance message", async () => {
+  it("edits expiry and renders its date and time on the original attendance message, preserving responses", async () => {
     const fixture = createFixture({ state: "sent", messageType: "pre_attendance", withEditDelivery: true })
     try {
-      fixture.occurrence.fields = { title: "Service", instructions: "Please arrive", date: "2026-10-03" }
-      fixture.occurrence.body = "{{title}}\n{{date}}\n{{instructions}}"
+      fixture.occurrence.fields = { title: "Service", instructions: "Please arrive" }
+      fixture.occurrence.body = "{{title}}\n{{date}} {{time}}\n{{instructions}}"
       await fixture.startManagement()
       await fixture.callback("pick", "0", "pick-date")
-      await fixture.callback("field", "2", "choose-date")
+      await fixture.callback("field", "expiresAt", "choose-expiry")
       const prompt = fixture.telegramCalls("sendMessage").at(-1)?.body
-      assert.match(String(prompt?.text), /YYYY-MM-DD/)
+      assert.match(String(prompt?.text), /timezone offset/)
       const promptId = (fixture.session()?.data as Record<string, unknown>).promptId as number
-      await handleScheduledMessage({ text: "2026-10-04", from: { id: 456 }, chat: { id: "-100123", type: "supergroup" }, message_thread_id: 22, ephemeral_message_id: 999, reply_to_message: { ephemeral_message_id: promptId } })
+      await handleScheduledMessage({ text: "2026-10-04T18:30+02:00", from: { id: 456 }, chat: { id: "-100123", type: "supergroup" }, message_thread_id: 22, ephemeral_message_id: 999, reply_to_message: { ephemeral_message_id: promptId } })
       await fixture.callback("apply", undefined, "apply-date")
       const change = fixture.rpcCalls.find(call => call.name === "change_scheduled_occurrence")
-      assert.equal(change?.body.p_field, "date")
-      assert.equal(change?.body.p_value, "2026-10-04")
+      assert.equal(change?.body.p_field, "expiresAt")
+      assert.equal(change?.body.p_value, "2026-10-04T18:30+02:00")
       const edited = fixture.telegramCalls("editMessageText").at(-1)?.body
       assert.equal(edited?.message_id, 700)
       const html = (edited?.rich_message as { html: string })?.html
-      assert.match(String(html), /431004/)
+      assert.match(String(html), /431004 18:30/)
       assert.match(String(html), /✅ Alex Member — 07:15/)
       assert.equal(fixture.telegramCalls("sendRichMessage").length, 0)
     } finally { fixture.teardown() }

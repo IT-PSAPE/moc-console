@@ -8,7 +8,7 @@ export type ScheduledOccurrence = {
 }
 export type ScheduledSchedule = {
  id:string;workspace_id:string;template_id:string;group_chat_id:string;thread_id:number|null;
- starts_on:string;frequency:'once'|'daily'|'weekdays'|'weekly'|'monthly';timezone:string;
+ starts_on:string;send_time?:string;frequency:'once'|'daily'|'weekdays'|'weekly'|'monthly';timezone:string;
  expiry_hours:number;auto_send:boolean;enabled:boolean;
 }
 export type ScheduledTemplate = {id:string;name:string;message_type:ScheduledMessageType;body:string;fields:ScheduledFields;audience:string[];require_arrival:boolean;attendance_groups?:ScheduledAttendanceGroup[]}

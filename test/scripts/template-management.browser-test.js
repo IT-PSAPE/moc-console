@@ -114,7 +114,7 @@ async (page) => {
   await page.getByRole('checkbox', { name: 'Ask attendees for their arrival time', exact: true }).check();
   if (await page.getByRole('textbox', { name: /expected arrival/i }).count()) throw new Error('Retired arrival field remains in template form');
   const variables = await page.getByRole('textbox', { name: 'Rich text editor', exact: true }).locator('code').allTextContents();
-  if (variables.join(',') !== 'title,date,instructions') throw new Error(`Unexpected template variables: ${variables}`);
+  if (variables.join(',') !== 'title,date,time,instructions') throw new Error(`Unexpected template variables: ${variables}`);
   await page.screenshot({ path: 'output/playwright/pre-attendance-instructions-mobile.png', fullPage: true, animations: 'disabled' });
   await page.getByRole('button', { name: 'Save template', exact: true }).click();
   await page.waitForURL('**/scheduled-messages');

@@ -237,7 +237,7 @@ BEGIN
   PERFORM pg_temp.assert_rejected(
     format('SELECT public.change_scheduled_occurrence(%L,%L,2,''expiresAt'',%L)',v_editor,v_occurrence,
       ((v_today::timestamp AT TIME ZONE 'Africa/Johannesburg')::text)),
-    'Expiry must be after the send date'
+    'Expiry must be after the send time'
   );
   PERFORM pg_temp.assert_rejected(
     format('SELECT public.create_scheduled_schedule(%L,%L,%L::jsonb)',v_editor,v_workspace,

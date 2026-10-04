@@ -1,7 +1,7 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { flushSync } from 'react-dom'
 import { useNavigate, useParams } from 'react-router-dom'
-import { SCHEDULED_DEFAULT_BODIES, SCHEDULED_FIELDS, validateScheduledAttendanceGroups, validateScheduledBody, validateScheduledFields, type ScheduledAttendanceGroup, type ScheduledMessageType, type ScheduledTemplate } from '@moc/notifications'
+import { SCHEDULED_VARIABLES, SCHEDULED_DEFAULT_BODIES, SCHEDULED_FIELDS, validateScheduledAttendanceGroups, validateScheduledBody, validateScheduledFields, type ScheduledAttendanceGroup, type ScheduledMessageType, type ScheduledTemplate } from '@moc/notifications'
 import { useTemplateBodyEditor } from '@/hooks/use-template-body-editor'
 import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard'
 import { routes } from '@/screens/console-routes'
@@ -27,9 +27,9 @@ export function useScheduledTemplateEditor() {
     function setAttendanceGroups(attendanceGroups: ScheduledAttendanceGroup[]): void { setDraft(current => ({ ...current, attendanceGroups })) }
     const attendanceGroups = useScheduledAttendanceGroupEditor(draft.attendanceGroups, setAttendanceGroups)
     function changeBody(body: string): void { setDraft(current => ({ ...current, body })) }
-    const variables = SCHEDULED_FIELDS[draft.messageType].map(field => field.key)
+    const variables = [...SCHEDULED_VARIABLES]
     const bodyEditor = useTemplateBodyEditor(draft.body, changeBody)
-    const preview = scheduledMessagePreview({ ...draft, id: draft.id ?? 'preview' }, messages.snapshot.members)
+    const preview = scheduledMessagePreview({ ...draft, id: draft.id ?? 'preview', expiresAt: new Date(Date.now() + 72 * 3600_000).toISOString(), timezone: 'Africa/Johannesburg' }, messages.snapshot.members)
     function ignorePreviewChange(): void { /* Generated attendees are not editable template content. */ }
     function changeName(event: ChangeEvent<HTMLInputElement>): void { setDraft(current => ({ ...current, name: event.target.value })) }
     function changeType(value: string): void {

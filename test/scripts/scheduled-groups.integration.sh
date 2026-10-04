@@ -37,6 +37,7 @@ MIGRATIONS=(
   "$ROOT/supabase/migrations/2026-10-04a-scheduled-message-date.sql"
   "$ROOT/supabase/migrations/2026-10-04b-scheduled-attendance-groups.sql"
   "$ROOT/supabase/migrations/2026-10-04c-scheduled-message-resend.sql"
+  "$ROOT/supabase/migrations/2026-10-04d-scheduled-message-timestamps.sql"
 )
 
 {

@@ -23,8 +23,8 @@ export async function showOccurrence(s: MessageSession): Promise<void> {
   const rows=defs.map((f,i)=>[sessionButton(s,f.label,`field:${i}`)])
   const attendanceGroups=validateScheduledAttendanceGroups(o.message_type,o.attendance_groups??[])
   attendanceGroups.forEach((group,index)=>rows.push([sessionButton(s,`Rename group: ${group.label}`,`group:${index}`)]))
-  if(o.state==='scheduled') rows.push([sessionButton(s,'Send date','field:sendOn'),sessionButton(s,'Send now','send')])
-  rows.push([sessionButton(s,'Expiry date','field:expiresAt'),sessionButton(s,'Expiry hours','field:expiryHours')])
+  if(o.state==='scheduled') rows.push([sessionButton(s,'Send date and time','field:sendOn'),sessionButton(s,'Send now','send')])
+  rows.push([sessionButton(s,'Message expiry','field:expiresAt'),sessionButton(s,'Expiry hours','field:expiryHours')])
   rows.push([sessionButton(s,'Back','list:0'),sessionButton(s,'Close','close')])
   await showSession(s,`${o.fields.title}\n${scheduledOccurrenceSummary(o)}\nSelect a field to edit.`,rows)
 }

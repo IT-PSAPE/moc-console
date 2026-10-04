@@ -39,7 +39,13 @@ for file in "$@"; do
   if [[ "$(basename "$file")" == *-remove-expected-arrival.sql ]]; then
     run_sql "$TEST_ROOT/remove-expected-arrival-before.sql"
   fi
+  if [[ "$(basename "$file")" == *-scheduled-message-timestamps.sql ]]; then
+    run_sql "$TEST_ROOT/scheduled-timestamps-before.sql"
+  fi
   run_sql "$file"
+  if [[ "$(basename "$file")" == *-scheduled-message-timestamps.sql ]]; then
+    run_sql "$TEST_ROOT/scheduled-timestamps-after.sql"
+  fi
   if [[ "$(basename "$file")" == *-remove-expected-arrival.sql ]]; then
     run_sql "$TEST_ROOT/remove-expected-arrival-after.sql"
   fi
@@ -47,6 +53,6 @@ done
 run_sql "$TEST_ROOT/assertions.sql"
 run_sql "$TEST_ROOT/template-management.sql"
 "$TEST_ROOT/concurrency-local.sh" "$SOCKET_DIR"
-run_sql "$TEST_ROOT/scheduled-date.sql"
+run_sql "$TEST_ROOT/scheduled-timestamps.sql"
 run_sql "$TEST_ROOT/scheduled-attendance-groups.sql"
 run_sql "$TEST_ROOT/scheduled-resend.sql"

@@ -46,6 +46,7 @@ export function ScheduledTemplateForm() {
                     <VariableTextEditor.Toolbar className="justify-between"><VariableTextEditor.ViewSwitch><SegmentedControl.Item value="preview">Preview</SegmentedControl.Item></VariableTextEditor.ViewSwitch><VariableTextEditor.Formatting /></VariableTextEditor.Toolbar>
                     <VariableTextEditor.Rich /><VariableTextEditor.Source />
                     <VariableTextEditor.Preview role="region" aria-label="Message preview">
+                        <Paragraph.xs className="mb-3 text-tertiary">Date and time display the message expiry. This template preview uses an example expiry.</Paragraph.xs>
                         {meta.preview.error ? <Alert variant="error" title="Couldn't preview message" description={meta.preview.error} /> : <RichTextEditor.Root value={meta.preview.html} onChange={actions.ignorePreviewChange} disabled><RichTextEditor.Content className="border-0 [&_.ProseMirror]:min-h-0 [&_.ProseMirror]:p-0" /></RichTextEditor.Root>}
                         {meta.isAttendance && !meta.preview.attendeeCount ? <Paragraph.sm className="text-tertiary">No attendees match the selected member types.</Paragraph.sm> : null}
                     </VariableTextEditor.Preview>
