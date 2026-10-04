@@ -13,7 +13,7 @@ const ZOOM_OAUTH_STATE_KEY = "zoom_oauth_state"
 
 export function useZoomOAuth() {
   const startOAuthFlow = useCallback(() => {
-    // Set pending flag so supabase.ts can distinguish Zoom codes from Supabase PKCE
+    // Let the OAuth interceptor recognize the returning Zoom response.
     sessionStorage.setItem(ZOOM_OAUTH_PENDING_KEY, "true")
 
     const state = generateOAuthState()

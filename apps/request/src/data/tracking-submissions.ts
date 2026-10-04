@@ -1,17 +1,10 @@
-import { apiUrl } from "@moc/utils/api-url"
+import { PublicSubmissionApiError } from "@moc/sdk"
+import { moc } from "@/lib/moc-client"
 import { parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time"
 import type { BookingFormData } from "@/types/booking"
 import type { RequestFormData } from "@/types/request"
 import type { TrackingResult, TrackingVenueBookingResult } from "@/types/tracking"
 import type { VenueBookingFormData } from "@/types/venue-booking"
-
-type TrackingResponse = {
-  submission: TrackingResult
-}
-
-type ErrorResponse = {
-  error?: string
-}
 
 export class TrackingSubmissionError extends Error {
   readonly status: number
@@ -23,29 +16,21 @@ export class TrackingSubmissionError extends Error {
   }
 }
 
-async function parseError(response: Response): Promise<TrackingSubmissionError> {
-  const body = await response.json().catch(() => null) as ErrorResponse | null
-  return new TrackingSubmissionError(body?.error ?? "The submission could not be updated.", response.status)
-}
-
-async function requestTrackingApi(method: "POST" | "PATCH" | "DELETE", body: Record<string, unknown>): Promise<Response> {
-  return fetch(apiUrl("/api/public/submissions"), {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  })
+async function retainTrackingError<T>(operation: Promise<T>): Promise<T> {
+  try {
+    return await operation
+  } catch (error) {
+    if (error instanceof PublicSubmissionApiError) throw new TrackingSubmissionError(error.message, error.status)
+    throw error
+  }
 }
 
 export async function lookupTrackingCode(code: string): Promise<TrackingResult | null> {
-  const response = await requestTrackingApi("POST", { trackingCode: code.trim().toUpperCase() })
-  if (response.status === 404) return null
-  if (!response.ok) throw await parseError(response)
-  const body = await response.json() as TrackingResponse
-  return body.submission
+  return retainTrackingError(moc.publicSubmissions.lookupTracking<TrackingResult>(code))
 }
 
 export async function updateTrackedRequest(result: Extract<TrackingResult, { type: "request" }>, data: RequestFormData): Promise<TrackingResult> {
-  const response = await requestTrackingApi("PATCH", {
+  return retainTrackingError(moc.publicSubmissions.updateTracking<TrackingResult>({
     trackingCode: result.trackingCode,
     type: result.type,
     updatedAt: result.updatedAt,
@@ -55,13 +40,11 @@ export async function updateTrackedRequest(result: Extract<TrackingResult, { typ
       notes: data.notes.trim(),
       flow: data.flow.trim(),
     },
-  })
-  if (!response.ok) throw await parseError(response)
-  return ((await response.json()) as TrackingResponse).submission
+  }))
 }
 
 export async function updateTrackedBooking(result: Extract<TrackingResult, { type: "booking" }>, data: BookingFormData): Promise<TrackingResult> {
-  const response = await requestTrackingApi("PATCH", {
+  return retainTrackingError(moc.publicSubmissions.updateTracking<TrackingResult>({
     trackingCode: result.trackingCode,
     type: result.type,
     updatedAt: result.updatedAt,
@@ -74,13 +57,11 @@ export async function updateTrackedBooking(result: Extract<TrackingResult, { typ
       requestedEquipment: data.requestedEquipment,
       otherEquipment: data.otherEquipment.trim(),
     },
-  })
-  if (!response.ok) throw await parseError(response)
-  return ((await response.json()) as TrackingResponse).submission
+  }))
 }
 
 export async function updateTrackedVenueBooking(result: TrackingVenueBookingResult, data: VenueBookingFormData): Promise<TrackingResult> {
-  const response = await requestTrackingApi("PATCH", {
+  return retainTrackingError(moc.publicSubmissions.updateTracking<TrackingResult>({
     trackingCode: result.trackingCode,
     type: result.type,
     updatedAt: result.updatedAt,
@@ -92,16 +73,13 @@ export async function updateTrackedVenueBooking(result: TrackingVenueBookingResu
       slotStarts: data.slotStarts,
       recurrence: data.recurrence,
     },
-  })
-  if (!response.ok) throw await parseError(response)
-  return ((await response.json()) as TrackingResponse).submission
+  }))
 }
 
 export async function deleteTrackedSubmission(result: TrackingResult): Promise<void> {
-  const response = await requestTrackingApi("DELETE", {
+  await retainTrackingError(moc.publicSubmissions.deleteTracking({
     trackingCode: result.trackingCode,
     type: result.type,
     updatedAt: result.updatedAt,
-  })
-  if (!response.ok) throw await parseError(response)
+  }))
 }

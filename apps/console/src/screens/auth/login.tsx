@@ -24,6 +24,7 @@ export function LoginScreen() {
       <form onSubmit={actions.submit} className="space-y-4">
         <h2 className="title-h6">Sign in</h2>
         {state.error && <Alert variant="error" title={state.error} />}
+        {state.verificationSent && <Alert variant="success" title="Verification email sent" description="Check your inbox for a new sign-in link." />}
 
         <div className="space-y-1">
           <FormLabel label="Email" required />
@@ -60,6 +61,7 @@ export function LoginScreen() {
           <Link to="/reset-password" className="paragraph-xs text-brand hover:underline">Forgot password?</Link>
         </div>
         <Button type="submit" disabled={state.loading} className="w-full">{state.loading ? "Signing in…" : "Sign in"}</Button>
+        {state.canResendVerification && <Button type="button" variant="secondary" disabled={state.resendLoading} className="w-full" onClick={actions.resendVerificationEmail}>{state.resendLoading ? "Sending verification email…" : "Resend verification email"}</Button>}
         <p className="paragraph-sm text-center text-tertiary">Don't have an account? <Link to="/signup" className="text-brand hover:underline">Sign up</Link></p>
       </form>
     </AuthLayout>

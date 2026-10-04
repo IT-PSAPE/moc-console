@@ -16,9 +16,10 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
+      "@moc/sdk": ["../../packages/sdk/src/index.ts"],
+      "@moc/sdk/*": ["../../packages/sdk/src/*"],
       "@moc/ui/styles.css": ["../../packages/ui/src/index.css"],
       "@moc/ui/*": ["../../packages/ui/src/*"],
-      "@moc/data/*": ["../../packages/data/src/*"],
       "@moc/notifications": ["../../packages/notifications/src/index.ts"],
       "@moc/notifications/*": ["../../packages/notifications/src/*"],
       "@moc/types/*": ["../../packages/types/src/*"],

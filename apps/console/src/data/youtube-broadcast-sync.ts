@@ -1,6 +1,6 @@
 import type { Stream } from "@moc/types/streams/stream"
-import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
+import { moc } from "@/lib/moc-client"
 import { fetchAuthenticatedChannelId, youtubeApiFetch } from "@/lib/youtube-client"
 import { providerRequestError } from "@/lib/provider-request-error"
 import { fetchStreams } from "./fetch-streams"
@@ -97,11 +97,11 @@ async function fetchBroadcastsByIds(broadcastIds: string[], workspaceId: string)
  */
 async function isConnectedToRecordedChannel(workspaceId: string): Promise<boolean> {
   const [connectionResult, authenticatedChannelId] = await Promise.all([
-    supabase.from("youtube_connections").select("channel_id").eq("workspace_id", workspaceId).maybeSingle(),
+    moc.streams.getYouTubeConnection(workspaceId),
     fetchAuthenticatedChannelId(workspaceId),
   ])
-  if (connectionResult.error || !authenticatedChannelId) return false
-  return connectionResult.data?.channel_id === authenticatedChannelId
+  if (!connectionResult || !authenticatedChannelId) return false
+  return connectionResult.channelId === authenticatedChannelId
 }
 
 function toUpsertRow(broadcast: YouTubeBroadcastSyncRow, workspaceId: string, createdBy: string) {
@@ -133,8 +133,8 @@ type StreamUpsertRow = ReturnType<typeof toUpsertRow>
 
 export async function syncStreamsFromYouTube(requestedWorkspaceId?: string): Promise<Stream[]> {
   const workspaceId = requestedWorkspaceId ?? await getCurrentWorkspaceId()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error("Not authenticated")
+  const session = await moc.auth.getSession()
+  if (!session?.user) throw new Error("Not authenticated")
 
   const [currentBroadcasts, existingStreams] = await Promise.all([
     fetchCurrentBroadcasts(workspaceId),
@@ -159,7 +159,7 @@ export async function syncStreamsFromYouTube(requestedWorkspaceId?: string): Pro
   const payloads = new Map<string, StreamUpsertRow>()
   const adoptedBroadcastIds = new Set<string>()
   for (const broadcast of broadcasts) {
-    const row = toUpsertRow(broadcast, workspaceId, existingCreators.get(broadcast.id) ?? user.id)
+    const row = toUpsertRow(broadcast, workspaceId, existingCreators.get(broadcast.id) ?? session.user.id)
     // A stream we already track is always reconciled, so its status and end
     // time stay accurate once it goes live and finishes. One we do not track is
     // only taken on while it is current or upcoming.
@@ -171,19 +171,17 @@ export async function syncStreamsFromYouTube(requestedWorkspaceId?: string): Pro
     }
   }
   if (payloads.size > 0) {
-    const { error } = await supabase.from("streams").upsert([...payloads.values()], { onConflict: "workspace_id,youtube_broadcast_id" })
-    if (error) throw new Error(error.message)
+    const records = [...payloads.values()].map(({ created_by: createdBy, ...record }) => {
+      void createdBy
+      return record
+    })
+    await moc.streams.upsertStreams(records, workspaceId)
   }
   // A stream that was still in flight and no longer exists on YouTube was
   // deleted there, so the local row goes with it. Streams already recorded as
   // finished are never looked up and so are never deleted: they stay as history.
   if (deletedIds.length > 0 && await isConnectedToRecordedChannel(workspaceId)) {
-    const { error } = await supabase
-      .from("streams")
-      .delete()
-      .eq("workspace_id", workspaceId)
-      .in("youtube_broadcast_id", deletedIds)
-    if (error) throw new Error(error.message)
+    await moc.streams.deleteStreamsByBroadcastIds(deletedIds, workspaceId)
   }
 
   const syncedStreams = await fetchStreams(workspaceId)

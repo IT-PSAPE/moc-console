@@ -1,5 +1,5 @@
+import { moc } from "@/lib/moc-client"
 import { probeMediaFile } from "@moc/utils/probe-media-file"
-import { supabase } from "@moc/data/supabase"
 import type { Broadcast, BroadcastItem, BroadcastKind } from "@moc/types/broadcast/broadcast"
 import { BROADCAST_MEDIA_BUCKET } from "@moc/types/broadcast/broadcast-constants"
 import { buildBroadcastMutationRows } from "./broadcast-mutation-rows"
@@ -7,13 +7,10 @@ import { createBroadcastSlug } from "./broadcast-slug"
 import { fetchBroadcastById } from "./fetch-broadcasts"
 
 export type BroadcastUploadStatus = "queued" | "uploading" | "complete" | "error"
-
 export type BroadcastUploadFile = { clientId: string; file: File }
-
 export type BroadcastPlaylistUpdateItem =
   | { id: string; source: "existing" }
   | { clientId: string; file: File; source: "upload" }
-
 export type BroadcastUploadStatusChange = (clientId: string, status: BroadcastUploadStatus, error?: string) => void
 
 export type CreateBroadcastParams = {
@@ -37,14 +34,8 @@ export type UpdateBroadcastParams = {
   onUploadStatusChange?: BroadcastUploadStatusChange
 }
 
-export type DeleteBroadcastParams = {
-  id: string
-  workspaceId: string
-}
-
-export type DeleteBroadcastResult = {
-  storageCleanupError: Error | null
-}
+export type DeleteBroadcastParams = { id: string; workspaceId: string }
+export type DeleteBroadcastResult = { storageCleanupError: Error | null }
 
 type UploadedBroadcastItem = {
   clientId: string
@@ -52,76 +43,61 @@ type UploadedBroadcastItem = {
   file: File
   publicUrl: string
   storagePath: string
+  storageBucket: string
 }
 
-function sanitizeFileName(fileName: string): string {
-  return fileName.toLowerCase().replace(/[^a-z0-9.]+/g, "-")
+function storagePurpose(kind: BroadcastKind): "broadcast-audio" | "broadcast-video" {
+  return kind === "audio" ? "broadcast-audio" : "broadcast-video"
 }
 
-function createStoragePath(workspaceId: string, userId: string, broadcastId: string, file: File): string {
-  return `${workspaceId}/${userId}/${broadcastId}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`
-}
-
-async function requireSignedInUser(): Promise<string> {
-  const { data, error } = await supabase.auth.getUser()
-
-  if (error) throw new Error(error.message)
-  if (!data.user?.id) throw new Error("You must be signed in to manage a broadcast")
-  return data.user.id
-}
-
-// Last line of defence. The editor already checks every file, but nothing
-// unplayable may reach storage — a broadcast whose items cannot decode is the
-// one failure a viewer sees as "This media could not be played".
 async function requireDecodableFile(file: File, kind: BroadcastKind): Promise<number | null> {
   const { durationSeconds, isDecodable } = await probeMediaFile(file, kind)
-
-  if (!isDecodable) {
-    throw new Error(`"${file.name}" is not a playable ${kind} file and was not uploaded.`)
-  }
-
+  if (!isDecodable) throw new Error(`"${file.name}" is not a playable ${kind} file and was not uploaded.`)
   return durationSeconds
 }
 
-async function removeStoragePaths(paths: string[]): Promise<void> {
+async function removeStoragePaths(paths: string[], kind: BroadcastKind, workspaceId: string): Promise<void> {
   if (paths.length === 0) return
-  const { error } = await supabase.storage.from(BROADCAST_MEDIA_BUCKET).remove(paths)
-  if (error) throw new Error(error.message)
+  await moc.storage.remove({ purpose: storagePurpose(kind), workspaceId, paths })
 }
 
-async function uploadFiles(params: { broadcastId: string; files: BroadcastUploadFile[]; kind: BroadcastKind; onStatusChange?: BroadcastUploadStatusChange; userId: string; workspaceId: string }): Promise<UploadedBroadcastItem[]> {
+async function uploadFiles(params: { files: BroadcastUploadFile[]; kind: BroadcastKind; onStatusChange?: BroadcastUploadStatusChange; workspaceId: string }): Promise<UploadedBroadcastItem[]> {
   const uploadedItems: UploadedBroadcastItem[] = []
-
   try {
     for (const upload of params.files) {
       params.onStatusChange?.(upload.clientId, "uploading")
-
-      // Probe before the upload so an unplayable file never reaches storage.
       let durationSeconds: number | null
       try {
         durationSeconds = await requireDecodableFile(upload.file, params.kind)
       } catch (error) {
-        const message = error instanceof Error ? error.message : "This file is not playable."
-        params.onStatusChange?.(upload.clientId, "error", message)
+        params.onStatusChange?.(upload.clientId, "error", error instanceof Error ? error.message : "This file is not playable.")
         throw error
       }
 
-      const storagePath = createStoragePath(params.workspaceId, params.userId, params.broadcastId, upload.file)
-      const { error } = await supabase.storage.from(BROADCAST_MEDIA_BUCKET).upload(storagePath, upload.file, { upsert: false })
-
-      if (error) {
-        params.onStatusChange?.(upload.clientId, "error", error.message)
-        throw new Error(error.message)
+      let result: Awaited<ReturnType<typeof moc.storage.upload>>
+      try {
+        result = await moc.storage.upload({
+          purpose: storagePurpose(params.kind),
+          workspaceId: params.workspaceId,
+          file: upload.file,
+        })
+      } catch (error) {
+        params.onStatusChange?.(upload.clientId, "error", error instanceof Error ? error.message : "The file could not be uploaded.")
+        throw error
       }
-
-      const publicUrl = supabase.storage.from(BROADCAST_MEDIA_BUCKET).getPublicUrl(storagePath).data.publicUrl
-      uploadedItems.push({ clientId: upload.clientId, durationSeconds, file: upload.file, publicUrl, storagePath })
+      uploadedItems.push({
+        clientId: upload.clientId,
+        durationSeconds,
+        file: upload.file,
+        publicUrl: result.url,
+        storagePath: result.path,
+        storageBucket: result.bucket,
+      })
       params.onStatusChange?.(upload.clientId, "complete")
     }
-
     return uploadedItems
   } catch (error) {
-    await removeStoragePaths(uploadedItems.map((item) => item.storagePath)).catch(() => undefined)
+    await removeStoragePaths(uploadedItems.map((item) => item.storagePath), params.kind, params.workspaceId).catch(() => undefined)
     throw error
   }
 }
@@ -129,7 +105,7 @@ async function uploadFiles(params: { broadcastId: string; files: BroadcastUpload
 function toMutationItem(item: UploadedBroadcastItem) {
   return {
     title: item.file.name,
-    storageBucket: BROADCAST_MEDIA_BUCKET,
+    storageBucket: item.storageBucket || BROADCAST_MEDIA_BUCKET,
     storagePath: item.storagePath,
     publicUrl: item.publicUrl,
     mimeType: item.file.type || "application/octet-stream",
@@ -145,38 +121,32 @@ async function reloadBroadcast(id: string, workspaceId: string): Promise<Broadca
 }
 
 export async function createBroadcast(params: CreateBroadcastParams): Promise<Broadcast> {
-  const userId = await requireSignedInUser()
   const broadcastId = crypto.randomUUID()
   const slug = createBroadcastSlug(params.title)
   let uploadedItems: UploadedBroadcastItem[] = []
-
   try {
-    uploadedItems = await uploadFiles({ broadcastId, files: params.files, kind: params.kind, onStatusChange: params.onUploadStatusChange, userId, workspaceId: params.workspaceId })
-    const { error } = await supabase.rpc("create_broadcast_with_items", {
-      p_broadcast_id: broadcastId,
-      p_description: params.description,
-      p_items: buildBroadcastMutationRows(uploadedItems.map(toMutationItem)),
-      p_kind: params.kind,
-      p_slug: slug,
-      p_title: params.title,
-      p_workspace_id: params.workspaceId,
+    uploadedItems = await uploadFiles({ files: params.files, kind: params.kind, onStatusChange: params.onUploadStatusChange, workspaceId: params.workspaceId })
+    await moc.broadcasts.create({
+      id: broadcastId,
+      workspaceId: params.workspaceId,
+      title: params.title,
+      description: params.description,
+      kind: params.kind,
+      slug,
+      items: buildBroadcastMutationRows(uploadedItems.map(toMutationItem)),
     })
-
-    if (error) throw new Error(error.message)
   } catch (error) {
-    await removeStoragePaths(uploadedItems.map((item) => item.storagePath)).catch(() => undefined)
+    await removeStoragePaths(uploadedItems.map((item) => item.storagePath), params.kind, params.workspaceId).catch(() => undefined)
     throw error
   }
-
   return reloadBroadcast(broadcastId, params.workspaceId)
 }
 
 export async function updateBroadcast(params: UpdateBroadcastParams): Promise<Broadcast> {
-  const userId = await requireSignedInUser()
   const retainedIds = new Set(params.items.filter((item) => item.source === "existing").map((item) => item.id))
   const removedItems = params.currentItems.filter((item) => !retainedIds.has(item.id))
   const uploads = params.items.filter((item): item is Extract<BroadcastPlaylistUpdateItem, { source: "upload" }> => item.source === "upload")
-  const uploadedItems = await uploadFiles({ broadcastId: params.id, files: uploads, kind: params.kind, onStatusChange: params.onUploadStatusChange, userId, workspaceId: params.workspaceId })
+  const uploadedItems = await uploadFiles({ files: uploads, kind: params.kind, onStatusChange: params.onUploadStatusChange, workspaceId: params.workspaceId })
   const uploadedByClientId = new Map(uploadedItems.map((item) => [item.clientId, item]))
   const currentById = new Map(params.currentItems.map((item) => [item.id, item]))
   const mutationItems = params.items.flatMap((item) => {
@@ -184,7 +154,6 @@ export async function updateBroadcast(params: UpdateBroadcastParams): Promise<Br
       const uploaded = uploadedByClientId.get(item.clientId)
       return uploaded ? [toMutationItem(uploaded)] : []
     }
-
     const existing = currentById.get(item.id)
     return existing ? [{
       createdAt: existing.createdAt,
@@ -200,43 +169,29 @@ export async function updateBroadcast(params: UpdateBroadcastParams): Promise<Br
   })
 
   try {
-    const { error } = await supabase.rpc("replace_broadcast_playlist", {
-      p_broadcast_id: params.id,
-      p_description: params.description,
-      p_expected_updated_at: params.expectedUpdatedAt,
-      p_items: buildBroadcastMutationRows(mutationItems),
-      p_title: params.title,
-      p_workspace_id: params.workspaceId,
+    await moc.broadcasts.update({
+      id: params.id,
+      workspaceId: params.workspaceId,
+      expectedUpdatedAt: params.expectedUpdatedAt,
+      title: params.title,
+      description: params.description,
+      kind: params.kind,
+      items: buildBroadcastMutationRows(mutationItems),
     })
-
-    if (error) throw new Error(error.message)
   } catch (error) {
-    await removeStoragePaths(uploadedItems.map((item) => item.storagePath)).catch(() => undefined)
+    await removeStoragePaths(uploadedItems.map((item) => item.storagePath), params.kind, params.workspaceId).catch(() => undefined)
     throw error
   }
-
-  await removeStoragePaths(removedItems.map((item) => item.storagePath)).catch(() => undefined)
+  await removeStoragePaths(removedItems.map((item) => item.storagePath), params.kind, params.workspaceId).catch(() => undefined)
   return reloadBroadcast(params.id, params.workspaceId)
 }
 
 export async function deleteBroadcast(params: DeleteBroadcastParams): Promise<DeleteBroadcastResult> {
-  const { data, error } = await supabase.rpc("delete_broadcast_with_items", {
-    p_broadcast_id: params.id,
-    p_workspace_id: params.workspaceId,
-  })
-
-  if (error) throw new Error(error.message)
-
-  const storagePaths = ((data ?? []) as { storage_path: string }[]).map((item) => item.storage_path)
-
+  const deleted = await moc.broadcasts.delete(params)
   try {
-    await removeStoragePaths(storagePaths)
+    await moc.storage.remove({ purpose: storagePurpose(deleted.kind), workspaceId: params.workspaceId, paths: deleted.storagePaths })
     return { storageCleanupError: null }
   } catch (cleanupError) {
-    return {
-      storageCleanupError: cleanupError instanceof Error
-        ? cleanupError
-        : new Error("The uploaded broadcast files could not be removed."),
-    }
+    return { storageCleanupError: cleanupError instanceof Error ? cleanupError : new Error("The uploaded broadcast files could not be removed.") }
   }
 }

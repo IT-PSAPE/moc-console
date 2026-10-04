@@ -1,14 +1,13 @@
 # MOC Request
 
-Public-facing form app for submitting requests, equipment bookings, and venue bookings into a MOC Console workspace. New submissions use narrow public Supabase RPCs. Tracking-code lookup, requester edits, and requester deletion go through the dedicated MOC API domain; admin management happens in the sibling [moc-console](https://github.com/IT-PSAPE/moc-console) app.
+Public-facing form app for submitting requests, equipment bookings, and venue bookings into a MOC Console workspace. Platform operations go through typed `@moc/sdk` methods to the MOC API; admin management happens in the sibling [moc-console](https://github.com/IT-PSAPE/moc-console) app.
 
 ## Stack
 
 - React 19, TypeScript, Vite
 - Tailwind CSS v4
 - React Router v7
-- Supabase (`@supabase/supabase-js`) for RPC calls
-- Dedicated MOC API for tracking-code lookup and mutations
+- `@moc/sdk` for public catalog, submission, and tracking operations
 
 ## Screens
 
@@ -25,32 +24,28 @@ Routed in [src/App.tsx](src/App.tsx); paths defined in [src/screens/console-rout
 
 ## Submission boundaries
 
-New submissions and public catalog reads use deliberately narrow anonymous
-Supabase RPCs:
+Public catalog reads and submissions use explicitly named API operations
+through `@moc/sdk`:
 
-- `public_submit_request` — [src/data/submit-request.ts](src/data/submit-request.ts)
-- `public_submit_booking_batch` — [src/data/submit-booking.ts](src/data/submit-booking.ts)
-- `public_submit_venue_booking` — [src/data/submit-venue-booking.ts](src/data/submit-venue-booking.ts)
-- `public_list_request_categories` — [src/data/fetch-request-categories.ts](src/data/fetch-request-categories.ts)
-- venue/event/availability reads — the corresponding files under `src/data/`
+- request, equipment booking, and venue booking submissions — the corresponding files under `src/data/`
+- public request categories and venue availability — the corresponding files under `src/data/`
 
-Tracking uses `POST`, `PATCH`, and `DELETE /api/public/submissions` through
+Tracking uses SDK methods from
 [src/data/tracking-submissions.ts](src/data/tracking-submissions.ts). The API
-holds the service credential, applies CORS and rate limits, and calls the
-service-role-only tracking RPCs. The browser never calls the retired
-`public_lookup_tracking` function.
+owns the tracking secret, rate limits, and optimistic concurrency checks.
 
-The current signatures, grants, stronger tracking codes, requester mutation
-functions, and managed categories are defined in
-[2026-09-20-public-submission-management.sql](../../supabase/migrations/2026-09-20-public-submission-management.sql).
+The API contract is implemented by
+[`public.ts`](../api/server/platform/public.ts) and
+[`store.ts`](../api/server/public-submissions/store.ts). The database model is
+documented in the [schema reference](../../docs/schema-reference.md).
 
 ## Outbound notifications
 
 The database enqueues a durable Telegram notification in the same transaction as
-each public request or booking submission. After a successful RPC, this client
-best-effort wakes that pending event with only its returned record ID and tracking
+each public request or booking submission. The client then best-effort asks the
+API to wake that pending event with only its returned record ID and tracking
 code; message content, workspace, and destinations remain server-derived. Failed
-wakes do not affect submission and are retried by the API cron job.
+wakes do not affect submission and are retried by the API worker.
 
 Requester edits and deletions enqueue distinct `*.requester_updated` and
 `*.requester_deleted` events transactionally. This lets console-configured
@@ -67,20 +62,18 @@ See [.env.example](.env.example).
 
 Client (`VITE_*` — exposed to the browser):
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
 - `VITE_WORKSPACE_ID` — UUID of the workspace this deployment submits into.
-- `VITE_API_BASE_URL` — HTTPS origin of the MOC API app, e.g. `https://api.psape.co.za`. It must also allow this app's exact origin through `ALLOWED_ORIGINS`. Blank keeps `/api/*` calls relative and is intended only for a same-origin local proxy.
+
+The frontend calls same-origin `/api/*` routes. Vercel rewrites those routes to the MOC API. For local development, `MOC_API_PROXY_TARGET` configures Vite's server-side `/api` proxy.
 
 There are no server-side variables: this app ships no serverless functions. Server secrets live in `apps/api/.env.example`.
 
 ## Project structure
 
 ```
-supabase/                Shared Supabase phases, patch history, and drift check
-src/data/                Supabase RPC clients + outbound notify helpers
+src/data/                Domain service calls through the SDK
 src/features/            Domain hooks (use-request-form, use-booking-form, etc.)
-src/lib/                 Supabase client + workspace env helper
+src/lib/                 SDK singleton + workspace env helper
 src/screens/             Route-level screens
 src/types/               Domain types (request, booking, equipment)
 src/components/          Shared UI primitives
@@ -90,7 +83,7 @@ src/components/          Shared UI primitives
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in the Supabase keys + workspace id
+cp .env.example .env.local   # fill in the workspace id and optional local proxy target
 npm run dev
 ```
 

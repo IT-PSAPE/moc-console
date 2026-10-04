@@ -1,56 +1,22 @@
 import type { Booking, BookingStatus } from "@moc/types/equipment/booking";
-import { supabase } from "@moc/data/supabase";
-import { BOOKING_SELECT, type BookingRow, mapBookingRow } from "./booking-row";
+import { moc } from "@/lib/moc-client";
+import { getCurrentWorkspaceId } from "./current-workspace";
 import { notifyEntityChanged } from "./notify-event";
 
-// Title is intentionally not in the update payload — bookings are owned by the
-// requester via MOC Request; the console can amend lifecycle/dates/notes but
-// not relabel the submission.
+// The API deliberately preserves the requester's title when staff update the
+// booking lifecycle and notes.
 export async function updateBooking(booking: Booking): Promise<Booking> {
-  const { data, error } = await supabase
-    .from("bookings")
-    .update({
-      booked_by: booking.bookedBy,
-      checked_out_at: booking.checkedOutDate,
-      expected_return_at: booking.expectedReturnAt,
-      returned_at: booking.returnedDate,
-      notes: booking.notes || null,
-      status: booking.status,
-    })
-    .eq("id", booking.id)
-    .select(BOOKING_SELECT)
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return mapBookingRow(data as unknown as BookingRow);
+  const workspaceId = await getCurrentWorkspaceId();
+  return moc.bookings.update(booking, workspaceId);
 }
 
 export async function updateBookingStatus(id: string, status: BookingStatus): Promise<void> {
-  const now = new Date().toISOString();
-  const values = {
-    status,
-    ...(status === "checked_out" ? { checked_out_at: now } : {}),
-    ...(status === "returned" ? { returned_at: now } : {}),
-  };
-  const { error } = await supabase.from("bookings").update(values).eq("id", id);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
+  const workspaceId = await getCurrentWorkspaceId();
+  await moc.bookings.updateStatus(id, status, workspaceId);
   notifyEntityChanged("booking", id);
 }
 
 export async function deleteBooking(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("bookings")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  const workspaceId = await getCurrentWorkspaceId();
+  await moc.bookings.delete(id, workspaceId);
 }

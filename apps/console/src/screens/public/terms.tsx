@@ -20,7 +20,7 @@ export function TermsOfUseScreen() {
         <Paragraph.md>
           MOC Console is a broadcast operations console that helps teams coordinate live streams,
           meetings, media, equipment, and production schedules. The Service integrates with third-party
-          platforms including Zoom, YouTube, and Supabase to provide its functionality.
+          platforms including Zoom and YouTube to provide its functionality.
         </Paragraph.md>
       </Section>
 

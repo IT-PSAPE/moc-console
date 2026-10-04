@@ -1,6 +1,7 @@
 import type { Stream } from "@moc/types/streams/stream"
-import { supabase } from "@moc/data/supabase"
 import { randomId } from "@moc/utils/random-id"
+import { moc } from "@/lib/moc-client"
+import { getCurrentWorkspaceId } from "./current-workspace"
 
 export type LocalStreamInsertPayload = {
   id?: string
@@ -31,8 +32,9 @@ export type LocalStreamInsertPayload = {
 }
 
 export async function insertLocalStream(payload: LocalStreamInsertPayload): Promise<void> {
-  const { error } = await supabase.from("streams").insert(payload)
-  if (error) throw new Error(error.message)
+  const { created_by: createdBy, ...record } = payload
+  void createdBy
+  await moc.streams.insertStream(record, payload.workspace_id)
 }
 
 export function mapLocalStreamPayload(payload: LocalStreamInsertPayload): Stream {
@@ -87,7 +89,7 @@ export function getLocalStreamUpdate(stream: Stream, thumbnailUrl: string | null
   }
 }
 
-export async function persistLocalStreamUpdate(streamId: string, values: ReturnType<typeof getLocalStreamUpdate>): Promise<void> {
-  const { error } = await supabase.from("streams").update(values).eq("id", streamId)
-  if (error) throw new Error(error.message)
+export async function persistLocalStreamUpdate(streamId: string, values: ReturnType<typeof getLocalStreamUpdate>, workspaceId?: string): Promise<void> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId()
+  await moc.streams.updateStream(streamId, values, resolvedWorkspaceId)
 }

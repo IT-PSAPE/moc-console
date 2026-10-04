@@ -91,16 +91,17 @@ export function UsersProvider({ children }: { children: ReactNode }) {
 
   const approveUser = useCallback(async (requestId: string) => {
     if (!currentWorkspaceId) throw new Error("No workspace selected");
-    await approveWorkspaceJoinRequest(requestId);
+    await approveWorkspaceJoinRequest(requestId, currentWorkspaceId);
     const acceptedUsers = await fetchUsersWithRoles(currentWorkspaceId);
     setPendingUsers((current) => current.filter((user) => user.requestId !== requestId));
     setUsers(acceptedUsers);
   }, [currentWorkspaceId]);
 
   const rejectUser = useCallback(async (requestId: string) => {
-    await rejectWorkspaceJoinRequest(requestId);
+    if (!currentWorkspaceId) throw new Error("No workspace selected");
+    await rejectWorkspaceJoinRequest(requestId, currentWorkspaceId);
     setPendingUsers((current) => current.filter((user) => user.requestId !== requestId));
-  }, []);
+  }, [currentWorkspaceId]);
 
   const value = useMemo(
     () => ({

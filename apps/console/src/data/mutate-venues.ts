@@ -1,76 +1,28 @@
 import type { Venue } from "@moc/types/venues";
-import { supabase } from "@moc/data/supabase";
+import { moc } from "@/lib/moc-client";
 import { getCurrentWorkspaceId } from "./current-workspace";
-import { VENUE_SELECT, mapVenueRow, type VenueRow } from "./fetch-venues";
 
 export type VenueDraft = {
   name: string;
   description: string | null;
 };
 
-// venue_bookings.venue_id is ON DELETE RESTRICT, so a venue that has ever
-// been booked cannot be deleted at the database. Surface that as a specific,
-// actionable message instead of the raw constraint error.
-const FOREIGN_KEY_VIOLATION = "23503";
-
 export async function createVenue(draft: VenueDraft, workspaceId?: string): Promise<Venue> {
   const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
-  const { data, error } = await supabase
-    .from("venues")
-    .insert({
-      workspace_id: resolvedWorkspaceId,
-      name: draft.name,
-      description: draft.description,
-    })
-    .select(VENUE_SELECT)
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return mapVenueRow(data as VenueRow);
+  return moc.venues.create(draft, resolvedWorkspaceId);
 }
 
 export async function updateVenue(id: string, draft: VenueDraft): Promise<Venue> {
-  const { data, error } = await supabase
-    .from("venues")
-    .update({
-      name: draft.name,
-      description: draft.description,
-    })
-    .eq("id", id)
-    .select(VENUE_SELECT)
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return mapVenueRow(data as VenueRow);
+  const workspaceId = await getCurrentWorkspaceId();
+  return moc.venues.update(id, draft, workspaceId);
 }
 
 export async function setVenueActive(id: string, active: boolean): Promise<void> {
-  const { error } = await supabase
-    .from("venues")
-    .update({ active })
-    .eq("id", id);
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  const workspaceId = await getCurrentWorkspaceId();
+  await moc.venues.setActive(id, active, workspaceId);
 }
 
 export async function deleteVenue(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("venues")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    if (error.code === FOREIGN_KEY_VIOLATION) {
-      throw new Error("This venue has bookings, so it can't be deleted. Deactivate it instead.");
-    }
-    throw new Error(error.message);
-  }
+  const workspaceId = await getCurrentWorkspaceId();
+  await moc.venues.delete(id, workspaceId);
 }

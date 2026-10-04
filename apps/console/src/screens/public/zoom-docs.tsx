@@ -126,8 +126,8 @@ export function ZoomDocsScreen() {
         <ul className="list-disc pl-6 space-y-2">
           <li><Paragraph.md><strong>Stored:</strong> Zoom user profile (ID, email, display name), meeting metadata (topic, description, schedule, host settings, join URL, passcode), and OAuth tokens.</Paragraph.md></li>
           <li><Paragraph.md><strong>Not stored or accessed:</strong> recordings, transcripts, cloud recording files, chat messages, participant lists, account or admin-level data.</Paragraph.md></li>
-          <li><Paragraph.md><strong>At rest:</strong> all Zoom data is stored in a managed PostgreSQL database on Supabase, encrypted with AES-256 and protected by Row-Level Security policies scoped to your workspace.</Paragraph.md></li>
-          <li><Paragraph.md><strong>In transit:</strong> all traffic is TLS 1.2+.</Paragraph.md></li>
+          <li><Paragraph.md><strong>At rest:</strong> Zoom data is stored in Neon PostgreSQL. The MOC API controls access based on your account and workspace permissions.</Paragraph.md></li>
+          <li><Paragraph.md><strong>In transit:</strong> your browser connects to MOC Console over HTTPS, and the MOC API handles access to service data.</Paragraph.md></li>
           <li><Paragraph.md><strong>Retention:</strong> An in-app disconnect or verified Marketplace removal deletes OAuth tokens, connection data, synced Zoom meeting metadata, and pending meeting notifications. Account data is deleted within 30 days of account deletion.</Paragraph.md></li>
         </ul>
         <Paragraph.md className="mt-4">

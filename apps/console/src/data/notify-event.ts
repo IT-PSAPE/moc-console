@@ -1,72 +1,38 @@
-import { buildSessionHeaders } from "@/lib/api-auth";
-import { apiUrl } from "@moc/utils/api-url";
-import type { NotifyDestination } from "@moc/types/streams";
+import { moc } from "@/lib/moc-client"
+import type { NotifyDestination } from "@moc/types/streams"
+import type { NotificationDispatchResult, NotificationEntityType } from "@moc/sdk"
 
-export type NotificationDispatchResult = {
-  ok: boolean
-  attempted: number
-  dispatched: number
-  failed: number
-  pendingRetry: number
-}
+export type { NotificationDispatchResult } from "@moc/sdk"
+export type NotifyEntityType = NotificationEntityType
 
-// The server reuses the durable event key, so duplicate calls are safe. Callers
-// may await this to know the API accepted the request, while a null result
-// leaves the trigger-created outbox event available for the delivery worker.
-async function notify(path: string, body: Record<string, unknown>): Promise<NotificationDispatchResult | null> {
+async function notify(
+  path: string,
+  operation: () => Promise<NotificationDispatchResult>,
+): Promise<NotificationDispatchResult | null> {
   try {
-    const headers = await buildSessionHeaders();
-    const response = await fetch(apiUrl(path), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...headers,
-      },
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      console.warn("Notification request was not accepted", { path, status: response.status })
-      return null
-    }
-    return await response.json() as NotificationDispatchResult
+    return await operation()
   } catch (error) {
     console.warn("Notification request failed", { path, error })
     return null
   }
 }
 
-// `destinations` overrides the workspace's configured routing for this one
-// notification. Omitted or empty means "follow notification settings". The
-// API re-validates every destination against the workspace's registered
-// groups, so nothing here is taken on trust.
 export function notifyStreamCreated(streamId: string, destinations?: NotifyDestination[]): Promise<NotificationDispatchResult | null> {
-  return notify("/api/notifications/internal/stream-created", {
-    streamId,
-    ...(destinations?.length ? { destinations } : {}),
-  });
+  return notify("/api/notifications/internal/stream-created", () => moc.notifications.streamCreated(streamId, destinations))
 }
 
 export function notifyMeetingCreated(meetingId: string, destinations?: NotifyDestination[]): Promise<NotificationDispatchResult | null> {
-  return notify("/api/notifications/internal/meeting-created", {
-    meetingId,
-    ...(destinations?.length ? { destinations } : {}),
-  });
+  return notify("/api/notifications/internal/meeting-created", () => moc.notifications.meetingCreated(meetingId, destinations))
 }
 
-export type NotifyEntityType = "request" | "booking" | "venue_booking";
-
-// Wakes the API so a console-made status change (or archive/unarchive,
-// cancel/restore/approve/reject) reaches Telegram immediately instead of at
-// the nightly cron. Fire-and-forget: callers do not need to await this, and
-// notify() never throws.
 export function notifyEntityChanged(entityType: NotifyEntityType, entityId: string): Promise<NotificationDispatchResult | null> {
-  return notify("/api/notifications/internal/entity-changed", { entityType, entityId });
+  return notify("/api/notifications/internal/entity-changed", () => moc.notifications.entityChanged(entityType, entityId))
 }
 
 export function notifyStreamUpdated(streamId: string): Promise<NotificationDispatchResult | null> {
-  return notify("/api/notifications/internal/stream-updated", { streamId });
+  return notify("/api/notifications/internal/stream-updated", () => moc.notifications.streamUpdated(streamId))
 }
 
 export function notifyMeetingUpdated(meetingId: string): Promise<NotificationDispatchResult | null> {
-  return notify("/api/notifications/internal/meeting-updated", { meetingId });
+  return notify("/api/notifications/internal/meeting-updated", () => moc.notifications.meetingUpdated(meetingId))
 }

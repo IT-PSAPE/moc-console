@@ -1,33 +1,15 @@
-import { supabase } from '@moc/data/supabase'
+import { moc } from '@/lib/moc-client'
 import { parseBrowserDateTimeInputToUtcIso } from '@moc/utils/browser-date-time'
-import { wakeRequestCreatedNotification } from '@/data/notify-event'
 import { workspaceId } from '@/lib/workspace'
 import type { RequestFormData, SubmitRequestResult } from '@/types/request'
 
 export async function submitPublicRequest(data: RequestFormData): Promise<SubmitRequestResult> {
-  const { data: result, error } = await supabase.rpc('public_submit_request', {
-    p_workspace_id: workspaceId,
-    p_title: data.title,
-    p_priority: data.priority,
-    p_category: data.category,
-    p_due_date: parseBrowserDateTimeInputToUtcIso(data.dueDate),
-    p_requested_by: data.requestedBy,
-    p_who: data.who,
-    p_what: data.what,
-    p_when_text: data.whenText,
-    p_where_text: data.whereText,
-    p_why: data.why,
-    p_how: data.how,
-    p_notes: data.notes || null,
-    p_flow: data.flow || null,
+  const result = await moc.publicSubmissions.submitRequest(workspaceId, {
+    ...data,
+    dueDate: parseBrowserDateTimeInputToUtcIso(data.dueDate),
+    notes: data.notes || null,
+    flow: data.flow || null,
   })
-
-  if (error) throw new Error(error.message)
-
-  wakeRequestCreatedNotification(result.id, result.tracking_code)
-
-  return {
-    id: result.id,
-    trackingCode: result.tracking_code,
-  }
+  moc.publicSubmissions.notifyCreated('request', result.id, result.trackingCode)
+  return result
 }

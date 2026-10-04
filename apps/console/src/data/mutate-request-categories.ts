@@ -1,9 +1,6 @@
 import type { RequestCategoryDefinition } from "@moc/types/requests";
-import { supabase } from "@moc/data/supabase";
+import { moc } from "@/lib/moc-client";
 import { getCurrentWorkspaceId } from "./current-workspace";
-import { REQUEST_CATEGORY_SELECT, mapRequestCategoryRow, type RequestCategoryRow } from "./fetch-request-categories";
-
-const FOREIGN_KEY_VIOLATION = "23503";
 
 export type RequestCategoryDraft = {
   name: string;
@@ -16,63 +13,27 @@ function createCategoryKey(): string {
 
 export async function createRequestCategory(draft: RequestCategoryDraft, workspaceId?: string): Promise<RequestCategoryDefinition> {
   const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
-  const { data, error } = await supabase
-    .from("request_categories")
-    .insert({
-      workspace_id: resolvedWorkspaceId,
-      key: createCategoryKey(),
-      name: draft.name,
-      description: draft.description,
-    })
-    .select(REQUEST_CATEGORY_SELECT)
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return mapRequestCategoryRow(data as RequestCategoryRow);
+  return moc.requests.createCategory({ ...draft, key: createCategoryKey() }, resolvedWorkspaceId);
 }
 
 export async function updateRequestCategory(id: string, draft: RequestCategoryDraft): Promise<RequestCategoryDefinition> {
-  const { data, error } = await supabase
-    .from("request_categories")
-    .update({
-      name: draft.name,
-      description: draft.description,
-    })
-    .eq("id", id)
-    .select(REQUEST_CATEGORY_SELECT)
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return mapRequestCategoryRow(data as RequestCategoryRow);
+  const workspaceId = await getCurrentWorkspaceId();
+  return moc.requests.updateCategory(id, draft, workspaceId);
 }
 
 export async function setRequestCategoryActive(id: string, active: boolean): Promise<void> {
-  const { error } = await supabase
-    .from("request_categories")
-    .update({ active })
-    .eq("id", id);
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  const workspaceId = await getCurrentWorkspaceId();
+  await moc.requests.setCategoryActive(id, active, workspaceId);
 }
 
 export async function deleteRequestCategory(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("request_categories")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    if (error.code === FOREIGN_KEY_VIOLATION) {
+  const workspaceId = await getCurrentWorkspaceId();
+  try {
+    await moc.requests.deleteCategory(id, workspaceId);
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "category_in_use") {
       throw new Error("This category has requests, so it can't be deleted. Deactivate it instead.");
     }
-    throw new Error(error.message);
+    throw error;
   }
 }

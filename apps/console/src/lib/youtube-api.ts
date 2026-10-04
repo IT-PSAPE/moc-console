@@ -1,26 +1,16 @@
-import { buildSessionHeaders } from "./api-auth"
 import { providerProxyPath } from "./provider-proxy-path"
 import { checkProviderApiResponse, providerRequestError } from "./provider-request-error"
-import { getCurrentWorkspaceId } from "@/data/current-workspace"
-import { apiUrl } from "@moc/utils/api-url"
+import { moc } from "@/lib/moc-client"
 
 export async function youtubeApiFetch(
   path: string,
   options: RequestInit = {},
 ): Promise<Response> {
-  const [sessionHeaders, workspaceId] = await Promise.all([buildSessionHeaders(), getCurrentWorkspaceId()])
-
-  const response = await fetch(apiUrl(`/api/youtube/v3${providerProxyPath(path)}`), {
-    ...options,
-    headers: {
-      // Only declare a payload type when there is a payload: the proxy rejects a
-      // body on read routes, and a bodyless JSON request is parsed server-side
-      // into an empty object that reads as one.
-      ...(options.body === undefined || options.body === null ? {} : { "Content-Type": "application/json" }),
-      "X-MOC-Workspace": workspaceId,
-      ...sessionHeaders,
-      ...options.headers,
-    },
+  const response = await moc.integrations.youtubeRequest(providerProxyPath(path), {
+    method: options.method,
+    body: options.body,
+    headers: options.headers,
+    ...(options.signal ? { signal: options.signal } : {}),
   })
   return checkProviderApiResponse(response)
 }

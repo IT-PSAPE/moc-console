@@ -1,345 +1,218 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import type { ReactNode } from "react"
-import type { Session, User } from "@supabase/supabase-js"
+import type { MoCSession, MoCUser } from "@moc/sdk/auth"
 import type { User as Profile } from "@moc/types/requests/assignee"
 import { routes } from "@/screens/console-routes"
 import { clearCurrentWorkspaceCache } from "@/data/current-workspace"
-import { supabase } from "@moc/data/supabase"
+import { moc } from "@/lib/moc-client"
+import { authCallbackError, authCallbackOutcome } from "@moc/sdk/auth"
 
 type AuthState = {
-    session: Session | null
-    user: User | null
-    profile: Profile | null
-    isPasswordRecovery: boolean
-    loading: boolean
-    signUp: (email: string, password: string, name: string, surname: string, workspaceSlug?: string) => Promise<{ error: Error | null }>
-    signIn: (email: string, password: string) => Promise<{ error: Error | null }>
-    signOut: () => Promise<{ error: Error | null }>
-    resetPassword: (email: string) => Promise<{ error: Error | null }>
-    updatePassword: (password: string) => Promise<{ error: Error | null }>
-    refreshProfile: () => Promise<void>
+  session: MoCSession | null
+  user: MoCUser | null
+  profile: Profile | null
+  isPasswordRecovery: boolean
+  callbackError: string | null
+  loading: boolean
+  signUp: (email: string, password: string, name: string, surname: string, workspaceSlug?: string) => Promise<{ error: Error | null }>
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>
+  signOut: () => Promise<{ error: Error | null }>
+  resetPassword: (email: string) => Promise<{ error: Error | null }>
+  updatePassword: (password: string) => Promise<{ error: Error | null }>
+  resendVerification: (email: string) => Promise<{ error: Error | null }>
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthState | null>(null)
+const AUTH_CHANNEL = "moc-auth-session"
 
-function clearSupabaseAuthStorage() {
-    if (typeof window === "undefined") {
-        return
-    }
 
-    const localStorageKeys = Object.keys(window.localStorage).filter((key) => key.startsWith("sb-"))
-    const sessionStorageKeys = Object.keys(window.sessionStorage).filter((key) => key.startsWith("sb-"))
-
-    for (const key of localStorageKeys) {
-        window.localStorage.removeItem(key)
-    }
-
-    for (const key of sessionStorageKeys) {
-        window.sessionStorage.removeItem(key)
-    }
+function passwordResetToken(): string | null {
+  if (typeof window === "undefined") return null
+  return new URLSearchParams(window.location.search).get("token")
 }
 
-function hasPasswordRecoveryParams() {
-    if (typeof window === "undefined") {
-        return false
-    }
-
-    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""))
-    const searchParams = new URLSearchParams(window.location.search)
-
-    return hashParams.get("type") === "recovery" || searchParams.get("type") === "recovery"
+function cleanAuthCallbackUrl(outcome: ReturnType<typeof authCallbackOutcome>): void {
+  if (typeof window === "undefined" || outcome === null) return
+  const url = new URL(window.location.href)
+  url.searchParams.delete("auth")
+  url.searchParams.delete("error")
+  url.searchParams.delete("error_description")
+  url.hash = ""
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`)
 }
 
-const VERIFIABLE_OTP_TYPES = ["signup", "recovery", "invite", "magiclink", "email_change", "email"] as const
-type VerifiableOtpType = typeof VERIFIABLE_OTP_TYPES[number]
-
-function isVerifiableOtpType(value: string): value is VerifiableOtpType {
-    return (VERIFIABLE_OTP_TYPES as readonly string[]).includes(value)
+function callbackOutcome(): ReturnType<typeof authCallbackOutcome> {
+  if (typeof window === "undefined") return null
+  return authCallbackOutcome(new URL(window.location.href))
 }
 
-async function verifyEmailOtpFromUrl(): Promise<{ wasRecovery: boolean }> {
-    if (typeof window === "undefined") {
-        return { wasRecovery: false }
-    }
-
-    const searchParams = new URLSearchParams(window.location.search)
-    const tokenHash = searchParams.get("token_hash")
-    const rawType = searchParams.get("type")
-
-    if (!tokenHash || !rawType || !isVerifiableOtpType(rawType)) {
-        return { wasRecovery: false }
-    }
-
-    const wasRecovery = rawType === "recovery"
-
-    const { error } = await supabase.auth.verifyOtp({
-        token_hash: tokenHash,
-        type: rawType,
-    })
-
-    searchParams.delete("token_hash")
-    searchParams.delete("type")
-    const nextSearch = searchParams.toString()
-    const basePath = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`
-
-    if (error) {
-        const errorHash = new URLSearchParams({
-            error: "access_denied",
-            error_code: "otp_expired",
-            error_description: error.message,
-        }).toString()
-        window.history.replaceState({}, "", `${basePath}#${errorHash}`)
-        return { wasRecovery }
-    }
-
-    window.history.replaceState({}, "", `${basePath}${window.location.hash}`)
-    return { wasRecovery }
+function currentRecoveryToken(): string | null {
+  return passwordResetToken()
 }
 
-function getResetPasswordRedirectUrl() {
-    if (typeof window === "undefined") {
-        return undefined
-    }
-
-    return new URL(`/${routes.passwordRecovery}`, window.location.origin).toString()
+async function fetchProfile(): Promise<Profile | null> {
+  return moc.users.getProfile()
 }
 
-async function fetchProfileForUser(user: User): Promise<Profile | null> {
-    const metadataName = typeof user.user_metadata?.name === "string" ? user.user_metadata.name : ""
-    const metadataSurname = typeof user.user_metadata?.surname === "string" ? user.user_metadata.surname : ""
-
-    const { data, error } = await supabase
-        .from("users")
-        .select("id, name, surname, email, telegram_chat_id, avatar_url, current_duty, status_message")
-        .eq("id", user.id)
-        .maybeSingle()
-
-    if (error && import.meta.env.DEV) {
-        console.error("Failed to fetch user profile:", error.message)
-    }
-
-    if (data) {
-        return {
-            id: data.id,
-            email: data.email,
-            name: data.name,
-            surname: data.surname,
-            telegramChatId: data.telegram_chat_id,
-            avatarUrl: data.avatar_url,
-            currentDuty: data.current_duty,
-            statusMessage: data.status_message,
-        }
-    }
-
-    if (metadataName && metadataSurname && user.email) {
-        return {
-            id: user.id,
-            email: user.email,
-            name: metadataName,
-            surname: metadataSurname,
-            telegramChatId: null,
-            avatarUrl: null,
-            currentDuty: null,
-            statusMessage: null,
-        }
-    }
-
-    return null
+function recoveryRedirectUrl(): string {
+  return new URL(`/${routes.passwordRecovery}`, window.location.origin).toString()
 }
 
-async function exchangeAuthCodeFromUrl() {
-    if (typeof window === "undefined") {
-        return
-    }
+function signupCallbackUrl(): string {
+  const url = new URL(`/${routes.login}`, window.location.origin)
+  url.searchParams.set("auth", "verified")
+  return url.toString()
+}
 
-    const searchParams = new URLSearchParams(window.location.search)
-    const authCode = searchParams.get("code")
-
-    if (!authCode) {
-        return
-    }
-
-    const { error } = await supabase.auth.exchangeCodeForSession(authCode)
-
-    if (!error) {
-        searchParams.delete("code")
-        const nextSearch = searchParams.toString()
-        const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`
-        window.history.replaceState({}, "", nextUrl)
-    }
+function notifyOtherTabs(): void {
+  if (typeof BroadcastChannel === "undefined") return
+  const channel = new BroadcastChannel(AUTH_CHANNEL)
+  channel.postMessage({ type: "session-changed" })
+  channel.close()
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [session, setSession] = useState<Session | null>(null)
-    const [user, setUser] = useState<User | null>(null)
-    const [profile, setProfile] = useState<Profile | null>(null)
-    const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
-    const [loading, setLoading] = useState(true)
+  const [session, setSession] = useState<MoCSession | null>(null)
+  const [user, setUser] = useState<MoCUser | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
+  const [callbackError] = useState<string | null>(() => typeof window === "undefined"
+    ? null
+    : authCallbackError(new URL(window.location.href)))
+  const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        let isActive = true
-
-        async function initializeAuth() {
-            await exchangeAuthCodeFromUrl()
-            const { wasRecovery } = await verifyEmailOtpFromUrl()
-
-            const { data: { session } } = await supabase.auth.getSession()
-
-            if (!isActive) {
-                return
-            }
-
-            setSession(session)
-            setUser(session?.user ?? null)
-            setIsPasswordRecovery(wasRecovery || hasPasswordRecoveryParams())
-            clearCurrentWorkspaceCache()
-
-            if (!session?.user) {
-                setProfile(null)
-            }
-
-            setLoading(false)
-        }
-
-        initializeAuth()
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
-            setSession(nextSession)
-            setUser(nextSession?.user ?? null)
-            clearCurrentWorkspaceCache()
-
-            if (!nextSession?.user) {
-                setProfile(null)
-                setIsPasswordRecovery(false)
-                return
-            }
-
-            if (event === "PASSWORD_RECOVERY") {
-                setIsPasswordRecovery(true)
-                return
-            }
-
-            if (event === "USER_UPDATED") {
-                setIsPasswordRecovery(false)
-                return
-            }
-
-            if (hasPasswordRecoveryParams()) {
-                setIsPasswordRecovery(true)
-            }
-        })
-
-        return () => {
-            isActive = false
-            subscription.unsubscribe()
-        }
-    }, [])
-
-    const refreshProfile = useCallback(async () => {
-        if (!user) return
-        const next = await fetchProfileForUser(user)
-        setProfile(next)
-    }, [user])
-
-    useEffect(() => {
-        if (!user) return
-
-        let isActive = true
-
-        fetchProfileForUser(user)
-            .then((next) => {
-                if (isActive) setProfile(next)
-            })
-            .catch((error) => {
-                if (import.meta.env.DEV) {
-                    console.error("Failed to fetch user profile:", error)
-                }
-            })
-
-        return () => {
-            isActive = false
-        }
-    }, [user])
-
-    async function signUp(email: string, password: string, name: string, surname: string, workspaceSlug?: string) {
-        const metadata: Record<string, string> = { name, surname }
-        if (workspaceSlug) {
-            metadata.workspace_slug = workspaceSlug
-        }
-
-        const { error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: metadata,
-            },
-        })
-
-        if (error) {
-            return { error: error as Error | null }
-        }
-
-        // if (data.session && data.user) {
-        //     const profileError = await upsertProfile(data.user.id, email, name, surname)
-        //     if (profileError) {
-        //         return { error: profileError }
-        //     }
-        // }
-
-        return { error: null }
+  const refreshSession = useCallback(async () => {
+    try {
+      const nextSession = await moc.auth.getSession()
+      setSession(nextSession)
+      setUser(nextSession?.user ?? null)
+      clearCurrentWorkspaceCache()
+      if (!nextSession?.user) setProfile(null)
+      setIsPasswordRecovery(callbackOutcome() === "password-recovery")
+    } catch (error) {
+      if (import.meta.env.DEV) console.error("Failed to restore authentication session:", error)
+      setSession(null)
+      setUser(null)
+      setProfile(null)
+    } finally {
+      setLoading(false)
     }
+  }, [])
 
-    async function signIn(email: string, password: string) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
-        return { error: error as Error | null }
+  useEffect(() => {
+    let active = true
+    const initialize = async () => {
+      const outcome = callbackOutcome()
+      if (authCallbackError(new URL(window.location.href))) {
+        const url = new URL(window.location.href)
+        url.searchParams.delete("error")
+        url.searchParams.delete("error_description")
+        url.hash = ""
+        window.history.replaceState({}, "", `${url.pathname}${url.search}`)
+      }
+      await refreshSession()
+      if (!active) return
+      if (outcome === "password-recovery") setIsPasswordRecovery(true)
+      if (outcome === "verified") cleanAuthCallbackUrl(outcome)
     }
+    void initialize()
 
-    async function signOut() {
-        let error: Error | null = null
-        try {
-            const result = await supabase.auth.signOut({ scope: "local" })
-            error = result.error as Error | null
-        } catch (e) {
-            error = e instanceof Error ? e : new Error("Sign-out failed")
-        }
-        clearSupabaseAuthStorage()
-        clearCurrentWorkspaceCache()
-        setSession(null)
-        setUser(null)
-        setProfile(null)
-        return { error }
+    const channel = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel(AUTH_CHANNEL)
+    if (channel) channel.onmessage = () => { void refreshSession() }
+    const refreshOnFocus = () => { void refreshSession() }
+    window.addEventListener("focus", refreshOnFocus)
+
+    return () => {
+      active = false
+      channel?.close()
+      window.removeEventListener("focus", refreshOnFocus)
     }
+  }, [refreshSession])
 
-    async function resetPassword(email: string) {
-        const redirectTo = getResetPasswordRedirectUrl()
-        const { error } = await supabase.auth.resetPasswordForEmail(
-            email,
-            redirectTo ? { redirectTo } : undefined,
-        )
-        return { error: error as Error | null }
+  const refreshProfile = useCallback(async () => {
+    if (!user) return
+    try {
+      setProfile(await fetchProfile())
+    } catch (error) {
+      if (import.meta.env.DEV) console.error("Failed to fetch user profile:", error)
     }
+  }, [user])
 
-    async function updatePassword(password: string) {
-        const { error } = await supabase.auth.updateUser({ password })
+  useEffect(() => {
+    if (!user) return
+    let active = true
+    fetchProfile().then((nextProfile) => {
+      if (active) setProfile(nextProfile)
+    }).catch((error: unknown) => {
+      if (active && import.meta.env.DEV) console.error("Failed to fetch user profile:", error)
+    })
+    return () => { active = false }
+  }, [user])
 
-        if (!error) {
-            setIsPasswordRecovery(false)
-        }
+  async function signUp(email: string, password: string, name: string, surname: string, workspaceSlug?: string) {
+    const result = await moc.auth.signUp({ email, password, name, surname, workspaceSlug, callbackURL: signupCallbackUrl() })
+    return { error: result.error }
+  }
 
-        return { error: error as Error | null }
+  async function signIn(email: string, password: string) {
+    const result = await moc.auth.signIn(email, password)
+    if (!result.error) {
+      await refreshSession()
+      notifyOtherTabs()
     }
+    return { error: result.error }
+  }
 
-    return (
-        <AuthContext value={{ session, user, profile, isPasswordRecovery, loading, signUp, signIn, signOut, resetPassword, updatePassword, refreshProfile }}>
-            {children}
-        </AuthContext>
-    )
+  async function signOut() {
+    let error: Error | null = null
+    try {
+      const result = await moc.auth.signOut()
+      error = result.error
+    } catch (cause) {
+      error = cause instanceof Error ? cause : new Error("Sign-out failed")
+    }
+    clearCurrentWorkspaceCache()
+    setSession(null)
+    setUser(null)
+    setProfile(null)
+    setIsPasswordRecovery(false)
+    notifyOtherTabs()
+    return { error }
+  }
+
+  async function resetPassword(email: string) {
+    const result = await moc.auth.requestPasswordReset(email, recoveryRedirectUrl())
+    return { error: result.error }
+  }
+
+  async function updatePassword(password: string) {
+    const token = currentRecoveryToken()
+    if (!token) return { error: new Error("This password recovery link is missing or has expired") }
+    const result = await moc.auth.resetPassword(token, password)
+    if (!result.error) {
+      setIsPasswordRecovery(false)
+      const url = new URL(window.location.href)
+      url.searchParams.delete("token")
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`)
+    }
+    return { error: result.error }
+  }
+
+  async function resendVerification(email: string) {
+    const result = await moc.auth.sendVerificationEmail(email, signupCallbackUrl())
+    return { error: result.error }
+  }
+
+  return (
+    <AuthContext value={{ session, user, profile, isPasswordRecovery, callbackError, loading, signUp, signIn, signOut, resetPassword, updatePassword, resendVerification, refreshProfile }}>
+      {children}
+    </AuthContext>
+  )
 }
 
 export function useAuth() {
-    const context = useContext(AuthContext)
-    if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider")
-    }
-    return context
+  const context = useContext(AuthContext)
+  if (!context) throw new Error("useAuth must be used within an AuthProvider")
+  return context
 }

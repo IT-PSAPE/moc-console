@@ -1,5 +1,4 @@
-import { supabase } from "@moc/data/supabase"
-import { randomId } from "@moc/utils/random-id"
+import { moc } from "../lib/moc-client"
 import { getCurrentWorkspaceId } from "./current-workspace"
 
 export type ThumbnailSource =
@@ -8,23 +7,8 @@ export type ThumbnailSource =
 
 export async function uploadStreamThumbnail(blob: Blob): Promise<string> {
   const workspaceId = await getCurrentWorkspaceId()
-  const ext = blob.type === "image/png" ? "png" : "jpg"
-  const path = `${workspaceId}/stream-thumbnails/${randomId()}.${ext}`
-
-  const { error: uploadError } = await supabase.storage
-    .from("media")
-    .upload(path, blob, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: blob.type || "image/jpeg",
-    })
-
-  if (uploadError) {
-    throw new Error(uploadError.message)
-  }
-
-  const { data } = supabase.storage.from("media").getPublicUrl(path)
-  return data.publicUrl
+  const result = await moc.storage.upload({ purpose: "stream-thumbnail", workspaceId, file: blob })
+  return result.url
 }
 
 export function describeThumbnailFailure(error: unknown): string {

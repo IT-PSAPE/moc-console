@@ -49,7 +49,7 @@ export function PasswordRecoveryScreen() {
           </div>
           <div className="space-y-1.5">
             <h2 className="title-h6">{meta.linkError ? "This recovery link won't work" : "Recovery link required"}</h2>
-            <p className="paragraph-sm text-tertiary">{meta.linkError ? "The link may have expired or already been used. Request a new one." : "Open the latest password recovery link from your inbox."}</p>
+            <p className="paragraph-sm text-tertiary">{meta.linkError ?? "Open the latest password recovery link from your inbox."}</p>
           </div>
           <div className="space-y-2 pt-1">
             <Button.Link render={<Link to={`/${routes.resetPassword}`} />} className="w-full">Request a new link</Button.Link>

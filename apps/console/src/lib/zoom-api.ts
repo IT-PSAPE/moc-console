@@ -1,44 +1,22 @@
-import { buildSessionHeaders } from "./api-auth"
 import { providerProxyPath } from "./provider-proxy-path"
-import { checkProviderApiResponse, providerRequestError } from "./provider-request-error"
-import { apiUrl } from "@moc/utils/api-url"
-import { getCurrentWorkspaceId } from "@/data/current-workspace"
+import { checkProviderApiResponse } from "./provider-request-error"
+import { moc } from "@/lib/moc-client"
 
 /** Make an authenticated Zoom API call through the server-side token proxy. */
 export async function zoomApiFetch(
   path: string,
   options: RequestInit = {},
 ): Promise<Response> {
-  const [sessionHeaders, workspaceId] = await Promise.all([buildSessionHeaders(), getCurrentWorkspaceId()])
-
-  const response = await fetch(apiUrl(`/api/zoom/v2${providerProxyPath(path)}`), {
-    ...options,
-    headers: {
-      // Only declare a payload type when there is a payload: the proxy rejects a
-      // body on read routes, and a bodyless JSON request is parsed server-side
-      // into an empty object that reads as one.
-      ...(options.body === undefined || options.body === null ? {} : { "Content-Type": "application/json" }),
-      "X-MOC-Workspace": workspaceId,
-      ...sessionHeaders,
-      ...options.headers,
-    },
+  const response = await moc.integrations.zoomRequest(providerProxyPath(path), {
+    method: options.method,
+    body: options.body,
+    headers: options.headers,
+    ...(options.signal ? { signal: options.signal } : {}),
   })
   return checkProviderApiResponse(response)
 }
 
 /** Revoke Zoom OAuth token. */
 export async function revokeZoomToken(workspaceId: string): Promise<void> {
-  const sessionHeaders = await buildSessionHeaders()
-  const response = await fetch(apiUrl("/api/zoom/oauth/revoke"), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...sessionHeaders,
-    },
-    body: JSON.stringify({ workspaceId }),
-  })
-
-  if (!response.ok) {
-    throw await providerRequestError(response, "Zoom could not be disconnected")
-  }
+  await moc.integrations.revokeZoom(workspaceId)
 }

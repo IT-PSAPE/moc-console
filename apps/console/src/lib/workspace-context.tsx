@@ -58,7 +58,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
             const { setLoadingState = true } = options
             if (setLoadingState) setLoading(true)
             try {
-                const directory = await fetchWorkspaceDirectory([uid])
+                const directory = await fetchWorkspaceDirectory()
 
                 const memberWorkspaceIds = new Set(
                     directory.memberships.filter((m) => m.userId === uid).map((m) => m.workspaceId),

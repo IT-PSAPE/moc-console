@@ -1,6 +1,6 @@
 import type { ZoomMeeting, ZoomMeetingType } from "@moc/types/streams/zoom"
-import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
+import { moc } from "@/lib/moc-client"
 import { zoomApiFetch } from "@/lib/zoom-client"
 import { parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time"
 import { providerRequestError } from "@/lib/provider-request-error"
@@ -76,8 +76,8 @@ export async function syncZoomMeetings(requestedWorkspaceId?: string): Promise<Z
 
 export async function syncZoomMeetingsWithinOperation(workspaceId: string): Promise<ZoomMeeting[]> {
   const zoomConnectionId = await fetchZoomConnectionId(workspaceId)
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error("Not authenticated")
+  const session = await moc.auth.getSession()
+  if (!session?.user) throw new Error("Not authenticated")
 
   const meetings: ZoomMeetingSyncRow[] = []
   let pageToken: string | undefined
@@ -116,7 +116,7 @@ export async function syncZoomMeetingsWithinOperation(workspaceId: string): Prom
   const payloads = new Map<number, ZoomMeetingUpsertRow>()
   const adoptedMeetingIds = new Set<number>()
   for (const meeting of [...meetings, ...verifiedMeetings]) {
-    const row = toUpsertRow(meeting, workspaceId, zoomConnectionId, existingCreators.get(meeting.id) ?? user.id)
+    const row = toUpsertRow(meeting, workspaceId, zoomConnectionId, existingCreators.get(meeting.id) ?? session.user.id)
     // A meeting we already track is always reconciled. One we do not track is
     // only taken on while its slot is still ahead of us.
     if (existingCreators.has(meeting.id)) {
@@ -127,16 +127,15 @@ export async function syncZoomMeetingsWithinOperation(workspaceId: string): Prom
     }
   }
   if (payloads.size > 0) {
-    const { error } = await supabase.from("zoom_meetings").upsert([...payloads.values()], { onConflict: "workspace_id,zoom_meeting_id" })
-    if (error) throw new Error(error.message)
+    const records = [...payloads.values()].map(({ created_by: createdBy, zoom_connection_id: connectionId, ...record }) => {
+      void createdBy
+      void connectionId
+      return record
+    })
+    await moc.streams.upsertZoomMeetings(records, workspaceId)
   }
   if (cancelledMeetingIds.length > 0) {
-    const { error } = await supabase
-      .from("zoom_meetings")
-      .delete()
-      .eq("workspace_id", workspaceId)
-      .in("id", cancelledMeetingIds)
-    if (error) throw new Error(error.message)
+    await moc.streams.deleteZoomMeetingsByIds(cancelledMeetingIds, workspaceId)
   }
 
   const syncedMeetings = await fetchZoomMeetings(workspaceId)

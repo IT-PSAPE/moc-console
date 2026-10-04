@@ -13,17 +13,16 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@moc/data": "*",
     "@moc/notifications": "*",
     "@moc/types": "*",
     "@moc/ui": "*",
     "@moc/utils": "*",
-    "@supabase/supabase-js": "^2.101.1",
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.2",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.5.0",
+    "@moc/sdk": "*"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",

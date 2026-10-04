@@ -1,7 +1,7 @@
 import type { Stream, StreamPrivacy, LatencyPreference } from "@moc/types/streams/stream"
 import type { NotifyDestination } from "@moc/types/streams"
-import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
+import { moc } from "@/lib/moc-client"
 import {
   youtubeApiFetch,
   uploadThumbnail,
@@ -82,9 +82,9 @@ async function cleanupCreatedYouTubeResources(broadcastId: string | null, stream
 
 export async function createStream(params: CreateStreamParams): Promise<StreamMutationResult> {
   const workspaceId = await getCurrentWorkspaceId()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await moc.auth.getSession()
 
-  if (!user) {
+  if (!session?.user) {
     throw new Error("Not authenticated")
   }
 
@@ -213,14 +213,14 @@ export async function createStream(params: CreateStreamParams): Promise<StreamMu
       enable_auto_start: params.enableAutoStart,
       enable_auto_stop: params.enableAutoStop,
       playlist_id: params.playlistId,
-      created_by: user.id,
+      created_by: session.user.id,
     }
 
     try {
       await insertLocalStream(payload)
       localRecordSaved = true
     } catch (error) {
-      // A network interruption can arrive after PostgREST has committed the
+      // A network interruption can arrive after the API has committed the
       // insert. Before rolling back YouTube, check whether that durable row is
       // already available under the client-generated ID.
       const persisted = await fetchStreamById(payload.id).catch(() => undefined)
@@ -333,14 +333,14 @@ export async function updateStream(
   const localValues = getLocalStreamUpdate(stream, thumbnailUrl)
 
   try {
-    await persistLocalStreamUpdate(stream.id, localValues)
+    await persistLocalStreamUpdate(stream.id, localValues, stream.workspaceId)
   } catch {
     // The provider update has already succeeded. Sync its canonical state and
     // retry the local write once so a transient database error does not leave
     // the user with a misleading failure or force them to repeat the update.
     try {
       await syncYouTubeStreams()
-      await persistLocalStreamUpdate(stream.id, localValues)
+      await persistLocalStreamUpdate(stream.id, localValues, stream.workspaceId)
     } catch {
       return {
         stream: { ...stream, thumbnailUrl },
@@ -371,21 +371,10 @@ export async function deleteStream(stream: Stream): Promise<void> {
     throw await providerRequestError(response, "Failed to delete broadcast on YouTube; the stream was kept")
   }
 
-  const { error } = await supabase
-    .from("streams")
-    .delete()
-    .eq("id", stream.id)
-
-  if (error) {
-    throw new Error(error.message)
-  }
+  await moc.streams.deleteStream(stream.id, stream.workspaceId)
 }
 
 export async function deleteLocalStreamRecord(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("streams")
-    .delete()
-    .eq("id", id)
-
-  if (error) throw new Error(error.message)
+  const workspaceId = await getCurrentWorkspaceId()
+  await moc.streams.deleteStream(id, workspaceId)
 }

@@ -1,41 +1,12 @@
-import { supabase } from "@moc/data/supabase";
-import type { Workspace } from "@moc/types/workspace";
+import { moc } from "@/lib/moc-client"
+import type { Workspace } from "@moc/types/workspace"
 
 export type WorkspaceUpdate = {
-  name?: string;
-  slug?: string;
-  description?: string | null;
-};
+  name?: string
+  slug?: string
+  description?: string | null
+}
 
-type WorkspaceRow = {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-};
-
-export async function updateWorkspace(id: string, updates: WorkspaceUpdate): Promise<Workspace> {
-  const payload: Record<string, unknown> = {};
-  if (updates.name !== undefined) payload.name = updates.name;
-  if (updates.slug !== undefined) payload.slug = updates.slug;
-  if (updates.description !== undefined) payload.description = updates.description;
-
-  const { data, error } = await supabase
-    .from("workspaces")
-    .update(payload)
-    .eq("id", id)
-    .select("id, name, slug, description")
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const row = data as WorkspaceRow;
-  return {
-    id: row.id,
-    name: row.name,
-    slug: row.slug,
-    description: row.description ?? null,
-  };
+export function updateWorkspace(id: string, updates: WorkspaceUpdate): Promise<Workspace> {
+  return moc.workspaces.update(id, updates)
 }

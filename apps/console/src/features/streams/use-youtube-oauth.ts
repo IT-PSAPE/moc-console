@@ -45,7 +45,7 @@ export function useYouTubeOAuth() {
       return { connected: false, error: oauthError }
     }
 
-    // The code was stashed in sessionStorage by supabase.ts before Supabase could intercept it
+    // The OAuth interceptor saved the code before the application router handled it.
     const code = sessionStorage.getItem(YOUTUBE_OAUTH_CODE_KEY)
 
     if (!code) {

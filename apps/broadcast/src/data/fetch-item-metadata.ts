@@ -1,4 +1,5 @@
 import { parseId3Tag, readId3TagLength, type Id3Tag } from "@/features/id3-tag"
+import { moc } from "@/lib/moc-client"
 import { cropCoverBlob } from "./crop-cover-blob"
 
 export type BroadcastItemMetadata = {
@@ -15,11 +16,7 @@ const MAX_TAG_BYTES = 4 * 1024 * 1024
 const cache = new Map<string, Promise<BroadcastItemMetadata>>()
 
 async function fetchRange(url: string, lastByte: number): Promise<Uint8Array | null> {
-  const response = await fetch(url, { headers: { Range: `bytes=0-${lastByte}` } })
-
-  if (!response.ok) return null
-
-  return new Uint8Array(await response.arrayBuffer())
+  return moc.storage.readRange(url, 0, lastByte)
 }
 
 async function toMetadata(tag: Id3Tag): Promise<BroadcastItemMetadata> {

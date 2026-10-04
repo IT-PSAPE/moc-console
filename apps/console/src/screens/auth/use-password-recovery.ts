@@ -19,7 +19,7 @@ function getLinkErrorFromUrl(): string | null {
 }
 
 export function usePasswordRecovery() {
-  const { loading: authLoading, isPasswordRecovery, session, updatePassword } = useAuth()
+  const { loading: authLoading, isPasswordRecovery, session, updatePassword, callbackError } = useAuth()
   const navigate = useNavigate()
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -30,7 +30,7 @@ export function usePasswordRecovery() {
   const [success, setSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [countdown, setCountdown] = useState(REDIRECT_COUNTDOWN_SECONDS)
-  const linkError = useMemo(() => authLoading || success ? null : getLinkErrorFromUrl(), [authLoading, success])
+  const linkError = useMemo(() => authLoading || success ? null : callbackError ?? getLinkErrorFromUrl(), [authLoading, callbackError, success])
   const strength = useMemo(() => evaluatePasswordStrength(password), [password])
   const passwordMeetsMinimum = password.length >= MIN_PASSWORD_LENGTH
   const confirmMatches = confirmPassword.length > 0 && confirmPassword === password

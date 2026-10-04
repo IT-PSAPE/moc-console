@@ -9,10 +9,7 @@ type Deferred<T> = {
   resolve: (value: T) => void
 }
 
-type RegisteredChannel = {
-  callbacks: Array<() => void>
-  name: string
-}
+type RegisteredSubscription = { broadcastId: string; notify: () => void; close: () => void }
 
 type TimerTask = {
   callback: () => void | Promise<void>
@@ -129,6 +126,7 @@ function createDocumentStub() {
   const listeners = new Map<string, Set<() => void>>()
 
   return {
+    listeners,
     addEventListener(eventName: string, listener: () => void) {
       const currentListeners = listeners.get(eventName) ?? new Set<() => void>()
       currentListeners.add(listener)
@@ -148,8 +146,10 @@ async function flushAsync() {
 
 let fetchBroadcastByIdImplementation: (id: string) => Promise<Broadcast | null> = () => Promise.resolve(null)
 let fetchPublicBroadcastImplementation: (slug: string) => Promise<Broadcast | null> = () => Promise.resolve(null)
-const registeredChannels: RegisteredChannel[] = []
-const removedChannels: RegisteredChannel[] = []
+let subscribeImplementation: (id: string, notify: () => void) => () => void = () => () => undefined
+const registeredSubscriptions: RegisteredSubscription[] = []
+const closedSubscriptions: string[] = []
+let documentStub = createDocumentStub()
 
 mock.module("react", () => ({ ...React, ...createMockReactModule() }))
 mock.module("@/data/fetch-public-broadcast", () => ({
@@ -160,25 +160,12 @@ mock.module("@/data/fetch-public-broadcast", () => ({
     return fetchPublicBroadcastImplementation(slug)
   },
 }))
-mock.module("@moc/data/supabase", () => ({
-  supabase: {
-    channel(name: string) {
-      const registeredChannel: RegisteredChannel = { callbacks: [], name }
-      const chain = {
-        on(_event: string, _options: Record<string, string>, callback: () => void) {
-          registeredChannel.callbacks.push(callback)
-          return chain
-        },
-        subscribe() {
-          registeredChannels.push(registeredChannel)
-          return registeredChannel
-        },
-      }
-      return chain
-    },
-    removeChannel(channel: RegisteredChannel) {
-      removedChannels.push(channel)
-      return Promise.resolve("ok")
+mock.module("@/lib/moc-client", () => ({
+  moc: {
+    broadcasts: {
+      subscribe(id: string, notify: () => void) {
+        return subscribeImplementation(id, notify)
+      },
     },
   },
 }))
@@ -196,15 +183,25 @@ describe("usePublicBroadcast", () => {
   beforeEach(() => {
     fetchBroadcastByIdImplementation = () => Promise.resolve(null)
     fetchPublicBroadcastImplementation = () => Promise.resolve(null)
-    registeredChannels.length = 0
-    removedChannels.length = 0
+    subscribeImplementation = (broadcastId, notify) => {
+      const subscription: RegisteredSubscription = {
+        broadcastId,
+        notify,
+        close() { closedSubscriptions.push(broadcastId) },
+      }
+      registeredSubscriptions.push(subscription)
+      return subscription.close
+    }
+    registeredSubscriptions.length = 0
+    closedSubscriptions.length = 0
     timers = new TimerController()
     originalClearInterval = globalThis.clearInterval
     originalClearTimeout = globalThis.clearTimeout
     originalDocument = globalThis.document
     originalSetInterval = globalThis.setInterval
     originalSetTimeout = globalThis.setTimeout
-    globalThis.document = createDocumentStub() as unknown as Document
+    documentStub = createDocumentStub()
+    globalThis.document = documentStub as unknown as Document
     globalThis.clearInterval = timers.clearInterval as typeof globalThis.clearInterval
     globalThis.clearTimeout = timers.clearTimeout as typeof globalThis.clearTimeout
     globalThis.setInterval = timers.setInterval as typeof globalThis.setInterval
@@ -240,7 +237,7 @@ describe("usePublicBroadcast", () => {
 
     expect(runtime.result?.broadcast?.id).toBe("alpha")
 
-    registeredChannels[0]?.callbacks[0]?.()
+    registeredSubscriptions[0]?.notify()
     await timers.advanceBy(500)
     runtime.rerender()
 
@@ -298,12 +295,64 @@ describe("usePublicBroadcast", () => {
     await timers.advanceBy(60_000)
     runtime.rerender()
 
-    expect(registeredChannels.map((channel) => channel.name)).toEqual([
-      "public-broadcast:alpha",
-      "public-broadcast:beta",
-    ])
-    expect(removedChannels.map((channel) => channel.name)).toEqual(["public-broadcast:alpha"])
+    expect(registeredSubscriptions.map((subscription) => subscription.broadcastId)).toEqual(["alpha", "beta"])
+    expect(closedSubscriptions).toEqual(["alpha"])
     expect(refreshCalls).toEqual(["beta"])
     expect(runtime.result?.broadcast?.items[0]?.id).toBe("two")
+  })
+
+  test("debounces revision events and keeps the current broadcast after a background failure", async () => {
+    const alpha = createBroadcast("alpha", "alpha-slug", ["one"])
+    let failRefresh = false
+    let refreshCalls = 0
+    fetchPublicBroadcastImplementation = async () => alpha
+    fetchBroadcastByIdImplementation = async () => {
+      refreshCalls += 1
+      if (failRefresh) throw new Error("temporary network failure")
+      return createBroadcast("alpha", "alpha-slug", ["updated"])
+    }
+
+    const runtime = new HookRuntime(usePublicBroadcast, "alpha-slug" as string | undefined)
+    runtime.render("alpha-slug")
+    await flushAsync()
+    runtime.rerender()
+
+    registeredSubscriptions[0]?.notify()
+    registeredSubscriptions[0]?.notify()
+    await timers.advanceBy(499)
+    expect(refreshCalls).toBe(0)
+    await timers.advanceBy(1)
+    runtime.rerender()
+    expect(refreshCalls).toBe(1)
+    expect(runtime.result?.broadcast?.items[0]?.id).toBe("updated")
+
+    failRefresh = true
+    registeredSubscriptions[0]?.notify()
+    await timers.advanceBy(500)
+    runtime.rerender()
+    expect(runtime.result?.broadcast?.items[0]?.id).toBe("updated")
+  })
+
+  test("refreshes after the tab becomes visible", async () => {
+    const alpha = createBroadcast("alpha", "alpha-slug", ["one"])
+    const refreshed = createBroadcast("alpha", "alpha-slug", ["visible-refresh"])
+    let refreshCalls = 0
+    fetchPublicBroadcastImplementation = async () => alpha
+    fetchBroadcastByIdImplementation = async () => {
+      refreshCalls += 1
+      return refreshed
+    }
+    const runtime = new HookRuntime(usePublicBroadcast, "alpha-slug" as string | undefined)
+    runtime.render("alpha-slug")
+    await flushAsync()
+    runtime.rerender()
+
+    documentStub.visibilityState = "visible"
+    for (const listener of documentStub.listeners.get("visibilitychange") ?? []) listener()
+    await timers.advanceBy(500)
+    runtime.rerender()
+
+    expect(refreshCalls).toBe(1)
+    expect(runtime.result?.broadcast?.items[0]?.id).toBe("visible-refresh")
   })
 })

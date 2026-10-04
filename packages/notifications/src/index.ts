@@ -1,7 +1,7 @@
 // The Telegram notification vocabulary, shared by the API app (which renders
 // and sends messages) and MOC Console's settings UI (which previews and edits
-// the templates). Deliberately free of Node, React and Supabase so both sides
-// can import it.
+// the templates). Keep this vocabulary free of runtime-specific dependencies
+// so both sides can import it.
 export * from './events.js'
 export * from './event-routing.js'
 export * from './template-tokens.js'

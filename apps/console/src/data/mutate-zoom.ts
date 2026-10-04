@@ -1,8 +1,8 @@
 import type { ZoomMeeting, ZoomRecurrenceType } from "@moc/types/streams/zoom"
-import { supabase } from "@moc/data/supabase"
 import { getCurrentWorkspaceId } from "./current-workspace"
+import { moc } from "@/lib/moc-client"
 import { zoomApiFetch, revokeZoomToken } from "@/lib/zoom-client"
-import { fetchZoomConnectionId, fetchZoomMeetingById } from "./fetch-zoom"
+import { fetchZoomMeetingById } from "./fetch-zoom"
 import { formatUtcIsoForZoomApi } from "@moc/utils/zoned-date-time"
 import { randomId } from "@moc/utils/random-id"
 import { notifyMeetingCreated, notifyMeetingUpdated } from "./notify-event"
@@ -37,7 +37,6 @@ export type ZoomMeetingMutationResult = {
 type LocalZoomMeetingInsertPayload = {
   id?: string
   workspace_id: string
-  zoom_connection_id: string
   zoom_meeting_id: number
   topic: string
   description: string
@@ -57,11 +56,9 @@ type LocalZoomMeetingInsertPayload = {
 }
 
 async function insertLocalZoomMeeting(payload: LocalZoomMeetingInsertPayload): Promise<void> {
-  const { error } = await supabase.from("zoom_meetings").insert(payload)
-
-  if (error) {
-    throw new Error(error.message)
-  }
+  const { created_by: createdBy, ...record } = payload
+  void createdBy
+  await moc.streams.insertZoomMeeting(record, payload.workspace_id)
 }
 
 function mapLocalZoomMeetingPayload(payload: LocalZoomMeetingInsertPayload): ZoomMeeting {
@@ -107,12 +104,8 @@ function getLocalZoomMeetingUpdate(meeting: ZoomMeeting) {
   }
 }
 
-async function persistLocalZoomMeetingUpdate(meetingId: string, values: ReturnType<typeof getLocalZoomMeetingUpdate>): Promise<void> {
-  const { error } = await supabase.from("zoom_meetings").update(values).eq("id", meetingId)
-
-  if (error) {
-    throw new Error(error.message)
-  }
+async function persistLocalZoomMeetingUpdate(meetingId: string, values: ReturnType<typeof getLocalZoomMeetingUpdate>, workspaceId: string): Promise<void> {
+  await moc.streams.updateZoomMeeting(meetingId, values, workspaceId)
 }
 
 function mapRecurrenceToZoomApi(params: CreateMeetingParams) {
@@ -146,10 +139,9 @@ export async function createZoomMeeting(params: CreateMeetingParams): Promise<Zo
 }
 
 async function createZoomMeetingWithinOperation(params: CreateMeetingParams, workspaceId: string): Promise<ZoomMeeting> {
-  const zoomConnectionId = await fetchZoomConnectionId(workspaceId)
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await moc.auth.getSession()
 
-  if (!user) {
+  if (!session?.user) {
     throw new Error("Not authenticated")
   }
 
@@ -191,7 +183,6 @@ async function createZoomMeetingWithinOperation(params: CreateMeetingParams, wor
   const payload: LocalZoomMeetingInsertPayload = {
     id: localMeetingId,
     workspace_id: workspaceId,
-    zoom_connection_id: zoomConnectionId,
     zoom_meeting_id: meeting.id,
     topic: params.topic,
     description: params.description,
@@ -207,12 +198,12 @@ async function createZoomMeetingWithinOperation(params: CreateMeetingParams, wor
     waiting_room: params.waitingRoom,
     mute_on_entry: params.muteOnEntry,
     continuous_chat: params.continuousChat,
-    created_by: user.id,
+    created_by: session.user.id,
   }
   try {
     await insertLocalZoomMeeting(payload)
   } catch (error) {
-    // The browser can lose the response after Supabase has committed the row.
+    // The browser can lose the response after the API has committed the row.
     // Treat an already-persisted client-generated ID as success rather than
     // deleting the provider meeting and encouraging a duplicate retry.
     const persisted = await fetchZoomMeetingById(localMeetingId).catch(() => undefined)
@@ -290,13 +281,13 @@ async function updateZoomMeetingWithinOperation(meeting: ZoomMeeting): Promise<Z
   const localValues = getLocalZoomMeetingUpdate(meeting)
 
   try {
-    await persistLocalZoomMeetingUpdate(meeting.id, localValues)
+    await persistLocalZoomMeetingUpdate(meeting.id, localValues, meeting.workspaceId)
   } catch {
     // Zoom has already accepted the update. Re-sync its canonical meeting and
     // retry local persistence once before asking the user to reconcile later.
     try {
       await syncZoomMeetingsWithinOperation(meeting.workspaceId)
-      await persistLocalZoomMeetingUpdate(meeting.id, localValues)
+      await persistLocalZoomMeetingUpdate(meeting.id, localValues, meeting.workspaceId)
     } catch {
       return {
         meeting,
@@ -328,14 +319,7 @@ async function deleteZoomMeetingWithinOperation(meeting: ZoomMeeting): Promise<v
     throw await providerRequestError(response, "Failed to delete Zoom meeting")
   }
 
-  const { error } = await supabase
-    .from("zoom_meetings")
-    .delete()
-    .eq("id", meeting.id)
-
-  if (error) {
-    throw new Error(error.message)
-  }
+  await moc.streams.deleteZoomMeeting(meeting.id, meeting.workspaceId)
 }
 
 export async function deleteLocalZoomMeetingRecord(id: string): Promise<void> {
@@ -344,12 +328,8 @@ export async function deleteLocalZoomMeetingRecord(id: string): Promise<void> {
 }
 
 async function deleteLocalZoomMeetingRecordWithinOperation(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("zoom_meetings")
-    .delete()
-    .eq("id", id)
-
-  if (error) throw new Error(error.message)
+  const workspaceId = await getCurrentWorkspaceId()
+  await moc.streams.deleteZoomMeeting(id, workspaceId)
 }
 
 export async function disconnectZoom(): Promise<void> {

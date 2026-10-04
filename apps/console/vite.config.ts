@@ -7,16 +7,16 @@ import { tailscaleDevServer } from '../../scripts/vite-tailscale'
 
 const aliasEntries = [
   {
+    find: '@moc/sdk',
+    replacement: fileURLToPath(new URL('../../packages/sdk/src', import.meta.url)),
+  },
+  {
     find: '@moc/ui/styles.css',
     replacement: fileURLToPath(new URL('../../packages/ui/src/index.css', import.meta.url)),
   },
   {
     find: '@moc/ui',
     replacement: fileURLToPath(new URL('../../packages/ui/src', import.meta.url)),
-  },
-  {
-    find: '@moc/data',
-    replacement: fileURLToPath(new URL('../../packages/data/src', import.meta.url)),
   },
   {
     find: '@moc/notifications',

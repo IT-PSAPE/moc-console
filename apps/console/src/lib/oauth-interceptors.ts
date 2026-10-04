@@ -1,7 +1,5 @@
-// Intercept OAuth redirects from Zoom and YouTube before Supabase tries to
-// exchange any returning ?code as a PKCE login. Must run before @moc/data/supabase
-// is imported so the URL is cleaned and the codes stashed in sessionStorage
-// for the connection flows to pick up.
+// Preserve Zoom and YouTube OAuth responses for their connection flows before
+// the application router processes the returned query parameters.
 //
 // Zoom: detected via a pending flag set before the redirect leaves the app.
 // Google/YouTube: detected by the presence of the `scope` query param.
@@ -13,7 +11,7 @@ const youtubeOAuthStateKey = 'youtube_oauth_state'
 function interceptYouTubeOAuthRedirect() {
   const params = new URLSearchParams(window.location.search)
   const hasYouTubeCode = params.has('code') && params.has('scope')
-  const hasYouTubeError = params.has('error')
+  const hasYouTubeError = params.has('error') && (params.has('scope') || Boolean(sessionStorage.getItem(youtubeOAuthStateKey)))
 
   if (!hasYouTubeCode && !hasYouTubeError) {
     return

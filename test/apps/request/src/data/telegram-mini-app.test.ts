@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { parseMiniAppResponse } from "../../../../../apps/request/src/data/telegram-mini-app"
+import { parseMiniAppResponse } from "../../../../../packages/sdk/src/telegram-mini-app"
 
 describe("parseMiniAppResponse", () => {
   test("passes through a well-formed success", () => {

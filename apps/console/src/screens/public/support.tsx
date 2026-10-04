@@ -50,7 +50,7 @@ export function SupportScreen() {
       <Section title="Status and incidents">
         <Paragraph.md>
           Major incidents and planned maintenance are communicated by email to workspace administrators. If
-          the Service appears unreachable, check that third-party dependencies (Zoom, YouTube, Supabase) are
+          the Service appears unreachable, check that third-party services such as Zoom and YouTube are
           operating normally on their respective status pages before filing a ticket.
         </Paragraph.md>
       </Section>

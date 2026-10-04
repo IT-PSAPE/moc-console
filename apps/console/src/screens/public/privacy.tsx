@@ -15,7 +15,7 @@ export function PrivacyPolicyScreen() {
       </Paragraph.md>
 
       <Section title="1. Information We Collect">
-        <Paragraph.md className="mb-3"><strong>Account information.</strong> When you create an account or are invited to a workspace, we collect your name, email address, and the organization/workspace you belong to. Authentication is handled by Supabase Auth.</Paragraph.md>
+        <Paragraph.md className="mb-3"><strong>Account information.</strong> When you create an account or are invited to a workspace, we collect your name, email address, and the organization/workspace you belong to. Authentication requests are handled by the MOC API and its authentication service.</Paragraph.md>
         <Paragraph.md className="mb-3"><strong>Zoom information.</strong> When you connect a Zoom account, we receive and store:</Paragraph.md>
         <ul className="list-disc pl-6 space-y-1 mb-3">
           <li><Paragraph.md>Your Zoom user profile (Zoom user ID, email address, display name).</Paragraph.md></li>
@@ -41,7 +41,7 @@ export function PrivacyPolicyScreen() {
         <Paragraph.md className="mb-3">We do not sell your personal information. We share information only in these limited cases:</Paragraph.md>
         <ul className="list-disc pl-6 space-y-2">
           <li><Paragraph.md><strong>With Zoom.</strong> When you perform an action in the Service that affects a Zoom meeting (create, update, delete, list, read), we send the necessary data to Zoom's API on your behalf under the OAuth authorization you granted.</Paragraph.md></li>
-          <li><Paragraph.md><strong>With service providers.</strong> We use Supabase (database, authentication, and storage) to host your data. Supabase processes data only under our instructions and under its own privacy and security commitments.</Paragraph.md></li>
+          <li><Paragraph.md><strong>With service providers.</strong> We use Neon PostgreSQL and private object storage to host service data. The MOC API manages access to this data and to authentication services.</Paragraph.md></li>
           <li><Paragraph.md><strong>With your workspace members.</strong> Data you add to a workspace is visible to other authenticated members of that workspace.</Paragraph.md></li>
           <li><Paragraph.md><strong>For legal reasons.</strong> We may disclose information if required by law, subpoena, or other legal process, or to protect the rights, property, or safety of users or the public.</Paragraph.md></li>
         </ul>
@@ -58,16 +58,12 @@ export function PrivacyPolicyScreen() {
 
       <Section title="5. Data Security">
         <Paragraph.md className="mb-3">
-          Zoom access tokens, refresh tokens, and meeting metadata are stored in a managed PostgreSQL database
-          on Supabase, which encrypts data at rest using <strong>AES-256</strong>. Every row is scoped by
-          <code className="mx-1 px-1.5 py-0.5 rounded bg-secondary text-secondary font-mono text-[0.95em]">workspace_id</code>
-          and guarded by PostgreSQL <strong>Row-Level Security</strong> policies, so only authenticated members
-          of the owning workspace can read or modify the data. The Zoom
+          Zoom access tokens, refresh tokens, and meeting metadata are stored in Neon PostgreSQL. The MOC API
+          controls access to service data based on account and workspace permissions. The Zoom
           <code className="mx-1 px-1.5 py-0.5 rounded bg-secondary text-secondary font-mono text-[0.95em]">client_secret</code>
-          is never stored in the database or sent to the browser; it lives only in server-side environment
-          variables on the hosting platform. All traffic between the client, our server, Supabase, and Zoom is
-          transmitted over <strong>TLS 1.2+</strong>. No security program is perfect, and we cannot guarantee
-          absolute security.
+          is never sent to the browser and is kept in server-side configuration. Your browser connects to MOC
+          Console over HTTPS; the API handles service data access and communication with Zoom. No security
+          program is perfect, and we cannot guarantee absolute security.
         </Paragraph.md>
       </Section>
 

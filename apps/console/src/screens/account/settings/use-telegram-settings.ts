@@ -32,17 +32,18 @@ export function useTelegramSettings() {
     useEffect(() => { void loadGroups() }, [loadGroups])
 
     const toggleGroup = useCallback(async (chatId: string, active: boolean) => {
+        if (!currentWorkspaceId) return
         setPendingChatId(chatId)
         setGroups((current) => current.map((group) => group.chatId === chatId ? { ...group, active } : group))
         try {
-            await setTelegramGroupActive(chatId, active)
+            await setTelegramGroupActive(currentWorkspaceId, chatId, active)
         } catch (error) {
             setGroups((current) => current.map((group) => group.chatId === chatId ? { ...group, active: !active } : group))
             toast({ title: "Couldn't update group", description: error instanceof Error ? error.message : 'Unknown error', variant: 'error' })
         } finally {
             setPendingChatId(null)
         }
-    }, [toast])
+    }, [currentWorkspaceId, toast])
 
     function openConnect(group: TelegramGroup, threadId: number | null, topicName: string | null) {
         if (!currentWorkspaceId) return

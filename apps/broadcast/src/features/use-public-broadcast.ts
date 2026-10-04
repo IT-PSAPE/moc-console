@@ -1,5 +1,5 @@
 import { fetchBroadcastById, fetchPublicBroadcast } from "@/data/fetch-public-broadcast"
-import { supabase } from "@moc/data/supabase"
+import { moc } from "@/lib/moc-client"
 import type { Broadcast } from "@moc/types/broadcast/broadcast"
 import { useCallback, useEffect, useRef, useState } from "react"
 
@@ -24,6 +24,12 @@ export function usePublicBroadcast(slug: string | undefined) {
         return
       }
 
+      if (!next) {
+        setBroadcast(null)
+        setBroadcastId(null)
+        broadcastIdRef.current = null
+        return
+      }
       setBroadcast(next)
     } catch {
       // background refresh failure is non-destructive
@@ -101,27 +107,10 @@ export function usePublicBroadcast(slug: string | undefined) {
     }
   }, [slug])
 
-  // Subscribe to realtime changes on broadcasts and broadcast_items
+  // Revision events cover broadcast rows, playlist rows, and deletion in one stream.
   useEffect(() => {
     if (!broadcastId) return
-
-    const channel = supabase
-      .channel(`public-broadcast:${broadcastId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "broadcasts", filter: `id=eq.${broadcastId}` },
-        scheduleRefetch,
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "broadcast_items", filter: `broadcast_id=eq.${broadcastId}` },
-        scheduleRefetch,
-      )
-      .subscribe()
-
-    return () => {
-      void supabase.removeChannel(channel)
-    }
+    return moc.broadcasts.subscribe(broadcastId, scheduleRefetch)
   }, [broadcastId, scheduleRefetch])
 
   // Periodic fallback refresh

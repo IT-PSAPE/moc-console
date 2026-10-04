@@ -69,7 +69,7 @@ export function useConnectEvents(target: ConnectEventsTarget | null, onClose: ()
                 const created = await createRouteForTarget(target, eventKey)
                 setRoutes((current) => [...current, created])
             } else if (!connected && existing) {
-                await deleteNotificationRoute(existing.id)
+                await deleteNotificationRoute(target.workspaceId, existing.id)
                 setRoutes((current) => current.filter((route) => route.id !== existing.id))
             }
         } catch (error) {

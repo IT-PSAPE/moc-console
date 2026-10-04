@@ -1,70 +1,28 @@
-import { supabase } from "@moc/data/supabase";
-import {
-  DEFAULT_DATE_FORMAT,
-  DEFAULT_TIMEZONE,
-  type DateFormatPreset,
-} from "@moc/notifications";
+import { moc } from "@/lib/moc-client"
+import { DEFAULT_DATE_FORMAT, DEFAULT_TIMEZONE } from "@moc/notifications"
+import type { DateFormatPreset } from "@moc/notifications"
+import type { NotificationSettings } from "@moc/sdk/notification-settings"
 
-export const DEFAULT_AUTO_ARCHIVE_COMPLETED_REQUESTS_DAYS = 7;
-export const DEFAULT_AUTO_ARCHIVE_RETURNED_BOOKINGS_DAYS = 7;
+export const DEFAULT_AUTO_ARCHIVE_COMPLETED_REQUESTS_DAYS = 7
+export const DEFAULT_AUTO_ARCHIVE_RETURNED_BOOKINGS_DAYS = 7
 
-export type NotificationSettings = {
-  workspaceId: string;
-  autoArchiveCompletedRequestsDays: number;
-  autoArchiveReturnedBookingsDays: number;
-  // How dates render in Telegram messages — see formatDateTokens in @moc/notifications.
-  timezone: string;
-  dateFormat: DateFormatPreset;
-};
+export type { NotificationSettings }
 
 export async function fetchNotificationSettings(workspaceId: string): Promise<NotificationSettings> {
-  const { data, error } = await supabase
-    .from("notification_settings")
-    .select("auto_archive_completed_requests_days, auto_archive_returned_bookings_days, timezone, date_format")
-    .eq("workspace_id", workspaceId)
-    .maybeSingle();
-
-  if (error) throw new Error(error.message);
+  const settings = await moc.notificationSettings.get(workspaceId)
   return {
-    workspaceId,
-    autoArchiveCompletedRequestsDays:
-      data?.auto_archive_completed_requests_days ?? DEFAULT_AUTO_ARCHIVE_COMPLETED_REQUESTS_DAYS,
-    autoArchiveReturnedBookingsDays:
-      data?.auto_archive_returned_bookings_days ?? DEFAULT_AUTO_ARCHIVE_RETURNED_BOOKINGS_DAYS,
-    timezone: data?.timezone ?? DEFAULT_TIMEZONE,
-    dateFormat: (data?.date_format as DateFormatPreset) ?? DEFAULT_DATE_FORMAT,
-  };
+    ...settings,
+    autoArchiveCompletedRequestsDays: settings.autoArchiveCompletedRequestsDays ?? DEFAULT_AUTO_ARCHIVE_COMPLETED_REQUESTS_DAYS,
+    autoArchiveReturnedBookingsDays: settings.autoArchiveReturnedBookingsDays ?? DEFAULT_AUTO_ARCHIVE_RETURNED_BOOKINGS_DAYS,
+    timezone: settings.timezone ?? DEFAULT_TIMEZONE,
+    dateFormat: settings.dateFormat ?? DEFAULT_DATE_FORMAT,
+  }
 }
 
-export async function updateAutoArchiveDays(
-  workspaceId: string,
-  completedRequestsDays: number,
-  returnedBookingsDays: number,
-): Promise<void> {
-  const { error } = await supabase
-    .from("notification_settings")
-    .upsert(
-      {
-        workspace_id: workspaceId,
-        auto_archive_completed_requests_days: completedRequestsDays,
-        auto_archive_returned_bookings_days: returnedBookingsDays,
-      },
-      { onConflict: "workspace_id" },
-    );
-  if (error) throw new Error(error.message);
+export function updateAutoArchiveDays(workspaceId: string, completedRequestsDays: number, returnedBookingsDays: number): Promise<void> {
+  return moc.notificationSettings.updateAutoArchiveDays(workspaceId, completedRequestsDays, returnedBookingsDays)
 }
 
-// Update formatting independently of the auto-archive settings.
-export async function updateMessageFormat(
-  workspaceId: string,
-  timezone: string,
-  dateFormat: DateFormatPreset,
-): Promise<void> {
-  const { error } = await supabase
-    .from("notification_settings")
-    .upsert(
-      { workspace_id: workspaceId, timezone, date_format: dateFormat },
-      { onConflict: "workspace_id" },
-    );
-  if (error) throw new Error(error.message);
+export function updateMessageFormat(workspaceId: string, timezone: string, dateFormat: DateFormatPreset): Promise<void> {
+  return moc.notificationSettings.updateMessageFormat(workspaceId, timezone, dateFormat)
 }
