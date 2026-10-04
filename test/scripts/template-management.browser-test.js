@@ -114,11 +114,11 @@ async (page) => {
   await page.getByRole('checkbox', { name: 'Ask attendees for their arrival time', exact: true }).check();
   if (await page.getByRole('textbox', { name: /expected arrival/i }).count()) throw new Error('Retired arrival field remains in template form');
   const variables = await page.getByRole('textbox', { name: 'Rich text editor', exact: true }).locator('code').allTextContents();
-  if (variables.join(',') !== 'title,instructions') throw new Error(`Unexpected template variables: ${variables}`);
+  if (variables.join(',') !== 'title,date,instructions') throw new Error(`Unexpected template variables: ${variables}`);
   await page.screenshot({ path: 'output/playwright/pre-attendance-instructions-mobile.png', fullPage: true, animations: 'disabled' });
   await page.getByRole('button', { name: 'Save template', exact: true }).click();
   await page.waitForURL('**/scheduled-messages');
   const attendance = templates.find(row => row.name === 'Service attendance');
   if (!attendance || 'expectedArrival' in attendance.fields || attendance.body.includes('expectedArrival') || attendance.fields.instructions !== 'Please arrive by 07:30.' || !attendance.require_arrival) throw new Error('Pre-attendance save did not preserve instructions and personal arrival setting');
-  return { saves, deletes, result: 'Template creation, navigation, deletion, and pre-attendance instruction-only fields with personal arrival collection passed' };
+  return { saves, deletes, result: 'Template creation, navigation, deletion, date placeholder, and pre-attendance instructions with personal arrival collection passed' };
 }

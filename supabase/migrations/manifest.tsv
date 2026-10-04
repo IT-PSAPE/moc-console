@@ -28,3 +28,4 @@
 20261003180000	scheduled_message_composition	2026-10-03d-scheduled-message-composition.sql
 20261003230000	scheduled_template_management	2026-10-03e-scheduled-template-management.sql
 20261003231000	remove_expected_arrival	2026-10-03f-remove-expected-arrival.sql
+20261004080000	scheduled_message_date	2026-10-04a-scheduled-message-date.sql

@@ -310,8 +310,15 @@ It removes the alert recipient table, threshold and bookkeeping columns, claim
 and completion RPCs, and stale-event routes and deliveries. Auto-archive and
 message-format settings remain. The API deployment removes the stale-items cron.
 
-The latest upgrade is
+The expected-arrival upgrade is
 [`migrations/2026-10-03f-remove-expected-arrival.sql`](migrations/2026-10-03f-remove-expected-arrival.sql).
 It removes the pre-attendance expected-arrival field, preserves existing guidance
 in instructions or custom body text, converts recurring overrides, and queues
 edits for active sent occurrences. Personal attendee arrival times are untouched.
+
+The latest upgrade is
+[`migrations/2026-10-04a-scheduled-message-date.sql`](migrations/2026-10-04a-scheduled-message-date.sql).
+It permits an optional date-only variable for announcements and pre-attendance,
+validates Gregorian `YYYY-MM-DD` values, and keeps existing templates unchanged.
+The renderer displays year, month, day without separators, subtracting 1983
+from the year: `2026-10-04` becomes `431004`. This content date is independent of delivery and expiry.

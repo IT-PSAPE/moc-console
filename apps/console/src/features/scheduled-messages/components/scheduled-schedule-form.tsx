@@ -5,7 +5,6 @@ import { Accordion } from '@moc/ui/components/display/accordion'
 import { Paragraph } from '@moc/ui/components/display/text'
 import { Button } from '@moc/ui/components/controls/button'
 import { Input } from '@moc/ui/components/form/input'
-import { TextArea } from '@moc/ui/components/form/text-area'
 import { FormField } from '@moc/ui/components/form/form-field'
 import { Checkbox } from '@moc/ui/components/form/checkbox'
 import { SelectField } from '@moc/ui/components/form/select-field'
@@ -16,11 +15,12 @@ import { Alert } from '@moc/ui/components/feedback/alert'
 import type { ScheduledFieldDefinition } from '@moc/notifications'
 import { routes } from '@/screens/console-routes'
 import { useScheduledMessagesContext } from '../scheduled-messages-context'
+import { ScheduledMessageField } from './scheduled-message-field'
 
 export function ScheduledScheduleForm() {
     const { state, actions, meta } = useScheduledMessagesContext()
     function renderField(field: ScheduledFieldDefinition) {
-        return <FormField key={field.key} label={field.label}>{field.key === 'instructions' ? <TextArea name={field.key} aria-label={`Message ${field.label}`} value={state.schedule.fields[field.key] ?? ''} maxLength={field.maxLength} onChange={actions.changeScheduleField} /> : <Input name={field.key} aria-label={`Message ${field.label}`} type="text" value={state.schedule.fields[field.key] ?? ''} maxLength={field.maxLength} onChange={actions.changeScheduleField} />}</FormField>
+        return <ScheduledMessageField key={field.key} field={field} labelPrefix="Message" value={state.schedule.fields[field.key] ?? ''} disabled={state.busy} onChange={actions.changeScheduleField} />
     }
     if (state.loading) return <LoadingSpinner className="py-16" />
     if (state.loadError) return <Alert variant="error" title="Couldn't load message setup" description={state.loadError} action={<Button variant="secondary" onClick={actions.reload}>Retry</Button>} />

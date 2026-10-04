@@ -41,7 +41,8 @@ export async function showSession(s: MessageSession,text: string,rows: InlineKey
   }
 }
 export async function promptSession(s: MessageSession,current: string,field: string,callbackId?: string): Promise<void> {
-  const sent=await sendTelegramEphemeralMessage(s.chat_id,s.telegram_user_id,`Current value: ${current || '(empty)'}\nReply with the replacement ${field}.`,{threadId:s.thread_id,callbackQueryId:callbackId,forceReply:true})
+  const hint=field==='date'?'\nUse Gregorian YYYY-MM-DD, for example 2026-10-04.':''
+  const sent=await sendTelegramEphemeralMessage(s.chat_id,s.telegram_user_id,`Current value: ${current || '(empty)'}\nReply with the replacement ${field}.${hint}`,{threadId:s.thread_id,callbackQueryId:callbackId,forceReply:true})
   if(!sent.ok || !sent.result?.ephemeral_message_id) throw new Error('Telegram could not open the input. Restart the flow.')
   await saveSession(s,{data:{...s.data,stage:'input',promptId:sent.result.ephemeral_message_id}})
 }

@@ -4,7 +4,6 @@ import { Section } from '@moc/ui/components/display/section'
 import { Page } from '@moc/ui/components/layout/page'
 import { Button } from '@moc/ui/components/controls/button'
 import { Input } from '@moc/ui/components/form/input'
-import { TextArea } from '@moc/ui/components/form/text-area'
 import { FormField } from '@moc/ui/components/form/form-field'
 import { Checkbox } from '@moc/ui/components/form/checkbox'
 import { SelectField } from '@moc/ui/components/form/select-field'
@@ -20,11 +19,12 @@ import type { MemberType, ScheduledFieldDefinition } from '@moc/notifications'
 import { UnsavedChangesModal } from '@/features/requests/unsaved-changes-modal'
 import { routes } from '@/screens/console-routes'
 import { useScheduledTemplateContext } from '../scheduled-template-context'
+import { ScheduledMessageField } from './scheduled-message-field'
 
 export function ScheduledTemplateForm() {
     const { state, actions, meta } = useScheduledTemplateContext()
     function renderField(field: ScheduledFieldDefinition) {
-        return <FormField key={field.key} label={field.label}>{field.key === 'instructions' ? <TextArea disabled={state.busy} name={field.key} aria-label={`Default ${field.label}`} value={state.draft.fields[field.key] ?? ''} maxLength={field.maxLength} onChange={actions.changeField} /> : <Input disabled={state.busy} name={field.key} aria-label={`Default ${field.label}`} type="text" value={state.draft.fields[field.key] ?? ''} maxLength={field.maxLength} onChange={actions.changeField} />}</FormField>
+        return <ScheduledMessageField key={field.key} field={field} labelPrefix="Default" value={state.draft.fields[field.key] ?? ''} disabled={state.busy} onChange={actions.changeField} />
     }
     function renderAudience(type: MemberType) {
         return <Checkbox disabled={state.busy} key={type.id} value={type.id} checked={state.draft.audience.includes(type.id)} onChange={actions.changeAudience}>{type.name}{type.is_default ? <Badge label="Default" color="gray" /> : null}</Checkbox>

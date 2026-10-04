@@ -94,7 +94,7 @@ export function useScheduledMessages() {
         const value = field === 'sendOn' ? editing.send_on : field === 'expiresAt' ? editing.expires_at : field === 'expiryHours' ? String(s?.expiry_hours ?? 72) : editing.fields[field] ?? ''
         setEdit(current => ({ ...current, field, value, scope: 'occurrence' }))
     }
-    function changeEditValue(event: ChangeEvent<HTMLTextAreaElement>): void { setEdit(current => ({ ...current, value: event.target.value })) }
+    function changeEditValue(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void { setEdit(current => ({ ...current, value: event.target.value })) }
     function changeScope(scope: string): void { setEdit(current => ({ ...current, scope: scope as ScheduledEditScope })) }
     function requestEdit(): void { setConfirmation({ op: 'occurrence.edit', title: 'Apply this change?', label: 'Apply change', data: edit, description: `Apply ${edit.field}: ${edit.value || '(empty)'} to ${edit.scope === 'occurrence' ? 'this occurrence' : edit.scope === 'future' ? 'this and future occurrences' : 'the entire series'}? Attendance responses will be retained.` }) }
     function requestSend(id: string): void { setError(''); setConfirmation({ op: 'occurrence.send', title: 'Send this message now?', label: 'Send now', data: { id }, description: 'This will post the occurrence to its Telegram group.' }) }

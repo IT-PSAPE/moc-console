@@ -21,7 +21,8 @@ test/supabase/tests/run-local.sh \
   supabase/migrations/2026-10-03c-scheduled-message-actions.sql \
   supabase/migrations/2026-10-03d-scheduled-message-composition.sql \
   supabase/migrations/2026-10-03e-scheduled-template-management.sql \
-  supabase/migrations/2026-10-03f-remove-expected-arrival.sql
+  supabase/migrations/2026-10-03f-remove-expected-arrival.sql \
+  supabase/migrations/2026-10-04a-scheduled-message-date.sql
 ```
 
 The assertion script checks migration backfills and defaults; Editor and

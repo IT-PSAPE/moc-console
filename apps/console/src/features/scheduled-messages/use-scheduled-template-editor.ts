@@ -32,7 +32,7 @@ export function useScheduledTemplateEditor() {
     function changeType(value: string): void {
         const messageType = value as ScheduledMessageType
         const defaultType = messages.snapshot.memberTypes.find(t => t.is_default)
-        setDraft(current => ({ ...current, messageType, body: SCHEDULED_DEFAULT_BODIES[messageType], fields: { title: current.fields.title, instructions: current.fields.instructions }, audience: current.audience.length ? current.audience : defaultType ? [defaultType.id] : [] }))
+        setDraft(current => ({ ...current, messageType, body: SCHEDULED_DEFAULT_BODIES[messageType], audience: current.audience.length ? current.audience : defaultType ? [defaultType.id] : [] }))
     }
     function changeField(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void {
         const { name, value } = event.target

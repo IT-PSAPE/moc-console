@@ -47,3 +47,4 @@ done
 run_sql "$TEST_ROOT/assertions.sql"
 run_sql "$TEST_ROOT/template-management.sql"
 "$TEST_ROOT/concurrency-local.sh" "$SOCKET_DIR"
+run_sql "$TEST_ROOT/scheduled-date.sql"
