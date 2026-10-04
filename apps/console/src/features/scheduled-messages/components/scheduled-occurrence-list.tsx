@@ -14,12 +14,14 @@ export function ScheduledOccurrenceList() {
     const { state, actions, meta } = useScheduledMessagesContext()
     function select(event: React.MouseEvent<HTMLButtonElement>): void { actions.selectOccurrence(event.currentTarget.value) }
     function send(event: React.MouseEvent<HTMLButtonElement>): void { actions.requestSend(event.currentTarget.value) }
+    function remove(event: React.MouseEvent<HTMLButtonElement>): void { actions.requestDelete(event.currentTarget.value) }
     function renderOccurrence(o: ScheduledOccurrence & { summary: string }) {
         return <ListItemCard.Root key={o.id} className="flex-wrap">
             <ListItemCard.Content className="w-full flex-none sm:w-auto sm:flex-1"><ListItemCard.Title className="whitespace-normal">{o.fields.title}</ListItemCard.Title><ListItemCard.Subtitle className="whitespace-normal">{o.summary}</ListItemCard.Subtitle></ListItemCard.Content>
             <ListItemCard.Trailing className="ml-auto">
                 <Button variant="secondary" value={o.id} onClick={select} disabled={state.busy || !['scheduled', 'sent'].includes(o.state)}>Manage</Button>
                 {['scheduled', 'sent'].includes(o.state) ? <Button value={o.id} onClick={send} disabled={state.busy}>{o.state === 'sent' ? 'Resend' : 'Send now'}</Button> : null}
+                <Button variant="danger" value={o.id} onClick={remove} disabled={state.busy || o.state === 'sending'}>Delete</Button>
             </ListItemCard.Trailing>
         </ListItemCard.Root>
     }

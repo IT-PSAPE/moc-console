@@ -29,6 +29,8 @@ export function useScheduledMessages() {
     const [loadError, setLoadError] = useState('')
     const [tab, setTab] = useState('active')
     const [schedule, setSchedule] = useState<ScheduleDraft>(defaultSchedule)
+    const [deleting, setDeleting] = useState<ScheduledOccurrence | null>(null)
+    const [deleteScope, setDeleteScope] = useState<ScheduledEditScope>('occurrence')
     const [editing, setEditing] = useState<ScheduledOccurrence | null>(null)
     const [edit, setEdit] = useState<EditDraft>({ id: '', revision: 0, field: 'title', value: '', scope: 'occurrence' })
     function parsedEditGroups(value: string): ScheduledAttendanceGroup[] {
@@ -45,7 +47,7 @@ export function useScheduledMessages() {
         catch (e) { setLoadError(e instanceof Error ? e.message : 'Loading failed') }
         finally { setLoading(false) }
     }, [currentWorkspaceId])
-    useEffect(() => { setSnapshot(empty); setEditing(null); setSchedule(defaultSchedule()); void reload() }, [reload])
+    useEffect(() => { setSnapshot(empty); setEditing(null); setDeleting(null); setConfirmation(null); setSchedule(defaultSchedule()); void reload() }, [reload])
     useEffect(() => {
         const timer = window.setInterval(() => setSnapshot(current => ({ ...current, occurrences: current.occurrences.filter(o => Date.parse(o.expires_at) > Date.now()) })), 15_000)
         return () => window.clearInterval(timer)
@@ -137,13 +139,33 @@ export function useScheduledMessages() {
         setError('')
         setConfirmation({ op: 'template.delete', title: 'Delete template?', label: 'Delete template', data: { id: template.id }, description: `Delete “${template.name}” from your template library? Existing scheduled messages and attendance responses will be kept. This cannot be undone.` })
     }
+    function requestDelete(id: string): void {
+        const occurrence = snapshot.occurrences.find(row => row.id === id)
+        if (!occurrence || occurrence.state === 'sending' || busy) return
+        setError(''); setDeleteScope('occurrence')
+        if (snapshot.schedules.find(row => row.id === occurrence.schedule_id)?.frequency === 'once') confirmDeletion(occurrence, 'occurrence')
+        else setDeleting(occurrence)
+    }
+    function changeDeleteScope(scope: string): void { setDeleteScope(scope as ScheduledEditScope) }
+    function changeDeleteOpen(open: boolean): void { if (!open && !busy) setDeleting(null) }
+    function confirmDeletion(occurrence: ScheduledOccurrence, scope: ScheduledEditScope): void {
+        const target = scope === 'occurrence' ? 'this occurrence' : scope === 'future' ? 'this and future occurrences' : 'the entire recurring schedule'
+        const recurring = snapshot.schedules.find(row => row.id === occurrence.schedule_id)?.frequency !== 'once'
+        const future = scope === 'occurrence' ? (recurring ? 'Other recurring occurrences will be kept.' : '') : 'Automatic sends in this scope will stop.'
+        setConfirmation({ op: 'occurrence.delete', title: 'Delete message?', label: 'Delete message', data: { id: occurrence.id, revision: occurrence.revision, scope }, description: `Delete “${occurrence.fields.title}” for ${target}? ${future} Sent messages will be removed from Telegram where possible, or marked deleted with their buttons removed. Saved attendance responses will be kept. This cannot be undone.` })
+    }
+    function reviewDelete(): void {
+        if (!deleting) return
+        confirmDeletion(deleting, deleteScope)
+        setDeleting(null)
+    }
     function changeEditorOpen(open: boolean): void { if (!open && !busy) setEditing(null) }
     function changeConfirmationOpen(open: boolean): void { if (!open && !busy) setConfirmation(null) }
     async function confirm(): Promise<void> {
         if (!confirmation) return
         const op = confirmation.op
         if (await mutate(op, confirmation.data)) {
-            setConfirmation(null); setEditing(null)
+            setConfirmation(null); setEditing(null); setDeleting(null)
             if (op === 'schedule.create') { setSchedule(defaultSchedule()); setTab('active'); navigate(`/${routes.scheduledMessages}`) }
         }
     }
@@ -162,8 +184,8 @@ export function useScheduledMessages() {
     const topics = snapshot.groups.find(g => g.chat_id === schedule.groupChatId)?.telegram_group_topics ?? []
     const topicItems = [{ value: 'main', label: 'General' }, ...topics.filter(t => !t.closed).map(t => ({ value: String(t.thread_id), label: t.name }))]
     return {
-        state: { snapshot, schedule, editing, edit, confirmation, error, loadError, loading, busy, tab },
-        actions: { reload, mutate, setTab, startSchedule, changeSchedule, setStartsOn, setExpiresAt, setEditTimestamp, changeScheduleField, setTemplateId, setGroup, setTopic, setFrequency, changeAutoSend, requestSchedule, selectOccurrence, changeEditField, changeEditValue, changeScope, changeAttendanceGroup: occurrenceGroupEditor.change, addAttendanceGroup: occurrenceGroupEditor.add, enableAttendanceGroups: occurrenceGroupEditor.enable, removeAttendanceGroup: occurrenceGroupEditor.remove, clearAttendanceGroups: occurrenceGroupEditor.clear, requestEdit, requestSend, requestTemplateDelete, changeEditorOpen, changeConfirmationOpen, confirm, syncCommands, ignorePreviewChange },
+        state: { snapshot, schedule, editing, deleting, deleteScope, edit, confirmation, error, loadError, loading, busy, tab },
+        actions: { reload, mutate, setTab, startSchedule, changeSchedule, setStartsOn, setExpiresAt, setEditTimestamp, changeScheduleField, setTemplateId, setGroup, setTopic, setFrequency, changeAutoSend, requestSchedule, selectOccurrence, changeEditField, changeEditValue, changeScope, changeAttendanceGroup: occurrenceGroupEditor.change, addAttendanceGroup: occurrenceGroupEditor.add, enableAttendanceGroups: occurrenceGroupEditor.enable, removeAttendanceGroup: occurrenceGroupEditor.remove, clearAttendanceGroups: occurrenceGroupEditor.clear, requestEdit, requestSend, requestTemplateDelete, requestDelete, changeDeleteScope, changeDeleteOpen, reviewDelete, changeEditorOpen, changeConfirmationOpen, confirm, syncCommands, ignorePreviewChange },
         meta: { frequencyItems, scopeItems, fieldItems, topicItems, selectedTemplate, templateRows, previewHtml: preview.html, previewError: preview.error, editGroups: edit.field === 'attendanceGroups' ? parsedEditGroups(edit.value) : editing?.attendance_groups ?? [], isAttendance: selectedTemplate?.message_type === 'pre_attendance', scheduleFields: selectedTemplate ? SCHEDULED_FIELDS[selectedTemplate.message_type] : [], hasTopics: topicItems.length > 1, isRecurring: schedule.frequency !== 'once', occurrences: snapshot.occurrences.map(occurrenceRow), templateItems: snapshot.templates.map(t => ({ value: t.id, label: t.name })), groupItems: snapshot.groups.map(g => ({ value: g.chat_id, label: g.title })), showScope: selectedSchedule?.frequency !== 'once' && !['sendOn', 'expiresAt'].includes(edit.field) },
     }
 }
