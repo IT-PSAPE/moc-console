@@ -1,4 +1,5 @@
 import { existsSync, symlinkSync, unlinkSync } from "node:fs"
+import { spawn } from "node:child_process"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
@@ -21,9 +22,10 @@ function cleanupEnvironmentLink(): void {
   }
 }
 
-const child = Bun.spawn(
-  ["bunx", "vercel@58.5.1", "dev", ".", "--listen", "3001", "--local"],
-  { cwd: apiDirectory, stdin: "inherit", stdout: "inherit", stderr: "inherit" },
+const child = spawn(
+  process.platform === "win32" ? "npx.cmd" : "npx",
+  ["--yes", "vercel@58.5.1", "dev", ".", "--listen", "3001", "--local"],
+  { cwd: apiDirectory, stdio: "inherit" },
 )
 
 function forwardSignal(signal: NodeJS.Signals): void {
@@ -34,7 +36,10 @@ process.once("SIGINT", () => forwardSignal("SIGINT"))
 process.once("SIGTERM", () => forwardSignal("SIGTERM"))
 
 try {
-  process.exitCode = await child.exited
+  process.exitCode = await new Promise<number>((resolve, reject) => {
+    child.once("error", reject)
+    child.once("exit", (code, signal) => resolve(code ?? (signal === "SIGINT" ? 130 : 143)))
+  })
 } finally {
   cleanupEnvironmentLink()
 }

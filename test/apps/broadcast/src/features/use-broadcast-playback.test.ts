@@ -1,10 +1,10 @@
 import type { Broadcast, BroadcastItem } from "@moc/types/broadcast/broadcast"
 import type { ChangeEvent } from "react"
 import * as React from "react"
-import { beforeEach, describe, expect, mock, test } from "bun:test"
+import { beforeEach, describe, expect, vi, test } from "vitest"
 import { HookRuntime, createMockReactModule } from "./test-hook-runtime"
 
-mock.module("react", () => ({ ...React, ...createMockReactModule() }))
+vi.doMock("react", () => ({ ...React, ...createMockReactModule() }))
 
 const { useBroadcastPlayback } = await import("../../../../../apps/broadcast/src/features/use-broadcast-playback")
 
@@ -176,7 +176,7 @@ describe("useBroadcastPlayback", () => {
     runtime.rerender()
 
     const handleMediaError = (runtime.result?.actions as { handleMediaError?: () => void } | undefined)?.handleMediaError
-    expect(handleMediaError).toBeFunction()
+    expect(typeof handleMediaError).toBe("function")
     handleMediaError?.()
     runtime.rerender()
 

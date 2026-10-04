@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { getDatabase, withActor } from '../../packages/backend/src/database';
 
 const databaseUrl = process.env.MOC_TEST_DATABASE_URL;

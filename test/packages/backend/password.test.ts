@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it } from "vitest"
 import { hashPassword, verifyPassword } from "../../../packages/backend/src/auth/password.js"
 
 describe("authentication password hashing", () => {

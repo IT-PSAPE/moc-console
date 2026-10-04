@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import {
   ASSEMBLY_PART_SIZE,
   MAX_CHUNK_SIZE,

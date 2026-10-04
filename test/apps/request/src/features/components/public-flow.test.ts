@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { PublicFlow } from '../../../../../../apps/request/src/features/components/public-flow'
@@ -9,7 +9,7 @@ describe('PublicFlow', () => {
     const narrowMarkup = renderToStaticMarkup(createElement(PublicFlow.Narrow, { as: 'form', action: '/submit', noValidate: true }, 'Narrow flow'))
 
     expect(wideMarkup).toContain('max-w-content')
-    expect(narrowMarkup).toStartWith('<form')
+    expect(narrowMarkup.startsWith('<form')).toBe(true)
     expect(narrowMarkup).toContain('action="/submit"')
     expect(narrowMarkup).toContain('noValidate=""')
     expect(narrowMarkup).toContain('max-w-2xl')

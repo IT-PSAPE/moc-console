@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
 import { ANNOUNCEMENT_EVENT_KEYS } from "../../../../packages/notifications/src/event-routing.js"
 import { DEFAULT_TEMPLATES } from "../../../../packages/notifications/src/default-templates.js"

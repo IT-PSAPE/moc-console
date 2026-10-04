@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { APPLE_DOUBLE_REASON, formatFileSize, getFileRejectionReason, isAppleDoubleName, matchesAccept, partitionFiles } from "../../../../packages/utils/src/file-constraints"
 
 function createFile(name: string, type: string, size = 1024 * 1024): File {

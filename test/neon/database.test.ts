@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { queryRows, withActor, type DatabaseActor } from '../../packages/backend/src/database';
 
 const databaseUrl = process.env.MOC_TEST_DATABASE_URL;

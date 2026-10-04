@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { getBroadcastEditorErrors } from "../../../../../../apps/console/src/features/broadcasts/broadcast-editor-validation"
 
 describe("getBroadcastEditorErrors", () => {

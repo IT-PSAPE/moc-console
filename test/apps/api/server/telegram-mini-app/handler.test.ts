@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { before, describe, it } from "node:test"
+import { beforeAll, describe, it } from "vitest"
 
 import type { MiniAppResponse } from "@moc/notifications"
 import type { ApiRequest, ApiResponse } from "../../../../../apps/api/server/http.js"
@@ -7,7 +7,7 @@ import type { RateLimitDecision } from "../../../../../apps/api/server/rate-limi
 import { handleTelegramMiniApp, type TelegramMiniAppDeps } from "../../../../../apps/api/server/telegram-mini-app/handler.js"
 import type { InitDataVerifyResult } from "../../../../../apps/api/server/telegram-mini-app/initdata.js"
 
-before(() => {
+beforeAll(() => {
   process.env.ALLOWED_ORIGINS = "https://request.psape.co.za"
 })
 

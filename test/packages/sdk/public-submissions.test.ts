@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { createMocTransport } from "../../../packages/sdk/src/transport"
 import { createPublicSubmissionsClient } from "../../../packages/sdk/src/public-submissions"
 

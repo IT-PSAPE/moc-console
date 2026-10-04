@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import type { PoolClient } from "pg"
 import { operations } from "../../../../../apps/api/server/platform/public.js"
 import type { PlatformContext } from "../../../../../apps/api/server/platform/context.js"

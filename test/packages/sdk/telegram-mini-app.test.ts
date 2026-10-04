@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { createTelegramMiniAppClient } from "../../../packages/sdk/src/telegram-mini-app"
 import { createMocTransport } from "../../../packages/sdk/src/transport"
 

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import type { Stream } from "@moc/types/streams/stream"
 import type { ZoomMeeting } from "@moc/types/streams/zoom"
 import { createStreamCalendarEvents, createStreamListEntries } from "../../../../../../apps/console/src/features/streams/stream-list-entry"

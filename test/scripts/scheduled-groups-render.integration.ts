@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { renderScheduledMessage } from '../../packages/notifications/src/scheduled-message.ts'
+import { renderScheduledMessage } from '@moc/notifications/scheduled-message'
 
 type RendererSnapshot = {
   input: Parameters<typeof renderScheduledMessage>[0]

@@ -1,7 +1,7 @@
-import { expect, test as bunTest } from 'bun:test'
+import { expect, test as runnerTest } from 'vitest'
 import { runWithSqlFixture, setSqlFixture } from '../apps/api/server/sql-fixture.js'
 
-function test(name:string,body:()=>Promise<void>):void { bunTest(name,()=>runWithSqlFixture(async()=>{setSqlFixture({queryRows:async(text:string)=>{sql.push(text);return []},queryActor:async(text:string)=>{sql.push(text);return []}});await body()})) }
+function test(name:string,body:()=>Promise<void>):void { runnerTest(name,()=>runWithSqlFixture(async()=>{setSqlFixture({queryRows:async(text:string)=>{sql.push(text);return []},queryActor:async(text:string)=>{sql.push(text);return []}});await body()})) }
 
 const sql: string[] = []
 const { default: handler } = await import('../../neon/functions/scheduled-messages')

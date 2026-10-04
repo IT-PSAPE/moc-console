@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test'
+import { expect, test } from 'vitest'
 import { readScheduledTrigger } from '../../neon/functions/trigger-envelope'
 
 test('scheduled handlers require Neon provenance and a matching invocation envelope', async () => {

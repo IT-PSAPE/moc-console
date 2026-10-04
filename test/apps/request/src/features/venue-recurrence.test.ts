@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { createVenueRecurrence, inferVenueRecurrencePreset, reduceVenueRecurrence, updateVenueRecurrenceForDate, venueRecurrencePresetItems } from '../../../../../apps/request/src/features/venue-recurrence'
 
 describe('venue recurrence state', () => {

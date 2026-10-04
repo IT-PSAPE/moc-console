@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
 import { createZoomOAuthHandler } from "../../../../../../../apps/api/server/routes/zoom-oauth.js"
 import { handleZoomWebhook } from "../../../../../../../apps/api/server/handlers/zoom/oauth/webhook.js"

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
 import { buildTrackingShareData, canRequesterModify, toBookingEditData, toRequestEditData, toVenueEditData } from "../../../../../apps/request/src/features/tracking-submission.js"
 

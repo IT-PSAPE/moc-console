@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test'
+import { expect, test } from 'vitest'
 import { scheduleTimestamps, scheduledTimestamp } from '../../../../../../apps/console/src/features/scheduled-messages/scheduled-timestamps'
 
 test('converts send and expiry controls in the chosen timezone, retaining minutes across midnight', () => {

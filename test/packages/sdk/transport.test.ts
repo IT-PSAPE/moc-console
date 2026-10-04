@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { MocApiError } from "../../../packages/sdk/src/error"
 import { createMocTransport } from "../../../packages/sdk/src/transport"
 

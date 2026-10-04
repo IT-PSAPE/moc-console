@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it } from "vitest"
 import { randomUUID } from "node:crypto"
 import { createInternalAuthHeaders } from "../../packages/backend/src/auth/internal-request.js"
 import { createAuthFunctionHandler } from "../../neon/functions/auth.js"

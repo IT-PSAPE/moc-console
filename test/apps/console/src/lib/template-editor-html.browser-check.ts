@@ -1,4 +1,4 @@
-// Build with bun build ./test/apps/console/src/lib/template-editor-html.browser-check.ts
+// Build with node_modules/.bin/esbuild ./test/apps/console/src/lib/template-editor-html.browser-check.ts
 // --target browser --outfile output/playwright/template-editor-html.browser-check.js
 // Run test/scripts/template-editor.browser-test.js in an isolated Playwright CLI session.
 import { Editor } from '../../../../../packages/ui/node_modules/@tiptap/core'

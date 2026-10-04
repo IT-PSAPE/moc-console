@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import type { VenueBooking } from "@moc/types/venues";
 import { venueBookingOverlapsDateRange } from "../../../../../../apps/console/src/features/venues/venue-booking-date-range";
 

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { renderScheduledMessage } from '../../../../packages/notifications/src/scheduled-message'
 
 const groups = [
@@ -29,7 +29,7 @@ describe('attendee-selected group rendering', () => {
     test('escapes group labels and attendee values and closes expired group actions', () => {
         const rendered = renderScheduledMessage({ ...input, attendanceGroups: [{ ...groups[0], label: '<Noon & lunch>' }, groups[1]] }, [{ name: '<Darren>', status: 'attending', arrivalTime: '11:20', groupId: groups[0].id }], true)
         expect(rendered.text).toContain('<b>&lt;Noon &amp; lunch&gt;:</b>\n✅ &lt;Darren&gt; — 11:20')
-        expect(rendered.text).toEndWith('Closed')
+        expect(rendered.text.endsWith('Closed')).toBe(true)
         expect(rendered.replyMarkup).toBeNull()
     })
     test('refuses to hide a response referencing an unavailable group', () => {

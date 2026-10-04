@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test"
+import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { randomUUID } from "node:crypto"
 import { Pool } from "pg"
 import { getIntegrationTokens, saveIntegrationConnection, tryAcquireIntegrationRefreshLock, completeIntegrationTokenRefresh, markIntegrationReauthRequiredIfRefreshTokenMatches, deleteIntegrationConnection } from "../../../../../apps/api/server/integration-oauth-store"

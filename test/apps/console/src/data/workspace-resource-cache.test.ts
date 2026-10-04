@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { getWorkspaceResourceState, loadWorkspaceResource, setWorkspaceResourceData } from "../../../../../apps/console/src/data/workspace-resource-cache"
 
 describe("workspace resource cache", () => {

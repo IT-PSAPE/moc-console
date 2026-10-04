@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
 import { IntegrationNotConnectedError, ZoomReauthRequiredError } from "../../../../../apps/api/server/integration-access.js"
 import { IntegrationStoreError } from "../../../../../apps/api/server/integration-oauth-store.js"

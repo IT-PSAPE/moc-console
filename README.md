@@ -70,13 +70,16 @@ for server configuration, imports, verification and cutover gates.
 Install dependencies:
 
 ```bash
-npm install
+npm ci
 ```
+
+Use Node.js 24 (24.13+) and npm 11 (11.12.1+). Run `nvm use` if you use nvm;
+update npm with `npm install --global npm@11.12.1` when needed.
 
 Start the dev server:
 
 ```bash
-npm run dev
+npm run dev:console
 ```
 
 Build for production:
@@ -94,7 +97,7 @@ npm run lint
 Preview the production build:
 
 ```bash
-npm run preview
+npm run preview --workspace=moc-console
 ```
 
 ### Viewing a dev server from another device (Tailscale)
@@ -104,9 +107,9 @@ so anything signed in to the same tailnet — a phone, a tablet, another laptop 
 can open a running dev server with no tunnel and no public URL:
 
 ```bash
-bun run dev:console     # http://<machine>.<tailnet>.ts.net:5173
-bun run dev:broadcast   # http://<machine>.<tailnet>.ts.net:5174
-bun run dev:request     # http://<machine>.<tailnet>.ts.net:5176
+npm run dev:console     # http://<machine>.<tailnet>.ts.net:5173
+npm run dev:broadcast   # http://<machine>.<tailnet>.ts.net:5174
+npm run dev:request     # http://<machine>.<tailnet>.ts.net:5176
 ```
 
 Each server prints its own tailnet URL alongside Vite's local one at startup.
@@ -144,7 +147,7 @@ database setup.
 
 ## Project Structure
 
-The repo is a bun-workspaces monorepo:
+The repo is an npm workspaces monorepo:
 
 - `apps/console` — the authenticated admin app (this README)
 - `apps/request` — the public submission PWA
@@ -153,8 +156,8 @@ The repo is a bun-workspaces monorepo:
 - `packages/{ui,types,utils,sdk,backend,notifications}` — shared code
 - `test/{apps,packages,scripts,neon}` — automated tests and fixtures, mirroring the source tree; see [test/README.md](test/README.md)
 
-Run the full test suite with `bun run test`, or the API suite with
-`bun run test:api`. New tests belong in `test/`, outside production folders.
+Run the full test suite with `npm test`, or the API suite with
+`npm run test:api`. New tests belong in `test/`, outside production folders.
 
 Inside a frontend app:
 

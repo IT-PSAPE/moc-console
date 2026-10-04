@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import type { QueryResultRow } from "pg"
 import { requireWorkspacePermission, WorkspaceAccessError, type WorkspacePermission } from "../../../../apps/api/server/workspace-access"
 

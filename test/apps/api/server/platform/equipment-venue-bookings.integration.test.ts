@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test"
+import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { randomUUID } from "node:crypto"
 import { Pool } from "pg"
 import { withActor } from "@moc/backend/database"

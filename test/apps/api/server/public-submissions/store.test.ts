@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { createPublicSubmissionStore, SubmissionConflictError, SubmissionStaleError } from "../../../../../apps/api/server/public-submissions/store.js"
 
 describe("pg public submission store", () => {

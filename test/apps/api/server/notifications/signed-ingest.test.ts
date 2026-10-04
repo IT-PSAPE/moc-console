@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { createHmac } from "node:crypto"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
 import { headerValue } from "../../../../../apps/api/server/http.js"
 import {

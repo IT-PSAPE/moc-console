@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto"
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { StorageUploadService, type UploadManifest, type UploadRepository, type UploadObjectStore } from "../../../../packages/backend/src/storage/upload-service"
 import { MAX_CHUNK_SIZE } from "../../../../packages/backend/src/storage/upload-protocol"
 

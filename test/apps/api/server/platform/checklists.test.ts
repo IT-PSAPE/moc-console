@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import type { PlatformContext } from "../../../../../apps/api/server/platform/context"
 import { operations } from "../../../../../apps/api/server/platform/checklists.ts"
 

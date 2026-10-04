@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
 import { authorizeProviderRoute, prepareProviderBody, ProviderRouteError, type ProviderRouteRule } from "../../../../apps/api/server/provider-route-policy.js"
 

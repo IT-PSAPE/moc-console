@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { parseId3Tag, readId3TagLength } from "../../../../../apps/broadcast/src/features/id3-tag"
 
 function toSynchsafe(size: number): number[] {

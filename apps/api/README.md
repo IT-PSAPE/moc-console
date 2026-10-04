@@ -39,8 +39,9 @@ is enabled during cutover.
 Telegram calls exactly one webhook URL per bot, and that registration lives in
 Telegram, not in this repo or in Vercel. After the API changes host, or when
 the bot stops answering `/start` and group commands, re-register it from
-`apps/api` with `bun run telegram:webhook` (add `--info` to only inspect the
-current registration). Pending updates are redelivered once the URL answers 200.
+`apps/api` with `npm --workspace moc-api run telegram:webhook`; add `-- --info`
+to only inspect the current registration. Pending updates are redelivered once
+the URL answers 200.
 
 
 Request and booking database triggers create durable notification-outbox rows in
@@ -152,7 +153,7 @@ Authentication uses opaque host-only HttpOnly cookies through app-origin rewrite
 ## Local development
 
 ```bash
-bun run dev:api
+npm run dev:api
 ```
 
 Runs `vercel dev` on port 3001. Frontend Vite servers proxy same-origin

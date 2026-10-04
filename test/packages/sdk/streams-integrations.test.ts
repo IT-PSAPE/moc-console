@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { createIntegrationsClient } from "../../../packages/sdk/src/integrations"
 import { createStreamsClient } from "../../../packages/sdk/src/streams"
 import type { MocTransport, RequestOptions } from "../../../packages/sdk/src/transport"

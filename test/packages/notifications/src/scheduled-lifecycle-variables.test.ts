@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test'
+import { expect, test } from 'vitest'
 import { renderScheduledMessage, validateScheduledBody, validateScheduledFields } from '../../../../packages/notifications/src/scheduled-message'
 
 test('derives date and 24-hour time from expiry in the schedule timezone, ignoring a stale stored date', () => {

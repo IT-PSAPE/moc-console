@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import type { VenueBookingFormData } from '../../../../../apps/request/src/types/venue-booking'
 import { getVenueBookingStepErrors } from '../../../../../apps/request/src/features/public-flow-validation'
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it } from "vitest"
 import { authCallbackError, authCallbackOutcome, createAuthClient } from "../../../packages/sdk/src/auth.js"
 import type { MocTransport } from "../../../packages/sdk/src/transport.js"
 

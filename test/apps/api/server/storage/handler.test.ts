@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import type { QueryResultRow } from "pg"
 import { runWithSqlFixture, setSqlFixture } from "../sql-fixture.js"
 import type { ApiRequest, ApiResponse } from "../../../../../apps/api/server/http"

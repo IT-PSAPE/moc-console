@@ -1,8 +1,8 @@
-import { describe, expect, test as bunTest } from 'bun:test'
+import { describe, expect, test as runnerTest } from 'vitest'
 import type { QueryResultRow } from 'pg'
 import { runWithSqlFixture, setSqlFixture } from '../sql-fixture.js'
 
-function test(name:string,body:()=>Promise<void>):void { bunTest(name,()=>runWithSqlFixture(body)) }
+function test(name:string,body:()=>Promise<void>):void { runnerTest(name,()=>runWithSqlFixture(body)) }
 
 type Member = { telegram_chat_id:string;can_update:boolean;can_manage_roles:boolean }
 type Command = { command:string;description:string;is_ephemeral?:boolean }

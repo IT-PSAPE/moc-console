@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto"
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { hashStorageBody } from "../../../../packages/backend/src/storage/s3"
 
 describe("storage object verification", () => {

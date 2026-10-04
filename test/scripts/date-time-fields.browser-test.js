@@ -1,4 +1,4 @@
-// Start bun run dev:request, then use an isolated Playwright CLI session:
+// Start npm run dev:request, then use an isolated Playwright CLI session:
 // playwright-cli --session date-time open http://localhost:5176/request --browser webkit
 // playwright-cli --session date-time run-code --filename test/scripts/date-time-fields.browser-test.js
 async (page) => {

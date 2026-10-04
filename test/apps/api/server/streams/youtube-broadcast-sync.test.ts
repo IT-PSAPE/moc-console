@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
 import type { StreamUpsertRow, YouTubeBroadcastSyncRow } from "../../../../../apps/api/server/streams/broadcast-row.js"
 import type { YouTubeSyncConnection } from "../../../../../apps/api/server/streams/provider-connections.js"

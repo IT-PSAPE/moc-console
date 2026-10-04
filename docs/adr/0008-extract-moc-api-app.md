@@ -22,7 +22,7 @@ Server-side code was split across the Console and Request frontends. The origina
 ## Consequences
 
 - **Deploy MOC API and Neon Functions as separate server workloads.** The API Vercel project uses `rootDirectory = apps/api`; Neon owns authentication execution and scheduled workers. Production schedules stay disabled until cutover is explicitly enabled.
-- **Local development routes through MOC API.** Start it with `bun run dev:api` on port 3001; each frontend's Vite proxy forwards same-origin `/api/*` requests to that server. All application operations, including requests, equipment, bookings, and venues, use this boundary.
+- **Local development routes through MOC API.** Start it with `npm run dev:api` on port 3001; each frontend's Vite proxy forwards same-origin `/api/*` requests to that server. All application operations, including requests, equipment, bookings, and venues, use this boundary.
 - **Ordering matters at deploy.** The frontends must not be pointed at the API domain before `ALLOWED_ORIGINS` includes them, or every call fails preflight. Deploy the API first with both origins listed, then the frontends.
 - The console's CSP `connect-src` now includes `https://api.psape.co.za`.
 - Same-origin `/api/*` paths keep frontend transport independent of deployment hostnames; the Vite and Vercel routing configuration selects the API target.

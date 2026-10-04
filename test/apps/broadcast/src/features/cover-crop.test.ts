@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { findCoverBounds, isCropped } from "../../../../../apps/broadcast/src/features/cover-crop"
 
 type Rgba = [number, number, number, number]

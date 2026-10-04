@@ -7,12 +7,21 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "node": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+      "node": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
       "default": "./src/index.ts"
     },
     "./*": {
-      "node": { "types": "./dist/*.d.ts", "default": "./dist/*.js" },
+      "node": {
+        "types": "./dist/*.d.ts",
+        "default": "./dist/*.js"
+      },
       "default": "./src/*.ts"
     }
+  },
+  "scripts": {
+    "build": "tsc -b --force"
   }
 }

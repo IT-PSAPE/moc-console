@@ -1,6 +1,6 @@
-# Reunify MOC Request into MOC Console as a bun-workspaces monorepo
+# Reunify MOC Request into MOC Console as a workspaces monorepo
 
-MOC Request was split out of MOC Console previously and had drifted on shared primitives (button, input, index.css tokens). To restore a single design system without forcing the apps to merge, the repository became a Bun workspaces monorepo with `apps/console` and `apps/request`. Shared packages now include `@moc/ui`, `@moc/sdk`, `@moc/utils`, and `@moc/types`. MOC Request's git history was preserved when it joined the monorepo.
+MOC Request was split out of MOC Console previously and had drifted on shared primitives (button, input, index.css tokens). To restore a single design system without forcing the apps to merge, the repository became a workspaces monorepo with `apps/console` and `apps/request`. Shared packages now include `@moc/ui`, `@moc/sdk`, `@moc/utils`, and `@moc/types`. MOC Request's git history was preserved when it joined the monorepo. The repository currently uses npm workspaces.
 
 ## Considered options
 
@@ -8,7 +8,7 @@ MOC Request was split out of MOC Console previously and had drifted on shared pr
 - **One shared package only (`@moc/shared`).** Rejected: collapses unrelated concerns (UI vs data vs pure utils) into one dep graph; tree-shaking is fine but the boundary clarity is worth the extra package.
 - **Narrow shared kernel; keep components per-app.** Rejected: accepts the drift instead of fixing it. The user explicitly wants to converge to a single canonical primitive set.
 - **Converge components in MOC Request to its own canonical set.** Rejected: MOC Console has more polish (active states, broader tokens) and the larger surface area; making it canonical minimises churn.
-- **pnpm or npm workspaces.** Rejected: MOC Console already uses bun; consolidating on it keeps install/run commands consistent with current workflow.
+- **npm workspaces.** Selected: a single package manager keeps installs and scripts consistent across the repository.
 
 ## Consequences
 

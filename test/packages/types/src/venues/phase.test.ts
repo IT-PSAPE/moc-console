@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { deriveVenueBookingSeriesPhase } from '../../../../../packages/types/src/venues/phase'
 
 const occurrences = [

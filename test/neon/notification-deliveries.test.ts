@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test'
+import { expect, test } from 'vitest'
 import notificationDeliveries from '../../neon/functions/notification-deliveries'
 
 test('notification-deliveries rejects requests without the named Neon schedule envelope', async () => {

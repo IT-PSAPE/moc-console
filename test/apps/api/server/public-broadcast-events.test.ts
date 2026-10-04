@@ -1,4 +1,4 @@
-import { describe, expect, test as bunTest } from "bun:test"
+import { describe, expect, test as runnerTest } from "vitest"
 import type { QueryResultRow } from "pg"
 import type { ApiRequest, ApiResponse } from "../../../../apps/api/server/http"
 import { runWithSqlFixture, setSqlFixture } from "./sql-fixture.js"
@@ -9,7 +9,7 @@ let latestRevision = "6"
 let replay: Revision[] = []
 const queries: string[] = []
 function test(name: string, body: () => Promise<void>): void {
-  bunTest(name, () => runWithSqlFixture(body))
+  runnerTest(name, () => runWithSqlFixture(body))
 }
 
 const { default: handler } = await import("../../../../apps/api/api/public/broadcasts/[id]/events")

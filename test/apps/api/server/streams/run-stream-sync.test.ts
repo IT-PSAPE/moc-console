@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
 import { IntegrationNotConnectedError } from "../../../../../apps/api/server/integration-access.js"
 import { ProviderUpstreamError } from "../../../../../apps/api/server/provider-failure.js"

@@ -1,7 +1,7 @@
 import type { Broadcast, BroadcastItem } from "@moc/types/broadcast/broadcast"
 import type { ReactNode } from "react"
 import * as React from "react"
-import { beforeEach, describe, expect, mock, test } from "bun:test"
+import { beforeEach, describe, expect, vi, test } from "vitest"
 import { HookRuntime, createMockReactModule } from "./test-hook-runtime"
 
 function createItem(id: string, sortOrder: number): BroadcastItem {
@@ -56,8 +56,8 @@ function useBroadcast(itemIds: string[]) {
   return broadcast
 }
 
-mock.module("react", () => ({ ...React, ...createMockReactModule() }))
-mock.module(import.meta.resolve("../../../../../apps/broadcast/src/features/broadcast-playback-provider"), () => ({
+vi.doMock("react", () => ({ ...React, ...createMockReactModule() }))
+vi.doMock("../../../../../apps/broadcast/src/features/broadcast-playback-provider", () => ({
   useBroadcastPlaybackContext() {
     return playbackContext
   },

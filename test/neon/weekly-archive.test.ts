@@ -1,7 +1,7 @@
-import { expect, test as bunTest } from 'bun:test'
+import { expect, test as runnerTest } from 'vitest'
 import { runWithSqlFixture, setSqlFixture } from '../apps/api/server/sql-fixture.js'
 
-function test(name:string,body:()=>Promise<void>):void { bunTest(name,()=>runWithSqlFixture(body)) }
+function test(name:string,body:()=>Promise<void>):void { runnerTest(name,()=>runWithSqlFixture(body)) }
 const {default:handler}=await import('../../neon/functions/weekly-archive.js')
 function payload() { return {version:1,invocation_id:'archive-invoke-1',trigger:{type:'schedule',id:'archive-trigger',name:'moc-weekly-archive'},data:{}} }
 

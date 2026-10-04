@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
 import { createZoomProxyHandler } from "../../../../apps/api/server/routes/zoom-proxy.js"
 import {

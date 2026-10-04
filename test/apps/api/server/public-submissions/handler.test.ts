@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { before, describe, it } from "node:test"
+import { beforeAll, describe, it } from "vitest"
 
 import type { NotificationEventKey } from "@moc/notifications"
 import publicNotificationRoute from "../../../../../apps/api/api/notify/[kind].js"
@@ -41,7 +41,7 @@ const requestSubmission: PublicSubmission = {
   flow: null,
 }
 
-before(() => {
+beforeAll(() => {
   process.env.ALLOWED_ORIGINS = "https://request.psape.co.za"
 })
 

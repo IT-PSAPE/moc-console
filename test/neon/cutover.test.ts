@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test'
+import { expect, test } from 'vitest'
 import { checkCutoverEnvironment } from '../../neon/scripts/check-cutover'
 
 test('cutover preflight rejects missing configuration without echoing secrets', () => {

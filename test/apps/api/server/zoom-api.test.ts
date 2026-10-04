@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
 import { ProviderUpstreamError } from "../../../../apps/api/server/provider-failure.js"
 import { isZoomNotFoundBody, sanitizeZoomProxyResponseBody } from "../../../../apps/api/server/zoom-api.js"

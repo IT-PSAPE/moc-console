@@ -6,8 +6,8 @@
   "scripts": {
     "build": "tsc -b --force",
     "lint": "eslint .",
-    "test": "bun test ../../test/apps/api",
-    "telegram:webhook": "bun run scripts/set-telegram-webhook.ts"
+    "test": "vitest run --root=../.. test/apps/api",
+    "telegram:webhook": "node --env-file-if-exists=.env.local scripts/set-telegram-webhook.ts"
   },
   "dependencies": {
     "@moc/notifications": "*",
@@ -15,11 +15,14 @@
     "@moc/types": "*"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@types/node": "^24.12.0",
-    "eslint": "^9.39.4",
-    "globals": "^17.4.0",
-    "typescript": "~5.9.3",
-    "typescript-eslint": "^8.57.0"
+    "@eslint/js": "9.39.4",
+    "@types/node": "24.12.0",
+    "eslint": "9.39.4",
+    "globals": "17.4.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.57.2"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }

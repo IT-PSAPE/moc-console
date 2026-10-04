@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
 import { buildPayload, claimPendingOutboxRow, outboxRetryAt, type OutboxRow } from "../../../../../apps/api/server/notifications/outbox.js"
 import type { VenueBookingCreatedPayload } from "../../../../../apps/api/server/notifications/dispatch.js"

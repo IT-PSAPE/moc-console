@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
-import { it as bunIt } from 'bun:test'
+import { it as runnerIt } from 'vitest'
 import type { ApiResponse } from '../../../../../apps/api/server/http.js'
 import { runWithSqlFixture, setSqlFixture } from '../sql-fixture.js'
 import { authCookieHeaders, configureAuthSessionTestEnvironment, withAuthSessionResponse } from '../../auth-test-session.js'
 
-function it(name:string,test:()=>Promise<void>):void { bunIt(name,()=>runWithSqlFixture(test)) }
+function it(name:string,test:()=>Promise<void>):void { runnerIt(name,()=>runWithSqlFixture(test)) }
 const {handleScheduledMessages}=await import('../../../../../apps/api/server/scheduled-messages/handler.js')
 
 const groups = [

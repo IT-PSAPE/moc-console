@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { publicOperationRateLimitSubject } from "../../../../../apps/api/server/platform/rate-limit"
 import type { ApiRequest } from "../../../../../apps/api/server/http"
 

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { BROADCAST_MAX_FILE_BYTES } from "../../../../../../packages/types/src/broadcast/broadcast-constants"
 import { checkBroadcastFiles, getBroadcastFileRejectionReason } from "../../../../../../apps/console/src/features/broadcasts/broadcast-file-check"
 

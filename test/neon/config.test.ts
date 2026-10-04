@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createNeonConfig } from '../../neon/config'

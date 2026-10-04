@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
 import { buildBookingDetail, buildChecklistDetail, buildRequestDetail, buildVenueBookingDetail, type FormatSettings } from "../../../../../apps/api/server/telegram-mini-app/view-builders.js"
 import type { BookingRecord } from "../../../../../apps/api/server/telegram-mini-app/store/booking-store.js"

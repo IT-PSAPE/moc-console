@@ -10,17 +10,20 @@ packages/notifications/src/templates.ts → test/packages/notifications/src/temp
 Run commands from the repository root:
 
 ```sh
-bun run test                  # All Bun tests
-bun run test:api              # API tests only
-bun test test/apps/console    # One app
-bun test test/packages/ui     # One package
-bun run lint:test             # Test TypeScript/TSX lint checks
+npm test                      # All Vitest tests
+npm run test:api              # API tests only
+npm test -- test/apps/console  # One app
+npm test -- test/packages/ui   # One package
+npm run lint:test             # Test TypeScript/TSX lint checks
 ```
+
+Vitest runs the TypeScript and TSX suites under Node.js with an explicit UTC test timezone.
+Module mocks are isolated per test file.
 
 Tests import production modules using relative paths into `apps` or `packages`.
 Test-only helpers stay beside the tests that use them. Add new tests here rather
 than beside production code. CI bootstraps a disposable PostgreSQL 18 database,
-then runs builds, the full Bun suite, a separate auth contract, and lint.
+then runs builds, the full test suite, a separate auth contract, and lint.
 
 Set `MOC_TEST_DATABASE_URL` to a disposable local database to enable Neon domain
 and role integration tests. Set `MOC_AUTH_TEST_DATABASE_URL` to a separate local

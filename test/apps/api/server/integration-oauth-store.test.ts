@@ -1,13 +1,14 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
-import {
+import { runWithSqlFixture, setSqlFixture } from "./sql-fixture.js"
+
+const {
   completeIntegrationTokenRefresh,
   getIntegrationTokens,
   saveIntegrationConnection,
   tryAcquireIntegrationRefreshLock,
-} from "../../../../apps/api/server/integration-oauth-store.js"
-import { runWithSqlFixture, setSqlFixture } from "./sql-fixture.js"
+} = await import("../../../../apps/api/server/integration-oauth-store.js")
 
 type QueryCall = { text: string; values: readonly unknown[] }
 const queryCalls: QueryCall[] = []

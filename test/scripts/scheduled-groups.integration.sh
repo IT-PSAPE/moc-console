@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 REPORT="${MOC_GROUPS_INTEGRATION_REPORT:-/tmp/moc-groups-integration-report.md}"
-for command in bun initdb pg_ctl psql python3 node; do
+for command in npm initdb pg_ctl psql python3 node; do
   if ! command -v "$command" >/dev/null 2>&1; then
     printf 'Missing required local command: %s\n' "$command" >&2
     exit 2
@@ -47,7 +47,8 @@ trap record_failure EXIT
 
   printf '\n## PostgreSQL to production renderer bridge\n\n'
   psql "${DB_ARGS[@]}" -qAt -f "$ROOT/test/scripts/scheduled-groups-render.integration.sql" > "$BRIDGE_DIR/renderer.json"
-  bun "$ROOT/test/scripts/scheduled-groups-render.integration.ts" "$BRIDGE_DIR/renderer.json"
+  (cd "$ROOT" && npm run build --workspace=@moc/notifications)
+  node "$ROOT/test/scripts/scheduled-groups-render.integration.ts" "$BRIDGE_DIR/renderer.json"
   printf '\nPASS: SQL-generated occurrence and response JSON was consumed by the production renderer with group, time, title, and stable Telegram message identity asserted.\n\n'
 
   printf '## Final-schema lifecycle SQL assertions\n\n'
@@ -65,7 +66,7 @@ trap record_failure EXIT
 
   printf '## Production application paths\n\n'
   cd "$ROOT"
-  bun test \
+  npm test -- \
     test/apps/api/server/scheduled-messages/telegram-flow.test.ts \
     test/apps/api/server/scheduled-messages/delivery.test.ts \
     test/apps/api/server/scheduled-messages/group-configuration.test.ts \

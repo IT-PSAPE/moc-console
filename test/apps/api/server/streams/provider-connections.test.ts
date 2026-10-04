@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
 import { IntegrationStoreError } from "../../../../../apps/api/server/integration-oauth-store.js"
 import { listUsableYouTubeConnections, listUsableZoomConnections } from "../../../../../apps/api/server/streams/provider-connections.js"

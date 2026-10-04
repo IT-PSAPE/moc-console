@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test"
+import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { randomUUID } from "node:crypto"
 import { withActor } from "../../../../packages/backend/src/database"
 import { PostgresUploadRepository } from "../../../../packages/backend/src/storage/postgres-upload-repository"

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { createRequestsClient } from "../../../packages/sdk/src/requests"
 import type { MocTransport } from "../../../packages/sdk/src/transport"
 

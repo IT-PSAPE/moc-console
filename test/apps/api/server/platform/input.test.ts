@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { objectInput, stringField, uuidField } from '../../../../../apps/api/server/platform/input'
 
 describe('platform operation inputs', () => {

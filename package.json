@@ -9,22 +9,38 @@
     "test"
   ],
   "scripts": {
-    "dev:console": "bun --filter moc-console dev",
-    "dev:request": "bun --filter moc-request dev",
-    "dev:broadcast": "bun --filter moc-broadcast dev",
-    "dev:api": "bun apps/api/scripts/dev.ts",
-    "build:console": "bun --filter moc-console build",
-    "build:request": "bun --filter moc-request build",
-    "build:broadcast": "bun --filter moc-broadcast build",
-    "build:api": "bun --filter moc-api build",
-    "build": "bun --filter '*' build && bun run build:neon",
-    "lint": "bun --filter '*' lint",
-    "test:api": "bun --filter moc-api test",
-    "test": "bun test ./test",
-    "lint:test": "bun --filter moc-tests lint",
+    "dev:console": "npm run dev --workspace=moc-console",
+    "dev:request": "npm run dev --workspace=moc-request",
+    "dev:broadcast": "npm run dev --workspace=moc-broadcast",
+    "dev:api": "node apps/api/scripts/dev.ts",
+    "build:console": "npm run build --workspace=moc-console",
+    "build:request": "npm run build --workspace=moc-request",
+    "build:broadcast": "npm run build --workspace=moc-broadcast",
+    "build:api": "npm run build --workspace=moc-api",
+    "build": "npm run build --workspaces --if-present && npm run build:neon",
+    "lint": "npm run lint --workspaces --if-present",
+    "test:api": "npm test -- test/apps/api",
+    "test": "vitest run",
+    "lint:test": "npm run lint --workspace=moc-tests",
     "build:neon": "tsc --project neon/tsconfig.json"
   },
   "devDependencies": {
-    "@neon/config": "1.8.3"
+    "@neon/config": "1.8.3",
+    "vitest": "5.0.3",
+    "@eslint/js": "9.39.4",
+    "@types/node": "24.12.0",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.4",
+    "globals": "17.4.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.57.2"
+  },
+  "packageManager": "npm@11.12.1",
+  "engines": {
+    "node": ">=24.13.0 <25",
+    "npm": ">=11.12.1 <12"
   }
 }

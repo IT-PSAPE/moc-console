@@ -1,6 +1,6 @@
 import type { Broadcast, BroadcastItem } from "@moc/types/broadcast/broadcast"
 import type { ReactNode } from "react"
-import { beforeEach, describe, expect, mock, test } from "bun:test"
+import { beforeEach, describe, expect, vi, test } from "vitest"
 
 let mediaErrorCalls = 0
 let nextCalls = 0
@@ -55,7 +55,7 @@ const playbackContext = {
   meta: { broadcast: null as unknown as Broadcast },
 }
 
-mock.module(import.meta.resolve("../../../../../apps/broadcast/src/features/broadcast-playback-provider"), () => ({
+vi.doMock("../../../../../apps/broadcast/src/features/broadcast-playback-provider", () => ({
   useBroadcastPlaybackContext() {
     return playbackContext
   },

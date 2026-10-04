@@ -1,10 +1,10 @@
 import assert from "node:assert/strict"
-import { describe, it as bunIt } from "bun:test"
+import { describe, it as runnerIt } from "vitest"
 import type { QueryResultRow } from 'pg'
 import { runWithSqlFixture, setSqlFixture } from '../sql-fixture.js'
 
 function it(name: string, test: () => Promise<void>): void {
-  bunIt(name, () => runWithSqlFixture(test))
+  runnerIt(name, () => runWithSqlFixture(test))
 }
 const { handleScheduledCallback, handleScheduledMessage } = await import('../../../../../apps/api/server/scheduled-messages/telegram-flow.js')
 

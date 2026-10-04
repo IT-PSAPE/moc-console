@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
-import { describe, it as bunIt } from 'bun:test'
+import { describe, it as runnerIt } from 'vitest'
 import type { ApiRequest, ApiResponse } from '../../../../../apps/api/server/http.js'
 import type { QueryResultRow } from 'pg'
 import { runWithSqlFixture, setSqlFixture } from '../sql-fixture.js'
 import { authCookieHeaders, configureAuthSessionTestEnvironment, withAuthSessionResponse } from '../../auth-test-session.js'
 
-function it(name:string,body:()=>Promise<void>):void { bunIt(name,()=>runWithSqlFixture(body)) }
+function it(name:string,body:()=>Promise<void>):void { runnerIt(name,()=>runWithSqlFixture(body)) }
 const {handleScheduledMessages}=await import('../../../../../apps/api/server/scheduled-messages/handler.js')
 
 async function requestWithoutSession(method: string, origin?: string): Promise<{ status: number; body: unknown }> {

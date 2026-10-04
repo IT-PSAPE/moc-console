@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import type { PoolClient, QueryResult, QueryResultRow } from "pg"
 import { PostgresUploadRepository } from "../../../../packages/backend/src/storage/postgres-upload-repository"
 import { StorageUploadService } from "../../../../packages/backend/src/storage/upload-service"

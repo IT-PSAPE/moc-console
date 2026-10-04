@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it } from "vitest"
 import { Pool } from "pg"
 import type { ApiRequest, ApiResponse } from "../../../apps/api/server/http.js"
 import { createAuthProxyHandler } from "../../../apps/api/server/auth-proxy.js"

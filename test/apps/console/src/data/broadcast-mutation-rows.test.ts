@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { buildBroadcastMutationRows } from "../../../../../apps/console/src/data/broadcast-mutation-rows"
 
 describe("buildBroadcastMutationRows", () => {

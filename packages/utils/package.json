@@ -9,6 +9,6 @@
   },
   "dependencies": {
     "@moc/types": "*",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "3.5.0"
   }
 }

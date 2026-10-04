@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it } from "vitest"
 import { createAuthProxyHandler } from "../../../../apps/api/server/auth-proxy.js"
 
 function responseRecorder() {

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { assertAuthIdentities } from '../../neon/database/domain-import-preflight.mjs';
 
 describe('domain import identity preflight', () => {

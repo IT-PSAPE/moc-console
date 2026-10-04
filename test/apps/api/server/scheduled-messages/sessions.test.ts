@@ -1,9 +1,9 @@
-import { describe, expect, test as bunTest } from 'bun:test'
+import { describe, expect, test as runnerTest } from 'vitest'
 import type { QueryResultRow } from 'pg'
 import type { MessageSession } from '../../../../../apps/api/server/scheduled-messages/types'
 import { runWithSqlFixture, setSqlFixture } from '../sql-fixture.js'
 
-function test(name:string,body:()=>Promise<void>):void { bunTest(name,()=>runWithSqlFixture(body)) }
+function test(name:string,body:()=>Promise<void>):void { runnerTest(name,()=>runWithSqlFixture(body)) }
 
 const sql: string[] = []
 let session: MessageSession | null = null

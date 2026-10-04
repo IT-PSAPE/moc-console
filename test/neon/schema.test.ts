@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { expect, test } from 'vitest';
 import { readFile } from 'node:fs/promises';
 
 const schema = await readFile(new URL('../../neon/database/20-domain-final.sql', import.meta.url), 'utf8');
@@ -7,7 +7,7 @@ const runtime = await readFile(new URL('../../neon/database/01-runtime-roles.sql
 const adapter = await readFile(new URL('../../packages/backend/src/database.ts', import.meta.url), 'utf8');
 
 test('standalone final schema keeps MoC identities and transaction actors', () => {
-  expect(schema).toStartWith('-- Standalone final-state MoC PostgreSQL domain schema.');
+  expect(schema.startsWith('-- Standalone final-state MoC PostgreSQL domain schema.')).toBe(true);
   expect(schema).toContain('REFERENCES moc_auth."user"(id) ON DELETE CASCADE');
   expect(schema).toContain('moc_private.actor_id()');
   expect(schema).not.toContain('schema_migrations');

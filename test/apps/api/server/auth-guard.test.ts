@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it } from "vitest"
 import { AuthError, requireAuthenticatedUser } from "../../../../apps/api/server/auth-guard.js"
 
 describe("cookie session guard", () => {

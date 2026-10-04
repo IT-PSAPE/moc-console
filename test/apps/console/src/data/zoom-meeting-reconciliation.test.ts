@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { canCreateZoomMeetings, canReconcileZoomMeetings, getZoomMeetingsToVerify, isCurrentOrUpcomingMeeting, type ZoomMeetingReconciliationRow } from "../../../../../apps/console/src/data/zoom-meeting-reconciliation"
 
 const now = new Date("2026-08-05T12:00:00.000Z")

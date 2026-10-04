@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { createBookingsClient } from "../../../packages/sdk/src/bookings"
 import { createEquipmentClient } from "../../../packages/sdk/src/equipment"
 import { createVenueBookingsClient } from "../../../packages/sdk/src/venue-bookings"

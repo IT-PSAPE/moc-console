@@ -1,6 +1,6 @@
 import type { Broadcast, BroadcastItem } from "@moc/types/broadcast/broadcast"
 import * as React from "react"
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test"
+import { afterEach, beforeEach, describe, expect, vi, test } from "vitest"
 import { HookRuntime, createMockReactModule } from "./test-hook-runtime"
 
 type Deferred<T> = {
@@ -151,8 +151,8 @@ const registeredSubscriptions: RegisteredSubscription[] = []
 const closedSubscriptions: string[] = []
 let documentStub = createDocumentStub()
 
-mock.module("react", () => ({ ...React, ...createMockReactModule() }))
-mock.module("@/data/fetch-public-broadcast", () => ({
+vi.doMock("react", () => ({ ...React, ...createMockReactModule() }))
+vi.doMock("../../../../../apps/broadcast/src/data/fetch-public-broadcast", () => ({
   fetchBroadcastById(id: string) {
     return fetchBroadcastByIdImplementation(id)
   },
@@ -160,7 +160,7 @@ mock.module("@/data/fetch-public-broadcast", () => ({
     return fetchPublicBroadcastImplementation(slug)
   },
 }))
-mock.module("@/lib/moc-client", () => ({
+vi.doMock("../../../../../apps/broadcast/src/lib/moc-client", () => ({
   moc: {
     broadcasts: {
       subscribe(id: string, notify: () => void) {

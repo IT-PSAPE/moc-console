@@ -5,11 +5,11 @@
  * did when the server code left the console), every `/start` and group
  * command silently dies against the old URL until this is re-run.
  *
- *   bun run telegram:webhook                  # defaults to the production API
- *   bun run telegram:webhook https://host     # any other base URL
- *   bun run telegram:webhook --info           # only print getWebhookInfo
+ *   npm run telegram:webhook                  # defaults to the production API
+ *   npm run telegram:webhook -- https://host  # any other base URL
+ *   npm run telegram:webhook -- --info        # only print getWebhookInfo
  *
- * Bun loads `.env.local` automatically, so TELEGRAM_BOT_TOKEN and
+ * The npm script loads `.env.local`, so TELEGRAM_BOT_TOKEN and
  * TELEGRAM_WEBHOOK_SECRET come from there. The secret must match the one the
  * deployed API checks, or every update is rejected with 401.
  */

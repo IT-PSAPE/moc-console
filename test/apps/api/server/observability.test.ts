@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 import type { ApiRequest, ApiResponse } from "../../../../apps/api/server/http.js"
 import { writeCorsHeaders } from "../../../../apps/api/server/cors.js"
 import { getRuntimeReadiness, startApiRequest } from "../../../../apps/api/server/observability.js"

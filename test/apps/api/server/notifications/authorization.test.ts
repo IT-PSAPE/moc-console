@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 import { requireWorkspaceCreateOrEntityOwnership } from "../../../../../apps/api/server/notifications/authorization.js"
 import { WorkspaceAccessError } from "../../../../../apps/api/server/workspace-access.js"
 

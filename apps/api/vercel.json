@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm ci",
   "buildCommand": "npm run build",
   "functions": {
     "api/public/broadcasts/[id]/events.ts": { "maxDuration": 60 },

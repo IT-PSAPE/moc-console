@@ -36,11 +36,11 @@ base URL; local API routing uses the server-only `MOC_API_PROXY_TARGET` setting.
 ## Provision and verify
 
 ```sh
-bun install --frozen-lockfile
-bun run build
-bun run lint
-bun run test
-bun run neon/scripts/check-cutover.ts
+npm ci
+npm run build
+npm run lint
+npm test
+node neon/scripts/check-cutover.ts
 ```
 
 Use `MOC_TEST_DATABASE_URL` for a disposable local PostgreSQL database and

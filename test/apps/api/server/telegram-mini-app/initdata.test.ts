@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { createHmac } from "node:crypto"
-import { describe, it } from "node:test"
+import { describe, it } from "vitest"
 
 import { verifyInitData } from "../../../../../apps/api/server/telegram-mini-app/initdata.js"
 

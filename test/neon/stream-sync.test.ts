@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import type { PoolClient } from 'pg'
 import { createStreamSyncHandler, STREAM_SYNC_TRIGGER_NAME } from '../../neon/functions/stream-sync'
 import type { StreamSyncSummary } from '../../apps/api/server/streams/run-stream-sync'

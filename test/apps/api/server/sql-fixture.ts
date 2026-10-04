@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
-import { mock } from 'bun:test'
+import { vi } from 'vitest'
 import type { PoolClient, QueryResultRow } from 'pg'
 import * as database from '@moc/backend/database'
 
@@ -13,7 +13,7 @@ const realDatabase = {
   withActor: database.withActor,
 }
 
-mock.module('@moc/backend/database', () => ({
+vi.doMock('@moc/backend/database', () => ({
   ...realDatabase,
   queryRows: async <Row extends QueryResultRow>(text: string, values: readonly unknown[] = []) => {
     const query = scopes.getStore()?.adapter?.queryRows

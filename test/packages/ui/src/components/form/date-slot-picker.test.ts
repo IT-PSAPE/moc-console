@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { getDateSlotPickerSlotClassName } from '../../../../../../packages/ui/src/components/form/date-slot-picker'
 
 describe('DateSlotPicker.Slot', () => {

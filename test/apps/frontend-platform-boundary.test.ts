@@ -1,8 +1,9 @@
+import { fileURLToPath } from 'node:url'
 import { readFileSync, readdirSync } from "node:fs"
 import { resolve } from "node:path"
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 
-const root = resolve(import.meta.dir, "../..")
+const root = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..")
 const applications = ["console", "request", "broadcast"] as const
 const sourceExtensions = new Set([".ts", ".tsx", ".js", ".jsx"])
 const backendDependency = /^(?:pg|postgres(?:ql)?|mysql2?|better-auth|@neondatabase\/|@aws-sdk\/client-s3)/

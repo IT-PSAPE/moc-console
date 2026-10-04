@@ -1,9 +1,9 @@
-import { expect, test as bunTest } from 'bun:test'
+import { expect, test as runnerTest } from 'vitest'
 import type { PoolClient, QueryResultRow } from 'pg'
 import { runWithSqlFixture, setSqlFixture } from '../sql-fixture.js'
 import type { PlatformContext } from '../../../../../apps/api/server/platform/context.js'
 
-function test(name:string,body:()=>Promise<void>):void { bunTest(name,()=>runWithSqlFixture(async()=>{setSqlFixture({queryRows:async()=>[]});await body()})) }
+function test(name:string,body:()=>Promise<void>):void { runnerTest(name,()=>runWithSqlFixture(async()=>{setSqlFixture({queryRows:async()=>[]});await body()})) }
 const {operations}=await import('../../../../../apps/api/server/platform/telegram.js')
 
 function context(calls: Array<{ text:string;values:readonly unknown[] }>):PlatformContext {

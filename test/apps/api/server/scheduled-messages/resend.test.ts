@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
-import { it as bunIt } from 'bun:test'
+import { it as runnerIt } from 'vitest'
 import type { QueryResultRow } from 'pg'
 import type { ApiResponse } from '../../../../../apps/api/server/http.js'
 import { runWithSqlFixture, setSqlFixture } from '../sql-fixture.js'
 import { authCookieHeaders, configureAuthSessionTestEnvironment, withAuthSessionResponse } from '../../auth-test-session.js'
 
-function it(name:string,body:()=>Promise<void>):void { bunIt(name,()=>runWithSqlFixture(body)) }
+function it(name:string,body:()=>Promise<void>):void { runnerIt(name,()=>runWithSqlFixture(body)) }
 const {handleScheduledMessages}=await import('../../../../../apps/api/server/scheduled-messages/handler.js')
 const workspace = '10000000-0000-4000-8000-000000000001'
 const occurrence = '30000000-0000-4000-8000-000000000001'

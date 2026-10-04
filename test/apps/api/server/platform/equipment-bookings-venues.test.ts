@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import type { PlatformContext } from "../../../../../apps/api/server/platform/context"
 import { operations as equipmentOperations } from "../../../../../apps/api/server/platform/equipment"
 import { operations as bookingOperations } from "../../../../../apps/api/server/platform/bookings"

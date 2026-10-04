@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { resolveMediaResponse } from "../../../../packages/backend/src/storage/media-response"
 
 const defaults = {

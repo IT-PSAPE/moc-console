@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import { queueZoomMeetingOperation } from "../../../../../apps/console/src/data/zoom-meeting-operation-queue"
 
 describe("queueZoomMeetingOperation", () => {

@@ -1,5 +1,5 @@
 import type { BroadcastItem } from "@moc/types/broadcast/broadcast"
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import {
   getMediaSourceKey,
   getNextPlaybackIndex,
