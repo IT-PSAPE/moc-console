@@ -15,10 +15,13 @@ this order before deploying the API and Console code:
 4. `supabase/migrations/2026-10-03d-scheduled-message-composition.sql`
 5. `supabase/migrations/2026-10-03e-scheduled-template-management.sql`
 6. `supabase/migrations/2026-10-03f-remove-expected-arrival.sql`
+7. `supabase/migrations/2026-10-04a-scheduled-message-date.sql`
+8. `supabase/migrations/2026-10-04b-scheduled-attendance-groups.sql`
 
 Apply only scripts that are not already applied. The fifth adds retry-safe
 template creation and deletion; the sixth removes expected arrival from the
-editable fields. If the first five are applied, only the sixth is needed.
+editable fields. The seventh adds the optional date variable; the eighth adds
+attendee-selected groups. If the first seven are applied, only the eighth is needed.
 Readable filenames retain the original versions in `supabase/migrations/manifest.tsv`;
 renaming is not a reason to reapply an upgrade. Historical scripts in that folder
 are not part of this feature's rollout.
@@ -57,10 +60,19 @@ changing template defaults. Attendance options appear only for pre-attendance;
 last recurring date appears only for repeating schedules. Preview and expiry/
 timezone details use progressive disclosure.
 
-The layout uses the declared `{{title}}` and `{{instructions}}` fields.
+The layout uses the declared `{{title}}`, `{{instructions}}` and optional `{{date}}` fields.
+Date values are stored as Gregorian calendar dates and displayed using the converted
+year, for example `2026-10-04` becomes `431004`. Dates are currently fixed values;
+relative dates and selectable weekly send days are not implemented yet.
 Arrival guidance belongs in instructions, not a separate template variable. Attendance lines and
 controls are generated separately. A schedule copies the template, audience and
 arrival requirement; later templates do not retroactively rewrite occurrences.
+
+Pre-attendance templates may define 2–8 attendance groups with distinct names,
+such as Noon and Evening or In person and Online. Groups are optional and are
+copied into the schedule and each occurrence. Stable group IDs survive renaming
+and reordering. Template previews show group headings and eligible pending people
+under Awaiting response; member types never assign people to attendance groups.
 
 Choose a linked active group/open topic, timezone, first date and once/daily/
 weekdays/weekly/monthly calendar rule. Monthly rules skip months without the
@@ -114,6 +126,22 @@ through ephemeral ForceReply. Their update edits the original group card.
 Supergroups/topics receive a Back to pre-attendance link; basic groups do not
 have that supported original-message link. Telegram cannot force navigation.
 
+For grouped messages, Attending first presents the group choices in the same
+ephemeral flow. An optional arrival-time prompt follows. The group, status and
+time are saved together only when the response is complete. Update response
+shows the current choice and lets the attendee choose again. Not attending
+clears the previous group and arrival time. New recurring occurrences have fresh
+responses. Grouped cards put confirmed attendees under their chosen heading,
+pending people under Awaiting response, and declined people under Not attending.
+
+Console administrators can edit group definitions through Manage with the usual
+occurrence/future/series scope and confirmation. Telegram management supports
+renaming existing groups through buttons and native reply input. These edits keep
+responses, times and the original Telegram message. Removing a group referenced
+by a live response is rejected; attendees must change their choices first. Adding
+groups to a previously ungrouped occurrence keeps existing attendance under
+Awaiting group choice until those attendees select a group.
+
 ## Failure handling and first-version limits
 
 Revision and synchronized revision are stored separately. Failed edits record
@@ -140,3 +168,10 @@ these migrations before checking lifecycle/RLS behavior. API tests use fake
 PostgREST and Telegram responses. See `test/supabase/tests/README.md` for the commands
 and [the verification report](scheduled-messages-verification.md) for results
 and the boundary between local tests and live integration.
+
+For attendee-selected groups, run `test/scripts/scheduled-groups.integration.sh`.
+It applies the migrations locally, checks the attendance lifecycle and scoped
+edits, and passes actual database response rows through the production message
+renderer. Telegram HTTP calls remain simulated. The isolated browser fixture
+also covers group controls, save/reload, previews, recurring scopes and mobile
+layout through `test/scripts/scheduled-groups.browser-test.js`.
