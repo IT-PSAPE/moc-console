@@ -52,7 +52,17 @@ export const RichTextVariable = Node.create({
     renderHTML() { return ['code', { 'data-variable': '' }, 0] },
     renderText({ node }) { return `{{${node.textContent}}}` },
     addKeyboardShortcuts() {
+        const exitAtEnd = (key: 'Space' | 'Enter'): boolean => {
+            const { empty, $from } = this.editor.state.selection
+            if (!empty || $from.parent.type.name !== 'variable' || $from.parentOffset !== $from.parent.content.size) return false
+            const after = $from.after()
+            if (key === 'Space') return this.editor.chain().setTextSelection(after).insertContent({ type: 'text', text: ' ', marks: $from.parent.marks.map(mark => mark.toJSON()) }).run()
+            this.editor.commands.setTextSelection(after)
+            return this.editor.commands.keyboardShortcut('Enter')
+        }
         return {
+            Space: () => exitAtEnd('Space'),
+            Enter: () => exitAtEnd('Enter'),
             'Mod-b': () => formatSelectedVariable(this.editor, 'bold'),
             'Mod-i': () => formatSelectedVariable(this.editor, 'italic'),
             'Mod-u': () => formatSelectedVariable(this.editor, 'underline'),

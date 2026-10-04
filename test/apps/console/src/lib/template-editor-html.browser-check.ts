@@ -125,6 +125,17 @@ quote.commands.insertContent('after')
 assert(editorHtmlToTemplate(quote.getHTML()).includes('{{title}} after'), 'Typing after a variable in a quote stays outside code')
 quote.destroy()
 
+for (const key of ['Space', 'Enter']) {
+    const boundary = createEditor('{{title}}')
+    boundary.commands.setTextSelection(7)
+    assert(boundary.state.selection.$from.parent.type.name === 'variable', 'Cursor starts inside the variable label')
+    boundary.view.dom.dispatchEvent(new KeyboardEvent('keydown', { key: key === 'Space' ? ' ' : 'Enter', bubbles: true, cancelable: true }))
+    assert(boundary.state.selection.$from.parent.type.name !== 'variable', `${key} exits the variable label`)
+    boundary.commands.insertContent('after')
+    const source = editorHtmlToTemplate(boundary.getHTML())
+    assert(source === (key === 'Space' ? '{{title}} after' : '{{title}}\n\nafter'), `${key} preserves the token and continues normal text: ${source}`)
+    boundary.destroy()
+}
 const output = document.createElement('output')
 output.id = 'editor-checks'
 output.textContent = String(checks)
