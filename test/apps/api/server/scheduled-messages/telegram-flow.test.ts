@@ -4,7 +4,7 @@ import { describe, it } from "node:test"
 import { handleScheduledCallback, handleScheduledMessage } from "../../../../../apps/api/server/scheduled-messages/telegram-flow.js"
 
 type RecordedCall = { url: string; method: string; body: Record<string, unknown> | null }
-type FixtureOptions = { frequency?: string; state?: string; expiresAt?: string; messageType?: string; requireArrival?: boolean; withEditDelivery?: boolean; attendanceGroups?: Array<{ id: string; label: string }> }
+type FixtureOptions = { frequency?: string; state?: string; expiresAt?: string; messageType?: string; requireArrival?: boolean; withEditDelivery?: boolean; attendanceGroups?: Array<{ id: string; label: string }>; failDeletion?: boolean }
 
 function createFixture(options: FixtureOptions = {}) {
   const previousFetch = globalThis.fetch
@@ -70,6 +70,7 @@ function createFixture(options: FixtureOptions = {}) {
       if (telegramMethod === "sendMessage") {
         return json({ ok: true, result: { message_id: nextRegularMessageId++, ephemeral_message_id: nextEphemeralId++ } })
       }
+      if (telegramMethod === "deleteEphemeralMessage") return options.failDeletion ? json({ ok: false, error_code: 500, description: "Temporary deletion failure" }, 500) : json({ ok: true, result: true })
       if (telegramMethod === "editEphemeralMessageText" || telegramMethod === "answerCallbackQuery" || telegramMethod === "editMessageText") {
         return json({ ok: true, result: true })
       }
@@ -121,7 +122,7 @@ function createFixture(options: FixtureOptions = {}) {
       }
       if (method === "DELETE") {
         for (const [id, session] of sessions) {
-          if (session.telegram_user_id === requestUrl.searchParams.get("telegram_user_id")?.replace("eq.", "")
+          if (id === requestUrl.searchParams.get("id")?.replace("eq.", "") || session.telegram_user_id === requestUrl.searchParams.get("telegram_user_id")?.replace("eq.", "")
             && session.chat_id === requestUrl.searchParams.get("chat_id")?.replace("eq.", "")) sessions.delete(id)
         }
         return new Response(null, { status: 204 })
@@ -139,11 +140,11 @@ function createFixture(options: FixtureOptions = {}) {
       const promptFilter = requestUrl.searchParams.get("data")
       const session = sessionId
         ? sessions.get(sessionId)
-        : [...sessions.values()].find(candidate => promptFilter
-          && candidate.telegram_user_id === telegramId
+        : [...sessions.values()].find(candidate => candidate.telegram_user_id === telegramId
           && candidate.chat_id === chatId
-          && (candidate.data as Record<string, unknown>)?.stage === "input"
-          && promptFilter.includes(String((candidate.data as Record<string, unknown>).promptId)))
+          && (!promptFilter || ((candidate.data as Record<string, unknown>)?.stage === "input"
+          && promptFilter.includes(String((candidate.data as Record<string, unknown>).promptId)))))
+      if (!session && !promptFilter && !sessionId) return json(null)
       if (!session || session.telegram_user_id !== telegramId || session.chat_id !== chatId || Date.parse(String(session.expires_at)) <= Date.now()) return noRows()
       return json(session)
     }
@@ -484,7 +485,7 @@ describe("scheduled Telegram flows", () => {
       await handleScheduledMessage({ text: "07:30", from: { id: 456 }, chat: { id: "-100123", type: "supergroup" }, message_thread_id: 22, ephemeral_message_id: promptId + 1, reply_to_message: { ephemeral_message_id: promptId } })
       const saved = fixture.rpcCalls.find(call => call.name === "respond_scheduled_attendance")
       assert.deepEqual(saved?.body, { p_actor: "user-1", p_id: "occurrence-1", p_revision: 3, p_status: "attending", p_arrival: "07:30", p_group: "10000000-0000-4000-8000-000000000002" })
-      assert.match(String(fixture.telegramCalls("editEphemeralMessageText").at(-1)?.body?.text), /Updated: attending · South · 07:30/)
+      assert.equal(fixture.sessionCount(), 0)
     } finally { fixture.teardown() }
   })
   it("renames an attendance group through an indexed admin action and confirmation", async () => {
@@ -544,7 +545,7 @@ describe("scheduled Telegram flows", () => {
       const edit = fixture.telegramCalls("editMessageText").find(call => call.body?.message_id === 700)
       assert.ok(edit, "attendance updates edit the original Telegram message")
       assert.match(String((edit?.body?.rich_message as { html: string })?.html), /North/)
-      assert.match(String(fixture.telegramCalls("editEphemeralMessageText").at(-1)?.body?.text), /Updated: attending · North/)
+      assert.equal(fixture.sessionCount(), 0)
     } finally { fixture.teardown() }
   })
   it("lets attendees change groups and declining clears both group and arrival", async () => {
@@ -557,7 +558,7 @@ describe("scheduled Telegram flows", () => {
       await fixture.callback("yes", undefined, "update-attending")
       await fixture.callback("group", "1", "change-to-south")
       assert.deepEqual(fixture.rpcCalls.filter(call => call.name === "respond_scheduled_attendance").at(-1)?.body, { p_actor: "user-1", p_id: "occurrence-1", p_revision: 3, p_status: "attending", p_arrival: null, p_group: groups[1]!.id })
-      assert.match(String(fixture.telegramCalls("editEphemeralMessageText").at(-1)?.body?.text), /Updated: attending · South/)
+      assert.equal(fixture.sessionCount(), 0)
 
       await handleScheduledCallback({ id: "start-decline", from: { id: 456 }, data: "sa:update:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700, message_thread_id: 22 } })
       assert.match(String(fixture.telegramCalls("sendMessage").at(-1)?.body?.text), /Current response: attending · South/)
@@ -612,4 +613,92 @@ describe("scheduled Telegram flows", () => {
       assert.match(String(staleChoice.telegramCalls("answerCallbackQuery").at(-1)?.body?.text), /message changed/)
     } finally { staleChoice.teardown() }
   })
+})
+
+
+describe("attendance ephemeral cleanup", () => {
+  it("deletes controls, prompts, input and validation messages after saving without a back-link or completion message", async () => {
+    const fixture = createFixture({ state: "sent", messageType: "pre_attendance", requireArrival: true, withEditDelivery: true })
+    try {
+      await handleScheduledCallback({ id: "start-cleanup", from: { id: 456 }, data: "sa:yes:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700, message_thread_id: 22 } })
+      const active = fixture.session()!
+      const controlId = active.ephemeral_message_id as number
+      const promptId = (active.data as Record<string, unknown>).promptId as number
+      await handleScheduledMessage({ text: "invalid", from: { id: 456 }, chat: { id: "-100123", type: "supergroup" }, ephemeral_message_id: 900, reply_to_message: { ephemeral_message_id: promptId } })
+      assert.equal(fixture.rpcCalls.some(call => call.name === "respond_scheduled_attendance"), false)
+      await handleScheduledMessage({ text: "07:30", from: { id: 456 }, chat: { id: "-100123", type: "supergroup" }, ephemeral_message_id: 901, reply_to_message: { ephemeral_message_id: promptId } })
+      const deletes = fixture.telegramCalls("deleteEphemeralMessage")
+      assert.deepEqual(deletes.map(call => call.body?.ephemeral_message_id).sort(), [controlId, promptId, promptId + 1, 900, 901].sort())
+      assert.ok(deletes.every(call => call.body?.chat_id === "-100123" && call.body?.receiver_user_id === 456))
+      assert.equal(fixture.sessionCount(), 0)
+      assert.equal(fixture.responses[0]?.arrival_time, "07:30")
+      assert.equal(fixture.telegramCalls("deleteMessage").length, 0, "never delete the shared group card")
+      assert.ok(fixture.telegramCalls("editEphemeralMessageText").every(call => !String(call.body?.text).startsWith("Updated:")))
+      assert.ok(fixture.telegramCalls("sendMessage").every(call => !JSON.stringify(call.body).includes("Back to pre-attendance")))
+    } finally { fixture.teardown() }
+  })
+  it("cleans an abandoned response flow on restart and cleans cancellation without saving", async () => {
+    const fixture = createFixture({ state: "sent", messageType: "pre_attendance", requireArrival: true })
+    try {
+      const start = async (id: string) => handleScheduledCallback({ id, from: { id: 456 }, data: "sa:yes:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700 } })
+      await start("first")
+      const old = fixture.session()!
+      const oldId = old.id
+      const ids = [old.ephemeral_message_id, (old.data as Record<string, unknown>).promptId]
+      await start("second")
+      assert.notEqual(fixture.session()?.id, oldId)
+      assert.deepEqual(fixture.telegramCalls("deleteEphemeralMessage").map(call => call.body?.ephemeral_message_id).sort(), ids.sort())
+      await fixture.callback("close")
+      assert.equal(fixture.sessionCount(), 0)
+      assert.equal(fixture.telegramCalls("deleteEphemeralMessage").length, 4)
+      assert.equal(fixture.rpcCalls.some(call => call.name === "respond_scheduled_attendance"), false)
+    } finally { fixture.teardown() }
+  })
+  it("retains failed cleanup IDs for retry without undoing a saved response or enabling old controls", async () => {
+    const options: FixtureOptions = { state: "sent", messageType: "pre_attendance", failDeletion: true }
+    const fixture = createFixture(options)
+    try {
+      await handleScheduledCallback({ id: "no-cleanup", from: { id: 456 }, data: "sa:no:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700 } })
+      assert.equal(fixture.responses[0]?.status, "not_attending")
+      assert.ok(fixture.telegramCalls("deleteEphemeralMessage").length > 0)
+      assert.equal(fixture.session()?.ephemeral_message_id, null)
+      await fixture.callback("yes")
+      assert.equal(fixture.rpcCalls.filter(call => call.name === "respond_scheduled_attendance").length, 1)
+      const failedIds = fixture.telegramCalls("deleteEphemeralMessage").map(call => call.body?.ephemeral_message_id)
+      options.failDeletion = false
+      await handleScheduledCallback({ id: "retry-cleanup", from: { id: 456 }, data: "sa:update:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700 } })
+      assert.deepEqual(fixture.telegramCalls("deleteEphemeralMessage").slice(failedIds.length).map(call => call.body?.ephemeral_message_id), failedIds)
+      await fixture.callback("close")
+      assert.equal(fixture.sessionCount(), 0)
+    } finally { fixture.teardown() }
+  })
+})
+
+
+describe("shared attendance entry buttons", () => {
+  for (const status of ["awaiting", "attending", "not_attending"] as const) {
+    for (const action of ["yes", "no"] as const) {
+      it(`replaces a saved ${status} response from ${action} without an update action`, async () => {
+        const fixture = createFixture({ state: "sent", messageType: "pre_attendance", requireArrival: true })
+        fixture.responses[0]!.status = status
+        fixture.responses[0]!.arrival_time = status === "attending" ? "07:15" : null
+        try {
+          await handleScheduledCallback({ id: "returning-attendee", from: { id: 456 }, data: `sa:${action}:occurrence-1`, message: { chat: { id: "-100123" }, message_id: 700 } })
+          if (action === "yes") {
+            assert.equal(fixture.rpcCalls.some(call => call.name === "respond_scheduled_attendance"), false)
+            const prompt = fixture.telegramCalls("sendMessage").at(-1)?.body
+            assert.equal((prompt?.reply_markup as { force_reply?: boolean })?.force_reply, true)
+            const promptId = (fixture.session()?.data as Record<string, unknown>).promptId as number
+            await handleScheduledMessage({ text: "07:45", from: { id: 456 }, chat: { id: "-100123", type: "supergroup" }, ephemeral_message_id: 901, reply_to_message: { ephemeral_message_id: promptId } })
+          }
+          assert.deepEqual(fixture.rpcCalls.filter(call => call.name === "respond_scheduled_attendance").map(call => call.body), [{
+            p_actor: "user-1", p_id: "occurrence-1", p_revision: 3,
+            p_status: action === "yes" ? "attending" : "not_attending", p_arrival: action === "yes" ? "07:45" : null, p_group: null,
+          }])
+          assert.equal(fixture.sessionCount(), 0)
+          assert.ok(fixture.telegramCalls("deleteEphemeralMessage").length > 0)
+        } finally { fixture.teardown() }
+      })
+    }
+  }
 })

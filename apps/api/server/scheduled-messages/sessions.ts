@@ -1,6 +1,6 @@
 import type { InlineKeyboardButton, InlineKeyboardMarkup } from '@moc/notifications'
 import { getSupabaseAdmin } from '../supabase-admin.js'
-import { editTelegramEphemeralMessage, sendTelegramEphemeralMessage } from '../telegram.js'
+import { deleteTelegramEphemeralMessage, editTelegramEphemeralMessage, sendTelegramEphemeralMessage } from '../telegram.js'
 import { authorizeManagement, linkedUser } from './store.js'
 import type { MessageSession, SessionData } from './types.js'
 
@@ -8,7 +8,11 @@ export async function createSession(input: Omit<MessageSession,'id'|'expires_at'
   // One atomic upsert rotates the session ID, invalidating old controls even
   // when two flow starts race in the same chat.
   const admin=getSupabaseAdmin()
-  const {data,error}=await admin.from('scheduled_message_sessions').upsert({...input,id:crypto.randomUUID(),ephemeral_message_id:null,expires_at:new Date(Date.now()+15*60_000).toISOString()},{onConflict:'telegram_user_id,chat_id'}).select('*').single()
+  const previous=await admin.from('scheduled_message_sessions').select('*').eq('telegram_user_id',input.telegram_user_id).eq('chat_id',input.chat_id).maybeSingle()
+  if(previous.error) throw new Error(previous.error.message)
+  if(previous.data) await clearSession(previous.data as MessageSession)
+  const retained=(previous.data as MessageSession | null)?.data.transientMessageIds??[]
+  const {data,error}=await admin.from('scheduled_message_sessions').upsert({...input,data:{...input.data,transientMessageIds:retained},id:crypto.randomUUID(),ephemeral_message_id:null,expires_at:new Date(Date.now()+15*60_000).toISOString()},{onConflict:'telegram_user_id,chat_id'}).select('*').single()
   if(error) throw new Error(error.message)
   return data as MessageSession
 }
@@ -16,7 +20,7 @@ export async function ownedSession(id: string,telegramId: string,chatId: string,
   const {data,error}=await getSupabaseAdmin().from('scheduled_message_sessions').select('*').eq('id',id).eq('telegram_user_id',telegramId).eq('chat_id',chatId).gt('expires_at',new Date().toISOString()).single()
   if(error || !data) throw new Error('This flow has ended. Restart it from the group message or /manage_messages.')
   const s=data as MessageSession
-  if(s.ephemeral_message_id!==ephemeralId) throw new Error('This control belongs to another interaction.')
+  if(s.ephemeral_message_id===null || s.ephemeral_message_id!==ephemeralId) throw new Error('This control belongs to another interaction.')
   if(await linkedUser(telegramId)!==s.user_id) throw new Error('Your Telegram link has changed. Restart the flow.')
   if(s.kind==='admin') await authorizeManagement(s.user_id,s.workspace_id)
   return s
@@ -44,7 +48,7 @@ export async function promptSession(s: MessageSession,current: string,field: str
   const hint=field==='date'?'\nUse Gregorian YYYY-MM-DD, for example 2026-10-04.':''
   const sent=await sendTelegramEphemeralMessage(s.chat_id,s.telegram_user_id,`Current value: ${current || '(empty)'}\nReply with the replacement ${field}.${hint}`,{threadId:s.thread_id,callbackQueryId:callbackId,forceReply:true})
   if(!sent.ok || !sent.result?.ephemeral_message_id) throw new Error('Telegram could not open the input. Restart the flow.')
-  await saveSession(s,{data:{...s.data,stage:'input',promptId:sent.result.ephemeral_message_id}})
+  await saveSession(s,{data:{...s.data,transientMessageIds:[...(s.data.transientMessageIds??[]),sent.result.ephemeral_message_id],stage:'input',promptId:sent.result.ephemeral_message_id}})
 }
 export async function replySession(telegramId: string,chatId: string,promptId: number): Promise<MessageSession> {
   const {data,error}=await getSupabaseAdmin().from('scheduled_message_sessions').select('*').eq('telegram_user_id',telegramId).eq('chat_id',chatId).gt('expires_at',new Date().toISOString()).contains('data',{promptId,stage:'input'}).single()
@@ -58,5 +62,28 @@ export async function finishSession(s: MessageSession,text: string,rows: InlineK
   if(error) throw new Error(error.message)
 }
 export async function setDraft(s: MessageSession,data: SessionData): Promise<void> {
-  await saveSession(s,{data})
+  await saveSession(s,{data:{...data,transientMessageIds:s.data.transientMessageIds}})
+}
+
+/** Track replies and validation prompts as well as the reusable control message. */
+export async function trackSessionMessage(s: MessageSession,id: number): Promise<void> {
+  await saveSession(s,{data:{...s.data,transientMessageIds:[...new Set([...(s.data.transientMessageIds??[]),id])]}})
+}
+
+/** Close controls even if Telegram cannot deliver every deletion event. */
+export async function clearSession(s: MessageSession): Promise<void> {
+  const ids=[...new Set([s.ephemeral_message_id,s.data.promptId,...(s.data.transientMessageIds??[])].filter((id): id is number=>typeof id==='number'))]
+  const results=await Promise.all(ids.map(id=>deleteTelegramEphemeralMessage(s.chat_id,s.telegram_user_id,id)))
+  const remaining=ids.filter((_,index)=>{
+    const result=results[index]
+    return !result.ok && !(result.errorCode===400 && /message.*(not found|already deleted)/i.test(result.description))
+  })
+  if(remaining.length) {
+    // Preserve failed IDs for another cleanup attempt when the user restarts.
+    await saveSession(s,{ephemeral_message_id:null,data:{transientMessageIds:remaining}})
+    return
+  }
+  const {error}=await getSupabaseAdmin().from('scheduled_message_sessions').delete().eq('id',s.id)
+  if(error) throw new Error(error.message)
+  Object.assign(s,{ephemeral_message_id:null,data:{}})
 }

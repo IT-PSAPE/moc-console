@@ -47,6 +47,7 @@ type TelegramMethod =
   | "sendRichMessage"
   | "editMessageReplyMarkup"
   | "deleteMessage"
+  | "deleteEphemeralMessage"
   | "answerCallbackQuery"
   | "editEphemeralMessageText"
   | "setMyCommands"
@@ -285,4 +286,10 @@ export async function getTelegramCommands(scope: TelegramCommandScope): Promise<
 
 export async function setTelegramCommands(scope: TelegramCommandScope, commands: TelegramCommand[]): Promise<TelegramApiDetailed<boolean>> {
   return requestTelegramApi<boolean>('setMyCommands', { scope, commands })
+}
+
+export async function deleteTelegramEphemeralMessage(chatId: string, receiverUserId: string, ephemeralMessageId: number): Promise<TelegramApiDetailed<boolean>> {
+  return requestTelegramApi<boolean>('deleteEphemeralMessage', {
+    chat_id: chatId, receiver_user_id: Number(receiverUserId), ephemeral_message_id: ephemeralMessageId,
+  })
 }

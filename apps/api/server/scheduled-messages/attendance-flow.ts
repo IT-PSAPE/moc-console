@@ -1,7 +1,7 @@
-import { ARRIVAL_TIME_PATTERN, validateScheduledAttendanceGroups, type InlineKeyboardButton } from '@moc/notifications'
+import { ARRIVAL_TIME_PATTERN, validateScheduledAttendanceGroups } from '@moc/notifications'
 import { getSupabaseAdmin } from '../supabase-admin.js'
-import { assertActive, getOccurrence, getResponses, getSchedule, respondAttendance } from './store.js'
-import { finishSession, promptSession, sessionButton, setDraft, showSession } from './sessions.js'
+import { assertActive, getOccurrence, getResponses, respondAttendance } from './store.js'
+import { clearSession, promptSession, sessionButton, setDraft, showSession } from './sessions.js'
 import { syncOccurrence } from './worker.js'
 import type { MessageSession, Occurrence } from './types.js'
 
@@ -15,13 +15,6 @@ export async function attendanceOccurrence(s: MessageSession): Promise<Occurrenc
   if(s.data.revision !== undefined && s.data.revision !== o.revision) throw new Error('The message changed. Restart your response before submitting.')
   validateScheduledAttendanceGroups(o.message_type,o.attendance_groups??[])
   return o
-}
-async function backRows(o: Occurrence): Promise<InlineKeyboardButton[][]> {
-  const schedule=await getSchedule(o.schedule_id)
-  const chat=schedule.group_chat_id
-  if(!chat.startsWith('-100') || !o.telegram_message_id) return []
-  const thread=schedule.thread_id ? `${schedule.thread_id}/` : ''
-  return [[{text:'Back to pre-attendance',url:`https://t.me/c/${chat.slice(4)}/${thread}${o.telegram_message_id}`}]]
 }
 export async function showAttendance(s: MessageSession,callbackId?: string): Promise<void> {
   const o=await attendanceOccurrence(s)
@@ -69,8 +62,7 @@ async function commitAttendance(s: MessageSession,o: Occurrence,status: 'attendi
   await showSession(s,`${o.fields.title}\nSaving your response…`,[],callbackId)
   await respondAttendance(s.user_id,o,status,arrival,groupId)
   await syncOccurrence(o.id)
-  const groupLabel=groupId?o.attendance_groups?.find(group=>group.id===groupId)?.label:null
-  await finishSession(s,`Updated: ${status.replace('_',' ')}${groupLabel?` · ${groupLabel}`:''}${arrival?` · ${arrival}`:''}`,await backRows(o))
+  await clearSession(s)
 }
 export async function attendanceInput(s: MessageSession,value: string): Promise<void> {
   if(!ARRIVAL_TIME_PATTERN.test(value)) throw new Error('Enter a time in HH:mm format, for example 07:30.')
@@ -79,7 +71,7 @@ export async function attendanceInput(s: MessageSession,value: string): Promise<
   await commitAttendance(s,o,'attending',value,s.data.groupId??null)
 }
 export async function attendanceCallback(s: MessageSession,action: string,arg: string|undefined,callbackId: string): Promise<void> {
-  if(action==='close') return finishSession(s,'Response cancelled.')
+  if(action==='close') return clearSession(s)
   if(action==='yes' || action==='no') return chooseAttendance(s,action==='yes'?'attending':'not_attending',callbackId)
   if(action==='group') {
     if(!/^[0-7]$/.test(arg??'')) throw new Error('This group choice is unavailable')

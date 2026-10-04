@@ -3,7 +3,8 @@ import type { TelegramCallbackQuery } from '../telegram-callback-query.js'
 import type { TelegramMessage } from '../telegram-webhook-commands.js'
 import { adminCallback, adminInput, showManagementList } from './admin-flow.js'
 import { attendanceCallback, attendanceInput, chooseAttendance, showAttendance } from './attendance-flow.js'
-import { createSession, ownedSession, replySession } from './sessions.js'
+import { createSession, ownedSession, replySession, trackSessionMessage } from './sessions.js'
+import type { MessageSession } from './types.js'
 import { authorizeManagement, getOccurrence, getSchedule, groupWorkspace, linkedUser } from './store.js'
 
 export async function handleScheduledCallback(query: TelegramCallbackQuery): Promise<boolean> {
@@ -18,6 +19,7 @@ export async function handleScheduledCallback(query: TelegramCallbackQuery): Pro
       if(s.kind==='admin') await adminCallback(s,actionOrId,arg,query.id)
       else await attendanceCallback(s,actionOrId,arg,query.id)
     } else {
+      if(idOrAction!=='update' && idOrAction!=='yes' && idOrAction!=='no') throw new Error('Invalid attendance action')
       const actor=await linkedUser(telegramId)
       const o=await getOccurrence(actionOrId)
       const schedule=await getSchedule(o.schedule_id)
@@ -25,9 +27,9 @@ export async function handleScheduledCallback(query: TelegramCallbackQuery): Pro
       const workspace=await groupWorkspace(chatId)
       if(workspace!==o.workspace_id) throw new Error('Message unavailable')
       const s=await createSession({user_id:actor,telegram_user_id:telegramId,workspace_id:workspace,chat_id:chatId,thread_id:query.message?.message_thread_id??null,occurrence_id:o.id,kind:'attendance',data:{}})
+      // Existing group cards can still carry the old update callback.
       if(idOrAction==='update') await showAttendance(s,query.id)
-      else if(idOrAction==='yes'||idOrAction==='no') await chooseAttendance(s,idOrAction==='yes'?'attending':'not_attending',query.id)
-      else throw new Error('Invalid attendance action')
+      else await chooseAttendance(s,idOrAction==='yes'?'attending':'not_attending',query.id)
     }
     await answerTelegramCallbackQuery(query.id)
   } catch(error) {
@@ -42,6 +44,7 @@ export async function handleScheduledMessage(message: TelegramMessage): Promise<
   const chatId=String(message.chat?.id??'')
   const telegramId=String(message.from?.id??'')
   if(!chatId || !telegramId || !['group','supergroup'].includes(message.chat?.type??'')) return true
+  let activeSession: MessageSession | undefined
   try {
     if(command) {
       const actor=await linkedUser(telegramId)
@@ -53,13 +56,16 @@ export async function handleScheduledMessage(message: TelegramMessage): Promise<
       // Ordinary group replies never become private administrative input.
       if(message.ephemeral_message_id===undefined) throw new Error('Use the ephemeral reply input to keep your answer private.')
       const s=await replySession(telegramId,chatId,promptId!)
+      activeSession=s
+      await trackSessionMessage(s,message.ephemeral_message_id)
       const value=message.text?.trim()
       if(value===undefined || value.length>2000) throw new Error('Enter a text value of at most 2000 characters.')
       if(s.kind==='admin') await adminInput(s,value)
       else await attendanceInput(s,value)
     }
   } catch(error) {
-    await sendTelegramEphemeralMessage(chatId,telegramId,(error instanceof Error?error.message:'Please restart the flow.').slice(0,1000),{threadId:message.message_thread_id,replyToEphemeralId:message.ephemeral_message_id})
+    const errorMessage=await sendTelegramEphemeralMessage(chatId,telegramId,(error instanceof Error?error.message:'Please restart the flow.').slice(0,1000),{threadId:message.message_thread_id,replyToEphemeralId:message.ephemeral_message_id})
+    if(activeSession && errorMessage.ok && errorMessage.result?.ephemeral_message_id) await trackSessionMessage(activeSession,errorMessage.result.ephemeral_message_id)
   }
   return true
 }
