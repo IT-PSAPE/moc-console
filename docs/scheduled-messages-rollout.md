@@ -125,14 +125,23 @@ Current workspace membership is checked when responding; removing a member
 blocks new responses. Changing a type after send retains that occurrence's
 roster and existing response. When arrival time is required, users enter HH:mm
 through ephemeral ForceReply. Their update edits the original group card.
-Supergroups/topics receive a Back to pre-attendance link; basic groups do not
-have that supported original-message link. Telegram cannot force navigation.
+Completing or cancelling a response deletes its ephemeral control, arrival
+prompts, typed replies and validation messages. No completion message or Back
+to pre-attendance link is left behind. Restarting cleans the abandoned session.
+Deletion failures retain message IDs for another attempt on restart and never
+undo a saved response. Telegram does not guarantee delivery of deletion events.
+The original group card is never deleted during this cleanup.
+
+The shared group card exposes only Attending and Not attending. These actions
+replace the attendee’s saved response: Attending collects any required group and
+arrival details before saving, while Not attending immediately clears them.
+Buttons on existing cards that still include Update response remain supported until
+those cards are edited or resent.
 
 For grouped messages, Attending first presents the group choices in the same
 ephemeral flow. An optional arrival-time prompt follows. The group, status and
-time are saved together only when the response is complete. Update response
-shows the current choice and lets the attendee choose again. Not attending
-clears the previous group and arrival time. New recurring occurrences have fresh
+time are saved together only when the response is complete. Attending lets the
+attendee choose again, and Not attending clears the previous group and arrival time. New recurring occurrences have fresh
 responses. Grouped cards put confirmed attendees under their chosen heading,
 pending people under Awaiting response, and declined people under Not attending.
 

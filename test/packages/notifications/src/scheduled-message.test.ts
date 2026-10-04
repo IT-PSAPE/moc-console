@@ -34,7 +34,7 @@ describe('scheduled message fields and rendering', () => {
   const result = renderScheduledMessage({ id: 'abc', messageType: 'pre_attendance', body: '{{title}}\n{{instructions}}', fields: {title:'Service', instructions:'Arrive earlier'}, requireArrival: true }, [{name:'Craig',status:'attending',arrivalTime:'07:30'}], false)
   expect(result.text).toContain('Arrive earlier')
   expect(result.text).toContain('✅ Craig — 07:30')
-  expect(result.replyMarkup?.inline_keyboard.flat().map(b => b.text)).toContain('Update response')
+  expect(result.replyMarkup?.inline_keyboard.flat().map(b => b.text)).toEqual(['Attending','Not attending'])
  })
  test('expired render removes all actions and escapes replacements', () => {
   const result=renderScheduledMessage({id:'abc',messageType:'announcement',body:'{{title}}',fields:{title:'<unsafe>'},requireArrival:false},[],true)
@@ -55,4 +55,14 @@ describe('scheduled message fields and rendering', () => {
   const result=renderScheduledMessage({id:'abc',messageType:'pre_attendance',body:'',fields:{},requireArrival:false},[{name:'<Port & Elizabeth>',status:'awaiting',arrivalTime:null}],false)
   expect(result.text).toBe('🔁 &lt;Port &amp; Elizabeth&gt;')
  })
+})
+
+
+test('keeps only initial actions on the shared card even when some attendees have responded', () => {
+ const input={id:'abc',messageType:'pre_attendance' as const,body:'{{title}}',fields:{title:'Service'},requireArrival:false}
+ for (const responses of [[],[{name:'Alex',status:'attending' as const,arrivalTime:null},{name:'Sam',status:'awaiting' as const,arrivalTime:null}]]) {
+  expect(renderScheduledMessage(input,responses,false).replyMarkup).toEqual({inline_keyboard:[[
+   {text:'Attending',callback_data:'sa:yes:abc'}, {text:'Not attending',callback_data:'sa:no:abc'},
+  ]]})
+ }
 })

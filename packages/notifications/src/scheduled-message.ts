@@ -46,7 +46,6 @@ export function renderScheduledMessage(input: ScheduledRenderInput, responses: S
  if (text.replace(/<[^>]*>/g,'').length > 4096) throw new Error('Message exceeds Telegram’s text limit; shorten the template or audience')
  const replyMarkup:InlineKeyboardMarkup|null = expired || input.messageType !== 'pre_attendance' ? null : {inline_keyboard:[
   [{text:'Attending',callback_data:`sa:yes:${input.id}`},{text:'Not attending',callback_data:`sa:no:${input.id}`}],
-  [{text:'Update response',callback_data:`sa:update:${input.id}`}],
  ]}
  return {text,replyMarkup}
 }

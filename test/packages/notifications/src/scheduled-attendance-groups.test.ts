@@ -16,7 +16,7 @@ describe('attendee-selected group rendering', () => {
             { name: 'Tony', status: 'not_attending', arrivalTime: null, groupId: null },
         ], false)
         expect(rendered.text).toBe('Service\n\n<b>Noon:</b>\n✅ Darren — 11:20\n\n<b>Evening:</b>\n✅ Minnie\n\n<b>Awaiting response:</b>\n🔁 Bronwyn\n\n<b>Not attending:</b>\n❌ Tony')
-        expect(rendered.replyMarkup?.inline_keyboard.flat().map(button => button.text)).toEqual(['Attending', 'Not attending', 'Update response'])
+        expect(rendered.replyMarkup?.inline_keyboard.flat().map(button => button.text)).toEqual(['Attending', 'Not attending'])
     })
     test('keeps empty groups visible without assigning pending people', () => {
         expect(renderScheduledMessage(input, [{ name: 'Bronwyn', status: 'awaiting', arrivalTime: null }], false).text)
