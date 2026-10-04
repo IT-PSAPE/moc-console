@@ -25,7 +25,9 @@ test/supabase/tests/run-local.sh \
   supabase/migrations/2026-10-04a-scheduled-message-date.sql \
   supabase/migrations/2026-10-04b-scheduled-attendance-groups.sql \
   supabase/migrations/2026-10-04c-scheduled-message-resend.sql \
-  supabase/migrations/2026-10-04d-scheduled-message-timestamps.sql
+  supabase/migrations/2026-10-04d-scheduled-message-timestamps.sql \
+  supabase/migrations/2026-10-04e-scheduled-attendance-telegram-roster.sql \
+  supabase/migrations/2026-10-04f-scheduled-message-deletion.sql
 ```
 
 The assertion script checks migration backfills and defaults; Editor and
@@ -61,3 +63,7 @@ checks permissions, duplicate requests, frozen response retention, replacement
 message identity, failed/ambiguous/crashed resends and expiry.
 
 The timestamp assertions verify exact send/expiry instants, fractional recurring intervals, no early sending, timezone delivery snapshots, scoped expiry edits and expired action rejection.
+
+The Telegram roster upgrade runs before/after probes for active unanswered entries, saved responses after disconnection, expired history, queued refreshes and service-only RPC permissions. `telegram-roster.sql` verifies send-time connection changes, blank IDs, recurring occurrence rosters and frozen response preservation on resend.
+
+`scheduled-deletion.sql` checks permission and revision enforcement, cancellation of queued unsent messages, no resurrection, recurring scope limits, in-flight protection, response retention, retry-safe Telegram cleanup and service-only RPC access.

@@ -289,15 +289,15 @@ BEGIN
   PERFORM public.change_scheduled_occurrence(v_editor,v_occurrence,3,'sendOn',v_today::text);
 
   -- Claim, freeze the roster, and finish the delivery. The roster includes the
-  -- unlinked eligible member, and later changes cannot add new people to it.
+  -- linked eligible members, and later changes cannot add new people to it.
   UPDATE public.notification_deliveries SET status='processing' WHERE id=v_auto_delivery;
   v_payload := public.begin_scheduled_delivery(v_auto_delivery);
   IF (v_payload->>'busy')::boolean IS TRUE OR (v_payload->>'expired')::boolean IS TRUE
-     OR jsonb_array_length(v_payload->'responses')<>4 THEN
-    RAISE EXCEPTION 'begin send must return a frozen four-member eligible roster';
+     OR jsonb_array_length(v_payload->'responses')<>3 THEN
+    RAISE EXCEPTION 'begin send must return a frozen three-member Telegram-linked roster';
   END IF;
-  IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(v_payload->'responses') r WHERE r->>'user_id'=v_unlinked::text) THEN
-    RAISE EXCEPTION 'unlinked eligible member was omitted from the attendance roster';
+  IF EXISTS(SELECT 1 FROM jsonb_array_elements(v_payload->'responses') r WHERE r->>'user_id'=v_unlinked::text) THEN
+    RAISE EXCEPTION 'unlinked member entered the attendance roster';
   END IF;
   IF EXISTS(SELECT 1 FROM jsonb_array_elements(v_payload->'responses') r WHERE r->>'user_id'='20000000-0000-4000-8000-000000000006') THEN
     RAISE EXCEPTION 'member outside the selected audience types entered the roster';
@@ -317,7 +317,7 @@ BEGIN
     RAISE EXCEPTION 'successful send must store sent state, Telegram identity, and frozen roster';
   END IF;
   IF EXISTS(SELECT 1 FROM public.scheduled_message_responses WHERE occurrence_id=v_occurrence AND user_id='20000000-0000-4000-8000-000000000007')
-     OR (SELECT count(*) FROM public.scheduled_message_responses WHERE occurrence_id=v_occurrence)<>4 THEN
+     OR (SELECT count(*) FROM public.scheduled_message_responses WHERE occurrence_id=v_occurrence)<>3 THEN
     RAISE EXCEPTION 'membership changes after roster freeze altered the sent audience';
   END IF;
 

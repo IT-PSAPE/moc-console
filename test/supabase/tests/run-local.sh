@@ -42,7 +42,13 @@ for file in "$@"; do
   if [[ "$(basename "$file")" == *-scheduled-message-timestamps.sql ]]; then
     run_sql "$TEST_ROOT/scheduled-timestamps-before.sql"
   fi
+  if [[ "$(basename "$file")" == *-scheduled-attendance-telegram-roster.sql ]]; then
+    run_sql "$TEST_ROOT/telegram-roster-before.sql"
+  fi
   run_sql "$file"
+  if [[ "$(basename "$file")" == *-scheduled-attendance-telegram-roster.sql ]]; then
+    run_sql "$TEST_ROOT/telegram-roster-after.sql"
+  fi
   if [[ "$(basename "$file")" == *-scheduled-message-timestamps.sql ]]; then
     run_sql "$TEST_ROOT/scheduled-timestamps-after.sql"
   fi
@@ -56,3 +62,5 @@ run_sql "$TEST_ROOT/template-management.sql"
 run_sql "$TEST_ROOT/scheduled-timestamps.sql"
 run_sql "$TEST_ROOT/scheduled-attendance-groups.sql"
 run_sql "$TEST_ROOT/scheduled-resend.sql"
+run_sql "$TEST_ROOT/telegram-roster.sql"
+run_sql "$TEST_ROOT/scheduled-deletion.sql"

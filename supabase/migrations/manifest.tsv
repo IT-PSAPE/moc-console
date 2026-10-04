@@ -32,3 +32,5 @@
 20261004090000	scheduled_attendance_groups	2026-10-04b-scheduled-attendance-groups.sql
 20261004100000	scheduled_message_resend	2026-10-04c-scheduled-message-resend.sql
 20261004110000	scheduled_message_timestamps	2026-10-04d-scheduled-message-timestamps.sql
+20261004120000	scheduled_attendance_telegram_roster	2026-10-04e-scheduled-attendance-telegram-roster.sql
+20261004130000	scheduled_message_deletion	2026-10-04f-scheduled-message-deletion.sql

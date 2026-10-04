@@ -29,15 +29,15 @@ if '-f' not in sys.argv:
       '2026-08-04-moc-console-target-schema-cleanup.sql',
     ]);
     expect(files[4]).toBe('2026-08-05a-api-reliability-hardening.sql');
-    expect(files.at(-1)).toBe('2026-10-04d-scheduled-message-timestamps.sql');
+    expect(files.at(-1)).toBe('2026-10-04f-scheduled-message-deletion.sql');
     expect(files).not.toContain('2026-05-16-media-intrinsic-metadata.sql');
     expect(files).not.toContain('2026-08-04-consolidated-live-schema-update.sql');
     expect(files.indexOf('2026-09-27c-venue-booking-approval-states.sql')).toBeLessThan(
       files.indexOf('2026-09-27d-venue-booking-approval-and-telegram-actions.sql'));
     const versions = calls.flatMap(args => args.filter(arg => arg.startsWith('version=')));
-    expect(versions).toHaveLength(34);
+    expect(versions).toHaveLength(36);
     expect(versions.slice(0, 2)).toEqual(['version=20260805120000', 'version=20260805130000']);
-    expect(versions.at(-1)).toBe('version=20261004110000');
+    expect(versions.at(-1)).toBe('version=20261004130000');
     expect(calls.some(args => args.includes('name=remove_expected_arrival'))).toBe(true);
   } finally {
     rmSync(scratch, { recursive: true, force: true });

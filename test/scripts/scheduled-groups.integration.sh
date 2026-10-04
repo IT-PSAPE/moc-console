@@ -38,6 +38,8 @@ MIGRATIONS=(
   "$ROOT/supabase/migrations/2026-10-04b-scheduled-attendance-groups.sql"
   "$ROOT/supabase/migrations/2026-10-04c-scheduled-message-resend.sql"
   "$ROOT/supabase/migrations/2026-10-04d-scheduled-message-timestamps.sql"
+  "$ROOT/supabase/migrations/2026-10-04e-scheduled-attendance-telegram-roster.sql"
+  "$ROOT/supabase/migrations/2026-10-04f-scheduled-message-deletion.sql"
 )
 
 {
