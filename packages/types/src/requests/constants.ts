@@ -1,5 +1,5 @@
-import type { Priority } from "./priority";
-import type { Status } from "./status";
+import type { Priority } from "./priority.js";
+import type { Status } from "./status.js";
 
 // Legacy category metadata remains as a visual fallback for existing keys.
 // Workspace-managed category names are loaded from request_categories.

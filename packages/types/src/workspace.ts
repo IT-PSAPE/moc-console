@@ -1,4 +1,4 @@
-import type { Role } from "./requests/assignee";
+import type { Role } from "./requests/assignee.js";
 
 export type Workspace = {
   id: string;

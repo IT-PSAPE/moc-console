@@ -1,4 +1,4 @@
-import type { BroadcastKind } from "./broadcast"
+import type { BroadcastKind } from "./broadcast.js"
 
 export const BROADCAST_MEDIA_BUCKET = "broadcast-media"
 
@@ -30,8 +30,8 @@ export const BROADCAST_FILE_ACCEPT: Record<BroadcastKind, string> = {
 // An AppleDouble sidecar is 178 bytes; no real playable track is under 4 KB.
 export const BROADCAST_MIN_FILE_BYTES = 4 * 1024
 
-// Keep these at or below the Supabase project's global upload limit, otherwise
-// storage rejects the file after the browser has already accepted it.
+// Keep these within the application's upload limits so validation agrees
+// with the API and storage service before an upload starts.
 export const BROADCAST_MAX_FILE_BYTES: Record<BroadcastKind, number> = {
   audio: 50 * 1024 * 1024,
   video: 500 * 1024 * 1024,

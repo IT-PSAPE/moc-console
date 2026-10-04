@@ -1,0 +1,37 @@
+{
+  "name": "@moc/backend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "bun": "./src/*.ts",
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "dependencies": {
+    "@moc/notifications": "*",
+    "@moc/types": "*",
+    "pg": "8.23.1",
+    "better-auth": "1.7.7",
+    "bcryptjs": "3.0.3",
+    "@aws-sdk/client-s3": "3.1146.0",
+    "nodemailer": "10.0.14"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1",
+    "@types/nodemailer": "8.0.2"
+  },
+  "scripts": {
+    "build": "tsc -b --force",
+    "lint": "eslint src"
+  }
+}

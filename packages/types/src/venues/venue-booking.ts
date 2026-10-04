@@ -1,5 +1,5 @@
-import type { VenueBookingStatus } from "./status";
-import type { VenueBookingOccurrence, VenueRecurrence } from "./recurrence";
+import type { VenueBookingStatus } from "./status.js";
+import type { VenueBookingOccurrence, VenueRecurrence } from "./recurrence.js";
 
 /** One booked 30-minute slot. A booking always holds a continuous run of them. */
 export type VenueBookingSlot = {

@@ -1,4 +1,4 @@
-import type { VenueBookingPhase } from "./status";
+import type { VenueBookingPhase } from "./status.js";
 
 // ─── The bookable day ──────────────────────────────────
 // 08:00 to 23:00 in the workspace's own time zone, in 30-minute steps: 30

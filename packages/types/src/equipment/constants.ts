@@ -1,6 +1,6 @@
-import type { EquipmentStatus } from "./status";
-import type { EquipmentCategory } from "./category";
-import type { BookingStatus } from "./booking";
+import type { EquipmentStatus } from "./status.js";
+import type { EquipmentCategory } from "./category.js";
+import type { BookingStatus } from "./booking.js";
 
 // ─── Labels ────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-import type { ZoomRecurrenceType } from "./zoom"
+import type { ZoomRecurrenceType } from "./zoom.js"
 
 export const zoomRecurrenceLabel: Record<ZoomRecurrenceType, string> = {
   none: "No repeat",

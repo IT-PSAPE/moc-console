@@ -1,5 +1,5 @@
-import type { EquipmentStatus } from "./status";
-import type { EquipmentCategory } from "./category";
+import type { EquipmentStatus } from "./status.js";
+import type { EquipmentCategory } from "./category.js";
 
 export type Equipment = {
   id: string;

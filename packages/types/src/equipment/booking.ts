@@ -1,4 +1,4 @@
-import type { EquipmentCategory } from "./category";
+import type { EquipmentCategory } from "./category.js";
 
 export type BookingStatus = "booked" | "checked_out" | "returned" | "archived";
 

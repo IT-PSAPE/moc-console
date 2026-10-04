@@ -1,7 +1,7 @@
-export type { Equipment } from "./equipment";
-export type { EquipmentStatus } from "./status";
-export type { EquipmentCategory } from "./category";
-export type { Booking, BookingItem, BookingStatus } from "./booking";
+export type { Equipment } from "./equipment.js";
+export type { EquipmentStatus } from "./status.js";
+export type { EquipmentCategory } from "./category.js";
+export type { Booking, BookingItem, BookingStatus } from "./booking.js";
 export {
   equipmentStatusLabel,
   equipmentStatusColor,
@@ -10,4 +10,4 @@ export {
   bookingStatusLabel,
   bookingStatusColor,
   bookingStatusGroup,
-} from "./constants";
+} from "./constants.js";

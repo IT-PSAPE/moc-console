@@ -1,12 +1,12 @@
-export type { Venue, PublicVenue } from "./venue";
-export type { VenueEvent, PublicVenueEvent } from "./venue-event";
-export { VENUE_EVENT_OTHER_ID } from "./venue-event";
-export type { VenueBookingStatus, VenueBookingPhase } from "./status";
-export type { VenueBooking, VenueBookingSlot } from "./venue-booking";
-export { venueBookingEventLabel, isOtherVenueBookingEvent } from "./venue-booking";
-export type { VenueBookingOccurrence, VenueRecurrence, VenueRecurrenceEnd, VenueRecurrenceFrequency } from "./recurrence";
-export { formatVenueRecurrenceEndLabel, formatVenueRecurrenceLabel, getVenueBookingSeriesBounds } from "./recurrence";
-export { deriveVenueBookingPhase, deriveVenueBookingSeriesPhase } from "./phase";
+export type { Venue, PublicVenue } from "./venue.js";
+export type { VenueEvent, PublicVenueEvent } from "./venue-event.js";
+export { VENUE_EVENT_OTHER_ID } from "./venue-event.js";
+export type { VenueBookingStatus, VenueBookingPhase } from "./status.js";
+export type { VenueBooking, VenueBookingSlot } from "./venue-booking.js";
+export { venueBookingEventLabel, isOtherVenueBookingEvent } from "./venue-booking.js";
+export type { VenueBookingOccurrence, VenueRecurrence, VenueRecurrenceEnd, VenueRecurrenceFrequency } from "./recurrence.js";
+export { formatVenueRecurrenceEndLabel, formatVenueRecurrenceLabel, getVenueBookingSeriesBounds } from "./recurrence.js";
+export { deriveVenueBookingPhase, deriveVenueBookingSeriesPhase } from "./phase.js";
 export {
   VENUE_SLOT_MINUTES,
   VENUE_DAY_START_HOUR,
@@ -15,4 +15,4 @@ export {
   venueBookingPhaseLabel,
   venueBookingPhaseColor,
   venueBookingPhaseGroups,
-} from "./constants";
+} from "./constants.js";

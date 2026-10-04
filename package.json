@@ -17,10 +17,14 @@
     "build:request": "bun --filter moc-request build",
     "build:broadcast": "bun --filter moc-broadcast build",
     "build:api": "bun --filter moc-api build",
-    "build": "bun --filter '*' build",
+    "build": "bun --filter '*' build && bun run build:neon",
     "lint": "bun --filter '*' lint",
     "test:api": "bun --filter moc-api test",
     "test": "bun test ./test",
-    "lint:test": "bun --filter moc-tests lint"
+    "lint:test": "bun --filter moc-tests lint",
+    "build:neon": "tsc --project neon/tsconfig.json"
+  },
+  "devDependencies": {
+    "@neon/config": "1.8.3"
   }
 }

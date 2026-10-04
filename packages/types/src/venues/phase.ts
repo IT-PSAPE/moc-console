@@ -1,5 +1,5 @@
-import type { VenueBookingPhase, VenueBookingStatus } from "./status";
-import { getVenueBookingSeriesBounds, type VenueBookingOccurrence } from "./recurrence";
+import type { VenueBookingPhase, VenueBookingStatus } from "./status.js";
+import { getVenueBookingSeriesBounds, type VenueBookingOccurrence } from "./recurrence.js";
 
 /**
  * The reader-facing status of a venue booking.

@@ -1,6 +1,6 @@
-import type { Priority } from "./priority";
-import type { Status } from "./status";
-import type { Category } from "./category";
+import type { Priority } from "./priority.js";
+import type { Status } from "./status.js";
+import type { Category } from "./category.js";
 
 export type Request = {
   id: string;

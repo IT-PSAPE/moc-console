@@ -1,4 +1,4 @@
-import type { StreamStatus, StreamPrivacy, LatencyPreference } from "./stream"
+import type { StreamStatus, StreamPrivacy, LatencyPreference } from "./stream.js"
 
 // ─── Labels ────────────────────────────────────────────
 
