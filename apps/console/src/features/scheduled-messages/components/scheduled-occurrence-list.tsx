@@ -19,7 +19,7 @@ export function ScheduledOccurrenceList() {
             <ListItemCard.Content className="w-full flex-none sm:w-auto sm:flex-1"><ListItemCard.Title className="whitespace-normal">{o.fields.title}</ListItemCard.Title><ListItemCard.Subtitle className="whitespace-normal">{o.summary}</ListItemCard.Subtitle></ListItemCard.Content>
             <ListItemCard.Trailing className="ml-auto">
                 <Button variant="secondary" value={o.id} onClick={select} disabled={state.busy || !['scheduled', 'sent'].includes(o.state)}>Manage</Button>
-                {o.state === 'scheduled' ? <Button value={o.id} onClick={send} disabled={state.busy}>Send now</Button> : null}
+                {['scheduled', 'sent'].includes(o.state) ? <Button value={o.id} onClick={send} disabled={state.busy}>{o.state === 'sent' ? 'Resend' : 'Send now'}</Button> : null}
             </ListItemCard.Trailing>
         </ListItemCard.Root>
     }

@@ -114,7 +114,13 @@ export function useScheduledMessages() {
         const description = edit.field === 'attendanceGroups' ? `Set attendance groups to ${value} for ${target}? Attendance responses will be retained.` : `Apply ${edit.field}: ${edit.value || '(empty)'} to ${target}? Attendance responses will be retained.`
         setConfirmation({ op: 'occurrence.edit', title: 'Apply this change?', label: 'Apply change', data: edit, description })
     }
-    function requestSend(id: string): void { setError(''); setConfirmation({ op: 'occurrence.send', title: 'Send this message now?', label: 'Send now', data: { id }, description: 'This will post the occurrence to its Telegram group.' }) }
+    function requestSend(id: string): void {
+        const occurrence = snapshot.occurrences.find(row => row.id === id)
+        if (!occurrence || !['scheduled', 'sent'].includes(occurrence.state)) return
+        const resend = occurrence.state === 'sent'
+        setError('')
+        setConfirmation({ op: resend ? 'occurrence.resend' : 'occurrence.send', title: resend ? 'Resend this message?' : 'Send this message now?', label: resend ? 'Resend' : 'Send now', data: { id, revision: occurrence.revision }, description: resend ? 'This posts a new message with the current content and saved attendance responses. Future updates will use the new message. If the old message still exists, both will remain visible.' : 'This will post the occurrence to its Telegram group.' })
+    }
     function requestTemplateDelete(event: MouseEvent<HTMLButtonElement>): void {
         const template = snapshot.templates.find(row => row.id === event.currentTarget.dataset.templateId)
         if (!template || busy) return
