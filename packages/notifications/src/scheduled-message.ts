@@ -1,12 +1,13 @@
 import { renderTemplate } from './render-template.js'
-import { escapeHtml } from './template-tokens.js'
 import { formatScheduledDate } from './scheduled-date.js'
 import type { InlineKeyboardMarkup } from './telegram-keyboard.js'
+import { validateScheduledAttendanceGroups, type ScheduledAttendanceGroup } from './scheduled-attendance-groups.js'
+import { renderScheduledAttendanceRoster } from './scheduled-attendance-roster.js'
 
 export type ScheduledMessageType = 'announcement' | 'pre_attendance'
 export type ScheduledFields = Record<string, string>
-export type ScheduledResponse = { name: string; status: 'awaiting' | 'attending' | 'not_attending'; arrivalTime: string | null }
-export type ScheduledRenderInput = { id: string; messageType: ScheduledMessageType; body: string; fields: ScheduledFields; requireArrival: boolean }
+export type ScheduledResponse = { name: string; status: 'awaiting' | 'attending' | 'not_attending'; arrivalTime: string | null; groupId?: string | null }
+export type ScheduledRenderInput = { id: string; messageType: ScheduledMessageType; body: string; fields: ScheduledFields; requireArrival: boolean; attendanceGroups?: ScheduledAttendanceGroup[] }
 export type ScheduledFieldDefinition = { key: string; label: string; maxLength: number; inputType?: 'date' }
 export const SCHEDULED_FIELDS: Record<ScheduledMessageType, readonly ScheduledFieldDefinition[]> = {
  announcement: [{ key:'title',label:'Title',maxLength:120 },{ key:'instructions',label:'Message',maxLength:2000 },{ key:'date',label:'Date',maxLength:10,inputType:'date' }],
@@ -39,12 +40,9 @@ export function validateScheduledBody(type: ScheduledMessageType, body: string):
 
 export function renderScheduledMessage(input: ScheduledRenderInput, responses: ScheduledResponse[], expired: boolean): { text: string; replyMarkup: InlineKeyboardMarkup | null } {
  const body=renderTemplate(input.body,{...input.fields,date:formatScheduledDate(input.fields.date ?? '')})
- const lines=responses.map(response => {
-  const icon=response.status === 'attending' ? '✅' : response.status === 'not_attending' ? '❌' : '🔁'
-  const arrival=response.status === 'attending' && response.arrivalTime ? ` — ${escapeHtml(response.arrivalTime)}` : ''
-  return `${icon} ${escapeHtml(response.name)}${arrival}`
- })
- const text=[body,input.messageType === 'pre_attendance' ? lines.join('\n') : '',expired ? 'Closed' : ''].filter(Boolean).join('\n\n')
+ const groups=validateScheduledAttendanceGroups(input.messageType,input.attendanceGroups??[])
+ const roster=input.messageType === 'pre_attendance' ? renderScheduledAttendanceRoster(groups,responses) : ''
+ const text=[body,roster,expired ? 'Closed' : ''].filter(Boolean).join('\n\n')
  if (text.replace(/<[^>]*>/g,'').length > 4096) throw new Error('Message exceeds Telegram’s text limit; shorten the template or audience')
  const replyMarkup:InlineKeyboardMarkup|null = expired || input.messageType !== 'pre_attendance' ? null : {inline_keyboard:[
   [{text:'Attending',callback_data:`sa:yes:${input.id}`},{text:'Not attending',callback_data:`sa:no:${input.id}`}],

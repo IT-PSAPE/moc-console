@@ -1,7 +1,8 @@
 import type { ScheduledFields, ScheduledMessageType } from './scheduled-message.js'
+import type { ScheduledAttendanceGroup } from './scheduled-attendance-groups.js'
 export type ScheduledOccurrence = {
  id:string;workspace_id:string;schedule_id:string;occurrence_on:string;send_on:string;expires_at:string;
- fields:ScheduledFields;body:string;message_type:ScheduledMessageType;require_arrival:boolean;
+ fields:ScheduledFields;body:string;message_type:ScheduledMessageType;require_arrival:boolean;attendance_groups?:ScheduledAttendanceGroup[];
  state:'scheduled'|'sending'|'sent'|'unknown'|'cancelled';revision:number;synced_revision:number;
  telegram_message_id:number|null;last_sync_error:string|null;
 }
@@ -10,7 +11,7 @@ export type ScheduledSchedule = {
  starts_on:string;frequency:'once'|'daily'|'weekdays'|'weekly'|'monthly';timezone:string;
  expiry_hours:number;auto_send:boolean;enabled:boolean;
 }
-export type ScheduledTemplate = {id:string;name:string;message_type:ScheduledMessageType;body:string;fields:ScheduledFields;audience:string[];require_arrival:boolean}
+export type ScheduledTemplate = {id:string;name:string;message_type:ScheduledMessageType;body:string;fields:ScheduledFields;audience:string[];require_arrival:boolean;attendance_groups?:ScheduledAttendanceGroup[]}
 export type MemberType = {id:string;name:string;is_default:boolean}
 export type ScheduledMember = {id:string;name:string;memberTypeId:string}
 export type ScheduledSnapshot = {

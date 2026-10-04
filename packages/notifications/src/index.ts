@@ -16,3 +16,4 @@ export * from './telegram-mini-app.js'
 
 export * from './scheduled-message.js'
 export * from './scheduled-contract.js'
+export * from './scheduled-attendance-groups.js'
