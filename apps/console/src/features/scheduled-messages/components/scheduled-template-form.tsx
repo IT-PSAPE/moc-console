@@ -20,6 +20,7 @@ import { UnsavedChangesModal } from '@/features/requests/unsaved-changes-modal'
 import { routes } from '@/screens/console-routes'
 import { useScheduledTemplateContext } from '../scheduled-template-context'
 import { ScheduledMessageField } from './scheduled-message-field'
+import { ScheduledAttendanceGroupFields } from './scheduled-attendance-group-fields'
 
 export function ScheduledTemplateForm() {
     const { state, actions, meta } = useScheduledTemplateContext()
@@ -50,7 +51,7 @@ export function ScheduledTemplateForm() {
                     </VariableTextEditor.Preview>
                 </VariableTextEditor.Root>
                 <Section><Section.Header title="Default values" description="These prefill the message when you use this template." /><Section.Body className="gap-4">{meta.fields.map(renderField)}</Section.Body></Section>
-                {meta.isAttendance ? <Section><Section.Header title="Attendance" /><Section.Body className="gap-4"><FormField label="Who should respond?">{meta.memberTypes.map(renderAudience)}</FormField><Checkbox disabled={state.busy} checked={state.draft.requireArrival} onChange={actions.changeArrival}>Ask attendees for their arrival time</Checkbox></Section.Body></Section> : null}
+                {meta.isAttendance ? <Section><Section.Header title="Attendance" /><Section.Body className="gap-4"><FormField label="Who should respond?">{meta.memberTypes.map(renderAudience)}</FormField><Checkbox disabled={state.busy} checked={state.draft.requireArrival} onChange={actions.changeArrival}>Ask attendees for their arrival time</Checkbox><ScheduledAttendanceGroupFields groups={state.draft.attendanceGroups} disabled={state.busy} onChange={actions.changeAttendanceGroup} onAdd={actions.addAttendanceGroup} onEnable={actions.enableAttendanceGroups} onClear={actions.clearAttendanceGroups} onRemove={actions.removeAttendanceGroup} /></Section.Body></Section> : null}
                 {state.error ? <Alert variant="error" title="Couldn't save template" description={state.error} /> : null}
                 <div className="flex justify-end gap-2"><Button.Link disabled={state.busy} variant="secondary" render={<Link to={`/${routes.scheduledMessages}`} />}>Cancel</Button.Link><Button onClick={actions.saveAndBack} disabled={state.busy || !state.draft.name.trim() || !state.draft.fields.title?.trim()}>{state.busy ? 'Saving…' : 'Save template'}</Button></div>
             </>}

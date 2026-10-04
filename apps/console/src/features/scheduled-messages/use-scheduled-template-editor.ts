@@ -1,17 +1,18 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { flushSync } from 'react-dom'
 import { useNavigate, useParams } from 'react-router-dom'
-import { SCHEDULED_DEFAULT_BODIES, SCHEDULED_FIELDS, validateScheduledBody, validateScheduledFields, type ScheduledMessageType, type ScheduledTemplate } from '@moc/notifications'
+import { SCHEDULED_DEFAULT_BODIES, SCHEDULED_FIELDS, validateScheduledAttendanceGroups, validateScheduledBody, validateScheduledFields, type ScheduledAttendanceGroup, type ScheduledMessageType, type ScheduledTemplate } from '@moc/notifications'
 import { useTemplateBodyEditor } from '@/hooks/use-template-body-editor'
 import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard'
 import { routes } from '@/screens/console-routes'
 import { useScheduledMessagesContext } from './scheduled-messages-context'
 import { scheduledMessagePreview } from './scheduled-message-preview'
+import { useScheduledAttendanceGroupEditor } from './use-scheduled-attendance-group-editor'
 
-type TemplateDraft = { id?: string; name: string; messageType: ScheduledMessageType; body: string; fields: Record<string, string>; audience: string[]; requireArrival: boolean }
+type TemplateDraft = { id?: string; name: string; messageType: ScheduledMessageType; body: string; fields: Record<string, string>; audience: string[]; requireArrival: boolean; attendanceGroups: ScheduledAttendanceGroup[] }
 const typeItems = [{ value: 'announcement', label: 'Announcement' }, { value: 'pre_attendance', label: 'Pre-attendance' }]
 function initialDraft(row?: ScheduledTemplate): TemplateDraft {
-    return row ? { id: row.id, name: row.name, messageType: row.message_type, body: row.body, fields: row.fields, audience: row.audience, requireArrival: row.require_arrival } : { name: '', messageType: 'announcement', body: SCHEDULED_DEFAULT_BODIES.announcement, fields: { title: '', instructions: '' }, audience: [], requireArrival: false }
+    return row ? { id: row.id, name: row.name, messageType: row.message_type, body: row.body, fields: row.fields, audience: row.audience, requireArrival: row.require_arrival, attendanceGroups: row.attendance_groups ?? [] } : { name: '', messageType: 'announcement', body: SCHEDULED_DEFAULT_BODIES.announcement, fields: { title: '', instructions: '' }, audience: [], requireArrival: false, attendanceGroups: [] }
 }
 export function useScheduledTemplateEditor() {
     const { id } = useParams<{ id: string }>()
@@ -23,6 +24,8 @@ export function useScheduledTemplateEditor() {
     const [creationId] = useState(() => crypto.randomUUID())
     const saving = useRef(false)
     const [error, setError] = useState('')
+    function setAttendanceGroups(attendanceGroups: ScheduledAttendanceGroup[]): void { setDraft(current => ({ ...current, attendanceGroups })) }
+    const attendanceGroups = useScheduledAttendanceGroupEditor(draft.attendanceGroups, setAttendanceGroups)
     function changeBody(body: string): void { setDraft(current => ({ ...current, body })) }
     const variables = SCHEDULED_FIELDS[draft.messageType].map(field => field.key)
     const bodyEditor = useTemplateBodyEditor(draft.body, changeBody)
@@ -45,14 +48,15 @@ export function useScheduledTemplateEditor() {
     function changeArrival(event: ChangeEvent<HTMLInputElement>): void { setDraft(current => ({ ...current, requireArrival: event.target.checked })) }
     async function save(): Promise<boolean> {
         if (saving.current || messages.busy) return false
-        try { validateScheduledBody(draft.messageType, draft.body); validateScheduledFields(draft.messageType, draft.fields) }
+        try { validateScheduledBody(draft.messageType, draft.body); validateScheduledFields(draft.messageType, draft.fields); validateScheduledAttendanceGroups(draft.messageType, draft.messageType === 'pre_attendance' ? draft.attendanceGroups : []) }
         catch (e) { setError(e instanceof Error ? e.message : 'Check the template'); return false }
         if (!draft.name.trim()) { setError('Enter a template name'); return false }
         if (draft.messageType === 'pre_attendance' && !draft.audience.length) { setError('Select at least one member type'); return false }
         setError('')
         saving.current = true
         try {
-            if (!await messageActions.mutate('template.save', draft.id ? draft : { ...draft, creationId })) return false
+            const payload = { ...draft, attendanceGroups: draft.messageType === 'pre_attendance' ? draft.attendanceGroups : [] }
+            if (!await messageActions.mutate('template.save', draft.id ? payload : { ...payload, creationId })) return false
             const persisted = { ...draft, id: draft.id ?? creationId }
             // The router must see a clean draft before successful-save navigation.
             flushSync(() => { setDraft(persisted); setSaved(JSON.stringify(persisted)) })
@@ -66,7 +70,7 @@ export function useScheduledTemplateEditor() {
     }
     return {
         state: { draft, busy: messages.busy, loading: messages.loading, error: error || messages.error, missing: Boolean(id && !messages.loading && !row), navigationBlocked: guard.state.isBlocked, ...bodyEditor.state },
-        actions: { changeName, changeType, changeField, changeAudience, changeArrival, saveAndBack, ignorePreviewChange, ...bodyEditor.actions, ...guard.actions },
+        actions: { changeName, changeType, changeField, changeAudience, changeArrival, changeAttendanceGroup: attendanceGroups.change, addAttendanceGroup: attendanceGroups.add, enableAttendanceGroups: attendanceGroups.enable, clearAttendanceGroups: attendanceGroups.clear, removeAttendanceGroup: attendanceGroups.remove, saveAndBack, ignorePreviewChange, ...bodyEditor.actions, ...guard.actions },
         meta: { typeItems, fields: SCHEDULED_FIELDS[draft.messageType], variables, memberTypes: messages.snapshot.memberTypes, preview, isAttendance: draft.messageType === 'pre_attendance', textareaRef: bodyEditor.meta.textareaRef },
     }
 }

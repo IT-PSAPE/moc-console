@@ -8,6 +8,7 @@ import { ConfirmationDialog } from '@moc/ui/components/overlays/confirmation-dia
 import { Label } from '@moc/ui/components/display/text'
 import { Alert } from '@moc/ui/components/feedback/alert'
 import { useScheduledMessagesContext } from '../scheduled-messages-context'
+import { ScheduledAttendanceGroupFields } from './scheduled-attendance-group-fields'
 
 export function ScheduledOccurrenceEditor() {
   const {state,actions,meta}=useScheduledMessagesContext()
@@ -17,7 +18,7 @@ export function ScheduledOccurrenceEditor() {
         <Modal.Header><Label.md>Manage {state.editing?.fields.title}</Label.md></Modal.Header>
         <Modal.Content><div className="flex flex-col gap-4 p-4">
           <FormField label="Field"><SelectField name="edit-field" label="Field" items={meta.fieldItems} value={state.edit.field} onValueChange={actions.changeEditField}/></FormField>
-          <FormField label="Replacement value">{state.edit.field==='date' ? <Input type="date" aria-label="Replacement value" value={state.edit.value} onChange={actions.changeEditValue}/> : <TextArea aria-label="Replacement value" value={state.edit.value} onChange={actions.changeEditValue}/>}</FormField>
+          {state.edit.field==='attendanceGroups' ? <FormField label="Group choices"><ScheduledAttendanceGroupFields groups={meta.editGroups} disabled={state.busy} onChange={actions.changeAttendanceGroup} onAdd={actions.addAttendanceGroup} onEnable={actions.enableAttendanceGroups} onClear={actions.clearAttendanceGroups} onRemove={actions.removeAttendanceGroup}/></FormField> : <FormField label="Replacement value">{state.edit.field==='date' ? <Input type="date" aria-label="Replacement value" value={state.edit.value} onChange={actions.changeEditValue}/> : <TextArea aria-label="Replacement value" value={state.edit.value} onChange={actions.changeEditValue}/>}</FormField>}
           {meta.showScope?<FormField label="Apply to"><SelectField name="edit-scope" label="Apply to" items={meta.scopeItems} value={state.edit.scope} onValueChange={actions.changeScope}/></FormField>:null}
           {state.error?<Alert variant="error" title="Couldn't apply change" description={state.error}/>:null}
         </div></Modal.Content>
