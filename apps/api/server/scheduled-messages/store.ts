@@ -18,7 +18,7 @@ export async function getSchedule(id: string): Promise<Schedule> {
   return data as Schedule
 }
 export async function getResponses(id: string): Promise<AttendanceResponse[]> {
-  const { data, error } = await getSupabaseAdmin().from('scheduled_message_responses').select('user_id,name,status,arrival_time').eq('occurrence_id', id).order('name')
+  const { data, error } = await getSupabaseAdmin().from('scheduled_message_responses').select('user_id,name,status,arrival_time,group_id').eq('occurrence_id', id).order('name')
   if (error) throw new Error(error.message)
   return data as AttendanceResponse[]
 }
@@ -44,8 +44,8 @@ export async function changeOccurrence(actor: string, id: string, revision: numb
 export async function sendOccurrence(actor: string,id: string): Promise<void> {
   await scheduledRpc('request_scheduled_send',{p_actor:actor,p_id:id})
 }
-export async function respondAttendance(actor: string,o: Occurrence,status: 'attending'|'not_attending',arrival: string|null): Promise<void> {
-  await scheduledRpc('respond_scheduled_attendance',{p_actor:actor,p_id:o.id,p_revision:o.revision,p_status:status,p_arrival:arrival})
+export async function respondAttendance(actor: string,o: Occurrence,status: 'attending'|'not_attending',arrival: string|null,groupId: string|null): Promise<void> {
+  await scheduledRpc('respond_scheduled_attendance',{p_actor:actor,p_id:o.id,p_revision:o.revision,p_status:status,p_arrival:arrival,p_group:groupId})
 }
 export async function linkedUser(telegramId: string): Promise<string> {
   const { data,error }=await getSupabaseAdmin().from('users').select('id').eq('telegram_chat_id',telegramId).single()

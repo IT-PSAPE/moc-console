@@ -1,4 +1,4 @@
-import { validateScheduledBody, validateScheduledFields, type ScheduledMessageType } from '@moc/notifications'
+import { validateScheduledBody, validateScheduledFields, validateScheduledAttendanceGroups, type ScheduledMessageType } from '@moc/notifications'
 import { requireAuthenticatedUser, AuthError } from '../auth-guard.js'
 import { applyCors, isAllowedOrigin } from '../cors.js'
 import { headerValue, normaliseHeaders, type ApiRequest, type ApiResponse } from '../http.js'
@@ -49,7 +49,8 @@ async function mutate(actor: string,workspace: string,body: Record<string,unknow
     if(!['announcement','pre_attendance'].includes(messageType)) throw new Error('Invalid message type')
     validateScheduledFields(messageType,data.fields)
     validateScheduledBody(messageType,string(data.body))
-    await scheduledRpc('save_scheduled_template',{p_actor:actor,p_workspace:workspace,p_data:data})
+    const attendanceGroups=validateScheduledAttendanceGroups(messageType,data.attendanceGroups??[])
+    await scheduledRpc('save_scheduled_template',{p_actor:actor,p_workspace:workspace,p_data:{...data,attendanceGroups}})
   } else if(body.op==='template.delete') {
     await scheduledRpc('delete_scheduled_template',{p_actor:actor,p_workspace:workspace,p_id:uuid(data.id)})
   } else if(body.op==='schedule.create') {

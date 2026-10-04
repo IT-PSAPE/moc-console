@@ -16,7 +16,7 @@ export async function handleScheduledCallback(query: TelegramCallbackQuery): Pro
     if(namespace==='sm') {
       const s=await ownedSession(idOrAction,telegramId,chatId,query.message?.ephemeral_message_id)
       if(s.kind==='admin') await adminCallback(s,actionOrId,arg,query.id)
-      else await attendanceCallback(s,actionOrId,query.id)
+      else await attendanceCallback(s,actionOrId,arg,query.id)
     } else {
       const actor=await linkedUser(telegramId)
       const o=await getOccurrence(actionOrId)

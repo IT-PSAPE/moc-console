@@ -32,10 +32,10 @@ export async function deliverScheduledMessage(row: ScheduledDelivery): Promise<D
     return total
   }
   const o=snapshot.occurrence
-  const responses=snapshot.responses.map(r=>({name:r.name,status:r.status,arrivalTime:r.arrival_time}))
+  const responses=snapshot.responses.map(r=>({name:r.name,status:r.status,arrivalTime:r.arrival_time,groupId:r.group_id}))
   let result
   try {
-    const rendered=renderScheduledMessage({id:o.id,messageType:o.message_type,body:o.body,fields:o.fields,requireArrival:o.require_arrival},responses,snapshot.expired)
+    const rendered=renderScheduledMessage({id:o.id,messageType:o.message_type,body:o.body,fields:o.fields,requireArrival:o.require_arrival,attendanceGroups:o.attendance_groups},responses,snapshot.expired)
     result=row.scheduled_operation==='send'
       ? await sendTelegramRichMessage(row.chat_id,toRichHtml(rendered.text),{threadId:row.thread_id,replyMarkup:rendered.replyMarkup})
       : await editTelegramRichMessage(row.chat_id,o.telegram_message_id!,toRichHtml(rendered.text),rendered.replyMarkup ?? {inline_keyboard:[]})

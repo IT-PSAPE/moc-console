@@ -1,4 +1,4 @@
-import { SCHEDULED_FIELDS, scheduledOccurrenceSummary, validateScheduledFields } from '@moc/notifications'
+import { SCHEDULED_FIELDS, scheduledOccurrenceSummary, validateScheduledAttendanceGroups, validateScheduledFields } from '@moc/notifications'
 import { assertActive, authorizeManagement, changeOccurrence, getOccurrence, getSchedule, listActive, sendOccurrence } from './store.js'
 import { finishSession, promptSession, saveSession, sessionButton, setDraft, showSession } from './sessions.js'
 import { syncOccurrence, syncWorkspace } from './worker.js'
@@ -21,6 +21,8 @@ export async function showOccurrence(s: MessageSession): Promise<void> {
   await saveSession(s,{data:{revision:o.revision}})
   const defs=SCHEDULED_FIELDS[o.message_type]
   const rows=defs.map((f,i)=>[sessionButton(s,f.label,`field:${i}`)])
+  const attendanceGroups=validateScheduledAttendanceGroups(o.message_type,o.attendance_groups??[])
+  attendanceGroups.forEach((group,index)=>rows.push([sessionButton(s,`Rename group: ${group.label}`,`group:${index}`)]))
   if(o.state==='scheduled') rows.push([sessionButton(s,'Send date','field:sendOn'),sessionButton(s,'Send now','send')])
   rows.push([sessionButton(s,'Expiry date','field:expiresAt'),sessionButton(s,'Expiry hours','field:expiryHours')])
   rows.push([sessionButton(s,'Back','list:0'),sessionButton(s,'Close','close')])
@@ -29,14 +31,17 @@ export async function showOccurrence(s: MessageSession): Promise<void> {
 export async function confirmAdminDraft(s: MessageSession): Promise<void> {
   const o=await getOccurrence(s.occurrence_id!)
   assertActive(o)
-  const current=s.data.field==='sendOn'?o.send_on:s.data.field==='expiresAt'?o.expires_at:s.data.field==='expiryHours'?'Current schedule duration':o.fields[s.data.field!]
+  const groups=validateScheduledAttendanceGroups(o.message_type,o.attendance_groups??[])
+  const proposedGroups=s.data.field==='attendanceGroups'?validateScheduledAttendanceGroups(o.message_type,JSON.parse(s.data.value??'[]')):[]
+  const current=s.data.field==='sendOn'?o.send_on:s.data.field==='expiresAt'?o.expires_at:s.data.field==='expiryHours'?'Current schedule duration':s.data.field==='attendanceGroups'?(groups[s.data.groupIndex??-1]?.label??groups.map(group=>group.label).join(', ')):o.fields[s.data.field!]
+  const proposed=s.data.field==='attendanceGroups'?(proposedGroups[s.data.groupIndex??-1]?.label??proposedGroups.map(group=>group.label).join(', ')):s.data.value
   const schedule=await getSchedule(o.schedule_id)
   if(schedule.frequency!=='once' && !s.data.scope && !['sendOn','expiresAt'].includes(s.data.field!)) {
     await showSession(s,'Apply this edit to:',[[sessionButton(s,'This occurrence','scope:occurrence')],[sessionButton(s,'This and future occurrences','scope:future')],[sessionButton(s,'Entire series','scope:series')],[sessionButton(s,'Cancel','detail')]])
     return
   }
   await setDraft(s,{...s.data,scope:s.data.scope??'occurrence',stage:'confirm'})
-  await showSession(s,`Confirm ${s.data.field}\n${current??'(empty)'} → ${s.data.value}\nScope: ${s.data.scope}`,[[sessionButton(s,'Apply change','apply'),sessionButton(s,'Cancel','detail')]])
+  await showSession(s,`Confirm ${s.data.field==='attendanceGroups'?'group names':s.data.field}\n${current??'(empty)'} → ${proposed}\nScope: ${s.data.scope}`,[[sessionButton(s,'Apply change','apply'),sessionButton(s,'Cancel','detail')]])
 }
 export async function adminCallback(s: MessageSession,action: string,arg: string|undefined,callbackId: string): Promise<void> {
   if(action==='list') return showManagementList(s,Math.max(0,Number(arg)||0))
@@ -53,6 +58,7 @@ export async function adminCallback(s: MessageSession,action: string,arg: string
   if(!s.occurrence_id) throw new Error('Select a message first')
   const o=await getOccurrence(s.occurrence_id)
   assertActive(o)
+  if(s.data.revision!==undefined && s.data.revision!==o.revision) throw new Error('The message changed. Reopen the management flow before editing.')
   if(action==='detail') return showOccurrence(s)
   if(action==='field') {
     const defs=SCHEDULED_FIELDS[o.message_type]
@@ -60,6 +66,14 @@ export async function adminCallback(s: MessageSession,action: string,arg: string
     if(!field) throw new Error('Invalid field')
     await setDraft(s,{revision:o.revision,field})
     return promptSession(s,field==='sendOn'?o.send_on:field==='expiresAt'?o.expires_at:field==='expiryHours'?String((await getSchedule(o.schedule_id)).expiry_hours):o.fields[field],field,callbackId)
+  }
+  if(action==='group') {
+    if(!/^[0-7]$/.test(arg??'')) throw new Error('Invalid group selection')
+    const groups=validateScheduledAttendanceGroups(o.message_type,o.attendance_groups??[])
+    const group=groups[Number(arg)]
+    if(!group) throw new Error('Invalid group selection')
+    await setDraft(s,{revision:o.revision,field:`attendanceGroup:${Number(arg)}`})
+    return promptSession(s,group.label,'group label',callbackId)
   }
   if(action==='send') {
     await setDraft(s,{revision:o.revision,field:'sendNow',stage:'confirm'})
@@ -85,6 +99,16 @@ export async function adminInput(s: MessageSession,value: string): Promise<void>
   const o=await getOccurrence(s.occurrence_id!)
   assertActive(o)
   if(!s.data.field) throw new Error('No field selected')
+  if(s.data.revision!==undefined && s.data.revision!==o.revision) throw new Error('The message changed. Reopen the management flow before editing.')
+  if(s.data.field.startsWith('attendanceGroup:')) {
+    const groups=validateScheduledAttendanceGroups(o.message_type,o.attendance_groups??[])
+    const index=Number(s.data.field.slice('attendanceGroup:'.length))
+    if(!Number.isInteger(index) || !groups[index]) throw new Error('This group is no longer available')
+    groups[index]={...groups[index]!,label:value.trim()}
+    const validated=validateScheduledAttendanceGroups(o.message_type,groups)
+    await setDraft(s,{revision:o.revision,field:'attendanceGroups',groupIndex:index,value:JSON.stringify(validated),stage:'confirm'})
+    return confirmAdminDraft(s)
+  }
   if(!['sendOn','expiresAt','expiryHours'].includes(s.data.field)) validateScheduledFields(o.message_type,{...o.fields,[s.data.field]:value})
   await setDraft(s,{...s.data,value,stage:'confirm'})
   await confirmAdminDraft(s)

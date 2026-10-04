@@ -4,7 +4,7 @@ import { describe, it } from "node:test"
 import { handleScheduledCallback, handleScheduledMessage } from "../../../../../apps/api/server/scheduled-messages/telegram-flow.js"
 
 type RecordedCall = { url: string; method: string; body: Record<string, unknown> | null }
-type FixtureOptions = { frequency?: string; state?: string; expiresAt?: string; messageType?: string; requireArrival?: boolean; withEditDelivery?: boolean }
+type FixtureOptions = { frequency?: string; state?: string; expiresAt?: string; messageType?: string; requireArrival?: boolean; withEditDelivery?: boolean; attendanceGroups?: Array<{ id: string; label: string }> }
 
 function createFixture(options: FixtureOptions = {}) {
   const previousFetch = globalThis.fetch
@@ -17,8 +17,8 @@ function createFixture(options: FixtureOptions = {}) {
 
   const calls: RecordedCall[] = []
   const sessions = new Map<string, Record<string, unknown>>()
-  const responses: Array<{ user_id: string; name: string; status: string; arrival_time: string | null }> = [
-    { user_id: "user-1", name: "Alex Member", status: "attending", arrival_time: "07:15" },
+  const responses: Array<{ user_id: string; name: string; status: string; arrival_time: string | null; group_id: string | null }> = [
+    { user_id: "user-1", name: "Alex Member", status: "attending", arrival_time: "07:15", group_id: null },
   ]
   const occurrence: Record<string, unknown> = {
     id: "occurrence-1",
@@ -31,6 +31,7 @@ function createFixture(options: FixtureOptions = {}) {
     body: "<b>{{title}}</b>\n{{instructions}}",
     message_type: options.messageType ?? "announcement",
     require_arrival: options.requireArrival ?? false,
+    attendance_groups: options.attendanceGroups ?? [],
     state: options.state ?? "scheduled",
     revision: 3,
     synced_revision: 3,
@@ -93,6 +94,7 @@ function createFixture(options: FixtureOptions = {}) {
         if (selected) {
           selected.status = String(body?.p_status)
           selected.arrival_time = typeof body?.p_arrival === "string" ? body.p_arrival : null
+          selected.group_id = typeof body?.p_group === "string" ? body.p_group : null
         }
       }
       if (name === "change_scheduled_occurrence") {
@@ -448,7 +450,7 @@ describe("scheduled Telegram flows", () => {
 
       const savedResponse = fixture.rpcCalls.find(call => call.name === "respond_scheduled_attendance")
       assert.deepEqual(savedResponse?.body, {
-        p_actor: "user-1", p_id: "occurrence-1", p_revision: 3, p_status: "attending", p_arrival: "07:30",
+        p_actor: "user-1", p_id: "occurrence-1", p_revision: 3, p_status: "attending", p_arrival: "07:30", p_group: null,
       })
       const originalEdit = fixture.telegramCalls("editMessageText").find(call => call.body?.message_id === 700)
       assert.ok(originalEdit, "the shared delivery worker edits the recorded provider message in place")
@@ -457,5 +459,157 @@ describe("scheduled Telegram flows", () => {
     } finally {
       fixture.teardown()
     }
+  })
+  it("collects a group before optional arrival, preserves stable group IDs, and commits only when the flow is complete", async () => {
+    const groups = [
+      { id: "10000000-0000-4000-8000-000000000001", label: "North" },
+      { id: "10000000-0000-4000-8000-000000000002", label: "South" },
+    ]
+    const fixture = createFixture({ state: "sent", messageType: "pre_attendance", requireArrival: true, attendanceGroups: groups })
+    try {
+      await handleScheduledCallback({ id: "grouped-yes", from: { id: 456 }, data: "sa:yes:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700, message_thread_id: 22 } })
+      assert.equal(fixture.rpcCalls.some(call => call.name === "respond_scheduled_attendance"), false)
+      const groupPrompt = fixture.telegramCalls("sendMessage").at(-1)?.body
+      assert.match(String(groupPrompt?.text), /Choose your group/)
+      const groupMarkup = groupPrompt?.reply_markup as { inline_keyboard: Array<Array<{ text: string; callback_data?: string }>> }
+      assert.deepEqual(groupMarkup.inline_keyboard.flat().map(button => button.text), ["North", "South", "Cancel"])
+      const data = fixture.session()?.data as Record<string, unknown>
+      assert.equal(data.stage, "group")
+      assert.deepEqual(data.attendanceChoices, groups)
+
+      await fixture.callback("group", "1", "choose-south")
+      assert.equal(fixture.rpcCalls.some(call => call.name === "respond_scheduled_attendance"), false)
+      assert.match(String(fixture.telegramCalls("sendMessage").at(-1)?.body?.text), /Current value: 07:15/)
+      const promptId = (fixture.session()?.data as Record<string, unknown>).promptId as number
+      await handleScheduledMessage({ text: "07:30", from: { id: 456 }, chat: { id: "-100123", type: "supergroup" }, message_thread_id: 22, ephemeral_message_id: promptId + 1, reply_to_message: { ephemeral_message_id: promptId } })
+      const saved = fixture.rpcCalls.find(call => call.name === "respond_scheduled_attendance")
+      assert.deepEqual(saved?.body, { p_actor: "user-1", p_id: "occurrence-1", p_revision: 3, p_status: "attending", p_arrival: "07:30", p_group: "10000000-0000-4000-8000-000000000002" })
+      assert.match(String(fixture.telegramCalls("editEphemeralMessageText").at(-1)?.body?.text), /Updated: attending · South · 07:30/)
+    } finally { fixture.teardown() }
+  })
+  it("renames an attendance group through an indexed admin action and confirmation", async () => {
+    const fixture = createFixture({ state: "sent", messageType: "pre_attendance", attendanceGroups: [{ id: "10000000-0000-4000-8000-000000000001", label: "North" }, { id: "10000000-0000-4000-8000-000000000002", label: "South" }] })
+    try {
+      await fixture.startManagement()
+      await fixture.callback("pick", "0", "pick-occurrence")
+      const detail = fixture.telegramCalls("editEphemeralMessageText").at(-1)?.body
+      const buttons = (detail?.reply_markup as { inline_keyboard: Array<Array<{ text: string }>> }).inline_keyboard.flat()
+      assert.ok(buttons.some(button => button.text === "Rename group: North"))
+      await fixture.callback("group", "0", "rename-group")
+      const prompt = fixture.telegramCalls("sendMessage").at(-1)?.body
+      assert.match(String(prompt?.text), /replacement group label/)
+      const promptId = (fixture.session()?.data as Record<string, unknown>).promptId as number
+      await handleScheduledMessage({ text: "North Wing", from: { id: 456 }, chat: { id: "-100123", type: "supergroup" }, message_thread_id: 22, ephemeral_message_id: 999, reply_to_message: { ephemeral_message_id: promptId } })
+      assert.match(String(fixture.telegramCalls("editEphemeralMessageText").at(-1)?.body?.text), /North → North Wing/)
+      await fixture.callback("apply", undefined, "apply-rename")
+      const change = fixture.rpcCalls.find(call => call.name === "change_scheduled_occurrence")
+      assert.equal(change?.body.p_field, "attendanceGroups")
+      assert.deepEqual(JSON.parse(String(change?.body.p_value)), [{ id: "10000000-0000-4000-8000-000000000001", label: "North Wing" }, { id: "10000000-0000-4000-8000-000000000002", label: "South" }])
+    } finally { fixture.teardown() }
+  })
+  it("rejects invalid group indices and revision changes during an attendee session without saving a response", async () => {
+    const groups = [{ id: "10000000-0000-4000-8000-000000000001", label: "North" }, { id: "10000000-0000-4000-8000-000000000002", label: "South" }]
+    const invalid = createFixture({ state: "sent", messageType: "pre_attendance", attendanceGroups: groups })
+    try {
+      await handleScheduledCallback({ id: "start-invalid", from: { id: 456 }, data: "sa:yes:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700, message_thread_id: 22 } })
+      await invalid.callback("group", "9", "invalid-group")
+      assert.equal(invalid.rpcCalls.some(call => call.name === "respond_scheduled_attendance"), false)
+      assert.match(String(invalid.telegramCalls("answerCallbackQuery").at(-1)?.body?.text), /group choice is unavailable/)
+      await invalid.callback("group", "0.0", "malformed-group-index")
+      assert.equal(invalid.rpcCalls.some(call => call.name === "respond_scheduled_attendance"), false)
+      assert.match(String(invalid.telegramCalls("answerCallbackQuery").at(-1)?.body?.text), /group choice is unavailable/)
+    } finally { invalid.teardown() }
+
+    const stale = createFixture({ state: "sent", messageType: "pre_attendance", requireArrival: true, attendanceGroups: groups })
+    try {
+      await handleScheduledCallback({ id: "start-stale", from: { id: 456 }, data: "sa:yes:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700, message_thread_id: 22 } })
+      await stale.callback("group", "0", "choose-before-edit")
+      stale.occurrence.revision = 4
+      const promptId = (stale.session()?.data as Record<string, unknown>).promptId as number
+      await handleScheduledMessage({ text: "07:30", from: { id: 456 }, chat: { id: "-100123", type: "supergroup" }, message_thread_id: 22, ephemeral_message_id: promptId + 1, reply_to_message: { ephemeral_message_id: promptId } })
+      assert.equal(stale.rpcCalls.some(call => call.name === "respond_scheduled_attendance"), false)
+      assert.match(String(stale.telegramCalls("sendMessage").at(-1)?.body?.text), /message changed/)
+    } finally { stale.teardown() }
+  })
+  it("commits a no-arrival group choice once and edits the original attendance message", async () => {
+    const groupId = "10000000-0000-4000-8000-000000000001"
+    const fixture = createFixture({ state: "sent", messageType: "pre_attendance", attendanceGroups: [{ id: groupId, label: "North" }, { id: "10000000-0000-4000-8000-000000000002", label: "South" }], withEditDelivery: true })
+    try {
+      await handleScheduledCallback({ id: "start-no-arrival", from: { id: 456 }, data: "sa:yes:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700, message_thread_id: 22 } })
+      assert.equal(fixture.rpcCalls.some(call => call.name === "respond_scheduled_attendance"), false)
+      await fixture.callback("group", "0", "choose-north")
+      const responses = fixture.rpcCalls.filter(call => call.name === "respond_scheduled_attendance")
+      assert.equal(responses.length, 1, JSON.stringify(fixture.telegramCalls("answerCallbackQuery").at(-1)?.body))
+      assert.deepEqual(responses.map(call => call.body), [{ p_actor: "user-1", p_id: "occurrence-1", p_revision: 3, p_status: "attending", p_arrival: null, p_group: groupId }])
+      const edit = fixture.telegramCalls("editMessageText").find(call => call.body?.message_id === 700)
+      assert.ok(edit, "attendance updates edit the original Telegram message")
+      assert.match(String((edit?.body?.rich_message as { html: string })?.html), /North/)
+      assert.match(String(fixture.telegramCalls("editEphemeralMessageText").at(-1)?.body?.text), /Updated: attending · North/)
+    } finally { fixture.teardown() }
+  })
+  it("lets attendees change groups and declining clears both group and arrival", async () => {
+    const groups = [{ id: "10000000-0000-4000-8000-000000000001", label: "North" }, { id: "10000000-0000-4000-8000-000000000002", label: "South" }]
+    const fixture = createFixture({ state: "sent", messageType: "pre_attendance", attendanceGroups: groups })
+    fixture.responses[0]!.group_id = groups[0]!.id
+    try {
+      await handleScheduledCallback({ id: "start-update-group", from: { id: 456 }, data: "sa:update:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700, message_thread_id: 22 } })
+      assert.match(String(fixture.telegramCalls("sendMessage").at(-1)?.body?.text), /Current response: attending · North/)
+      await fixture.callback("yes", undefined, "update-attending")
+      await fixture.callback("group", "1", "change-to-south")
+      assert.deepEqual(fixture.rpcCalls.filter(call => call.name === "respond_scheduled_attendance").at(-1)?.body, { p_actor: "user-1", p_id: "occurrence-1", p_revision: 3, p_status: "attending", p_arrival: null, p_group: groups[1]!.id })
+      assert.match(String(fixture.telegramCalls("editEphemeralMessageText").at(-1)?.body?.text), /Updated: attending · South/)
+
+      await handleScheduledCallback({ id: "start-decline", from: { id: 456 }, data: "sa:update:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700, message_thread_id: 22 } })
+      assert.match(String(fixture.telegramCalls("sendMessage").at(-1)?.body?.text), /Current response: attending · South/)
+      await fixture.callback("no", undefined, "decline")
+      const responses = fixture.rpcCalls.filter(call => call.name === "respond_scheduled_attendance")
+      assert.equal(responses.length, 2)
+      assert.deepEqual(responses[1]?.body, { p_actor: "user-1", p_id: "occurrence-1", p_revision: 3, p_status: "not_attending", p_arrival: null, p_group: null })
+      assert.equal(fixture.responses[0]?.group_id, null)
+      assert.equal(fixture.responses[0]?.arrival_time, null)
+    } finally { fixture.teardown() }
+  })
+  it("blocks group callbacks and arrival replies after expiry, for another Telegram user, after cancellation, and after a stale revision", async () => {
+    const groups = [{ id: "10000000-0000-4000-8000-000000000001", label: "North" }, { id: "10000000-0000-4000-8000-000000000002", label: "South" }]
+    const expiry = createFixture({ state: "sent", messageType: "pre_attendance", attendanceGroups: groups })
+    try {
+      await handleScheduledCallback({ id: "start-expiry-choice", from: { id: 456 }, data: "sa:yes:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700, message_thread_id: 22 } })
+      ;(expiry.session() as Record<string, unknown>).expires_at = new Date(Date.now() - 1000).toISOString()
+      await expiry.callback("group", "0", "expired-choice")
+      assert.equal(expiry.rpcCalls.some(call => call.name === "respond_scheduled_attendance"), false)
+      assert.match(String(expiry.telegramCalls("answerCallbackQuery").at(-1)?.body?.text), /flow has ended/)
+    } finally { expiry.teardown() }
+
+    const owner = createFixture({ state: "sent", messageType: "pre_attendance", attendanceGroups: groups })
+    try {
+      await handleScheduledCallback({ id: "start-owner", from: { id: 456 }, data: "sa:yes:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700, message_thread_id: 22 } })
+      const session = owner.session() as Record<string, unknown>
+      await handleScheduledCallback({ id: "foreign-group", from: { id: 999 }, data: `sm:${String(session.id)}:group:0`, message: { chat: { id: "-100123" }, ephemeral_message_id: session.ephemeral_message_id as number } })
+      assert.equal(owner.rpcCalls.some(call => call.name === "respond_scheduled_attendance"), false)
+      assert.match(String(owner.telegramCalls("answerCallbackQuery").at(-1)?.body?.text), /flow has ended/)
+      await owner.callback("close", undefined, "cancel-group-flow")
+      assert.equal(owner.rpcCalls.some(call => call.name === "respond_scheduled_attendance"), false)
+    } finally { owner.teardown() }
+
+    const expiredReply = createFixture({ state: "sent", messageType: "pre_attendance", requireArrival: true, attendanceGroups: groups })
+    try {
+      await handleScheduledCallback({ id: "start-expiry-reply", from: { id: 456 }, data: "sa:yes:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700, message_thread_id: 22 } })
+      await expiredReply.callback("group", "0", "choose-before-expiry")
+      const session = expiredReply.session() as Record<string, unknown>
+      const promptId = (session.data as Record<string, unknown>).promptId as number
+      session.expires_at = new Date(Date.now() - 1000).toISOString()
+      await handleScheduledMessage({ text: "07:30", from: { id: 456 }, chat: { id: "-100123", type: "supergroup" }, message_thread_id: 22, ephemeral_message_id: promptId + 1, reply_to_message: { ephemeral_message_id: promptId } })
+      assert.equal(expiredReply.rpcCalls.some(call => call.name === "respond_scheduled_attendance"), false)
+      assert.match(String(expiredReply.telegramCalls("sendMessage").at(-1)?.body?.text), /input has expired/)
+    } finally { expiredReply.teardown() }
+
+    const staleChoice = createFixture({ state: "sent", messageType: "pre_attendance", attendanceGroups: groups })
+    try {
+      await handleScheduledCallback({ id: "start-stale-choice", from: { id: 456 }, data: "sa:yes:occurrence-1", message: { chat: { id: "-100123" }, message_id: 700, message_thread_id: 22 } })
+      staleChoice.occurrence.revision = 4
+      await staleChoice.callback("group", "0", "stale-choice")
+      assert.equal(staleChoice.rpcCalls.some(call => call.name === "respond_scheduled_attendance"), false)
+      assert.match(String(staleChoice.telegramCalls("answerCallbackQuery").at(-1)?.body?.text), /message changed/)
+    } finally { staleChoice.teardown() }
   })
 })
