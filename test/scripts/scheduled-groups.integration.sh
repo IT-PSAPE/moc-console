@@ -36,6 +36,7 @@ MIGRATIONS=(
   "$ROOT/supabase/migrations/2026-10-03f-remove-expected-arrival.sql"
   "$ROOT/supabase/migrations/2026-10-04a-scheduled-message-date.sql"
   "$ROOT/supabase/migrations/2026-10-04b-scheduled-attendance-groups.sql"
+  "$ROOT/supabase/migrations/2026-10-04c-scheduled-message-resend.sql"
 )
 
 {
@@ -66,6 +67,8 @@ MIGRATIONS=(
   bun test \
     test/apps/api/server/scheduled-messages/telegram-flow.test.ts \
     test/apps/api/server/scheduled-messages/delivery.test.ts \
+    test/apps/api/server/scheduled-messages/delivery-edges.test.ts \
+    test/apps/api/server/scheduled-messages/resend.test.ts \
     test/packages/notifications/src/scheduled-attendance-groups.test.ts \
     test/packages/notifications/src/scheduled-attendance-group-validation.test.ts
   printf '\nPASS: production Telegram handlers, delivery renderer integration, group roster rendering, escaping, expiry presentation, and group validation tests.\n\n'

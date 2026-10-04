@@ -17,11 +17,13 @@ this order before deploying the API and Console code:
 6. `supabase/migrations/2026-10-03f-remove-expected-arrival.sql`
 7. `supabase/migrations/2026-10-04a-scheduled-message-date.sql`
 8. `supabase/migrations/2026-10-04b-scheduled-attendance-groups.sql`
+9. `supabase/migrations/2026-10-04c-scheduled-message-resend.sql`
 
 Apply only scripts that are not already applied. The fifth adds retry-safe
 template creation and deletion; the sixth removes expected arrival from the
 editable fields. The seventh adds the optional date variable; the eighth adds
-attendee-selected groups. If the first seven are applied, only the eighth is needed.
+attendee-selected groups. The ninth adds explicit resend support. Apply only the
+remaining scripts if earlier migrations have already been applied.
 Readable filenames retain the original versions in `supabase/migrations/manifest.tsv`;
 renaming is not a reason to reapply an upgrade. Historical scripts in that folder
 are not part of this feature's rollout.
@@ -143,6 +145,17 @@ groups to a previously ungrouped occurrence keeps existing attendance under
 Awaiting group choice until those attendees select a group.
 
 ## Failure handling and first-version limits
+
+Active messages show Send now before delivery and Resend after delivery. Resend
+requires confirmation and posts the current occurrence with its frozen roster,
+saved attendance choices and arrival times. It stores the replacement Telegram
+message ID; subsequent edits and response buttons use that message. Old message
+buttons no longer accept responses. Expiry is retained, and expired messages
+cannot be resent. If the old post still exists, both posts remain visible.
+
+Pending edits to the old post are superseded by the resend. A definite failure
+retains the previous identity; an ambiguous or interrupted resend becomes
+`unknown` and requires the same operator reconciliation described below.
 
 Revision and synchronized revision are stored separately. Failed edits record
 an error and remain queued for retries, subject to the existing daily worker and
