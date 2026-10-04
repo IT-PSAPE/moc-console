@@ -225,8 +225,13 @@ export async function deleteTelegramMessage(
   chatId: number | string,
   messageId: number,
 ): Promise<{ ok: boolean; description?: string }> {
-  const result = await requestTelegramApi("deleteMessage", { chat_id: chatId, message_id: messageId })
+  const result = await deleteTelegramMessageDetailed(chatId, messageId)
   return result.ok ? { ok: true } : { ok: false, description: result.description }
+}
+
+export async function deleteTelegramMessageDetailed(chatId: number | string, messageId: number): Promise<TelegramSendDetailed> {
+  const result = await requestTelegramApi<boolean>("deleteMessage", { chat_id: chatId, message_id: messageId })
+  return result.ok ? { ok: true, result: null } : result
 }
 
 export async function answerTelegramCallbackQuery(

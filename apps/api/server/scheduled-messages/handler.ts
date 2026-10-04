@@ -4,7 +4,7 @@ import { applyCors, isAllowedOrigin } from '../cors.js'
 import { headerValue, normaliseHeaders, type ApiRequest, type ApiResponse } from '../http.js'
 import { getSupabaseAdmin } from '../supabase-admin.js'
 import { WorkspaceAccessError } from '../workspace-access.js'
-import { authorizeManagement, changeOccurrence, getOccurrence, listActive, scheduledRpc, sendOccurrence, resendOccurrence } from './store.js'
+import { authorizeManagement, changeOccurrence, deleteOccurrence, getOccurrence, listActive, scheduledRpc, sendOccurrence, resendOccurrence } from './store.js'
 import { syncOccurrence, syncWorkspace } from './worker.js'
 import { syncManagementCommands } from './commands.js'
 import type { EditScope } from './types.js'
@@ -30,13 +30,14 @@ async function snapshot(workspace: string): Promise<unknown> {
     admin.from('scheduled_message_schedules').select('*').eq('workspace_id',workspace),
     admin.from('workspace_member_types').select('*').eq('workspace_id',workspace).order('name'),
     admin.from('telegram_groups').select('chat_id,title,telegram_group_topics(thread_id,name,closed)').eq('workspace_id',workspace).eq('active',true).is('removed_at',null),
-    admin.from('workspace_users').select('user_id,member_type_id,users!inner(name,surname)').eq('workspace_id',workspace),
+    admin.from('workspace_users').select('user_id,member_type_id,users!inner(name,surname,telegram_chat_id)').eq('workspace_id',workspace).not('users.telegram_chat_id','is',null),
   ])
   for(const r of results) if(r.error) throw new Error(r.error.message)
-  type MemberRow = {user_id:string;member_type_id:string;users:{name:string;surname:string}|{name:string;surname:string}[]|null}
+  type MemberProfile = {name:string;surname:string;telegram_chat_id:string|null}
+  type MemberRow = {user_id:string;member_type_id:string;users:MemberProfile|MemberProfile[]|null}
   const members=((results[4].data ?? []) as unknown as MemberRow[]).flatMap(row => {
     const user=Array.isArray(row.users)?row.users[0]:row.users
-    return user?[{id:row.user_id,memberTypeId:row.member_type_id,name:`${user.name} ${user.surname}`.trim()}]:[]
+    return user?.telegram_chat_id?.trim()?[{id:row.user_id,memberTypeId:row.member_type_id,name:`${user.name} ${user.surname}`.trim()}]:[]
   })
   return {occurrences,templates:results[0].data,schedules:results[1].data,memberTypes:results[2].data,groups:results[3].data,members}
 }
@@ -63,6 +64,18 @@ async function mutate(actor: string,workspace: string,body: Record<string,unknow
     const id=uuid(data.id)
     const occurrence=await getOccurrence(id)
     if(occurrence.workspace_id!==workspace) throw new WorkspaceAccessError('Message belongs to another workspace')
+    if(body.op==='occurrence.delete') {
+      if(!Number.isInteger(data.revision)) throw new Error('Invalid revision')
+      const scope=string(data.scope) as EditScope
+      if(!['occurrence','future','series'].includes(scope)) throw new Error('Invalid delete scope')
+      const deleted=await deleteOccurrence(actor,id,data.revision as number,scope)
+      for(const target of deleted) await syncOccurrence(target)
+      for(const target of deleted) {
+        const result=await getOccurrence(target)
+        if(result.last_sync_error) throw new Error(`Message cancelled in Console; Telegram cleanup failed: ${result.last_sync_error}. Retry deletion.`)
+      }
+      return
+    }
     if(body.op==='occurrence.send') await sendOccurrence(actor,id)
     else if(body.op==='occurrence.resend') {
       if(!Number.isInteger(data.revision)) throw new Error('Invalid revision')

@@ -3,9 +3,10 @@ import { getSupabaseAdmin } from '../supabase-admin.js'
 import { editTelegramRichMessage, sendTelegramRichMessage } from '../telegram.js'
 import type { DeliveryRunResult } from '../notifications/delivery-store.js'
 import { scheduledRpc } from './store.js'
+import { deleteScheduledTelegramMessage } from './delete-telegram-message.js'
 import type { AttendanceResponse, Occurrence } from './types.js'
 
-export type ScheduledDelivery = { id: string; chat_id: string; thread_id: number|null; attempt_count: number; scheduled_operation: 'send'|'resend'|'edit'|'expire' }
+export type ScheduledDelivery = { id: string; chat_id: string; thread_id: number|null; attempt_count: number; scheduled_operation: 'send'|'resend'|'edit'|'expire'|'delete' }
 type DeliverySnapshot = { busy?: boolean; occurrence: Occurrence; responses: AttendanceResponse[]; expired: boolean; timezone?: string }
 
 export async function deliverScheduledMessage(row: ScheduledDelivery): Promise<DeliveryRunResult> {
@@ -36,10 +37,13 @@ export async function deliverScheduledMessage(row: ScheduledDelivery): Promise<D
   const responses=snapshot.responses.map(r=>({name:r.name,status:r.status,arrivalTime:r.arrival_time,groupId:r.group_id}))
   let result
   try {
-    const rendered=renderScheduledMessage({id:o.id,messageType:o.message_type,body:o.body,fields:o.fields,requireArrival:o.require_arrival,attendanceGroups:o.attendance_groups,expiresAt:o.expires_at,timezone:snapshot.timezone},responses,snapshot.expired)
-    result=postsMessage
-      ? await sendTelegramRichMessage(row.chat_id,toRichHtml(rendered.text),{threadId:row.thread_id,replyMarkup:rendered.replyMarkup})
-      : await editTelegramRichMessage(row.chat_id,o.telegram_message_id!,toRichHtml(rendered.text),rendered.replyMarkup ?? {inline_keyboard:[]})
+    if(row.scheduled_operation==='delete') result=await deleteScheduledTelegramMessage(row.chat_id,o.telegram_message_id!,o.fields.title)
+    else {
+      const rendered=renderScheduledMessage({id:o.id,messageType:o.message_type,body:o.body,fields:o.fields,requireArrival:o.require_arrival,attendanceGroups:o.attendance_groups,expiresAt:o.expires_at,timezone:snapshot.timezone},responses,snapshot.expired)
+      result=postsMessage
+        ? await sendTelegramRichMessage(row.chat_id,toRichHtml(rendered.text),{threadId:row.thread_id,replyMarkup:rendered.replyMarkup})
+        : await editTelegramRichMessage(row.chat_id,o.telegram_message_id!,toRichHtml(rendered.text),rendered.replyMarkup ?? {inline_keyboard:[]})
+    }
   } catch(error) {
     result={ok:false as const,errorCode:400,description:error instanceof Error?error.message:'Rendering failed',retryAfterSeconds:null}
   }

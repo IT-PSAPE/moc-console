@@ -47,6 +47,9 @@ export async function sendOccurrence(actor: string,id: string): Promise<void> {
 export async function resendOccurrence(actor: string,id: string,revision: number): Promise<void> {
   await scheduledRpc('request_scheduled_resend',{p_actor:actor,p_id:id,p_revision:revision})
 }
+export async function deleteOccurrence(actor: string,id: string,revision: number,scope: EditScope): Promise<string[]> {
+  return await scheduledRpc('delete_scheduled_occurrence',{p_actor:actor,p_id:id,p_revision:revision,p_scope:scope}) as string[]
+}
 export async function respondAttendance(actor: string,o: Occurrence,status: 'attending'|'not_attending',arrival: string|null,groupId: string|null): Promise<void> {
   await scheduledRpc('respond_scheduled_attendance',{p_actor:actor,p_id:o.id,p_revision:o.revision,p_status:status,p_arrival:arrival,p_group:groupId})
 }

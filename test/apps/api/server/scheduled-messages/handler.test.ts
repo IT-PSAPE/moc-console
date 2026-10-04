@@ -37,7 +37,7 @@ describe('scheduled message browser origin checks', () => {
 })
 
 describe('scheduled message attendee snapshot', () => {
-  it('returns only accepted workspace members and their types, without private profile fields', async () => {
+  it('returns only Telegram-connected workspace members without exposing their Telegram IDs', async () => {
     const originalFetch = globalThis.fetch
     const savedUrl = process.env.VITE_SUPABASE_URL
     const savedKey = process.env.SUPABASE_SECRET_KEY
@@ -56,10 +56,15 @@ describe('scheduled message attendee snapshot', () => {
         if (url.searchParams.has('user_id')) return json({ roles: { can_update: true } })
         rosterRead = true
         const selection = url.searchParams.get('select') ?? ''
-        assert.ok(!/email|telegram_chat_id|avatar_url/.test(selection))
+        assert.ok(!/email|avatar_url/.test(selection))
+        assert.ok(selection.includes('telegram_chat_id'))
+        assert.equal(url.searchParams.get('users.telegram_chat_id'), 'not.is.null')
         return json([
-          { user_id: 'member', member_type_id: 'members', users: { name: 'Craig', surname: 'Hero' } },
-          { user_id: 'volunteer', member_type_id: 'volunteers', users: [{ name: 'Sarah', surname: 'Volunteer' }] },
+          { user_id: 'member', member_type_id: 'members', users: { name: 'Craig', surname: 'Hero', telegram_chat_id: '123' } },
+          { user_id: 'volunteer', member_type_id: 'volunteers', users: [{ name: 'Sarah', surname: 'Volunteer', telegram_chat_id: '456' }] },
+          { user_id: 'unlinked', member_type_id: 'members', users: { name: 'No', surname: 'Connection', telegram_chat_id: null } },
+          { user_id: 'empty', member_type_id: 'members', users: { name: 'Empty', surname: 'Connection', telegram_chat_id: '' } },
+          { user_id: 'blank', member_type_id: 'members', users: { name: 'Blank', surname: 'Connection', telegram_chat_id: '   ' } },
           { user_id: 'removed', member_type_id: 'members', users: null },
         ])
       }

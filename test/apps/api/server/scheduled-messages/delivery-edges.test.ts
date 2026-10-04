@@ -3,7 +3,7 @@ import { describe, it } from "node:test"
 
 import { processPendingDeliveries } from "../../../../../apps/api/server/notifications/delivery-store.js"
 
-type Scenario = "removed-destination-and-valid-row" | "ambiguous-send" | "network-throw" | "missing-token" | "expire-edit" | "resend" | "ambiguous-resend"
+type Scenario = "removed-destination-and-valid-row" | "ambiguous-send" | "network-throw" | "missing-token" | "expire-edit" | "resend" | "ambiguous-resend" | "delete" | "delete-missing" | "delete-old" | "delete-transient" | "delete-denied"
 type Call = { url: string; method: string; body: Record<string, unknown> | null }
 
 function makeOccurrence(id: string, messageId: number | null) {
@@ -57,7 +57,7 @@ async function runQueueScenario(scenario: Scenario) {
     entity_id: null,
     reply_markup: null,
     parent_delivery_id: null,
-    scheduled_operation: scenario.includes("resend") ? "resend" : scenario === "expire-edit" ? "expire" : "send",
+    scheduled_operation: scenario.startsWith("delete") ? "delete" : scenario.includes("resend") ? "resend" : scenario === "expire-edit" ? "expire" : "send",
     scheduled_occurrence_id: id.replace("delivery", "occurrence"),
     index,
   }]))
@@ -76,6 +76,11 @@ async function runQueueScenario(scenario: Scenario) {
           ? { ok: true, result: { message_id: undefined } }
           : { ok: true, result: { message_id: 920 } }), { status: 200 })
       }
+      if (telegramMethod === "deleteMessage") {
+        const description = scenario === "delete-missing" ? "Bad Request: message to delete not found" : scenario === "delete-transient" ? "Temporary outage" : "Bad Request: message can't be deleted"
+        return new Response(JSON.stringify(scenario === "delete" ? { ok: true, result: true } : { ok: false, error_code: scenario === "delete-transient" ? 500 : 400, description }), { status: scenario === "delete" ? 200 : scenario === "delete-transient" ? 500 : 400 })
+      }
+      if (telegramMethod === "editMessageText" && scenario === "delete-denied") return new Response(JSON.stringify({ ok: false, error_code: 403, description: "Forbidden: bot removed" }), { status: 403 })
       if (telegramMethod === "editMessageText") return new Response(JSON.stringify({ ok: true, result: true }), { status: 200 })
       return new Response(JSON.stringify({ ok: false, error_code: 500, description: `Unexpected Telegram method ${telegramMethod}` }), { status: 500 })
     }
@@ -90,7 +95,7 @@ async function runQueueScenario(scenario: Scenario) {
       }
       const isExpiry = scenario === "expire-edit"
       return new Response(JSON.stringify({
-        occurrence: { ...makeOccurrence(isExpiry ? "occurrence-expiry" : `occurrence-${id}`, isExpiry || scenario.includes("resend") ? 905 : null), attendance_groups: scenario.includes("resend") ? [{ id: "00000000-0000-4000-8000-000000000011", label: "Noon" }, { id: "00000000-0000-4000-8000-000000000012", label: "Evening" }] : [] },
+        occurrence: { ...makeOccurrence(isExpiry ? "occurrence-expiry" : `occurrence-${id}`, isExpiry || scenario.includes("resend") || scenario.startsWith("delete") ? 905 : null), state: scenario.startsWith("delete") ? "cancelled" : "sent", attendance_groups: scenario.includes("resend") ? [{ id: "00000000-0000-4000-8000-000000000011", label: "Noon" }, { id: "00000000-0000-4000-8000-000000000012", label: "Evening" }] : [] },
         responses: [{ name: "Alex Member", status: scenario.includes("resend") ? "attending" : "awaiting", arrival_time: scenario.includes("resend") ? "07:30" : null, group_id: scenario.includes("resend") ? "00000000-0000-4000-8000-000000000011" : null }],
         expired: isExpiry,
       }), { status: 200 })
@@ -128,6 +133,38 @@ async function runQueueScenario(scenario: Scenario) {
 }
 
 describe("scheduled delivery failure and expiry edges", () => {
+  it("deletes the stored Telegram message without posting a replacement", async () => {
+    const { result, calls } = await runQueueScenario("delete")
+    assert.deepEqual(result, { attempted: 1, sent: 1, failed: 0, pendingRetry: 0 })
+    const telegram = calls.filter(call => call.url.startsWith("https://api.telegram.org/"))
+    assert.deepEqual(telegram.map(call => call.url.split("/").pop()), ["deleteMessage"])
+    assert.deepEqual(telegram[0]?.body, { chat_id: "-100123", message_id: 905 })
+    assert.equal(calls.find(call => call.url.endsWith("/rpc/finish_scheduled_delivery"))?.body?.p_error, null)
+  })
+  it("treats an already deleted Telegram message as successful cleanup", async () => {
+    const { result, calls } = await runQueueScenario("delete-missing")
+    assert.equal(result.sent, 1)
+    assert.equal(calls.filter(call => call.url.endsWith("/editMessageText")).length, 0)
+  })
+  it("marks old messages deleted and clears buttons when Telegram refuses deletion", async () => {
+    const { result, calls } = await runQueueScenario("delete-old")
+    assert.equal(result.sent, 1)
+    const edit = calls.find(call => call.url.endsWith("/editMessageText"))
+    assert.match(JSON.stringify(edit?.body), /Deleted/)
+    assert.match(JSON.stringify(edit?.body), /Service briefing/)
+    assert.deepEqual(edit?.body?.reply_markup, { inline_keyboard: [] })
+    assert.equal(calls.filter(call => call.url.endsWith("/sendRichMessage")).length, 0)
+  })
+  it("retries temporary deletion failures without posting or editing a message", async () => {
+    const { result, calls } = await runQueueScenario("delete-transient")
+    assert.deepEqual(result, { attempted: 1, sent: 0, failed: 1, pendingRetry: 1 })
+    assert.equal(calls.filter(call => call.url.endsWith("/editMessageText")).length, 0)
+  })
+  it("records permanent cleanup failure while retaining the cancellation", async () => {
+    const { result, calls } = await runQueueScenario("delete-denied")
+    assert.deepEqual(result, { attempted: 1, sent: 0, failed: 1, pendingRetry: 0 })
+    assert.match(String(calls.find(call => call.url.endsWith("/rpc/finish_scheduled_delivery"))?.body?.p_error), /bot removed/)
+  })
   it("resends the current content and saved attendance to a new Telegram message", async () => {
     const { result, calls } = await runQueueScenario("resend")
     assert.deepEqual(result, { attempted: 1, sent: 1, failed: 0, pendingRetry: 0 })
