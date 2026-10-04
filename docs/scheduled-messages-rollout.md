@@ -1,6 +1,6 @@
 # Scheduled messages: rollout and operation
 
-The scheduled-message system reuses the notification delivery queue and daily
+The scheduled-message system reuses the notification delivery queue and hourly
 cron. Supabase migrations must be applied separately from deploying the code.
 
 ## Supabase migrations
@@ -18,11 +18,12 @@ this order before deploying the API and Console code:
 7. `supabase/migrations/2026-10-04a-scheduled-message-date.sql`
 8. `supabase/migrations/2026-10-04b-scheduled-attendance-groups.sql`
 9. `supabase/migrations/2026-10-04c-scheduled-message-resend.sql`
+10. `supabase/migrations/2026-10-04d-scheduled-message-timestamps.sql`
 
 Apply only scripts that are not already applied. The fifth adds retry-safe
 template creation and deletion; the sixth removes expected arrival from the
 editable fields. The seventh adds the optional date variable; the eighth adds
-attendee-selected groups. The ninth adds explicit resend support. Apply only the
+attendee-selected groups. The ninth adds explicit resend support. The tenth replaces the independent message date with expiry-derived date/time and enables send timestamps. Apply only the
 remaining scripts if earlier migrations have already been applied.
 Readable filenames retain the original versions in `supabase/migrations/manifest.tsv`;
 renaming is not a reason to reapply an upgrade. Historical scripts in that folder
@@ -59,13 +60,9 @@ Each new draft has a stable creation ID so retries cannot insert a second copy.
 Use New message or Use template, fill in the variable values, and choose the
 group and schedule. Message-specific values are copied into the schedule without
 changing template defaults. Attendance options appear only for pre-attendance;
-last recurring date appears only for repeating schedules. Preview and expiry/
-timezone details use progressive disclosure.
+last recurring date appears only for repeating schedules. Preview and timezone details use progressive disclosure; send and expiry date-times are visible together.
 
-The layout uses the declared `{{title}}`, `{{instructions}}` and optional `{{date}}` fields.
-Date values are stored as Gregorian calendar dates and displayed using the converted
-year, for example `2026-10-04` becomes `431004`. Dates are currently fixed values;
-relative dates and selectable weekly send days are not implemented yet.
+The layout supports `{{title}}`, `{{instructions}}`, `{{date}}` and `{{time}}`. Title and instructions are editable values; date and time derive from the occurrence expiry. Custom weekly send-day selection remains outside this version.
 Arrival guidance belongs in instructions, not a separate template variable. Attendance lines and
 controls are generated separately. A schedule copies the template, audience and
 arrival requirement; later templates do not retroactively rewrite occurrences.
@@ -76,20 +73,13 @@ copied into the schedule and each occurrence. Stable group IDs survive renaming
 and reordering. Template previews show group headings and eligible pending people
 under Awaiting response; member types never assign people to attendance groups.
 
-Choose a linked active group/open topic, timezone, first date and once/daily/
-weekdays/weekly/monthly calendar rule. Monthly rules skip months without the
-selected day (for example, the 31st). Recurring occurrences are materialized
-through 32 days ahead, with a 30-day catch-up window. The existing free-plan
-daily cron sends all eligible queued messages when it runs. It is not an exact
-time scheduler. Send now uses the same queue and can send an upcoming occurrence.
-Nothing calls Telegram's native scheduler: bots cannot use it.
+Choose a linked active group/open topic, timezone, send date and time, expiry date and time, and once/daily/weekdays/weekly/monthly calendar rule. Monthly rules skip months without the selected day. Recurring occurrences are materialized through 32 days ahead, with a 30-day catch-up window. Each occurrence retains the send wall-clock time in the schedule timezone and advances expiry by the configured interval from that occurrence's scheduled send. Manual sends leave expiry unchanged.
 
-Expiry starts as hours after the local send-date midnight. It is independent of
-the actual provider send time and each person's arrival time. Manage can change
-an occurrence's explicit expiry timestamp or scoped expiry duration. Automatic
-schedules require at least 24 expiry hours; shorter durations use manual delivery. Moving
-an unsent send date retains the occurrence identity and its explicit expiry;
-adjust expiry separately if necessary. Sent dates/destinations are immutable.
+The message's date-time is its expiry. `date` displays the expiry calendar date with the existing year conversion (`2026-10-04` → `431004`); `time` displays its local 24-hour time (`18:30`). These are generated placeholders, not template default fields. Template previews use an example expiry; the scheduling preview uses the selected expiry. The migration retires old date overrides while preserving expiry instants, responses and Telegram IDs. Active sent cards queue an in-place refresh.
+
+Vercel Hobby now supports 100 cron jobs per project, each running at most once per day, with invocation anywhere in the selected hour. The configuration adds 24 daily jobs (one for each UTC hour) calling the same authenticated `/api/cron/scheduled-messages` worker. The three existing maintenance/notification jobs remain. The worker reuses the existing delivery queue and atomic claims, sends only due unexpired occurrences, and retries queued edits/expiry cleanup. Hourly checking plus Hobby timing imprecision can make delivery nearly two hours late; short active windows can be missed. Exact-minute scheduling needs a more frequent worker (such as Supabase Cron or Vercel Pro). No native Telegram scheduling is used.
+
+Manage can change an occurrence's send or expiry timestamp, or a scoped expiry duration, without losing responses. Moving an unsent send timestamp retains occurrence identity and its explicit expiry; adjust expiry separately if needed. Send times and destinations cannot change after sending.
 
 Before send, edits change the occurrence data. After send, confirmed edits and
 attendance responses atomically queue an edit of the stored Telegram message ID.
@@ -99,7 +89,7 @@ Unrelated fields and attendee responses remain intact. Expired history is never
 revived. A one-off exposes no series choices.
 
 At expiry, active lists and every mutation reject the occurrence immediately.
-The next daily worker marks the Telegram card closed and removes its keyboard.
+The next hourly worker marks the Telegram card closed and removes its keyboard.
 Old visible buttons can therefore remain briefly but cannot change anything.
 Database occurrence and response history is retained.
 
@@ -167,7 +157,7 @@ retains the previous identity; an ambiguous or interrupted resend becomes
 `unknown` and requires the same operator reconciliation described below.
 
 Revision and synchronized revision are stored separately. Failed edits record
-an error and remain queued for retries, subject to the existing daily worker and
+an error and remain queued for retries, subject to the hourly scheduled worker and
 provider backoff. Invalid payloads or removed destinations need an operator
 correction; editing never posts a replacement. A failed explicit send may be
 retried with Send now. An ambiguous timeout or crashed send becomes `unknown`

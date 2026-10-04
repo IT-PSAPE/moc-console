@@ -318,12 +318,14 @@ edits for active sent occurrences. Personal attendee arrival times are untouched
 
 The date-variable upgrade is
 [`migrations/2026-10-04a-scheduled-message-date.sql`](migrations/2026-10-04a-scheduled-message-date.sql).
-It permits an optional date-only variable for announcements and pre-attendance,
+This historical upgrade introduced an optional date-only variable for announcements and pre-attendance,
 validates Gregorian `YYYY-MM-DD` values, and keeps existing templates unchanged.
 The renderer displays year, month, day without separators, subtracting 1983
-from the year: `2026-10-04` becomes `431004`. This content date is independent of delivery and expiry.
+from the year: `2026-10-04` becomes `431004`. The timestamp upgrade below supersedes the independent content date.
 
 
 The attendance-groups upgrade is [`migrations/2026-10-04b-scheduled-attendance-groups.sql`](migrations/2026-10-04b-scheduled-attendance-groups.sql). It stores validated ordered group snapshots on templates, schedules and occurrences, adds nullable response group IDs, and extends attendance/admin RPCs while retaining the existing authorization grants and occurrence revisions. Group removal is rejected atomically when an affected live response uses that group.
 
 The resend upgrade is [`migrations/2026-10-04c-scheduled-message-resend.sql`](migrations/2026-10-04c-scheduled-message-resend.sql). It adds a revision-checked, service-role-only resend RPC and extends the existing delivery queue. Resends retain the occurrence and responses, store the new Telegram message ID on success, and prevent automatic retry after an ambiguous outcome.
+
+The timestamp upgrade is [`migrations/2026-10-04d-scheduled-message-timestamps.sql`](migrations/2026-10-04d-scheduled-message-timestamps.sql). It turns occurrence `send_on` into a timezone-aware timestamp, adds the series send time, and retains fractional expiry durations. Existing expiry instants, roster responses and Telegram IDs are preserved. Stored `date`/`time` overrides are removed: both template variables now derive from occurrence expiry in the schedule timezone, displaying `431004` and `18:30`. Deploy the matching API and Console after applying this migration.
