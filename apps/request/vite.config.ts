@@ -4,6 +4,7 @@ import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 import { tailscaleDevServer } from '../../scripts/vite-tailscale'
+import { createApiProxy } from '../../scripts/vite-api-proxy'
 
 const aliasEntries = [
   {
@@ -23,7 +24,6 @@ const aliasEntries = [
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const environment = loadEnv(mode, fileURLToPath(new URL('.', import.meta.url)), '')
-  const apiTarget = environment.MOC_API_PROXY_TARGET?.trim() || 'http://localhost:3001'
 
   return {
     plugins: [
@@ -36,9 +36,7 @@ export default defineConfig(({ mode }) => {
       alias: aliasEntries,
     },
     server: {
-      proxy: {
-        '/api': { target: apiTarget, changeOrigin: true },
-      },
+      proxy: createApiProxy(environment),
     },
   }
 })

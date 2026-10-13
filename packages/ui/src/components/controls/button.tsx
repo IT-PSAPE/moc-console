@@ -125,7 +125,7 @@ function LinkButton({ children, className, disabled, icon, iconPosition = 'leadi
     const trailing = iconPosition === 'trailing'
 
     return (
-        <BaseButton nativeButton={false} render={render} disabled={disabled} className={cn(buttonVariants({ variant, size: 'default' }), className)} {...props}>
+        <BaseButton nativeButton={false} role="link" render={render} disabled={disabled} className={cn(buttonVariants({ variant, size: 'default' }), className)} {...props}>
             {showIcon && !trailing ? <IconSpan icon={icon} /> : null}
             <Label.sm className="inline-flex items-center justify-center gap-2 text-[inherit]">{children}</Label.sm>
             {showIcon && trailing ? <IconSpan icon={icon} /> : null}
@@ -135,7 +135,7 @@ function LinkButton({ children, className, disabled, icon, iconPosition = 'leadi
 
 function IconLinkButton({ icon, className, disabled, render, variant = 'primary', ...props }: IconLinkButtonProps) {
     return (
-        <BaseButton nativeButton={false} render={render} disabled={disabled} className={cn(buttonVariants({ variant, size: 'icon' }), className)} {...props}>
+        <BaseButton nativeButton={false} role="link" render={render} disabled={disabled} className={cn(buttonVariants({ variant, size: 'icon' }), className)} {...props}>
             <IconSpan icon={icon} />
         </BaseButton>
     )

@@ -1,3 +1,4 @@
+import { setRecordRequest } from "./record-request.js"
 import type { VenueBooking, VenueBookingStatus } from "@moc/types/venues"
 import type { VenueRecurrence } from "@moc/types/venues/recurrence"
 import type { PlatformContext, PlatformOperation } from "./context.js"
@@ -10,6 +11,7 @@ type VenueBookingRow = {
   venue_id: string
   event_id: string | null
   event_other: string | null
+  request_id?: string | null
   tracking_code: string
   title: string
   requested_by: string
@@ -36,7 +38,7 @@ type VenueBookingRow = {
   slots: SlotRow[] | null
 }
 
-const SELECT = `b.id, b.workspace_id, b.venue_id, b.event_id, b.event_other, b.tracking_code, b.title, b.requested_by, b.notes,
+const SELECT = `b.id, b.request_id, b.workspace_id, b.venue_id, b.event_id, b.event_other, b.tracking_code, b.title, b.requested_by, b.notes,
   b.status, b.starts_at::text, b.ends_at::text, b.recurrence, b.cancelled_at::text, b.cancelled_by, b.cancel_reason,
   b.approved_at::text, b.approved_by, b.rejected_at::text, b.rejected_by, b.created_at::text, b.updated_at::text,
   v.name AS venue_name, v.description AS venue_description, e.name AS event_name,
@@ -73,6 +75,7 @@ function personName(value: string | null, fallback: string | null): string | nul
 function mapBooking(row: VenueBookingRow): VenueBooking {
   return {
     id: row.id,
+    requestId: row.request_id ?? null,
     workspaceId: row.workspace_id,
     venueId: row.venue_id,
     venueName: row.venue_name ?? "Unknown venue",
@@ -147,6 +150,13 @@ async function transition(context: PlatformContext, id: string, operation: "canc
 }
 
 export const operations: Record<string, PlatformOperation> = {
+  setRequest: {
+    permission: "can_update",
+    async run(context, input) {
+      await setRecordRequest(context, "venue_bookings", input);
+      return null;
+    },
+  },
   list: {
     permission: "can_read",
     async run(context) {

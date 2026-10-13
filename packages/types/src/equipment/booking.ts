@@ -11,6 +11,8 @@ export type BookingItem = {
 };
 
 export type Booking = {
+  /** Explicit origin request; records may also exist independently. */
+  requestId?: string | null;
   id: string;
   trackingCode: string;
   title: string;

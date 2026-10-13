@@ -2,6 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm ci",
   "buildCommand": "npm run build",
+  "outputDirectory": "public",
   "functions": {
     "api/public/broadcasts/[id]/events.ts": { "maxDuration": 60 },
     "api/storage/[...path].ts": { "maxDuration": 60 },
@@ -9,6 +10,7 @@
     "api/zoom/[...path].ts": { "maxDuration": 60 }
   },
   "rewrites": [
+    { "source": "/api/auth/(sign-up/email|sign-in/email|reset-password/[^/]+)", "destination": "/api/auth/_proxy?authPath=$1" },
     { "source": "/api/public/submissions", "destination": "/api/notify/public-submissions" },
     { "source": "/api/youtube/v3/(.*)", "destination": "/api/youtube/v3/_proxy?rewrittenPath=$1" },
     { "source": "/api/zoom/v2/(.*)", "destination": "/api/zoom/v2/_proxy?rewrittenPath=$1" }

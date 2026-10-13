@@ -1,10 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type SetStateAction } from "react";
 import type { VenueBooking, VenueBookingPhase } from "@moc/types/venues";
 import { deriveVenueBookingSeriesPhase } from "@moc/types/venues";
 import { areSetsEqual } from "@/utils/sets";
 import { useQueryText } from "@/hooks/use-query-text";
 import { useVenueBookings } from "./venue-bookings-provider";
 import { venueBookingOverlapsDateRange } from "./venue-booking-date-range";
+import { useWorkspace } from "@/lib/workspace-context";
+import { useManagedVenueEventOptions, useManagedVenueOptions } from "./use-managed-venue-option-resource";
+import { matchesVenueBookingOptions } from "./venue-booking-option-filter";
 
 // ─── Filter / Sort state ───────────────────────────────
 
@@ -13,6 +16,8 @@ export type SortDirection = "asc" | "desc";
 
 export type VenueBookingFilters = {
     search: string;
+    venueId: string | null;
+    eventId: string | null;
     phases: Set<VenueBookingPhase>;
     dateRange: { start: string; end: string };
     sortField: SortField;
@@ -21,6 +26,8 @@ export type VenueBookingFilters = {
 
 const defaultFilters: VenueBookingFilters = {
     search: "",
+    venueId: null,
+    eventId: null,
     phases: new Set<VenueBookingPhase>(["booked", "in_progress"]),
     dateRange: { start: "", end: "" },
     sortField: "startsAt",
@@ -31,7 +38,20 @@ const defaultFilters: VenueBookingFilters = {
 
 export function useVenueBookingFilters(bookings: VenueBooking[]) {
     const { state: { at } } = useVenueBookings();
-    const [filterState, setFilters] = useState<VenueBookingFilters>(defaultFilters);
+    const { role, currentWorkspaceId } = useWorkspace();
+    const canManageOptions = role?.can_manage_roles === true;
+    const venues = useManagedVenueOptions();
+    const events = useManagedVenueEventOptions();
+    const [filterStateByWorkspace, setFilterStateByWorkspace] = useState<Record<string, VenueBookingFilters>>({});
+    const workspaceKey = currentWorkspaceId ?? "none";
+    const filterState = filterStateByWorkspace[workspaceKey] ?? defaultFilters;
+    function setFilters(nextFilterState: SetStateAction<VenueBookingFilters>) {
+        setFilterStateByWorkspace((current) => {
+            const currentFilters = current[workspaceKey] ?? defaultFilters;
+            const next = typeof nextFilterState === "function" ? nextFilterState(currentFilters) : nextFilterState;
+            return { ...current, [workspaceKey]: next };
+        });
+    }
     const [search, setSearchQuery] = useQueryText();
     const filters = useMemo(() => ({ ...filterState, search }), [filterState, search]);
 
@@ -54,6 +74,8 @@ export function useVenueBookingFilters(bookings: VenueBooking[]) {
         // overlaps it. Legacy rows without embedded slots fall back to the
         // parent booking window.
         result = result.filter((booking) => venueBookingOverlapsDateRange(booking, filters.dateRange));
+
+        result = result.filter((booking) => matchesVenueBookingOptions(booking, filters.venueId, filters.eventId));
 
         // Sort
         const dir = filters.sortDirection === "asc" ? 1 : -1;
@@ -95,6 +117,14 @@ export function useVenueBookingFilters(bookings: VenueBooking[]) {
         setFilters((f) => ({ ...f, dateRange: { start, end } }));
     }
 
+    function setVenueId(venueId: string | null) {
+        setFilters((current) => ({ ...current, venueId }));
+    }
+
+    function setEventId(eventId: string | null) {
+        setFilters((current) => ({ ...current, eventId }));
+    }
+
     function setSort(field: SortField, direction: SortDirection) {
         setFilters((f) => ({ ...f, sortField: field, sortDirection: direction }));
     }
@@ -106,6 +136,8 @@ export function useVenueBookingFilters(bookings: VenueBooking[]) {
 
     const hasActiveFilters =
         !areSetsEqual(filters.phases, defaultFilters.phases) ||
+        filters.venueId !== null ||
+        filters.eventId !== null ||
         filters.dateRange.start !== "" ||
         filters.dateRange.end !== "";
 
@@ -117,7 +149,14 @@ export function useVenueBookingFilters(bookings: VenueBooking[]) {
         setSearch,
         togglePhase,
         setDateRange,
+        setVenueId,
+        setEventId,
         setSort,
         reset,
+        options: {
+            workspaceId: currentWorkspaceId,
+            venues: { ...venues, canManage: canManageOptions },
+            events: { ...events, canManage: canManageOptions },
+        },
     };
 }

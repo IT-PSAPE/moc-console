@@ -1,3 +1,4 @@
+import { setRecordRequest } from "./record-request.js"
 import type { Booking, BookingItem, BookingStatus } from "@moc/types/equipment/booking"
 import type { EquipmentCategory } from "@moc/types/equipment/category"
 import type { PlatformOperation } from "./context.js"
@@ -5,6 +6,7 @@ import { objectInput, PlatformInputError, stringField, uuidField } from "./input
 
 type BookingRow = {
   id: string
+  request_id?: string | null
   tracking_code: string
   title: string
   booked_by: string
@@ -18,7 +20,7 @@ type BookingRow = {
 }
 
 const statuses: readonly BookingStatus[] = ["booked", "checked_out", "returned", "archived"]
-const SELECT = `b.id, b.tracking_code, b.title, b.booked_by, b.checked_out_at::text, b.expected_return_at::text, b.returned_at::text,
+const SELECT = `b.id, b.request_id, b.tracking_code, b.title, b.booked_by, b.checked_out_at::text, b.expected_return_at::text, b.returned_at::text,
   b.notes, b.status, b.created_at::text,
   COALESCE((SELECT jsonb_agg(jsonb_build_object('id', bi.id, 'equipment_id', bi.equipment_id, 'name', e.name, 'category', e.category, 'thumbnail_url', e.thumbnail_url) ORDER BY e.name)
     FROM public.booking_items bi JOIN public.equipment e ON e.id=bi.equipment_id
@@ -46,6 +48,7 @@ function mapBooking(row: BookingRow): Booking {
   }))
   return {
     id: row.id,
+    requestId: row.request_id ?? null,
     trackingCode: row.tracking_code,
     title: row.title,
     bookedBy: row.booked_by,
@@ -73,6 +76,13 @@ function notFound(): Error {
 }
 
 export const operations: Record<string, PlatformOperation> = {
+  setRequest: {
+    permission: "can_update",
+    async run(context, input) {
+      await setRecordRequest(context, "bookings", input);
+      return null;
+    },
+  },
   list: {
     permission: "can_read",
     async run(context) {
@@ -106,7 +116,7 @@ export const operations: Record<string, PlatformOperation> = {
     permission: "can_update",
     async run(context, input) {
       const { booking: source } = objectInput(input, ["booking"])
-      const record = objectInput(source, ["id", "bookedBy", "checkedOutDate", "expectedReturnAt", "returnedDate", "notes", "status", "duration", "trackingCode", "title", "items", "createdAt"])
+      const record = objectInput(source, ["id", "bookedBy", "checkedOutDate", "expectedReturnAt", "returnedDate", "notes", "status", "duration", "trackingCode", "title", "items", "createdAt", "requestId"])
       const id = uuidField(record, "id")
       const status = stringField(record, "status") as BookingStatus
       if (!statuses.includes(status)) throw new PlatformInputError("Invalid booking status")

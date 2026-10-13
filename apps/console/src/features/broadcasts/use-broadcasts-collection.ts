@@ -114,6 +114,7 @@ export function useBroadcastsCollection() {
       editingBroadcast,
       editorOpen,
       isLoading: broadcastsState.isLoadingBroadcasts,
+      isInitialLoadingBroadcasts: broadcastsState.isInitialLoadingBroadcasts,
       isDeleting,
       loadError: broadcastsState.broadcastsError,
       searchQuery,

@@ -25,9 +25,9 @@
   },
   "include": ["api", "server"],
 
-  /* Build mode compiles this first, which puts @moc/notifications' emitted
-     JavaScript on disk before the functions that import it are bundled. The
+  /* Build mode compiles shared packages first, which puts their emitted
+     JavaScript on disk before the functions that import them are bundled. The
      API build uses --force because Vercel can restore tsbuildinfo without the
      referenced package's ignored dist directory. */
-  "references": [{ "path": "../../packages/notifications" }, { "path": "../../packages/backend" }]
+  "references": [{ "path": "../../packages/types" }, { "path": "../../packages/notifications" }, { "path": "../../packages/backend" }]
 }

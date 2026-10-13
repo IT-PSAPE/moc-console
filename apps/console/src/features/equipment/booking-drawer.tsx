@@ -1,3 +1,4 @@
+import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { Button } from "@moc/ui/components/controls/button";
 import { Paragraph, Title } from "@moc/ui/components/display/text";
@@ -174,6 +175,8 @@ export function BookingPanelContent({ booking, onClose, isDirtyRef, requestClose
             />
           </MetaRow>
         </div>
+
+        <RequestLinkField kind="booking" id={booking.id} className="px-4 pt-5" />
 
         {/* Items */}
         <BookingItemsSection items={draft.items} scannedItemIds={collection.state.scannedItemIds} onNavigate={onClose} />

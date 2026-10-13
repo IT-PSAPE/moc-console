@@ -1,3 +1,4 @@
+import { setRecordRequest } from "./record-request.js"
 import type { Checklist, ChecklistItem, ChecklistSection } from "@moc/types/checklists"
 import type { PlatformOperation } from "./context.js"
 import { objectInput, optionalStringField, optionalUuidField, PlatformInputError, stringField, uuidField } from "./input.js"
@@ -104,6 +105,7 @@ function toRpcStructure(checklist: Checklist): Record<string, unknown> {
 }
 
 export const operations: Record<string, PlatformOperation> = {
+  setRequest: { permission: "can_update", run: async (context, input) => { await setRecordRequest(context, "checklists", input); return null } },
   list: { permission: "can_read", run: async ({ db, workspaceId }) => loadAll(db, workspaceId) },
   getById: { permission: "can_read", run: async ({ db, workspaceId }, value) => {
     const input = objectInput(value, ["id", "workspaceId"])
@@ -128,14 +130,18 @@ export const operations: Record<string, PlatformOperation> = {
       if (!result.rows[0]) throw new Error("Checklist not found")
       await db.query("SELECT public.save_template_checklist_structure($1::uuid,$2::jsonb)", [checklist.id, JSON.stringify(toRpcStructure(checklist))])
     } else {
-      if (checklist.requestId) {
-        const request = await db.query<{ id: string }>("SELECT id FROM requests WHERE workspace_id=$1 AND id=$2 FOR SHARE", [workspaceId, checklist.requestId])
+      // Origin is set on creation or by setRequest. Ordinary content saves
+      // preserve the stored link, including when the editor has a stale snapshot.
+      const existing = await db.query<{ id: string }>("SELECT id FROM checklists WHERE workspace_id=$1 AND id=$2", [workspaceId, checklist.id])
+      const initialRequestId = existing.rows[0] ? null : checklist.requestId ?? null
+      if (initialRequestId) {
+        const request = await db.query<{ id: string }>("SELECT id FROM requests WHERE workspace_id=$1 AND id=$2", [workspaceId, initialRequestId])
         if (!request.rows[0]) throw new Error("Request not found")
       }
       const result = await db.query<{ id: string }>(`INSERT INTO checklists (id,workspace_id,name,description,scheduled_at,request_id,created_at,updated_at)
         VALUES ($1,$2,$3,$4,$5,$6,$7,now()) ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name,description=EXCLUDED.description,
-        scheduled_at=EXCLUDED.scheduled_at,request_id=EXCLUDED.request_id,updated_at=now() WHERE checklists.workspace_id=$2 RETURNING id`,
-        [checklist.id, workspaceId, checklist.name, checklist.description, checklist.scheduledAt ?? new Date().toISOString(), checklist.requestId ?? null, checklist.createdAt])
+        scheduled_at=EXCLUDED.scheduled_at,updated_at=now() WHERE checklists.workspace_id=$2 RETURNING id`,
+        [checklist.id, workspaceId, checklist.name, checklist.description, checklist.scheduledAt ?? new Date().toISOString(), initialRequestId, checklist.createdAt])
       if (!result.rows[0]) throw new Error("Checklist not found")
       await db.query("SELECT public.save_checklist_structure($1::uuid,$2::jsonb)", [checklist.id, JSON.stringify(toRpcStructure(checklist))])
     }

@@ -32,10 +32,6 @@ export function useAppShell() {
     }
   }, [closeMobile, isSigningOut, signOut, toast])
 
-  function isRouteActive(route: string) {
-    return pathname === `/${route}` || pathname.startsWith(`/${route}/`)
-  }
-
   function openProfile() {
     closeMobile()
     setProfileOpen(true)
@@ -43,6 +39,6 @@ export function useAppShell() {
 
   return {
     state: { isSigningOut, profileOpen, mobileSidebarOpen: sidebar.state.isMobileOpen, canManageScheduledMessages },
-    actions: { isRouteActive, signOut: signOutUser, openProfile, setProfileOpen, closeMobileSidebar: closeMobile, setMobileSidebarOpen: setMobileOpen },
+    actions: { signOut: signOutUser, openProfile, setProfileOpen, closeMobileSidebar: closeMobile, setMobileSidebarOpen: setMobileOpen },
   }
 }

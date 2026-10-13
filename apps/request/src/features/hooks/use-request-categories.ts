@@ -10,6 +10,7 @@ type RequestCategoriesState = {
 
 export function useRequestCategories() {
   const [state, setState] = useState<RequestCategoriesState>({ categories: [], loading: true, error: null })
+  const [reloadVersion, setReloadVersion] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -19,13 +20,18 @@ export function useRequestCategories() {
         if (!cancelled) setState({ categories, loading: false, error: null })
       })
       .catch((error: unknown) => {
-        if (!cancelled) setState({ categories: [], loading: false, error: error instanceof Error ? error.message : "Failed to load request categories" })
+        if (!cancelled) setState((current) => ({ ...current, loading: false, error: error instanceof Error ? error.message : "Failed to load request categories" }))
       })
 
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [reloadVersion])
 
-  return { state }
+  function retry() {
+    setState((current) => ({ ...current, loading: true, error: null }))
+    setReloadVersion((current) => current + 1)
+  }
+
+  return { state, actions: { retry } }
 }

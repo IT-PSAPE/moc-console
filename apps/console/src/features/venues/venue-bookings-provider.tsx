@@ -9,6 +9,7 @@ type VenueBookingsContextValue = {
         bookings: VenueBooking[]
         bookingsById: Record<string, VenueBooking>
         isLoading: boolean
+        isInitialLoading: boolean
         error: Error | null
         /**
          * One instant shared by every list/kanban/calendar render pass, so
@@ -40,7 +41,7 @@ function mergeBookings(previous: Record<string, VenueBooking>, bookings: VenueBo
 
 export function VenueBookingsProvider({ children }: { children: ReactNode }) {
     const { currentWorkspaceId } = useWorkspace()
-    const { data, error, isLoading, load, updateData } = useWorkspaceResource({ emptyValue: emptyBookings, fetcher: fetchVenueBookings, resource: 'venue-bookings', workspaceId: currentWorkspaceId })
+    const { data, error, isLoading, isInitialLoading, load, updateData } = useWorkspaceResource({ emptyValue: emptyBookings, fetcher: fetchVenueBookings, resource: 'venue-bookings', workspaceId: currentWorkspaceId })
     const [detailBookingsByWorkspace, setDetailBookingsByWorkspace] = useState<Record<string, Record<string, VenueBooking>>>({})
 
     const bookingsById = useMemo(() => {
@@ -86,9 +87,9 @@ export function VenueBookingsProvider({ children }: { children: ReactNode }) {
     // i.e. whenever the underlying data reloads or changes — without adding
     // a dependency the callback never reads.
     const value = useMemo<VenueBookingsContextValue>(() => ({
-        state: { bookings, bookingsById, isLoading, error, at: new Date() },
+        state: { bookings, bookingsById, isLoading, isInitialLoading, error, at: new Date() },
         actions: { loadBookings, retryBookings, loadBooking, syncVenueBooking },
-    }), [bookings, bookingsById, error, isLoading, loadBooking, loadBookings, retryBookings, syncVenueBooking])
+    }), [bookings, bookingsById, error, isInitialLoading, isLoading, loadBooking, loadBookings, retryBookings, syncVenueBooking])
 
     return <VenueBookingsContext.Provider value={value}>{children}</VenueBookingsContext.Provider>
 }

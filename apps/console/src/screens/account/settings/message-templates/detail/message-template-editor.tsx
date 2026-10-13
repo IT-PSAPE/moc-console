@@ -2,17 +2,19 @@ import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { Divider } from "@moc/ui/components/display/divider";
 import { VariableTextEditor } from "@moc/ui/components/form/variable-text-editor";
 import { Button } from "@moc/ui/components/controls/button";
-import { Spinner } from "@moc/ui/components/feedback/spinner";
 import { ArrowLeft } from "lucide-react";
 import {
     type MessageType,
 } from "@moc/notifications";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { Page } from "@moc/ui/components/layout/page";
+import { ResourceLoadError } from "@/components/feedback/resource-load-error";
 import { useMessageTemplateEditor } from "./use-message-template-editor";
 
 export function MessageTemplateEditor({ messageType }: { messageType: MessageType }) {
     const { state, actions, templateMeta, textareaRef, variables } = useMessageTemplateEditor(messageType);
+
+    if (state.isLoading) return <Page.Loading />;
 
     return (
         <Page>
@@ -32,11 +34,7 @@ export function MessageTemplateEditor({ messageType }: { messageType: MessageTyp
             </Page.Header>
 
             <Page.Content width="standard" className="flex flex-col gap-3">
-                {state.isLoading ? (
-                    <div className="flex justify-center py-16">
-                        <Spinner size="lg" />
-                    </div>
-                ) : (
+                {state.loadError ? <ResourceLoadError title="Couldn't load template" error={state.loadError} onRetry={actions.retryLoad} /> : (
                     <>
                         <VariableTextEditor.Root source={state.body} html={state.editorHtml} variables={variables} disabled={state.saving} textareaRef={textareaRef} onSourceChange={actions.changeBody} onRichChange={actions.changeRichBody} onInsertVariable={actions.insertTokenFromButton} richFallback={state.unsupportedTags.length ? <Paragraph.sm>This template uses advanced blocks ({state.unsupportedTags.join(', ')}). Edit these in Source to preserve their formatting.</Paragraph.sm> : null}>
                             <VariableTextEditor.Toolbar className="justify-between"><VariableTextEditor.ViewSwitch /><VariableTextEditor.Formatting /></VariableTextEditor.Toolbar>
@@ -63,14 +61,14 @@ export function MessageTemplateEditor({ messageType }: { messageType: MessageTyp
                 )}
             </Page.Content>
 
-            <UnsavedChangesModal
+            {!state.loadError && <UnsavedChangesModal
                 open={state.navigationBlocked}
                 onSave={actions.saveAndProceed}
                 onDiscard={actions.discardAndProceed}
                 onCancel={actions.cancelNavigation}
                 isSaving={state.saving}
                 message="You have unsaved changes to this template. Save them before leaving, or discard to continue."
-            />
+            />}
         </Page>
     );
 }

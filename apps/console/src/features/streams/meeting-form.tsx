@@ -16,6 +16,8 @@ import { NotifyDestinationField } from "./notify-destination-field"
 import { MEETING_TIMEZONES, useMeetingForm } from "./use-meeting-form"
 
 type MeetingFormProps = {
+  initialTitle?: string
+  initialScheduledAt?: string
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (params: CreateMeetingParams) => Promise<void> | void
@@ -24,8 +26,8 @@ type MeetingFormProps = {
 
 const TIMEZONE_ITEMS = MEETING_TIMEZONES.map((value) => ({ label: value, value }))
 
-export function MeetingForm({ open, onOpenChange, onSubmit, meeting }: MeetingFormProps) {
-  const { state, actions, meta } = useMeetingForm({ meeting, onOpenChange, onSubmit, open })
+export function MeetingForm({ open, onOpenChange, onSubmit, meeting, initialTitle, initialScheduledAt }: MeetingFormProps) {
+  const { state, actions, meta } = useMeetingForm({ meeting, onOpenChange, onSubmit, open, initialTitle, initialScheduledAt })
 
   function renderTimezone(timezone: string) {
     return <Select.Item key={timezone} value={timezone}>{timezone}</Select.Item>

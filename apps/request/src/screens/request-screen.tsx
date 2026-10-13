@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@moc/ui/components/controls/button'
 import { Alert } from '@moc/ui/components/feedback/alert'
+import { RetryAlert } from '@moc/ui/components/feedback/retry-alert'
 import { Spinner } from '@moc/ui/components/feedback/spinner'
 import { PublicLayout } from '@/features/components/public-layout'
 import { RequestBasicInfo } from '@/features/components/request-basic-info'
@@ -70,12 +71,14 @@ export function RequestScreen() {
         {state.step === 3 && <RequestFlow data={state.data} onChange={actions.setField} />}
         {state.step === 4 && <RequestReview data={state.data} categoryName={categoryName} />}
 
-        {categoryOptions.state.error && <Alert title="Could not load categories" description={categoryOptions.state.error} variant="error" style="filled" />}
+        {categoryOptions.state.error && <RetryAlert title="Request categories unavailable" description="Check your connection and try again. Your request details are saved." onRetry={categoryOptions.actions.retry} isRetrying={categoryOptions.state.loading} />}
+        {!categoryOptions.state.loading && !categoryOptions.state.error && categoryOptions.state.categories.length === 0 && <Alert title="No request categories are available" description="Ask a workspace manager to add request categories, then reload this page." variant="warning" style="filled" />}
         {state.error && <Alert title="Submission failed" description={state.error} variant="error" style="filled" />}
 
         <PublicFlow.Actions>
           <Button type="submit" disabled={state.submitting || categoryOptions.state.loading || categoryOptions.state.categories.length === 0} className="rounded-full">
-            {state.submitting ? <Spinner size="sm" /> : isLastStep ? 'Submit' : 'Next'}
+            {state.submitting || categoryOptions.state.loading ? <Spinner size="sm" /> : null}
+            {state.submitting ? 'Submitting…' : categoryOptions.state.loading ? 'Loading options…' : isLastStep ? 'Submit' : 'Next'}
           </Button>
         </PublicFlow.Actions>
       </PublicFlow.Narrow>

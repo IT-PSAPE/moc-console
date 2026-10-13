@@ -11,6 +11,7 @@ export type CreateChecklistInstanceOverrides = {
 };
 
 export type CreateBlankChecklistInput = {
+  requestId?: string;
   name: string;
   description: string;
   scheduledAt: string;
@@ -65,6 +66,7 @@ export async function createBlankChecklist(input: CreateBlankChecklistInput): Pr
     name: input.name,
     description: input.description,
     scheduledAt: input.scheduledAt,
+    requestId: input.requestId,
     items: [],
     sections: [],
     createdAt: now,

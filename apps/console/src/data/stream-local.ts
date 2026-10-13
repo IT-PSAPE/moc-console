@@ -4,6 +4,7 @@ import { moc } from "@/lib/moc-client"
 import { getCurrentWorkspaceId } from "./current-workspace"
 
 export type LocalStreamInsertPayload = {
+  request_id?: string | null
   id?: string
   workspace_id: string
   youtube_broadcast_id: string
@@ -42,6 +43,7 @@ export function mapLocalStreamPayload(payload: LocalStreamInsertPayload): Stream
   return {
     id: payload.id ?? randomId(),
     workspaceId: payload.workspace_id,
+    requestId: payload.request_id ?? null,
     youtubeBroadcastId: payload.youtube_broadcast_id,
     youtubeStreamId: payload.youtube_stream_id,
     title: payload.title,

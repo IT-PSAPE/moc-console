@@ -1,3 +1,4 @@
+import { RequestLinkedRecords } from "@/features/request-links/request-linked-records"
 import { Drawer, useDrawer } from "@moc/ui/components/overlays/drawer";
 import { Dropdown } from "@moc/ui/components/overlays/dropdown";
 import { Divider } from "@moc/ui/components/display/divider";
@@ -24,7 +25,6 @@ import { RequestMetaFields } from "./request-meta-fields";
 import { RequestNotes } from "./request-notes";
 import { RequestShareActions } from "./request-share-actions";
 import { RequestDiscussion } from "./request-discussion";
-import { RequestRelatedChecklists } from "./request-related-checklists";
 import { RequestTitle } from "./request-title";
 import { useRequestDetail } from "./use-request-detail";
 import { useDrawerClose } from "@/hooks/use-drawer-close";
@@ -195,7 +195,7 @@ export function RequestPanelContent({
               />
             )}
             <Divider className="my-6" />
-            <RequestRelatedChecklists checklists={detail.relatedChecklists.checklists} isLoading={detail.relatedChecklists.isLoading} error={detail.relatedChecklists.error} onRetry={detail.actions.refreshRelatedChecklists} />
+            <RequestLinkedRecords request={request} enabled={open} className="px-4" />
             <Divider className="my-6" />
             <RequestDiscussion.Root requestId={request.id} refreshKey={store.state.draft.updatedAt} enabled={open}>
               <div className="px-4"><RequestDiscussion.Activity /></div>

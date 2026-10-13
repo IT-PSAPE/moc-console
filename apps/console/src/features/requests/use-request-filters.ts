@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type SetStateAction } from "react";
 import type { Request } from "@moc/types/requests";
-import type { Category } from "@moc/types/requests/category";
 import type { Priority } from "@moc/types/requests/priority";
 import type { Status } from "@moc/types/requests/status";
 import { areSetsEqual } from "@/utils/sets";
 import { useQueryText } from "@/hooks/use-query-text";
+import { useWorkspace } from "@/lib/workspace-context";
 
 // ─── Filter / Sort state ───────────────────────────────
 
@@ -13,7 +13,7 @@ export type SortDirection = "asc" | "desc";
 
 export type RequestFilters = {
     search: string;
-    categories: Set<Category>;
+    category: string | null;
     priorities: Set<Priority>;
     statuses: Set<Status>;
     dateRange: { start: string; end: string };
@@ -23,7 +23,7 @@ export type RequestFilters = {
 
 const defaultFilters: RequestFilters = {
     search: "",
-    categories: new Set(),
+    category: null,
     priorities: new Set(),
     statuses: new Set<Status>(["not_started", "in_progress"]),
     dateRange: { start: "", end: "" },
@@ -31,15 +31,37 @@ const defaultFilters: RequestFilters = {
     sortDirection: "desc",
 };
 
+export function selectRequestFiltersForWorkspace(filtersByWorkspace: Record<string, RequestFilters>, workspaceKey: string): RequestFilters {
+    return filtersByWorkspace[workspaceKey] ?? defaultFilters;
+}
+
+export function filterRequestsByType(requests: Request[], type: string | null): Request[] {
+    return type ? requests.filter((request) => request.category === type) : requests;
+}
+
+export function hasRequestResettableState(filters: RequestFilters, hasActiveFilters: boolean, workView: string): boolean {
+    return hasActiveFilters || filters.search !== "" || filters.sortField !== defaultFilters.sortField || filters.sortDirection !== defaultFilters.sortDirection || workView !== "all";
+}
+
 // ─── Hook ──────────────────────────────────────────────
 
 export function useRequestFilters(requests: Request[]) {
-    const [filterState, setFilters] = useState<RequestFilters>(defaultFilters);
+    const { currentWorkspaceId } = useWorkspace();
+    const workspaceKey = currentWorkspaceId ?? "none";
+    const [filterStateByWorkspace, setFilterStateByWorkspace] = useState<Record<string, RequestFilters>>({});
+    const filterState = selectRequestFiltersForWorkspace(filterStateByWorkspace, workspaceKey);
+    function setFilters(nextFilterState: SetStateAction<RequestFilters>) {
+        setFilterStateByWorkspace((current) => {
+            const currentFilters = selectRequestFiltersForWorkspace(current, workspaceKey);
+            const next = typeof nextFilterState === "function" ? nextFilterState(currentFilters) : nextFilterState;
+            return { ...current, [workspaceKey]: next };
+        });
+    }
     const [search, setSearchQuery] = useQueryText();
     const filters = useMemo(() => ({ ...filterState, search }), [filterState, search]);
 
     const results = useMemo(() => {
-        let result = requests;
+        let result = filterRequestsByType(requests, filters.category);
 
         // Search
         if (filters.search) {
@@ -50,11 +72,6 @@ export function useRequestFilters(requests: Request[]) {
                     r.what.toLowerCase().includes(q) ||
                     r.who.toLowerCase().includes(q),
             );
-        }
-
-        // Category filter
-        if (filters.categories.size > 0) {
-            result = result.filter((r) => filters.categories.has(r.category));
         }
 
         // Priority filter
@@ -102,13 +119,8 @@ export function useRequestFilters(requests: Request[]) {
         setSearchQuery(search);
     }
 
-    function toggleCategory(category: Category) {
-        setFilters((f) => {
-            const next = new Set(f.categories);
-            if (next.has(category)) next.delete(category);
-            else next.add(category);
-            return { ...f, categories: next };
-        });
+    function setCategory(category: string | null) {
+        setFilters((f) => ({ ...f, category }));
     }
 
     function togglePriority(priority: Priority) {
@@ -137,13 +149,13 @@ export function useRequestFilters(requests: Request[]) {
         setFilters((f) => ({ ...f, sortField: field, sortDirection: direction }));
     }
 
-    function reset() {
+    function reset(clearSearch = true) {
         setFilters(defaultFilters);
-        setSearchQuery("");
+        if (clearSearch) setSearchQuery("");
     }
 
     const hasActiveFilters =
-        filters.categories.size > 0 ||
+        filters.category !== null ||
         filters.priorities.size > 0 ||
         !areSetsEqual(filters.statuses, defaultFilters.statuses) ||
         filters.dateRange.start !== "" ||
@@ -160,7 +172,7 @@ export function useRequestFilters(requests: Request[]) {
         hasActiveFilters,
         includesArchived,
         setSearch,
-        toggleCategory,
+        setCategory,
         togglePriority,
         toggleStatus,
         setDateRange,

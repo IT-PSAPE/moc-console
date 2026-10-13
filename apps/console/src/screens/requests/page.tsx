@@ -13,7 +13,6 @@ import {
   Settings2,
 } from "lucide-react";
 import type { ChangeEvent } from "react";
-import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { RequestFilterDrawer } from "@/features/requests/request-filter-drawer";
@@ -22,13 +21,15 @@ import { useRequestsScreen } from "./use-requests-screen";
 import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 import { RequestPanelContent } from "@/features/requests/request-drawer";
 import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar";
+import { ResourceLoadError } from "@/components/feedback/resource-load-error";
 
 export function RequestsScreen() {
   const { state, actions, meta } = useRequestsScreen();
-  const { filters, activeView, isMobile, requestCategories } = meta;
+  const { filters, activeView, isMobile } = meta;
   const CollectionContent = activeView === "kanban" ? Page.CollectionContent : Page.Content;
-  const visibleRequests = activeView === "calendar" ? filters.calendarFiltered : filters.filtered;
+  const visibleRequests = meta.workViewRequests;
   const collectionState = activeView === "list" ? visibleRequests : activeView;
+  if (meta.isInitialLoading) return <Page.Loading />;
 
   function handleSearch(event: ChangeEvent<HTMLInputElement>) {
     filters.setSearch(event.target.value)
@@ -58,21 +59,20 @@ export function RequestsScreen() {
             <Drawer.Trigger>
               <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter requests">Filter</CollectionToolbar.ActionButton>
             </Drawer.Trigger>
-            <RequestFilterDrawer filters={filters} categories={requestCategories} />
+            <RequestFilterDrawer filters={filters} workView={meta.workView} onWorkViewChange={actions.changeWorkView} onReset={actions.resetFilters} />
           </Drawer>
         </CollectionToolbar.Actions>
       </CollectionToolbar>
 
+      {meta.categoriesError && !meta.collectionError && <ResourceLoadError title="Couldn't load request types" error={meta.categoriesError} onRetry={actions.retryCategories} />}
+
       <CollectionContent>
-      <Decision value={collectionState} loading={meta.isLoading}>
-        <Decision.Loading>
-          <LoadingSpinner className="py-6" />
-        </Decision.Loading>
+      {meta.collectionError ? <ResourceLoadError title={meta.collectionErrorTitle} error={meta.collectionError} onRetry={actions.retryCollection} /> : <Decision value={collectionState}>
         <Decision.Empty>
           <EmptyState
             icon={<Inbox />}
             title="No requests found"
-            description="No requests match your current filters, or none have been created yet."
+            description="No requests match this work view and your current filters."
           />
         </Decision.Empty>
         <Decision.Data>
@@ -80,7 +80,7 @@ export function RequestsScreen() {
           {activeView === "kanban" && <RequestKanbanView requests={visibleRequests} />}
           {activeView === "calendar" && <RequestCalendarView requests={visibleRequests} />}
         </Decision.Data>
-      </Decision>
+      </Decision>}
       </CollectionContent>
       </Page>
       </SplitPanel.Primary>

@@ -19,4 +19,19 @@ describe("workspace resource cache", () => {
     expect(state.data).toEqual([])
     expect(state.isLoading).toBe(false)
   })
+
+  test("force reloads a cached aggregate so route remounts see record changes", async () => {
+    const workspaceId = "workspace-force-refresh"
+    const resource = "schedule-force-refresh"
+    let fetchCount = 0
+    setWorkspaceResourceData(workspaceId, resource, ["stale"])
+
+    await loadWorkspaceResource(workspaceId, resource, async () => {
+      fetchCount += 1
+      return ["fresh"]
+    }, true)
+
+    expect(fetchCount).toBe(1)
+    expect(getWorkspaceResourceState<string[]>(workspaceId, resource).data).toEqual(["fresh"])
+  })
 })

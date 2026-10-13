@@ -4,12 +4,11 @@ import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import { Decision } from "@moc/ui/components/display/decision"
 import { Alert } from "@moc/ui/components/feedback/alert"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
-import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { Input } from "@moc/ui/components/form/input"
 import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar"
 import { Page } from "@moc/ui/components/layout/page"
 import { Drawer } from "@moc/ui/components/overlays/drawer"
-import { CalendarDays, List, Plus, RadioTower, RefreshCw, Search } from "lucide-react"
+import { CalendarDays, List, Plus, RadioTower, RefreshCw, Search, Settings2 } from "lucide-react"
 import { CreateStreamModal } from "./create-stream-modal"
 import { MeetingModal } from "./meeting-modal"
 import { StreamFilterDrawer } from "./stream-filter-drawer"
@@ -52,12 +51,15 @@ export function StreamsCollection() {
     void zoom.actions.sync()
   }
 
+  if (meta.isInitialLoading) return <Page.Loading />
+
   return (
     <Page>
       <Page.Header>
         <Page.Heading>
           <Page.Title>Streams</Page.Title>
         </Page.Heading>
+        {meta.canManageConnections && <Page.Actions><Button variant="secondary" icon={<Settings2 />} onClick={youtube.actions.openSettings}>Connections</Button></Page.Actions>}
       </Page.Header>
 
       <CollectionToolbar>
@@ -126,10 +128,7 @@ export function StreamsCollection() {
         {zoom.state.syncError && !zoom.meta.needsReauth ? (
           <Alert variant="error" title={providerFailureTitle("Zoom", zoom.meta.providerFailure, "Zoom sync failed")} description={zoom.state.syncError} action={<Button variant="secondary" onClick={handleRetryZoomSync}>Retry sync</Button>} />
         ) : null}
-        <Decision value={meta.isConnected ? collectionState : null} loading={meta.isLoading}>
-          <Decision.Loading>
-            <LoadingSpinner className="py-6" />
-          </Decision.Loading>
+        <Decision value={meta.isConnected ? collectionState : null}>
           <Decision.Empty>
             {meta.isConnected ? (
               <EmptyState

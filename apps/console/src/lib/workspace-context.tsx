@@ -15,6 +15,7 @@ type WorkspaceContextValue = {
     currentWorkspaceId: string | null
     role: Role | null
     loading: boolean
+    error: Error | null
     setCurrentWorkspaceId: (id: string) => void
     refresh: () => Promise<void>
 }
@@ -50,6 +51,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     const [currentWorkspaceId, setCurrentWorkspaceIdState] = useState<string | null>(null)
     const [roleByWorkspaceId, setRoleByWorkspaceId] = useState<Map<string, Role>>(new Map())
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<Error | null>(null)
 
     const userId = user?.id ?? null
 
@@ -57,6 +59,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         async (uid: string, options: { setLoadingState?: boolean } = {}) => {
             const { setLoadingState = true } = options
             if (setLoadingState) setLoading(true)
+            setError(null)
             try {
                 const directory = await fetchWorkspaceDirectory()
 
@@ -83,6 +86,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
                     writeStoredWorkspaceId(next)
                     return next
                 })
+            } catch (reason: unknown) {
+                setError(reason instanceof Error ? reason : new Error("Couldn't load workspace access"))
             } finally {
                 if (setLoadingState) setLoading(false)
             }
@@ -96,6 +101,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
             setCurrentWorkspaceIdState(null)
             setRoleByWorkspaceId(new Map())
             setCurrentWorkspaceIdMirror(null)
+            setError(null)
             setLoading(false)
             return
         }
@@ -139,10 +145,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
             currentWorkspaceId,
             role: currentWorkspaceId ? roleByWorkspaceId.get(currentWorkspaceId) ?? null : null,
             loading,
+            error,
             setCurrentWorkspaceId,
             refresh,
         }),
-        [workspaces, currentWorkspaceId, roleByWorkspaceId, loading, setCurrentWorkspaceId, refresh],
+        [workspaces, currentWorkspaceId, roleByWorkspaceId, loading, error, setCurrentWorkspaceId, refresh],
     )
 
     return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>

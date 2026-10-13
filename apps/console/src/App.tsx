@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from 'react'
 import { createBrowserRouter, Navigate, Outlet, RouterProvider, useLocation } from 'react-router-dom'
 import { routes } from './screens/console-routes'
-import { Spinner } from '@moc/ui/components/feedback/spinner'
+import { Page } from '@moc/ui/components/layout/page'
 import { ErrorBoundary } from '@/components/feedback/error-boundary'
 import { useAuth } from './lib/auth-context'
 import { AppShell } from './features/app-shell'
@@ -28,6 +28,8 @@ const VenueBookingDetailScreen = lazy(() => import('@/screens/venues/detail/page
 const EquipmentScreen = lazy(() => import('@/screens/equipment/page').then((m) => ({ default: m.EquipmentScreen })))
 const EquipmentDetailScreen = lazy(() => import('@/screens/equipment/detail/page').then((m) => ({ default: m.EquipmentDetailScreen })))
 const RequestsScreen = lazy(() => import('@/screens/requests/page').then((m) => ({ default: m.RequestsScreen })))
+const MembersScreen = lazy(() => import('@/screens/members/page').then((m) => ({ default: m.MembersScreen })))
+const SchedulePage = lazy(() => import('@/screens/schedule/page').then((m) => ({ default: m.SchedulePage })))
 const RequestDetailScreen = lazy(() => import('@/screens/requests/detail/page').then((m) => ({ default: m.RequestDetailScreen })))
 const ChecklistsScreen = lazy(() => import('@/screens/checklists/page').then((m) => ({ default: m.ChecklistsScreen })))
 const ChecklistTemplatesScreen = lazy(() => import('@/screens/checklists/templates/page').then((m) => ({ default: m.ChecklistTemplatesScreen })))
@@ -48,23 +50,15 @@ const ScheduledMessagesScreen = lazy(() => import('./screens/scheduled-messages/
 const ScheduledMessageComposeScreen = lazy(() => import('./screens/scheduled-messages/compose/page').then((m) => ({ default: m.ScheduledMessageComposeScreen })))
 const ScheduledTemplateScreen = lazy(() => import('./screens/scheduled-messages/templates/page').then((m) => ({ default: m.ScheduledTemplateScreen })))
 
-function FullScreenSpinner() {
-    return (
-        <div className="flex min-h-dvh items-center justify-center">
-            <Spinner size="lg" />
-        </div>
-    )
-}
-
 function SuspenseRoute({ children }: { children: React.ReactNode }) {
-    return <Suspense fallback={<FullScreenSpinner />}>{children}</Suspense>
+    return <Suspense fallback={<Page.Loading />}>{children}</Suspense>
 }
 
 function RequireAuth() {
     const { session, loading } = useAuth()
 
     if (loading) {
-        return <FullScreenSpinner />
+        return <Page.Loading />
     }
 
     if (!session) {
@@ -79,7 +73,7 @@ function RequireAuth() {
 }
 
 function WorkspaceAccessGate() {
-    const { currentWorkspaceId, loading, refresh } = useWorkspace()
+    const { currentWorkspaceId, loading, error, refresh } = useWorkspace()
     const { signOut } = useAuth()
     const [checking, setChecking] = useState(false)
 
@@ -97,11 +91,11 @@ function WorkspaceAccessGate() {
     }
 
     if (loading) {
-        return <FullScreenSpinner />
+        return <Page.Loading />
     }
 
     if (!currentWorkspaceId) {
-        return <PendingAccessScreen checking={checking} onCheckAgain={checkAgain} onSignOut={signOutUser} />
+        return <PendingAccessScreen checking={checking} error={error} onCheckAgain={checkAgain} onSignOut={signOutUser} />
     }
 
     return (
@@ -116,7 +110,7 @@ function WorkspaceAccessGate() {
                                         <TopBarProvider>
                                             <AppShell>
                                                 <RouteErrorBoundary>
-                                                    <Suspense fallback={<FullScreenSpinner />}>
+                                                    <Suspense fallback={<Page.Loading />}>
                                                         <Outlet />
                                                     </Suspense>
                                                 </RouteErrorBoundary>
@@ -142,7 +136,7 @@ function RedirectIfAuth({ children }: { children: React.ReactNode }) {
     const { session, loading } = useAuth()
 
     if (loading) {
-        return <FullScreenSpinner />
+        return <Page.Loading />
     }
 
     if (session) {
@@ -150,6 +144,12 @@ function RedirectIfAuth({ children }: { children: React.ReactNode }) {
     }
 
     return children
+}
+
+function MembersRoute() {
+    const { role } = useWorkspace()
+    if (role?.can_update !== true && role?.can_manage_roles !== true) return <Navigate to={`/${routes.requests}`} replace />
+    return <MembersScreen />
 }
 
 const router = createBrowserRouter([
@@ -172,6 +172,8 @@ const router = createBrowserRouter([
         children: [
             { index: true, element: <Navigate to={`/${routes.requests}`} replace /> },
             { path: routes.settings, element: <SettingsScreen /> },
+            { path: routes.members, element: <MembersRoute /> },
+            { path: routes.schedule, element: <SchedulePage /> },
             { path: routes.messageTemplateDetail, element: <MessageTemplateDetailScreen /> },
             { path: routes.scheduledMessages, element: <ScheduledMessagesLayout />, children: [
                 { index: true, element: <ScheduledMessagesScreen /> },

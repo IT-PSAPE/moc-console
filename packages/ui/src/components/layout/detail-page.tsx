@@ -20,7 +20,7 @@ function DetailPageHeader({ children, className, ...props }: HTMLAttributes<HTML
 
 function DetailPageBack({ children, className, ...props }: ComponentProps<typeof Button.Link>) {
     return (
-        <div className="px-page-gutter pt-4 md:hidden">
+        <div className="px-page-gutter pt-4">
             <Button.Link className={cn("-ml-3 w-fit px-3", className)} variant="ghost" icon={<ArrowLeft />} {...props}>{children}</Button.Link>
         </div>
     );

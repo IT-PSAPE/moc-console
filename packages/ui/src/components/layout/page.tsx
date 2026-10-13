@@ -1,5 +1,6 @@
 import { cn } from '@moc/utils/cn'
-import type { HTMLAttributes } from 'react'
+import type { HTMLAttributes, Ref } from 'react'
+import { Spinner } from '../feedback/spinner'
 
 type PageWidth = 'wide' | 'standard' | 'readable'
 
@@ -12,6 +13,8 @@ const widthClassName: Record<PageWidth, string> = {
 type PageContainerProps = HTMLAttributes<HTMLDivElement> & {
     width?: PageWidth
 }
+
+type PageMainProps = Omit<HTMLAttributes<HTMLElement>, 'width'> & { width?: PageWidth | 'full'; ref?: Ref<HTMLElement> }
 
 function PageRoot({ children, className, ...props }: HTMLAttributes<HTMLElement>) {
     return (
@@ -85,6 +88,15 @@ function PageContent({ children, className, ...props }: PageContainerProps) {
     )
 }
 
+function PageMain({ children, className, width = 'full', ref, ...props }: PageMainProps) {
+    const widthClass = width === 'full' ? 'max-w-none' : widthClassName[width]
+    return <main ref={ref} className={cn('min-w-0', widthClass, className)} {...props}>{children}</main>
+}
+
+function PageLoading({ className, ...props }: HTMLAttributes<HTMLElement>) {
+    return <section className={cn('flex min-h-[calc(100dvh-var(--spacing-header))] items-center justify-center md:min-h-[calc(100dvh-var(--spacing-header)-1rem)]', className)} {...props}><Spinner size="lg" /></section>
+}
+
 function PageCollectionContent({ children, className, ...props }: Omit<PageContainerProps, 'width'>) {
     return (
         <PageContainer className={cn('max-w-none pb-[max(1.5rem,env(safe-area-inset-bottom))]', className)} {...props}>
@@ -100,6 +112,8 @@ export const Page = Object.assign(PageRoot, {
     Content: PageContent,
     Description: PageDescription,
     Header: PageHeader,
+    Loading: PageLoading,
+    Main: PageMain,
     Heading: PageHeading,
     Title: PageTitle,
     Toolbar: PageToolbar,

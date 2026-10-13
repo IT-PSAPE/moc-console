@@ -13,9 +13,13 @@ type StreamsContextValue = {
     zoomConnection: ZoomConnection | null
     zoomMeetings: ZoomMeeting[]
     isLoadingStreams: boolean
+    isInitialLoadingStreams: boolean
     isLoadingConnection: boolean
+    isInitialLoadingConnection: boolean
     isLoadingZoomConnection: boolean
+    isInitialLoadingZoomConnection: boolean
     isLoadingZoomMeetings: boolean
+    isInitialLoadingZoomMeetings: boolean
     streamsError: Error | null
     youtubeConnectionError: Error | null
     zoomConnectionError: Error | null
@@ -47,10 +51,10 @@ const emptyMeetings: ZoomMeeting[] = []
 
 export function StreamsProvider({ children }: { children: ReactNode }) {
   const { currentWorkspaceId } = useWorkspace()
-  const { data: streams, error: streamsError, isLoading: isLoadingStreams, load: loadStreamsResource, setData: setStreams, updateData: updateStreams } = useWorkspaceResource({ emptyValue: emptyStreams, fetcher: fetchStreams, resource: "streams", workspaceId: currentWorkspaceId })
-  const { data: youtubeConnection, error: youtubeConnectionError, isLoading: isLoadingConnection, load: loadYouTubeConnectionResource, setData: setYouTubeConnection } = useWorkspaceResource({ emptyValue: null, fetcher: fetchYouTubeConnection, resource: "youtube-connection", workspaceId: currentWorkspaceId })
-  const { data: zoomConnection, error: zoomConnectionError, isLoading: isLoadingZoomConnection, load: loadZoomConnectionResource, setData: setZoomConnection } = useWorkspaceResource({ emptyValue: null, fetcher: fetchZoomConnection, resource: "zoom-connection", workspaceId: currentWorkspaceId })
-  const { data: zoomMeetings, error: zoomMeetingsError, isLoading: isLoadingZoomMeetings, load: loadZoomMeetingsResource, setData: setZoomMeetings, updateData: updateZoomMeetings } = useWorkspaceResource({ emptyValue: emptyMeetings, fetcher: fetchZoomMeetings, resource: "zoom-meetings", workspaceId: currentWorkspaceId })
+  const { data: streams, error: streamsError, isLoading: isLoadingStreams, isInitialLoading: isInitialLoadingStreams, load: loadStreamsResource, setData: setStreams, updateData: updateStreams } = useWorkspaceResource({ emptyValue: emptyStreams, fetcher: fetchStreams, resource: "streams", workspaceId: currentWorkspaceId })
+  const { data: youtubeConnection, error: youtubeConnectionError, isLoading: isLoadingConnection, isInitialLoading: isInitialLoadingConnection, load: loadYouTubeConnectionResource, setData: setYouTubeConnection } = useWorkspaceResource({ emptyValue: null, fetcher: fetchYouTubeConnection, resource: "youtube-connection", workspaceId: currentWorkspaceId })
+  const { data: zoomConnection, error: zoomConnectionError, isLoading: isLoadingZoomConnection, isInitialLoading: isInitialLoadingZoomConnection, load: loadZoomConnectionResource, setData: setZoomConnection } = useWorkspaceResource({ emptyValue: null, fetcher: fetchZoomConnection, resource: "zoom-connection", workspaceId: currentWorkspaceId })
+  const { data: zoomMeetings, error: zoomMeetingsError, isLoading: isLoadingZoomMeetings, isInitialLoading: isInitialLoadingZoomMeetings, load: loadZoomMeetingsResource, setData: setZoomMeetings, updateData: updateZoomMeetings } = useWorkspaceResource({ emptyValue: emptyMeetings, fetcher: fetchZoomMeetings, resource: "zoom-meetings", workspaceId: currentWorkspaceId })
 
   const syncStream = useCallback((updated: Stream) => {
     updateStreams((current) => {
@@ -115,9 +119,13 @@ export function StreamsProvider({ children }: { children: ReactNode }) {
       zoomConnection,
       zoomMeetings,
       isLoadingStreams,
+      isInitialLoadingStreams,
       isLoadingConnection,
+      isInitialLoadingConnection,
       isLoadingZoomConnection,
+      isInitialLoadingZoomConnection,
       isLoadingZoomMeetings,
+      isInitialLoadingZoomMeetings,
       streamsError,
       youtubeConnectionError,
       zoomConnectionError,
@@ -141,7 +149,7 @@ export function StreamsProvider({ children }: { children: ReactNode }) {
       setZoomMeetings,
       setZoomConnection,
     },
-  }), [isLoadingConnection, isLoadingStreams, isLoadingZoomConnection, isLoadingZoomMeetings, loadStreams, loadYouTubeConnection, loadZoomConnection, loadZoomMeetings, removeMeeting, removeStream, retryStreams, retryYouTubeConnection, retryZoomConnection, retryZoomMeetings, setStreams, setYouTubeConnection, setZoomConnection, setZoomMeetings, streams, streamsError, syncMeeting, syncStream, youtubeConnection, youtubeConnectionError, zoomConnection, zoomConnectionError, zoomMeetings, zoomMeetingsError])
+  }), [isInitialLoadingConnection, isInitialLoadingStreams, isInitialLoadingZoomConnection, isInitialLoadingZoomMeetings, isLoadingConnection, isLoadingStreams, isLoadingZoomConnection, isLoadingZoomMeetings, loadStreams, loadYouTubeConnection, loadZoomConnection, loadZoomMeetings, removeMeeting, removeStream, retryStreams, retryYouTubeConnection, retryZoomConnection, retryZoomMeetings, setStreams, setYouTubeConnection, setZoomConnection, setZoomMeetings, streams, streamsError, syncMeeting, syncStream, youtubeConnection, youtubeConnectionError, zoomConnection, zoomConnectionError, zoomMeetings, zoomMeetingsError])
 
   return <StreamsContext.Provider value={value}>{children}</StreamsContext.Provider>
 }

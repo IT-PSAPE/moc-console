@@ -14,7 +14,6 @@ import { Badge } from '@moc/ui/components/display/badge'
 import { Paragraph } from '@moc/ui/components/display/text'
 import { Alert } from '@moc/ui/components/feedback/alert'
 import { EmptyState } from '@moc/ui/components/feedback/empty-state'
-import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import type { MemberType, ScheduledFieldDefinition } from '@moc/notifications'
 import { UnsavedChangesModal } from '@/features/requests/unsaved-changes-modal'
 import { routes } from '@/screens/console-routes'
@@ -24,6 +23,8 @@ import { ScheduledAttendanceGroupFields } from './scheduled-attendance-group-fie
 
 export function ScheduledTemplateForm() {
     const { state, actions, meta } = useScheduledTemplateContext()
+    if (state.isInitialLoading) return <Page.Loading />
+
     function renderField(field: ScheduledFieldDefinition) {
         return <ScheduledMessageField key={field.key} field={field} labelPrefix="Default" value={state.draft.fields[field.key] ?? ''} disabled={state.busy} onChange={actions.changeField} />
     }
@@ -37,7 +38,7 @@ export function ScheduledTemplateForm() {
             <Page.Description>Write the reusable message. Variable values can change each time you schedule it.</Page.Description>
         </Page.Heading></Page.Header>
         <Page.Content width="standard" className="flex flex-col gap-6">
-            {state.loading ? <LoadingSpinner className="py-16" /> : state.missing ? <EmptyState icon={<FileText />} title="Template not found" description="Return to Scheduled messages and select another template." /> : <>
+            {state.missing ? <EmptyState icon={<FileText />} title="Template not found" description="Return to Scheduled messages and select another template." /> : <>
                 <div className="grid gap-4 sm:grid-cols-2">
                     <FormField label="Template name"><Input disabled={state.busy} aria-label="Template name" value={state.draft.name} maxLength={80} onChange={actions.changeName} /></FormField>
                     <FormField label="Message type"><SelectField disabled={state.busy} name="message-type" label="Message type" value={state.draft.messageType} items={meta.typeItems} onValueChange={actions.changeType} /></FormField>

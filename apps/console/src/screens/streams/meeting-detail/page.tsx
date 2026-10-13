@@ -1,10 +1,11 @@
+import { useDetailReturn } from "@/hooks/use-detail-return"
+import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { Link, useParams } from "react-router-dom"
 import { Header } from "@moc/ui/components/display/header"
 import { Badge } from "@moc/ui/components/display/badge"
 import { Button } from "@moc/ui/components/controls/button"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
-import { Spinner } from "@moc/ui/components/feedback/spinner"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { useBreadcrumbOverride } from "@moc/ui/components/navigation/breadcrumb"
 import { TopBarActions } from "@/features/topbar"
@@ -27,6 +28,7 @@ function formatDuration(minutes: number): string {
 }
 
 export function MeetingDetailScreen() {
+  const back = useDetailReturn(`/${routes.streams}`, "Back to streams")
   const { id } = useParams<{ id: string }>()
   const { state, actions, meta } = useMeetingDetail(id)
   const { meeting, error, isLoading, editOpen, deleteOpen, isDeleting, localDeleteOpen, isRemovingLocal, copiedField, copyMessage } = state
@@ -46,11 +48,7 @@ export function MeetingDetailScreen() {
     actions.setLocalDeleteOpen(true)
   }
 
-  if (isLoading) {
-    return (
-      <Page><Page.Content width="readable" className="flex justify-center py-16"><Spinner size="lg" /></Page.Content></Page>
-    )
-  }
+  if (isLoading) return <Page.Loading />;
 
   if (error) {
     return <Page><Page.Content width="standard"><ResourceLoadError title="Could not load meeting" error={error} onRetry={actions.retry} /></Page.Content></Page>
@@ -67,7 +65,7 @@ export function MeetingDetailScreen() {
   const isPast = meeting.startTime ? new Date(meeting.startTime) < new Date() : false
   return (
     <DetailPage>
-      <DetailPage.Back render={<Link to={`/${routes.streams}`} />}>Back to streams</DetailPage.Back>
+      <DetailPage.Back render={<Link to={back.href} />}>{back.label}</DetailPage.Back>
       <Paragraph.xs role="status" aria-live="polite" className="sr-only">{copyMessage}</Paragraph.xs>
       <TopBarActions>
         {meta.canEdit && (
@@ -93,6 +91,8 @@ export function MeetingDetailScreen() {
           )}
         </Header.Lead>
       </DetailPage.Header>
+
+      <DetailPage.Section><RequestLinkField kind="meeting" id={meeting.id} /></DetailPage.Section>
 
       {/* Schedule */}
       <DetailPage.Section>

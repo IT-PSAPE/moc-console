@@ -14,6 +14,8 @@ export function useSignup() {
   const [workspaceSlug, setWorkspaceSlug] = useState("")
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [workspacesLoading, setWorkspacesLoading] = useState(true)
+  const [workspacesError, setWorkspacesError] = useState<string | null>(null)
+  const [workspacesAttempt, setWorkspacesAttempt] = useState(0)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -27,12 +29,16 @@ export function useSignup() {
         const defaultWorkspace = list.find((workspace) => workspace.slug === "default-workspace") ?? list[0]
         if (defaultWorkspace) setWorkspaceSlug(defaultWorkspace.slug)
       })
-      .catch(() => undefined)
+      .catch(() => {
+        if (cancelled) return
+        setWorkspaces([])
+        setWorkspacesError("Check your connection, then retry.")
+      })
       .finally(() => {
         if (!cancelled) setWorkspacesLoading(false)
       })
     return () => { cancelled = true }
-  }, [])
+  }, [workspacesAttempt])
 
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -63,15 +69,23 @@ export function useSignup() {
     setWorkspaceSlug(value ?? "")
   }
 
+  function retryWorkspaces() {
+    setWorkspacesLoading(true)
+    setWorkspacesError(null)
+    setWorkspacesAttempt((attempt) => attempt + 1)
+  }
+
   const workspaceItems = workspacesLoading
     ? [{ label: "Loading workspaces…", value: "" }]
-    : workspaces.length === 0
+    : workspacesError
+      ? [{ label: "Workspaces unavailable", value: "" }]
+      : workspaces.length === 0
       ? [{ label: "No workspaces available", value: "" }]
       : workspaces.map((workspace) => ({ label: workspace.name, value: workspace.slug }))
 
   return {
     state: { name, surname, email, password, confirmPassword, workspaceSlug, error, success, loading },
-    actions: { setName, setSurname, setEmail, setPassword, setConfirmPassword, selectWorkspace, submit },
-    meta: { workspaces, workspacesLoading, workspaceItems },
+    actions: { setName, setSurname, setEmail, setPassword, setConfirmPassword, selectWorkspace, submit, retryWorkspaces },
+    meta: { workspaces, workspacesLoading, workspacesError, workspaceItems },
   }
 }

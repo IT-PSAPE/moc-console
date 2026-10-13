@@ -5,11 +5,15 @@ import { AuthLayout } from "./auth-layout"
 
 type PendingAccessScreenProps = {
   checking: boolean
+  error: Error | null
   onCheckAgain: () => void
   onSignOut: () => void
 }
 
-export function PendingAccessScreen({ checking, onCheckAgain, onSignOut }: PendingAccessScreenProps) {
+export function PendingAccessScreen({ checking, error, onCheckAgain, onSignOut }: PendingAccessScreenProps) {
+  const title = error ? "We couldn't check your workspace access" : "Access awaiting approval"
+  const description = error ? error.message : "Your account is ready. A workspace administrator needs to approve your request before you can open the console."
+
   return (
     <AuthLayout>
       <div className="space-y-5 text-center">
@@ -17,11 +21,11 @@ export function PendingAccessScreen({ checking, onCheckAgain, onSignOut }: Pendi
           <Clock3 className="size-6" aria-hidden="true" />
         </div>
         <div className="space-y-2">
-          <h1 className="title-h6">Access awaiting approval</h1>
-          <Paragraph.sm className="text-tertiary">Your account is ready. A workspace administrator needs to approve your request before you can open the console.</Paragraph.sm>
+          <h1 className="title-h6">{title}</h1>
+          <Paragraph.sm className="text-tertiary">{description}</Paragraph.sm>
         </div>
         <div className="space-y-2">
-          <Button className="w-full" disabled={checking} onClick={onCheckAgain}>{checking ? "Checking…" : "Check again"}</Button>
+          <Button className="w-full" disabled={checking} onClick={onCheckAgain}>{checking ? "Checking…" : error ? "Try again" : "Check again"}</Button>
           <Button className="w-full" variant="secondary" onClick={onSignOut}>Sign out</Button>
         </div>
       </div>

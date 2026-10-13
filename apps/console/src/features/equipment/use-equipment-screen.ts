@@ -57,8 +57,8 @@ export function useEquipmentScreen() {
   }
 
   return {
-    state: { activeView, isMobile, createOpen, detailOpen: detail.state.isOpen, selectedEquipment: detail.state.selectedItem, isLoading: equipmentState.isLoadingEquipment, filtered: filters.filtered, filterState: filters.filters },
-    actions: { changeView, closeDetail, selectEquipment, setCreateOpen, openCreate, create, setSearch: filters.setSearch },
-    meta: { filters },
+    state: { activeView, isMobile, createOpen, detailOpen: detail.state.isOpen, selectedEquipment: detail.state.selectedItem, isLoading: equipmentState.isLoadingEquipment, isInitialLoading: equipmentState.isInitialLoadingEquipment, filtered: filters.filtered, filterState: filters.filters },
+    actions: { changeView, closeDetail, selectEquipment, setCreateOpen, openCreate, create, setSearch: filters.setSearch, retry: equipmentActions.retryEquipment },
+    meta: { filters, error: equipmentState.equipmentError },
   }
 }

@@ -71,8 +71,9 @@ export function PasswordRecoveryScreen() {
         {state.submitError && <Alert variant="error" title={state.submitError} />}
 
         <div className="space-y-1.5">
-          <FormLabel label="New password" required />
+          <FormLabel label="New password" htmlFor="recovery-new-password" required />
           <PasswordField
+            id="recovery-new-password"
             name="new-password"
             value={state.password}
             onChange={actions.setPassword}
@@ -85,8 +86,9 @@ export function PasswordRecoveryScreen() {
         </div>
 
         <div className="space-y-1.5">
-          <FormLabel label="Confirm password" required />
+          <FormLabel label="Confirm password" htmlFor="recovery-confirm-password" required />
           <PasswordField
+            id="recovery-confirm-password"
             name="confirm-password"
             value={state.confirmPassword}
             onChange={actions.setConfirmPassword}

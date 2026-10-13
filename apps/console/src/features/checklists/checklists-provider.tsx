@@ -17,6 +17,7 @@ type ChecklistsContextValue = {
   state: {
     checklists: Checklist[];
     isLoadingChecklists: boolean;
+    isInitialLoadingChecklists: boolean;
     checklistsError: Error | null;
   };
   actions: {
@@ -35,7 +36,7 @@ const emptyChecklists: Checklist[] = [];
 
 export function ChecklistsProvider({ children }: { children: ReactNode }) {
   const { currentWorkspaceId } = useWorkspace();
-  const { data: checklists, error: checklistsError, isLoading: isLoadingChecklists, load, updateData } = useWorkspaceResource({ emptyValue: emptyChecklists, fetcher: fetchChecklists, resource: "checklists", workspaceId: currentWorkspaceId });
+  const { data: checklists, error: checklistsError, isLoading: isLoadingChecklists, isInitialLoading: isInitialLoadingChecklists, load, updateData } = useWorkspaceResource({ emptyValue: emptyChecklists, fetcher: fetchChecklists, resource: "checklists", workspaceId: currentWorkspaceId });
 
   const loadChecklists = useCallback(async () => {
     await load();
@@ -79,9 +80,9 @@ export function ChecklistsProvider({ children }: { children: ReactNode }) {
   }, [updateData]);
 
   const value = useMemo<ChecklistsContextValue>(() => ({
-    state: { checklists, isLoadingChecklists, checklistsError },
+    state: { checklists, isLoadingChecklists, isInitialLoadingChecklists, checklistsError },
     actions: { loadChecklists, retryChecklists, syncChecklist, createChecklistInstance, createBlankChecklist, createChecklistTemplateFromRun, removeChecklist },
-  }), [checklists, checklistsError, createBlankChecklist, createChecklistInstance, createChecklistTemplateFromRun, isLoadingChecklists, loadChecklists, removeChecklist, retryChecklists, syncChecklist]);
+  }), [checklists, checklistsError, createBlankChecklist, createChecklistInstance, createChecklistTemplateFromRun, isInitialLoadingChecklists, isLoadingChecklists, loadChecklists, removeChecklist, retryChecklists, syncChecklist]);
 
   return <ChecklistsContext.Provider value={value}>{children}</ChecklistsContext.Provider>;
 }

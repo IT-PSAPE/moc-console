@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import type { PoolClient } from 'pg'
 import { createPlatformHandler, type PlatformDependencies } from '../../../../../apps/api/server/platform/handler'
 import type { PlatformOperation } from '../../../../../apps/api/server/platform/context'
@@ -47,5 +47,23 @@ describe('MoC platform boundary', () => {
     const {dependencies:deps,calls}=dependencies();const {result,sink}=response()
     await createPlatformHandler({},deps)({method:'POST',headers:{origin:'https://attacker.test'},body:{operation:'list',input:{}}},sink)
     expect(result.code).toBe(403);expect(calls).toEqual([])
+  })
+  test('logs private failure diagnostics without exposing them in the API response', async () => {
+    const { dependencies: deps } = dependencies(); const { result, sink } = response()
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const operation: PlatformOperation = { permission: 'can_read', async run() { throw Object.assign(new Error('connect ETIMEDOUT postgresql://user:secret@db.example/app password=secret'), { code: 'ETIMEDOUT' }) } }
+    try {
+      await createPlatformHandler({ requests: { list: operation } }, deps)({ method: 'POST', query: { capability: 'requests' }, headers, body: { operation: 'list', input: {} } }, sink)
+      expect(result.code).toBe(500)
+      expect(result.body).toMatchObject({ error: { code: 'unavailable', message: 'Operation unavailable' } })
+      const logged = String(log.mock.calls[0][0])
+      expect(logged).toContain('ETIMEDOUT')
+      expect(logged).toContain('connection_timeout')
+      expect(logged).toContain('"capability":"requests"')
+      expect(logged).toContain('"operation":"list"')
+      expect(logged).not.toContain('secret')
+    } finally {
+      log.mockRestore()
+    }
   })
 })

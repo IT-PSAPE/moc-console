@@ -6,6 +6,12 @@ export type StreamRecord = Record<string, unknown>
 
 export function createStreamsClient(transport: MocTransport) {
   return {
+    setStreamRequest(id: string, requestId: string | null, workspaceId?: string): Promise<void> {
+      return transport.call("streams", "setStreamRequest", { id, requestId }, workspaceId)
+    },
+    setMeetingRequest(id: string, requestId: string | null, workspaceId?: string): Promise<void> {
+      return transport.call("streams", "setMeetingRequest", { id, requestId }, workspaceId)
+    },
     listStreams(workspaceId?: string) {
       return transport.call<Stream[]>("streams", "list", {}, workspaceId)
     },

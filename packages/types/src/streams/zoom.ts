@@ -14,6 +14,8 @@ export type ZoomConnection = {
 }
 
 export type ZoomMeeting = {
+  /** Explicit origin request; records may also exist independently. */
+  requestId?: string | null;
   id: string
   workspaceId: string
   zoomMeetingId: number

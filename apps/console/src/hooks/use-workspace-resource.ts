@@ -27,9 +27,10 @@ export function useWorkspaceResource<T>({ emptyValue, fetcher, resource, workspa
   const snapshot = { id: workspaceId, generation };
   const snapshotKey = getSnapshotKey(snapshot, resource);
   const initial = getWorkspaceResourceState<T>(workspaceId, resource);
+  const initialLoadPending = Boolean(workspaceId && !initial.isLoaded && !initial.error);
   const [data, setDataState] = useState<T>(initial.data ?? emptyValue);
   const [error, setError] = useState<Error | null>(initial.error);
-  const [isLoading, setIsLoading] = useState(initial.isLoading);
+  const [isLoading, setIsLoading] = useState(initial.isLoading || initialLoadPending);
   const [stateSnapshotKey, setStateSnapshotKey] = useState(snapshotKey);
   const currentSnapshotRef = useRef(snapshot);
   const emptyValueRef = useRef(emptyValue);
@@ -40,7 +41,7 @@ export function useWorkspaceResource<T>({ emptyValue, fetcher, resource, workspa
     const cached = getWorkspaceResourceState<T>(workspaceId, resource);
     setDataState(cached.data ?? emptyValueRef.current);
     setError(cached.error);
-    setIsLoading(cached.isLoading);
+    setIsLoading(cached.isLoading || Boolean(workspaceId && !cached.isLoaded && !cached.error));
     setStateSnapshotKey(snapshotKey);
   }, [generation, resource, snapshotKey, workspaceId]);
 
@@ -100,7 +101,7 @@ export function useWorkspaceResource<T>({ emptyValue, fetcher, resource, workspa
   const stateIsCurrent = stateSnapshotKey === snapshotKey;
   const visibleData = stateIsCurrent ? data : initial.data ?? emptyValue;
   const visibleError = stateIsCurrent ? error : initial.error;
-  const visibleLoading = stateIsCurrent ? isLoading : initial.isLoading;
+  const visibleLoading = stateIsCurrent ? isLoading : initial.isLoading || initialLoadPending;
 
-  return useMemo(() => ({ data: visibleData, error: visibleError, isLoading: visibleLoading, load, setData, updateData }), [load, setData, updateData, visibleData, visibleError, visibleLoading]);
+  return useMemo(() => ({ data: visibleData, error: visibleError, isLoading: visibleLoading, isInitialLoading: initialLoadPending, load, setData, updateData }), [initialLoadPending, load, setData, updateData, visibleData, visibleError, visibleLoading]);
 }

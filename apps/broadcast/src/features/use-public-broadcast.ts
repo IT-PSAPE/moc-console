@@ -12,6 +12,7 @@ export function usePublicBroadcast(slug: string | undefined) {
   const [loadedSlug, setLoadedSlug] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [reloadVersion, setReloadVersion] = useState(0)
 
   const broadcastIdRef = useRef<string | null>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -105,7 +106,7 @@ export function usePublicBroadcast(slug: string | undefined) {
       setBroadcastId(null)
       broadcastIdRef.current = null
     }
-  }, [slug])
+  }, [slug, reloadVersion])
 
   // Revision events cover broadcast rows, playlist rows, and deletion in one stream.
   useEffect(() => {
@@ -145,9 +146,16 @@ export function usePublicBroadcast(slug: string | undefined) {
   const normalizedSlug = slug ?? null
   const hasCurrentResult = loadedSlug === normalizedSlug
 
+  function retry() {
+    setIsLoading(true)
+    setError(null)
+    setReloadVersion((current) => current + 1)
+  }
+
   return {
     broadcast: hasCurrentResult ? broadcast : null,
     isLoading: isLoading || !hasCurrentResult,
     error: hasCurrentResult ? error : null,
+    retry,
   }
 }

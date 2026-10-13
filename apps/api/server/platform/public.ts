@@ -129,7 +129,7 @@ async function submitVenueBooking(context: Parameters<PlatformOperation["run"]>[
   const slotStarts = stringArray(data.slotStarts, "slotStarts").map((slot) => validIso(slot, "slotStarts"));
   const result = await context.db.query<{ result: unknown }>(
     "SELECT public.public_submit_venue_booking($1::uuid, $2::uuid, $3::text, $4::timestamptz[], $5::uuid, $6::text, $7::text, $8::jsonb) AS result",
-    [input.workspaceId, venueId, stringField(data, "requestedBy"), slotStarts, eventId, textOrNull(data, "eventOther"), null, JSON.stringify(recurrenceValue(data.recurrence ?? null))],
+    [input.workspaceId, venueId, stringField(data, "requestedBy"), slotStarts, eventId, textOrNull(data, "eventOther"), null, recurrenceValue(data.recurrence ?? null)],
   );
   const row = jsonRecord(result.rows[0]?.result, "Venue booking submission returned an invalid result");
   return { id: row.id, trackingCode: row.tracking_code, title: row.title, startsAt: row.starts_at, endsAt: row.ends_at };

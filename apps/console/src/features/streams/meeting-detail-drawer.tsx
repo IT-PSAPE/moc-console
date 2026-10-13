@@ -1,3 +1,4 @@
+import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { SplitPanel } from "@moc/ui/components/layout/split-panel"
 import { Button } from "@moc/ui/components/controls/button"
 import { Badge } from "@moc/ui/components/display/badge"
@@ -91,6 +92,8 @@ export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: Meeti
                 <Paragraph.xs>{isPast ? "This meeting has passed" : "Upcoming"}</Paragraph.xs>
               </MetaRow>
             </div>
+
+            <RequestLinkField kind="meeting" id={meeting.id} className="px-4 pt-5" />
 
             <Divider className="my-6" />
 

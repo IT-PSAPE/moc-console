@@ -7,6 +7,8 @@ export type ChecklistRunSubmit =
   | { kind: "blank"; name: string; description: string; scheduledAt: string };
 
 type UseCreateChecklistRunOptions = {
+  initialName?: string;
+  initialScheduledAt?: string;
   open: boolean;
   template: Checklist | null;
   onOpenChange: (open: boolean) => void;
@@ -17,7 +19,7 @@ function currentDateTimeInput() {
   return formatUtcIsoForBrowserDateTimeInput(new Date().toISOString());
 }
 
-export function useCreateChecklistRun({ open, template, onOpenChange, onSubmit }: UseCreateChecklistRunOptions) {
+export function useCreateChecklistRun({ open, template, onOpenChange, onSubmit, initialName, initialScheduledAt }: UseCreateChecklistRunOptions) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [scheduledAt, setScheduledAt] = useState(currentDateTimeInput);
@@ -25,10 +27,10 @@ export function useCreateChecklistRun({ open, template, onOpenChange, onSubmit }
 
   useEffect(() => {
     if (!open) return;
-    setName(template ? `${template.name} Run` : "");
+    setName(initialName ?? (template ? `${template.name} Run` : ""));
     setDescription(template?.description ?? "");
-    setScheduledAt(currentDateTimeInput());
-  }, [open, template]);
+    setScheduledAt(initialScheduledAt ? formatUtcIsoForBrowserDateTimeInput(initialScheduledAt) : currentDateTimeInput());
+  }, [initialName, initialScheduledAt, open, template]);
 
   const canSubmit = name.trim().length > 0 && scheduledAt.length > 0 && !isSubmitting;
 

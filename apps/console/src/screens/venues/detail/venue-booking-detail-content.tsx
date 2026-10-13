@@ -1,3 +1,5 @@
+import { useDetailReturn } from "@/hooks/use-detail-return"
+import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { Ban, Check, EllipsisVertical, RotateCcw, X } from "lucide-react"
 import { Link } from "react-router-dom"
 import { VenueBookingMetaFields } from "@/features/venues/venue-booking-meta-fields"
@@ -23,6 +25,7 @@ type VenueBookingDetailContentProps = {
 }
 
 export function VenueBookingDetailContent({ booking }: VenueBookingDetailContentProps) {
+  const back = useDetailReturn(`/${routes.venues}`, "Back to venue bookings")
   const { state: { at } } = useVenueBookings()
   const cancel = useVenueBookingCancel()
   const decision = useVenueBookingDecision()
@@ -59,7 +62,7 @@ export function VenueBookingDetailContent({ booking }: VenueBookingDetailContent
 
   return (
     <DetailPage>
-      <DetailPage.Back render={<Link to={`/${routes.venues}`} />}>Back to venue bookings</DetailPage.Back>
+      <DetailPage.Back render={<Link to={back.href} />}>{back.label}</DetailPage.Back>
 
       <TopBarActions>
         <Dropdown placement="bottom">
@@ -80,6 +83,7 @@ export function VenueBookingDetailContent({ booking }: VenueBookingDetailContent
 
       <DetailPage.Header><Header.Lead className="gap-2"><Page.Title>{booking.title}</Page.Title></Header.Lead></DetailPage.Header>
       <DetailPage.Section><VenueBookingMetaFields booking={booking} at={at} /></DetailPage.Section>
+      <DetailPage.Section><RequestLinkField kind="venue-booking" id={booking.id} /></DetailPage.Section>
       {booking.notes && <><DetailPage.Divider /><DetailPage.Section><VenueBookingNotes booking={booking} /></DetailPage.Section></>}
       {isCancelled && <><DetailPage.Divider /><DetailPage.Section><VenueBookingCancellationAudit booking={booking} /></DetailPage.Section></>}
 

@@ -97,14 +97,12 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
     const days = useMemo(() => getCalendarDays(year, month), [year, month])
 
     const navigate = useCallback((offset: number) => {
-        setCurrentMonth(prev => {
-            const next = new Date(prev.getFullYear(), prev.getMonth() + offset, 1)
-            setPreviewOpen(false)
-            setSelectedDate(next)
-            onMonthChange?.(next)
-            return next
-        })
-    }, [onMonthChange])
+        const next = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1)
+        setCurrentMonth(next)
+        setPreviewOpen(false)
+        setSelectedDate(next)
+        onMonthChange?.(next)
+    }, [currentMonth, onMonthChange])
 
     const goToToday = useCallback(() => {
         const next = startOfMonth(new Date())
@@ -117,13 +115,11 @@ function CalendarRoot<T = unknown>({ className, defaultMonth, events = [], onMon
     const selectDate = useCallback((date: Date) => {
         setSelectedDate(date)
         setPreviewOpen(true)
-        setCurrentMonth(previousMonth => {
-            if (previousMonth.getFullYear() === date.getFullYear() && previousMonth.getMonth() === date.getMonth()) return previousMonth
-            const nextMonth = startOfMonth(date)
-            onMonthChange?.(nextMonth)
-            return nextMonth
-        })
-    }, [onMonthChange])
+        if (currentMonth.getFullYear() === date.getFullYear() && currentMonth.getMonth() === date.getMonth()) return
+        const nextMonth = startOfMonth(date)
+        setCurrentMonth(nextMonth)
+        onMonthChange?.(nextMonth)
+    }, [currentMonth, onMonthChange])
 
     function handlePreviousMonth() {
         navigate(-1)

@@ -1,3 +1,4 @@
+import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { SplitPanel } from "@moc/ui/components/layout/split-panel"
 import { Button } from "@moc/ui/components/controls/button"
 import { Badge } from "@moc/ui/components/display/badge"
@@ -163,6 +164,8 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
                 </MetaRow>
               )}
             </div>
+
+            <RequestLinkField kind="stream" id={stream.id} className="px-4 pt-5" />
 
             {stream.streamUrl && (
               <>

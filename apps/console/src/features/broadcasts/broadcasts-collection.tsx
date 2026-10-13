@@ -4,7 +4,6 @@ import { Decision } from "@moc/ui/components/display/decision"
 import { GroupedList } from "@moc/ui/components/display/grouped-list"
 import { Alert } from "@moc/ui/components/feedback/alert"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
-import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { Input } from "@moc/ui/components/form/input"
 import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar"
 import { Page } from "@moc/ui/components/layout/page"
@@ -36,6 +35,8 @@ function BroadcastsCollection() {
   function renderBroadcast(broadcast: Broadcast) {
     return <BroadcastItem key={broadcast.id} broadcast={broadcast} onSelect={actions.selectBroadcast} />
   }
+
+  if (state.isInitialLoadingBroadcasts) return <Page.Loading />
 
   return (
     <SplitPanel open={state.detailOpen} onOpenChange={handleDetailOpenChange} detailLabel="Broadcast details">
@@ -75,10 +76,7 @@ function BroadcastsCollection() {
                 action={<Button variant="secondary" onClick={actions.retry}>Retry</Button>}
               />
             ) : null}
-            <Decision value={meta.filtered} loading={state.isLoading}>
-              <Decision.Loading>
-                <LoadingSpinner className="py-6" />
-              </Decision.Loading>
+            <Decision value={meta.filtered}>
               <Decision.Empty>
                 <EmptyState
                   icon={<RadioTower />}

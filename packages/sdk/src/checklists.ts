@@ -5,6 +5,7 @@ export type CreateChecklistInstanceOverrides = { name?: string; description?: st
 export type RequestRelatedChecklist = { id: string; name: string; completedItems: number; totalItems: number }
 
 type ChecklistsClient = {
+  setRequest(id: string, requestId: string | null, workspaceId: string): Promise<void>
   list(workspaceId?: string): Promise<Checklist[]>
   getById(id: string, workspaceId?: string): Promise<Checklist | undefined>
   getRelatedToRequest(workspaceId: string, requestId: string): Promise<RequestRelatedChecklist[]>
@@ -25,6 +26,7 @@ export function createChecklistsClient(transport: MocTransport): ChecklistsClien
   }
 
   return {
+    setRequest: (id, requestId, workspaceId) => callVoid("setRequest", { id, requestId }, workspaceId),
     list: (workspaceId) => call<Checklist[]>("list", { workspaceId }, workspaceId),
     getById: (id, workspaceId) => call<Checklist | undefined>("getById", { id, workspaceId }, workspaceId),
     getRelatedToRequest: (workspaceId, requestId) => call<RequestRelatedChecklist[]>("getRelatedToRequest", { workspaceId, requestId }, workspaceId),

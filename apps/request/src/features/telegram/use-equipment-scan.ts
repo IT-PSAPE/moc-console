@@ -37,6 +37,7 @@ export function useEquipmentScan({ bookingId, items, scanMode, initData, webApp,
 
   const [isScanning, setIsScanning] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const scannedItemIdsRef = useRef(scannedItemIds)
   const itemsRef = useRef(items)
 
@@ -62,7 +63,11 @@ export function useEquipmentScan({ bookingId, items, scanMode, initData, webApp,
       scannedItemIds: Array.from(scannedItemIdsRef.current),
     })
     setIsSubmitting(false)
-    onSubmitted(response)
+    if (response.ok || response.error !== "invalid") {
+      onSubmitted(response)
+      return
+    }
+    setSubmitError(response.message)
   }, [bookingId, initData, isSubmitting, onSubmitted, scanMode])
 
   const finish = useCallback(() => {
@@ -102,6 +107,7 @@ export function useEquipmentScan({ bookingId, items, scanMode, initData, webApp,
       return
     }
 
+    setSubmitError(null)
     setIsScanning(true)
     webApp.showScanQrPopup({ text: "Scan an item" }, handleScanned)
   }, [handleScanned, scanMode, webApp])
@@ -111,8 +117,8 @@ export function useEquipmentScan({ bookingId, items, scanMode, initData, webApp,
   const isComplete = totalCount > 0 && scannedCount >= totalCount
 
   return {
-    state: { isScanning, scannedItemIds, scannedCount, totalCount, isComplete, isSubmitting },
-    actions: { start, finish },
+    state: { isScanning, scannedItemIds, scannedCount, totalCount, isComplete, isSubmitting, submitError },
+    actions: { start, finish, retrySubmission: submit },
     meta: {},
   }
 }

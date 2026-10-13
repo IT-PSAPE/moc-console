@@ -119,6 +119,14 @@ export const operations: Record<string, PlatformOperation> = {
       WHERE requests.workspace_id = $1 AND requests.status = 'archived' ORDER BY requests.updated_at DESC`, [workspaceId])
     return result.rows.map(mapRequest)
   } },
+  listAssignedIds: { permission: "can_read", run: async ({ db, userId, workspaceId }) => {
+    const result = await db.query<{ id: string }>(`SELECT DISTINCT assignment.request_id AS id
+      FROM request_assignees AS assignment
+      JOIN requests ON requests.id = assignment.request_id
+      WHERE requests.workspace_id = $1 AND assignment.user_id = $2 AND requests.status <> 'archived'
+      ORDER BY assignment.request_id`, [workspaceId, userId])
+    return result.rows.map((row) => row.id)
+  } },
   save: { permission: "can_write", run: async ({ db, workspaceId }, value) => {
     const input = objectInput(value, ["request"])
     const request = requestInput(input.request)
@@ -191,10 +199,10 @@ export const operations: Record<string, PlatformOperation> = {
     return mapCategory(result.rows[0])
   } },
   updateCategory: { permission: "can_update", run: async ({ db, workspaceId }, value) => {
-    const input = objectInput(value, ["id", "name", "description"])
-    const result = await db.query<CategoryRow>(`UPDATE request_categories SET name=$3, description=$4
+    const input = objectInput(value, ["id", "name"])
+    const result = await db.query<CategoryRow>(`UPDATE request_categories SET name=$3
       WHERE workspace_id=$1 AND id=$2 RETURNING id,workspace_id,key,name,description,active,sort_order,created_at,updated_at`,
-      [workspaceId, uuidField(input, "id"), stringField(input, "name"), optionalStringField(input, "description") ?? null])
+      [workspaceId, uuidField(input, "id"), stringField(input, "name")])
     if (!result.rows[0]) throw new Error("Request category not found")
     return mapCategory(result.rows[0])
   } },

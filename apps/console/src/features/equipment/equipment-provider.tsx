@@ -10,7 +10,9 @@ type EquipmentContextValue = {
     equipment: Equipment[];
     bookings: Booking[];
     isLoadingEquipment: boolean;
+    isInitialLoadingEquipment: boolean;
     isLoadingBookings: boolean;
+    isInitialLoadingBookings: boolean;
     equipmentError: Error | null;
     bookingsError: Error | null;
   };
@@ -35,8 +37,8 @@ const emptyBookings: Booking[] = [];
 
 export function EquipmentProvider({ children }: { children: ReactNode }) {
   const { currentWorkspaceId } = useWorkspace();
-  const { data: equipment, error: equipmentError, isLoading: isLoadingEquipment, load: loadEquipmentResource, updateData: updateEquipment } = useWorkspaceResource({ emptyValue: emptyEquipment, fetcher: fetchEquipment, resource: "equipment", workspaceId: currentWorkspaceId });
-  const { data: bookings, error: bookingsError, isLoading: isLoadingBookings, load: loadBookingsResource, updateData: updateBookings } = useWorkspaceResource({ emptyValue: emptyBookings, fetcher: fetchBookings, resource: "bookings", workspaceId: currentWorkspaceId });
+  const { data: equipment, error: equipmentError, isLoading: isLoadingEquipment, isInitialLoading: isInitialLoadingEquipment, load: loadEquipmentResource, updateData: updateEquipment } = useWorkspaceResource({ emptyValue: emptyEquipment, fetcher: fetchEquipment, resource: "equipment", workspaceId: currentWorkspaceId });
+  const { data: bookings, error: bookingsError, isLoading: isLoadingBookings, isInitialLoading: isInitialLoadingBookings, load: loadBookingsResource, updateData: updateBookings } = useWorkspaceResource({ emptyValue: emptyBookings, fetcher: fetchBookings, resource: "bookings", workspaceId: currentWorkspaceId });
 
   const addEquipment = useCallback((newItem: Equipment) => {
     updateEquipment((current) => [newItem, ...current]);
@@ -98,12 +100,14 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
         bookings,
         isLoadingEquipment,
         isLoadingBookings,
+        isInitialLoadingEquipment,
+        isInitialLoadingBookings,
         equipmentError,
         bookingsError,
       },
       actions: { loadEquipment, refreshEquipment, retryEquipment, loadBookings, retryBookings, addEquipment, syncEquipment, removeEquipment, syncBooking, removeBooking, removeBookingItemsByEquipmentId },
     }),
-    [addEquipment, bookings, bookingsError, equipment, equipmentError, isLoadingBookings, isLoadingEquipment, loadBookings, loadEquipment, refreshEquipment, removeBooking, removeBookingItemsByEquipmentId, removeEquipment, retryBookings, retryEquipment, syncBooking, syncEquipment],
+    [addEquipment, bookings, bookingsError, equipment, equipmentError, isInitialLoadingBookings, isInitialLoadingEquipment, isLoadingBookings, isLoadingEquipment, loadBookings, loadEquipment, refreshEquipment, removeBooking, removeBookingItemsByEquipmentId, removeEquipment, retryBookings, retryEquipment, syncBooking, syncEquipment],
   );
 
   return <EquipmentContext.Provider value={value}>{children}</EquipmentContext.Provider>;

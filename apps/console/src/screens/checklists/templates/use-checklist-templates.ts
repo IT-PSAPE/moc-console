@@ -5,7 +5,7 @@ import type { Checklist } from "@moc/types/checklists"
 
 export function useChecklistTemplates() {
   const {
-    state: { checklists, isLoadingChecklists },
+    state: { checklists, isLoadingChecklists, isInitialLoadingChecklists },
     actions: { loadChecklists, syncChecklist },
   } = useChecklists()
   const [search, setSearch] = useState("")
@@ -45,6 +45,6 @@ export function useChecklistTemplates() {
   return {
     state: { search, modalOpen },
     actions: { setSearch, setModalOpen, openCreate, create },
-    meta: { templates: filteredTemplates, isLoading: isLoadingChecklists },
+    meta: { templates: filteredTemplates, isLoading: isLoadingChecklists, isInitialLoading: isInitialLoadingChecklists },
   }
 }

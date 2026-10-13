@@ -1,0 +1,10 @@
+.local
+.env
+.env.*
+**/.env
+**/.env.*
+.notes
+.playwright-cli
+.playwright-mcp
+.superpowers
+.claude

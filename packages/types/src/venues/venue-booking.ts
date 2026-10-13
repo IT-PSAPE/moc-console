@@ -9,6 +9,8 @@ export type VenueBookingSlot = {
 };
 
 export type VenueBooking = {
+  /** Explicit origin request; records may also exist independently. */
+  requestId?: string | null;
   id: string;
   workspaceId: string;
   venueId: string;

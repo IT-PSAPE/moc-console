@@ -1,7 +1,7 @@
 type Command = { command: string; description: string; is_ephemeral?: boolean }
 type Role = { can_update: boolean; can_manage_roles: boolean }
 type Member = { user_id: string; users: { telegram_chat_id: string | null }; roles: Role }
-type Options = { failReads?: boolean; registered?: boolean; linked?: boolean; onlyRestricted?: boolean }
+type Options = { failReads?: boolean; failSends?: boolean; registered?: boolean; linked?: boolean; onlyRestricted?: boolean }
 import type { QueryResultRow } from 'pg'
 import { setSqlFixture } from './sql-fixture.js'
 
@@ -70,6 +70,7 @@ export function createTelegramCommandFixture(options: Options = {}) {
         const initial = configured[scope!.type] ?? []
         return json({ ok: true, result: menus.get(key(scope!.type, scope?.user_id)) ?? (options.onlyRestricted ? initial.filter(command => command.command.startsWith('register_') || command.command === 'manage_messages') : initial) })
       }
+      if (table === 'sendMessage' && options.failSends) return json({ ok: false, error_code: 503, description: 'Unavailable' }, 503)
       if (table === 'setMyCommands') menus.set(key(scope!.type, scope?.user_id), body.commands as Command[])
       return json({ ok: true, result: table === 'sendMessage' ? { message_id: 10 } : true })
     }

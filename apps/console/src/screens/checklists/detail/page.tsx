@@ -1,3 +1,4 @@
+import { useDetailReturn } from "@/hooks/use-detail-return"
 import { Link } from "react-router-dom"
 import { routes } from "@/screens/console-routes"
 import { TopBarActions } from "@/features/topbar"
@@ -7,7 +8,6 @@ import { Card } from "@moc/ui/components/display/card"
 import { Header } from "@moc/ui/components/display/header"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
-import { Spinner } from "@moc/ui/components/feedback/spinner"
 import { InlineEditableText } from "@moc/ui/components/form/inline-editable-text"
 import { Page } from "@moc/ui/components/layout/page"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
@@ -17,16 +17,15 @@ import { CopyPlus, FolderPlus, ListChecks, Plus, SquarePlus, Trash2 } from "luci
 import { useChecklistDetail } from "./use-checklist-detail"
 import { ChecklistScheduleField } from "@/features/checklists/checklist-schedule-field"
 import { ChecklistEditorContent } from "@/features/checklists/checklist-editor-content"
-import { ChecklistRequestLink } from "@/features/checklists/checklist-request-link"
+import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 
 export function ChecklistDetailScreen() {
+  const back = useDetailReturn(`/${routes.checklists}`, "Back to checklists")
   const { state, actions, meta } = useChecklistDetail()
   const { checklist, counts } = meta
 
-  if (meta.isLoading && !checklist) {
-    return <Page><Page.Content width="readable" className="flex justify-center py-16"><Spinner size="lg" /></Page.Content></Page>
-  }
+  if (meta.isLoading && !checklist) return <Page.Loading />;
 
   if (meta.error) {
     return <Page><Page.Content width="readable"><ResourceLoadError title="Could not load checklist" error={meta.error} onRetry={meta.retry} /></Page.Content></Page>
@@ -40,7 +39,7 @@ export function ChecklistDetailScreen() {
             headingLevel="h1"
             icon={<ListChecks />}
             title="Checklist not found"
-            action={<Button.Link render={<Link to={`/${routes.checklists}`} />} variant="secondary">Back to checklists</Button.Link>}
+            action={<Button.Link render={<Link to={back.href} />} variant="secondary">{back.label}</Button.Link>}
           />
         </Page.Content>
       </Page>
@@ -49,7 +48,7 @@ export function ChecklistDetailScreen() {
 
   return (
     <DetailPage>
-        <DetailPage.Back render={<Link to={`/${routes.checklists}`} />}>Back to checklists</DetailPage.Back>
+        <DetailPage.Back render={<Link to={back.href} />}>{back.label}</DetailPage.Back>
         <TopBarActions>
           <Button.Icon aria-label="Delete checklist" variant="danger-secondary" icon={<Trash2 />} onClick={actions.openDelete} />
           {checklist.kind === "instance" && <Button.Icon aria-label="Save as checklist template" variant="secondary" icon={<CopyPlus />} onClick={actions.createTemplate} />}
@@ -80,7 +79,7 @@ export function ChecklistDetailScreen() {
         {checklist.kind === "instance" && (
           <DetailPage.Section className="pb-0 pt-4">
             <ChecklistScheduleField value={meta.scheduledAtInput} onChange={actions.updateScheduledAt} />
-            <div className="pt-4"><ChecklistRequestLink linkedRequest={meta.requestLink.state.linkedRequest} requests={meta.requestLink.state.requestOptions} isLoading={meta.requestLink.state.isLoading} onLink={meta.requestLink.actions.link} onUnlink={meta.requestLink.actions.unlink} /></div>
+            <div className="pt-4"><RequestLinkField kind="checklist" id={checklist.id} /></div>
           </DetailPage.Section>
         )}
 

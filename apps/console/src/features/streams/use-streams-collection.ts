@@ -1,3 +1,4 @@
+import { useWorkspace } from "@/lib/workspace-context"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useIsMobile } from "@moc/ui/hooks/use-is-mobile"
 import type { Stream } from "@moc/types/streams/stream"
@@ -12,6 +13,8 @@ import { useZoomMeetings } from "./use-zoom-meetings"
 const streamViews = ["list", "calendar"] as const
 
 export function useStreamsCollection() {
+  const { role } = useWorkspace()
+  const canManageConnections = role?.can_manage_roles === true
   const [searchQuery, setSearchQuery] = useQueryText()
   const [activeView, setActiveView] = useViewQuery(streamViews, "list")
   const [createOpen, setCreateOpen] = useState(false)
@@ -75,6 +78,7 @@ export function useStreamsCollection() {
     state: { searchQuery, createOpen, activeView, calendarMonth },
     actions: { setSearchQuery, setCreateOpen, openCreate, syncConnected, changeView, changeCalendarMonth, selectStream, selectMeeting },
     meta: {
+      canManageConnections,
       listEntries,
       calendarEvents,
       youtube,
@@ -86,6 +90,7 @@ export function useStreamsCollection() {
       canSync,
       isConnected,
       isLoading,
+      isInitialLoading: youtube.meta.isInitialLoading || zoom.meta.isInitialLoading,
       isSyncing: youtube.state.isSyncing || zoom.state.isSyncing,
       hasActiveFilters,
     },

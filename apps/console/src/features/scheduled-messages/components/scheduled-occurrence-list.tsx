@@ -5,7 +5,6 @@ import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import { DividedList } from '@moc/ui/components/display/divided-list'
 import { Decision } from '@moc/ui/components/display/decision'
 import { EmptyState } from '@moc/ui/components/feedback/empty-state'
-import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import type { ScheduledOccurrence } from '@moc/notifications'
 import { routes } from '@/screens/console-routes'
 import { useScheduledMessagesContext } from '../scheduled-messages-context'
@@ -25,8 +24,7 @@ export function ScheduledOccurrenceList() {
             </ListItemCard.Trailing>
         </ListItemCard.Root>
     }
-    return <Decision value={meta.occurrences} loading={state.loading}>
-        <Decision.Loading><LoadingSpinner className="py-16" /></Decision.Loading>
+    return <Decision value={meta.occurrences}>
         <Decision.Empty><EmptyState icon={<MessageSquare />} title="No active messages" description="Schedule a message once or on a recurring basis. Sent messages stay here until they expire." action={<Button.Link render={<Link to={`/${routes.scheduledMessageNew}`} />}>Schedule a message</Button.Link>} /></Decision.Empty>
         <Decision.Data><DividedList>{meta.occurrences.map(renderOccurrence)}</DividedList></Decision.Data>
     </Decision>

@@ -157,7 +157,7 @@ npm run dev:api
 ```
 
 Runs `vercel dev` on port 3001. Frontend Vite servers proxy same-origin
-`/api/*` requests here. Set `MOC_API_PROXY_TARGET=http://localhost:3001` in
+`/api/*` requests here. Set `MOC_API_PROXY_TARGET=http://127.0.0.1:3001` in
 the frontend app's `.env.local`, and add that app's origin to `ALLOWED_ORIGINS`.
 Deployed frontends use their Vercel `/api/*` rewrites.
 

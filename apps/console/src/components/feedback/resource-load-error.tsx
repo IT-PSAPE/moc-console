@@ -1,5 +1,4 @@
-import { Button } from "@moc/ui/components/controls/button";
-import { Alert } from "@moc/ui/components/feedback/alert";
+import { RetryAlert } from "@moc/ui/components/feedback/retry-alert";
 
 type ResourceLoadErrorProps = {
   error: Error;
@@ -8,5 +7,5 @@ type ResourceLoadErrorProps = {
 };
 
 export function ResourceLoadError({ error, onRetry, title }: ResourceLoadErrorProps) {
-  return <Alert variant="error" title={title} description={error.message} action={<Button variant="secondary" onClick={onRetry}>Retry</Button>} />;
+  return <RetryAlert title={title} description={error.message} onRetry={onRetry} />;
 }

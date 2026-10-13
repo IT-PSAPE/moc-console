@@ -6,7 +6,6 @@ import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso 
 import { getChecklistCounts } from './checklist-content'
 import type { ChecklistAddRequest } from './checklist-types'
 import { useChecklists } from './checklists-provider'
-import { useChecklistRequestLink } from "./use-checklist-request-link";
 
 export function useChecklistPanel(checklist: Checklist, onClose: () => void) {
   const { actions: { createChecklistTemplateFromRun, syncChecklist, removeChecklist } } = useChecklists()
@@ -24,7 +23,6 @@ export function useChecklistPanel(checklist: Checklist, onClose: () => void) {
       toast({ title: 'Failed to save checklist', description: error instanceof Error ? error.message : 'The checklist could not be saved.', variant: 'error' })
     }
   }, [syncChecklist, toast])
-  const requestLink = useChecklistRequestLink(checklist, update)
 
   function openFullPage() {
     onClose()
@@ -66,6 +64,6 @@ export function useChecklistPanel(checklist: Checklist, onClose: () => void) {
   return {
     state: { addRequest, deleteOpen },
     actions: { addItem, addSection, close: onClose, createTemplate, dismissAdd, openDelete, openFullPage, remove, setDeleteOpen, updateDescription, updateChecklist, updateName, updateScheduledAt },
-    meta: { ...counts, requestLink, scheduledAtInput },
+    meta: { ...counts, scheduledAtInput },
   }
 }

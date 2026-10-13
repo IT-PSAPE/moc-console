@@ -1,6 +1,7 @@
 import { ScanLine } from "lucide-react"
 import { Button } from "@moc/ui/components/controls/button"
 import { Section } from "@moc/ui/components/display/section"
+import { RetryAlert } from "@moc/ui/components/feedback/retry-alert"
 import { EquipmentList } from "./equipment-list"
 import { useEquipmentScan } from "@/features/telegram/use-equipment-scan"
 import { useAutoStartScan } from "@/features/telegram/use-auto-start-scan"
@@ -33,6 +34,14 @@ export function EquipmentScanSection({ bookingId, items, scanMode, autoStart }: 
       <Section.Header title={`Equipment (${items.length})`} description={progress} />
       <Section.Body className="gap-4">
         <EquipmentList items={items} scannedItemIds={scan.state.scannedItemIds} />
+        {scan.state.submitError && (
+          <RetryAlert
+            title="Couldn't submit scan"
+            description={scan.state.submitError}
+            onRetry={scan.actions.retrySubmission}
+            isRetrying={scan.state.isSubmitting}
+          />
+        )}
         {scanMode && (
           <div className="flex gap-2">
             <Button variant="secondary" icon={<ScanLine />} disabled={scan.state.isSubmitting} onClick={scan.actions.start}>

@@ -1,3 +1,4 @@
+import { createStreamPreset } from "./stream-preset"
 import { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { createStream, deleteStream, saveStreamPreset, syncStreamsFromYouTube, updateStream, uploadStreamThumbnail } from "@/data/mutate-streams"
@@ -24,7 +25,7 @@ export function useYouTubeStreams(searchQuery: string) {
   const { role, currentWorkspaceId } = useWorkspace()
   const { toast } = useFeedback()
   const {
-    state: { streams, youtubeConnection, isLoadingStreams, isLoadingConnection, streamsError, youtubeConnectionError },
+    state: { streams, youtubeConnection, isLoadingStreams, isLoadingConnection, isInitialLoadingStreams, isInitialLoadingConnection, streamsError, youtubeConnectionError },
     actions: { loadStreams, loadYouTubeConnection, syncStream, removeStream, setStreams, setYouTubeConnection },
   } = useStreams()
   const filters = useStreamFilters(streams)
@@ -90,22 +91,7 @@ export function useYouTubeStreams(searchQuery: string) {
       providerFailure.actions.clear()
       if (params.savePreset) {
         const thumbnailUrl = await getPresetThumbnailUrl(params.thumbnail)
-        void saveStreamPreset({
-          title: params.title,
-          description: params.description,
-          scheduledStartTime: params.scheduledStartTime,
-          thumbnailUrl,
-          privacyStatus: params.privacyStatus,
-          isForKids: params.isForKids,
-          categoryId: params.categoryId,
-          tags: params.tags,
-          latencyPreference: params.latencyPreference,
-          enableDvr: params.enableDvr,
-          enableEmbed: params.enableEmbed,
-          enableAutoStart: params.enableAutoStart,
-          enableAutoStop: params.enableAutoStop,
-          playlistId: params.playlistId,
-        }).catch(() => undefined)
+        void saveStreamPreset(createStreamPreset(params, thumbnailUrl)).catch(() => undefined)
       }
       toast(thumbnailError
         ? { title: "Stream created, but the thumbnail wasn't applied", description: thumbnailError, variant: "warning" }
@@ -166,7 +152,7 @@ export function useYouTubeStreams(searchQuery: string) {
   }
 
   function openSettings() {
-    navigate("/account/settings?tab=streams")
+    navigate("/account/settings?tab=integrations")
   }
 
   return {
@@ -181,6 +167,7 @@ export function useYouTubeStreams(searchQuery: string) {
       providerFailure: providerFailure.state.failure,
       canCreate: role?.can_create === true && !needsReauth,
       isLoading: isLoadingStreams || isLoadingConnection,
+      isInitialLoading: isInitialLoadingStreams || isInitialLoadingConnection,
     },
   }
 }

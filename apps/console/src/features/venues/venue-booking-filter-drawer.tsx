@@ -10,13 +10,22 @@ import type { VenueBookingPhase } from "@moc/types/venues";
 import { venueBookingPhaseGroups } from "@moc/types/venues";
 import { parseSortValue } from "@/utils/parse-sort-value";
 import type { useVenueBookingFilters } from "./use-venue-booking-filters";
+import { ManagedOptionPicker } from "@moc/ui/components/form/managed-option-picker";
+import type { Venue, VenueEvent } from "@moc/types/venues";
+
+function venueKey(venue: Venue) { return venue.id }
+function venueLabel(venue: Venue) { return venue.name }
+function venueIsActive(venue: Venue) { return venue.active }
+function eventKey(event: VenueEvent) { return event.id }
+function eventLabel(event: VenueEvent) { return event.name }
+function eventIsActive(event: VenueEvent) { return event.active }
 
 type VenueBookingFilterDrawerProps = {
     filters: ReturnType<typeof useVenueBookingFilters>;
 };
 
 export function VenueBookingFilterDrawer({ filters }: VenueBookingFilterDrawerProps) {
-    const { filters: state, togglePhase, setDateRange, setSort, reset, hasActiveFilters } = filters;
+    const { filters: state, togglePhase, setDateRange, setVenueId, setEventId, setSort, reset, hasActiveFilters, options } = filters;
 
     const sortValue = `${state.sortField}-${state.sortDirection}`;
 
@@ -35,6 +44,14 @@ export function VenueBookingFilterDrawer({ filters }: VenueBookingFilterDrawerPr
 
     function handleEndDateChange(event: ChangeEvent<HTMLInputElement>) {
         setDateRange(state.dateRange.start, event.target.value);
+    }
+
+    function handleVenueChange(venue: Venue | null) {
+        setVenueId(venue?.id ?? null);
+    }
+
+    function handleEventChange(event: VenueEvent | null) {
+        setEventId(event?.id ?? null);
     }
 
     return (
@@ -63,6 +80,24 @@ export function VenueBookingFilterDrawer({ filters }: VenueBookingFilterDrawerPr
                                         <FormLabel label={group.label} />
                                     </Checkbox>
                                 ))}
+                            </FilterDrawer.Options>
+                        </FilterDrawer.Group>
+                        <FilterDrawer.Group label="Venue">
+                            <FilterDrawer.Options>
+                                <ManagedOptionPicker.Root key={`venues-${options.workspaceId ?? "none"}`} options={options.venues.options} value={state.venueId} onValueChange={handleVenueChange} getOptionKey={venueKey} getOptionLabel={venueLabel} getOptionActive={venueIsActive} onCreate={options.venues.canManage ? options.venues.create : undefined} onRename={options.venues.canManage ? options.venues.rename : undefined} onActiveChange={options.venues.canManage ? options.venues.changeActive : undefined} disabled={options.venues.isLoading} label="Venue" placeholder="All venues">
+                                    <ManagedOptionPicker.Field />
+                                    <ManagedOptionPicker.Content />
+                                </ManagedOptionPicker.Root>
+                                {options.venues.error && <p role="alert" className="paragraph-xs text-error">Venues could not be loaded.</p>}
+                            </FilterDrawer.Options>
+                        </FilterDrawer.Group>
+                        <FilterDrawer.Group label="Event type">
+                            <FilterDrawer.Options>
+                                <ManagedOptionPicker.Root key={`events-${options.workspaceId ?? "none"}`} options={options.events.options} value={state.eventId} onValueChange={handleEventChange} getOptionKey={eventKey} getOptionLabel={eventLabel} getOptionActive={eventIsActive} onCreate={options.events.canManage ? options.events.create : undefined} onRename={options.events.canManage ? options.events.rename : undefined} onActiveChange={options.events.canManage ? options.events.changeActive : undefined} disabled={options.events.isLoading} label="Event type" placeholder="All event types">
+                                    <ManagedOptionPicker.Field />
+                                    <ManagedOptionPicker.Content />
+                                </ManagedOptionPicker.Root>
+                                {options.events.error && <p role="alert" className="paragraph-xs text-error">Event types could not be loaded.</p>}
                             </FilterDrawer.Options>
                         </FilterDrawer.Group>
                         <FilterDrawer.Group label="Timeline">

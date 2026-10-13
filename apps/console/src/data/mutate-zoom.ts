@@ -14,6 +14,7 @@ import { queueZoomMeetingOperation } from "./zoom-meeting-operation-queue"
 export { syncZoomMeetings } from "./zoom-meeting-sync"
 
 export type CreateMeetingParams = {
+  requestId?: string
   topic: string
   description: string
   startTime: string
@@ -35,6 +36,7 @@ export type ZoomMeetingMutationResult = {
 }
 
 type LocalZoomMeetingInsertPayload = {
+  request_id?: string | null
   id?: string
   workspace_id: string
   zoom_meeting_id: number
@@ -67,6 +69,7 @@ function mapLocalZoomMeetingPayload(payload: LocalZoomMeetingInsertPayload): Zoo
   return {
     id: payload.id ?? randomId(),
     workspaceId: payload.workspace_id,
+    requestId: payload.request_id ?? null,
     zoomMeetingId: payload.zoom_meeting_id,
     topic: payload.topic,
     description: payload.description,
@@ -183,6 +186,7 @@ async function createZoomMeetingWithinOperation(params: CreateMeetingParams, wor
   const payload: LocalZoomMeetingInsertPayload = {
     id: localMeetingId,
     workspace_id: workspaceId,
+    request_id: params.requestId ?? null,
     zoom_meeting_id: meeting.id,
     topic: params.topic,
     description: params.description,

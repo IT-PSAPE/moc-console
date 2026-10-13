@@ -16,7 +16,7 @@ export function useZoomMeetings(searchQuery: string) {
   const { role, currentWorkspaceId } = useWorkspace()
   const { toast } = useFeedback()
   const {
-    state: { zoomConnection, zoomMeetings, isLoadingZoomConnection, isLoadingZoomMeetings, zoomConnectionError, zoomMeetingsError },
+    state: { zoomConnection, zoomMeetings, isLoadingZoomConnection, isLoadingZoomMeetings, isInitialLoadingZoomConnection, isInitialLoadingZoomMeetings, zoomConnectionError, zoomMeetingsError },
     actions: { loadZoomConnection, loadZoomMeetings, syncMeeting, removeMeeting, setZoomMeetings, setZoomConnection },
   } = useStreams()
   const filters = useZoomMeetingFilters(zoomMeetings)
@@ -151,7 +151,7 @@ export function useZoomMeetings(searchQuery: string) {
   }
 
   function openSettings() {
-    navigate("/account/settings?tab=streams")
+    navigate("/account/settings?tab=integrations")
   }
 
   return {
@@ -165,6 +165,7 @@ export function useZoomMeetings(searchQuery: string) {
       canCreate,
       canSync,
       isLoading: isLoadingZoomMeetings || isLoadingZoomConnection,
+      isInitialLoading: isInitialLoadingZoomMeetings || isInitialLoadingZoomConnection,
     },
   }
 }

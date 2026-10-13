@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { randomUUID } from "node:crypto"
 import { createInternalAuthHeaders } from "../../packages/backend/src/auth/internal-request.js"
 import { createAuthFunctionHandler } from "../../neon/functions/auth.js"
@@ -8,11 +8,12 @@ const secret = "test-service-secret-that-is-long-enough"
 const now = 1_800_000_000_000
 const trustedOrigin = "https://console.example.test"
 
-function signedRequest(nonce: string, cookie = "moc.session=opaque") {
-  const signed = { method: "GET", path: "/api/auth/get-session", body: "", origin: trustedOrigin, cookie, timestamp: now, nonce }
+function signedRequest(nonce: string, cookie = "moc.session=opaque", input: { method?: "GET" | "POST"; path?: string; body?: string } = {}): Request {
+  const signed = { method: input.method ?? "GET", path: input.path ?? "/api/auth/get-session", body: input.body ?? "", origin: trustedOrigin, cookie, timestamp: now, nonce }
   const headers = new Headers(createInternalAuthHeaders(signed, secret))
   if (cookie) headers.set("cookie", cookie)
-  return new Request(`https://neon.example.test${signed.path}`, { method: signed.method, headers })
+  if (signed.method === "POST") headers.set("content-type", "application/json")
+  return new Request(`https://neon.example.test${signed.path}`, { method: signed.method, headers, ...(signed.method === "POST" ? { body: signed.body } : {}) })
 }
 
 describe("Neon auth Function boundary", () => {
@@ -55,6 +56,18 @@ describe("Neon auth Function boundary", () => {
     expect((await handler(signed)).status).toBe(200)
     expect((await handler(signedRequest("nonce_abcdefghijklmno123456"))).status).toBe(409)
     expect(dispatches).toBe(1)
+  })
+
+  it("rejects signup before identity creation when email delivery is not configured", async () => {
+    vi.stubEnv("SMTP_PASSWORD", "")
+    try {
+      const handler = createAuthFunctionHandler({ secret, trustedOrigins: [trustedOrigin], now: () => now, claimNonce: async () => true })
+      const response = await handler(signedRequest("email_nonce_123456789012345", "", { method: "POST", path: "/api/auth/sign-up/email", body: "{}" }))
+      expect(response.status).toBe(503)
+      expect(await response.json()).toEqual({ code: "EMAIL_UNAVAILABLE", message: "Email delivery is temporarily unavailable. Please try again later." })
+    } finally {
+      vi.unstubAllEnvs()
+    }
   })
 })
 

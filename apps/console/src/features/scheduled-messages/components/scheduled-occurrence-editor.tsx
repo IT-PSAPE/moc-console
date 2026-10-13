@@ -12,6 +12,7 @@ import { ScheduledAttendanceGroupFields } from './scheduled-attendance-group-fie
 
 export function ScheduledOccurrenceEditor() {
   const {state,actions,meta}=useScheduledMessagesContext()
+  if (state.isInitialLoading) return null
   return <>
     <Modal open={state.editing!==null} onOpenChange={actions.changeEditorOpen}>
       <Modal.Portal><Modal.Backdrop/><Modal.Positioner><Modal.FullScreenPanel className="md:max-w-lg">

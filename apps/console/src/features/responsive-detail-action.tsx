@@ -2,6 +2,7 @@ import type { MouseEventHandler, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { InteractiveSurface } from '@moc/ui/components/controls/interactive-surface'
 import { useIsMobile } from '@moc/ui/hooks/use-is-mobile'
+import { useDetailLinkState } from '@/hooks/use-detail-return'
 
 type ResponsiveDetailActionProps = {
     children: ReactNode
@@ -12,10 +13,11 @@ type ResponsiveDetailActionProps = {
 
 function ResponsiveDetailActionRoot({ children, className, mobileHref, onActivate }: ResponsiveDetailActionProps) {
     const isMobile = useIsMobile()
+    const linkState = useDetailLinkState()
 
     if (isMobile) {
         return (
-            <InteractiveSurface.Link render={<Link to={mobileHref} />} className={className}>
+            <InteractiveSurface.Link render={<Link to={mobileHref} state={linkState} />} className={className}>
                 {children}
             </InteractiveSurface.Link>
         )
@@ -30,9 +32,10 @@ function ResponsiveDetailActionRoot({ children, className, mobileHref, onActivat
 
 function ResponsiveDetailCardAction({ children, className, mobileHref, onActivate }: ResponsiveDetailActionProps) {
     const isMobile = useIsMobile()
+    const linkState = useDetailLinkState()
 
     if (isMobile) {
-        return <InteractiveSurface.CardLink render={<Link to={mobileHref} />} className={className}>{children}</InteractiveSurface.CardLink>
+        return <InteractiveSurface.CardLink render={<Link to={mobileHref} state={linkState} />} className={className}>{children}</InteractiveSurface.CardLink>
     }
 
     return <InteractiveSurface.Card className={className} onClick={onActivate}>{children}</InteractiveSurface.Card>

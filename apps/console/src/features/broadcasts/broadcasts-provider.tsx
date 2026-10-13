@@ -10,6 +10,7 @@ type BroadcastsContextValue = {
     broadcasts: Broadcast[]
     broadcastsError: Error | null
     isLoadingBroadcasts: boolean
+    isInitialLoadingBroadcasts: boolean
   }
   actions: {
     createBroadcast: (params: Omit<CreateBroadcastParams, "workspaceId">) => Promise<Broadcast>
@@ -31,7 +32,7 @@ const emptyBroadcasts: Broadcast[] = []
 
 export function BroadcastsProvider({ children }: { children: ReactNode }) {
   const { currentWorkspaceId, role } = useWorkspace()
-  const { data: broadcasts, error: broadcastsError, isLoading: isLoadingBroadcasts, load, updateData } = useWorkspaceResource({ emptyValue: emptyBroadcasts, fetcher: fetchBroadcasts, resource: "broadcasts", workspaceId: currentWorkspaceId })
+  const { data: broadcasts, error: broadcastsError, isLoading: isLoadingBroadcasts, isInitialLoading: isInitialLoadingBroadcasts, load, updateData } = useWorkspaceResource({ emptyValue: emptyBroadcasts, fetcher: fetchBroadcasts, resource: "broadcasts", workspaceId: currentWorkspaceId })
 
   const loadBroadcasts = useCallback(async () => {
     await load()
@@ -63,10 +64,10 @@ export function BroadcastsProvider({ children }: { children: ReactNode }) {
   }, [currentWorkspaceId, updateData])
 
   const value = useMemo<BroadcastsContextValue>(() => ({
-    state: { broadcasts, broadcastsError, isLoadingBroadcasts },
+    state: { broadcasts, broadcastsError, isLoadingBroadcasts, isInitialLoadingBroadcasts },
     actions: { createBroadcast, deleteBroadcast, loadBroadcasts, retryBroadcasts, updateBroadcast },
     meta: { canCreate: role?.can_create ?? false, canDelete: role?.can_delete ?? false, canUpdate: role?.can_update ?? false, workspaceId: currentWorkspaceId },
-  }), [broadcasts, broadcastsError, createBroadcast, currentWorkspaceId, deleteBroadcast, isLoadingBroadcasts, loadBroadcasts, retryBroadcasts, role?.can_create, role?.can_delete, role?.can_update, updateBroadcast])
+  }), [broadcasts, broadcastsError, createBroadcast, isInitialLoadingBroadcasts, currentWorkspaceId, deleteBroadcast, isLoadingBroadcasts, loadBroadcasts, retryBroadcasts, role?.can_create, role?.can_delete, role?.can_update, updateBroadcast])
 
   return <BroadcastsContext.Provider value={value}>{children}</BroadcastsContext.Provider>
 }

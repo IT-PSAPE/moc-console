@@ -1,33 +1,16 @@
 import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip'
 import { cn } from '@moc/utils/cn'
-import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type MouseEventHandler, type ReactElement, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type HTMLAttributes, type MouseEventHandler, type ReactElement, type ReactNode } from 'react'
 import { Label } from '../display/text'
+import { SidebarRailItem } from './sidebar-rail-item'
+import { SidebarLayout } from './sidebar-layout'
+import { SidebarRail } from './sidebar-rail'
+import { SidebarSecondary } from './sidebar-secondary'
 import { NavigationList } from './navigation-list'
+import { SidebarContext, type SidebarContextValue } from './sidebar-context'
+export { useSidebar } from './sidebar-context'
 
 // ─── Context ─────────────────────────────────────────────
-
-type SidebarContextValue = {
-    state: {
-        isCollapsed: boolean
-        isMobileOpen: boolean
-    }
-    actions: {
-        toggleCollapsed: () => void
-        openMobile: () => void
-        closeMobile: () => void
-        setMobileOpen: (open: boolean) => void
-    }
-}
-
-const SidebarContext = createContext<SidebarContextValue | null>(null)
-
-export function useSidebar() {
-    const context = useContext(SidebarContext)
-    if (!context) {
-        throw new Error('useSidebar must be used within a SidebarProvider')
-    }
-    return context
-}
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
     const [isCollapsed, setIsCollapsed] = useState(false)
@@ -36,17 +19,20 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     const toggleCollapsed = useCallback(() => setIsCollapsed(prev => !prev), [])
     const openMobile = useCallback(() => setIsMobileOpen(true), [])
     const closeMobile = useCallback(() => setIsMobileOpen(false), [])
+    const expand = useCallback(() => setIsCollapsed(false), [])
 
     const actions = useMemo(() => ({
         toggleCollapsed,
         openMobile,
         closeMobile,
         setMobileOpen: setIsMobileOpen,
-    }), [toggleCollapsed, openMobile, closeMobile])
+        expand,
+    }), [toggleCollapsed, openMobile, closeMobile, expand])
 
     const value: SidebarContextValue = useMemo(() => ({
         state: { isCollapsed, isMobileOpen },
         actions,
+        meta: {},
     }), [isCollapsed, isMobileOpen, actions])
 
     return (
@@ -60,24 +46,14 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
 // ─── Components ──────────────────────────────────────────
 
-function SidebarPanel({ children, className }: HTMLAttributes<HTMLDivElement>) {
-    const { state } = useSidebar()
-
+function SidebarPanel({ children, className, ...props }: HTMLAttributes<HTMLElement>) {
     return (
         <aside
             className={cn(
-                'flex flex-col overflow-hidden bg-secondary',
-                'area-sidebar',
-                // Mobile: fixed overlay, slide in/out
-                'fixed inset-y-0 left-0 z-50',
-                'transition-transform duration-300 ease-in-out motion-reduce:transition-none',
-                state.isMobileOpen ? 'translate-x-0' : '-translate-x-full',
-                // Desktop: static in grid, always visible
-                'md:static md:z-auto md:translate-x-0',
-                // Width from CSS tokens
-                state.isCollapsed ? 'w-sidebar-collapsed' : state.isMobileOpen ? 'w-[min(88%,24rem)]' : 'w-sidebar',
+                'flex h-full min-h-0 shrink-0 overflow-hidden bg-secondary',
                 className,
             )}
+            {...props}
         >
             {children}
         </aside>
@@ -85,10 +61,9 @@ function SidebarPanel({ children, className }: HTMLAttributes<HTMLDivElement>) {
 }
 
 function SidebarHeader({ children, className }: HTMLAttributes<HTMLDivElement>) {
-    const { state } = useSidebar()
     return (
         <header className={cn("px-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-2 border-b border-secondary inline-flex justify-start items-center overflow-hidden", className)}>
-            <div className={cn("flex-1 flex justify-start items-center gap-2.5 h-8", state.isCollapsed && "justify-center")}>
+            <div className="flex min-w-0 flex-1 items-center gap-2.5 h-8">
                 {children}
             </div>
         </header>
@@ -96,19 +71,17 @@ function SidebarHeader({ children, className }: HTMLAttributes<HTMLDivElement>) 
 }
 
 function SidebarContent({ children, className }: HTMLAttributes<HTMLDivElement>) {
-    const { state } = useSidebar()
     return (
-        <div className={cn("w-full py-1.5 inline-flex flex-col justify-start items-start min-h-0 flex-1 overflow-y-auto scrollbar-hidden", state.isCollapsed && "items-center", className)}>
+        <div className={cn("w-full py-1.5 flex flex-col items-start min-h-0 flex-1 overflow-y-auto scrollbar-hidden", className)}>
             {children}
         </div>
     )
 }
 
 function SidebarFooter({ children, className }: HTMLAttributes<HTMLDivElement>) {
-    const { state } = useSidebar()
     return (
         <div className={cn("px-2 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] border-t border-secondary inline-flex justify-start items-center overflow-hidden", className)}>
-            <div className={cn("flex-1 rounded-lg flex justify-start items-center gap-2", state.isCollapsed && "justify-center")}>
+            <div className="flex-1 rounded-lg flex justify-start items-center gap-2">
                 {children}
             </div>
         </div>
@@ -124,8 +97,6 @@ function SidebarGroup({ children, className }: HTMLAttributes<HTMLDivElement>) {
 }
 
 function SidebarGroupTitle({ title, className }: { title: string, className?: string }) {
-    const { state } = useSidebar()
-    if (state.isCollapsed) return null
     return (
         <div className={cn("px-4 py-1.5 inline-flex justify-start items-center gap-2.5", className)}>
             <h3 className="text-neutral-500 text-xs">{title}</h3>
@@ -149,54 +120,37 @@ type SidebarMenuItemProps = {
     title: string
 }
 
-// Menu items are flat — one item, one destination. There is no nesting and
-// no expand/collapse; the only collapsing left is the panel rail itself.
 function SidebarMenuItem({ title, icon, active = false, onClick, render }: SidebarMenuItemProps) {
-    const { state: sidebarState } = useSidebar()
-    const isCollapsed = sidebarState.isCollapsed
-
-    const menuButton = (
+    return (
         <NavigationList.Item
             active={active}
             tone="brand"
             nativeButton={render === undefined}
             render={render}
             type={render ? undefined : 'button'}
-            className={cn('px-1 py-1', isCollapsed && 'w-fit')}
+            className="px-2 py-1"
             onClick={onClick}
             aria-current={render && active ? 'page' : undefined}
-            aria-label={isCollapsed ? title : undefined}
+            role={render ? 'link' : undefined}
         >
-                <div className={cn("flex-1 px-1 flex justify-start items-center gap-1.5", isCollapsed && "justify-center px-0")}>
+                <div className="flex-1 flex items-center gap-2">
                     <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
                         {icon}
                     </div>
-                    {!isCollapsed && (
                         <Label.sm className="flex-1 text-left whitespace-nowrap text-inherit">
                             {title}
                         </Label.sm>
-                    )}
                 </div>
         </NavigationList.Item>
     )
 
-    return (
-        <div className={isCollapsed ? "w-fit" : "w-full"}>
-            <BaseTooltip.Root disabled={!isCollapsed}>
-                <BaseTooltip.Trigger render={menuButton} />
-                <BaseTooltip.Portal>
-                    <BaseTooltip.Positioner side="right" sideOffset={8} className="z-[9100]">
-                        <BaseTooltip.Popup className="rounded-md border border-secondary bg-primary px-2 py-1 label-xs text-primary shadow-md">
-                            {title}
-                        </BaseTooltip.Popup>
-                    </BaseTooltip.Positioner>
-                </BaseTooltip.Portal>
-            </BaseTooltip.Root>
-        </div>
-    )
 }
 
 export const Sidebar = {
+    Layout: SidebarLayout,
+    Rail: SidebarRail,
+    RailItem: SidebarRailItem,
+    Secondary: SidebarSecondary,
     Panel: SidebarPanel,
     Header: SidebarHeader,
     Content: SidebarContent,

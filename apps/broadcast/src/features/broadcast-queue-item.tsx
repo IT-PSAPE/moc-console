@@ -24,7 +24,7 @@ export function BroadcastQueueItem({ display, isActive, item, onSelect }: Broadc
         className="flex w-full min-w-0 items-center gap-3 rounded-lg p-1.5 transition-colors hover:bg-secondary"
         onClick={handleSelect}
       >
-        <BroadcastCover className="size-10 rounded-md" coverUrl={display.coverUrl} iconClassName="size-4" title={display.title} />
+        <BroadcastCover alt="" className="size-10 rounded-md" coverUrl={display.coverUrl} iconClassName="size-4" title={display.title} />
         <span className="min-w-0 flex-1">
           <Label.sm className={cn("block truncate", isActive ? "text-brand" : "text-primary")}>{display.title}</Label.sm>
           {display.artist ? <Paragraph.xs className="block truncate text-quaternary">{display.artist}</Paragraph.xs> : null}

@@ -3,6 +3,9 @@ import type { MocTransport } from "./transport";
 
 export function createVenueBookingsClient(transport: MocTransport) {
   return {
+    setRequest(id: string, requestId: string | null, workspaceId?: string): Promise<void> {
+      return transport.call("venueBookings", "setRequest", { id, requestId }, workspaceId);
+    },
     list(workspaceId?: string): Promise<VenueBooking[]> {
       return transport.call("venueBookings", "list", undefined, workspaceId);
     },

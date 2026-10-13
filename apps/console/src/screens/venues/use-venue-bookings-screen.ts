@@ -13,8 +13,8 @@ export function useVenueBookingsScreen() {
   const isMobile = useIsMobile()
   const activeView = isMobile && view === "kanban" ? "list" : view
   const {
-    state: { bookings, isLoading },
-    actions: { loadBookings },
+    state: { bookings, isLoading, isInitialLoading, error },
+    actions: { loadBookings, retryBookings },
   } = useVenueBookings()
   const filters = useVenueBookingFilters(bookings)
   const detail = useListDetailSelection<VenueBooking>(bookings)
@@ -34,12 +34,14 @@ export function useVenueBookingsScreen() {
 
   return {
     state: { detailOpen: detail.state.isOpen, selectedBooking: detail.state.selectedItem },
-    actions: { changeView, closeDetail, selectBooking },
+    actions: { changeView, closeDetail, selectBooking, retry: retryBookings },
     meta: {
       filters,
       activeView,
       isMobile,
       isLoading,
+      isInitialLoading,
+      error,
     },
   }
 }

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { Lock, Mail, User } from "lucide-react"
 import { Button } from "@moc/ui/components/controls/button"
 import { Alert } from "@moc/ui/components/feedback/alert"
+import { RetryAlert } from "@moc/ui/components/feedback/retry-alert"
 import { FormLabel } from "@moc/ui/components/form/form-label"
 import { Input } from "@moc/ui/components/form/input"
 import { Select } from "@moc/ui/components/form/select"
@@ -58,8 +59,9 @@ export function SignupScreen() {
         {state.error && <Alert variant="error" title={state.error} />}
 
         <div className="space-y-1">
-          <FormLabel label="Name" required />
+          <FormLabel label="Name" htmlFor="signup-name" required />
           <Input
+            id="signup-name"
             aria-label="First name"
             autoComplete="given-name"
             name="given-name"
@@ -73,8 +75,9 @@ export function SignupScreen() {
         </div>
 
         <div className="space-y-1">
-          <FormLabel label="Surname" required />
+          <FormLabel label="Surname" htmlFor="signup-surname" required />
           <Input
+            id="signup-surname"
             aria-label="Surname"
             autoComplete="family-name"
             name="family-name"
@@ -88,8 +91,9 @@ export function SignupScreen() {
         </div>
 
         <div className="space-y-1">
-          <FormLabel label="Email" required />
+          <FormLabel label="Email" htmlFor="signup-email" required />
           <Input
+            id="signup-email"
             aria-label="Email"
             autoComplete="email"
             name="email"
@@ -104,7 +108,8 @@ export function SignupScreen() {
         </div>
 
         <div className="space-y-1">
-          <FormLabel label="Workspace" required />
+          <FormLabel label="Workspace" htmlFor="signup-workspace" required />
+          {meta.workspacesError && <RetryAlert title="Couldn't load workspaces" description={meta.workspacesError} onRetry={actions.retryWorkspaces} isRetrying={meta.workspacesLoading} />}
           <Select.Root
             name="workspace"
             items={meta.workspaceItems}
@@ -113,18 +118,20 @@ export function SignupScreen() {
             disabled={meta.workspacesLoading || meta.workspaces.length === 0}
             required
           >
-            <Select.Trigger aria-label="Workspace" />
+            <Select.Trigger id="signup-workspace" aria-label="Workspace" />
             <Select.Content>
               {meta.workspacesLoading && <Select.Item value="" disabled>Loading workspaces…</Select.Item>}
-              {!meta.workspacesLoading && meta.workspaces.length === 0 && <Select.Item value="" disabled>No workspaces available</Select.Item>}
+              {!meta.workspacesLoading && meta.workspacesError && <Select.Item value="" disabled>Workspaces unavailable</Select.Item>}
+              {!meta.workspacesLoading && !meta.workspacesError && meta.workspaces.length === 0 && <Select.Item value="" disabled>No workspaces available</Select.Item>}
               {meta.workspaces.map(renderWorkspace)}
             </Select.Content>
           </Select.Root>
         </div>
 
         <div className="space-y-1">
-          <FormLabel label="Password" required />
+          <FormLabel label="Password" htmlFor="signup-password" required />
           <Input
+            id="signup-password"
             aria-label="Password"
             autoComplete="new-password"
             name="password"
@@ -139,8 +146,9 @@ export function SignupScreen() {
         </div>
 
         <div className="space-y-1">
-          <FormLabel label="Confirm password" required />
+          <FormLabel label="Confirm password" htmlFor="signup-confirm-password" required />
           <Input
+            id="signup-confirm-password"
             aria-label="Confirm password"
             autoComplete="new-password"
             name="confirm-password"

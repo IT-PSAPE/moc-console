@@ -1,10 +1,12 @@
 import { queryRows } from "../../packages/backend/src/database.js"
 import { getAuth } from "../../packages/backend/src/auth/index.js"
+import { isAuthEmailConfigured } from "../../packages/backend/src/auth/email.js"
 import { verifyInternalAuthRequest } from "../../packages/backend/src/auth/internal-request.js"
 
 type NonceRow = { nonce: string }
 const AUTH_ROUTE = /^\/api\/auth\/(?:sign-up\/email|sign-in\/email|sign-out|get-session|send-verification-email|verify-email|request-password-reset|reset-password(?:\/[^/]+)?|change-password)$/
 const GET_AUTH_ROUTE = /^\/api\/auth\/(?:get-session|verify-email|reset-password\/[^/]+)$/
+const EMAIL_AUTH_ROUTE = /^\/api\/auth\/(?:sign-up\/email|send-verification-email|request-password-reset)$/
 type AuthFunctionOptions = {
   secret: string
   trustedOrigins: readonly string[]
@@ -29,11 +31,18 @@ function unauthorized(): Response {
   return Response.json({ error: "Unauthorized" }, { status: 401 })
 }
 
+async function handleConfiguredAuth(request: Request): Promise<Response> {
+  if (EMAIL_AUTH_ROUTE.test(new URL(request.url).pathname) && !isAuthEmailConfigured()) {
+    return Response.json({ code: "EMAIL_UNAVAILABLE", message: "Email delivery is temporarily unavailable. Please try again later." }, { status: 503 })
+  }
+  return getAuth().handler(request)
+}
+
 export function createAuthFunctionHandler(options: AuthFunctionOptions) {
   const trustedOrigins = new Set(options.trustedOrigins.map((origin) => new URL(origin).origin))
   const now = options.now ?? Date.now
   const acceptNonce = options.claimNonce ?? claimNonce
-  const handleAuth = options.handleAuth ?? ((request) => getAuth().handler(request))
+  const handleAuth = options.handleAuth ?? handleConfiguredAuth
 
   return async function handleInternalAuth(request: Request): Promise<Response> {
     const url = new URL(request.url)

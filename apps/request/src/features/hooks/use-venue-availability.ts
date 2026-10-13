@@ -47,8 +47,10 @@ function getErrorMessage(err: unknown, fallback: string): string {
 // toggled with a synchronous setState at the top of the effect.
 export function useVenueAvailability(venueId: string, bookingDate: string, reservedSlotStarts: string[] = []) {
   const [lists, setLists] = useState<ListsState>({ venues: [], events: [], loading: true, error: null })
+  const [listsAttempt, setListsAttempt] = useState(0)
 
   const [slotsState, setSlotsState] = useState<SlotsState>({ slots: [], timeZone: null, error: null, settledKey: null })
+  const [slotsAttempt, setSlotsAttempt] = useState(0)
   const slotsKey = `${venueId}::${bookingDate}`
   const reservedSlotsKey = reservedSlotStarts.join("::")
   const reservedSlots = useMemo(() => new Set(reservedSlotsKey ? reservedSlotsKey.split("::") : []), [reservedSlotsKey])
@@ -70,7 +72,7 @@ export function useVenueAvailability(venueId: string, bookingDate: string, reser
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [listsAttempt])
 
   useEffect(() => {
     if (!venueId || !bookingDate) return
@@ -89,7 +91,17 @@ export function useVenueAvailability(venueId: string, bookingDate: string, reser
     return () => {
       cancelled = true
     }
-  }, [venueId, bookingDate, slotsKey, reservedSlots])
+  }, [venueId, bookingDate, slotsKey, reservedSlots, slotsAttempt])
+
+  function retryLists() {
+    setLists((current) => ({ ...current, loading: true, error: null }))
+    setListsAttempt((current) => current + 1)
+  }
+
+  function retrySlots() {
+    setSlotsState((current) => ({ ...current, error: null, settledKey: null }))
+    setSlotsAttempt((current) => current + 1)
+  }
 
   const hasVenueAndDate = Boolean(venueId && bookingDate)
   const slotsCurrent = slotsState.settledKey === slotsKey
@@ -107,5 +119,6 @@ export function useVenueAvailability(venueId: string, bookingDate: string, reser
       slotsLoading: hasVenueAndDate && !slotsCurrent,
       slotsError: slotsCurrent ? slotsState.error : null,
     },
+    actions: { retryLists, retrySlots },
   }
 }

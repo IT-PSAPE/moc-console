@@ -69,7 +69,7 @@ export function useScheduledTemplateEditor() {
         if (await save()) { messageActions.setTab('templates'); navigate(`/${routes.scheduledMessages}`) }
     }
     return {
-        state: { draft, busy: messages.busy, loading: messages.loading, error: error || messages.error, missing: Boolean(id && !messages.loading && !row), navigationBlocked: guard.state.isBlocked, ...bodyEditor.state },
+        state: { draft, busy: messages.busy, loading: messages.loading, isInitialLoading: messages.isInitialLoading, error: error || messages.error, missing: Boolean(id && !messages.loading && !row), navigationBlocked: guard.state.isBlocked, ...bodyEditor.state },
         actions: { changeName, changeType, changeField, changeAudience, changeArrival, changeAttendanceGroup: attendanceGroups.change, addAttendanceGroup: attendanceGroups.add, enableAttendanceGroups: attendanceGroups.enable, clearAttendanceGroups: attendanceGroups.clear, removeAttendanceGroup: attendanceGroups.remove, saveAndBack, ignorePreviewChange, ...bodyEditor.actions, ...guard.actions },
         meta: { typeItems, fields: SCHEDULED_FIELDS[draft.messageType], variables, memberTypes: messages.snapshot.memberTypes, preview, isAttendance: draft.messageType === 'pre_attendance', textareaRef: bodyEditor.meta.textareaRef },
     }

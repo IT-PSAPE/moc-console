@@ -108,6 +108,42 @@ suite("Task 6 operations against the local Neon PostgreSQL schema", () => {
     expect(restored?.occurrences).toHaveLength(1)
   })
 
+  test("inactive venues leave history intact and return to public booking after reactivation", async () => {
+    const date = new Date(Date.now() + 4 * 86_400_000).toISOString().slice(0, 10)
+    const activeSlots = await runPublicOperation<Array<{ slotStart: string | Date; available: boolean }>>(publicOperations.getVenueAvailability, { workspaceId, venueId, date })
+    const availableSlot = activeSlots.find((slot) => slot.available)
+    expect(availableSlot).toBeDefined()
+    const slotStart = new Date(availableSlot!.slotStart).toISOString()
+
+    const existing = await pool!.query("SELECT id,status,notes,starts_at FROM public.venue_bookings WHERE venue_id=$1 ORDER BY id", [venueId])
+    await runOperation(venueOperations.setActive, { id: venueId, active: false })
+
+    const publicVenues = await runPublicOperation<Array<{ id: string }>>(publicOperations.listVenues, { workspaceId })
+    const inactiveSlots = await runPublicOperation<unknown[]>(publicOperations.getVenueAvailability, { workspaceId, venueId, date })
+    expect(publicVenues.some((venue) => venue.id === venueId)).toBe(false)
+    expect(inactiveSlots).toEqual([])
+    await expect(runPublicOperation(publicOperations.submitVenueBooking, { workspaceId, data: {
+      venueId, requestedBy: "Inactive venue test", slotStarts: [slotStart], eventId: null,
+      eventOther: "Integration workshop", recurrence: null,
+    } })).rejects.toMatchObject({ code: "23514" })
+
+    expect((await pool!.query("SELECT id,status,notes,starts_at FROM public.venue_bookings WHERE venue_id=$1 ORDER BY id", [venueId])).rows).toEqual(existing.rows)
+    await runOperation(venueOperations.setActive, { id: venueId, active: true })
+
+    const reactivatedVenues = await runPublicOperation<Array<{ id: string }>>(publicOperations.listVenues, { workspaceId })
+    const reactivatedSlots = await runPublicOperation<Array<{ slotStart: string | Date; available: boolean }>>(publicOperations.getVenueAvailability, { workspaceId, venueId, date })
+    expect(reactivatedVenues.some((venue) => venue.id === venueId)).toBe(true)
+    expect(reactivatedSlots.some((slot) => slot.available)).toBe(true)
+
+    const booking = await runPublicOperation<{ id: string; trackingCode: string }>(publicOperations.submitVenueBooking, { workspaceId, data: {
+      venueId, requestedBy: "Reactivated venue test", slotStarts: [slotStart], eventId: null,
+      eventOther: "Integration workshop", recurrence: null,
+    } })
+    expect(booking.trackingCode).toMatch(/^VEN-/)
+    const after = await pool!.query("SELECT id,status,notes,starts_at FROM public.venue_bookings WHERE id=ANY($1::uuid[]) ORDER BY id", [existing.rows.map((row) => row.id)])
+    expect(after.rows).toEqual(existing.rows)
+  })
+
   test("operation SQL cannot read another workspace by supplying its id", async () => {
     const foreignWorkspaceId = randomUUID()
     await pool!.query("INSERT INTO public.workspaces (id,name,slug) VALUES ($1,$2,$3)", [foreignWorkspaceId, `Foreign ${foreignWorkspaceId}`, `foreign-${foreignWorkspaceId}`])

@@ -2,35 +2,62 @@ import { Label } from "@moc/ui/components/display/text";
 import { Checkbox } from "@moc/ui/components/form/checkbox";
 import { FormLabel } from "@moc/ui/components/form/form-label";
 import { Input } from "@moc/ui/components/form/input";
+import { ManagedOptionPicker } from "@moc/ui/components/form/managed-option-picker";
 import { Radio, RadioGroup } from "@moc/ui/components/form/radio";
+import { Select } from "@moc/ui/components/form/select";
 import { Tabs } from "@moc/ui/components/layout/tabs";
 import { FilterDrawer } from "@moc/ui/components/overlays/filter-drawer";
-import { priorityLabel, statusLabel } from "@moc/types/requests";
-import type { RequestCategoryDefinition } from "@moc/types/requests";
-import type { Category } from "@moc/types/requests/category";
+import { priorityLabel, statusLabel, type RequestCategoryDefinition } from "@moc/types/requests";
 import type { Priority } from "@moc/types/requests/priority";
 import type { Status } from "@moc/types/requests/status";
 import type { ChangeEvent } from "react";
-import type { useRequestFilters } from "./use-request-filters";
+import { hasRequestResettableState, type useRequestFilters } from "./use-request-filters";
 import { parseSortValue } from "@/utils/parse-sort-value";
+import { useRequests } from "./request-provider";
+import { useWorkspace } from "@/lib/workspace-context";
+import type { RequestWorkView } from "./request-work-view";
+
+const requestWorkViews: { value: RequestWorkView; label: string }[] = [
+    { value: "all", label: "All requests" },
+    { value: "assigned", label: "Assigned to me" },
+    { value: "due-soon", label: "Due soon" },
+    { value: "attention", label: "Needs attention" },
+];
 
 type RequestFilterDrawerProps = {
     filters: ReturnType<typeof useRequestFilters>;
-    categories: RequestCategoryDefinition[];
+    workView: RequestWorkView;
+    onWorkViewChange: (value: string) => void;
+    onReset: () => void;
 };
 
-export function RequestFilterDrawer({ filters, categories }: RequestFilterDrawerProps) {
-    const { filters: state, toggleCategory, togglePriority, toggleStatus, setDateRange, setSort, reset, hasActiveFilters } = filters;
+function getRequestTypeKey(category: RequestCategoryDefinition): string { return category.key; }
+function getRequestTypeLabel(category: RequestCategoryDefinition): string { return category.name; }
+function getRequestTypeActive(category: RequestCategoryDefinition): boolean { return category.active; }
+
+export function RequestFilterDrawer({ filters, workView, onWorkViewChange, onReset }: RequestFilterDrawerProps) {
+    const { filters: state, togglePriority, toggleStatus, setDateRange, setSort, hasActiveFilters } = filters;
+    const { role, currentWorkspaceId } = useWorkspace();
+    const { state: requestState, actions: requestActions } = useRequests();
+    const canManageTypes = role?.can_manage_roles === true;
+    const onCreateType = canManageTypes ? requestActions.createRequestType : undefined;
+    const onRenameType = canManageTypes ? requestActions.renameRequestType : undefined;
+    const onTypeActiveChange = canManageTypes ? requestActions.setRequestTypeActive : undefined;
+    const drawerHasActiveFilters = hasRequestResettableState(filters.filters, hasActiveFilters, workView);
 
     const sortValue = `${state.sortField}-${state.sortDirection}`;
+
+    function handleTypeChange(category: RequestCategoryDefinition | null) {
+        filters.setCategory(category?.key ?? null);
+    }
+
+    function handleWorkViewChange(value: string | null) {
+        if (value && requestWorkViews.some((option) => option.value === value)) onWorkViewChange(value);
+    }
 
     function handleSortChange(value: string) {
         const [field, direction] = parseSortValue(value);
         setSort(field as Parameters<typeof setSort>[0], direction as Parameters<typeof setSort>[1]);
-    }
-
-    function handleCategoryChange(event: ChangeEvent<HTMLInputElement>) {
-        toggleCategory(event.target.value as Category);
     }
 
     function handleStatusChange(event: ChangeEvent<HTMLInputElement>) {
@@ -49,16 +76,12 @@ export function RequestFilterDrawer({ filters, categories }: RequestFilterDrawer
         setDateRange(state.dateRange.start, event.target.value);
     }
 
-    function renderCategory(category: RequestCategoryDefinition) {
-        return (
-            <Checkbox key={category.key} checked={state.categories.has(category.key)} value={category.key} onChange={handleCategoryChange}>
-                <FormLabel label={category.name} />
-            </Checkbox>
-        );
+    function renderWorkView(option: (typeof requestWorkViews)[number]) {
+        return <Select.Item key={option.value} value={option.value}>{option.label}</Select.Item>;
     }
 
     return (
-        <FilterDrawer hasActiveFilters={hasActiveFilters} onReset={reset}>
+        <FilterDrawer hasActiveFilters={drawerHasActiveFilters} onReset={onReset}>
                 <Tabs defaultTab="filters">
                     <Tabs.List>
                         <Tabs.Tab value="filters">
@@ -71,10 +94,17 @@ export function RequestFilterDrawer({ filters, categories }: RequestFilterDrawer
                     <Tabs.Panels>
                         {/* ── Filters ── */}
                         <Tabs.Panel value="filters">
+                            <FilterDrawer.Group label="View">
+                                <Select.Root items={requestWorkViews} value={workView} onValueChange={handleWorkViewChange}>
+                                    <Select.Trigger aria-label="Request work view" className="w-full" />
+                                    <Select.Content>{requestWorkViews.map(renderWorkView)}</Select.Content>
+                                </Select.Root>
+                            </FilterDrawer.Group>
                             <FilterDrawer.Group label="Type">
-                                <FilterDrawer.Options>
-                                    {categories.map(renderCategory)}
-                                </FilterDrawer.Options>
+                                <ManagedOptionPicker.Root key={currentWorkspaceId ?? "none"} options={requestState.requestCategories} value={state.category} onValueChange={handleTypeChange} getOptionKey={getRequestTypeKey} getOptionLabel={getRequestTypeLabel} getOptionActive={getRequestTypeActive} onCreate={onCreateType} onRename={onRenameType} onActiveChange={onTypeActiveChange} label="Type" placeholder="Filter by type">
+                                    <ManagedOptionPicker.Field className="w-full" />
+                                    <ManagedOptionPicker.Content />
+                                </ManagedOptionPicker.Root>
                             </FilterDrawer.Group>
                             <FilterDrawer.Group label="Status">
                                     <FilterDrawer.Options>

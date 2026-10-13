@@ -2,7 +2,7 @@ import { approveWorkspaceJoinRequest, rejectWorkspaceJoinRequest, fetchPendingWo
 import type { PendingWorkspaceUser, UserWithRole } from "@/data/fetch-users";
 import type { Role } from "@moc/types/requests/assignee";
 import { useWorkspace } from "@/lib/workspace-context";
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState, useLayoutEffect, type ReactNode } from "react";
 import { useMemberTypes } from './use-member-types';
 
 type UsersContextValue = {
@@ -11,6 +11,7 @@ type UsersContextValue = {
     pendingUsers: PendingWorkspaceUser[];
     roles: Role[];
     isLoading: boolean;
+    isInitialLoading: boolean;
     memberTypes: ReturnType<typeof useMemberTypes>['state'];
   };
   actions: {
@@ -30,44 +31,62 @@ export function UsersProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [pendingUsers, setPendingUsers] = useState<PendingWorkspaceUser[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const onTypeAssigned = useCallback((userId:string,typeId:string) => {
     setUsers(current => current.map(user => user.id===userId ? {...user,memberTypeId:typeId} : user));
   }, []);
   const memberTypes = useMemberTypes(onTypeAssigned);
 
-  const loadedWorkspaceRef = useRef<string | null>(null);
-  const promiseRef = useRef<Promise<void> | null>(null);
-
-  const { currentWorkspaceId, refresh } = useWorkspace();
-  const [trackedWorkspaceId, setTrackedWorkspaceId] = useState(currentWorkspaceId);
-  if (trackedWorkspaceId !== currentWorkspaceId) {
-    setTrackedWorkspaceId(currentWorkspaceId);
+  const { currentWorkspaceId, refresh, role } = useWorkspace();
+  const canManage = role?.can_manage_roles === true;
+  const loadKey = `${currentWorkspaceId ?? ''}:${canManage}`;
+  const activeLoadKeyRef = useRef<string | null>(loadKey);
+  const loadedKeyRef = useRef<string | null>(null);
+  const [loadedWorkspaceKey, setLoadedWorkspaceKey] = useState<string | null>(null);
+  const promiseRef = useRef<{ key: string; promise: Promise<void> } | null>(null);
+  const [trackedLoadKey, setTrackedLoadKey] = useState(loadKey);
+  if (trackedLoadKey !== loadKey) {
+    setTrackedLoadKey(loadKey);
     setUsers([]);
     setPendingUsers([]);
+    setRoles([]);
+    setIsLoading(false);
   }
 
-  const loadUsers = useCallback(async () => {
-    if (loadedWorkspaceRef.current === currentWorkspaceId) return;
-    if (promiseRef.current) return promiseRef.current;
-    if (!currentWorkspaceId) return;
+  useLayoutEffect(() => {
+    activeLoadKeyRef.current = loadKey;
+    loadedKeyRef.current = null;
+    promiseRef.current = null;
+    return () => { activeLoadKeyRef.current = null; };
+  }, [loadKey]);
 
+  const loadUsers = useCallback(async (): Promise<void> => {
+    if (!currentWorkspaceId || loadedKeyRef.current === loadKey) return;
+    if (promiseRef.current?.key === loadKey) return promiseRef.current.promise;
     setIsLoading(true);
 
-    promiseRef.current = Promise.all([fetchUsersWithRoles(currentWorkspaceId), fetchPendingWorkspaceUsers(currentWorkspaceId), fetchAvailableRoles()])
+    const promise: Promise<void> = Promise.all([
+      fetchUsersWithRoles(currentWorkspaceId),
+      canManage ? fetchPendingWorkspaceUsers(currentWorkspaceId) : Promise.resolve([] as PendingWorkspaceUser[]),
+      fetchAvailableRoles(),
+    ])
       .then(([usersData, pendingUsersData, rolesData]) => {
+        if (activeLoadKeyRef.current !== loadKey || promiseRef.current?.promise !== promise) return;
         setUsers(usersData);
         setPendingUsers(pendingUsersData);
         setRoles(rolesData);
-        loadedWorkspaceRef.current = currentWorkspaceId;
+        loadedKeyRef.current = loadKey;
+        setLoadedWorkspaceKey(loadKey);
       })
       .finally(() => {
+        if (promiseRef.current?.promise !== promise) return;
         promiseRef.current = null;
-        setIsLoading(false);
+        if (activeLoadKeyRef.current === loadKey) setIsLoading(false);
       });
 
-    return promiseRef.current;
-  }, [currentWorkspaceId]);
+    promiseRef.current = { key: loadKey, promise };
+    return promise;
+  }, [canManage, currentWorkspaceId, loadKey]);
 
   const updateProfile = useCallback(async (userId: string, fields: { name?: string; surname?: string }) => {
     await updateUserProfile(userId, fields);
@@ -105,11 +124,11 @@ export function UsersProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
-      state: { users, pendingUsers, roles, isLoading, memberTypes: memberTypes.state },
+      state: { users, pendingUsers, roles, isLoading, isInitialLoading: loadedWorkspaceKey !== loadKey, memberTypes: memberTypes.state },
       actions: { loadUsers, updateProfile, changeRole, approveUser, rejectUser, memberTypes: memberTypes.actions },
       meta: {memberTypes: memberTypes.meta},
     }),
-    [users, pendingUsers, roles, isLoading, loadUsers, updateProfile, changeRole, approveUser, rejectUser, memberTypes],
+    [users, pendingUsers, roles, isLoading, loadedWorkspaceKey, loadKey, loadUsers, updateProfile, changeRole, approveUser, rejectUser, memberTypes],
   );
 
   return <UsersContext.Provider value={value}>{children}</UsersContext.Provider>;

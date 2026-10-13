@@ -49,8 +49,9 @@ export function ResetPasswordScreen() {
         {state.error && <Alert variant="error" title={state.error} />}
 
         <div className="space-y-1.5">
-          <FormLabel label="Email" required />
+          <FormLabel label="Email" htmlFor="reset-email" required />
           <Input
+            id="reset-email"
             aria-label="Email"
             name="email"
             spellCheck={false}

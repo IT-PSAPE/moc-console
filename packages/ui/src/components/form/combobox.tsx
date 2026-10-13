@@ -1,7 +1,7 @@
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { cn } from '@moc/utils/cn'
 import { ChevronDown, Search, X } from 'lucide-react'
-import { createContext, Fragment, useContext, useState, type ReactNode } from 'react'
+import { createContext, Fragment, useContext, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useIsMobile } from '../../hooks/use-is-mobile'
 import { Drawer } from '../overlays/drawer'
 import { mobileSheetPositionerClassName } from '../overlays/mobile-sheet'
@@ -39,9 +39,12 @@ type ComboboxRootProps<Value> = {
     itemToStringLabel?: (item: Value) => string
     /** Identity for object options that aren't referentially stable. */
     isItemEqualToValue?: (item: Value, value: Value) => boolean
+    inputValue?: string
+    onInputValueChange?: (value: string) => void
     open?: boolean
     defaultOpen?: boolean
     onOpenChange?: (open: boolean, eventDetails?: BaseCombobox.Root.ChangeEventDetails) => void
+    onItemHighlighted?: (value: Value | undefined, eventDetails: BaseCombobox.Root.HighlightEventDetails) => void
 }
 
 type ComboboxContextValue = {
@@ -114,10 +117,14 @@ const fieldShell = cn(
 
 function ComboboxField({ className, ...props }: Styled<React.ComponentProps<typeof BaseCombobox.Input>>) {
     const { isMobile, itemToStringLabel } = useComboboxContext()
+    function handleMobileKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+        const inputEvent = event as unknown as Parameters<NonNullable<typeof props.onKeyDown>>[0]
+        props.onKeyDown?.(inputEvent)
+    }
 
     if (isMobile) {
         return (
-            <BaseCombobox.Trigger className={cn(fieldShell, 'flex-nowrap text-left', className)} disabled={props.disabled} aria-label={props['aria-label'] ?? props.placeholder}>
+            <BaseCombobox.Trigger id={props.id} className={cn(fieldShell, 'flex-nowrap text-left', className)} disabled={props.disabled} aria-label={props['aria-label'] ?? props.placeholder} aria-keyshortcuts={props['aria-keyshortcuts']} onKeyDown={handleMobileKeyDown}>
                 <span className="min-w-0 flex-1 truncate paragraph-sm text-primary">
                     <BaseCombobox.Value>
                         {(selected: unknown) => {
@@ -225,9 +232,10 @@ type ComboboxContentProps = {
     empty?: ReactNode
     searchPlaceholder?: string
     title?: string
+    footer?: ReactNode
 }
 
-function ComboboxContent({ children, className, empty = 'No matches', searchPlaceholder = 'Search options', title = 'Choose an option' }: ComboboxContentProps) {
+function ComboboxContent({ children, className, empty = 'No matches', footer, searchPlaceholder = 'Search options', title = 'Choose an option' }: ComboboxContentProps) {
     const { isMobile, multiple } = useComboboxContext()
     const { state: overlayState } = useOverlayStack()
 
@@ -237,9 +245,9 @@ function ComboboxContent({ children, className, empty = 'No matches', searchPlac
                 <Drawer.Backdrop />
                 <BaseCombobox.Portal container={overlayState.rootElement ?? undefined}>
                     <BaseCombobox.Positioner className={mobileSheetPositionerClassName}>
-                        <Drawer.Panel>
+                        <Drawer.Panel className="[--combobox-visible-content-height:calc(94dvh_-_var(--drawer-snap-point-offset,0px)_-_3rem)]">
                             <Drawer.Content className="overflow-hidden !pb-0">
-                                <BaseCombobox.Popup className="flex min-h-0 flex-1 flex-col outline-none">
+                                <BaseCombobox.Popup className="flex min-h-0 max-h-[var(--combobox-visible-content-height)] flex-1 flex-col outline-none">
                                     <div className="flex shrink-0 flex-col gap-3 border-b border-secondary px-4 pb-3">
                                         <span className="label-md text-primary">{multiple ? 'Select options' : title}</span>
                                         <BaseCombobox.InputGroup className={cn(fieldShell, 'flex-nowrap')}>
@@ -252,12 +260,13 @@ function ComboboxContent({ children, className, empty = 'No matches', searchPlac
                                             </BaseCombobox.Icon>
                                         </BaseCombobox.InputGroup>
                                     </div>
-                                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
+                                    <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-2">
                                         <BaseCombobox.Empty className="px-2 py-6 text-center paragraph-sm text-quaternary empty:p-0">
                                             {empty}
                                         </BaseCombobox.Empty>
                                         <BaseCombobox.List>{children as never}</BaseCombobox.List>
                                     </div>
+                                    {footer}
                                     {multiple ? (
                                         <div className="shrink-0 border-t border-secondary p-3">
                                             <BaseCombobox.Trigger className="flex min-h-11 w-full items-center justify-center rounded-md bg-brand_solid px-3 label-sm text-on-brand">
@@ -283,7 +292,7 @@ function ComboboxContent({ children, className, empty = 'No matches', searchPlac
                         // `pointer-events: none` so a portalled layer never blocks the
                         // page behind it, and each popup surface opts back in. Without
                         // it the list renders but no item can be clicked or hovered.
-                        'pointer-events-auto max-h-[min(var(--available-height),16rem)] w-[var(--anchor-width)] max-w-[var(--available-width)] overflow-y-auto overscroll-contain rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none',
+                        'pointer-events-auto max-h-[min(var(--available-height),16rem)] w-[var(--anchor-width)] max-w-[var(--available-width)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none',
                         'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150 motion-reduce:transition-none',
                         'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
                         'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
@@ -300,6 +309,7 @@ function ComboboxContent({ children, className, empty = 'No matches', searchPlac
                         {empty}
                     </BaseCombobox.Empty>
                     <BaseCombobox.List>{children as never}</BaseCombobox.List>
+                    {footer}
                 </BaseCombobox.Popup>
             </BaseCombobox.Positioner>
         </BaseCombobox.Portal>
@@ -316,7 +326,7 @@ function ComboboxItem({ children, className, ...props }: Styled<React.ComponentP
             )}
             {...props}
         >
-            <span className="col-start-2 min-w-0 truncate">{children}</span>
+            <span className="col-start-2 flex min-w-0 items-center gap-2 overflow-hidden">{children}</span>
         </BaseCombobox.Item>
     )
 }

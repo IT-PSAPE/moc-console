@@ -23,6 +23,8 @@ export function useScheduledMessages() {
     const navigate = useNavigate()
     const [snapshot, setSnapshot] = useState(empty)
     const [loading, setLoading] = useState(true)
+    const [hasLoaded, setHasLoaded] = useState(false)
+    const [loadedWorkspaceId, setLoadedWorkspaceId] = useState<string | null>(null)
     const [busy, setBusy] = useState(false)
     const mutating = useRef(false)
     const [error, setError] = useState('')
@@ -45,9 +47,9 @@ export function useScheduledMessages() {
         setLoading(true)
         try { setSnapshot(await fetchScheduledMessages(currentWorkspaceId)); setError(''); setLoadError('') }
         catch (e) { setLoadError(e instanceof Error ? e.message : 'Loading failed') }
-        finally { setLoading(false) }
+        finally { setLoading(false); setHasLoaded(true); setLoadedWorkspaceId(currentWorkspaceId) }
     }, [currentWorkspaceId])
-    useEffect(() => { setSnapshot(empty); setEditing(null); setDeleting(null); setConfirmation(null); setSchedule(defaultSchedule()); void reload() }, [reload])
+    useEffect(() => { setHasLoaded(false); setSnapshot(empty); setEditing(null); setDeleting(null); setConfirmation(null); setSchedule(defaultSchedule()); void reload() }, [reload])
     useEffect(() => {
         const timer = window.setInterval(() => setSnapshot(current => ({ ...current, occurrences: current.occurrences.filter(o => Date.parse(o.expires_at) > Date.now()) })), 15_000)
         return () => window.clearInterval(timer)
@@ -184,7 +186,7 @@ export function useScheduledMessages() {
     const topics = snapshot.groups.find(g => g.chat_id === schedule.groupChatId)?.telegram_group_topics ?? []
     const topicItems = [{ value: 'main', label: 'General' }, ...topics.filter(t => !t.closed).map(t => ({ value: String(t.thread_id), label: t.name }))]
     return {
-        state: { snapshot, schedule, editing, deleting, deleteScope, edit, confirmation, error, loadError, loading, busy, tab },
+        state: { snapshot: loadedWorkspaceId === currentWorkspaceId ? snapshot : empty, schedule, editing: loadedWorkspaceId === currentWorkspaceId ? editing : null, deleting: loadedWorkspaceId === currentWorkspaceId ? deleting : null, deleteScope, edit, confirmation: loadedWorkspaceId === currentWorkspaceId ? confirmation : null, error, loadError, loading, isInitialLoading: !hasLoaded || loadedWorkspaceId !== currentWorkspaceId, busy, tab },
         actions: { reload, mutate, setTab, startSchedule, changeSchedule, setStartsOn, setExpiresAt, setEditTimestamp, changeScheduleField, setTemplateId, setGroup, setTopic, setFrequency, changeAutoSend, requestSchedule, selectOccurrence, changeEditField, changeEditValue, changeScope, changeAttendanceGroup: occurrenceGroupEditor.change, addAttendanceGroup: occurrenceGroupEditor.add, enableAttendanceGroups: occurrenceGroupEditor.enable, removeAttendanceGroup: occurrenceGroupEditor.remove, clearAttendanceGroups: occurrenceGroupEditor.clear, requestEdit, requestSend, requestTemplateDelete, requestDelete, changeDeleteScope, changeDeleteOpen, reviewDelete, changeEditorOpen, changeConfirmationOpen, confirm, syncCommands, ignorePreviewChange },
         meta: { frequencyItems, scopeItems, fieldItems, topicItems, selectedTemplate, templateRows, previewHtml: preview.html, previewError: preview.error, editGroups: edit.field === 'attendanceGroups' ? parsedEditGroups(edit.value) : editing?.attendance_groups ?? [], isAttendance: selectedTemplate?.message_type === 'pre_attendance', scheduleFields: selectedTemplate ? SCHEDULED_FIELDS[selectedTemplate.message_type] : [], hasTopics: topicItems.length > 1, isRecurring: schedule.frequency !== 'once', occurrences: snapshot.occurrences.map(occurrenceRow), templateItems: snapshot.templates.map(t => ({ value: t.id, label: t.name })), groupItems: snapshot.groups.map(g => ({ value: g.chat_id, label: g.title })), showScope: selectedSchedule?.frequency !== 'once' && !['sendOn', 'expiresAt'].includes(edit.field) },
     }

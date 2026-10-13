@@ -1,36 +1,41 @@
-import { useCallback, useEffect, useState, type ChangeEvent, type MouseEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { MemberType } from '@moc/notifications'
 import { useWorkspace } from '@/lib/workspace-context'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
-import { assignMemberType,fetchMemberTypes,saveMemberType } from './member-type-service'
+import { assignMemberType,fetchMemberTypes,saveMemberTypeAndFetch } from './member-type-service'
 export function useMemberTypes(onAssigned:(userId:string,typeId:string)=>void) {
   const {currentWorkspaceId,role}=useWorkspace()
   const {toast}=useFeedback()
-  const [types,setTypes]=useState<MemberType[]>([])
-  const [draft,setDraft]=useState<{id:string|null;name:string}|null>(null)
-  const [saving,setSaving]=useState(false)
-  const reload=useCallback(async()=>{
-    if(currentWorkspaceId) setTypes(await fetchMemberTypes(currentWorkspaceId))
-  },[currentWorkspaceId])
+  const [typesState,setTypesState]=useState<{workspaceId:string;types:MemberType[]}|null>(null)
+  const types=typesState?.workspaceId===currentWorkspaceId?typesState.types:[]
+  const activeWorkspaceIdRef=useRef(currentWorkspaceId)
+  useLayoutEffect(()=>{activeWorkspaceIdRef.current=currentWorkspaceId},[currentWorkspaceId])
   const showError=useCallback((error:unknown):void=>{toast({title:'Member type update failed',description:error instanceof Error?error.message:'Try again',variant:'error'})},[toast])
-  useEffect(()=>{setTypes([]);setDraft(null);void reload().catch(showError)},[reload,showError])
-  function openCreate():void {setDraft({id:null,name:''})}
-  function openRename(event:MouseEvent<HTMLButtonElement>):void {
-    const type=types.find(t=>t.id===event.currentTarget.value)
-    if(type) setDraft({id:type.id,name:type.name})
-  }
-  function changeName(event:ChangeEvent<HTMLInputElement>):void {setDraft(current=>current?{...current,name:event.target.value}:null)}
-  function changeOpen(open:boolean):void {if(!open && !saving) setDraft(null)}
-  async function save():Promise<void> {
-    if(!draft || !currentWorkspaceId || saving) return
-    setSaving(true)
-    try {await saveMemberType(currentWorkspaceId,draft.name.trim(),draft.id);await reload();setDraft(null)}
-    catch(e){showError(e)} finally {setSaving(false)}
-  }
-  async function assign(userId:string,typeId:string):Promise<void> {
+  useEffect(()=>{
     if(!currentWorkspaceId) return
-    try {await assignMemberType(currentWorkspaceId,userId,typeId);onAssigned(userId,typeId)}
-    catch(e){showError(e)}
-  }
-  return {state:{types,draft,saving},actions:{openCreate,openRename,changeName,changeOpen,save,assign},meta:{canEdit:role?.can_update===true}}
+    let cancelled=false
+    void fetchMemberTypes(currentWorkspaceId).then(loadedTypes=>{
+      if(!cancelled && activeWorkspaceIdRef.current===currentWorkspaceId) setTypesState({workspaceId:currentWorkspaceId,types:loadedTypes})
+    }).catch(showError)
+    return ()=>{cancelled=true}
+  },[currentWorkspaceId,showError])
+  const save=useCallback(async(name:string,id:string|null):Promise<MemberType>=>{
+    if(!currentWorkspaceId) throw new Error('No workspace selected')
+    const normalizedName=name.trim()
+    if(!normalizedName) throw new Error('Enter a member type name')
+    const {types:updatedTypes,savedType}=await saveMemberTypeAndFetch(currentWorkspaceId,normalizedName,id)
+    if(activeWorkspaceIdRef.current===currentWorkspaceId) setTypesState({workspaceId:currentWorkspaceId,types:updatedTypes})
+    return savedType
+  },[currentWorkspaceId])
+  const assign=useCallback(async(userId:string,typeId:string):Promise<void>=>{
+    if(!currentWorkspaceId) throw new Error('No workspace selected')
+    try {
+      await assignMemberType(currentWorkspaceId,userId,typeId)
+      if(activeWorkspaceIdRef.current===currentWorkspaceId) onAssigned(userId,typeId)
+    }
+    catch(error){showError(error);throw error}
+  },[currentWorkspaceId,onAssigned,showError])
+  const create=useCallback((name:string)=>save(name,null),[save])
+  const rename=useCallback((type:MemberType,name:string)=>save(name,type.id),[save])
+  return {state:{types},actions:{create,rename,assign},meta:{canEdit:role?.can_update===true,workspaceId:currentWorkspaceId}}
 }

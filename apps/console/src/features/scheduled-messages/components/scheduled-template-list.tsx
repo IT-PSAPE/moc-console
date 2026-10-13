@@ -5,7 +5,6 @@ import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import { DividedList } from '@moc/ui/components/display/divided-list'
 import { Decision } from '@moc/ui/components/display/decision'
 import { EmptyState } from '@moc/ui/components/feedback/empty-state'
-import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import { routes } from '@/screens/console-routes'
 import { useScheduledMessagesContext } from '../scheduled-messages-context'
 
@@ -17,8 +16,7 @@ export function ScheduledTemplateList() {
             <ListItemCard.Trailing className="ml-auto flex-wrap"><Button.Link variant="ghost" render={<Link to={template.editPath} />}>Edit</Button.Link><Button.Link variant="secondary" render={<Link to={template.usePath} />}>Use template</Button.Link><Button variant="danger-secondary" data-template-id={template.id} onClick={actions.requestTemplateDelete} disabled={state.busy}>Delete</Button></ListItemCard.Trailing>
         </ListItemCard.Root>
     }
-    return <Decision value={meta.templateRows} loading={state.loading}>
-        <Decision.Loading><LoadingSpinner className="py-16" /></Decision.Loading>
+    return <Decision value={meta.templateRows}>
         <Decision.Empty><EmptyState icon={<FileText />} title="No templates yet" description="Create a reusable announcement or pre-attendance message with editable variables." action={<Button.Link render={<Link to={`/${routes.scheduledTemplateNew}`} />}>Create a template</Button.Link>} /></Decision.Empty>
         <Decision.Data><DividedList>{meta.templateRows.map(renderTemplate)}</DividedList></Decision.Data>
     </Decision>

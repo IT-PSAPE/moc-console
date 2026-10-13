@@ -8,7 +8,6 @@ import type { ChecklistAddRequest } from "@/features/checklists/checklist-types"
 import { routes } from "@/screens/console-routes"
 import type { Checklist } from "@moc/types/checklists"
 import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time"
-import { useChecklistRequestLink } from "@/features/checklists/use-checklist-request-link";
 import { getCurrentWorkspaceGeneration } from "@/data/current-workspace";
 import { useWorkspace } from "@/lib/workspace-context";
 
@@ -54,7 +53,6 @@ export function useChecklistDetail() {
       toast({ title: "Failed to save checklist", description: error instanceof Error ? error.message : "The checklist could not be saved.", variant: "error" })
     }
   }, [syncChecklist, toast])
-  const requestLink = useChecklistRequestLink(checklist, update)
 
   function updateName(name: string) {
     if (checklist) void update({ ...checklist, name })
@@ -111,7 +109,6 @@ export function useChecklistDetail() {
     meta: {
       checklist,
       counts,
-      requestLink,
       scheduledAtInput,
       error: loadedKey === currentKey ? checklistsError : null,
       isLoading: Boolean(!checklist && id && currentWorkspaceId && (isLoadingChecklists || loadedKey !== currentKey)),

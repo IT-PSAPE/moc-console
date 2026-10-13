@@ -4,7 +4,7 @@ The platform contract is `MoC apps → @moc/sdk → MoC API on Vercel → Neon`.
 Console, Request, Broadcast and API remain separate Vercel applications. Browser
 code has no provider clients, database connections or storage credentials. The
 three app projects rewrite same-origin `/api/*` to `https://api.psape.co.za/api/*`;
-local Vite servers proxy to `MOC_API_PROXY_TARGET` (default port 3001).
+local Vite servers proxy to `MOC_API_PROXY_TARGET` (default `http://127.0.0.1:3001`).
 
 The selected target is **PSAPE / Frankfurt**, Neon project `blue-wind-16947728`,
 branch `br-gentle-butterfly-b1quozc3` (`production`). MoC uses the application-owned
@@ -25,13 +25,40 @@ Neon injects branch-scoped `DATABASE_URL` and S3 environment values into Functio
 The Vercel API needs its own server-only pooled URL, private S3 credentials,
 `NEON_AUTH_FUNCTION_URL`, `MOC_AUTH_SERVICE_SECRET` and trusted origins. Its
 connection needs membership in the app, public and worker roles. Better Auth
-uses a connection with access to `moc_auth`. Keep all credentials behind the API.
+uses the injected unpooled URL because its startup `search_path` is incompatible
+with transaction pooling. Keep all credentials behind the API. Create an ordinary
+runtime login with `NOINHERIT`, no database/role creation and no RLS bypass, then
+grant the three runtime roles without inheritance. `withActor` selects the role
+inside each transaction. Neon API-created roles may have elevated privileges;
+do not use them as the application's restricted runtime login.
+
+`MOC_AUTH_SERVICE_SECRET` is generated locally, not obtained from Neon. Generate
+it with `openssl rand -hex 32` and store the same value in the API and its auth
+Function. Generate `BETTER_AUTH_SECRET` separately for the auth Function. Use
+distinct secrets for local development and production. `NEON_AUTH_FUNCTION_URL`
+must identify the deployed MoC Function; the managed Neon Auth URL does not
+implement the signed MoC service protocol.
+
+For local setup, use `http://localhost:5173` for both canonical origins and include
+it in both trusted-origin lists. Deploy a separate `authdev` Function configured
+with the local secrets and link origins; point `apps/api/.env.local` at that
+Function. Keep the production `auth` Function configured for
+`https://console.psape.co.za`. Cookie security follows the canonical URL unless
+explicitly overridden with `MOC_AUTH_COOKIE_SECURE`.
 
 Configure SMTP and verify outbound connectivity, sender delivery and link origins.
 Provider OAuth client IDs, registered redirects, webhook URLs and Telegram Mini
 App URLs retain their existing values. Supply provider secrets and bot credentials
 to the corresponding Neon workers. Frontends need no backend credentials or API
 base URL; local API routing uses the server-only `MOC_API_PROXY_TARGET` setting.
+
+For Resend SMTP, verify the sender domain and create a Sending Access key scoped
+to that domain. Set `SMTP_HOST=smtp.resend.com`, `SMTP_PORT=465`,
+`SMTP_USER=resend`, `SMTP_PASSWORD` to the key and `SMTP_FROM` to a sender on
+the verified domain. Port 465 uses implicit TLS. Store the key only in ignored
+Neon environment files or deployment secrets. Signup, verification email and
+password recovery return `EMAIL_UNAVAILABLE` before identity changes while SMTP
+configuration is missing. Verify delivery and links after adding credentials.
 
 ## Provision and verify
 
@@ -64,7 +91,6 @@ Run its catalog verifier and `check-cutover.ts --schema` before activation.
 
 ## Existing data
 
-No live data transfer or production deployment has been performed by this cleanup.
 Provider-specific identity and object-import adapters have been removed. Moving
 existing accounts and assets now requires a separate export/import procedure,
 completed and verified before directing live users to the new deployment.
@@ -94,7 +120,11 @@ domain parity before deliberate URL rewrites, then verify those changes separate
 ## Deploy and exercise
 
 Deploy the API, then the three apps with SDK rewrites. Preserve project domains
-and integration callbacks. Exercise signup, access approval, verification,
+and integration callbacks. Stage the API with `vercel deploy --prod --skip-domain`
+and verify it with `vercel curl` before promoting its custom domain. The API's
+explicit auth rewrite routes nested signup, sign-in and reset links into its
+Node Function; verify those routes on the deployment as well as locally.
+Exercise signup, access approval, verification,
 recovery, sign-in/out, workspace switching, requests, checklists, equipment and
 venue bookings, providers, Telegram, scheduled messages and notification retries
 in real desktop and mobile browsers. Capture network requests to verify all

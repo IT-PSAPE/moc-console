@@ -5,10 +5,13 @@ import { useYouTubeOAuth } from "@/features/streams/use-youtube-oauth"
 import { useZoomOAuth } from "@/features/streams/use-zoom-oauth"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { getErrorMessage } from "@moc/utils/get-error-message"
+import { useSettingsResourceLoading } from "./settings-loading-context"
 
 export function useStreamConnections() {
   const { toast } = useFeedback()
-  const { actions: { loadYouTubeConnection, loadZoomConnection, setZoomMeetings } } = useStreams()
+  const { state, actions: { loadYouTubeConnection, loadZoomConnection, setZoomMeetings } } = useStreams()
+  useSettingsResourceLoading('integrations', 'youtube-connection', state.isInitialLoadingConnection)
+  useSettingsResourceLoading('integrations', 'zoom-connection', state.isInitialLoadingZoomConnection)
   const { handleOAuthCallback: handleYouTubeCallback } = useYouTubeOAuth()
   const { handleOAuthCallback: handleZoomCallback } = useZoomOAuth()
 

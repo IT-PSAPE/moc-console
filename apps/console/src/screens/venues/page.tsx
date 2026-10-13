@@ -15,13 +15,13 @@ import { VenueBookingPanelContent } from "@/features/venues/venue-booking-drawer
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
 import { Page } from "@moc/ui/components/layout/page";
 import { Input } from "@moc/ui/components/form/input";
-import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { Decision } from "@moc/ui/components/display/decision";
 import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar";
 import { useVenueBookingsScreen } from "./use-venue-bookings-screen";
+import { ResourceLoadError } from "@/components/feedback/resource-load-error";
 
 export function VenueBookingsScreen() {
   const { state, actions, meta } = useVenueBookingsScreen();
@@ -29,6 +29,7 @@ export function VenueBookingsScreen() {
   const CollectionContent = activeView === "kanban" ? Page.CollectionContent : Page.Content;
   const visibleBookings = activeView === "calendar" ? filters.calendarFiltered : filters.filtered;
   const collectionState = activeView === "list" ? visibleBookings : activeView;
+  if (meta.isInitialLoading) return <Page.Loading />;
 
   function handleSearch(event: ChangeEvent<HTMLInputElement>) {
     filters.setSearch(event.target.value)
@@ -40,7 +41,7 @@ export function VenueBookingsScreen() {
       <Page>
       <Page.Header>
         <Page.Heading>
-          <Page.Title>Venue Bookings</Page.Title>
+          <Page.Title>Venues</Page.Title>
         </Page.Heading>
       </Page.Header>
 
@@ -64,10 +65,7 @@ export function VenueBookingsScreen() {
       </CollectionToolbar>
 
       <CollectionContent>
-      <Decision value={collectionState} loading={meta.isLoading}>
-        <Decision.Loading>
-          <LoadingSpinner className="py-6" />
-        </Decision.Loading>
+      {meta.error ? <ResourceLoadError title="Couldn't load venue bookings" error={meta.error} onRetry={actions.retry} /> : <Decision value={collectionState}>
         <Decision.Empty>
           <EmptyState
             icon={<MapPin />}
@@ -80,7 +78,7 @@ export function VenueBookingsScreen() {
           {activeView === "kanban" && <VenueBookingKanbanView bookings={visibleBookings} />}
           {activeView === "calendar" && <VenueBookingCalendarView bookings={visibleBookings} />}
         </Decision.Data>
-      </Decision>
+      </Decision>}
       </CollectionContent>
       </Page>
       </SplitPanel.Primary>

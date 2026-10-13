@@ -11,10 +11,11 @@ type PasswordFieldProps = {
     onToggleVisible: () => void
     placeholder?: string
     autoComplete?: string
+    id?: string
     name: string
 }
 
-export function PasswordField({ value, onChange, onBlur, visible, onToggleVisible, placeholder, autoComplete, name }: PasswordFieldProps) {
+export function PasswordField({ value, onChange, onBlur, visible, onToggleVisible, placeholder, autoComplete, id, name }: PasswordFieldProps) {
     function handleChange(event: ChangeEvent<HTMLInputElement>) {
         onChange(event.target.value)
     }
@@ -22,6 +23,7 @@ export function PasswordField({ value, onChange, onBlur, visible, onToggleVisibl
     return (
         <div className="relative">
             <Input
+                id={id}
                 aria-label={placeholder ?? "Password"}
                 name={name}
                 type={visible ? "text" : "password"}

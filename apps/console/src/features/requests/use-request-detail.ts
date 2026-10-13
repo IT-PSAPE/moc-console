@@ -7,7 +7,6 @@ import { useRequestStore } from './use-request-store'
 import { useRequests } from './request-provider'
 import { getErrorMessage } from '@moc/utils/get-error-message'
 import { useRequestAssignees } from './use-request-assignees'
-import { useRequestRelatedChecklists } from './use-request-related-checklists'
 
 type UseRequestDetailOptions = {
     request: Request
@@ -27,7 +26,6 @@ export function useRequestDetail({ request, syncRequest, assigneesEnabled = true
     const [isDeleting, setIsDeleting] = useState(false)
     const blocker = useBlocker(store.state.isDirty)
     const assigneeStore = useRequestAssignees(request.id, assigneesEnabled)
-    const relatedChecklists = useRequestRelatedChecklists(request.id, assigneesEnabled)
 
     useEffect(() => {
         if (!store.state.isDirty) return
@@ -123,7 +121,6 @@ export function useRequestDetail({ request, syncRequest, assigneesEnabled = true
         blockerState: blocker.state,
         assignees: assigneeStore.state.assignees,
         isLoadingAssignees: assigneeStore.state.isLoading,
-        relatedChecklists: relatedChecklists.state,
         isDeleting,
         showDeleteModal,
         store,
@@ -137,7 +134,6 @@ export function useRequestDetail({ request, syncRequest, assigneesEnabled = true
             handleContentChange,
             handleDelete,
             handleRemoveMember: assigneeStore.actions.removeMember,
-            refreshRelatedChecklists: relatedChecklists.actions.refresh,
             handleSave,
             openDeleteModal,
         },

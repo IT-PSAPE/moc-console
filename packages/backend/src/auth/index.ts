@@ -9,7 +9,9 @@ let authPool: PoolType | undefined
 
 function getAuthPool(): PoolType {
   if (authPool) return authPool
-  const connectionString = process.env.NEON_AUTH_DATABASE_URL ?? process.env.DATABASE_URL ?? process.env.NEON_DATABASE_URL
+  // Auth selects its schema at connection startup, which requires a direct
+  // connection when Neon supplies both direct and transaction-pooled URLs.
+  const connectionString = process.env.NEON_AUTH_DATABASE_URL ?? process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL ?? process.env.NEON_DATABASE_URL
   if (!connectionString) throw new Error("Auth database connection is not configured")
   authPool = new Pool({
     connectionString,

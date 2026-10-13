@@ -10,8 +10,8 @@ const bookingViews = ["list", "kanban", "calendar"] as const
 
 export function useBookingsScreen() {
   const {
-    state: { bookings, isLoadingBookings },
-    actions: { loadBookings, loadEquipment },
+    state: { bookings, isLoadingBookings, isInitialLoadingBookings, bookingsError },
+    actions: { loadBookings, loadEquipment, retryBookings },
   } = useEquipment()
   const [view, setView] = useViewQuery(bookingViews, "list")
   const isMobile = useIsMobile()
@@ -35,12 +35,14 @@ export function useBookingsScreen() {
 
   return {
     state: { detailOpen: detail.state.isOpen, selectedBooking: detail.state.selectedItem },
-    actions: { changeView, closeDetail, selectBooking },
+    actions: { changeView, closeDetail, selectBooking, retry: retryBookings },
     meta: {
       filters,
       isLoading: isLoadingBookings,
+      isInitialLoading: isInitialLoadingBookings,
       isMobile,
       activeView,
+      error: bookingsError,
     },
   }
 }

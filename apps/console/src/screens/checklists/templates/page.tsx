@@ -2,7 +2,6 @@ import type { ChangeEvent } from 'react'
 import { ListChecks, Plus, Search } from 'lucide-react'
 import { DividedList } from '@moc/ui/components/display/divided-list'
 import { Button } from '@moc/ui/components/controls/button'
-import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import { Input } from '@moc/ui/components/form/input'
 import { Page } from '@moc/ui/components/layout/page'
 import { ChecklistDrawerItem } from '@/features/checklists/checklist-drawer-item'
@@ -14,6 +13,8 @@ import { useChecklistTemplates } from './use-checklist-templates'
 
 export function ChecklistTemplatesScreen() {
     const { state, actions, meta } = useChecklistTemplates()
+
+    if (meta.isInitialLoading) return <Page.Loading />
 
     function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
         actions.setSearch(event.target.value)
@@ -39,10 +40,7 @@ export function ChecklistTemplatesScreen() {
             </Page.Toolbar>
 
             <Page.Content className="flex flex-col gap-1.5">
-                <Decision value={meta.templates} loading={meta.isLoading}>
-                    <Decision.Loading>
-                        <LoadingSpinner className="py-6" />
-                    </Decision.Loading>
+                <Decision value={meta.templates}>
                     <Decision.Empty>
                         <EmptyState
                             icon={<ListChecks />}

@@ -59,6 +59,8 @@ function streamOptionsFailureToast(failures: string[], errors: unknown[]): { tit
 }
 
 type UseStreamFormOptions = {
+  initialTitle?: string;
+  initialScheduledAt?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (params: StreamFormData) => Promise<void> | void;
@@ -70,7 +72,7 @@ function fileNameFromUrl(url: string, fallback: string) {
   return url.split("/").pop() || fallback;
 }
 
-export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset }: UseStreamFormOptions) {
+export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset, initialTitle, initialScheduledAt }: UseStreamFormOptions) {
   const isEditing = Boolean(stream);
   const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const { toast } = useFeedback();
@@ -119,9 +121,9 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset }: 
 
   function resetForm() {
     const reset = stream ?? preset ?? null;
-    const resetScheduledStart = stream ? stream.scheduledStartTime : preset?.scheduledStartTime ?? null;
+    const resetScheduledStart = initialScheduledAt ?? (stream ? stream.scheduledStartTime : preset?.scheduledStartTime ?? null);
     const resetPresetThumbUrl = !stream ? preset?.thumbnailUrl ?? null : null;
-    setTitle(reset?.title ?? "");
+    setTitle(initialTitle ?? reset?.title ?? "");
     setDescription(reset?.description ?? "");
     setPrivacyStatus(reset?.privacyStatus ?? "unlisted");
     setIsForKids(reset?.isForKids ?? false);

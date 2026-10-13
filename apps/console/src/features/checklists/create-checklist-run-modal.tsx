@@ -8,14 +8,16 @@ import type { Checklist } from '@moc/types/checklists'
 import { useCreateChecklistRun, type ChecklistRunSubmit } from './use-create-checklist-run'
 
 type Props = {
+    initialName?: string
+    initialScheduledAt?: string
     open: boolean
     onOpenChange: (open: boolean) => void
     template: Checklist | null
     onSubmit: (input: ChecklistRunSubmit) => Promise<void> | void
 }
 
-export function CreateChecklistRunModal({ open, onOpenChange, template, onSubmit }: Props) {
-    const { state, actions, meta } = useCreateChecklistRun({ open, onOpenChange, onSubmit, template })
+export function CreateChecklistRunModal({ open, onOpenChange, template, onSubmit, initialName, initialScheduledAt }: Props) {
+    const { state, actions, meta } = useCreateChecklistRun({ open, onOpenChange, onSubmit, template, initialName, initialScheduledAt })
 
     return (
         <Modal open={open} onOpenChange={onOpenChange}>

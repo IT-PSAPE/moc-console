@@ -3,13 +3,31 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./checklists": "./src/checklists.ts",
-    "./equipment": "./src/equipment/index.ts",
-    "./requests": "./src/requests/index.ts",
-    "./workspace": "./src/workspace.ts",
-    "./venues": "./src/venues/index.ts",
-    "./*": "./src/*.ts"
+    ".": {
+      "node": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+      "default": "./src/index.ts"
+    },
+    "./equipment": {
+      "node": { "types": "./dist/equipment/index.d.ts", "default": "./dist/equipment/index.js" },
+      "default": "./src/equipment/index.ts"
+    },
+    "./requests": {
+      "node": { "types": "./dist/requests/index.d.ts", "default": "./dist/requests/index.js" },
+      "default": "./src/requests/index.ts"
+    },
+    "./venues": {
+      "node": { "types": "./dist/venues/index.d.ts", "default": "./dist/venues/index.js" },
+      "default": "./src/venues/index.ts"
+    },
+    "./*": {
+      "node": { "types": "./dist/*.d.ts", "default": "./dist/*.js" },
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b --force"
   }
 }

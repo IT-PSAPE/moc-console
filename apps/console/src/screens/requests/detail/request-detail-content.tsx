@@ -1,3 +1,5 @@
+import { useDetailReturn } from "@/hooks/use-detail-return"
+import { RequestLinkedRecords } from "@/features/request-links/request-linked-records"
 import { useRef } from "react"
 import { Link } from "react-router-dom"
 import { Archive, ArchiveRestore, EllipsisVertical, Save, Trash2, Undo2 } from "lucide-react"
@@ -9,7 +11,6 @@ import { RequestMetaFields } from "@/features/requests/request-meta-fields"
 import { RequestNotes } from "@/features/requests/request-notes"
 import { RequestShareActions } from "@/features/requests/request-share-actions"
 import { RequestDiscussion } from "@/features/requests/request-discussion"
-import { RequestRelatedChecklists } from "@/features/requests/request-related-checklists"
 import { RequestTitle } from "@/features/requests/request-title"
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal"
 import { useRequestDetail } from "@/features/requests/use-request-detail"
@@ -31,10 +32,11 @@ type RequestDetailContentProps = {
 }
 
 export function RequestDetailContent({ request, syncRequest }: RequestDetailContentProps) {
+  const back = useDetailReturn(`/${routes.requests}`, "Back to requests")
   const shareTargetRef = useRef<HTMLDivElement | null>(null)
   const { state: { requestCategories } } = useRequests()
   const detail = useRequestDetail({ request, syncRequest })
-  const { assignees, blockerState, isDeleting, relatedChecklists, showDeleteModal, store } = detail
+  const { assignees, blockerState, isDeleting, showDeleteModal, store } = detail
   const actions = detail.actions
 
   function handleTitleChange(value: string) {
@@ -43,7 +45,7 @@ export function RequestDetailContent({ request, syncRequest }: RequestDetailCont
 
   return (
     <DetailPage>
-        <DetailPage.Back render={<Link to={`/${routes.requests}`} />}>Back to requests</DetailPage.Back>
+        <DetailPage.Back render={<Link to={back.href} />}>{back.label}</DetailPage.Back>
         <RequestShareActions.Root request={store.state.draft} targetRef={shareTargetRef}>
           <TopBarActions>
             {store.state.isDirty && (
@@ -77,12 +79,12 @@ export function RequestDetailContent({ request, syncRequest }: RequestDetailCont
             <DetailPage.Divider />
             <DetailPage.Section><RequestAssigneeList assignees={assignees} onAddMember={actions.handleAddMember} onRemoveMember={actions.handleRemoveMember} /></DetailPage.Section>
             <DetailPage.Divider />
-            <DetailPage.Section><RequestRelatedChecklists checklists={relatedChecklists.checklists} isLoading={relatedChecklists.isLoading} error={relatedChecklists.error} onRetry={actions.refreshRelatedChecklists} /></DetailPage.Section>
-            <DetailPage.Divider />
             <DetailPage.Section>
               <Label.md className="block pb-3">Content</Label.md>
               <DocEditor value={store.state.draft.content ?? ""} onChange={actions.handleContentChange} placeholder="Add notes, details, or additional context…" className="w-full" />
             </DetailPage.Section>
+            <DetailPage.Divider />
+            <DetailPage.Section><RequestLinkedRecords request={request} /></DetailPage.Section>
             <DetailPage.Divider />
             <RequestDiscussion.Root requestId={request.id} refreshKey={store.state.draft.updatedAt}>
               <DetailPage.Section><RequestDiscussion.Activity /></DetailPage.Section>

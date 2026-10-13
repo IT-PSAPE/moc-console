@@ -1,6 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react"
 import { cn } from "@moc/utils/cn"
 import { useBroadcastPlaybackContext } from "./broadcast-playback-provider"
+import { Page } from "@moc/ui/components/layout/page"
 
 /**
  * The whole app runs on the dark end of the design tokens — `data-theme` is set
@@ -14,14 +15,14 @@ export function BroadcastStage({ children, className, ...props }: HTMLAttributes
   const { broadcast } = meta
 
   return (
-    <section
+    <Page.Main
       ref={setPlayerRoot}
       aria-label={`${broadcast.title} player`}
       className={cn("h-dvh w-full overflow-y-auto bg-primary text-primary lg:grid lg:grid-cols-[minmax(0,1fr)_21rem] lg:grid-rows-1 lg:overflow-hidden", className)}
       {...props}
     >
       {children}
-    </section>
+    </Page.Main>
   )
 }
 

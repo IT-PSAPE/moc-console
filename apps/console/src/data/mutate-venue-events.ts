@@ -12,14 +12,14 @@ export async function createVenueEvent(draft: VenueEventDraft, workspaceId?: str
   return moc.venues.createEvent(draft, resolvedWorkspaceId);
 }
 
-export async function updateVenueEvent(id: string, draft: VenueEventDraft): Promise<VenueEvent> {
-  const workspaceId = await getCurrentWorkspaceId();
-  return moc.venues.updateEvent(id, draft, workspaceId);
+export async function updateVenueEvent(id: string, draft: VenueEventDraft, workspaceId?: string): Promise<VenueEvent> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
+  return moc.venues.updateEvent(id, draft, resolvedWorkspaceId);
 }
 
-export async function setVenueEventActive(id: string, active: boolean): Promise<void> {
-  const workspaceId = await getCurrentWorkspaceId();
-  await moc.venues.setEventActive(id, active, workspaceId);
+export async function setVenueEventActive(id: string, active: boolean, workspaceId?: string): Promise<void> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
+  await moc.venues.setEventActive(id, active, resolvedWorkspaceId);
 }
 
 export async function deleteVenueEvent(id: string): Promise<void> {

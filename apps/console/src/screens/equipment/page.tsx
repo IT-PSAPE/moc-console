@@ -11,7 +11,6 @@ import {
   Search,
   Settings2,
 } from "lucide-react";
-import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import { Decision } from "@moc/ui/components/display/decision";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
@@ -24,11 +23,13 @@ import type { ChangeEvent } from "react";
 import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 import { EquipmentPanelContent } from "@/features/equipment/equipment-drawer";
 import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar";
+import { ResourceLoadError } from "@/components/feedback/resource-load-error";
 
 export function EquipmentScreen() {
   const { state, actions, meta } = useEquipmentScreen();
   const CollectionContent = state.activeView === "kanban" ? Page.CollectionContent : Page.Content;
   const collectionState = state.activeView === "kanban" ? state.activeView : state.filtered;
+  if (state.isInitialLoading) return <Page.Loading />;
 
   function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
     actions.setSearch(event.target.value);
@@ -78,10 +79,7 @@ export function EquipmentScreen() {
       </CollectionToolbar>
 
       <CollectionContent>
-      <Decision value={collectionState} loading={state.isLoading}>
-        <Decision.Loading>
-          <LoadingSpinner className="py-6" />
-        </Decision.Loading>
+      {meta.error ? <ResourceLoadError title="Couldn't load equipment" error={meta.error} onRetry={actions.retry} /> : <Decision value={collectionState}>
         <Decision.Empty>
           <EmptyState
             icon={<Package />}
@@ -93,7 +91,7 @@ export function EquipmentScreen() {
           {state.activeView === "list" && <InventoryListView equipment={state.filtered} onSelect={actions.selectEquipment} />}
           {state.activeView === "kanban" && <InventoryKanbanView equipment={state.filtered} />}
         </Decision.Data>
-      </Decision>
+      </Decision>}
       </CollectionContent>
 
       <CreateEquipmentModal

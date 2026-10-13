@@ -32,7 +32,8 @@ type TailscalePlugin = {
   config(): {
     server: { host: boolean; port: number; strictPort: boolean; allowedHosts: string[] }
   }
-  configureServer(server: DevServerLike): Promise<void>
+  configureServer(server: DevServerLike): void
+  buildStart(): Promise<void>
 }
 
 // The macOS App Store build keeps its CLI inside the bundle and only
@@ -77,10 +78,8 @@ function readTailnetHost(): string | null {
  *
  * Vite's `strictPort` does not catch every collision. A server bound to
  * loopback only (`[::1]:5175`) and one bound to every interface (`*:5175`)
- * are different addresses, so BOTH binds succeed — and then `localhost`
- * resolves to ::1 and reaches the other process while the tailnet address
- * reaches this one. The dev server looks healthy and serves a different
- * app on localhost, which is a genuinely confusing hour to lose.
+ * can both bind successfully. Then localhost reaches the first server
+ * while the tailnet address reaches the second.
  */
 function isPortAnswering(host: string, port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -113,6 +112,7 @@ async function assertPortIsFree(port: number): Promise<void> {
 }
 
 export function tailscaleDevServer(port: number): TailscalePlugin {
+  let shouldCheckPort = false
   return {
     name: "moc:tailscale-dev-server",
     config() {
@@ -125,9 +125,8 @@ export function tailscaleDevServer(port: number): TailscalePlugin {
         },
       }
     },
-    async configureServer(server: DevServerLike) {
-      await assertPortIsFree(port)
-
+    configureServer(server: DevServerLike) {
+      shouldCheckPort = true
       const host = readTailnetHost()
       if (!host) return
 
@@ -138,6 +137,13 @@ export function tailscaleDevServer(port: number): TailscalePlugin {
           `  \x1b[32m➜\x1b[0m  \x1b[1mTailnet\x1b[0m: \x1b[36mhttp://${host}:${port}/\x1b[0m`,
         )
       })
+    },
+    async buildStart() {
+      if (!shouldCheckPort) return
+      // Vite configures a replacement before closing the old server. Its
+      // startup build hook runs after that close and before the new listen.
+      await assertPortIsFree(port)
+      shouldCheckPort = false
     },
   }
 }

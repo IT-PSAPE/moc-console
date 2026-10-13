@@ -28,6 +28,7 @@ function InteractiveSurfaceLink({ children, className, render, ...props }: Inter
     return (
         <BaseButton
             nativeButton={false}
+            role="link"
             render={render}
             className={cn('touch-manipulation text-left focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none', className)}
             {...props}

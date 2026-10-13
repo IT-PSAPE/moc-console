@@ -56,7 +56,7 @@ export function useChecklistsScreen() {
     }
 
     return {
-        state: { activeView, isMobile, modalOpen, modalTemplate, templates, active: groups.active, completed: groups.completed, detailOpen: detail.state.isOpen, selectedChecklist: detail.state.selectedItem, showActive, showCompleted, isLoading: checklistState.isLoadingChecklists, search: filters.filters.search },
+        state: { activeView, isMobile, modalOpen, modalTemplate, templates, active: groups.active, completed: groups.completed, detailOpen: detail.state.isOpen, selectedChecklist: detail.state.selectedItem, showActive, showCompleted, isLoading: checklistState.isLoadingChecklists, isInitialLoading: checklistState.isInitialLoadingChecklists, search: filters.filters.search },
         actions: { changeView, closeDetail, selectChecklist, setModalOpen, pickBlank, pickTemplate, submit, openTemplates, setSearch: filters.setSearch },
         meta: { filters, filtered: filters.filtered, calendarFiltered: filters.calendarFiltered },
     }

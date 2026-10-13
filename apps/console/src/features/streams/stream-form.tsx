@@ -13,6 +13,8 @@ import { StreamThumbnailField } from "./stream-thumbnail-field"
 import { useStreamForm, type StreamFormData } from "./use-stream-form"
 
 type StreamFormProps = {
+  initialTitle?: string;
+  initialScheduledAt?: string;
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (params: StreamFormData) => Promise<void> | void
@@ -20,8 +22,8 @@ type StreamFormProps = {
   preset?: StreamPreset | null
 }
 
-export function StreamForm({ open, onOpenChange, onSubmit, stream, preset }: StreamFormProps) {
-  const { state, actions, meta } = useStreamForm({ open, onOpenChange, onSubmit, stream, preset })
+export function StreamForm({ open, onOpenChange, onSubmit, stream, preset, initialTitle, initialScheduledAt }: StreamFormProps) {
+  const { state, actions, meta } = useStreamForm({ open, onOpenChange, onSubmit, stream, preset, initialTitle, initialScheduledAt })
   const submitLabel = state.isSubmitting
     ? meta.isEditing ? "Updating…" : "Creating…"
     : meta.isEditing ? "Update stream" : "Create stream"

@@ -27,8 +27,9 @@ export function LoginScreen() {
         {state.verificationSent && <Alert variant="success" title="Verification email sent" description="Check your inbox for a new sign-in link." />}
 
         <div className="space-y-1">
-          <FormLabel label="Email" required />
+          <FormLabel label="Email" htmlFor="login-email" required />
           <Input
+            id="login-email"
             aria-label="Email"
             autoComplete="email"
             name="email"
@@ -43,8 +44,9 @@ export function LoginScreen() {
         </div>
 
         <div className="space-y-1">
-          <FormLabel label="Password" required />
+          <FormLabel label="Password" htmlFor="login-password" required />
           <Input
+            id="login-password"
             aria-label="Password"
             autoComplete="current-password"
             name="password"

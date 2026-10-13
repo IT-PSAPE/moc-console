@@ -11,7 +11,7 @@ import { Checkbox } from '@moc/ui/components/form/checkbox'
 import { SelectField } from '@moc/ui/components/form/select-field'
 import { RichTextEditor } from '@moc/ui/components/form/rich-text-editor'
 import { EmptyState } from '@moc/ui/components/feedback/empty-state'
-import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
+import { Page } from '@moc/ui/components/layout/page'
 import { Alert } from '@moc/ui/components/feedback/alert'
 import type { ScheduledFieldDefinition } from '@moc/notifications'
 import { routes } from '@/screens/console-routes'
@@ -23,7 +23,7 @@ export function ScheduledScheduleForm() {
     function renderField(field: ScheduledFieldDefinition) {
         return <ScheduledMessageField key={field.key} field={field} labelPrefix="Message" value={state.schedule.fields[field.key] ?? ''} disabled={state.busy} onChange={actions.changeScheduleField} />
     }
-    if (state.loading) return <LoadingSpinner className="py-16" />
+    if (state.isInitialLoading) return <Page.Loading />
     if (state.loadError) return <Alert variant="error" title="Couldn't load message setup" description={state.loadError} action={<Button variant="secondary" onClick={actions.reload}>Retry</Button>} />
     if (!meta.templateItems.length) return <EmptyState icon={<FileText />} title="Start with a template" description="Create an announcement or pre-attendance template, then choose where and when to send it." action={<Button.Link render={<Link to={`/${routes.scheduledTemplateNew}`} />}>Create a template</Button.Link>} />
     return <>
@@ -33,7 +33,7 @@ export function ScheduledScheduleForm() {
             <Section><Section.Header title="Message" /><Section.Body className="gap-4">{meta.scheduleFields.map(renderField)}
                 <Accordion><Accordion.Item value="preview"><Accordion.Trigger className="flex items-center justify-between py-2 text-secondary">Preview message<ChevronDown className="size-4 group-data-[panel-open]:rotate-180" /></Accordion.Trigger><Accordion.Content className="pt-2">{meta.previewError ? <Alert variant="error" title="Check message values" description={meta.previewError} /> : <RichTextEditor.Root value={meta.previewHtml} onChange={actions.ignorePreviewChange} disabled><RichTextEditor.Content className="rounded-lg [&_.ProseMirror]:min-h-0" /></RichTextEditor.Root>}{meta.isAttendance ? <Paragraph.xs className="pt-2 text-tertiary">Only members with Telegram connected are included. The attendee list is finalized when this message is sent.</Paragraph.xs> : null}</Accordion.Content></Accordion.Item></Accordion>
             </Section.Body></Section>
-            {!meta.groupItems.length ? <EmptyState icon={<MessageSquare />} title="No linked Telegram groups" description="Link the bot to a group before scheduling a message." action={<Button.Link variant="secondary" render={<Link to={`/${routes.settings}?tab=telegram`} />}>Telegram settings</Button.Link>} /> : <>
+            {!meta.groupItems.length ? <EmptyState icon={<MessageSquare />} title="No linked Telegram groups" description="Link the bot to a group before scheduling a message." action={<Button.Link variant="secondary" render={<Link to={`/${routes.settings}?tab=notifications`} />}>Telegram settings</Button.Link>} /> : <>
                 <Section><Section.Header title="Where to send" /><Section.Body className="gap-4"><FormField label="Telegram group"><SelectField name="group" label="Telegram group" items={meta.groupItems} value={state.schedule.groupChatId} onValueChange={actions.setGroup} /></FormField>{meta.hasTopics ? <FormField label="Topic"><SelectField name="topic" label="Topic" items={meta.topicItems} value={state.schedule.threadId || 'main'} onValueChange={actions.setTopic} /></FormField> : null}</Section.Body></Section>
                 <Section><Section.Header title="When to send" /><Section.Body className="gap-4">
                     <div className="grid gap-4 sm:grid-cols-2"><DateTimeFields label="Send date and time" name="startsOn" value={state.schedule.startsOn} onChange={actions.setStartsOn} required /><FormField label="Repeat"><SelectField name="repeat" label="Repeat" items={meta.frequencyItems} value={state.schedule.frequency} onValueChange={actions.setFrequency} /></FormField>{meta.isRecurring ? <FormField label="Last recurring date" optional><Input type="date" name="untilOn" aria-label="Last recurring date" value={state.schedule.untilOn} onChange={actions.changeSchedule} /></FormField> : null}</div>

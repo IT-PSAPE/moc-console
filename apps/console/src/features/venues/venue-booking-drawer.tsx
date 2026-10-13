@@ -1,3 +1,5 @@
+import { useDetailLinkState } from "@/hooks/use-detail-return"
+import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { Ban, Check, EllipsisVertical, Maximize2, RotateCcw, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
@@ -43,6 +45,7 @@ type VenueBookingPanelContentProps = {
 };
 
 export function VenueBookingPanelContent({ booking, onClose }: VenueBookingPanelContentProps) {
+  const linkState = useDetailLinkState()
   const { state: { at } } = useVenueBookings();
   const cancel = useVenueBookingCancel();
   const decision = useVenueBookingDecision();
@@ -81,7 +84,7 @@ export function VenueBookingPanelContent({ booking, onClose }: VenueBookingPanel
     <>
       <SplitPanel.Header className="flex items-center gap-1">
         <Button.Icon aria-label="Close booking" variant="ghost" icon={<X />} onClick={onClose} />
-        <Button.IconLink aria-label="Open full page" variant="ghost" icon={<Maximize2 />} render={<Link to={`/${routes.venues}/${booking.id}`} />} />
+        <Button.IconLink aria-label="Open full page" variant="ghost" icon={<Maximize2 />} render={<Link state={linkState} to={`/${routes.venues}/${booking.id}`} />} />
         <div className="flex-1" />
         <Dropdown placement="bottom">
           <Dropdown.Trigger>
@@ -125,6 +128,8 @@ export function VenueBookingPanelContent({ booking, onClose }: VenueBookingPanel
         <div className="px-4">
           <VenueBookingMetaFields booking={booking} at={at} />
         </div>
+
+        <RequestLinkField kind="venue-booking" id={booking.id} className="px-4 pt-5" />
 
         {booking.notes && (
           <>

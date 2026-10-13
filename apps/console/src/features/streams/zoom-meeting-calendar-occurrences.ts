@@ -1,4 +1,6 @@
 import type { ZoomMeeting } from "@moc/types/streams/zoom"
+import { getBrowserTimeZone } from "@moc/utils/browser-date-time"
+import { formatUtcIsoForDateTimeInput, parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time"
 
 const MILLISECONDS_PER_DAY = 86_400_000
 const CALENDAR_DAY_COUNT = 42
@@ -59,22 +61,45 @@ function occurrenceOnDate(date: Date, start: Date): Date {
   )
 }
 
-export function getZoomMeetingCalendarOccurrences(meeting: ZoomMeeting, visibleMonth: Date): Date[] {
+function toLocalInput(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  const hours = String(date.getHours()).padStart(2, "0")
+  const minutes = String(date.getMinutes()).padStart(2, "0")
+  const seconds = String(date.getSeconds()).padStart(2, "0")
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+}
+
+export function getZoomMeetingCalendarOccurrences(meeting: ZoomMeeting, visibleMonth: Date, displayTimezone = getBrowserTimeZone()): Date[] {
   if (!meeting.startTime) return []
 
-  const start = new Date(meeting.startTime)
-  if (Number.isNaN(start.getTime())) return []
-  if (meeting.recurrenceType === "none") return [start]
+  const startInstant = new Date(meeting.startTime)
+  if (Number.isNaN(startInstant.getTime())) return []
+  if (meeting.recurrenceType === "none") return [startInstant]
+  const start = new Date(formatUtcIsoForDateTimeInput(meeting.startTime, meeting.timezone))
 
-  const calendarStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1)
-  calendarStart.setDate(1 - calendarStart.getDay())
+  const visibleStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1)
+  visibleStart.setDate(1 - visibleStart.getDay())
+  const visibleEnd = new Date(visibleStart)
+  visibleEnd.setDate(visibleStart.getDate() + CALENDAR_DAY_COUNT)
+  const visibleStartIso = parseDateTimeInputToUtcIso(toLocalInput(visibleStart), displayTimezone)
+  const meetingVisibleStart = new Date(formatUtcIsoForDateTimeInput(visibleStartIso, meeting.timezone))
+  meetingVisibleStart.setDate(meetingVisibleStart.getDate() - 1)
 
   const occurrences: Date[] = []
-  for (let offset = 0; offset < CALENDAR_DAY_COUNT; offset += 1) {
-    const candidate = new Date(calendarStart)
-    candidate.setDate(calendarStart.getDate() + offset)
-    if (matchesRecurrence(meeting, start, candidate)) occurrences.push(occurrenceOnDate(candidate, start))
+  for (let offset = 0; offset < CALENDAR_DAY_COUNT + 3; offset += 1) {
+    const candidate = new Date(meetingVisibleStart)
+    candidate.setDate(meetingVisibleStart.getDate() + offset)
+    if (matchesRecurrence(meeting, start, candidate)) {
+      const localOccurrence = occurrenceOnDate(candidate, start)
+      occurrences.push(new Date(parseDateTimeInputToUtcIso(toLocalInput(localOccurrence), meeting.timezone)))
+    }
   }
 
-  return occurrences
+  return occurrences.filter((occurrence) => {
+    const displayOccurrence = new Date(formatUtcIsoForDateTimeInput(occurrence.toISOString(), displayTimezone))
+    const displayDay = new Date(displayOccurrence.getFullYear(), displayOccurrence.getMonth(), displayOccurrence.getDate())
+    return displayDay >= visibleStart && displayDay < visibleEnd
+  })
 }

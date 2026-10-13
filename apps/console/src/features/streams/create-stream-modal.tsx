@@ -9,6 +9,8 @@ import { StreamProviderIcon } from "./stream-provider-icon"
 import type { StreamFormData } from "./use-stream-form"
 
 type CreateStreamModalProps = {
+  initialTitle?: string
+  initialScheduledAt?: string
   open: boolean
   onOpenChange: (open: boolean) => void
   youtubeAvailable: boolean
@@ -18,7 +20,7 @@ type CreateStreamModalProps = {
   onCreateZoom: (params: CreateMeetingParams) => Promise<void> | void
 }
 
-export function CreateStreamModal({ open, onOpenChange, youtubeAvailable, zoomAvailable, youtubePreset, onCreateYouTube, onCreateZoom }: CreateStreamModalProps) {
+export function CreateStreamModal({ open, onOpenChange, youtubeAvailable, zoomAvailable, youtubePreset, onCreateYouTube, onCreateZoom, initialTitle, initialScheduledAt }: CreateStreamModalProps) {
   return (
     <Modal open={open} onOpenChange={onOpenChange} closeOnBackdropClick={false} closeOnEscape={false}>
       <Modal.Portal>
@@ -44,12 +46,12 @@ export function CreateStreamModal({ open, onOpenChange, youtubeAvailable, zoomAv
               <Tabs.Panels className="contents">
                 {youtubeAvailable ? (
                   <Tabs.Panel value="youtube" className="contents">
-                    <StreamForm open={open} onOpenChange={onOpenChange} onSubmit={onCreateYouTube} preset={youtubePreset} />
+                    <StreamForm open={open} onOpenChange={onOpenChange} onSubmit={onCreateYouTube} preset={youtubePreset} initialTitle={initialTitle} initialScheduledAt={initialScheduledAt} />
                   </Tabs.Panel>
                 ) : null}
                 {zoomAvailable ? (
                   <Tabs.Panel value="zoom" className="contents">
-                    <MeetingForm open={open} onOpenChange={onOpenChange} onSubmit={onCreateZoom} />
+                    <MeetingForm open={open} onOpenChange={onOpenChange} onSubmit={onCreateZoom} initialTitle={initialTitle} initialScheduledAt={initialScheduledAt} />
                   </Tabs.Panel>
                 ) : null}
               </Tabs.Panels>

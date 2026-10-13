@@ -37,4 +37,19 @@ describe("requests SDK", () => {
 
     await expect(client.createComment("request-1", "  Need a new cable  ", "workspace-1")).resolves.toMatchObject({ id: "comment-1" })
   })
+
+  test("sends only the new name when renaming a request type", async () => {
+    const transport = {
+      call: async (_capability: string, operation: string, input?: unknown, workspaceId?: string) => {
+        expect(operation).toBe("updateCategory")
+        expect(input).toEqual({ id: "type-1", name: "Production gear" })
+        expect(workspaceId).toBe("workspace-1")
+        return { id: "type-1", key: "custom_equipment", name: "Production gear", description: "Existing description" }
+      },
+    } as MocTransport
+    const client = createRequestsClient(transport)
+
+    await expect(client.updateCategory("type-1", { name: "Production gear" }, "workspace-1"))
+      .resolves.toMatchObject({ id: "type-1", key: "custom_equipment", name: "Production gear", description: "Existing description" })
+  })
 })

@@ -1,8 +1,9 @@
+import { setRecordRequest, validateRequestLink } from "./record-request.js"
 import type { QueryResultRow } from "pg"
 import type { Stream, YouTubeConnection } from "@moc/types/streams/stream"
 import type { ZoomConnection, ZoomMeeting } from "@moc/types/streams/zoom"
 import type { PlatformContext, PlatformOperation } from "./context.js"
-import { objectInput, uuidField } from "./input.js"
+import { objectInput, optionalUuidField, uuidField } from "./input.js"
 
 type Row = QueryResultRow & Record<string, unknown>
 
@@ -39,8 +40,10 @@ const MEETING_FIELDS = [
   "duration", "timezone", "join_url", "password", "recurrence_type", "recurrence_interval", "recurrence_days",
   "waiting_room", "mute_on_entry", "continuous_chat",
 ] as const
-const STREAM_COLUMNS = "id, workspace_id, youtube_broadcast_id, youtube_stream_id, title, description, thumbnail_url, privacy_status, is_for_kids, scheduled_start_time, actual_start_time, actual_end_time, stream_status, stream_url, stream_key, ingestion_url, category_id, tags, latency_preference, enable_dvr, enable_embed, enable_auto_start, enable_auto_stop, playlist_id, created_by, created_at, updated_at"
-const MEETING_COLUMNS = "id, workspace_id, zoom_meeting_id, topic, description, meeting_type, start_time, duration, timezone, join_url, password, recurrence_type, recurrence_interval, recurrence_days, waiting_room, mute_on_entry, continuous_chat, created_by, created_at, updated_at"
+const STREAM_INSERT_FIELDS = [...STREAM_FIELDS, "request_id"] as const
+const MEETING_INSERT_FIELDS = [...MEETING_FIELDS, "request_id"] as const
+const STREAM_COLUMNS = "request_id, id, workspace_id, youtube_broadcast_id, youtube_stream_id, title, description, thumbnail_url, privacy_status, is_for_kids, scheduled_start_time, actual_start_time, actual_end_time, stream_status, stream_url, stream_key, ingestion_url, category_id, tags, latency_preference, enable_dvr, enable_embed, enable_auto_start, enable_auto_stop, playlist_id, created_by, created_at, updated_at"
+const MEETING_COLUMNS = "request_id, id, workspace_id, zoom_meeting_id, topic, description, meeting_type, start_time, duration, timezone, join_url, password, recurrence_type, recurrence_interval, recurrence_days, waiting_room, mute_on_entry, continuous_chat, created_by, created_at, updated_at"
 const YOUTUBE_CONNECTION_COLUMNS = "id, workspace_id, channel_id, channel_title, presets, connected_by, created_at, token_expires_at, status"
 const ZOOM_CONNECTION_COLUMNS = "id, workspace_id, zoom_user_id, email, display_name, connected_by, created_at, status"
 
@@ -51,6 +54,7 @@ async function rows<T extends Row>(context: PlatformContext, query: string, para
 
 function toStream(row: Row): Stream {
   return {
+    requestId: row.request_id as string | null ?? null,
     id: row.id as string, workspaceId: row.workspace_id as string, youtubeBroadcastId: row.youtube_broadcast_id as string,
     youtubeStreamId: row.youtube_stream_id as string, title: row.title as string, description: row.description as string,
     thumbnailUrl: row.thumbnail_url as string | null, privacyStatus: row.privacy_status as Stream["privacyStatus"],
@@ -69,6 +73,7 @@ function toStream(row: Row): Stream {
 
 function toMeeting(row: Row): ZoomMeeting {
   return {
+    requestId: row.request_id as string | null ?? null,
     id: row.id as string, workspaceId: row.workspace_id as string, zoomMeetingId: Number(row.zoom_meeting_id),
     topic: row.topic as string, description: row.description as string, meetingType: row.meeting_type as ZoomMeeting["meetingType"],
     startTime: row.start_time as string | null, duration: row.duration as number, timezone: row.timezone as string,
@@ -123,9 +128,11 @@ async function deleteIds(context: PlatformContext, table: "streams" | "zoom_meet
 }
 
 async function insertStream(context: PlatformContext, record: Record<string, unknown>): Promise<null> {
+  const requestId = optionalUuidField(record, "request_id") ?? null
+  await validateRequestLink(context, requestId)
   await context.db.query(
-    `INSERT INTO public.streams (${STREAM_FIELDS.join(", ")}, created_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)`,
+    `INSERT INTO public.streams (${STREAM_INSERT_FIELDS.join(", ")}, created_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26)`,
     [
       value(record, "id"), context.workspaceId, value(record, "youtube_broadcast_id"), value(record, "youtube_stream_id"),
       value(record, "title"), value(record, "description", ""), value(record, "thumbnail_url", null), value(record, "privacy_status"),
@@ -134,7 +141,7 @@ async function insertStream(context: PlatformContext, record: Record<string, unk
       value(record, "stream_key", null), value(record, "ingestion_url", null), value(record, "category_id", null),
       value(record, "tags", []), value(record, "latency_preference", "normal"), value(record, "enable_dvr", true),
       value(record, "enable_embed", true), value(record, "enable_auto_start", false), value(record, "enable_auto_stop", true),
-      value(record, "playlist_id", null), context.userId,
+      value(record, "playlist_id", null), requestId, context.userId,
     ],
   )
   return null
@@ -187,17 +194,19 @@ async function upsertStreams(context: PlatformContext, records: Record<string, u
 }
 
 async function insertMeeting(context: PlatformContext, record: Record<string, unknown>): Promise<null> {
+  const requestId = optionalUuidField(record, "request_id") ?? null
+  await validateRequestLink(context, requestId)
   const [connectionRow] = await rows<Row>(context, "SELECT id FROM public.zoom_connections WHERE workspace_id=$1 LIMIT 1", [context.workspaceId])
   if (!connectionRow) throw new Error("Zoom is not connected for this workspace")
   await context.db.query(
     `INSERT INTO public.zoom_meetings (id,workspace_id,zoom_connection_id,zoom_meeting_id,topic,description,meeting_type,start_time,
-      duration,timezone,join_url,password,recurrence_type,recurrence_interval,recurrence_days,waiting_room,mute_on_entry,continuous_chat,created_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
+      duration,timezone,join_url,password,recurrence_type,recurrence_interval,recurrence_days,waiting_room,mute_on_entry,continuous_chat,request_id,created_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
     [value(record, "id"), context.workspaceId, connectionRow.id, value(record, "zoom_meeting_id"), value(record, "topic"),
       value(record, "description", ""), value(record, "meeting_type", "scheduled"), value(record, "start_time", null),
       value(record, "duration", 60), value(record, "timezone", "UTC"), value(record, "join_url", null), value(record, "password", null),
       value(record, "recurrence_type", "none"), value(record, "recurrence_interval", null), value(record, "recurrence_days", null),
-      value(record, "waiting_room", false), value(record, "mute_on_entry", false), value(record, "continuous_chat", false), context.userId],
+      value(record, "waiting_room", false), value(record, "mute_on_entry", false), value(record, "continuous_chat", false), requestId, context.userId],
   )
   return null
 }
@@ -241,13 +250,13 @@ const listZoomMeetings: PlatformOperation = { permission: "can_read", run: async
 const getZoomMeeting: PlatformOperation = { permission: "can_read", run: async (context, input) => getById(context, "zoom_meetings", MEETING_COLUMNS, uuidField(objectInput(input, ["id"]), "id")) }
 const getYouTubeConnection: PlatformOperation = { permission: "can_read", run: async (context, input) => { emptyInput(input); return connection(context, "youtube_connections", YOUTUBE_CONNECTION_COLUMNS) } }
 const getZoomConnection: PlatformOperation = { permission: "can_read", run: async (context, input) => { emptyInput(input); return connection(context, "zoom_connections", ZOOM_CONNECTION_COLUMNS) } }
-const insertStreamOp: PlatformOperation = { permission: "can_create", run: async (context, input) => insertStream(context, recordInput(input, "record", STREAM_FIELDS)) }
+const insertStreamOp: PlatformOperation = { permission: "can_create", run: async (context, input) => insertStream(context, recordInput(input, "record", STREAM_INSERT_FIELDS)) }
 const updateStreamOp: PlatformOperation = { permission: "can_update", run: async (context, input) => { const root = objectInput(input, ["id", "record"]); return updateStream(context, uuidField(root, "id"), objectInput(root.record, STREAM_FIELDS)) } }
 const deleteStreamOp: PlatformOperation = { permission: "can_delete", run: async (context, input) => deleteIds(context, "streams", [uuidField(objectInput(input, ["id"]), "id")], "id") }
 const upsertStreamsOp: PlatformOperation = { permission: "can_update", run: async (context, input) => upsertStreams(context, recordsInput(input, "records", STREAM_FIELDS)) }
 const deleteByBroadcastsOp: PlatformOperation = { permission: "can_delete", run: async (context, input) => { const root = objectInput(input, ["ids"]); return deleteIds(context, "streams", stringArray(root.ids), "youtube_broadcast_id") } }
 const updatePresetsOp: PlatformOperation = { permission: "can_update", run: async (context, input) => { const root = objectInput(input, ["presets"]); await context.db.query("UPDATE public.youtube_connections SET presets=$2 WHERE workspace_id=$1", [context.workspaceId, root.presets]); return null } }
-const insertMeetingOp: PlatformOperation = { permission: "can_create", run: async (context, input) => insertMeeting(context, recordInput(input, "record", MEETING_FIELDS)) }
+const insertMeetingOp: PlatformOperation = { permission: "can_create", run: async (context, input) => insertMeeting(context, recordInput(input, "record", MEETING_INSERT_FIELDS)) }
 const updateMeetingOp: PlatformOperation = { permission: "can_update", run: async (context, input) => { const root = objectInput(input, ["id", "record"]); return updateMeeting(context, uuidField(root, "id"), objectInput(root.record, MEETING_FIELDS)) } }
 const deleteMeetingOp: PlatformOperation = { permission: "can_delete", run: async (context, input) => deleteIds(context, "zoom_meetings", [uuidField(objectInput(input, ["id"]), "id")], "id") }
 const upsertMeetingsOp: PlatformOperation = { permission: "can_update", run: async (context, input) => upsertMeetings(context, recordsInput(input, "records", MEETING_FIELDS)) }
@@ -259,6 +268,8 @@ function stringArray(value: unknown): string[] {
 }
 
 export const operations: Record<string, PlatformOperation> = {
+  setStreamRequest: { permission: "can_update", run: async (context, input) => { await setRecordRequest(context, "streams", input); return null } },
+  setMeetingRequest: { permission: "can_update", run: async (context, input) => { await setRecordRequest(context, "zoom_meetings", input); return null } },
   list, get, listZoomMeetings, getZoomMeeting, getYouTubeConnection, getZoomConnection,
   insertStream: insertStreamOp, updateStream: updateStreamOp, deleteStream: deleteStreamOp, upsertStreams: upsertStreamsOp,
   deleteStreamsByBroadcastIds: deleteByBroadcastsOp, updateYouTubePresets: updatePresetsOp,

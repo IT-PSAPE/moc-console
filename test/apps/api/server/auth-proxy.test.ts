@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { createAuthProxyHandler } from "../../../../apps/api/server/auth-proxy.js"
+import { authRequestPath } from "../../../../apps/api/server/auth-proxy-helpers.js"
 
 function responseRecorder() {
   const headers = new Map<string, string>()
@@ -17,6 +18,23 @@ function responseRecorder() {
 }
 
 describe("auth proxy", () => {
+  it("resolves nested deployment rewrites without forwarding routing metadata", () => {
+    expect(authRequestPath({ url: "/api/auth/_proxy?authPath=sign-up%2Femail&path=_proxy", headers: {} }))
+      .toEqual({ path: "/api/auth/sign-up/email", query: "" })
+    expect(authRequestPath({ url: "/api/auth/[...path]?authPath=reset-password%2Freset-token&callbackURL=https%3A%2F%2Fconsole.example.test%2Flogin", headers: {} }))
+      .toEqual({ path: "/api/auth/reset-password/reset-token", query: "?callbackURL=https%3A%2F%2Fconsole.example.test%2Flogin" })
+    expect(authRequestPath({ url: "/api/auth/verify-email?token=verification-token&callbackURL=%2Flogin&path=verify-email", headers: {} }))
+      .toEqual({ path: "/api/auth/verify-email", query: "?token=verification-token&callbackURL=%2Flogin" })
+  })
+
+  it("rejects missing, ambiguous and unlisted rewritten auth routes", () => {
+    for (const url of [
+      "/api/auth/_proxy", "/api/auth/_proxy?authPath=admin/list-users",
+      "/api/auth/_proxy?authPath=sign-up/email&authPath=sign-in/email",
+      "/api/auth/_proxy?authPath=../admin", "/api/other?authPath=sign-up/email",
+    ]) expect(authRequestPath({ url, headers: {} })).toBeNull()
+  })
+
   it("signs a normalized internal request and relays Better Auth cookie set/clear headers", async () => {
     const calls: Array<{ url: string; init?: RequestInit }> = []
     const handler = createAuthProxyHandler({

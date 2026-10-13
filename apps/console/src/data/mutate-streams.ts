@@ -38,6 +38,7 @@ export type StreamMutationResult = {
 }
 
 type CreateStreamParams = {
+  requestId?: string;
   title: string
   description: string
   privacyStatus: StreamPrivacy
@@ -193,6 +194,7 @@ export async function createStream(params: CreateStreamParams): Promise<StreamMu
     const payload = {
       id: randomId(),
       workspace_id: workspaceId,
+      request_id: params.requestId ?? null,
       youtube_broadcast_id: broadcast.id,
       youtube_stream_id: stream.id,
       title: params.title,

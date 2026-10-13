@@ -23,12 +23,13 @@ type MeetingDraft = {
   notifyDestinations: NotifyDestination[];
 };
 
-function createDraft(meeting?: ZoomMeeting | null): MeetingDraft {
+function createDraft(meeting?: ZoomMeeting | null, initialTitle?: string, initialScheduledAt?: string): MeetingDraft {
   const timezone = meeting?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const startTime = initialScheduledAt ?? meeting?.startTime;
   return {
-    topic: meeting?.topic ?? "",
+    topic: initialTitle ?? meeting?.topic ?? "",
     description: meeting?.description ?? "",
-    startTime: meeting?.startTime ? formatUtcIsoForDateTimeInput(meeting.startTime, timezone) : "",
+    startTime: startTime ? formatUtcIsoForDateTimeInput(startTime, timezone) : "",
     duration: meeting?.duration ?? 60,
     timezone,
     recurrenceType: meeting?.recurrenceType ?? "none",
@@ -41,30 +42,32 @@ function createDraft(meeting?: ZoomMeeting | null): MeetingDraft {
 }
 
 type UseMeetingFormOptions = {
+  initialTitle?: string;
+  initialScheduledAt?: string;
   meeting?: ZoomMeeting | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (params: CreateMeetingParams) => Promise<void> | void;
 };
 
-export function useMeetingForm({ meeting, open, onOpenChange, onSubmit }: UseMeetingFormOptions) {
-  const [draft, setDraft] = useState(() => createDraft(meeting));
+export function useMeetingForm({ meeting, open, onOpenChange, onSubmit, initialTitle, initialScheduledAt }: UseMeetingFormOptions) {
+  const [draft, setDraft] = useState(() => createDraft(meeting, initialTitle, initialScheduledAt));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [discardChangesOpen, setDiscardChangesOpen] = useState(false);
   const isEditing = Boolean(meeting);
   const canSubmit = Boolean(draft.topic.trim()) && Boolean(draft.startTime) && !isSubmitting;
-  const hasChanges = JSON.stringify(draft) !== JSON.stringify(createDraft(meeting));
+  const hasChanges = JSON.stringify(draft) !== JSON.stringify(createDraft(meeting, initialTitle, initialScheduledAt));
 
   useEffect(() => {
-    if (open) setDraft(createDraft(meeting));
-  }, [meeting, open]);
+    if (open) setDraft(createDraft(meeting, initialTitle, initialScheduledAt));
+  }, [initialTitle, initialScheduledAt, meeting, open]);
 
   function update<K extends keyof MeetingDraft>(field: K, value: MeetingDraft[K]) {
     setDraft((current) => ({ ...current, [field]: value }));
   }
 
   function close() {
-    setDraft(createDraft(meeting));
+    setDraft(createDraft(meeting, initialTitle, initialScheduledAt));
     setDiscardChangesOpen(false);
     onOpenChange(false);
   }

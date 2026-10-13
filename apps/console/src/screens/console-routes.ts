@@ -5,6 +5,8 @@ export const routes = {
     passwordRecovery: 'password-recovery',
     broadcasts: 'broadcasts',
     requests: 'requests',
+    members: 'members',
+    schedule: 'schedule',
     requestsDetail: 'requests/:id',
     equipment: 'equipment',
     equipmentDetail: 'equipment/:id',

@@ -1,3 +1,4 @@
+import { useDetailLinkState } from "./use-detail-return";
 import { useCallback, useEffect, useState, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBeforeUnloadWarning } from "./use-before-unload-warning";
@@ -14,6 +15,7 @@ type DrawerEditorGuardOptions = {
 
 export function useDrawerEditorGuard({ close, discard, href, isDirty, isDirtyRef, requestCloseRef, save }: DrawerEditorGuardOptions) {
   const navigate = useNavigate();
+  const linkState = useDetailLinkState();
   const [isPromptOpen, setPromptOpen] = useState(false);
   useBeforeUnloadWarning(isDirty);
 
@@ -37,7 +39,7 @@ export function useDrawerEditorGuard({ close, discard, href, isDirty, isDirtyRef
       return;
     }
     close();
-    navigate(href);
+    navigate(href, { state: linkState });
   }
 
   async function saveAndClose() {

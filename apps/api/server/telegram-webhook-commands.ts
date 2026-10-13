@@ -55,6 +55,7 @@ const START_COMMAND = /^\/start(?:@\w+)?(?:\s+(\S+))?\s*$/
 const REGISTER_GROUP_COMMAND = /^\/register_group(?:@\w+)?(?:\s+(\S+))?\s*$/
 const REGISTER_TOPIC_COMMAND = /^\/register_topic(?:@\w+)?(?:\s+(\S+))?\s*$/
 const ABSENT_STATUSES = new Set(["left", "kicked"])
+const TELEGRAM_SETTINGS_NEXT_STEP = "Open MOC Console → Account Settings → Telegram to turn on notifications and connect events."
 
 async function sendMessage(chatId: number | string, text: string, options: SendMessageOptions = {}): Promise<TelegramSendResult | null> {
   return sendTelegramMessage(chatId, text, options)
@@ -166,7 +167,8 @@ async function handleRegisterGroupCommand(message: TelegramMessage): Promise<boo
   )
 
   await refreshGroupCommands(String(chatId), workspace.id)
-  await sendMessage(chatId, `✅ Registered "${chat.title ?? "this group"}" to workspace "${workspace.slug}".`, { threadId })
+  const confirmation = await sendMessage(chatId, `✅ Registered "${chat.title ?? "this group"}" to workspace "${workspace.slug}". ${TELEGRAM_SETTINGS_NEXT_STEP}`, { threadId })
+  if (!confirmation) console.warn(`Telegram registered group ${chatId}, but could not send its confirmation.`)
   return true
 }
 
@@ -241,7 +243,12 @@ async function handleRegisterTopicCommand(message: TelegramMessage): Promise<boo
   }
 
   if (registerParentGroup) {
-    await queryRows("INSERT INTO public.telegram_groups(chat_id,title,type,is_forum,workspace_id,active) VALUES($1,$2,$3,$4,$5,false)",[groupChatId,chat.title??"",chat.type,chat.is_forum??true,workspace.id])
+    await queryRows("INSERT INTO public.telegram_groups(chat_id,title,type,is_forum,workspace_id,active) VALUES($1,$2,$3,$4,$5,false) ON CONFLICT(chat_id) DO NOTHING",[groupChatId,chat.title??"",chat.type,chat.is_forum??true,workspace.id])
+    const registeredGroup = await getRegisteredGroup(groupChatId)
+    if (!registeredGroup || registeredGroup.workspaceId !== workspace.id) {
+      await sendMessage(chatId, "This group was registered to another workspace while you were setting it up. Ask that workspace's administrator to manage the connection.", { threadId })
+      return true
+    }
   }
 
   const sent = await sendMessage(chatId, "Registering topic…", { threadId, replyToMessageId: threadId })
@@ -255,9 +262,11 @@ async function handleRegisterTopicCommand(message: TelegramMessage): Promise<boo
   await refreshGroupCommands(groupChatId, workspace.id)
   if (sent?.message_id !== undefined) {
     const finalText = resolvedName
-      ? `✅ Registered "${resolvedName}" in workspace "${workspace.slug}".`
-      : `✅ Registered topic #${threadId} in workspace "${workspace.slug}". (Couldn't read the topic name — rename it in Telegram and I'll pick it up.)`
+      ? `✅ Registered "${resolvedName}" in workspace "${workspace.slug}". ${TELEGRAM_SETTINGS_NEXT_STEP}`
+      : `✅ Registered topic #${threadId} in workspace "${workspace.slug}". (Couldn't read the topic name — rename it in Telegram and I'll pick it up.) ${TELEGRAM_SETTINGS_NEXT_STEP}`
     await editTelegramMessageText(chatId, sent.message_id, finalText)
+  } else {
+    console.warn(`Telegram registered topic ${threadId} in group ${groupChatId}, but could not send its confirmation.`)
   }
   return true
 }

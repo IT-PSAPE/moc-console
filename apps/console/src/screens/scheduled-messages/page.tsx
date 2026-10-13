@@ -10,6 +10,7 @@ import { routes } from '../console-routes'
 
 export function ScheduledMessagesScreen() {
     const { state, actions } = useScheduledMessagesContext()
+    if (state.isInitialLoading) return <Page.Loading />
     return <Page>
         <Page.Header><Page.Heading><Page.Title>Scheduled messages</Page.Title></Page.Heading><Page.Actions><Button.Link icon={<Plus />} render={<Link to={`/${routes.scheduledMessageNew}`} />}>New message</Button.Link></Page.Actions></Page.Header>
         <Tabs value={state.tab} onValueChange={actions.setTab} variant="pill">

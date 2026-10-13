@@ -32,8 +32,18 @@ export function trustedRequestOrigin(request: ApiRequest, canonicalOrigin: strin
 export function authRequestPath(request: ApiRequest): { path: string; query: string } | null {
   try {
     const parsed = new URL(request.url ?? "/", "https://moc-api.invalid")
-    if (!AUTH_PATH.test(parsed.pathname)) return null
-    return { path: parsed.pathname, query: parsed.search }
+    let path = parsed.pathname
+    // Plain Node functions receive one dynamic segment; deployment rewrites
+    // carry nested auth routes through the same strict route allow-list.
+    if (path === "/api/auth/_proxy" || path === "/api/auth/[...path]") {
+      const rewrittenPaths = parsed.searchParams.getAll("authPath")
+      if (rewrittenPaths.length !== 1) return null
+      path = `/api/auth/${rewrittenPaths[0]}`
+    }
+    if (!AUTH_PATH.test(path)) return null
+    parsed.searchParams.delete("authPath")
+    parsed.searchParams.delete("path")
+    return { path, query: parsed.search }
   } catch {
     return null
   }

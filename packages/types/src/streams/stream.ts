@@ -4,6 +4,8 @@ export type LatencyPreference = "normal" | "low" | "ultraLow"
 export type ClosedCaptionsType = "closedCaptionsDisabled" | "closedCaptionsHttpPost" | "closedCaptionsEmbedded"
 
 export type Stream = {
+  /** Explicit origin request; records may also exist independently. */
+  requestId?: string | null;
   id: string
   workspaceId: string
   youtubeBroadcastId: string

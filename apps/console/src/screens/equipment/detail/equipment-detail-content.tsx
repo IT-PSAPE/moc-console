@@ -1,3 +1,4 @@
+import { useDetailReturn } from "@/hooks/use-detail-return"
 import { useCallback } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { BookingHistorySection } from "@/features/equipment/booking-history-section"
@@ -19,6 +20,7 @@ import type { Equipment } from "@moc/types/equipment"
 import { Package, Save, Trash2, Undo2 } from "lucide-react"
 
 export function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
+  const back = useDetailReturn(`/${routes.equipment}`, "Back to equipment")
   const navigate = useNavigate()
   const handleDeleted = useCallback(() => navigate("/equipment"), [navigate])
   const editor = useEquipmentEditor(equipment, handleDeleted)
@@ -36,7 +38,7 @@ export function EquipmentDetailContent({ equipment }: { equipment: Equipment }) 
 
   return (
     <DetailPage>
-        <DetailPage.Back render={<Link to={`/${routes.equipment}`} />}>Back to equipment</DetailPage.Back>
+        <DetailPage.Back render={<Link to={back.href} />}>{back.label}</DetailPage.Back>
         <TopBarActions>
           {store.state.isDirty && (
             <>

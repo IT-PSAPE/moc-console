@@ -37,7 +37,7 @@ export function useTrackingRequestEditor(result: TrackingRequestResult, onSaved:
   }, [data, onSaved, result, validation.actions])
 
   return {
-    state: { data, categories, saving, error: error ?? categoryOptions.state.error, validationErrors: validation.state.errors },
-    actions: { setField, save },
+    state: { data, categories, saving, error, categoriesError: categoryOptions.state.error, categoriesLoading: categoryOptions.state.loading, validationErrors: validation.state.errors },
+    actions: { setField, save, retryCategories: categoryOptions.actions.retry },
   }
 }

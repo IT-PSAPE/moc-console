@@ -5,7 +5,6 @@ import { GroupedList } from '@moc/ui/components/display/grouped-list'
 import { Indicator } from '@moc/ui/components/display/indicator'
 import { Label } from '@moc/ui/components/display/text'
 import { Page } from '@moc/ui/components/layout/page'
-import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import { Input } from '@moc/ui/components/form/input'
 import { Decision } from '@moc/ui/components/display/decision'
 import { EmptyState } from '@moc/ui/components/feedback/empty-state'
@@ -24,6 +23,7 @@ import { CollectionToolbar } from '@moc/ui/components/layout/collection-toolbar'
 
 export function ChecklistsScreen() {
     const { state, actions, meta } = useChecklistsScreen()
+    if (state.isInitialLoading) return <Page.Loading />;
 
     function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
         actions.setSearch(event.target.value)
@@ -88,19 +88,13 @@ export function ChecklistsScreen() {
 
             <Page.Content>
                 {state.activeView === 'calendar' ? (
-                    <Decision value={state.activeView} loading={state.isLoading}>
-                        <Decision.Loading>
-                            <LoadingSpinner className="py-6" />
-                        </Decision.Loading>
+                    <Decision value={state.activeView}>
                         <Decision.Data>
                             <ChecklistCalendarView checklists={meta.calendarFiltered} />
                         </Decision.Data>
                     </Decision>
                 ) : (
-                <Decision value={meta.filtered} loading={state.isLoading}>
-                    <Decision.Loading>
-                        <LoadingSpinner className="py-6" />
-                    </Decision.Loading>
+                <Decision value={meta.filtered}>
                     <Decision.Empty>
                         <EmptyState
                             icon={<ListChecks />}

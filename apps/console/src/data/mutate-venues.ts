@@ -12,14 +12,14 @@ export async function createVenue(draft: VenueDraft, workspaceId?: string): Prom
   return moc.venues.create(draft, resolvedWorkspaceId);
 }
 
-export async function updateVenue(id: string, draft: VenueDraft): Promise<Venue> {
-  const workspaceId = await getCurrentWorkspaceId();
-  return moc.venues.update(id, draft, workspaceId);
+export async function updateVenue(id: string, draft: VenueDraft, workspaceId?: string): Promise<Venue> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
+  return moc.venues.update(id, draft, resolvedWorkspaceId);
 }
 
-export async function setVenueActive(id: string, active: boolean): Promise<void> {
-  const workspaceId = await getCurrentWorkspaceId();
-  await moc.venues.setActive(id, active, workspaceId);
+export async function setVenueActive(id: string, active: boolean, workspaceId?: string): Promise<void> {
+  const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
+  await moc.venues.setActive(id, active, resolvedWorkspaceId);
 }
 
 export async function deleteVenue(id: string): Promise<void> {

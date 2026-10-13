@@ -82,7 +82,8 @@ type AlertProps = Omit<HTMLAttributes<HTMLDivElement>, 'style'> & {
 export function Alert({ title, description, action, variant = 'info', style = 'filled', dismissible = false, onDismiss, icon, className, ...props}: AlertProps) {
     return (
         <div
-            role="alert"
+            role={variant === 'error' ? 'alert' : 'status'}
+            aria-live={variant === 'error' ? 'assertive' : 'polite'}
             className={cn(alertVariants({ variant, style }), colorMap[variant][style], className)}
             {...props}
         >

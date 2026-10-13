@@ -1,3 +1,5 @@
+import { useDetailReturn } from "@/hooks/use-detail-return"
+import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { useCallback } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { BookingDeleteModal } from "@/features/equipment/booking-delete-modal"
@@ -23,6 +25,7 @@ import { formatUtcIsoForBrowserDateTimeInput } from "@moc/utils/browser-date-tim
 import { Calendar, Clock, Loader, Package, Save, ScanLine, StickyNote, Trash2, Undo2, User } from "lucide-react"
 
 export function BookingDetailContent({ booking }: { booking: Booking }) {
+  const back = useDetailReturn(`/${routes.bookings}`, "Back to bookings")
   const navigate = useNavigate()
   const handleDeleted = useCallback(() => navigate("/bookings"), [navigate])
   const editor = useBookingEditor(booking, handleDeleted)
@@ -36,7 +39,7 @@ export function BookingDetailContent({ booking }: { booking: Booking }) {
 
   return (
     <DetailPage>
-        <DetailPage.Back render={<Link to={`/${routes.bookings}`} />}>Back to bookings</DetailPage.Back>
+        <DetailPage.Back render={<Link to={back.href} />}>{back.label}</DetailPage.Back>
         <TopBarActions>
           <Button variant="secondary" icon={<ScanLine />} onClick={collection.actions.openScanner} disabled={!collection.state.canScan}>
             {collection.state.isComplete ? "All scanned" : "Scan"}
@@ -72,6 +75,7 @@ export function BookingDetailContent({ booking }: { booking: Booking }) {
           </MetaRow>
         </DetailPage.Section>
 
+        <DetailPage.Section><RequestLinkField kind="booking" id={booking.id} /></DetailPage.Section>
         <DetailPage.Divider />
         <BookingItemsSection items={draft.items} scannedItemIds={collection.state.scannedItemIds} />
 

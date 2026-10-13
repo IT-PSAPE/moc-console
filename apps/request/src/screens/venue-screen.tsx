@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@moc/ui/components/controls/button'
 import { Alert } from '@moc/ui/components/feedback/alert'
+import { RetryAlert } from '@moc/ui/components/feedback/retry-alert'
 import { Spinner } from '@moc/ui/components/feedback/spinner'
 import { VENUE_EVENT_OTHER_ID } from '@moc/types/venues'
 import { PublicLayout } from '@/features/components/public-layout'
@@ -29,6 +30,8 @@ export function VenueScreen() {
   const navigate = useNavigate()
   const { state, actions, meta } = useVenueBookingForm()
   const availability = useVenueAvailability(state.data.venueId, state.data.bookingDate)
+  const isAvailabilityLoading = availability.state.listsLoading || availability.state.slotsLoading
+  const hasNoVenues = !availability.state.listsLoading && !availability.state.listsError && availability.state.venues.length === 0
 
   async function handleNext() {
     if (!actions.validateCurrentStep()) return
@@ -95,12 +98,14 @@ export function VenueScreen() {
         )}
 
         {state.error && <Alert title="Submission failed" description={state.error} variant="error" style="filled" />}
-        {availability.state.listsError && <Alert title="Could not load venues" description={availability.state.listsError} variant="error" style="filled" />}
-        {availability.state.slotsError && <Alert title="Could not load availability" description={availability.state.slotsError} variant="error" style="filled" />}
+        {availability.state.listsError && <RetryAlert title="Booking options couldn't be loaded" description="Check your connection and try again. Your booking details are saved." onRetry={availability.actions.retryLists} isRetrying={availability.state.listsLoading} />}
+        {hasNoVenues && <Alert title="No venues are available" description="Ask a workspace manager to add a venue before you continue." variant="warning" style="filled" />}
+        {availability.state.slotsError && <RetryAlert title="Availability couldn't be loaded" description="Check your connection and try again. Your booking details are saved." onRetry={availability.actions.retrySlots} isRetrying={availability.state.slotsLoading} />}
 
         <PublicFlow.Actions>
-          <Button type="submit" disabled={state.submitting} className="rounded-full">
-            {state.submitting ? <Spinner size="sm" /> : meta.isLastStep ? 'Submit' : 'Next'}
+          <Button type="submit" disabled={state.submitting || isAvailabilityLoading || Boolean(availability.state.listsError) || hasNoVenues || Boolean(availability.state.slotsError)} className="rounded-full">
+            {state.submitting || isAvailabilityLoading ? <Spinner size="sm" /> : null}
+            {state.submitting ? 'Submitting…' : isAvailabilityLoading ? 'Loading availability…' : meta.isLastStep ? 'Submit' : 'Next'}
           </Button>
         </PublicFlow.Actions>
       </PublicFlow>

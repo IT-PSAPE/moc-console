@@ -8,13 +8,13 @@ import { BookingFilterDrawer } from "@/features/equipment/booking-filter-drawer"
 import { BookingListView } from "@/features/equipment/booking-list";
 import { BookingCalendarView } from "@/features/equipment/booking-calendar";
 import { BookingKanbanView } from "@/features/equipment/booking-kanban";
-import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import { Decision } from "@moc/ui/components/display/decision";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { useBookingsScreen } from "./use-bookings-screen";
 import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 import { BookingPanelContent } from "@/features/equipment/booking-drawer";
 import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar";
+import { ResourceLoadError } from "@/components/feedback/resource-load-error";
 
 export function BookingsScreen() {
   const { state, actions, meta } = useBookingsScreen();
@@ -22,6 +22,7 @@ export function BookingsScreen() {
   const CollectionContent = activeView === "kanban" ? Page.CollectionContent : Page.Content;
   const visibleBookings = activeView === "calendar" ? filters.calendarFiltered : filters.filtered;
   const collectionState = activeView === "list" ? visibleBookings : activeView;
+  if (meta.isInitialLoading) return <Page.Loading />;
 
   function handleSearch(event: ChangeEvent<HTMLInputElement>) {
     filters.setSearch(event.target.value);
@@ -57,10 +58,7 @@ export function BookingsScreen() {
       </CollectionToolbar>
 
       <CollectionContent className="flex flex-col gap-4">
-        <Decision value={collectionState} loading={meta.isLoading}>
-          <Decision.Loading>
-            <LoadingSpinner className="py-6" />
-          </Decision.Loading>
+        {meta.error ? <ResourceLoadError title="Couldn't load equipment bookings" error={meta.error} onRetry={actions.retry} /> : <Decision value={collectionState}>
           <Decision.Empty>
             <EmptyState
               icon={<ClipboardList />}
@@ -73,7 +71,7 @@ export function BookingsScreen() {
             {activeView === "kanban" && <BookingKanbanView bookings={visibleBookings} />}
             {activeView === "calendar" && <BookingCalendarView bookings={visibleBookings} />}
           </Decision.Data>
-        </Decision>
+        </Decision>}
       </CollectionContent>
       </Page>
       </SplitPanel.Primary>

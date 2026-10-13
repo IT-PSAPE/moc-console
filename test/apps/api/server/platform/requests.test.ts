@@ -29,6 +29,47 @@ describe("request platform operations", () => {
     expect(operations.list.permission).toBe("can_read")
   })
 
+  test("renames a request type without writing its stable key or stored description", async () => {
+    let sql = ""
+    let values: readonly unknown[] = []
+    const categoryId = "00000000-0000-4000-8000-000000000010"
+    const context = makeContext(async (text, params) => {
+      sql = text
+      values = params ?? []
+      return { rows: [{ id: categoryId, workspace_id: "verified-workspace", key: "custom_equipment", name: "Production gear", description: "Request equipment for a production.", active: true, sort_order: 4, created_at: "created", updated_at: "updated" }] }
+    })
+
+    const category = await operations.updateCategory.run(context, { id: categoryId, name: "Production gear" })
+
+    expect(sql).toContain("UPDATE request_categories SET name=$3")
+    expect(sql).not.toContain("description=")
+    expect(sql).not.toContain("SET key=")
+    expect(values).toEqual(["verified-workspace", categoryId, "Production gear"])
+    expect(category).toMatchObject({ id: categoryId, key: "custom_equipment", name: "Production gear", description: "Request equipment for a production." })
+    expect(operations.updateCategory.permission).toBe("can_update")
+
+    await expect(operations.updateCategory.run(context, { id: categoryId, name: "Production gear", description: null })).rejects.toThrow("Unexpected input field")
+  })
+
+  test("lists the authenticated user's assigned request ids within the verified workspace", async () => {
+    let sql = ""
+    let values: readonly unknown[] = []
+    const context = makeContext(async (text, params) => {
+      sql = text
+      values = params ?? []
+      return { rows: [{ id: "request-1" }, { id: "request-2" }] }
+    })
+
+    const ids = await operations.listAssignedIds.run(context, { userId: "forged-user", workspaceId: "forged-workspace" })
+
+    expect(sql).toContain("JOIN requests ON requests.id = assignment.request_id")
+    expect(sql).toContain("requests.workspace_id = $1 AND assignment.user_id = $2")
+    expect(sql).toContain("requests.status <> 'archived'")
+    expect(values).toEqual(["verified-workspace", "user-1"])
+    expect(ids).toEqual(["request-1", "request-2"])
+    expect(operations.listAssignedIds.permission).toBe("can_read")
+  })
+
   test("normalizes PostgreSQL timestamp values to ISO strings", async () => {
     const createdAt = new Date("2026-10-04T10:15:30.000Z")
     const updatedAt = new Date("2026-10-04T10:20:30.000Z")

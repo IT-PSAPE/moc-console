@@ -57,6 +57,16 @@ describe("public submission platform operations", () => {
       workspaceId,
       data: { venueId: "22222222-2222-4222-8222-222222222222", requestedBy: "Craig", slotStarts: ["2030-10-12T16:00:00.000Z", "2030-10-12T16:30:00.000Z"], eventId: null, eventOther: "Youth night", recurrence },
     })).resolves.toEqual({ id: "33333333-3333-4333-8333-333333333333", trackingCode: "VEN-ABC123", title: "Youth night", startsAt: "2030-10-12T16:00:00.000Z", endsAt: "2030-10-12T17:00:00.000Z" })
-    expect(calls[0]?.values).toEqual([workspaceId, "22222222-2222-4222-8222-222222222222", "Craig", ["2030-10-12T16:00:00.000Z", "2030-10-12T16:30:00.000Z"], null, "Youth night", null, JSON.stringify(recurrence)])
+    expect(calls[0]?.values).toEqual([workspaceId, "22222222-2222-4222-8222-222222222222", "Craig", ["2030-10-12T16:00:00.000Z", "2030-10-12T16:30:00.000Z"], null, "Youth night", null, recurrence])
+  })
+
+  test("sends no recurrence to PostgreSQL as SQL null", async () => {
+    const { context, calls } = contextWithQuery(() => [{ result: { id: "33333333-3333-4333-8333-333333333333", tracking_code: "VEN-ABC123", title: "Youth night", starts_at: "2030-10-12T16:00:00.000Z", ends_at: "2030-10-12T16:30:00.000Z" } }])
+
+    await operations.submitVenueBooking.run(context, {
+      workspaceId,
+      data: { venueId: "22222222-2222-4222-8222-222222222222", requestedBy: "Craig", slotStarts: ["2030-10-12T16:00:00.000Z"], eventId: null, eventOther: "Youth night", recurrence: null },
+    })
+    expect(calls[0]?.values[7]).toBeNull()
   })
 })

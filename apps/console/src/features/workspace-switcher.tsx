@@ -1,11 +1,10 @@
-import { ChevronDown, LogOut, Settings, UserRound } from 'lucide-react'
+import { LogOut, Settings, UserRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Avatar } from '@moc/ui/components/display/avatar'
 import { Label } from '@moc/ui/components/display/text'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import { NavigationList } from '@moc/ui/components/navigation/navigation-list'
 import { Dropdown } from '@moc/ui/components/overlays/dropdown'
-import { cn } from '@moc/utils/cn'
 import { WorkspaceMenuItems } from './workspace-menu-items'
 import { useWorkspaceSwitcher } from './use-workspace-switcher'
 
@@ -24,15 +23,8 @@ export function WorkspaceSwitcher({ isSigningOut, onEditProfile, onSignOut }: Wo
     return (
         <Dropdown placement="top-start">
             <Dropdown.Trigger>
-                <NavigationList.Item aria-label={`Account menu for ${meta.displayName}. Current workspace: ${meta.workspaceName}`} className={cn('gap-1.5 px-2 py-1', meta.isCollapsed && 'justify-center px-1')}>
+                <NavigationList.Item aria-label={`Account menu for ${meta.displayName}. Current workspace: ${meta.workspaceName}`} className="size-11 justify-center p-1 md:min-h-11">
                     <Avatar src={meta.avatarUrl} name={meta.initials} size="xs" />
-                    {!meta.isCollapsed && (
-                        <>
-                            <Label.sm className="min-w-0 truncate text-inherit">{meta.firstName}</Label.sm>
-                            {meta.roleName && <Label.xs className="min-w-0 truncate text-tertiary">{meta.roleName}</Label.xs>}
-                            <ChevronDown className="ml-auto size-4 shrink-0 text-tertiary" aria-hidden="true" />
-                        </>
-                    )}
                 </NavigationList.Item>
             </Dropdown.Trigger>
             <Dropdown.Panel className="w-72 p-1.5">

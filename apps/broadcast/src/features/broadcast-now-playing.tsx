@@ -1,4 +1,4 @@
-import { Paragraph, Title } from "@moc/ui/components/display/text"
+import { Paragraph } from "@moc/ui/components/display/text"
 import { useBroadcastItemDisplay, useBroadcastPlaybackContext } from "./broadcast-playback-provider"
 import { BroadcastScrubber } from "./broadcast-scrubber"
 import { BroadcastTransport } from "./broadcast-transport"
@@ -13,7 +13,7 @@ export function BroadcastNowPlaying() {
   return (
     <section className="flex w-full flex-col gap-4" aria-label="Now playing">
       <div className="min-w-0">
-        <Title.h6 className="truncate" aria-live="polite">{display?.title ?? ""}</Title.h6>
+        <h1 className="title-h6 truncate" aria-live="polite">{display?.title ?? "Now playing"}</h1>
         {subtitle ? (
           <Paragraph.sm
             aria-live={playbackError ? "assertive" : undefined}
