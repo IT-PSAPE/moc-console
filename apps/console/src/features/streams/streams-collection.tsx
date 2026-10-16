@@ -1,6 +1,5 @@
 import type { ChangeEvent } from "react"
 import { Button } from "@moc/ui/components/controls/button"
-import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import { Decision } from "@moc/ui/components/display/decision"
 import { Alert } from "@moc/ui/components/feedback/alert"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
@@ -8,14 +7,13 @@ import { Input } from "@moc/ui/components/form/input"
 import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar"
 import { Page } from "@moc/ui/components/layout/page"
 import { Drawer } from "@moc/ui/components/overlays/drawer"
-import { CalendarDays, List, Plus, RadioTower, RefreshCw, Search, Settings2 } from "lucide-react"
+import { Plus, RadioTower, RefreshCw, Search } from "lucide-react"
 import { CreateStreamModal } from "./create-stream-modal"
 import { MeetingModal } from "./meeting-modal"
 import { StreamFilterDrawer } from "./stream-filter-drawer"
 import { StreamListDetail } from "./stream-list-detail"
 import { StreamModal } from "./stream-modal"
 import { StreamProviderIcon } from "./stream-provider-icon"
-import { StreamsCalendar } from "./streams-calendar"
 import { StreamsList } from "./streams-list"
 import { useStreamsCollection } from "./use-streams-collection"
 import { ZoomMeetingFilterDrawer } from "./zoom-meeting-filter-drawer"
@@ -25,7 +23,7 @@ export function StreamsCollection() {
   const { state, actions, meta } = useStreamsCollection()
   const { youtube, zoom } = meta
   const filtered = state.searchQuery.trim().length > 0 || meta.hasActiveFilters
-  const collectionState = meta.isConnected && state.activeView === "calendar" ? state.activeView : meta.listEntries
+  const collectionState = meta.isConnected ? meta.listEntries : null
 
   function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
     actions.setSearchQuery(event.target.value)
@@ -59,24 +57,14 @@ export function StreamsCollection() {
         <Page.Heading>
           <Page.Title>Streams</Page.Title>
         </Page.Heading>
-        {meta.canManageConnections && <Page.Actions><Button variant="secondary" icon={<Settings2 />} onClick={youtube.actions.openSettings}>Connections</Button></Page.Actions>}
-      </Page.Header>
-
-      <CollectionToolbar>
-        <CollectionToolbar.Views>
-          <SegmentedControl value={state.activeView} onValueChange={actions.changeView} fill={meta.isMobile}>
-            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
-            <CollectionToolbar.ViewItem value="calendar" icon={<CalendarDays />}>Calendar</CollectionToolbar.ViewItem>
-          </SegmentedControl>
-        </CollectionToolbar.Views>
-        <CollectionToolbar.Actions>
+        <Page.Controls>
           <Input
             aria-label="Search streams and meetings"
             name="stream-search"
             autoComplete="off"
             icon={<Search />}
             placeholder="Search streams and meetings…"
-            className="w-full max-w-md max-mobile:flex-[1_1_100%]"
+            className="w-full max-w-md"
             value={state.searchQuery}
             onChange={handleSearchChange}
           />
@@ -96,8 +84,8 @@ export function StreamsCollection() {
           {meta.canCreate ? (
             <Button.Icon aria-label="Create stream" variant="secondary" icon={<Plus />} onClick={actions.openCreate} />
           ) : null}
-        </CollectionToolbar.Actions>
-      </CollectionToolbar>
+        </Page.Controls>
+      </Page.Header>
 
       <Page.Content className="flex flex-col gap-4">
         {youtube.meta.isConnected && youtube.meta.needsReauth ? (
@@ -146,11 +134,7 @@ export function StreamsCollection() {
             )}
           </Decision.Empty>
           <Decision.Data>
-            {state.activeView === "list" ? (
-              <StreamsList entries={meta.listEntries} onSelectStream={actions.selectStream} onSelectMeeting={actions.selectMeeting} />
-            ) : (
-              <StreamsCalendar events={meta.calendarEvents} month={state.calendarMonth} onMonthChange={actions.changeCalendarMonth} onSelectStream={actions.selectStream} onSelectMeeting={actions.selectMeeting} />
-            )}
+            <StreamsList entries={meta.listEntries} onSelectStream={actions.selectStream} onSelectMeeting={actions.selectMeeting} />
           </Decision.Data>
         </Decision>
       </Page.Content>

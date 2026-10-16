@@ -74,13 +74,12 @@ export function useStreamFilters(streams: Stream[]) {
       }
     })
 
-    const calendarFiltered = result
-    const visibleStatuses = calendarFiltered.filter((stream) => {
+    const filtered = result.filter((stream) => {
       if (!filters.showCompleted && stream.streamStatus === "complete") return false
       return filters.statuses.size === 0 || filters.statuses.has(stream.streamStatus)
     })
 
-    return { calendarFiltered, filtered: visibleStatuses }
+    return filtered
   }, [streams, filters])
 
   const setSearch = useCallback((search: string) => {
@@ -130,8 +129,7 @@ export function useStreamFilters(streams: Stream[]) {
 
   return {
     filters,
-    filtered: results.filtered,
-    calendarFiltered: results.calendarFiltered,
+    filtered: results,
     hasActiveFilters,
     setSearch,
     toggleStatus,

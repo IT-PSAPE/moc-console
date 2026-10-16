@@ -79,10 +79,7 @@ export function useZoomMeetingFilters(meetings: ZoomMeeting[]) {
       }
     })
 
-    return {
-      calendarFiltered: result,
-      filtered: filters.showPast ? result : result.filter((meeting) => !isMeetingPast(meeting)),
-    }
+    return filters.showPast ? result : result.filter((meeting) => !isMeetingPast(meeting))
   }, [meetings, filters])
 
   const setSearch = useCallback((search: string) => {
@@ -122,8 +119,7 @@ export function useZoomMeetingFilters(meetings: ZoomMeeting[]) {
 
   return {
     filters,
-    filtered: results.filtered,
-    calendarFiltered: results.calendarFiltered,
+    filtered: results,
     hasActiveFilters,
     setSearch,
     toggleRecurrenceType,

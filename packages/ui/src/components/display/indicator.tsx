@@ -2,7 +2,7 @@ import { cn } from '@moc/utils/cn'
 import { cv } from '@moc/utils/cv'
 import type { HTMLAttributes } from 'react'
 
-type IndicatorColor = 'yellow' | 'green' | 'red' | 'blue' | 'gray' | 'purple'
+type IndicatorColor = 'yellow' | 'green' | 'red' | 'blue' | 'gray' | 'purple' | 'brand' | 'orange'
 
 type IndicatorProps = HTMLAttributes<HTMLSpanElement> & {
     color?: IndicatorColor
@@ -20,6 +20,8 @@ const indicatorVariants = cv({
             blue: ['bg-utility-blue-700'],
             gray: ['bg-text-quaternary'],
             purple: ['bg-utility-purple-700'],
+            brand: ['bg-brand_solid'],
+            orange: ['bg-text-warning'],
         },
     },
     defaultVariants: {
@@ -27,7 +29,7 @@ const indicatorVariants = cv({
     },
 })
 
-export function Indicator({ className, color = 'gray', ...props }: IndicatorProps) {
+function IndicatorRoot({ className, color = 'gray', ...props }: IndicatorProps) {
     return (
         <span className={cn('flex items-center justify-center', className)} {...props}>
             <span className="flex size-4 items-center justify-center rounded-full bg-primary p-[3px]">
@@ -36,3 +38,9 @@ export function Indicator({ className, color = 'gray', ...props }: IndicatorProp
         </span>
     )
 }
+
+function IndicatorDot({ className, ...props }: IndicatorProps) {
+    return <IndicatorRoot className={cn('size-1.5 shrink-0 [&>span]:size-full [&>span]:p-0', className)} {...props} />
+}
+
+export const Indicator = Object.assign(IndicatorRoot, { Dot: IndicatorDot })

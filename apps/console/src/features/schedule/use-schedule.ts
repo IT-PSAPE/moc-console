@@ -1,47 +1,147 @@
+import { getScheduleAgendaGroups } from "./schedule-agenda";
 import { useCallback, useEffect, useMemo } from "react";
 import { fetchScheduleData } from "@/features/schedule/schedule-service";
-import { getScheduleEvents } from "@/features/schedule/schedule-events";
+import { getAgendaEvents, getScheduleEvents, matchesScheduleFilters } from "@/features/schedule/schedule-events";
 import { useWorkspaceResource } from "@/hooks/use-workspace-resource";
-import { useViewQuery } from "@/hooks/use-view-query";
 import { useWorkspace } from "@/lib/workspace-context";
 import { useSearchParams } from "react-router-dom";
 import type { ScheduleData } from "@/features/schedule/schedule-service";
 import { getBrowserTimeZone } from "@moc/utils/browser-date-time";
-import { formatScheduleMonth, parseScheduleMonth, updateScheduleMonthQuery } from "@/features/schedule/schedule-query";
+import { getCalendarDateRange, getCalendarDayEvents, getCalendarMonthDays } from "@moc/utils/calendar-date-range";
+import { getScheduleCalendarDates, parseScheduleItemType, updateScheduleDateQuery } from "@/features/schedule/schedule-query";
+import type { ScheduleView } from "./schedule-types";
+import { useRequests } from "@/features/requests/request-provider";
+import { useManagedVenueEventOptions, useManagedVenueOptions } from "@/features/venues/use-managed-venue-option-resource";
 
-import { scheduleTypeOptions } from "./schedule-types";
+const emptyData: ScheduleData = { bookings: [], requests: [], venueBookings: [] };
+const views: ScheduleView[] = ["day", "week", "month", "agenda"];
 
-const emptyData: ScheduleData = { bookings: [], checklists: [], requests: [], streams: [], meetings: [], venueBookings: [], messages: [] };
-const scheduleTypes = ["all", "request", "equipment", "venue", "stream", "meeting", "checklist"] as const;
-const messageScheduleTypes = [...scheduleTypes, "message"] as const;
+function parseList(value: string | null): string[] { return [...new Set(value?.split(",").filter(Boolean) ?? [])]; }
+function hasCustomVenueEvent(bookings: ScheduleData["venueBookings"]): boolean { return bookings.some(booking => booking.eventOther !== null); }
 
 export function useSchedule() {
-  const { currentWorkspaceId, role } = useWorkspace();
-  const canViewMessages = role?.can_update === true;
+  const { currentWorkspaceId } = useWorkspace();
+  const { state: requestState, actions: requestActions } = useRequests();
+  const managedVenues = useManagedVenueOptions();
+  const managedVenueEvents = useManagedVenueEventOptions();
+  const { loadCategories, retryCategories } = requestActions;
+  const { load: loadVenues } = managedVenues;
+  const { load: loadVenueEvents } = managedVenueEvents;
   const [searchParams, setSearchParams] = useSearchParams();
-  const [type, setType] = useViewQuery(canViewMessages ? messageScheduleTypes : scheduleTypes, "all", "type");
-  const month = useMemo(() => parseScheduleMonth(searchParams.get("month")), [searchParams]);
+  useEffect(() => {
+    const scope = searchParams.get("workScope");
+    const nextScope = currentWorkspaceId ?? "none";
+    if (scope === nextScope) return;
+    const next = new URLSearchParams(searchParams);
+    if (scope !== null) ["types", "q", "categories", "venueEvents", "venues"].forEach(key => next.delete(key));
+    next.set("workScope", nextScope);
+    setSearchParams(next, { replace: true });
+  }, [currentWorkspaceId, searchParams, setSearchParams]);
+  const { month, date: selectedDate } = useMemo(() => getScheduleCalendarDates(searchParams), [searchParams]);
+  const view = (views.includes(searchParams.get("view") as ScheduleView) ? searchParams.get("view") : "month") as ScheduleView;
+  const itemType = parseScheduleItemType(searchParams.get("types"));
+  const search = searchParams.get("q") ?? "";
+  const selectedCategories = useMemo(() => parseList(searchParams.get("categories")), [searchParams]);
+  const selectedVenueEvents = useMemo(() => parseList(searchParams.get("venueEvents")), [searchParams]);
+  const selectedVenues = useMemo(() => parseList(searchParams.get("venues")), [searchParams]);
   const displayTimezone = getBrowserTimeZone();
-  const fetcher = useCallback((workspaceId: string) => fetchScheduleData(workspaceId, canViewMessages), [canViewMessages]);
-  const { data, error, isLoading, isInitialLoading, load } = useWorkspaceResource({
-    emptyValue: emptyData,
-    fetcher,
-    resource: canViewMessages ? "schedule:messages" : "schedule",
-    workspaceId: currentWorkspaceId,
-  });
-  useEffect(() => { void load(true); }, [load]);
-  const allEvents = useMemo(() => getScheduleEvents(data, month, displayTimezone), [data, displayTimezone, month]);
-  const events = useMemo(() => allEvents
-    .filter((event) => type === "all" || event.data?.type === type)
-    .sort((left, right) => left.date.getTime() - right.date.getTime()), [allEvents, type]);
-  const changeMonth = useCallback((nextMonth: Date) => {
-    setSearchParams(updateScheduleMonthQuery(searchParams, nextMonth), { replace: true });
-  }, [searchParams, setSearchParams]);
-  const changeType = useCallback((nextType: string | null) => { if (nextType) setType(nextType); }, [setType]);
-  const retry = useCallback(() => load(true), [load]);
+  const fetcher = useCallback((workspaceId: string) => fetchScheduleData(workspaceId), []);
+  const { data, error: resourceError, isLoading, isInitialLoading, load } = useWorkspaceResource({ emptyValue: emptyData, fetcher, resource: "work-calendar", workspaceId: currentWorkspaceId });
+  useEffect(() => {
+    void load(true);
+    void loadCategories();
+  }, [load, loadCategories]);
+  const allEvents = useMemo(() => getScheduleEvents(data, displayTimezone), [data, displayTimezone]);
+  const viewEvents = useMemo(() => {
+    if (view === "agenda") return getAgendaEvents(allEvents);
+    if (view === "month") {
+      const days = getCalendarMonthDays(month);
+      return allEvents.filter(event => days.some(day => getCalendarDayEvents([event], day).length > 0));
+    }
+    const days = getCalendarDateRange(selectedDate, view === "week" ? 7 : 1);
+    return allEvents.filter(event => days.some(day => getCalendarDayEvents([event], day).length > 0));
+  }, [allEvents, month, selectedDate, view]);
+  const events = useMemo(() => viewEvents.filter(event => matchesScheduleFilters(event, { types: itemType === "all" ? [] : [itemType], search, categories: selectedCategories, venueEvents: selectedVenueEvents, venues: selectedVenues })), [viewEvents, itemType, search, selectedCategories, selectedVenueEvents, selectedVenues]);
+  const filterSelections = useMemo(() => ({ categories: selectedCategories, venueEvents: selectedVenueEvents, venues: selectedVenues }), [selectedCategories, selectedVenueEvents, selectedVenues]);
+  const filterOptions = useMemo(() => ({
+    categories: requestState.requestCategories.map(({ key, name, active }) => ({ value: key, label: name, active })),
+    venueEvents: [
+      ...managedVenueEvents.options.map(({ id, name, active }) => ({ value: id, label: name, active })),
+      ...(hasCustomVenueEvent(data.venueBookings) ? [{ value: "other", label: "Other" }] : []),
+    ],
+    venues: managedVenues.options.map(({ id, name, active }) => ({ value: id, label: name, active })),
+  }), [data.venueBookings, managedVenueEvents.options, managedVenues.options, requestState.requestCategories]);
+  const agendaGroups = useMemo(() => getScheduleAgendaGroups(events, filterOptions), [events, filterOptions]);
+  const hasActiveFilters = Object.values(filterSelections).some(values => values.length > 0);
 
-  const typeOptions = scheduleTypeOptions.filter(option => option.value !== "message" || canViewMessages);
-  const typeLabel = typeOptions.find(option => option.value === type)?.label;
-  const monthKey = formatScheduleMonth(month);
-  return { state: { events, error, isLoading, isInitialLoading, month, monthKey, type }, actions: { changeMonth, changeType, retry }, meta: { typeOptions, typeLabel } };
+  const setParamList = useCallback((key: string, values: string[]) => {
+    const next = new URLSearchParams(searchParams);
+    if (values.length) next.set(key, values.join(",")); else next.delete(key);
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+  const changeItemType = useCallback((value: string) => {
+    const nextType = parseScheduleItemType(value);
+    setParamList("types", nextType === "all" ? [] : [nextType]);
+  }, [setParamList]);
+  const changeSearch = useCallback((value: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set("q", value); else next.delete("q");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+  const changeView = useCallback((nextView: string) => {
+    if (!views.includes(nextView as ScheduleView)) return;
+    const next = new URLSearchParams(searchParams);
+    next.set("view", nextView);
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+  const selectDate = useCallback((nextDate: Date) => {
+    setSearchParams(updateScheduleDateQuery(searchParams, nextDate), { replace: true });
+  }, [searchParams, setSearchParams]);
+  const changeDate = useCallback((offset: number) => {
+    const nextDate = new Date(selectedDate);
+    nextDate.setDate(nextDate.getDate() + offset);
+    selectDate(nextDate);
+  }, [selectDate, selectedDate]);
+  const changePeriod = useCallback((direction: -1 | 1) => {
+    if (view === "month") {
+      const lastDay = new Date(month.getFullYear(), month.getMonth() + direction + 1, 0).getDate();
+      selectDate(new Date(month.getFullYear(), month.getMonth() + direction, Math.min(selectedDate.getDate(), lastDay)));
+      return;
+    }
+    changeDate(direction * (view === "week" ? 7 : 1));
+  }, [changeDate, month, selectDate, selectedDate, view]);
+  const goToToday = useCallback(() => selectDate(new Date()), [selectDate]);
+  const toggleValue = useCallback((key: string, values: string[], value: string) => setParamList(key, values.includes(value) ? values.filter((item) => item !== value) : [...values, value]), [setParamList]);
+  const toggleFilter = useCallback((name: string, value: string) => {
+    if (name === "categories") toggleValue("categories", selectedCategories, value);
+    if (name === "venueEvents") toggleValue("venueEvents", selectedVenueEvents, value);
+    if (name === "venues") toggleValue("venues", selectedVenues, value);
+  }, [selectedCategories, selectedVenueEvents, selectedVenues, toggleValue]);
+  const resetFilters = useCallback(() => {
+    const next = new URLSearchParams(searchParams);
+    ["categories", "venueEvents", "venues"].forEach(key => next.delete(key));
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+  const retry = useCallback(() => {
+    void load(true);
+    void retryCategories();
+    void loadVenues(true);
+    void loadVenueEvents(true);
+  }, [load, loadVenues, loadVenueEvents, retryCategories]);
+  const initialLoading = isInitialLoading || requestState.isInitialLoadingCategories || managedVenues.isInitialLoading || managedVenueEvents.isInitialLoading;
+  const loading = isLoading || requestState.isLoadingCategories || managedVenues.isLoading || managedVenueEvents.isLoading;
+  const error = resourceError ?? requestState.categoriesError ?? managedVenues.error ?? managedVenueEvents.error;
+  return {
+    state: { events, agendaGroups, error, isLoading: loading, isInitialLoading: initialLoading, month, date: selectedDate, view, itemType, search, selectedCategories, selectedVenueEvents, selectedVenues, hasActiveFilters },
+    actions: {
+      changeView, changeItemType, changeSearch, changePeriod, selectDate, goToToday, resetFilters,
+      toggleFilter,
+      retry,
+    },
+    meta: {
+      categoryOptions: filterOptions.categories,
+      venueEventOptions: filterOptions.venueEvents,
+      venueOptions: filterOptions.venues,
+    },
+  };
 }
