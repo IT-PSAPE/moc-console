@@ -27,7 +27,7 @@ export function useLogin() {
     }
     setCanResendVerification(false)
     setVerificationSent(false)
-    navigate(`/${routes.requests}`, { replace: true })
+    navigate(`/${routes.overview}`, { replace: true })
   }
 
   async function resendVerificationEmail() {

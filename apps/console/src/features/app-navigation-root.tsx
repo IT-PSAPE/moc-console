@@ -6,16 +6,16 @@ type AppNavigationRootProps = {
     children: ReactNode
     isSigningOut: boolean
     canManageScheduledMessages: boolean
-    onCloseMobileNavigation: () => void
+    onCloseLandscapeNavigation: () => void
     onEditProfile: () => void
     onSignOut: () => void
 }
 
-export function AppNavigationRoot({ children, isSigningOut, canManageScheduledMessages, onCloseMobileNavigation, onEditProfile, onSignOut }: AppNavigationRootProps) {
+export function AppNavigationRoot({ children, isSigningOut, canManageScheduledMessages, onCloseLandscapeNavigation, onEditProfile, onSignOut }: AppNavigationRootProps) {
     const navigation = useAppNavigation(canManageScheduledMessages)
     const value = {
         ...navigation,
-        actions: { ...navigation.actions, closeMobile: onCloseMobileNavigation, editProfile: onEditProfile, signOut: onSignOut },
+        actions: { ...navigation.actions, closeLandscape: onCloseLandscapeNavigation, editProfile: onEditProfile, signOut: onSignOut },
         meta: { ...navigation.meta, isSigningOut },
     }
     return <AppNavigationContext value={value}>{children}</AppNavigationContext>

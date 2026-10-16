@@ -29,6 +29,9 @@ const EquipmentScreen = lazy(() => import('@/screens/equipment/page').then((m) =
 const EquipmentDetailScreen = lazy(() => import('@/screens/equipment/detail/page').then((m) => ({ default: m.EquipmentDetailScreen })))
 const RequestsScreen = lazy(() => import('@/screens/requests/page').then((m) => ({ default: m.RequestsScreen })))
 const MembersScreen = lazy(() => import('@/screens/members/page').then((m) => ({ default: m.MembersScreen })))
+const OverviewPage = lazy(() => import('@/screens/overview/page').then((m) => ({ default: m.OverviewPage })))
+const TelegramPage = lazy(() => import('@/screens/telegram/page').then((m) => ({ default: m.TelegramPage })))
+const VenueCatalogPage = lazy(() => import('@/screens/venue-catalog/page').then((m) => ({ default: m.VenueCatalogPage })))
 const SchedulePage = lazy(() => import('@/screens/schedule/page').then((m) => ({ default: m.SchedulePage })))
 const RequestDetailScreen = lazy(() => import('@/screens/requests/detail/page').then((m) => ({ default: m.RequestDetailScreen })))
 const ChecklistsScreen = lazy(() => import('@/screens/checklists/page').then((m) => ({ default: m.ChecklistsScreen })))
@@ -140,7 +143,7 @@ function RedirectIfAuth({ children }: { children: React.ReactNode }) {
     }
 
     if (session) {
-        return <Navigate to={`/${routes.requests}`} replace />
+        return <Navigate to={`/${routes.overview}`} replace />
     }
 
     return children
@@ -148,12 +151,23 @@ function RedirectIfAuth({ children }: { children: React.ReactNode }) {
 
 function MembersRoute() {
     const { role } = useWorkspace()
-    if (role?.can_update !== true && role?.can_manage_roles !== true) return <Navigate to={`/${routes.requests}`} replace />
+    if (role?.can_update !== true && role?.can_manage_roles !== true) return <Navigate to={`/${routes.overview}`} replace />
     return <MembersScreen />
 }
 
+function TelegramRoute() {
+    const { role } = useWorkspace()
+    if (role?.can_manage_roles !== true) return <Navigate to={`/${routes.overview}`} replace />
+    return <TelegramPage />
+}
+
+function LegacyScheduleRoute() {
+    const { search } = useLocation()
+    return <Navigate to={`/${routes.work}${search}`} replace />
+}
+
 const router = createBrowserRouter([
-    // Auth routes — redirect to requests if already signed in
+    // Auth routes — redirect to overview if already signed in
     { path: routes.login, element: <RedirectIfAuth><SuspenseRoute><LoginScreen /></SuspenseRoute></RedirectIfAuth> },
     { path: routes.signup, element: <RedirectIfAuth><SuspenseRoute><SignupScreen /></SuspenseRoute></RedirectIfAuth> },
     { path: routes.resetPassword, element: <RedirectIfAuth><SuspenseRoute><ResetPasswordScreen /></SuspenseRoute></RedirectIfAuth> },
@@ -170,10 +184,14 @@ const router = createBrowserRouter([
     {
         element: <RequireAuth />,
         children: [
-            { index: true, element: <Navigate to={`/${routes.requests}`} replace /> },
+            { index: true, element: <Navigate to={`/${routes.overview}`} replace /> },
+            { path: routes.overview, element: <OverviewPage /> },
+            { path: routes.work, element: <SchedulePage /> },
+            { path: routes.telegram, element: <TelegramRoute /> },
+            { path: routes.venueCatalog, element: <VenueCatalogPage /> },
             { path: routes.settings, element: <SettingsScreen /> },
             { path: routes.members, element: <MembersRoute /> },
-            { path: routes.schedule, element: <SchedulePage /> },
+            { path: routes.schedule, element: <LegacyScheduleRoute /> },
             { path: routes.messageTemplateDetail, element: <MessageTemplateDetailScreen /> },
             { path: routes.scheduledMessages, element: <ScheduledMessagesLayout />, children: [
                 { index: true, element: <ScheduledMessagesScreen /> },

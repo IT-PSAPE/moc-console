@@ -3,6 +3,7 @@ import { cn } from '@moc/utils/cn'
 import { useCallback, useMemo, useState, type HTMLAttributes, type MouseEventHandler, type ReactElement, type ReactNode } from 'react'
 import { Label } from '../display/text'
 import { SidebarRailItem } from './sidebar-rail-item'
+import { SidebarRailButton } from './sidebar-rail-button'
 import { SidebarLayout } from './sidebar-layout'
 import { SidebarRail } from './sidebar-rail'
 import { SidebarSecondary } from './sidebar-secondary'
@@ -14,26 +15,26 @@ export { useSidebar } from './sidebar-context'
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
     const [isCollapsed, setIsCollapsed] = useState(false)
-    const [isMobileOpen, setIsMobileOpen] = useState(false)
+    const [isLandscapeOpen, setIsLandscapeOpen] = useState(false)
 
     const toggleCollapsed = useCallback(() => setIsCollapsed(prev => !prev), [])
-    const openMobile = useCallback(() => setIsMobileOpen(true), [])
-    const closeMobile = useCallback(() => setIsMobileOpen(false), [])
+    const openLandscape = useCallback(() => setIsLandscapeOpen(true), [])
+    const closeLandscape = useCallback(() => setIsLandscapeOpen(false), [])
     const expand = useCallback(() => setIsCollapsed(false), [])
 
     const actions = useMemo(() => ({
         toggleCollapsed,
-        openMobile,
-        closeMobile,
-        setMobileOpen: setIsMobileOpen,
+        openLandscape,
+        closeLandscape,
+        setLandscapeOpen: setIsLandscapeOpen,
         expand,
-    }), [toggleCollapsed, openMobile, closeMobile, expand])
+    }), [toggleCollapsed, openLandscape, closeLandscape, expand])
 
     const value: SidebarContextValue = useMemo(() => ({
-        state: { isCollapsed, isMobileOpen },
+        state: { isCollapsed, isLandscapeOpen },
         actions,
         meta: {},
-    }), [isCollapsed, isMobileOpen, actions])
+    }), [isCollapsed, isLandscapeOpen, actions])
 
     return (
         <BaseTooltip.Provider delay={350} closeDelay={100}>
@@ -150,6 +151,7 @@ export const Sidebar = {
     Layout: SidebarLayout,
     Rail: SidebarRail,
     RailItem: SidebarRailItem,
+    RailButton: SidebarRailButton,
     Secondary: SidebarSecondary,
     Panel: SidebarPanel,
     Header: SidebarHeader,

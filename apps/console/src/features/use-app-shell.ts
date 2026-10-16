@@ -10,35 +10,35 @@ export function useAppShell() {
   const canManageScheduledMessages = useScheduledMessageAccess()
   const { pathname } = useLocation()
   const sidebar = useSidebar()
-  const { closeMobile, setMobileOpen } = sidebar.actions
+  const { closeLandscape, setLandscapeOpen } = sidebar.actions
   const { signOut } = useAuth()
   const { toast } = useFeedback()
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
 
   useEffect(() => {
-    closeMobile()
-  }, [closeMobile, pathname])
+    closeLandscape()
+  }, [closeLandscape, pathname])
 
   const signOutUser = useCallback(async () => {
     if (isSigningOut) return
     setIsSigningOut(true)
     try {
       const result = await signOut()
-      closeMobile()
+      closeLandscape()
       if (result.error) toast({ title: "Logged out locally", description: result.error.message, variant: "info" })
     } finally {
       window.location.replace(`/${routes.login}`)
     }
-  }, [closeMobile, isSigningOut, signOut, toast])
+  }, [closeLandscape, isSigningOut, signOut, toast])
 
   function openProfile() {
-    closeMobile()
+    closeLandscape()
     setProfileOpen(true)
   }
 
   return {
-    state: { isSigningOut, profileOpen, mobileSidebarOpen: sidebar.state.isMobileOpen, canManageScheduledMessages },
-    actions: { signOut: signOutUser, openProfile, setProfileOpen, closeMobileSidebar: closeMobile, setMobileSidebarOpen: setMobileOpen },
+    state: { isSigningOut, profileOpen, landscapeSidebarOpen: sidebar.state.isLandscapeOpen, canManageScheduledMessages },
+    actions: { signOut: signOutUser, openProfile, setProfileOpen, closeLandscapeSidebar: closeLandscape, setLandscapeSidebarOpen: setLandscapeOpen },
   }
 }

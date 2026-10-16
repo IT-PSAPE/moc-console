@@ -3,7 +3,7 @@ import type { useAppNavigation } from './use-app-navigation'
 
 export type AppNavigationContextValue = ReturnType<typeof useAppNavigation> & {
     actions: ReturnType<typeof useAppNavigation>['actions'] & {
-        closeMobile: () => void
+        closeLandscape: () => void
         editProfile: () => void
         signOut: () => void
     }

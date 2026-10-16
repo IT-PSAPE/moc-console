@@ -5,6 +5,6 @@ import { routes } from '../console-routes'
 
 export function ScheduledMessagesLayout() {
     const canManage = useScheduledMessageAccess()
-    if (!canManage) return <Navigate to={`/${routes.requests}`} replace />
+    if (!canManage) return <Navigate to={`/${routes.overview}`} replace />
     return <ScheduledMessages.Root><Outlet /><ScheduledMessages.Editor /></ScheduledMessages.Root>
 }

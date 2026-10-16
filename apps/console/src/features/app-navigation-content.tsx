@@ -1,26 +1,19 @@
-import { Link } from 'react-router-dom'
+import { PanelLeftClose, X } from 'lucide-react'
 import { Sidebar } from '@moc/ui/components/navigation/sidebar'
+import { useIsLandscape } from '@moc/ui/hooks/use-is-landscape'
 import { useNavigation } from './app-navigation-context'
-import type { NavigationDestination } from './navigation-sections'
 import { WorkspaceNavigationHeader } from './workspace-navigation-header'
+import { AppNavigationMenu } from './app-navigation-menu'
 
 export function AppNavigationContent() {
     const { actions, meta } = useNavigation()
-
-    function renderDestination(destination: NavigationDestination) {
-        const Icon = destination.icon
-        return <Sidebar.MenuItem key={destination.route} title={destination.title} icon={<Icon />} active={actions.isRouteActive(destination.route)} render={<Link to={`/${destination.route}`} />} />
-    }
+    const isLandscape = useIsLandscape()
+    if (meta.destinations.length === 0 && !isLandscape) return null
 
     return (
         <Sidebar.Secondary id="secondary-navigation" aria-label={`${meta.title} navigation`}>
-            <WorkspaceNavigationHeader />
-            <Sidebar.Content>
-                <Sidebar.Group>
-                    <Sidebar.GroupTitle title={meta.title} />
-                    <Sidebar.GroupContent>{meta.destinations.map(renderDestination)}</Sidebar.GroupContent>
-                </Sidebar.Group>
-            </Sidebar.Content>
+            <WorkspaceNavigationHeader onToggle={isLandscape ? actions.closeLandscape : actions.toggleCollapsed} toggleLabel={isLandscape ? 'Close navigation' : 'Collapse navigation details'} toggleIcon={isLandscape ? <X /> : <PanelLeftClose />} />
+            {meta.destinations.length > 0 ? <AppNavigationMenu title={meta.title} destinations={meta.destinations} onNavigate={actions.closeLandscape} /> : null}
         </Sidebar.Secondary>
     )
 }

@@ -21,18 +21,21 @@ function toSideAlign(placement: Placement): { side: 'top' | 'bottom' | 'left' | 
 
 const PlacementContext = createContext<Placement>('bottom')
 
+export type PopoverChangeEventDetails = BasePopover.Root.ChangeEventDetails
+
 // ─── Root ────────────────────────────────────────────────────────────
 
 type PopoverRootProps = {
     children: ReactNode
     closeOnEscape?: boolean
     defaultOpen?: boolean
-    onOpenChange?: (nextOpen: boolean) => void
+    onOpenChange?: (nextOpen: boolean, eventDetails: PopoverChangeEventDetails) => void
     open?: boolean
     placement?: Placement
+    triggerId?: string | null
 }
 
-function PopoverRoot({ children, closeOnEscape = true, defaultOpen, onOpenChange, open, placement = 'bottom' }: PopoverRootProps) {
+function PopoverRoot({ children, closeOnEscape = true, defaultOpen, onOpenChange, open, placement = 'bottom', triggerId }: PopoverRootProps) {
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false)
     const isOpen = isControlled ? open : uncontrolledOpen
@@ -44,12 +47,12 @@ function PopoverRoot({ children, closeOnEscape = true, defaultOpen, onOpenChange
         if (!isControlled) {
             setUncontrolledOpen(nextOpen)
         }
-        onOpenChange?.(nextOpen)
+        onOpenChange?.(nextOpen, eventDetails)
     }
 
     return (
         <PlacementContext.Provider value={placement}>
-            <BasePopover.Root open={isOpen} onOpenChange={handleOpenChange}>
+            <BasePopover.Root open={isOpen} onOpenChange={handleOpenChange} triggerId={triggerId}>
                 {children}
             </BasePopover.Root>
         </PlacementContext.Provider>
@@ -62,7 +65,9 @@ type PopoverControlProps = Omit<HTMLAttributes<HTMLElement>, 'children'> & {
     children: ReactElement
 }
 
-function PopoverTrigger({ children, className, ...props }: PopoverControlProps) {
+type PopoverTriggerProps = PopoverControlProps & Pick<BasePopover.Trigger.Props, 'openOnHover' | 'delay' | 'closeDelay'>
+
+function PopoverTrigger({ children, className, ...props }: PopoverTriggerProps) {
     const nativeButton = typeof children.type !== 'string' || children.type === 'button'
 
     return (
@@ -72,13 +77,15 @@ function PopoverTrigger({ children, className, ...props }: PopoverControlProps) 
 
 // ─── Panel ───────────────────────────────────────────────────────────
 
-function PopoverPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+type PopoverPanelProps = HTMLAttributes<HTMLDivElement> & Pick<BasePopover.Positioner.Props, 'anchor' | 'sideOffset' | 'alignOffset' | 'collisionPadding'>
+
+function PopoverPanel({ children, className, anchor, sideOffset = 6, alignOffset, collisionPadding, ...props }: PopoverPanelProps) {
     const { side, align } = toSideAlign(useContext(PlacementContext))
     const { state: overlayState } = useOverlayStack()
 
     return (
         <BasePopover.Portal container={overlayState.rootElement ?? undefined}>
-            <BasePopover.Positioner side={side} align={align} sideOffset={6} className="z-[9050] outline-none">
+            <BasePopover.Positioner anchor={anchor} side={side} align={align} sideOffset={sideOffset} alignOffset={alignOffset} collisionPadding={collisionPadding} className="z-[9050] outline-none">
                 <BasePopover.Popup
                     className={cn(
                         'pointer-events-auto flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-xl border border-secondary bg-primary shadow-lg outline-none',

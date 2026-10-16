@@ -14,7 +14,7 @@ type WorkspaceSwitcherProps = {
     onSignOut: () => void
 }
 
-const menuItemClassName = 'min-h-11 gap-2 px-2 py-1.5 md:min-h-9 md:py-1.5'
+const menuItemClassName = 'min-h-9 gap-2 px-2 py-1.5 landscape:min-h-11'
 
 export function WorkspaceSwitcher({ isSigningOut, onEditProfile, onSignOut }: WorkspaceSwitcherProps) {
     const { meta } = useWorkspaceSwitcher()
@@ -23,12 +23,12 @@ export function WorkspaceSwitcher({ isSigningOut, onEditProfile, onSignOut }: Wo
     return (
         <Dropdown placement="top-start">
             <Dropdown.Trigger>
-                <NavigationList.Item aria-label={`Account menu for ${meta.displayName}. Current workspace: ${meta.workspaceName}`} className="size-11 justify-center p-1 md:min-h-11">
+                <NavigationList.Item aria-label={`Account menu for ${meta.displayName}. Current workspace: ${meta.workspaceName}`} className="size-11 min-h-11 justify-center p-1">
                     <Avatar src={meta.avatarUrl} name={meta.initials} size="xs" />
                 </NavigationList.Item>
             </Dropdown.Trigger>
             <Dropdown.Panel className="w-72 p-1.5">
-                <ListItemCard.Root className="items-center gap-2 px-2 py-2 md:px-2">
+                <ListItemCard.Root className="items-center gap-2 px-2 py-2">
                     <Avatar src={meta.avatarUrl} name={meta.initials} size="sm" />
                     <ListItemCard.Content>
                         <div className="flex min-w-0 items-center gap-2">

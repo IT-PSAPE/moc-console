@@ -1,12 +1,12 @@
 import { createContext, useContext } from 'react'
 
 export type SidebarContextValue = {
-    state: { isCollapsed: boolean; isMobileOpen: boolean }
+    state: { isCollapsed: boolean; isLandscapeOpen: boolean }
     actions: {
         toggleCollapsed: () => void
-        openMobile: () => void
-        closeMobile: () => void
-        setMobileOpen: (open: boolean) => void
+        openLandscape: () => void
+        closeLandscape: () => void
+        setLandscapeOpen: (open: boolean) => void
         expand: () => void
     }
     meta: Record<string, never>
