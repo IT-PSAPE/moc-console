@@ -4427,7 +4427,7 @@ CREATE TABLE public.checklists (
     workspace_id uuid NOT NULL,
     name text NOT NULL,
     description text DEFAULT ''::text NOT NULL,
-    scheduled_at timestamp with time zone NOT NULL,
+    scheduled_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     request_id uuid

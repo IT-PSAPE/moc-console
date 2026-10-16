@@ -15,7 +15,6 @@ import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dia
 import { Dropdown } from "@moc/ui/components/overlays/dropdown"
 import { CopyPlus, FolderPlus, ListChecks, Plus, SquarePlus, Trash2 } from "lucide-react"
 import { useChecklistDetail } from "./use-checklist-detail"
-import { ChecklistScheduleField } from "@/features/checklists/checklist-schedule-field"
 import { ChecklistEditorContent } from "@/features/checklists/checklist-editor-content"
 import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
@@ -78,7 +77,6 @@ export function ChecklistDetailScreen() {
 
         {checklist.kind === "instance" && (
           <DetailPage.Section className="pb-0 pt-4">
-            <ChecklistScheduleField value={meta.scheduledAtInput} onChange={actions.updateScheduledAt} />
             <div className="pt-4"><RequestLinkField kind="checklist" id={checklist.id} /></div>
           </DetailPage.Section>
         )}
@@ -87,9 +85,9 @@ export function ChecklistDetailScreen() {
 
         <DetailPage.Section className="pb-8">
           <Label.md className="block pb-4">Items</Label.md>
-          <Card.Content className="overflow-hidden">
+          <Card className="overflow-hidden">
             <ChecklistEditorContent checklist={checklist} onUpdate={actions.update} addRequest={state.addRequest} onAddRequestDismiss={actions.dismissAdd} />
-          </Card.Content>
+          </Card>
         </DetailPage.Section>
 
         <ConfirmationDialog

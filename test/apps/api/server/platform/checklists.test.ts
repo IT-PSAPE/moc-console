@@ -49,6 +49,54 @@ describe("checklist platform operations", () => {
     expect(operations.createFromTemplate.permission).toBe("can_create")
   })
 
+  test("creates template runs without assigning a date when none is supplied", async () => {
+    const calls: Array<{ sql: string; values: readonly unknown[] }> = []
+    const context = makeContext(async (text, params) => {
+      calls.push({ sql: text, values: params ?? [] })
+      return { rows: [{ id: text.startsWith("SELECT id FROM checklist_templates") ? "template-1" : "run-1" }] }
+    })
+
+    await operations.createFromTemplate.run(context, {
+      templateId: "00000000-0000-4000-8000-000000000001",
+      overrides: { name: "Undated run", description: "" },
+    })
+
+    expect(calls[1].values).toEqual(["00000000-0000-4000-8000-000000000001", null, "Undated run", ""])
+  })
+
+  test("preserves a historical date when saving checklist content without a date", async () => {
+    const calls: Array<{ sql: string; values: readonly unknown[] }> = []
+    const historicDate = "2026-10-04T07:00:00.000Z"
+    const context = makeContext(async (text, params) => {
+      calls.push({ sql: text, values: params ?? [] })
+      if (text.includes("SELECT id FROM checklist_templates")) return { rows: [] }
+      if (text === "SELECT id FROM checklists WHERE workspace_id=$1 AND id=$2") return { rows: [{ id: "run-1" }] }
+      if (text.startsWith("INSERT INTO checklists")) return { rows: [{ id: "run-1" }] }
+      if (text.startsWith("SELECT id,workspace_id,name,description,created_at,updated_at")) return { rows: [] }
+      if (text.startsWith("SELECT id,workspace_id,name,description,scheduled_at,request_id,created_at,updated_at")) {
+        return { rows: [{ id: "run-1", workspace_id: "verified-workspace", name: "Run", description: "", scheduled_at: historicDate, request_id: null, created_at: historicDate, updated_at: historicDate }] }
+      }
+      return { rows: [] }
+    })
+
+    await operations.save.run(context, {
+      checklist: {
+        id: "00000000-0000-4000-8000-000000000001",
+        kind: "instance",
+        name: "Run",
+        description: "",
+        items: [],
+        sections: [],
+        createdAt: historicDate,
+        updatedAt: historicDate,
+      },
+    })
+
+    const saveCall = calls.find(({ sql }) => sql.startsWith("INSERT INTO checklists"))
+    expect(saveCall?.sql).toContain("scheduled_at=COALESCE(EXCLUDED.scheduled_at,checklists.scheduled_at)")
+    expect(saveCall?.values[4]).toBeNull()
+  })
+
   test("maps ordered templates and runs, preserving item completion only for runs", async () => {
     const templateId = "00000000-0000-4000-8000-000000000001"
     const runId = "00000000-0000-4000-8000-000000000002"

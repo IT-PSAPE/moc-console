@@ -7,7 +7,6 @@ import { getChecklistCounts } from "@/features/checklists/checklist-content"
 import type { ChecklistAddRequest } from "@/features/checklists/checklist-types"
 import { routes } from "@/screens/console-routes"
 import type { Checklist } from "@moc/types/checklists"
-import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time"
 import { getCurrentWorkspaceGeneration } from "@/data/current-workspace";
 import { useWorkspace } from "@/lib/workspace-context";
 
@@ -27,7 +26,6 @@ export function useChecklistDetail() {
   const currentKey = `${currentWorkspaceId ?? "none"}:${generation}:${id ?? "none"}`
   const checklist = checklists.find((item) => item.id === id) ?? null
   const counts = checklist ? getChecklistCounts(checklist) : { total: 0, checked: 0 }
-  const scheduledAtInput = checklist?.kind === "instance" && checklist.scheduledAt ? formatUtcIsoForBrowserDateTimeInput(checklist.scheduledAt) : ""
 
   useBreadcrumbOverride(id ?? "", checklist?.name)
 
@@ -62,9 +60,6 @@ export function useChecklistDetail() {
     if (checklist) void update({ ...checklist, description })
   }
 
-  function updateScheduledAt(value: string) {
-    if (checklist?.kind === "instance" && value) void update({ ...checklist, scheduledAt: parseBrowserDateTimeInputToUtcIso(value) })
-  }
 
   async function remove() {
     if (!id || !checklist) return
@@ -105,11 +100,10 @@ export function useChecklistDetail() {
 
   return {
     state: { addRequest, deleteOpen },
-    actions: { setDeleteOpen, openDelete, createTemplate, addItem, addSection, dismissAdd, update, updateName, updateDescription, updateScheduledAt, remove },
+    actions: { setDeleteOpen, openDelete, createTemplate, addItem, addSection, dismissAdd, update, updateName, updateDescription, remove },
     meta: {
       checklist,
       counts,
-      scheduledAtInput,
       error: loadedKey === currentKey ? checklistsError : null,
       isLoading: Boolean(!checklist && id && currentWorkspaceId && (isLoadingChecklists || loadedKey !== currentKey)),
       retry: retryChecklists,

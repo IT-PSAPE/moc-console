@@ -8,7 +8,6 @@ import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 import { Dropdown } from "@moc/ui/components/overlays/dropdown";
 import type { Checklist } from "@moc/types/checklists";
 import { useChecklistPanel } from "./use-checklist-panel";
-import { ChecklistScheduleField } from "./checklist-schedule-field";
 import { ChecklistEditorContent } from "./checklist-editor-content";
 import { RequestLinkField } from "@/features/request-links/request-link-field";
 
@@ -43,7 +42,6 @@ export function ChecklistPanelContent({ checklist, onClose }: { checklist: Check
 
         {checklist.kind === "instance" && (
           <div className="px-4 pt-3">
-            <ChecklistScheduleField value={meta.scheduledAtInput} onChange={actions.updateScheduledAt} />
             <div className="pt-3"><RequestLinkField kind="checklist" id={checklist.id} /></div>
           </div>
         )}

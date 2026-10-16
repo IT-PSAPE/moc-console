@@ -1,5 +1,4 @@
 import { Label } from '@moc/ui/components/display/text'
-import { Checkbox } from '@moc/ui/components/form/checkbox'
 import { FormLabel } from '@moc/ui/components/form/form-label'
 import { Input } from '@moc/ui/components/form/input'
 import { Radio, RadioGroup } from '@moc/ui/components/form/radio'
@@ -20,24 +19,12 @@ const completionFilters: { value: ChecklistRunCompletionFilter; label: string }[
 ]
 
 export function ChecklistRunFilterDrawer({ filters }: ChecklistRunFilterDrawerProps) {
-    const { filters: state, hasActiveFilters, reset, setCompletion, setDateRange, setIncludePast, setItemCount, setSort } = filters
+    const { filters: state, hasActiveFilters, reset, setCompletion, setItemCount, setSort } = filters
     const sortValue = `${state.sortField}-${state.sortDirection}`
 
     function handleSortChange(value: string) {
         const [field, direction] = parseSortValue(value)
         setSort(field as Parameters<typeof setSort>[0], direction as Parameters<typeof setSort>[1])
-    }
-
-    function handleIncludePastChange(event: ChangeEvent<HTMLInputElement>) {
-        setIncludePast(event.target.checked)
-    }
-
-    function handleStartDateChange(event: ChangeEvent<HTMLInputElement>) {
-        setDateRange(event.target.value, state.dateRange.end)
-    }
-
-    function handleEndDateChange(event: ChangeEvent<HTMLInputElement>) {
-        setDateRange(state.dateRange.start, event.target.value)
     }
 
     function handleCompletionChange(value: string) {
@@ -61,23 +48,6 @@ export function ChecklistRunFilterDrawer({ filters }: ChecklistRunFilterDrawerPr
                         </Tabs.List>
                         <Tabs.Panels>
                             <Tabs.Panel value="filters">
-                                <FilterDrawer.Group label="Schedule">
-                                    <div className="flex flex-col gap-3">
-                                        <Checkbox checked={state.includePast} onChange={handleIncludePastChange}>
-                                            <FormLabel label="Include past runs" />
-                                        </Checkbox>
-                                        <div className="flex gap-2">
-                                            <label className="space-y-1 *:odd:ml-1">
-                                                <FormLabel label="Start Date" />
-                                                <Input aria-label="Schedule start date" name="schedule-start" type="date" value={state.dateRange.start} onChange={handleStartDateChange} />
-                                            </label>
-                                            <label className="space-y-1 *:odd:ml-1">
-                                                <FormLabel label="End Date" />
-                                                <Input aria-label="Schedule end date" name="schedule-end" type="date" value={state.dateRange.end} onChange={handleEndDateChange} />
-                                            </label>
-                                        </div>
-                                    </div>
-                                </FilterDrawer.Group>
                                 <FilterDrawer.Group label="Completion">
                                     <RadioGroup
                                         className="grid grid-cols-1 gap-2"
@@ -109,12 +79,6 @@ export function ChecklistRunFilterDrawer({ filters }: ChecklistRunFilterDrawerPr
                                     value={sortValue}
                                     onValueChange={handleSortChange}
                                 >
-                                <FilterDrawer.Group label="Scheduled Date">
-                                    <FilterDrawer.Options>
-                                        <Radio value="scheduledAt-asc"><FormLabel label="Ascending" /></Radio>
-                                        <Radio value="scheduledAt-desc"><FormLabel label="Descending" /></Radio>
-                                    </FilterDrawer.Options>
-                                </FilterDrawer.Group>
                                 <FilterDrawer.Group label="Name">
                                     <FilterDrawer.Options>
                                         <Radio value="name-asc"><FormLabel label="A-Z" /></Radio>

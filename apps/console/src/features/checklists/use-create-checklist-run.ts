@@ -1,38 +1,30 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import type { Checklist } from "@moc/types/checklists";
-import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time";
 
 export type ChecklistRunSubmit =
-  | { kind: "template"; template: Checklist; name: string; description: string; scheduledAt: string }
-  | { kind: "blank"; name: string; description: string; scheduledAt: string };
+  | { kind: "template"; template: Checklist; name: string; description: string }
+  | { kind: "blank"; name: string; description: string };
 
 type UseCreateChecklistRunOptions = {
   initialName?: string;
-  initialScheduledAt?: string;
   open: boolean;
   template: Checklist | null;
   onOpenChange: (open: boolean) => void;
   onSubmit: (input: ChecklistRunSubmit) => Promise<void> | void;
 };
 
-function currentDateTimeInput() {
-  return formatUtcIsoForBrowserDateTimeInput(new Date().toISOString());
-}
-
-export function useCreateChecklistRun({ open, template, onOpenChange, onSubmit, initialName, initialScheduledAt }: UseCreateChecklistRunOptions) {
+export function useCreateChecklistRun({ open, template, onOpenChange, onSubmit, initialName }: UseCreateChecklistRunOptions) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [scheduledAt, setScheduledAt] = useState(currentDateTimeInput);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setName(initialName ?? (template ? `${template.name} Run` : ""));
     setDescription(template?.description ?? "");
-    setScheduledAt(initialScheduledAt ? formatUtcIsoForBrowserDateTimeInput(initialScheduledAt) : currentDateTimeInput());
-  }, [initialName, initialScheduledAt, open, template]);
+  }, [initialName, open, template]);
 
-  const canSubmit = name.trim().length > 0 && scheduledAt.length > 0 && !isSubmitting;
+  const canSubmit = name.trim().length > 0 && !isSubmitting;
 
   function changeName(event: ChangeEvent<HTMLInputElement>) {
     setName(event.target.value);
@@ -46,8 +38,7 @@ export function useCreateChecklistRun({ open, template, onOpenChange, onSubmit, 
     if (!canSubmit) return;
     setIsSubmitting(true);
     try {
-      const scheduledIso = parseBrowserDateTimeInputToUtcIso(scheduledAt);
-      const shared = { name: name.trim(), description: description.trim(), scheduledAt: scheduledIso };
+      const shared = { name: name.trim(), description: description.trim() };
       await onSubmit(template ? { kind: "template", template, ...shared } : { kind: "blank", ...shared });
       onOpenChange(false);
     } finally {
@@ -56,8 +47,8 @@ export function useCreateChecklistRun({ open, template, onOpenChange, onSubmit, 
   }
 
   return {
-    state: { canSubmit, description, isSubmitting, name, scheduledAt },
-    actions: { changeDescription, changeName, setScheduledAt, submit },
+    state: { canSubmit, description, isSubmitting, name },
+    actions: { changeDescription, changeName, submit },
     meta: { title: template ? `New run from “${template.name}”` : "New blank checklist run" },
   };
 }

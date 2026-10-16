@@ -19,7 +19,7 @@ export function CreateChecklistModal({ open, onOpenChange, onCreate }: CreateChe
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
-                    <Modal.FullScreenPanel className="w-full md:max-w-md">
+                    <Modal.FullScreenPanel className="w-full max-w-md landscape:max-w-none">
                         <Modal.Header>
                             <Label.md>New checklist</Label.md>
                         </Modal.Header>

@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import type { Checklist } from '@moc/types/checklists'
-import { formatUtcIsoForBrowserDateTimeInput, parseBrowserDateTimeInputToUtcIso } from '@moc/utils/browser-date-time'
 import { getChecklistCounts } from './checklist-content'
 import type { ChecklistAddRequest } from './checklist-types'
 import { useChecklists } from './checklists-provider'
@@ -14,7 +13,6 @@ export function useChecklistPanel(checklist: Checklist, onClose: () => void) {
   const [addRequest, setAddRequest] = useState<ChecklistAddRequest>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const counts = getChecklistCounts(checklist)
-  const scheduledAtInput = checklist.kind === 'instance' && checklist.scheduledAt ? formatUtcIsoForBrowserDateTimeInput(checklist.scheduledAt) : ''
 
   const update = useCallback(async (nextChecklist: Checklist) => {
     try {
@@ -31,9 +29,6 @@ export function useChecklistPanel(checklist: Checklist, onClose: () => void) {
 
   function updateName(name: string) { void update({ ...checklist, name }) }
   function updateDescription(description: string) { void update({ ...checklist, description }) }
-  function updateScheduledAt(value: string) {
-    if (checklist.kind === 'instance' && value) void update({ ...checklist, scheduledAt: parseBrowserDateTimeInputToUtcIso(value) })
-  }
   function updateChecklist(nextChecklist: Checklist) { void update(nextChecklist) }
   function addItem() { setAddRequest({ type: 'item', target: 'top' }) }
   function addSection() { setAddRequest({ type: 'section' }) }
@@ -63,7 +58,7 @@ export function useChecklistPanel(checklist: Checklist, onClose: () => void) {
 
   return {
     state: { addRequest, deleteOpen },
-    actions: { addItem, addSection, close: onClose, createTemplate, dismissAdd, openDelete, openFullPage, remove, setDeleteOpen, updateDescription, updateChecklist, updateName, updateScheduledAt },
-    meta: { ...counts, scheduledAtInput },
+    actions: { addItem, addSection, close: onClose, createTemplate, dismissAdd, openDelete, openFullPage, remove, setDeleteOpen, updateDescription, updateChecklist, updateName },
+    meta: counts,
   }
 }

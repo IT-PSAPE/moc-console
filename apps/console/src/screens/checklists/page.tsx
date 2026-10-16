@@ -1,6 +1,5 @@
-import { CalendarDays, FilePlus2, List, ListChecks, Plus, Search, Settings2 } from 'lucide-react'
+import { FilePlus2, ListChecks, Plus, Search, Settings2 } from 'lucide-react'
 import { Button } from '@moc/ui/components/controls/button'
-import { SegmentedControl } from '@moc/ui/components/controls/segmented-control'
 import { GroupedList } from '@moc/ui/components/display/grouped-list'
 import { Indicator } from '@moc/ui/components/display/indicator'
 import { Label } from '@moc/ui/components/display/text'
@@ -16,7 +15,6 @@ import { CreateChecklistRunModal } from '@/features/checklists/create-checklist-
 import { useChecklistsScreen } from '@/features/checklists/use-checklists-screen'
 import type { ChangeEvent } from 'react'
 import type { Checklist } from '@moc/types/checklists'
-import { ChecklistCalendarView } from '@/features/checklists/checklist-calendar'
 import { SplitPanel } from '@moc/ui/components/layout/split-panel'
 import { ChecklistPanelContent } from '@/features/checklists/checklist-drawer-content'
 import { CollectionToolbar } from '@moc/ui/components/layout/collection-toolbar'
@@ -48,52 +46,36 @@ export function ChecklistsScreen() {
                 <Page.Heading>
                     <Page.Title>Checklists</Page.Title>
                 </Page.Heading>
+              <Page.Controls>
+                <Input aria-label="Search checklists" name="checklist-search" autoComplete="off" icon={<Search />} placeholder="Search checklists…" className="w-full max-w-md" value={state.search} onChange={handleSearchChange} />
+                <Drawer mobileSide="bottom">
+                    <Drawer.Trigger>
+                        <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter checklists">Filter</CollectionToolbar.ActionButton>
+                    </Drawer.Trigger>
+                    <ChecklistRunFilterDrawer filters={meta.filters} />
+                </Drawer>
+                <Dropdown placement="bottom">
+                    <Dropdown.Trigger>
+                        <Button.Icon aria-label="Create checklist" variant='secondary' icon={<Plus />} />
+                    </Dropdown.Trigger>
+                    <Dropdown.Panel>
+                        <Dropdown.Item onSelect={actions.pickBlank}>
+                            <FilePlus2 className="size-4" />
+                            Blank checklist
+                        </Dropdown.Item>
+                        {state.templates.length > 0 && <Dropdown.Separator />}
+                        {state.templates.map(renderTemplate)}
+                        {state.templates.length > 0 && <Dropdown.Separator />}
+                        <Dropdown.Item onSelect={actions.openTemplates}>
+                            <ListChecks className="size-4" />
+                            Manage checklist templates
+                        </Dropdown.Item>
+                    </Dropdown.Panel>
+                </Dropdown>
+              </Page.Controls>
             </Page.Header>
 
-            <CollectionToolbar>
-                    <CollectionToolbar.Views>
-                        <SegmentedControl value={state.activeView} onValueChange={actions.changeView} fill={state.isMobile}>
-                            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
-                            <CollectionToolbar.ViewItem value="calendar" icon={<CalendarDays />}>Calendar</CollectionToolbar.ViewItem>
-                        </SegmentedControl>
-                    </CollectionToolbar.Views>
-                    <CollectionToolbar.Actions>
-                        <Input aria-label="Search checklists" name="checklist-search" autoComplete="off" icon={<Search />} placeholder="Search checklists…" className="w-full max-w-md" value={state.search} onChange={handleSearchChange} />
-                        <Drawer mobileSide="bottom">
-                            <Drawer.Trigger>
-                                <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter checklists">Filter</CollectionToolbar.ActionButton>
-                            </Drawer.Trigger>
-                            <ChecklistRunFilterDrawer filters={meta.filters} />
-                        </Drawer>
-                        <Dropdown placement="bottom">
-                            <Dropdown.Trigger>
-                                <Button.Icon aria-label="Create checklist" variant='secondary' icon={<Plus />} />
-                            </Dropdown.Trigger>
-                            <Dropdown.Panel>
-                                <Dropdown.Item onSelect={actions.pickBlank}>
-                                    <FilePlus2 className="size-4" />
-                                    Blank checklist
-                                </Dropdown.Item>
-                                {state.templates.length > 0 && <Dropdown.Separator />}
-                                {state.templates.map(renderTemplate)}
-                                {state.templates.length > 0 && <Dropdown.Separator />}
-                                <Dropdown.Item onSelect={actions.openTemplates}>
-                                    <ListChecks className="size-4" />
-                                    Manage checklist templates
-                                </Dropdown.Item>
-                            </Dropdown.Panel>
-                        </Dropdown>
-                    </CollectionToolbar.Actions>
-            </CollectionToolbar>
-
             <Page.Content>
-                {state.activeView === 'calendar' ? (
-                    <Decision value={state.activeView}>
-                        <Decision.Data>
-                            <ChecklistCalendarView checklists={meta.calendarFiltered} />
-                        </Decision.Data>
-                    </Decision>
-                ) : (
                 <Decision value={meta.filtered}>
                     <Decision.Empty>
                         <EmptyState
@@ -122,7 +104,6 @@ export function ChecklistsScreen() {
                         </GroupedList>
                     </Decision.Data>
                 </Decision>
-                )}
             </Page.Content>
 
             <CreateChecklistRunModal open={state.modalOpen} onOpenChange={actions.setModalOpen} template={state.modalTemplate} onSubmit={actions.submit} />

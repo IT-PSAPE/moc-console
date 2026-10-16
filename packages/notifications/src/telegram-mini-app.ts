@@ -98,7 +98,7 @@ export type MiniAppChecklistDetail = {
   id: string;
   name: string;
   description: string;
-  scheduledAt: string;
+  scheduledAt?: string;
   sections: MiniAppChecklistSection[];
 };
 

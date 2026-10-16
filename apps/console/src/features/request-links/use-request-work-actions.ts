@@ -57,7 +57,7 @@ export function useRequestWorkActions({ request, enabled, refreshRecords }: Opti
 
   const createChecklist = useCallback(async (input: ChecklistRunSubmit) => {
     try {
-      await checklistActions.createBlankChecklist({ name: input.name, description: input.description, scheduledAt: input.scheduledAt, requestId: request.id })
+      await checklistActions.createBlankChecklist({ name: input.name, description: input.description, requestId: request.id })
       refreshRecords()
       toast({ title: "Checklist created and linked", variant: "success" })
     } catch (error) {

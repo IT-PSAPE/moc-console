@@ -14,7 +14,7 @@ export type CreateBlankChecklistInput = {
   requestId?: string;
   name: string;
   description: string;
-  scheduledAt: string;
+  scheduledAt?: string;
 };
 
 function copyTemplateStructure(run: Checklist): Checklist {
@@ -48,7 +48,7 @@ export async function deleteChecklist(id: string): Promise<void> {
 export async function createChecklistInstance(template: Checklist, overrides: CreateChecklistInstanceOverrides = {}): Promise<Checklist> {
   const workspaceId = await getCurrentWorkspaceId();
   const checklistId = await moc.checklists.createFromTemplate(template.id, {
-    scheduledAt: overrides.scheduledAt ?? new Date().toISOString(),
+    ...(overrides.scheduledAt ? { scheduledAt: overrides.scheduledAt } : {}),
     name: overrides.name ?? `${template.name} Run`,
     description: overrides.description ?? template.description,
   }, workspaceId);
@@ -65,7 +65,7 @@ export async function createBlankChecklist(input: CreateBlankChecklistInput): Pr
     kind: "instance",
     name: input.name,
     description: input.description,
-    scheduledAt: input.scheduledAt,
+    ...(input.scheduledAt ? { scheduledAt: input.scheduledAt } : {}),
     requestId: input.requestId,
     items: [],
     sections: [],

@@ -3,9 +3,9 @@ import type { QueryResultRow } from 'pg'
 
 export type ChecklistItemRecord = { id: string; sectionId: string | null; label: string; checked: boolean; sortOrder: number; assigneeNames: string[] }
 export type ChecklistSectionRecord = { id: string; name: string; sortOrder: number }
-export type ChecklistRecord = { id: string; workspaceId: string; name: string; description: string; scheduledAt: string; sections: ChecklistSectionRecord[]; items: ChecklistItemRecord[] }
+export type ChecklistRecord = { id: string; workspaceId: string; name: string; description: string; scheduledAt?: string; sections: ChecklistSectionRecord[]; items: ChecklistItemRecord[] }
 
-type ChecklistRow = QueryResultRow & { id: string; workspace_id: string; name: string; description: string; scheduled_at: string }
+type ChecklistRow = QueryResultRow & { id: string; workspace_id: string; name: string; description: string; scheduled_at: string | Date | null }
 type SectionRow = QueryResultRow & { id: string; name: string; sort_order: number }
 type ItemRow = QueryResultRow & { id: string; section_id: string | null; label: string; checked: boolean; sort_order: number; assignee_names: string[] }
 
@@ -21,7 +21,7 @@ export async function loadChecklist(id: string): Promise<ChecklistRecord | null>
     ),
   ])
   return {
-    id:row.id,workspaceId:row.workspace_id,name:row.name,description:row.description,scheduledAt:row.scheduled_at,
+    id:row.id,workspaceId:row.workspace_id,name:row.name,description:row.description,...(row.scheduled_at ? { scheduledAt: row.scheduled_at instanceof Date ? row.scheduled_at.toISOString() : row.scheduled_at } : {}),
     sections:sections.map(section=>({id:section.id,name:section.name,sortOrder:section.sort_order})),
     items:items.map(item=>({id:item.id,sectionId:item.section_id,label:item.label,checked:item.checked,sortOrder:item.sort_order,assigneeNames:item.assignee_names})),
   }

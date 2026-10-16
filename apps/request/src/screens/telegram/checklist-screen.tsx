@@ -15,7 +15,7 @@ export function ChecklistScreen({ detail }: { detail: MiniAppChecklistDetail }) 
       <header className="flex flex-col gap-1">
         <Title.h1 className="title-h4">{detail.name}</Title.h1>
         {detail.description && <Paragraph.sm className="text-secondary">{detail.description}</Paragraph.sm>}
-        <Paragraph.xs className="text-tertiary">{detail.scheduledAt}</Paragraph.xs>
+        {detail.scheduledAt && <Paragraph.xs className="text-tertiary">{detail.scheduledAt}</Paragraph.xs>}
       </header>
 
       {checklist.state.lastError && (

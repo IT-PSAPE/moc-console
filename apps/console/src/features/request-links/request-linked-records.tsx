@@ -36,7 +36,7 @@ export function RequestLinkedRecords({ request, enabled = true, className }: Req
         {creation.meta.canCreate && <Button variant="secondary" onClick={creation.actions.openChecklist}>Create checklist</Button>}
         {creation.meta.canCreateStream && <Button variant="secondary" onClick={creation.actions.openStream}>Create stream or meeting</Button>}
       </Section.Body>
-      <CreateChecklistRunModal open={creation.state.checklistOpen} onOpenChange={creation.actions.setChecklistOpen} template={null} onSubmit={creation.actions.createChecklist} initialName={request.title} initialScheduledAt={request.dueDate} />
+      <CreateChecklistRunModal open={creation.state.checklistOpen} onOpenChange={creation.actions.setChecklistOpen} template={null} onSubmit={creation.actions.createChecklist} initialName={request.title} />
       {creation.state.streamOpen && <CreateStreamModal open={creation.state.streamOpen} onOpenChange={creation.actions.setStreamOpen} youtubeAvailable={creation.meta.youtubeAvailable} zoomAvailable={creation.meta.zoomAvailable} youtubePreset={creation.meta.youtubePreset} onCreateYouTube={creation.actions.createYouTube} onCreateZoom={creation.actions.createZoom} initialTitle={request.title} initialScheduledAt={request.dueDate} />}
     </Section>
   )

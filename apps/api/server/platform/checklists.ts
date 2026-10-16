@@ -4,13 +4,13 @@ import type { PlatformOperation } from "./context.js"
 import { objectInput, optionalStringField, optionalUuidField, PlatformInputError, stringField, uuidField } from "./input.js"
 
 type DbTimestamp = string | Date
-type HeaderRow = { id: string; workspace_id: string; name: string; description: string; created_at: DbTimestamp; updated_at: DbTimestamp; scheduled_at?: DbTimestamp; request_id?: string | null }
+type HeaderRow = { id: string; workspace_id: string; name: string; description: string; created_at: DbTimestamp; updated_at: DbTimestamp; scheduled_at?: DbTimestamp | null; request_id?: string | null }
 type SectionRow = { id: string; checklist_id?: string; checklist_template_id?: string; name: string; sort_order: number }
 type ItemRow = { id: string; checklist_id?: string; checklist_template_id?: string; section_id?: string | null; template_section_id?: string | null; label: string; checked?: boolean; sort_order: number }
 type RelatedRow = { id: string; name: string; completed_items: number; total_items: number }
 
-function isoTimestamp(value: DbTimestamp | undefined): string | undefined {
-  return value instanceof Date ? value.toISOString() : value
+function isoTimestamp(value: DbTimestamp | null | undefined): string | undefined {
+  return value == null ? undefined : value instanceof Date ? value.toISOString() : value
 }
 
 function mapChecklist(header: HeaderRow, sections: SectionRow[], items: ItemRow[], kind: Checklist["kind"]): Checklist {
@@ -140,8 +140,8 @@ export const operations: Record<string, PlatformOperation> = {
       }
       const result = await db.query<{ id: string }>(`INSERT INTO checklists (id,workspace_id,name,description,scheduled_at,request_id,created_at,updated_at)
         VALUES ($1,$2,$3,$4,$5,$6,$7,now()) ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name,description=EXCLUDED.description,
-        scheduled_at=EXCLUDED.scheduled_at,updated_at=now() WHERE checklists.workspace_id=$2 RETURNING id`,
-        [checklist.id, workspaceId, checklist.name, checklist.description, checklist.scheduledAt ?? new Date().toISOString(), initialRequestId, checklist.createdAt])
+        scheduled_at=COALESCE(EXCLUDED.scheduled_at,checklists.scheduled_at),updated_at=now() WHERE checklists.workspace_id=$2 RETURNING id`,
+        [checklist.id, workspaceId, checklist.name, checklist.description, checklist.scheduledAt ?? null, initialRequestId, checklist.createdAt])
       if (!result.rows[0]) throw new Error("Checklist not found")
       await db.query("SELECT public.save_checklist_structure($1::uuid,$2::jsonb)", [checklist.id, JSON.stringify(toRpcStructure(checklist))])
     }
@@ -164,7 +164,7 @@ export const operations: Record<string, PlatformOperation> = {
     const template = await db.query<{ id: string }>("SELECT id FROM checklist_templates WHERE workspace_id=$1 AND id=$2 FOR SHARE", [workspaceId, templateId])
     if (!template.rows[0]) throw new Error("Checklist template not found")
     const result = await db.query<{ id: string }>("SELECT public.create_checklist_from_template($1::uuid,$2::timestamptz,$3::text,$4::text) AS id",
-      [templateId, scheduledAt ?? new Date().toISOString(), optionalStringField(overrides, "name") ?? null, optionalStringField(overrides, "description") ?? null])
+      [templateId, scheduledAt ?? null, optionalStringField(overrides, "name") ?? null, optionalStringField(overrides, "description") ?? null])
     if (!result.rows[0]) throw new Error("Checklist template not found")
     return result.rows[0].id
   } },
