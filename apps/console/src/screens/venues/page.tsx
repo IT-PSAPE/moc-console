@@ -25,7 +25,7 @@ import { ResourceLoadError } from "@/components/feedback/resource-load-error";
 
 export function VenueBookingsScreen() {
   const { state, actions, meta } = useVenueBookingsScreen();
-  const { filters, activeView, isMobile } = meta;
+  const { filters, activeView, isLandscape } = meta;
   const CollectionContent = activeView === "kanban" ? Page.CollectionContent : Page.Content;
   const visibleBookings = activeView === "calendar" ? filters.calendarFiltered : filters.filtered;
   const collectionState = activeView === "list" ? visibleBookings : activeView;
@@ -43,17 +43,7 @@ export function VenueBookingsScreen() {
         <Page.Heading>
           <Page.Title>Venues</Page.Title>
         </Page.Heading>
-      </Page.Header>
-
-      <CollectionToolbar>
-        <CollectionToolbar.Views>
-          <SegmentedControl value={activeView} onValueChange={actions.changeView} fill={isMobile} >
-            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
-            <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={isMobile}>Kanban</CollectionToolbar.ViewItem>
-            <CollectionToolbar.ViewItem value="calendar" icon={<CalendarDays />}>Calendar</CollectionToolbar.ViewItem>
-          </SegmentedControl>
-        </CollectionToolbar.Views>
-        <CollectionToolbar.Actions>
+        <Page.Controls>
           <Input aria-label="Search venue bookings" name="venue-booking-search" autoComplete="off" icon={<Search />} placeholder="Search bookings…" className="w-full max-w-md" value={filters.filters.search} onChange={handleSearch} />
           <Drawer mobileSide="bottom">
             <Drawer.Trigger>
@@ -61,7 +51,17 @@ export function VenueBookingsScreen() {
             </Drawer.Trigger>
             <VenueBookingFilterDrawer filters={filters} />
           </Drawer>
-        </CollectionToolbar.Actions>
+        </Page.Controls>
+      </Page.Header>
+
+      <CollectionToolbar>
+        <CollectionToolbar.Views>
+          <SegmentedControl value={activeView} onValueChange={actions.changeView} fill={isLandscape} >
+            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={isLandscape}>Kanban</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="calendar" icon={<CalendarDays />}>Calendar</CollectionToolbar.ViewItem>
+          </SegmentedControl>
+        </CollectionToolbar.Views>
       </CollectionToolbar>
 
       <CollectionContent>

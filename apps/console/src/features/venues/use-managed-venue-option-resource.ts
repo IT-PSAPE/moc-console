@@ -41,7 +41,7 @@ const eventApi: VenueOptionApi<VenueEvent> = {
 
 function useManagedVenueOptionResource<Option extends ManagedVenueOption>(api: VenueOptionApi<Option>) {
     const { currentWorkspaceId } = useWorkspace()
-    const { data: options, error, isLoading, load, updateData } = useWorkspaceResource({ emptyValue: [] as Option[], fetcher: api.fetch, resource: api.resource, workspaceId: currentWorkspaceId })
+    const { data: options, error, isLoading, isInitialLoading, load, updateData } = useWorkspaceResource({ emptyValue: [] as Option[], fetcher: api.fetch, resource: api.resource, workspaceId: currentWorkspaceId })
 
     useEffect(() => { void load() }, [load])
 
@@ -66,7 +66,7 @@ function useManagedVenueOptionResource<Option extends ManagedVenueOption>(api: V
         return updated
     }
 
-    return { workspaceId: currentWorkspaceId, options, error, isLoading, create, rename, changeActive }
+    return { workspaceId: currentWorkspaceId, options, error, isLoading, isInitialLoading, load, create, rename, changeActive }
 }
 
 export function useManagedVenueOptions() {

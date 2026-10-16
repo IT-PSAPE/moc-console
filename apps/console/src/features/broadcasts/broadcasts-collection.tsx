@@ -5,7 +5,6 @@ import { GroupedList } from "@moc/ui/components/display/grouped-list"
 import { Alert } from "@moc/ui/components/feedback/alert"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Input } from "@moc/ui/components/form/input"
-import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar"
 import { Page } from "@moc/ui/components/layout/page"
 import { SplitPanel } from "@moc/ui/components/layout/split-panel"
 import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
@@ -45,12 +44,8 @@ function BroadcastsCollection() {
           <Page.Header>
             <Page.Heading>
               <Page.Title>Broadcast</Page.Title>
-              <Page.Description>Public audio and video playlists. Players pick up edits as you save them.</Page.Description>
             </Page.Heading>
-          </Page.Header>
-
-          <CollectionToolbar>
-            <CollectionToolbar.Actions>
+            <Page.Controls>
               <Input
                 aria-label="Search broadcasts"
                 name="broadcast-search"
@@ -64,8 +59,8 @@ function BroadcastsCollection() {
               {meta.canCreate ? (
                 <Button.Icon aria-label="Create broadcast" variant="secondary" icon={<Plus />} onClick={actions.openCreate} />
               ) : null}
-            </CollectionToolbar.Actions>
-          </CollectionToolbar>
+            </Page.Controls>
+          </Page.Header>
 
           <Page.Content className="flex flex-col gap-4">
             {state.loadError ? (

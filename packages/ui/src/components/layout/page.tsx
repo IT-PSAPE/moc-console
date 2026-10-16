@@ -34,7 +34,7 @@ function PageContainer({ children, className, width = 'wide', ...props }: PageCo
 
 function PageHeader({ children, className, ...props }: HTMLAttributes<HTMLElement>) {
     return (
-        <header className={cn('mx-auto flex w-full max-w-content items-start gap-4 pt-6 pr-[max(var(--spacing-page-gutter),env(safe-area-inset-right))] pb-4 pl-[max(var(--spacing-page-gutter),env(safe-area-inset-left))] md:pt-page-top', className)} {...props}>
+        <header className={cn('@container/collection-toolbar mx-auto flex w-full max-w-content flex-wrap items-center gap-4 pt-page-top landscape:pt-6 pr-[max(var(--spacing-page-gutter),env(safe-area-inset-right))] pb-4 pl-[max(var(--spacing-page-gutter),env(safe-area-inset-left))]', className)} {...props}>
             {children}
         </header>
     )
@@ -42,7 +42,7 @@ function PageHeader({ children, className, ...props }: HTMLAttributes<HTMLElemen
 
 function PageHeading({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn('flex min-w-0 flex-1 flex-col gap-1.5', className)} {...props}>
+        <div className={cn('flex min-w-0 max-w-full flex-[1_0_auto] flex-col gap-1.5', className)} {...props}>
             {children}
         </div>
     )
@@ -72,9 +72,17 @@ function PageActions({ children, className, ...props }: HTMLAttributes<HTMLDivEl
     )
 }
 
+function PageControls({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    return (
+        <div className={cn('flex min-w-0 flex-[1_1_28rem] flex-wrap items-center justify-end gap-2 [&>[data-ui-control]]:min-w-40 [&>[data-ui-control]]:max-w-md [&>[data-ui-control]]:flex-[1_1_12rem] landscape:[&>[data-ui-control]]:basis-full', className)} {...props}>
+            {children}
+        </div>
+    )
+}
+
 function PageToolbar({ children, className, ...props }: PageContainerProps) {
     return (
-        <PageContainer className={cn('flex flex-col gap-2 pb-4 md:flex-row md:items-center', className)} {...props}>
+        <PageContainer className={cn('flex flex-row items-center gap-2 pb-4 landscape:flex-col landscape:items-stretch', className)} {...props}>
             {children}
         </PageContainer>
     )
@@ -94,7 +102,7 @@ function PageMain({ children, className, width = 'full', ref, ...props }: PageMa
 }
 
 function PageLoading({ className, ...props }: HTMLAttributes<HTMLElement>) {
-    return <section className={cn('flex min-h-[calc(100dvh-var(--spacing-header))] items-center justify-center md:min-h-[calc(100dvh-var(--spacing-header)-1rem)]', className)} {...props}><Spinner size="lg" /></section>
+    return <section className={cn('flex min-h-[calc(100dvh-var(--spacing-header)-1rem)] items-center justify-center landscape:min-h-[calc(100dvh-var(--spacing-header))]', className)} {...props}><Spinner size="lg" /></section>
 }
 
 function PageCollectionContent({ children, className, ...props }: Omit<PageContainerProps, 'width'>) {
@@ -110,6 +118,7 @@ export const Page = Object.assign(PageRoot, {
     Container: PageContainer,
     CollectionContent: PageCollectionContent,
     Content: PageContent,
+    Controls: PageControls,
     Description: PageDescription,
     Header: PageHeader,
     Loading: PageLoading,

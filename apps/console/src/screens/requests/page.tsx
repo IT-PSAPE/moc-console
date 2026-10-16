@@ -25,7 +25,7 @@ import { ResourceLoadError } from "@/components/feedback/resource-load-error";
 
 export function RequestsScreen() {
   const { state, actions, meta } = useRequestsScreen();
-  const { filters, activeView, isMobile } = meta;
+  const { filters, activeView, isLandscape } = meta;
   const CollectionContent = activeView === "kanban" ? Page.CollectionContent : Page.Content;
   const visibleRequests = meta.workViewRequests;
   const collectionState = activeView === "list" ? visibleRequests : activeView;
@@ -43,17 +43,7 @@ export function RequestsScreen() {
         <Page.Heading>
           <Page.Title>Requests</Page.Title>
         </Page.Heading>
-      </Page.Header>
-
-      <CollectionToolbar>
-        <CollectionToolbar.Views>
-          <SegmentedControl value={activeView} onValueChange={actions.changeView} fill={isMobile} >
-            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
-            <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={isMobile}>Kanban</CollectionToolbar.ViewItem>
-            <CollectionToolbar.ViewItem value="calendar" icon={<CalendarDays />}>Calendar</CollectionToolbar.ViewItem>
-          </SegmentedControl>
-        </CollectionToolbar.Views>
-        <CollectionToolbar.Actions>
+        <Page.Controls>
           <Input aria-label="Search requests" name="request-search" autoComplete="off" icon={<Search />} placeholder="Search requests…" className="w-full max-w-md" value={filters.filters.search} onChange={handleSearch} />
           <Drawer mobileSide="bottom">
             <Drawer.Trigger>
@@ -61,7 +51,17 @@ export function RequestsScreen() {
             </Drawer.Trigger>
             <RequestFilterDrawer filters={filters} workView={meta.workView} onWorkViewChange={actions.changeWorkView} onReset={actions.resetFilters} />
           </Drawer>
-        </CollectionToolbar.Actions>
+        </Page.Controls>
+      </Page.Header>
+
+      <CollectionToolbar>
+        <CollectionToolbar.Views>
+          <SegmentedControl value={activeView} onValueChange={actions.changeView} fill={isLandscape} >
+            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={isLandscape}>Kanban</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="calendar" icon={<CalendarDays />}>Calendar</CollectionToolbar.ViewItem>
+          </SegmentedControl>
+        </CollectionToolbar.Views>
       </CollectionToolbar>
 
       {meta.categoriesError && !meta.collectionError && <ResourceLoadError title="Couldn't load request types" error={meta.categoriesError} onRetry={actions.retryCategories} />}

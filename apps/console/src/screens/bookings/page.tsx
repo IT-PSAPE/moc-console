@@ -18,7 +18,7 @@ import { ResourceLoadError } from "@/components/feedback/resource-load-error";
 
 export function BookingsScreen() {
   const { state, actions, meta } = useBookingsScreen();
-  const { filters, activeView, isMobile } = meta;
+  const { filters, activeView, isLandscape } = meta;
   const CollectionContent = activeView === "kanban" ? Page.CollectionContent : Page.Content;
   const visibleBookings = activeView === "calendar" ? filters.calendarFiltered : filters.filtered;
   const collectionState = activeView === "list" ? visibleBookings : activeView;
@@ -36,25 +36,25 @@ export function BookingsScreen() {
         <Page.Heading>
           <Page.Title>Equipment Bookings</Page.Title>
         </Page.Heading>
+        <Page.Controls>
+          <Input aria-label="Search bookings" name="booking-search" autoComplete="off" icon={<Search />} placeholder="Search bookings…" className="w-full max-w-md" value={filters.filters.search} onChange={handleSearch} />
+          <Drawer mobileSide="bottom">
+            <Drawer.Trigger>
+              <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter bookings">Filter</CollectionToolbar.ActionButton>
+            </Drawer.Trigger>
+            <BookingFilterDrawer filters={filters} />
+          </Drawer>
+        </Page.Controls>
       </Page.Header>
 
       <CollectionToolbar>
           <CollectionToolbar.Views>
-            <SegmentedControl value={activeView} onValueChange={actions.changeView} fill={isMobile}>
+            <SegmentedControl value={activeView} onValueChange={actions.changeView} fill={isLandscape}>
               <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
-              <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={isMobile}>Kanban</CollectionToolbar.ViewItem>
+              <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={isLandscape}>Kanban</CollectionToolbar.ViewItem>
               <CollectionToolbar.ViewItem value="calendar" icon={<CalendarDays />}>Calendar</CollectionToolbar.ViewItem>
             </SegmentedControl>
           </CollectionToolbar.Views>
-          <CollectionToolbar.Actions>
-            <Input aria-label="Search bookings" name="booking-search" autoComplete="off" icon={<Search />} placeholder="Search bookings…" className="w-full max-w-md" value={filters.filters.search} onChange={handleSearch} />
-            <Drawer mobileSide="bottom">
-              <Drawer.Trigger>
-                <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter bookings">Filter</CollectionToolbar.ActionButton>
-              </Drawer.Trigger>
-              <BookingFilterDrawer filters={filters} />
-            </Drawer>
-          </CollectionToolbar.Actions>
       </CollectionToolbar>
 
       <CollectionContent className="flex flex-col gap-4">

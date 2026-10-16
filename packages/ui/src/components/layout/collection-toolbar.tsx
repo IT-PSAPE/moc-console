@@ -14,7 +14,7 @@ function CollectionToolbarRoot({ children, className, ...props }: ComponentProps
 
 function CollectionToolbarViews({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn('w-full md:w-auto', className)} {...props}>
+        <div className={cn('w-auto landscape:w-full', className)} {...props}>
             {children}
         </div>
     )
@@ -22,17 +22,9 @@ function CollectionToolbarViews({ children, className, ...props }: HTMLAttribute
 
 function CollectionToolbarViewItem({ children, className, ...props }: ComponentProps<typeof SegmentedControl.Item>) {
     return (
-        <SegmentedControl.Item className={cn('md:@max-[36rem]/collection-toolbar:px-2', className)} {...props}>
-            <span className="md:@max-[36rem]/collection-toolbar:sr-only">{children}</span>
+        <SegmentedControl.Item className={cn('@max-[36rem]/collection-toolbar:px-2 landscape:@max-[36rem]/collection-toolbar:px-3', className)} {...props}>
+            <span className="@max-[36rem]/collection-toolbar:sr-only landscape:@max-[36rem]/collection-toolbar:not-sr-only">{children}</span>
         </SegmentedControl.Item>
-    )
-}
-
-function CollectionToolbarActions({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    return (
-        <div className={cn('flex flex-1 gap-2 md:justify-end', className)} {...props}>
-            {children}
-        </div>
     )
 }
 
@@ -44,8 +36,8 @@ function CollectionToolbarActionButton({ children, className, ...props }: Collec
     return (
         <Button
             className={cn(
-                'max-md:gap-0 max-md:px-2 max-md:[&>span:last-child]:sr-only',
-                'md:@max-[36rem]/collection-toolbar:gap-0 md:@max-[36rem]/collection-toolbar:px-2 md:@max-[36rem]/collection-toolbar:[&>span:last-child]:sr-only',
+                'landscape:gap-0 landscape:px-2 landscape:[&>span:last-child]:sr-only',
+                '@max-[36rem]/collection-toolbar:gap-0 @max-[36rem]/collection-toolbar:px-2 @max-[36rem]/collection-toolbar:[&>span:last-child]:sr-only',
                 className,
             )}
             {...props}
@@ -57,7 +49,6 @@ function CollectionToolbarActionButton({ children, className, ...props }: Collec
 
 export const CollectionToolbar = Object.assign(CollectionToolbarRoot, {
     ActionButton: CollectionToolbarActionButton,
-    Actions: CollectionToolbarActions,
     ViewItem: CollectionToolbarViewItem,
     Views: CollectionToolbarViews,
 })

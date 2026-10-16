@@ -43,23 +43,14 @@ export function EquipmentScreen() {
         <Page.Heading>
           <Page.Title>Equipment</Page.Title>
         </Page.Heading>
-      </Page.Header>
-
-      <CollectionToolbar>
-        <CollectionToolbar.Views className="max-mobile:hidden">
-          <SegmentedControl value={state.activeView} onValueChange={actions.changeView} fill={state.isMobile} >
-            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
-            <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={state.isMobile}>Kanban</CollectionToolbar.ViewItem>
-          </SegmentedControl>
-        </CollectionToolbar.Views>
-        <CollectionToolbar.Actions>
+        <Page.Controls>
           <Input
             aria-label="Search equipment"
             name="equipment-search"
             autoComplete="off"
             icon={<Search />}
             placeholder="Search equipment…"
-            className="w-full max-w-md max-mobile:flex-[1_1_100%]"
+            className="w-full max-w-md"
             value={state.filterState.search}
             onChange={handleSearchChange}
           />
@@ -75,7 +66,16 @@ export function EquipmentScreen() {
             icon={<Plus />}
             onClick={actions.openCreate}
           />
-        </CollectionToolbar.Actions>
+        </Page.Controls>
+      </Page.Header>
+
+      <CollectionToolbar className="landscape:hidden">
+        <CollectionToolbar.Views>
+          <SegmentedControl value={state.activeView} onValueChange={actions.changeView} fill={state.isLandscape} >
+            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={state.isLandscape}>Kanban</CollectionToolbar.ViewItem>
+          </SegmentedControl>
+        </CollectionToolbar.Views>
       </CollectionToolbar>
 
       <CollectionContent>

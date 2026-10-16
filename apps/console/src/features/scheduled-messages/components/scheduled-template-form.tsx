@@ -33,13 +33,13 @@ export function ScheduledTemplateForm() {
     }
     return <Page>
         <Page.Header className="max-w-content-md"><Page.Heading>
-            <Button.Link disabled={state.busy} variant="ghost" className="-ml-3 w-fit" icon={<ArrowLeft />} render={<Link to={`/${routes.scheduledMessages}`} />}>Scheduled messages</Button.Link>
+            <Button.Link disabled={state.busy} variant="ghost" className="-ml-3 w-fit" icon={<ArrowLeft />} render={<Link to={`/${routes.scheduledMessages}`} />}>Messages</Button.Link>
             <Page.Title>{state.draft.id ? state.draft.name : 'Create a template'}</Page.Title>
-            <Page.Description>Write the reusable message. Variable values can change each time you schedule it.</Page.Description>
+
         </Page.Heading></Page.Header>
         <Page.Content width="standard" className="flex flex-col gap-6">
-            {state.missing ? <EmptyState icon={<FileText />} title="Template not found" description="Return to Scheduled messages and select another template." /> : <>
-                <div className="grid gap-4 sm:grid-cols-2">
+            {state.missing ? <EmptyState icon={<FileText />} title="Template not found" description="Return to Messages and select another template." /> : <>
+                <div className="grid grid-cols-2 gap-4 portrait:grid-cols-1">
                     <FormField label="Template name"><Input disabled={state.busy} aria-label="Template name" value={state.draft.name} maxLength={80} onChange={actions.changeName} /></FormField>
                     <FormField label="Message type"><SelectField disabled={state.busy} name="message-type" label="Message type" value={state.draft.messageType} items={meta.typeItems} onValueChange={actions.changeType} /></FormField>
                 </div>
