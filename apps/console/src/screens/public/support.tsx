@@ -18,10 +18,10 @@ export function SupportScreen() {
         <Paragraph.md className="mb-3">
           The fastest way to reach the team is by email. We read every message and respond in the order received.
         </Paragraph.md>
-        <Card.Content className="mb-4 bg-secondary p-5">
+        <Card className="mb-4 p-5">
           <Label.sm className="block mb-1">Email</Label.sm>
           <a href="mailto:psape.dev@gmail.com" className="title-h6 text-brand hover:underline">psape.dev@gmail.com</a>
-        </Card.Content>
+        </Card>
         <Paragraph.md>
           <strong>Response time:</strong> we aim to reply within <strong>2 business days</strong>.
           Urgent issues affecting a live broadcast are prioritized — put <em>URGENT</em> in the subject line.

@@ -19,13 +19,13 @@ export function ZoomReviewTestPlanScreen() {
       </Paragraph.md>
 
       <Section title="Requested scopes and test coverage">
-        <Card.Content className="bg-secondary">
+        <Card>
           <ScopeRow scope="user:read:user" reason="Verify the authorized host's identity after connection." />
           <ScopeRow scope="meeting:read:list_meetings" reason="Verify the host's scheduled-meeting list after connection and during a manual refresh." />
           <ScopeRow scope="meeting:write:meeting" reason="Create a scheduled meeting from MOC Console." />
           <ScopeRow scope="meeting:update:meeting" reason="Edit a scheduled meeting from MOC Console." />
           <ScopeRow scope="meeting:delete:meeting" reason="Delete the reviewer-created test meeting from MOC Console." last />
-        </Card.Content>
+        </Card>
       </Section>
 
       <Section title="Reviewer workflow">

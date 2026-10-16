@@ -1,4 +1,3 @@
-import { Card } from "@moc/ui/components/display/card";
 import { cn } from "@moc/utils/cn";
 import {
     DndContext,
@@ -15,8 +14,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { createContext, useContext, type HTMLAttributes, type ReactNode } from "react";
 
 type ColumnContextValue = {
-    setNodeRef: (node: HTMLElement | null) => void;
-    isOver: boolean;
+    state: { isOver: boolean };
+    actions: Record<string, never>;
+    meta: { setNodeRef: (node: HTMLElement | null) => void };
 };
 
 const ColumnContext = createContext<ColumnContextValue | null>(null);
@@ -60,43 +60,37 @@ function KanbanBoardColumns({ children, className, ...props }: HTMLAttributes<HT
     );
 }
 
-function KanbanBoardColumn({
-    id,
-    children,
-    className,
-    ...props
-}: HTMLAttributes<HTMLDivElement> & { id: string }) {
+function KanbanBoardColumn({ id, children, className, ...props }: HTMLAttributes<HTMLDivElement> & { id: string }) {
     const { setNodeRef, isOver } = useDroppable({ id });
     return (
-        <ColumnContext.Provider value={{ setNodeRef, isOver }}>
-            <Card
+        <ColumnContext.Provider value={{ state: { isOver }, actions: {}, meta: { setNodeRef } }}>
+            <div
                 className={cn(
+                    "flex min-w-0 flex-col gap-1.5 rounded-lg border border-secondary bg-secondary p-1.5",
                     isOver ? "ring-2 ring-border-brand ring-offset-2 transition-shadow" : "transition-shadow",
                     className,
                 )}
                 {...props}
             >
                 {children}
-            </Card>
+            </div>
         </ColumnContext.Provider>
     );
 }
 
 function KanbanBoardColumnHeader({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <Card.Header className={cn("gap-1.5", className)} {...props}>
+        <div className={cn("flex min-h-8 items-center gap-1.5 px-1.5 landscape:flex-col landscape:items-start", className)} {...props}>
             {children}
-        </Card.Header>
+        </div>
     );
 }
 
 function KanbanBoardColumnContent({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    const { setNodeRef } = useColumnContext("KanbanBoard.ColumnContent");
+    const { meta: { setNodeRef } } = useColumnContext("KanbanBoard.ColumnContent");
     return (
-        <div ref={setNodeRef}>
-            <Card.Content ghost className={cn("flex flex-col gap-1.5 min-h-16", className)} {...props}>
-                {children}
-            </Card.Content>
+        <div ref={setNodeRef} className={cn("flex min-h-16 flex-col gap-1.5", className)} {...props}>
+            {children}
         </div>
     );
 }

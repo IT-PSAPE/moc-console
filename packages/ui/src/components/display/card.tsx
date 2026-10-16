@@ -1,23 +1,23 @@
 import { cn } from "@moc/utils/cn";
 import type { HTMLAttributes } from "react";
 
-function CardRoot({ children, className }: HTMLAttributes<HTMLDivElement>) {
+function CardRoot({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("flex flex-col gap-1.5 p-1.5 rounded-lg border border-secondary bg-secondary", className)}>
+        <div className={cn("flex min-w-0 flex-col overflow-hidden rounded-lg border border-secondary bg-primary", className)} {...props}>
             {children}
         </div>
     )
 }
-function CardHeader({ children, className, tight = false }: HTMLAttributes<HTMLDivElement> & { tight?: boolean }) {
+function CardHeader({ children, className, tight = false, ...props }: HTMLAttributes<HTMLDivElement> & { tight?: boolean }) {
     return (
-        <div className={cn("min-h-8 px-1.5 flex items-center", !tight && "max-mobile:flex-col max-mobile:items-start", className)}>
+        <div className={cn("flex min-h-8 items-center gap-2 p-3", !tight && "landscape:flex-col landscape:items-start", className)} {...props}>
             {children}
         </div>
     )
 }
-function CardContent({ children, className, ghost = false }: HTMLAttributes<HTMLDivElement> & { ghost?: boolean }) {
+function CardContent({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn(!ghost && "bg-primary rounded-md border border-secondary", className)}>
+        <div className={cn("min-w-0 border-t border-secondary first:border-t-0", className)} {...props}>
             {children}
         </div>
     )

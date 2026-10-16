@@ -7,15 +7,15 @@ function GroupedListRoot({ children, className, ...props }: HTMLAttributes<HTMLD
 }
 
 function GroupedListGroup({ children, className, ...props }: HTMLAttributes<HTMLElement>) {
-  return <section className={cn("flex flex-col gap-1.5 rounded-lg border border-secondary bg-secondary p-1.5", className)} {...props}>{children}</section>;
+  return <section className={cn("flex min-w-0 flex-col gap-1.5", className)} {...props}>{children}</section>;
 }
 
 function GroupedListHeader({ children, className, ...props }: HTMLAttributes<HTMLElement>) {
-  return <header className={cn("flex min-h-8 items-center gap-1.5 px-1.5", className)} {...props}>{children}</header>;
+  return <header className={cn("flex min-h-8 items-center gap-1.5 px-3", className)} {...props}>{children}</header>;
 }
 
 function GroupedListContent({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <ListSurfaceContext.Provider value={true}><div className={cn("flex flex-col overflow-hidden rounded-md border border-secondary bg-primary divide-y divide-secondary", className)} {...props}>{children}</div></ListSurfaceContext.Provider>;
+  return <ListSurfaceContext.Provider value={true}><div className={cn("flex min-w-0 flex-col overflow-hidden rounded-lg border border-secondary bg-primary divide-y divide-secondary", className)} {...props}>{children}</div></ListSurfaceContext.Provider>;
 }
 
 export const GroupedList = Object.assign(GroupedListRoot, {

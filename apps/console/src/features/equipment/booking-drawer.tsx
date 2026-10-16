@@ -125,7 +125,6 @@ export function BookingPanelContent({ booking, onClose, isDirtyRef, requestClose
               style="ghost"
               fieldLabels="hidden"
               required
-              fieldsClassName="sm:grid-cols-2"
             />
           </MetaRow>
 
@@ -139,7 +138,6 @@ export function BookingPanelContent({ booking, onClose, isDirtyRef, requestClose
               style="ghost"
               fieldLabels="hidden"
               required
-              fieldsClassName="sm:grid-cols-2"
             />
           </MetaRow>
 
@@ -152,7 +150,6 @@ export function BookingPanelContent({ booking, onClose, isDirtyRef, requestClose
               onChange={editor.actions.changeReturnedDate}
               style="ghost"
               fieldLabels="hidden"
-              fieldsClassName="sm:grid-cols-2"
             />
           </MetaRow>
 

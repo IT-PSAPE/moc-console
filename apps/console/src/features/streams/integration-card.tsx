@@ -27,7 +27,7 @@ export function IntegrationCard({ icon, name, isLoading, isConnected, accountLab
   }
 
   return (
-    <ListItemCard.Root className="flex flex-col items-stretch justify-between gap-4 p-4 sm:flex-row sm:items-center">
+    <ListItemCard.Root className="flex flex-row items-center justify-between gap-4 p-4 portrait:flex-col portrait:items-stretch">
       <div className="flex items-center gap-3">
         <div className="size-10 shrink-0 rounded-lg bg-secondary flex items-center justify-center overflow-hidden border border-secondary ring-2 ring-border-secondary/40">
           {icon}
@@ -53,7 +53,7 @@ export function IntegrationCard({ icon, name, isLoading, isConnected, accountLab
 
       {canManage && (
         isConnected ? (
-          <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center [&_button]:w-full sm:[&_button]:w-auto">
+          <div className="flex shrink-0 flex-row items-center gap-2 [&_button]:w-auto portrait:flex-col portrait:items-stretch portrait:[&_button]:w-full">
             {needsReauth && (
               <Button
                 variant="primary"
@@ -77,7 +77,7 @@ export function IntegrationCard({ icon, name, isLoading, isConnected, accountLab
             variant="primary"
             onClick={onConnect}
             icon={<Link2 className="size-4" />}
-            className="w-full sm:w-auto"
+            className="w-auto portrait:w-full"
           >
             Connect
           </Button>
