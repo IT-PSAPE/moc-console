@@ -24,7 +24,7 @@ export function NameDescriptionDialog({ open, title, submitLabel, name, descript
     return (
         <Modal open={open} onOpenChange={onOpenChange}>
             <Modal.Portal><Modal.Backdrop /><Modal.Positioner>
-                <Modal.FullScreenPanel className="w-full md:max-w-md">
+                <Modal.FullScreenPanel className="w-full max-w-md landscape:max-w-none">
                     <Modal.Header><Label.md>{title}</Label.md></Modal.Header>
                     <Modal.Content>
                         <div className="flex flex-col gap-4 p-4">

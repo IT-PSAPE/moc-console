@@ -3,13 +3,13 @@ import { X } from 'lucide-react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties, type HTMLAttributes, type KeyboardEvent, type PointerEvent, type RefObject } from 'react'
 import { Button } from '../controls/button'
 import { OverlayContent, OverlayFooter, OverlayHeader } from '../overlays/overlay-primitives'
-import { useIsMobile } from '../../hooks/use-is-mobile'
+import { useIsLandscape } from '../../hooks/use-is-landscape'
 import { Drawer } from '../overlays/drawer'
 
 type SplitPanelContextValue = {
     state: {
         isDesktopOpen: boolean
-        isMobile: boolean
+        isLandscape: boolean
         isOpen: boolean
         isResizing: boolean
         maximumRatio: number
@@ -63,9 +63,9 @@ function getPixelConstraint(value: string, fallback: number) {
 }
 
 function SplitPanelRoot({ children, className, defaultRatio = DEFAULT_RATIO, detailLabel, onRatioChange, onOpenChange, open, ratio, ...props }: SplitPanelRootProps) {
-    const isMobile = useIsMobile()
+    const isLandscape = useIsLandscape()
     const isOpen = open
-    const isDesktopOpen = open && !isMobile
+    const isDesktopOpen = open && !isLandscape
     const rootRef = useRef<HTMLDivElement | null>(null)
     const primaryRef = useRef<HTMLDivElement | null>(null)
     const detailRef = useRef<HTMLDivElement | null>(null)
@@ -131,7 +131,7 @@ function SplitPanelRoot({ children, className, defaultRatio = DEFAULT_RATIO, det
     }, [getRatioBounds, isDesktopOpen])
 
     const value = useMemo<SplitPanelContextValue>(() => ({
-        state: { isDesktopOpen, isMobile, isOpen, isResizing, maximumRatio: ratioBounds.maximum, minimumRatio: ratioBounds.minimum, primaryRatio },
+        state: { isDesktopOpen, isLandscape, isOpen, isResizing, maximumRatio: ratioBounds.maximum, minimumRatio: ratioBounds.minimum, primaryRatio },
         actions: {
             close,
             open: openPanel,
@@ -143,7 +143,7 @@ function SplitPanelRoot({ children, className, defaultRatio = DEFAULT_RATIO, det
             setOpen: onOpenChange,
         },
         meta: { detailLabel, detailRef, primaryRef, rootRef },
-    }), [close, detailLabel, isDesktopOpen, isMobile, isOpen, isResizing, onOpenChange, openPanel, primaryRatio, ratioBounds.maximum, ratioBounds.minimum, resetRatio, resizeAt, resizeBy, resizeToBoundary])
+    }), [close, detailLabel, isDesktopOpen, isLandscape, isOpen, isResizing, onOpenChange, openPanel, primaryRatio, ratioBounds.maximum, ratioBounds.minimum, resetRatio, resizeAt, resizeBy, resizeToBoundary])
 
     return (
         <SplitPanelContext.Provider value={value}>
@@ -170,26 +170,26 @@ function getPaneStyle({ maxWidth, minWidth, ratio }: Pick<SplitPanelPaneProps, '
 }
 
 function SplitPanelPrimary({ children, className, maxWidth = '44rem', minWidth = '18rem', style, ...props }: SplitPanelPaneProps) {
-    const { state, meta } = useSplitPanel()
+    const { state, meta: { primaryRef } } = useSplitPanel()
     const paneStyle = state.isDesktopOpen ? getPaneStyle({ maxWidth, minWidth, ratio: state.primaryRatio }) : undefined
 
     return (
-        <div ref={meta.primaryRef} className={cn('min-h-0 min-w-0 flex-1 overflow-y-auto', state.isDesktopOpen && 'max-lg:hidden', className)} style={{ ...paneStyle, ...style }} {...props}>
+        <div ref={primaryRef} className={cn('min-h-0 min-w-0 flex-1 overflow-y-auto', state.isDesktopOpen && 'tablet:hidden', className)} style={{ ...paneStyle, ...style }} {...props}>
             {children}
         </div>
     )
 }
 
 function SplitPanelDetail({ children, className, maxWidth, minWidth = '28rem', style, ...props }: SplitPanelPaneProps) {
-    const { state, actions, meta } = useSplitPanel()
+    const { state, actions, meta: { detailLabel, detailRef } } = useSplitPanel()
 
     useEffect(() => {
-        if (state.isDesktopOpen) meta.detailRef.current?.focus()
-    }, [meta.detailRef, state.isDesktopOpen])
+        if (state.isDesktopOpen) detailRef.current?.focus()
+    }, [detailRef, state.isDesktopOpen])
 
     if (!state.isOpen) return null
 
-    if (state.isMobile) {
+    if (state.isLandscape) {
         return (
             <Drawer open={state.isOpen} onOpenChange={actions.setOpen} mobileSide="bottom">
                 <Drawer.Portal>
@@ -202,9 +202,9 @@ function SplitPanelDetail({ children, className, maxWidth, minWidth = '28rem', s
 
     return (
         <div
-            ref={meta.detailRef}
-            aria-label={meta.detailLabel}
-            className={cn('flex min-h-0 min-w-0 flex-col overflow-hidden border-l border-secondary bg-primary outline-none max-lg:!min-w-0 max-lg:!max-w-none max-lg:!flex-1', className)}
+            ref={detailRef}
+            aria-label={detailLabel}
+            className={cn('flex min-h-0 min-w-0 flex-col overflow-hidden border-l border-secondary bg-primary outline-none tablet:!min-w-0 tablet:!max-w-none tablet:!flex-1', className)}
             role="region"
             style={{ ...getPaneStyle({ maxWidth, minWidth, ratio: 1 - state.primaryRatio }), ...style }}
             tabIndex={-1}
@@ -259,7 +259,7 @@ function SplitPanelResizeHandle({ className, ...props }: HTMLAttributes<HTMLDivE
             aria-valuemin={Math.round(state.minimumRatio * 100)}
             aria-valuenow={Math.round(state.primaryRatio * 100)}
             aria-valuetext={`${Math.round(state.primaryRatio * 100)}% list, ${Math.round((1 - state.primaryRatio) * 100)}% details`}
-            className={cn('group relative z-10 hidden w-px shrink-0 cursor-col-resize touch-none bg-secondary outline-none lg:block', 'before:absolute before:inset-y-0 before:left-1/2 before:w-3 before:-translate-x-1/2', 'after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-transparent after:transition-colors', 'hover:after:bg-border-brand focus-visible:after:bg-border-brand', state.isResizing && 'after:bg-border-brand', className)}
+            className={cn('group relative z-10 block w-px shrink-0 cursor-col-resize touch-none bg-secondary outline-none tablet:hidden', 'before:absolute before:inset-y-0 before:left-1/2 before:w-3 before:-translate-x-1/2', 'after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-transparent after:transition-colors', 'hover:after:bg-border-brand focus-visible:after:bg-border-brand', state.isResizing && 'after:bg-border-brand', className)}
             onDoubleClick={actions.resetRatio}
             onKeyDown={handleKeyDown}
             onPointerCancel={handlePointerEnd}

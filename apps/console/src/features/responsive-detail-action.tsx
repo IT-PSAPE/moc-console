@@ -1,7 +1,7 @@
 import type { MouseEventHandler, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { InteractiveSurface } from '@moc/ui/components/controls/interactive-surface'
-import { useIsMobile } from '@moc/ui/hooks/use-is-mobile'
+import { useIsLandscape } from '@moc/ui/hooks/use-is-landscape'
 import { useDetailLinkState } from '@/hooks/use-detail-return'
 
 type ResponsiveDetailActionProps = {
@@ -12,10 +12,10 @@ type ResponsiveDetailActionProps = {
 }
 
 function ResponsiveDetailActionRoot({ children, className, mobileHref, onActivate }: ResponsiveDetailActionProps) {
-    const isMobile = useIsMobile()
+    const isLandscape = useIsLandscape()
     const linkState = useDetailLinkState()
 
-    if (isMobile) {
+    if (isLandscape) {
         return (
             <InteractiveSurface.Link render={<Link to={mobileHref} state={linkState} />} className={className}>
                 {children}
@@ -31,10 +31,10 @@ function ResponsiveDetailActionRoot({ children, className, mobileHref, onActivat
 }
 
 function ResponsiveDetailCardAction({ children, className, mobileHref, onActivate }: ResponsiveDetailActionProps) {
-    const isMobile = useIsMobile()
+    const isLandscape = useIsLandscape()
     const linkState = useDetailLinkState()
 
-    if (isMobile) {
+    if (isLandscape) {
         return <InteractiveSurface.CardLink render={<Link to={mobileHref} state={linkState} />} className={className}>{children}</InteractiveSurface.CardLink>
     }
 

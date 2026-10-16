@@ -20,7 +20,7 @@ export function ConfirmationScreen() {
   const { trackingCode, title } = confirmationState
 
   return (
-    <PublicLayout className="py-8 sm:py-12">
+    <PublicLayout className="py-12 portrait:py-8">
       <ColorSchemeImage lightSrc="/assets/light/icon_check.avif" darkSrc="/assets/dark/icon_check.avif" alt="" width="240" height="240" className="mx-auto mb-8 size-60" />
       <Title.h1 className="title-h3 text-center">Submission received</Title.h1>
 

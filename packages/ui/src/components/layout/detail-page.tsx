@@ -15,7 +15,7 @@ function DetailPageRoot({ children, className, ...props }: HTMLAttributes<HTMLEl
 }
 
 function DetailPageHeader({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    return <Header className={cn("px-page-gutter pt-6 md:pt-12", className)} {...props}>{children}</Header>;
+    return <Header className={cn("px-page-gutter pt-12 landscape:pt-6", className)} {...props}>{children}</Header>;
 }
 
 function DetailPageBack({ children, className, ...props }: ComponentProps<typeof Button.Link>) {

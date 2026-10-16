@@ -1,10 +1,11 @@
 import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
 import { cn } from '@moc/utils/cn'
-import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type ReactElement, type ReactNode } from 'react'
-import { useIsMobile } from '../../hooks/use-is-mobile'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type HTMLAttributes, type ReactElement, type ReactNode, type RefObject } from 'react'
+import { useIsLandscape } from '../../hooks/use-is-landscape'
 import { MobileSheetHandle, mobileDrawerStackContentClassName, mobileDrawerStackPopupClassName } from './mobile-sheet'
 import { useOverlayStack } from './overlay-provider'
 import { overlayHeaderClassName, OverlayFooter } from './overlay-primitives'
+import { isOpeningTriggerPress } from './external-trigger-press'
 
 // ─── Context ─────────────────────────────────────────────────────────
 //
@@ -66,16 +67,26 @@ type DrawerRootProps = {
     open?: boolean
     side?: Side
     mobileSide?: Side
+    triggerRef?: RefObject<HTMLElement | null>
 }
 
-function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = true, defaultOpen = false, mobileSide, onOpenChange, open, side = 'right' }: DrawerRootProps) {
-    const isMobile = useIsMobile()
+function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = true, defaultOpen = false, mobileSide, onOpenChange, open, side = 'right', triggerRef }: DrawerRootProps) {
+    const isLandscape = useIsLandscape()
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
     const [snapPoint, setSnapPoint] = useState<DrawerSnapPoint | null>(MOBILE_SNAP_POINTS[0])
     const isOpen = isControlled ? open : uncontrolledOpen
-    const isMobileSheet = isMobile && mobileSide !== undefined
-    const effectiveSide = isMobileSheet ? mobileSide : side
+    const hasNewPointerPress = useRef(false)
+    useEffect(() => {
+        hasNewPointerPress.current = false
+        if (!isOpen || !triggerRef) return
+        const ownerDocument = triggerRef.current?.ownerDocument
+        function handlePointerDown() { hasNewPointerPress.current = true }
+        ownerDocument?.addEventListener('pointerdown', handlePointerDown, true)
+        return () => ownerDocument?.removeEventListener('pointerdown', handlePointerDown, true)
+    }, [isOpen, triggerRef])
+    const isLandscapeSheet = isLandscape && mobileSide !== undefined
+    const effectiveSide = isLandscapeSheet ? mobileSide : side
     const setOpen = useCallback((nextOpen: boolean) => {
         if (!isControlled) {
             setUncontrolledOpen(nextOpen)
@@ -84,21 +95,25 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
     }, [isControlled, onOpenChange])
 
     const value = useMemo<DrawerContextValue>(() => ({
-        state: { isOpen, isSheet: isMobileSheet, isTopmost: true, zIndex: 9000, side: effectiveSide },
+        state: { isOpen, isSheet: isLandscapeSheet, isTopmost: true, zIndex: 9000, side: effectiveSide },
         actions: {
             close: () => setOpen(false),
             open: () => setOpen(true),
             setOpen,
         },
         meta: { closeOnBackdropClick },
-    }), [closeOnBackdropClick, effectiveSide, isMobileSheet, isOpen, setOpen])
+    }), [closeOnBackdropClick, effectiveSide, isLandscapeSheet, isOpen, setOpen])
 
     function handleOpenChange(nextOpen: boolean, eventDetails: BaseDrawer.Root.ChangeEventDetails) {
+        if (!nextOpen && eventDetails.reason === 'outside-press' && isOpeningTriggerPress(eventDetails.event, triggerRef?.current ?? null, hasNewPointerPress.current)) {
+            eventDetails.cancel()
+            return
+        }
         if (!nextOpen && !closeOnEscape && eventDetails.reason === 'escape-key') {
             return
         }
 
-        if (nextOpen && isMobileSheet && snapPoint === null) {
+        if (nextOpen && isLandscapeSheet && snapPoint === null) {
             setSnapPoint(MOBILE_SNAP_POINTS[0])
         }
         setOpen(nextOpen)
@@ -110,9 +125,9 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
                 open={isOpen}
                 disablePointerDismissal={!closeOnBackdropClick}
                 swipeDirection={swipeDirectionBySide[effectiveSide]}
-                snapPoints={isMobileSheet ? MOBILE_SNAP_POINTS : undefined}
-                snapPoint={isMobileSheet ? snapPoint : null}
-                snapToSequentialPoints={isMobileSheet}
+                snapPoints={isLandscapeSheet ? MOBILE_SNAP_POINTS : undefined}
+                snapPoint={isLandscapeSheet ? snapPoint : null}
+                snapToSequentialPoints={isLandscapeSheet}
                 onOpenChange={handleOpenChange}
                 onSnapPointChange={setSnapPoint}
             >
@@ -161,7 +176,7 @@ function DrawerBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>)
     return (
         <BaseDrawer.Backdrop
             className={cn(
-                'pointer-events-auto fixed inset-0 z-0 bg-overlay/40 md:bg-overlay/30',
+                'pointer-events-auto fixed inset-0 z-0 bg-overlay/30 landscape:bg-overlay/40',
                 'transition-opacity duration-200 motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
                 className,
             )}
@@ -176,7 +191,7 @@ const panelClassesBySide: Record<Side, string> = {
     left: 'inset-y-0 left-0 w-full max-w-md',
     right: 'inset-y-0 right-0 w-full max-w-md',
     top: 'inset-x-0 top-0 h-auto max-h-[80vh]',
-    bottom: 'inset-x-0 bottom-0 h-[calc(100dvh-max(0.5rem,env(safe-area-inset-top)))] max-h-[94dvh] md:h-auto md:max-h-[80vh]',
+    bottom: 'inset-x-0 bottom-0 h-auto max-h-[80vh] landscape:h-[calc(100dvh-max(0.5rem,env(safe-area-inset-top)))] landscape:max-h-[94dvh]',
 }
 
 const slideBySide: Record<Side, string> = {
@@ -218,7 +233,7 @@ function DrawerHeader({ children, className, ...props }: HTMLAttributes<HTMLDivE
 }
 
 function DrawerContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    return <BaseDrawer.Content className={cn('min-h-0 flex flex-1 flex-col overflow-y-auto overscroll-contain max-md:pb-[max(1rem,env(safe-area-inset-bottom))]', className)} {...props} />
+    return <BaseDrawer.Content className={cn('min-h-0 flex flex-1 flex-col overflow-y-auto overscroll-contain landscape:pb-[max(1rem,env(safe-area-inset-bottom))]', className)} {...props} />
 }
 
 function DrawerFooter(props: HTMLAttributes<HTMLDivElement>) {

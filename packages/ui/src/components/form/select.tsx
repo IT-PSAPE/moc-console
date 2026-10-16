@@ -2,8 +2,8 @@ import { Select as BaseSelect } from "@base-ui/react/select";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
 import { ChevronDown } from "lucide-react";
-import { createContext, useContext, useState, type ComponentProps, type ReactNode } from "react";
-import { useIsMobile } from "../../hooks/use-is-mobile";
+import { createContext, useContext, useRef, useState, type ComponentProps, type ReactNode } from "react";
+import { useIsLandscape } from "../../hooks/use-is-landscape";
 import { Drawer } from "../overlays/drawer";
 import { mobileSheetPositionerClassName } from "../overlays/mobile-sheet";
 import { useOverlayStack } from "../overlays/overlay-provider";
@@ -12,14 +12,16 @@ type SelectRootProps<Value> = Omit<BaseSelect.Root.Props<Value, false>, "onOpenC
     onOpenChange?: (nextOpen: boolean, eventDetails?: BaseSelect.Root.ChangeEventDetails) => void;
 };
 type Styled<Props> = Omit<Props, "className"> & { className?: string };
-const SelectContext = createContext({ isMobile: false });
+const SelectContext = createContext({ isLandscape: false });
 
 function SelectRoot<Value>({ defaultOpen, onOpenChange, open, ...props }: SelectRootProps<Value>) {
-    const isMobile = useIsMobile();
+    const isLandscape = useIsLandscape();
+    const triggerRef = useRef<HTMLElement | null>(null);
     const isControlled = open !== undefined;
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false);
     const isOpen = isControlled ? open : uncontrolledOpen;
     function handleOpenChange(nextOpen: boolean, eventDetails: BaseSelect.Root.ChangeEventDetails) {
+        if (nextOpen) triggerRef.current = eventDetails.trigger instanceof HTMLElement ? eventDetails.trigger : null;
         if (!isControlled) {
             setUncontrolledOpen(nextOpen);
         }
@@ -35,14 +37,14 @@ function SelectRoot<Value>({ defaultOpen, onOpenChange, open, ...props }: Select
     }
 
     const select = (
-        <SelectContext.Provider value={{ isMobile }}>
-            <BaseSelect.Root {...props} modal={isMobile ? false : props.modal} open={isOpen} onOpenChange={handleOpenChange} />
+        <SelectContext.Provider value={{ isLandscape }}>
+            <BaseSelect.Root {...props} modal={isLandscape ? false : props.modal} open={isOpen} onOpenChange={handleOpenChange} />
         </SelectContext.Provider>
     );
 
-    if (!isMobile) return select;
+    if (!isLandscape) return select;
 
-    return <Drawer mobileSide="bottom" open={isOpen} onOpenChange={handleDrawerOpenChange}>{select}</Drawer>;
+    return <Drawer mobileSide="bottom" open={isOpen} onOpenChange={handleDrawerOpenChange} triggerRef={triggerRef}>{select}</Drawer>;
 }
 
 type SelectTriggerProps = Omit<ComponentProps<typeof BaseSelect.Trigger>, "children" | "className"> & {
@@ -56,7 +58,7 @@ type SelectTriggerProps = Omit<ComponentProps<typeof BaseSelect.Trigger>, "child
 
 const triggerVariants = cv({
     base: [
-        "relative flex min-h-11 w-full items-center gap-1.5 text-left paragraph-sm !leading-none md:min-h-0",
+        "relative flex min-h-0 landscape:min-h-11 w-full items-center gap-1.5 text-left paragraph-sm !leading-none",
         "bg-secondary data-[disabled]:cursor-not-allowed data-[disabled]:bg-tertiary",
         "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-border-brand/10",
     ],
@@ -73,7 +75,7 @@ const triggerVariants = cv({
             ghost: ["rounded-md px-2 py-1.5"],
         },
         size: {
-            sm: ["min-h-9 px-3 py-1.5 text-sm"],
+            sm: ["min-h-0 landscape:min-h-9 px-3 py-1.5 text-sm"],
             md: [],
         },
     },
@@ -100,11 +102,11 @@ function SelectTrigger({ children, className, placeholder, size, state, style = 
 }
 
 function SelectContent({ children, className }: { children: ReactNode; className?: string }) {
-    const { isMobile } = useContext(SelectContext);
+    const { isLandscape } = useContext(SelectContext);
     const { state: overlayState } = useOverlayStack();
 
     return (
-        isMobile ? (
+        isLandscape ? (
             <Drawer.Portal>
                 <Drawer.Backdrop />
                 <BaseSelect.Portal container={overlayState.rootElement ?? undefined}>
@@ -147,7 +149,7 @@ function SelectItem({ children, className, description, ...props }: Styled<Compo
     return (
         <BaseSelect.Item
             className={cn(
-                "group flex min-h-11 w-full cursor-default items-center gap-2 rounded-lg px-4 py-2 paragraph-sm text-secondary outline-none md:min-h-0 md:px-3",
+                "group flex min-h-0 landscape:min-h-11 w-full cursor-default items-center gap-2 rounded-lg px-3 landscape:px-4 py-2 paragraph-sm text-secondary outline-none",
                 "data-[highlighted]:bg-secondary data-[highlighted]:text-primary data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
                 className,
             )}

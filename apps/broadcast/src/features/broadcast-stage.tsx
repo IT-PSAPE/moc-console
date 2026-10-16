@@ -18,7 +18,7 @@ export function BroadcastStage({ children, className, ...props }: HTMLAttributes
     <Page.Main
       ref={setPlayerRoot}
       aria-label={`${broadcast.title} player`}
-      className={cn("h-dvh w-full overflow-y-auto bg-primary text-primary lg:grid lg:grid-cols-[minmax(0,1fr)_21rem] lg:grid-rows-1 lg:overflow-hidden", className)}
+      className={cn("grid h-dvh w-full grid-cols-[minmax(0,1fr)_21rem] grid-rows-1 overflow-hidden bg-primary text-primary tablet:block tablet:overflow-y-auto", className)}
       {...props}
     >
       {children}
@@ -32,8 +32,8 @@ export function BroadcastStage({ children, className, ...props }: HTMLAttributes
  */
 export function BroadcastMain({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-0 min-w-0 items-center justify-center pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-6 pl-[max(1rem,env(safe-area-inset-left))] lg:[container-type:size] lg:px-8 lg:pb-4">
-      <div className="flex w-full min-w-0 max-w-104 flex-col gap-5 lg:w-[min(26rem,max(12rem,100cqh_-_16rem))] lg:max-h-full lg:overflow-y-auto">
+    <div className="flex min-h-0 min-w-0 items-center justify-center px-8 pt-[max(1rem,env(safe-area-inset-top))] pb-4 [container-type:size] tablet:pr-[max(1rem,env(safe-area-inset-right))] tablet:pb-6 tablet:pl-[max(1rem,env(safe-area-inset-left))] tablet:[container-type:normal]">
+      <div className="flex max-h-full w-[min(26rem,max(12rem,100cqh_-_16rem))] min-w-0 max-w-104 flex-col gap-5 overflow-y-auto tablet:max-h-none tablet:w-full tablet:overflow-visible">
         {children}
       </div>
     </div>

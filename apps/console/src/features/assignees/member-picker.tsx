@@ -2,7 +2,7 @@ import { Button } from "@moc/ui/components/controls/button";
 import { Label } from "@moc/ui/components/display/text";
 import { Popover } from "@moc/ui/components/overlays/popover";
 import { Modal } from "@moc/ui/components/overlays/modal";
-import { useIsMobile } from "@moc/ui/hooks/use-is-mobile";
+import { useIsLandscape } from "@moc/ui/hooks/use-is-landscape";
 import { type ResolvedAssignee } from "@/data/fetch-assignees";
 import { X } from "lucide-react";
 import type { ReactElement } from "react";
@@ -17,9 +17,9 @@ type MemberPickerProps = {
 };
 
 export function MemberPicker({ assignees, onAdd, onRemove, children, placement = 'bottom-end' }: MemberPickerProps) {
-    const isMobile = useIsMobile();
+    const isLandscape = useIsLandscape();
 
-    if (isMobile) {
+    if (isLandscape) {
         return (
             <Modal>
                 <Modal.Trigger>{children}</Modal.Trigger>

@@ -52,7 +52,7 @@ export function RequestBasicInfo({ data, categories, onChange, errors }: Request
         <FieldError id="requested-by-error" message={errors['requested-by']} />
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-5 portrait:grid-cols-1">
         <div className="flex flex-col gap-1.5 w-full">
           <FormLabel label="Priority" required />
           <SelectField

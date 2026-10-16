@@ -3,7 +3,7 @@ import type { HTMLAttributes, ReactNode } from "react";
 
 function ListItemCardRoot({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("flex w-full min-w-0 items-start gap-3 px-3 py-3 md:px-4", className)} {...props}>
+    <div className={cn("flex w-full min-w-0 items-start gap-3 px-4 py-3 landscape:px-3", className)} {...props}>
       {children}
     </div>
   );

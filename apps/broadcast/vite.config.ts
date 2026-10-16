@@ -5,6 +5,7 @@ import babel from "@rolldown/plugin-babel"
 import tailwindcss from "@tailwindcss/vite"
 import { tailscaleDevServer } from "../../scripts/vite-tailscale"
 import { createApiProxy } from "../../scripts/vite-api-proxy"
+import { namedBreakpointOrder } from "../../scripts/named-breakpoint-order"
 
 const aliasEntries = [
   {
@@ -43,6 +44,7 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       tailscaleDevServer(5174),
     ],
+    css: { postcss: { plugins: [namedBreakpointOrder()] } },
     resolve: {
       alias: aliasEntries,
       dedupe: ["react", "react-dom"],

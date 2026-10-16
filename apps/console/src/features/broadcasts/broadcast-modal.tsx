@@ -17,7 +17,7 @@ export function BroadcastModal({ broadcast, onOpenChange, onSubmit, open }: Broa
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
-          <Modal.FullScreenPanel className="w-full md:!max-w-lg">
+          <Modal.FullScreenPanel className="w-full !max-w-lg landscape:!max-w-none">
             <Modal.Header>
               <Label.md>{broadcast ? "Edit broadcast" : "New broadcast"}</Label.md>
             </Modal.Header>

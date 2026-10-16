@@ -17,7 +17,7 @@ export function MeetingModal({ open, onOpenChange, onSubmit, meeting }: MeetingM
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
-          <Modal.FullScreenPanel className="w-full md:max-w-md">
+          <Modal.FullScreenPanel className="w-full max-w-md landscape:!max-w-none">
             <Modal.Header>
               <Label.md>{meeting ? "Edit meeting" : "Schedule meeting"}</Label.md>
             </Modal.Header>

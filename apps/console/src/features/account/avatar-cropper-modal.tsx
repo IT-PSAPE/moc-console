@@ -24,7 +24,7 @@ export function AvatarCropperModal({ open, file, onCancel, onConfirm }: AvatarCr
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
-          <Modal.FullScreenPanel className="w-full md:!max-w-md">
+          <Modal.FullScreenPanel className="w-full !max-w-md landscape:!max-w-none">
                         <Modal.Header>
                             <div className="flex flex-col gap-0.5">
                                 <Label.md>Adjust your photo</Label.md>

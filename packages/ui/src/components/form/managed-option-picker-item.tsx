@@ -17,7 +17,7 @@ export function ManagedOptionPickerItem({ option }: ManagedOptionPickerItemProps
     const isRenaming = state.renameOption !== null && meta.keyOf(state.renameOption) === key
     const rowLabel = meta.showsActiveState && !isActive ? `${label}, inactive` : label
     function handleRename() { actions.openRename(option) }
-    function handleActiveChange() { actions.changeActive(option, !isActive) }
+    function handleActiveChange() { actions.changeContextKey(null); actions.changeActive(option, !isActive) }
     function handleMenuOpenChange(open: boolean) { if (!open) actions.changeContextKey(null) }
     function handleContextMenu(event: MouseEvent) { event.preventDefault(); event.stopPropagation(); actions.changeContextKey(key) }
     function handleOpenMenu(event: MouseEvent) { event.stopPropagation(); actions.changeContextKey(key) }
@@ -46,8 +46,8 @@ export function ManagedOptionPickerItem({ option }: ManagedOptionPickerItemProps
                 <Dropdown placement="bottom-end" open={state.contextKey === key} onOpenChange={handleMenuOpenChange}>
                     <Dropdown.Trigger><Button.Icon aria-label={`Manage ${label}`} variant="ghost" icon={<EllipsisVertical />} disabled={state.busy} onClick={handleOpenMenu} onPointerDown={handleKeepComboboxFocus} data-managed-option-menu-trigger="" /></Dropdown.Trigger>
                     <Dropdown.Panel data-managed-option-menu-content="">
-                        {meta.canRename ? <Dropdown.Item disabled={state.busy} onSelect={handleRename}><Pencil className="size-4" aria-hidden="true" />Rename</Dropdown.Item> : null}
-                        {meta.canChangeActive ? <Dropdown.Item disabled={state.busy} onSelect={handleActiveChange}>{isActive ? <ToggleLeft className="size-4" aria-hidden="true" /> : <ToggleRight className="size-4" aria-hidden="true" />}{isActive ? 'Deactivate' : 'Activate'}</Dropdown.Item> : null}
+                        {meta.canRename ? <Dropdown.Item disabled={state.busy} closeOnClick={false} onSelect={handleRename}><Pencil className="size-4" aria-hidden="true" />Rename</Dropdown.Item> : null}
+                        {meta.canChangeActive ? <Dropdown.Item disabled={state.busy} closeOnClick={false} onSelect={handleActiveChange}>{isActive ? <ToggleLeft className="size-4" aria-hidden="true" /> : <ToggleRight className="size-4" aria-hidden="true" />}{isActive ? 'Deactivate' : 'Activate'}</Dropdown.Item> : null}
                     </Dropdown.Panel>
                 </Dropdown>
             ) : null}

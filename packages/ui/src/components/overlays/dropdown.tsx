@@ -1,10 +1,12 @@
 import { Menu } from '@base-ui/react/menu'
 import { cn } from '@moc/utils/cn'
-import { createContext, useContext, useState, type ComponentProps, type HTMLAttributes, type ReactElement, type ReactNode } from 'react'
-import { useIsMobile } from '../../hooks/use-is-mobile'
+import { createContext, useContext, useRef, useState, type ComponentProps, type HTMLAttributes, type ReactElement, type ReactNode } from 'react'
+import { useIsLandscape } from '../../hooks/use-is-landscape'
 import { Drawer } from './drawer'
 import { mobileSheetPositionerClassName } from './mobile-sheet'
 import { useOverlayStack } from './overlay-provider'
+import { Check } from 'lucide-react'
+import { Paragraph } from '../display/text'
 
 // ─── Placement ───────────────────────────────────────────────────────
 //
@@ -26,15 +28,17 @@ function toSideAlign(placement: Placement): { side: 'top' | 'bottom' | 'left' | 
 }
 
 type DropdownContextValue = {
-    isMobile: boolean
+    isLandscape: boolean
+    isNested: boolean
     placement: Placement
 }
 
-const DropdownContext = createContext<DropdownContextValue>({ isMobile: false, placement: 'bottom' })
+const DropdownContext = createContext<DropdownContextValue>({ isLandscape: false, isNested: false, placement: 'bottom' })
 
 const dropdownItemClassName = [
-    'flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm text-secondary outline-none md:min-h-0 md:rounded-sm md:px-2 md:py-1',
+    'flex min-h-0 cursor-pointer items-center gap-2 rounded-sm px-2 py-1 text-sm text-secondary outline-none landscape:min-h-11 landscape:rounded-lg landscape:px-4 landscape:py-2',
     'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
+    'data-[disabled]:cursor-not-allowed data-[disabled]:text-quaternary',
 ].join(' ')
 
 // ─── Root ────────────────────────────────────────────────────────────
@@ -46,15 +50,20 @@ type DropdownRootProps = {
     onOpenChange?: (nextOpen: boolean) => void
     open?: boolean
     placement?: Placement
+    modal?: boolean
 }
 
-function DropdownRoot({ children, closeOnEscape = true, defaultOpen, onOpenChange, open, placement = 'bottom' }: DropdownRootProps) {
-    const isMobile = useIsMobile()
+function DropdownRoot({ children, closeOnEscape = true, defaultOpen, onOpenChange, open, placement = 'bottom', modal }: DropdownRootProps) {
+    const isLandscape = useIsLandscape()
+    const parentDropdown = useContext(DropdownContext)
+    const isNested = parentDropdown.isNested
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false)
+    const triggerRef = useRef<HTMLElement | null>(null)
     const isOpen = isControlled ? open : uncontrolledOpen
     function handleOpenChange(nextOpen: boolean, eventDetails: Menu.Root.ChangeEventDetails) {
         if (!closeOnEscape && eventDetails.reason === 'escape-key') return
+        if (nextOpen) triggerRef.current = eventDetails.trigger instanceof HTMLElement ? eventDetails.trigger : null
 
         if (!isControlled) {
             setUncontrolledOpen(nextOpen)
@@ -71,16 +80,16 @@ function DropdownRoot({ children, closeOnEscape = true, defaultOpen, onOpenChang
     }
 
     const dropdown = (
-        <DropdownContext.Provider value={{ isMobile, placement }}>
-            <Menu.Root modal={!isMobile} open={isOpen} onOpenChange={handleOpenChange}>
+        <DropdownContext.Provider value={{ isLandscape, isNested, placement }}>
+            <Menu.Root modal={isNested ? undefined : modal ?? !isLandscape} open={isOpen} onOpenChange={handleOpenChange}>
                 {children}
             </Menu.Root>
         </DropdownContext.Provider>
     )
 
-    if (!isMobile) return dropdown
+    if (isNested || !isLandscape) return dropdown
 
-    return <Drawer mobileSide="bottom" open={isOpen} onOpenChange={handleDrawerOpenChange}>{dropdown}</Drawer>
+    return <Drawer mobileSide="bottom" open={isOpen} onOpenChange={handleDrawerOpenChange} triggerRef={triggerRef}>{dropdown}</Drawer>
 }
 
 // ─── Trigger ─────────────────────────────────────────────────────────
@@ -103,11 +112,11 @@ function DropdownTrigger({ children, className, ...props }: DropdownTriggerProps
 // ─── Panel ───────────────────────────────────────────────────────────
 
 function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    const { isMobile, placement } = useContext(DropdownContext)
+    const { isLandscape, isNested, placement } = useContext(DropdownContext)
     const { side, align } = toSideAlign(placement)
     const { state: overlayState } = useOverlayStack()
 
-    if (isMobile) {
+    if (isLandscape && !isNested) {
         return (
             <Drawer.Portal>
                 <Drawer.Backdrop />
@@ -192,6 +201,44 @@ function DropdownSeparator({ className, ...props }: HTMLAttributes<HTMLDivElemen
     return <Menu.Separator className={cn('my-1 h-px bg-secondary', className)} {...props} />
 }
 
+function DropdownSubmenu({ children }: { children: ReactNode }) {
+    const context = useContext(DropdownContext)
+    return <DropdownContext.Provider value={{ ...context, isNested: true }}><Menu.SubmenuRoot>{children}</Menu.SubmenuRoot></DropdownContext.Provider>
+}
+
+type DropdownSubmenuTriggerProps = Omit<ComponentProps<typeof Menu.SubmenuTrigger>, 'children' | 'render' | 'className'> & { children: ReactElement; className?: string }
+
+function DropdownSubmenuTrigger({ children, className, ...props }: DropdownSubmenuTriggerProps) {
+    const { isLandscape } = useContext(DropdownContext)
+    return <Menu.SubmenuTrigger render={children} openOnHover={!isLandscape} delay={100} closeDelay={180} className={cn(dropdownItemClassName, className)} {...props} />
+}
+
+function DropdownSubmenuPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    const { isLandscape } = useContext(DropdownContext)
+    const { state: overlayState } = useOverlayStack()
+    return <Menu.Portal container={overlayState.rootElement ?? undefined}>
+        <Menu.Positioner side={isLandscape ? 'bottom' : 'right'} align="start" sideOffset={4} className="z-[9055] outline-none">
+            <Menu.Popup className={cn('pointer-events-auto flex max-h-[min(70dvh,32rem)] min-w-56 max-w-[calc(100vw-1rem)] flex-col overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none', className)} {...props}>{children}</Menu.Popup>
+        </Menu.Positioner>
+    </Menu.Portal>
+}
+
+type DropdownCheckboxOption = { value: string; label: string }
+type DropdownCheckboxListProps = { label: string; options: DropdownCheckboxOption[]; selected: string[]; name: string; onValueChange: (name: string, value: string) => void }
+
+function DropdownCheckboxList({ label, options, selected, name, onValueChange }: DropdownCheckboxListProps) {
+    function renderOption(option: DropdownCheckboxOption) {
+        function handleCheckedChange() { onValueChange(name, option.value) }
+        return <Menu.CheckboxItem key={option.value} checked={selected.includes(option.value)} closeOnClick={false} onCheckedChange={handleCheckedChange} className={cn(dropdownItemClassName, 'group')}>
+            <span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center rounded border border-primary bg-primary shadow-xs group-data-[checked]:border-brand group-data-[checked]:bg-brand_solid group-data-[checked]:text-on-brand">
+                <Menu.CheckboxItemIndicator keepMounted className="opacity-0 group-data-[checked]:opacity-100"><Check className="size-3" /></Menu.CheckboxItemIndicator>
+            </span>
+            <span className="min-w-0 flex-1 truncate">{option.label}</span>
+        </Menu.CheckboxItem>
+    }
+    return <div role="group" aria-label={label} className="max-h-52 overflow-y-auto">{options.length ? options.map(renderOption) : <Paragraph.sm className="px-2 py-1 text-tertiary">No options available.</Paragraph.sm>}</div>
+}
+
 // ─── Compound Export ─────────────────────────────────────────────────
 
 export const Dropdown = Object.assign(DropdownRoot, {
@@ -200,4 +247,8 @@ export const Dropdown = Object.assign(DropdownRoot, {
     Item: DropdownItem,
     Link: DropdownLink,
     Separator: DropdownSeparator,
+    Submenu: DropdownSubmenu,
+    SubmenuTrigger: DropdownSubmenuTrigger,
+    SubmenuPanel: DropdownSubmenuPanel,
+    CheckboxList: DropdownCheckboxList,
 })

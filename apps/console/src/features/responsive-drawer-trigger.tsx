@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { InteractiveSurface } from '@moc/ui/components/controls/interactive-surface'
 import { Drawer } from '@moc/ui/components/overlays/drawer'
-import { useIsMobile } from '@moc/ui/hooks/use-is-mobile'
+import { useIsLandscape } from '@moc/ui/hooks/use-is-landscape'
 
 type ResponsiveDrawerTriggerProps = {
     children: ReactNode
@@ -11,9 +11,9 @@ type ResponsiveDrawerTriggerProps = {
 }
 
 function ResponsiveDrawerTriggerRoot({ children, className, mobileHref }: ResponsiveDrawerTriggerProps) {
-    const isMobile = useIsMobile()
+    const isLandscape = useIsLandscape()
 
-    if (isMobile) {
+    if (isLandscape) {
         return (
             <InteractiveSurface.Link render={<Link to={mobileHref} />} className={className}>
                 {children}
@@ -31,9 +31,9 @@ function ResponsiveDrawerTriggerRoot({ children, className, mobileHref }: Respon
 }
 
 function ResponsiveDrawerCardTrigger({ children, className, mobileHref }: ResponsiveDrawerTriggerProps) {
-    const isMobile = useIsMobile()
+    const isLandscape = useIsLandscape()
 
-    if (isMobile) {
+    if (isLandscape) {
         return <InteractiveSurface.CardLink render={<Link to={mobileHref} />} className={className}>{children}</InteractiveSurface.CardLink>
     }
 

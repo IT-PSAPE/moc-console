@@ -18,7 +18,7 @@ const stepCircle = cv({
 })
 
 const stepLabel = cv({
-  base: ['hidden sm:block'],
+  base: ['block portrait:hidden'],
   variants: {
     state: {
       active: ['text-primary'],
@@ -37,7 +37,7 @@ export function StepIndicator({ currentStep, totalSteps, labels }: { currentStep
         const state: StepState = step === currentStep ? 'active' : step < currentStep ? 'completed' : 'upcoming'
         return (
           <div key={step} className="flex items-center gap-2">
-            {i > 0 && <div className={cn('h-px w-4 sm:w-8 bg-tertiary')} />}
+            {i > 0 && <div className={cn('h-px w-8 portrait:w-4 bg-tertiary')} />}
             <StepIndicatorItem step={step} label={labels?.[i]} state={state} />
           </div>
         )

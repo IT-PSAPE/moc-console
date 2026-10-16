@@ -50,7 +50,7 @@ export function BookingScreen() {
   }
 
   return (
-    <PublicLayout className="py-8 sm:py-12">
+    <PublicLayout className="py-12 portrait:py-8">
       <FlowHeader title="Book equipment" onBack={handleBack} />
 
       <PublicFlow.Narrow as="form" noValidate onSubmit={handleSubmit}>

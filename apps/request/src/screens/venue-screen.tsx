@@ -60,7 +60,7 @@ export function VenueScreen() {
   }
 
   return (
-    <PublicLayout className="py-8 sm:py-12">
+    <PublicLayout className="py-12 portrait:py-8">
       <FlowHeader title="Book a venue" onBack={handleBack} />
 
       <PublicFlow as="form" noValidate onSubmit={handleSubmit}>

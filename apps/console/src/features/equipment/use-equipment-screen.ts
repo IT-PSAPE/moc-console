@@ -4,7 +4,7 @@ import { useViewQuery } from '@/hooks/use-view-query'
 import { randomId } from '@moc/utils/random-id'
 import { getErrorMessage } from '@moc/utils/get-error-message'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
-import { useIsMobile } from '@moc/ui/hooks/use-is-mobile'
+import { useIsLandscape } from '@moc/ui/hooks/use-is-landscape'
 import type { Equipment, EquipmentCategory } from '@moc/types/equipment'
 import { useEquipment } from './equipment-provider'
 import { useEquipmentFilters } from './use-equipment-filters'
@@ -21,13 +21,13 @@ type NewEquipment = {
 
 export function useEquipmentScreen() {
   const [view, setView] = useViewQuery(equipmentViews, 'list')
-  const isMobile = useIsMobile()
+  const isLandscape = useIsLandscape()
   const { state: equipmentState, actions: equipmentActions } = useEquipment()
   const { loadEquipment, addEquipment } = equipmentActions
   const { toast } = useFeedback()
   const [createOpen, setCreateOpen] = useState(false)
   const filters = useEquipmentFilters(equipmentState.equipment)
-  const activeView = isMobile && view === 'kanban' ? 'list' : view
+  const activeView = isLandscape && view === 'kanban' ? 'list' : view
   const detail = useListDetailSelection<Equipment>(equipmentState.equipment)
   const { close: closeDetail, select: selectEquipment } = detail.actions
 
@@ -57,7 +57,7 @@ export function useEquipmentScreen() {
   }
 
   return {
-    state: { activeView, isMobile, createOpen, detailOpen: detail.state.isOpen, selectedEquipment: detail.state.selectedItem, isLoading: equipmentState.isLoadingEquipment, isInitialLoading: equipmentState.isInitialLoadingEquipment, filtered: filters.filtered, filterState: filters.filters },
+    state: { activeView, isLandscape, createOpen, detailOpen: detail.state.isOpen, selectedEquipment: detail.state.selectedItem, isLoading: equipmentState.isLoadingEquipment, isInitialLoading: equipmentState.isInitialLoadingEquipment, filtered: filters.filtered, filterState: filters.filters },
     actions: { changeView, closeDetail, selectEquipment, setCreateOpen, openCreate, create, setSearch: filters.setSearch, retry: equipmentActions.retryEquipment },
     meta: { filters, error: equipmentState.equipmentError },
   }

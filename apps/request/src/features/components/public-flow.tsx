@@ -20,7 +20,7 @@ function PublicFlowNarrow<T extends ElementType = 'div'>({ as, className, ...pro
 }
 
 function PublicFlowProgress({ className, ...props }: ComponentPropsWithoutRef<'div'>) {
-  return <div className={cn("my-10 sm:my-16", className)} {...props} />
+  return <div className={cn("my-16 portrait:my-10", className)} {...props} />
 }
 
 function PublicFlowActions({ className, ...props }: ComponentPropsWithoutRef<'div'>) {

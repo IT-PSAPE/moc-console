@@ -32,7 +32,7 @@ type OverlayFooterProps = HTMLAttributes<HTMLDivElement>
 
 export function OverlayFooter({ children, className, ...props }: OverlayFooterProps) {
     return (
-        <div className={cn('flex shrink-0 flex-col items-center gap-2 border-t border-secondary px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] *:w-full [&_button]:w-full md:flex-row md:p-3 md:*:w-auto md:[&_button]:w-auto', className)} {...props}>
+        <div className={cn('flex shrink-0 flex-row items-center gap-2 border-t border-secondary p-3 *:w-auto [&_button]:w-auto landscape:flex-col landscape:pb-[max(0.75rem,env(safe-area-inset-bottom))] landscape:*:w-full landscape:[&_button]:w-full', className)} {...props}>
             {children}
         </div>
     )

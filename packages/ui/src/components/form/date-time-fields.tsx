@@ -41,7 +41,7 @@ export function DateTimeFields({ value, onChange, label, ariaLabel, name, dateLa
     return (
         <div className={cn("flex w-full min-w-0 flex-col gap-1.5", className)}>
             {label && <FormLabel label={label} required={required} optional={optional} />}
-            <div className={cn("grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2", fieldsClassName)}>
+            <div className={cn("grid min-w-0 grid-cols-2 portrait:grid-cols-1 gap-3", fieldsClassName)}>
                 <div className="flex min-w-0 flex-col gap-1.5">
                     <FormLabel label={dateLabel} htmlFor={dateId} className={fieldLabelClassName} />
                     <Input id={dateId} aria-label={accessibleLabel ? `${accessibleLabel} date` : dateLabel} aria-describedby={feedbackText ? feedbackId : undefined} aria-invalid={hasError || undefined} name={name ? `${name}-date` : undefined} type="date" value={date} onChange={handleDateChange} required={required} disabled={disabled} style={style} />

@@ -39,11 +39,11 @@ export function TrackScreen() {
   }
 
   return (
-    <PublicLayout className="py-8 sm:py-12">
+    <PublicLayout className="py-12 portrait:py-8">
       <FlowHeader title="Track submission" description="Enter your tracking code to view its status." onBack={handleBack} />
 
       <PublicFlow>
-        <form onSubmit={handleSubmit} className="my-10 flex gap-2 sm:my-16">
+        <form onSubmit={handleSubmit} className="my-16 flex gap-2 portrait:my-10">
           <Input
             aria-label="Tracking code"
             name="tracking-code"

@@ -2,7 +2,7 @@ import { useEffect } from "react"
 import { useVenueBookingFilters } from "@/features/venues/use-venue-booking-filters"
 import { useVenueBookings } from "@/features/venues/venue-bookings-provider"
 import { useViewQuery } from "@/hooks/use-view-query"
-import { useIsMobile } from "@moc/ui/hooks/use-is-mobile"
+import { useIsLandscape } from "@moc/ui/hooks/use-is-landscape"
 import type { VenueBooking } from "@moc/types/venues"
 import { useListDetailSelection } from "@/hooks/use-list-detail-selection"
 
@@ -10,8 +10,8 @@ const venueBookingViews = ["list", "kanban", "calendar"] as const
 
 export function useVenueBookingsScreen() {
   const [view, setView] = useViewQuery(venueBookingViews, "list")
-  const isMobile = useIsMobile()
-  const activeView = isMobile && view === "kanban" ? "list" : view
+  const isLandscape = useIsLandscape()
+  const activeView = isLandscape && view === "kanban" ? "list" : view
   const {
     state: { bookings, isLoading, isInitialLoading, error },
     actions: { loadBookings, retryBookings },
@@ -38,7 +38,7 @@ export function useVenueBookingsScreen() {
     meta: {
       filters,
       activeView,
-      isMobile,
+      isLandscape,
       isLoading,
       isInitialLoading,
       error,

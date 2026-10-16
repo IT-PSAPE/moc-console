@@ -219,8 +219,10 @@ If those conditions are not met, keep the JSX inline in the parent component and
 
 - Application must work on both desktop and mobile browsers.
 - UI must be fluid and responsive, not limited to fixed breakpoints.
-- Use Tailwind's responsive utilities when needed.
-- Mobile-first approach: start with mobile layout, enhance for larger screens.
+- Use the shared desktop-first responsive variants instead of Tailwind's default breakpoint names.
+- Unprefixed utilities apply at every width. `desktop:` is an explicit alias for that same baseline.
+- `tablet:` applies below 992px, `landscape:` below 768px, and `portrait:` below 480px. Each variant also applies to every narrower size; narrower variants override wider ones.
+- Define desktop layouts first, then adapt with `tablet:`, `landscape:`, and `portrait:`. Do not introduce `mobile:`, `sm:`, `md:`, `lg:`, `xl:`, or `2xl:` viewport variants.
 
 ## TypeScript
 

@@ -44,7 +44,7 @@ export function EditProfileModal({ open, onOpenChange }: EditProfileModalProps) 
         <Modal.Portal>
           <Modal.Backdrop />
           <Modal.Positioner>
-            <Modal.FullScreenPanel className="w-full md:!max-w-lg">
+            <Modal.FullScreenPanel className="w-full !max-w-lg landscape:!max-w-none">
               <Modal.Header><Label.md>Edit profile</Label.md></Modal.Header>
               <Modal.Content>
                 {profile ? (
@@ -71,7 +71,7 @@ export function EditProfileModal({ open, onOpenChange }: EditProfileModalProps) 
                       <Input aria-label="Profile photo" ref={fileInputRef} name="avatar" type="file" accept="image/*" onChange={actions.selectAvatar} style="ghost" className="hidden" />
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid grid-cols-2 gap-3 portrait:grid-cols-1">
                       <FormField label="First name" htmlFor="given-name" required>
                         <Input id="given-name" aria-label="First name" autoComplete="given-name" name="given-name" value={state.name} onChange={handleNameChange} placeholder="First name" />
                       </FormField>

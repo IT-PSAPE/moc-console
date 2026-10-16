@@ -54,7 +54,7 @@ export function BookingEquipmentPicker({ selected, onToggle, otherEquipment, onO
       <legend className="sr-only">Equipment</legend>
       <FormLabel label="Equipment" required />
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-2 portrait:grid-cols-1">
         {BOOKABLE_EQUIPMENT.map(renderEquipment)}
         <Checkbox checked={picker.state.isOtherOpen} onChange={picker.actions.toggleOther} className="w-full rounded-lg border border-secondary px-3 py-2.5">
           <Label.sm>{OTHER_LABEL}</Label.sm>

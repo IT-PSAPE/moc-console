@@ -1,7 +1,7 @@
 import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
 import { cn } from '@moc/utils/cn'
 import { createContext, useCallback, useContext, useMemo, useState, type HTMLAttributes, type ReactElement, type ReactNode } from 'react'
-import { useIsMobile } from '../../hooks/use-is-mobile'
+import { useIsLandscape } from '../../hooks/use-is-landscape'
 import { MobileSheetHandle, mobileDrawerStackContentClassName, mobileDrawerStackPopupClassName } from './mobile-sheet'
 import { useOverlayStack } from './overlay-provider'
 import { overlayHeaderClassName, OverlayContent, OverlayFooter } from './overlay-primitives'
@@ -134,7 +134,7 @@ function ModalBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>) 
     return (
         <BaseDrawer.Backdrop
             className={cn(
-                'pointer-events-auto fixed inset-0 z-0 bg-overlay/40 md:bg-overlay/30',
+                'pointer-events-auto fixed inset-0 z-0 bg-overlay/30 landscape:bg-overlay/40',
                 'transition-opacity duration-200 motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
                 className,
             )}
@@ -146,13 +146,13 @@ function ModalBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>) 
 // ─── Positioner ──────────────────────────────────────────────────────
 
 function ModalPositioner({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    const isMobile = useIsMobile()
+    const isLandscape = useIsLandscape()
 
     return (
         <BaseDrawer.Viewport
             className={cn(
                 'pointer-events-none fixed inset-0 z-10 flex justify-center',
-                isMobile
+                isLandscape
                     ? 'items-end'
                     : 'items-center pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))]',
                 className,
@@ -169,13 +169,13 @@ function ModalPositioner({ children, className, ...props }: HTMLAttributes<HTMLD
 type ModalPanelMode = 'compact' | 'full-screen'
 
 function ModalPanelSurface({ children, className, mode, ...props }: HTMLAttributes<HTMLDivElement> & { mode: ModalPanelMode }) {
-    const isMobile = useIsMobile()
+    const isLandscape = useIsLandscape()
     return (
         <BaseDrawer.Popup
-            data-base-ui-swipe-ignore={isMobile ? undefined : ''}
+            data-base-ui-swipe-ignore={isLandscape ? undefined : ''}
             className={cn(
                 'pointer-events-auto flex w-full flex-col border border-secondary bg-primary outline-none',
-                isMobile
+                isLandscape
                     ? cn(
                         mobileDrawerStackPopupClassName,
                         '!max-w-none rounded-t-3xl border-b-0 shadow-xl',
@@ -188,8 +188,8 @@ function ModalPanelSurface({ children, className, mode, ...props }: HTMLAttribut
             )}
             {...props}
         >
-            {isMobile ? <MobileSheetHandle /> : null}
-            <div className={isMobile ? mobileDrawerStackContentClassName : 'flex min-h-0 flex-1 flex-col'}>{children}</div>
+            {isLandscape ? <MobileSheetHandle /> : null}
+            <div className={isLandscape ? mobileDrawerStackContentClassName : 'flex min-h-0 flex-1 flex-col'}>{children}</div>
         </BaseDrawer.Popup>
     )
 }

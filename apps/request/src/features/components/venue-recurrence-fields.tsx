@@ -95,7 +95,7 @@ export function VenueRecurrenceFields({ value, bookingDate, errors, onChange }: 
 
       {value && preset === 'custom' && (
         <div className="flex flex-col gap-4">
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-3 portrait:grid-cols-1">
             <FormField label="Repeat every" htmlFor="recurrence-interval">
               <Input id="recurrence-interval" aria-label="Repeat interval" aria-invalid={Boolean(errors.recurrence)} aria-describedby={errors.recurrence ? 'recurrence-error' : undefined} type="number" min={1} max={365} value={value.interval} onChange={handleIntervalChange} />
             </FormField>
@@ -119,7 +119,7 @@ export function VenueRecurrenceFields({ value, bookingDate, errors, onChange }: 
       {value && (
         <div className="flex flex-col gap-2">
           <FormLabel label="Ends" />
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-3 portrait:grid-cols-1">
             <Select.Root name="recurrence-end" items={endItems} value={value.end?.type ?? null} onValueChange={handleEndTypeChange}>
               <Select.Trigger aria-label="Recurrence end" aria-invalid={Boolean(errors['recurrence-end'])} aria-describedby={errors['recurrence-end'] ? 'recurrence-end-error' : undefined} placeholder="Select when it ends" />
               <Select.Content>{endItems.map(renderEnd)}</Select.Content>

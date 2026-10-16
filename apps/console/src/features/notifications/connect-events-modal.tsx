@@ -44,7 +44,7 @@ export function ConnectEventsModal({ target, onClose }: ConnectEventsModalProps)
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
-                    <Modal.FullScreenPanel className="w-full md:max-w-lg">
+                    <Modal.FullScreenPanel className="w-full max-w-lg landscape:max-w-none">
                         <Modal.Header>
                             <div className="flex flex-col gap-1">
                                 <Label.md>Connect events</Label.md>

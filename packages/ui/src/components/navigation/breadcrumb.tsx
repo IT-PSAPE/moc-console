@@ -2,7 +2,7 @@ import { Button as BaseButton } from '@base-ui/react/button'
 import { ChevronRight } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@moc/utils/cn'
-import { useIsMobile } from '../../hooks/use-is-mobile'
+import { useIsLandscape } from '../../hooks/use-is-landscape'
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
 
 // ─── Label overrides context ────────────────────────────
@@ -122,9 +122,9 @@ function BreadcrumbRoot({ className }: { className?: string }) {
     const { pathname } = useLocation()
     const navigate = useNavigate()
     const { overrides } = useContext(BreadcrumbOverridesContext)
-    const isMobile = useIsMobile()
+    const isLandscape = useIsLandscape()
 
-    if (isMobile) return null
+    if (isLandscape) return null
 
     const crumbs = deriveBreadcrumbs(pathname, overrides)
 

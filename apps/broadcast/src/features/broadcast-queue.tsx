@@ -61,7 +61,7 @@ export function BroadcastQueue() {
   }
 
   return (
-    <aside className="mx-auto flex max-h-[max(16rem,42dvh)] min-h-0 w-full min-w-0 max-w-112 flex-col gap-2 pt-2 pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] lg:mx-0 lg:max-h-none lg:max-w-full lg:pt-[max(1.5rem,env(safe-area-inset-top))] lg:pl-1" aria-label="Broadcast queue">
+    <aside className="mx-0 flex max-h-none min-h-0 w-full min-w-0 max-w-full flex-col gap-2 pt-[max(1.5rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-1 tablet:mx-auto tablet:max-h-[max(16rem,42dvh)] tablet:max-w-112 tablet:pt-2 tablet:pl-[max(1rem,env(safe-area-inset-left))]" aria-label="Broadcast queue">
       <div className="px-1.5">
         <Label.sm className="block truncate">{broadcast.title}</Label.sm>
         <Paragraph.xs className="text-quaternary">{`Playlist · ${itemCountLabel}`}</Paragraph.xs>

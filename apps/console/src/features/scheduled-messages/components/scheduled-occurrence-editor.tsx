@@ -15,7 +15,7 @@ export function ScheduledOccurrenceEditor() {
   if (state.isInitialLoading) return null
   return <>
     <Modal open={state.editing!==null} onOpenChange={actions.changeEditorOpen}>
-      <Modal.Portal><Modal.Backdrop/><Modal.Positioner><Modal.FullScreenPanel className="md:max-w-lg">
+      <Modal.Portal><Modal.Backdrop/><Modal.Positioner><Modal.FullScreenPanel className="max-w-lg landscape:!max-w-none">
         <Modal.Header><Label.md>Manage {state.editing?.fields.title}</Label.md></Modal.Header>
         <Modal.Content><div className="flex flex-col gap-4 p-4">
           <FormField label="Field"><SelectField name="edit-field" label="Field" items={meta.fieldItems} value={state.edit.field} onValueChange={actions.changeEditField}/></FormField>
@@ -27,7 +27,7 @@ export function ScheduledOccurrenceEditor() {
       </Modal.FullScreenPanel></Modal.Positioner></Modal.Portal>
     </Modal>
     {state.deleting ? <Modal open onOpenChange={actions.changeDeleteOpen}>
-      <Modal.Portal><Modal.Backdrop/><Modal.Positioner><Modal.FullScreenPanel className="md:max-w-lg">
+      <Modal.Portal><Modal.Backdrop/><Modal.Positioner><Modal.FullScreenPanel className="max-w-lg landscape:!max-w-none">
         <Modal.Header><Label.md>Delete {state.deleting?.fields.title}</Label.md></Modal.Header>
         <Modal.Content><div className="flex flex-col gap-4 p-4">
           <FormField label="Delete"><SelectField name="delete-scope" label="Delete scope" items={meta.scopeItems} value={state.deleteScope} onValueChange={actions.changeDeleteScope}/></FormField>

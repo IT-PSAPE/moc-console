@@ -87,7 +87,7 @@ export function VenueBookingDetails({
         <FieldError id="requested-by-error" message={errors['requested-by']} />
       </FormField>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-5 portrait:grid-cols-1">
         <FormField label="Venue" htmlFor="venue" required>
           <Select.Root name="venue" items={venues.map((venue) => ({ label: venue.name, value: venue.id }))} value={data.venueId || null} onValueChange={handleVenueChange} disabled={listsLoading}>
             <Select.Trigger id="venue" aria-label="Venue" placeholder={listsLoading ? 'Loading…' : 'Choose a venue'} aria-invalid={Boolean(errors.venue) || undefined} aria-describedby={errors.venue ? 'venue-error' : undefined} />

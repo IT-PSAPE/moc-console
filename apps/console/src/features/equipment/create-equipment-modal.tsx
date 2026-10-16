@@ -26,7 +26,7 @@ export function CreateEquipmentModal({ open, onOpenChange, onCreate }: CreateEqu
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
-          <Modal.FullScreenPanel className="w-full md:max-w-md">
+          <Modal.FullScreenPanel className="w-full max-w-md landscape:max-w-none">
             <Modal.Header>
               <Label.md>New equipment</Label.md>
             </Modal.Header>

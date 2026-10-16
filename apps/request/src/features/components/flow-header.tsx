@@ -10,9 +10,9 @@ type FlowHeaderProps = {
 
 export function FlowHeader({ title, description, onBack }: FlowHeaderProps) {
   return (
-    <header className="grid gap-4 sm:grid-cols-[10rem_minmax(0,1fr)_10rem] sm:items-start">
+    <header className="grid grid-cols-[10rem_minmax(0,1fr)_10rem] items-start gap-4 portrait:grid-cols-1">
       <Button variant="ghost" icon={<ArrowLeft />} onClick={onBack} className="w-fit">Back</Button>
-      <div className="flex min-w-0 flex-col gap-1 sm:text-center">
+      <div className="flex min-w-0 flex-col gap-1 text-center portrait:text-left">
         <Title.h1 className="title-h3">{title}</Title.h1>
         {description && <Paragraph.sm className="text-secondary">{description}</Paragraph.sm>}
       </div>

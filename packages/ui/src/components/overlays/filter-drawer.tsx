@@ -25,7 +25,7 @@ function FilterDrawerRoot({ children, hasActiveFilters = false, onReset, title =
                     </Drawer.Close>
                 </Drawer.Header>
                 <Drawer.Content>{children}</Drawer.Content>
-                <Drawer.Footer className="max-md:*:w-full">
+                <Drawer.Footer className="landscape:*:w-full">
                     {hasActiveFilters && onReset && (
                         <Button variant="secondary" icon={<RotateCcw />} className="w-full" onClick={onReset}>
                             Reset

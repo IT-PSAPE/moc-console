@@ -139,7 +139,7 @@ function DateSlotPickerRoot({ children, className, selectedDate, onSelectDate, s
 
   return (
     <DateSlotPickerContext.Provider value={value}>
-      <div className={cn('grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]', className)}>
+      <div className={cn('grid grid-cols-[minmax(0,1fr)_16rem] tablet:grid-cols-1 gap-6', className)}>
         {children}
       </div>
     </DateSlotPickerContext.Provider>
@@ -222,7 +222,7 @@ function DateSlotPickerSlots({ children, className, 'aria-label': ariaLabel = 'A
     // A definite height, not `h-full`: the grid row is auto-sized, so a
     // percentage height resolved to auto and the column grew to fit every
     // slot — which is what made the whole page scroll instead of the list.
-    <ScrollArea className={cn('h-72 lg:h-96', className)}>
+    <ScrollArea className={cn('h-96 tablet:h-72', className)}>
       <ScrollArea.Viewport ref={viewportRef}>
         <ScrollArea.Content aria-label={ariaLabel} role="group" className="flex flex-col gap-2 p-1">
           {children}

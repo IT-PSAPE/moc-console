@@ -18,7 +18,7 @@ export function StreamModal({ open, onOpenChange, onSubmit, stream, preset }: St
       <Modal.Portal>
         <Modal.Backdrop />
         <Modal.Positioner>
-          <Modal.FullScreenPanel className="md:max-w-lg">
+          <Modal.FullScreenPanel className="max-w-lg landscape:!max-w-none">
             <Modal.Header>
               <Label.md>{stream ? "Edit stream" : "Create stream"}</Label.md>
             </Modal.Header>

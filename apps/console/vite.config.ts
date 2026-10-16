@@ -5,6 +5,7 @@ import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 import { tailscaleDevServer } from '../../scripts/vite-tailscale'
 import { createApiProxy } from '../../scripts/vite-api-proxy'
+import { namedBreakpointOrder } from '../../scripts/named-breakpoint-order'
 
 const aliasEntries = [
   {
@@ -60,6 +61,7 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       tailscaleDevServer(5173),
     ],
+    css: { postcss: { plugins: [namedBreakpointOrder()] } },
     resolve: {
       alias: aliasEntries,
       // @moc/ui is aliased to source, so its Base UI import resolves React

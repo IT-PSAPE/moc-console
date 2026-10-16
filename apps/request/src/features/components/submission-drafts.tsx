@@ -43,7 +43,7 @@ export function SubmissionDrafts({ drafts, discardOpen, onContinue, onRequestDis
   }
 
   return (
-    <Card className="@container/drafts gap-1 p-1">
+    <Card className="@container/drafts">
       <Card.Header tight className="px-2">
         <Label.md>Drafts</Label.md>
       </Card.Header>

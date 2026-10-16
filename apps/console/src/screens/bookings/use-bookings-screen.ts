@@ -2,7 +2,7 @@ import { useEffect } from "react"
 import { useEquipment } from "@/features/equipment/equipment-provider"
 import { useBookingFilters } from "@/features/equipment/use-booking-filters"
 import { useViewQuery } from "@/hooks/use-view-query"
-import { useIsMobile } from "@moc/ui/hooks/use-is-mobile"
+import { useIsLandscape } from "@moc/ui/hooks/use-is-landscape"
 import type { Booking } from "@moc/types/equipment"
 import { useListDetailSelection } from "@/hooks/use-list-detail-selection"
 
@@ -14,11 +14,11 @@ export function useBookingsScreen() {
     actions: { loadBookings, loadEquipment, retryBookings },
   } = useEquipment()
   const [view, setView] = useViewQuery(bookingViews, "list")
-  const isMobile = useIsMobile()
+  const isLandscape = useIsLandscape()
   const filters = useBookingFilters(bookings)
   const detail = useListDetailSelection<Booking>(bookings)
   const { close: closeDetail, select: selectBooking } = detail.actions
-  const activeView = isMobile && view === "kanban" ? "list" : view
+  const activeView = isLandscape && view === "kanban" ? "list" : view
 
   useEffect(() => {
     void loadBookings()
@@ -40,7 +40,7 @@ export function useBookingsScreen() {
       filters,
       isLoading: isLoadingBookings,
       isInitialLoading: isInitialLoadingBookings,
-      isMobile,
+      isLandscape,
       activeView,
       error: bookingsError,
     },

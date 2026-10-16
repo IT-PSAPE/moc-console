@@ -13,7 +13,7 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 
 const inputVariants = cv({
     base: [
-        'flex min-h-11 w-full min-w-0 items-center gap-1.5 has-[:disabled]:cursor-not-allowed md:min-h-0',
+        'flex min-h-0 landscape:min-h-11 w-full min-w-0 items-center gap-1.5 has-[:disabled]:cursor-not-allowed',
         'bg-secondary has-[:disabled]:bg-tertiary',
     ],
     variants: {

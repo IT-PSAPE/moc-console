@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react"
 import { useRequestFilters } from "@/features/requests/use-request-filters"
 import { useRequests } from "@/features/requests/request-provider"
 import { useViewQuery } from "@/hooks/use-view-query"
-import { useIsMobile } from "@moc/ui/hooks/use-is-mobile"
+import { useIsLandscape } from "@moc/ui/hooks/use-is-landscape"
 import type { Request } from "@moc/types/requests"
 import { useListDetailSelection } from "@/hooks/use-list-detail-selection"
 import { useRequestWorkView } from "@/features/requests/use-request-work-view"
@@ -13,8 +13,8 @@ const requestViews = ["list", "kanban", "calendar"] as const
 export function useRequestsScreen() {
   const [view, setView] = useViewQuery(requestViews, "list")
   const [, setSearchParams] = useSearchParams()
-  const isMobile = useIsMobile()
-  const activeView = isMobile && view === "kanban" ? "list" : view
+  const isLandscape = useIsLandscape()
+  const activeView = isLandscape && view === "kanban" ? "list" : view
   const {
     state: { allRequests, isLoadingActive, isLoadingArchived, isLoadingCategories, isInitialLoadingActive, isInitialLoadingArchived, isInitialLoadingCategories, activeError, archivedError, categoriesError },
     actions: { loadActiveRequests, loadArchivedRequests, retryActiveRequests, retryArchivedRequests, retryCategories },
@@ -81,7 +81,7 @@ export function useRequestsScreen() {
       workView: workViewType,
       workViewRequests: workView.state.visibleRequests,
       activeView,
-      isMobile,
+      isLandscape,
       collectionError: workViewType === "assigned" ? workView.meta.error ?? activeError ?? (loadsArchived ? archivedError : null) : activeError ?? (loadsArchived ? archivedError : null),
       collectionErrorTitle: workViewType === "assigned" && workView.meta.error ? "Couldn't load your assigned requests" : "Couldn't load requests",
       categoriesError,

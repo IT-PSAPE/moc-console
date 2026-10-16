@@ -43,7 +43,7 @@ export function ConfirmationDialog({ cancelLabel = 'Cancel', confirmLabel, descr
                                 {errorText ? <p role="alert" className="paragraph-sm pt-2 text-error">{errorText}</p> : null}
                             </div>
                         </div>
-                        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <div className="mt-5 flex flex-row justify-end gap-2 portrait:flex-col-reverse portrait:justify-normal">
                             <BaseAlertDialog.Close nativeButton render={<Button variant="secondary" disabled={isConfirming} />}>
                                 {cancelLabel}
                             </BaseAlertDialog.Close>

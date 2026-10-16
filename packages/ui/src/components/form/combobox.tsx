@@ -1,8 +1,8 @@
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { cn } from '@moc/utils/cn'
 import { ChevronDown, Search, X } from 'lucide-react'
-import { createContext, Fragment, useContext, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { useIsMobile } from '../../hooks/use-is-mobile'
+import { createContext, Fragment, useContext, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useIsLandscape } from '../../hooks/use-is-landscape'
 import { Drawer } from '../overlays/drawer'
 import { mobileSheetPositionerClassName } from '../overlays/mobile-sheet'
 import { useOverlayStack } from '../overlays/overlay-provider'
@@ -49,7 +49,7 @@ type ComboboxRootProps<Value> = {
 
 type ComboboxContextValue = {
     itemToStringLabel?: (item: unknown) => string
-    isMobile: boolean
+    isLandscape: boolean
     multiple: boolean
 }
 
@@ -66,11 +66,13 @@ function useComboboxContext(): ComboboxContextValue {
 }
 
 function ComboboxRoot<Value>({ children, defaultOpen, itemToStringLabel, modal, multiple = false, onOpenChange, open, ...props }: ComboboxRootProps<Value>) {
-    const isMobile = useIsMobile()
+    const isLandscape = useIsLandscape()
+    const triggerRef = useRef<HTMLElement | null>(null)
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false)
     const isOpen = isControlled ? open : uncontrolledOpen
     function handleOpenChange(nextOpen: boolean, eventDetails?: BaseCombobox.Root.ChangeEventDetails) {
+        if (nextOpen) triggerRef.current = eventDetails?.trigger instanceof HTMLElement ? eventDetails.trigger : null
         if (!isControlled) {
             setUncontrolledOpen(nextOpen)
         }
@@ -92,14 +94,14 @@ function ComboboxRoot<Value>({ children, defaultOpen, itemToStringLabel, modal, 
         p: ComboboxRootProps<Value>,
     ) => React.JSX.Element
     const combobox = (
-        <ComboboxContext.Provider value={{ isMobile, itemToStringLabel: itemToStringLabel as ((item: unknown) => string) | undefined, multiple }}>
-            <Root {...props} itemToStringLabel={itemToStringLabel} modal={isMobile ? false : modal} multiple={multiple} open={isOpen} onOpenChange={handleOpenChange}>{children}</Root>
+        <ComboboxContext.Provider value={{ isLandscape, itemToStringLabel: itemToStringLabel as ((item: unknown) => string) | undefined, multiple }}>
+            <Root {...props} itemToStringLabel={itemToStringLabel} modal={isLandscape ? false : modal} multiple={multiple} open={isOpen} onOpenChange={handleOpenChange}>{children}</Root>
         </ComboboxContext.Provider>
     )
 
-    if (!isMobile) return combobox
+    if (!isLandscape) return combobox
 
-    return <Drawer mobileSide="bottom" open={isOpen} onOpenChange={handleDrawerOpenChange}>{combobox}</Drawer>
+    return <Drawer mobileSide="bottom" open={isOpen} onOpenChange={handleDrawerOpenChange} triggerRef={triggerRef}>{combobox}</Drawer>
 }
 
 // Base UI allows `className` to be a function of component state. None of
@@ -108,7 +110,7 @@ function ComboboxRoot<Value>({ children, defaultOpen, itemToStringLabel, modal, 
 type Styled<P> = Omit<P, 'className'> & { className?: string }
 
 const fieldShell = cn(
-    'flex min-h-11 w-full flex-wrap items-center gap-1 rounded-lg border border-secondary bg-secondary px-3 py-2 md:min-h-0',
+    'flex min-h-0 landscape:min-h-11 w-full flex-wrap items-center gap-1 rounded-lg border border-secondary bg-secondary px-3 py-2',
     'focus-within:border-brand focus-within:ring-3 focus-within:ring-border-brand/10',
     'has-[:disabled]:cursor-not-allowed has-[:disabled]:bg-tertiary has-[:disabled]:border-primary',
 )
@@ -116,15 +118,15 @@ const fieldShell = cn(
 // ─── Single-value field ──────────────────────────────────────────────
 
 function ComboboxField({ className, ...props }: Styled<React.ComponentProps<typeof BaseCombobox.Input>>) {
-    const { isMobile, itemToStringLabel } = useComboboxContext()
-    function handleMobileKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    const { isLandscape, itemToStringLabel } = useComboboxContext()
+    function handleLandscapeKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
         const inputEvent = event as unknown as Parameters<NonNullable<typeof props.onKeyDown>>[0]
         props.onKeyDown?.(inputEvent)
     }
 
-    if (isMobile) {
+    if (isLandscape) {
         return (
-            <BaseCombobox.Trigger id={props.id} className={cn(fieldShell, 'flex-nowrap text-left', className)} disabled={props.disabled} aria-label={props['aria-label'] ?? props.placeholder} aria-keyshortcuts={props['aria-keyshortcuts']} onKeyDown={handleMobileKeyDown}>
+            <BaseCombobox.Trigger id={props.id} className={cn(fieldShell, 'flex-nowrap text-left', className)} disabled={props.disabled} aria-label={props['aria-label'] ?? props.placeholder} aria-keyshortcuts={props['aria-keyshortcuts']} onKeyDown={handleLandscapeKeyDown}>
                 <span className="min-w-0 flex-1 truncate paragraph-sm text-primary">
                     <BaseCombobox.Value>
                         {(selected: unknown) => {
@@ -167,9 +169,9 @@ type ChipsFieldProps<Value> = {
 }
 
 function ComboboxChipsField<Value>({ chipLabel, chipKey, placeholder, className }: ChipsFieldProps<Value>) {
-    const { isMobile } = useComboboxContext()
+    const { isLandscape } = useComboboxContext()
 
-    if (isMobile) {
+    if (isLandscape) {
         return (
             <BaseCombobox.Trigger className={cn(fieldShell, 'flex-nowrap text-left', className)} aria-label={placeholder}>
                 <span className="min-w-0 flex-1 truncate paragraph-sm text-primary">
@@ -236,10 +238,10 @@ type ComboboxContentProps = {
 }
 
 function ComboboxContent({ children, className, empty = 'No matches', footer, searchPlaceholder = 'Search options', title = 'Choose an option' }: ComboboxContentProps) {
-    const { isMobile, multiple } = useComboboxContext()
+    const { isLandscape, multiple } = useComboboxContext()
     const { state: overlayState } = useOverlayStack()
 
-    if (isMobile) {
+    if (isLandscape) {
         return (
             <Drawer.Portal>
                 <Drawer.Backdrop />
@@ -320,7 +322,7 @@ function ComboboxItem({ children, className, ...props }: Styled<React.ComponentP
     return (
         <BaseCombobox.Item
             className={cn(
-                'min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 py-2 paragraph-sm text-secondary outline-none select-none md:min-h-0 md:rounded-sm md:px-2 md:py-1.5',
+                'min-h-0 landscape:min-h-11 cursor-pointer items-center gap-2 rounded-sm landscape:rounded-lg px-2 landscape:px-4 py-1.5 landscape:py-2 paragraph-sm text-secondary outline-none select-none',
                 'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
                 className,
             )}
