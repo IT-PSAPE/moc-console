@@ -29,7 +29,6 @@ export function MessageTemplateEditor({ messageType }: { messageType: MessageTyp
                         <Label.xs className="text-inherit">Message templates</Label.xs>
                     </Button.Unstyled>
                     <Page.Title>{templateMeta.label}</Page.Title>
-                    <Page.Description>{templateMeta.description}</Page.Description>
                 </Page.Heading>
             </Page.Header>
 

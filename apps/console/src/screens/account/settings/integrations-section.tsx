@@ -6,13 +6,13 @@ import { useStreamConnections } from "./use-stream-connections"
 import { useStreams } from "@/features/streams/streams-provider"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 
-export function StreamsTabContent() {
+export function IntegrationsSection() {
   useStreamConnections()
   const { state, actions } = useStreams()
 
   return (
     <Section>
-      <Section.Header title="Streaming connections" description="Connect the services used to schedule and manage broadcasts." />
+      <Section.Header title="Integrations" description="Manage YouTube and Zoom connections." />
       <Section.Body>
         {state.youtubeConnectionError ? <ResourceLoadError title="YouTube connection couldn't be loaded" error={state.youtubeConnectionError} onRetry={actions.retryYouTubeConnection} /> : null}
         {state.zoomConnectionError ? <ResourceLoadError title="Zoom connection couldn't be loaded" error={state.zoomConnectionError} onRetry={actions.retryZoomConnection} /> : null}

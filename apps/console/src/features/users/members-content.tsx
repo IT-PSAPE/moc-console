@@ -1,6 +1,4 @@
 import { Search } from 'lucide-react'
-import { MemberNotificationContext } from './member-notification-context'
-import { ConnectEventsModal } from '@/features/notifications/connect-events-modal'
 import { Section } from '@moc/ui/components/display/section'
 import { ConfirmationDialog } from '@moc/ui/components/overlays/confirmation-dialog'
 import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
@@ -17,11 +15,15 @@ export function MembersContent() {
   if (meta.isInitialLoading) return <Page.Loading />
 
   return (
-    <MemberNotificationContext value={{ state: {}, actions: { openConnectUser: actions.openConnectUser }, meta: {} }}>
+    <>
       <Page>
-        <Page.Header><Page.Heading><Page.Title>Members</Page.Title></Page.Heading></Page.Header>
+        <Page.Header>
+          <Page.Heading><Page.Title>Members</Page.Title></Page.Heading>
+          <Page.Controls>
+            <Input aria-label="Search members" name="member-search" autoComplete="off" icon={<Search />} placeholder="Search members…" value={state.search} onChange={actions.changeSearch} />
+          </Page.Controls>
+        </Page.Header>
         <Page.Content className="flex min-w-0 flex-col gap-8">
-              <Input aria-label="Search members" name="member-search" autoComplete="off" icon={<Search />} placeholder="Search members…" className="w-full max-w-md" value={state.search} onChange={actions.changeSearch} />
               <Section>
                 <Section.Header title="Directory" description={`${meta.totalUsers} people have access to this workspace.`} />
                 <Section.Body>
@@ -37,7 +39,6 @@ export function MembersContent() {
         </Page.Content>
       </Page>
       <ConfirmationDialog open={meta.rejectTarget !== null} onOpenChange={actions.handleRejectOpenChange} title="Reject access request?" description={meta.rejectDescription} confirmLabel="Reject" isConfirming={meta.isRejecting} onConfirm={actions.confirmReject} />
-      <ConnectEventsModal target={meta.connectTarget} onClose={actions.closeConnect} />
-    </MemberNotificationContext>
+    </>
   )
 }

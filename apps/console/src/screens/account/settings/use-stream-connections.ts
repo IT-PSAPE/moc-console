@@ -10,8 +10,8 @@ import { useSettingsResourceLoading } from "./settings-loading-context"
 export function useStreamConnections() {
   const { toast } = useFeedback()
   const { state, actions: { loadYouTubeConnection, loadZoomConnection, setZoomMeetings } } = useStreams()
-  useSettingsResourceLoading('integrations', 'youtube-connection', state.isInitialLoadingConnection)
-  useSettingsResourceLoading('integrations', 'zoom-connection', state.isInitialLoadingZoomConnection)
+  useSettingsResourceLoading('youtube-connection', state.isInitialLoadingConnection)
+  useSettingsResourceLoading('zoom-connection', state.isInitialLoadingZoomConnection)
   const { handleOAuthCallback: handleYouTubeCallback } = useYouTubeOAuth()
   const { handleOAuthCallback: handleZoomCallback } = useZoomOAuth()
 

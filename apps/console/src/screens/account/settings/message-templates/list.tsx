@@ -20,7 +20,7 @@ export function MessageTemplates() {
 
     return (
         <Section>
-            <Section.Header title="Message templates" description="Customize the notifications sent to Telegram groups and individual members." />
+            <Section.Header title="Notifications" description="Customize Telegram notification templates." />
             {state.isLoading ? <div className="flex justify-center py-6"><LoadingSpinner size="lg" /></div> : state.loadError ? <RetryAlert title="Couldn't load message templates" description={state.loadError.message} onRetry={actions.retryLoad} isRetrying={state.isRetrying} /> : (
                 <Section.Body className="gap-4">
                     <DividedList>{MESSAGE_TYPES.map(renderTemplate)}</DividedList>

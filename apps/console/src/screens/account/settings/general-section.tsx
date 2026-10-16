@@ -5,10 +5,9 @@ import { Section } from "@moc/ui/components/display/section"
 import { SettingsRow } from "@moc/ui/components/display/settings-row"
 import { Paragraph } from "@moc/ui/components/display/text"
 import { Input } from "@moc/ui/components/form/input"
-import { DateTimeSection } from "./date-time-section"
 import { useWorkspaceSettings } from "./use-workspace-settings"
 
-export function WorkspaceTab() {
+export function GeneralSection() {
   const { state, actions, meta } = useWorkspaceSettings()
 
   function handleNameChange(event: ChangeEvent<HTMLInputElement>) {
@@ -20,29 +19,28 @@ export function WorkspaceTab() {
   }
 
   return (
-    <div className="flex flex-col gap-10">
     <Section>
-      <Section.Header title="General" description="Update the name shown across this workspace." />
+      <Section.Header title="General" description="Workspace name and URL slug." />
 
       <Section.Body>
         <DividedList>
-        <SettingsRow label="Name" className="px-3 py-3 md:px-4">
-          <Input
-            aria-label="Workspace name"
-            autoComplete="off"
-            name="workspace-name"
-            value={state.name}
-            onChange={handleNameChange}
-            placeholder="Workspace name"
-            className="max-w-md"
-            disabled={!meta.canManage}
-          />
-        </SettingsRow>
+          <SettingsRow label="Name" className="px-4 py-3 landscape:px-3">
+            <Input
+              aria-label="Workspace name"
+              autoComplete="off"
+              name="workspace-name"
+              value={state.name}
+              onChange={handleNameChange}
+              placeholder="Workspace name"
+              className="max-w-md"
+              disabled={!meta.canManage}
+            />
+          </SettingsRow>
 
-        <SettingsRow label="Slug" className="px-3 py-3 md:px-4">
-          <Input aria-label="Workspace slug" autoCapitalize="none" autoComplete="off" name="workspace-slug" spellCheck={false} value={meta.workspace.slug} className="max-w-md" disabled readOnly />
-        </SettingsRow>
-              </DividedList>
+          <SettingsRow label="Slug" className="px-4 py-3 landscape:px-3">
+            <Input aria-label="Workspace slug" autoCapitalize="none" autoComplete="off" name="workspace-slug" spellCheck={false} value={meta.workspace.slug} className="max-w-md" disabled readOnly />
+          </SettingsRow>
+        </DividedList>
       </Section.Body>
 
       {meta.canManage && (
@@ -52,7 +50,5 @@ export function WorkspaceTab() {
         </div>
       )}
     </Section>
-    {meta.canManage && <DateTimeSection />}
-    </div>
   )
 }

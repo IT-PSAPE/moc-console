@@ -1,54 +1,25 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useLocation } from 'react-router-dom'
-import { useWorkspace } from '@/lib/workspace-context'
-import type { SettingsTab } from './use-settings-screen'
 
-type SettingsResource = 'youtube-connection' | 'zoom-connection' | 'telegram-groups' | 'message-templates' | 'archive-settings'
-
-type ResourceLoadState = { tab: SettingsTab; locationKey: string; workspaceId: string | null; isLoading: boolean }
+type SettingsResource = 'youtube-connection' | 'zoom-connection' | 'message-templates' | 'archive-settings' | 'date-time-settings'
 type SettingsLoadingContextValue = {
-  state: { activeTab: SettingsTab; isInitialLoading: boolean }
-  actions: { reportLoading: (tab: SettingsTab, resource: SettingsResource, isLoading: boolean) => void }
-  meta: { workspaceId: string | null; locationKey: string }
+  state: { isInitialLoading: boolean }
+  actions: { reportLoading: (resource: SettingsResource, isLoading: boolean) => void }
+  meta: { workspaceId: string | null }
 }
-
-type SettingsLoadingProviderProps = { activeTab: SettingsTab; children: ReactNode }
-
-const requiredResources: Record<SettingsTab, SettingsResource[]> = {
-  general: [],
-  integrations: ['youtube-connection', 'zoom-connection'],
-  notifications: ['telegram-groups', 'message-templates'],
-  automation: ['archive-settings'],
-}
-
+const requiredResources: SettingsResource[] = ['youtube-connection', 'zoom-connection', 'message-templates', 'archive-settings', 'date-time-settings']
 const SettingsLoadingContext = createContext<SettingsLoadingContextValue | null>(null)
 
-export function SettingsLoadingProvider({ activeTab, children }: SettingsLoadingProviderProps) {
-  const location = useLocation()
-  const { currentWorkspaceId } = useWorkspace()
-  const [resources, setResources] = useState<Partial<Record<SettingsResource, ResourceLoadState>>>({})
-
-  const reportLoading = useCallback((tab: SettingsTab, resource: SettingsResource, isLoading: boolean) => {
-    setResources((current) => ({
-      ...current,
-      [resource]: { tab, locationKey: location.key, workspaceId: currentWorkspaceId, isLoading },
-    }))
-  }, [currentWorkspaceId, location.key])
-
-  const isInitialLoading = requiredResources[activeTab].some((resource) => {
-    const resourceState = resources[resource]
-    return !resourceState
-      || resourceState.tab !== activeTab
-      || resourceState.locationKey !== location.key
-      || resourceState.workspaceId !== currentWorkspaceId
-      || resourceState.isLoading
-  })
-
-  const value = useMemo<SettingsLoadingContextValue>(() => ({
-    state: { activeTab, isInitialLoading },
-    actions: { reportLoading },
-    meta: { workspaceId: currentWorkspaceId, locationKey: location.key },
-  }), [activeTab, currentWorkspaceId, isInitialLoading, location.key, reportLoading])
+export function SettingsLoadingProvider({ canManage, workspaceId, children }: { canManage: boolean; workspaceId: string | null; children: ReactNode }) {
+  const [settledResources, setSettledResources] = useState<Set<SettingsResource>>(() => new Set())
+  const reportLoading = useCallback((resource: SettingsResource, isLoading: boolean) => {
+    if (isLoading) return
+    setSettledResources((current) => {
+      if (current.has(resource)) return current
+      return new Set(current).add(resource)
+    })
+  }, [])
+  const isInitialLoading = canManage && requiredResources.some((resource) => !settledResources.has(resource))
+  const value = useMemo<SettingsLoadingContextValue>(() => ({ state: { isInitialLoading }, actions: { reportLoading }, meta: { workspaceId } }), [isInitialLoading, reportLoading, workspaceId])
 
   return <SettingsLoadingContext.Provider value={value}>{children}</SettingsLoadingContext.Provider>
 }
@@ -59,10 +30,7 @@ export function useSettingsLoading() {
   return context
 }
 
-export function useSettingsResourceLoading(tab: SettingsTab, resource: SettingsResource, isLoading: boolean) {
+export function useSettingsResourceLoading(resource: SettingsResource, isLoading: boolean) {
   const { actions } = useSettingsLoading()
-
-  useEffect(() => {
-    actions.reportLoading(tab, resource, isLoading)
-  }, [actions, isLoading, resource, tab])
+  useEffect(() => actions.reportLoading(resource, isLoading), [actions, isLoading, resource])
 }

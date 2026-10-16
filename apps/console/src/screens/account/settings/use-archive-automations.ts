@@ -55,7 +55,7 @@ export function useArchiveAutomations() {
     useEffect(() => { void load() }, [load])
 
     const isInitialLoading = currentWorkspaceId !== null && loadedWorkspaceId !== currentWorkspaceId
-    useSettingsResourceLoading('automation', 'archive-settings', isInitialLoading)
+    useSettingsResourceLoading('archive-settings', isInitialLoading)
 
     const save = useCallback(async (nextRequestDays: number, nextBookingDays: number) => {
         if (!currentWorkspaceId) return

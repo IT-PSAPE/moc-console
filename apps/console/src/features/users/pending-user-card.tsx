@@ -20,7 +20,7 @@ export function PendingUserCard({ user, onApprove, onReject }: PendingUserCardPr
   }
 
   return (
-    <ListItemCard.Root className="flex-wrap sm:flex-nowrap">
+    <ListItemCard.Root className="flex-nowrap portrait:flex-wrap">
       <ListItemCard.Leading className="bg-transparent">
         <UserAvatar user={user} size="md" />
       </ListItemCard.Leading>
@@ -31,7 +31,7 @@ export function PendingUserCard({ user, onApprove, onReject }: PendingUserCardPr
         </div>
         <ListItemCard.Subtitle>{user.email}</ListItemCard.Subtitle>
       </ListItemCard.Content>
-      <ListItemCard.Trailing className="ml-13 w-[calc(100%-3.25rem)] justify-start gap-2 sm:ml-0 sm:w-auto sm:justify-end">
+      <ListItemCard.Trailing className="ml-0 w-auto justify-end gap-2 portrait:ml-13 portrait:w-[calc(100%-3.25rem)] portrait:justify-start">
         <Button className="min-h-9 px-3 py-1.5" variant="secondary" onClick={reject}>Reject</Button>
         <Button className="min-h-9 px-3 py-1.5" onClick={approve}>Accept</Button>
       </ListItemCard.Trailing>

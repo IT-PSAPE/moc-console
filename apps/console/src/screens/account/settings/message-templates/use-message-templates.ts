@@ -41,7 +41,7 @@ export function useMessageTemplates() {
     }, [load])
 
     const isLoading = currentWorkspaceId !== null && loadedWorkspaceId !== currentWorkspaceId
-    useSettingsResourceLoading('notifications', 'message-templates', isLoading)
+    useSettingsResourceLoading('message-templates', isLoading)
 
     const retryLoad = useCallback(async () => {
         setIsRetrying(true)

@@ -1,12 +1,10 @@
-import { Button } from "@moc/ui/components/controls/button"
-import { useMemberNotifications } from "./member-notification-context"
 import type { UserWithRole } from "@/data/fetch-users"
 import { TelegramIcon } from "@moc/ui/components/display/telegram-icon"
 import { Badge } from "@moc/ui/components/display/badge"
 import { ListItemCard } from "@moc/ui/components/display/list-item-card"
 import { UserAvatar } from "@moc/ui/components/display/user-avatar"
 import type { Role } from "@moc/types/requests/assignee"
-import { Link2, Shield } from "lucide-react"
+import { Shield } from "lucide-react"
 import { UserRoleSelect } from "./user-role-select"
 import { useUserMemberType } from '@/features/users/use-user-member-type'
 import { ManagedOptionPicker } from '@moc/ui/components/form/managed-option-picker'
@@ -29,12 +27,7 @@ type UserCardProps = {
 }
 
 export function UserCard({ user, roles, canManage, onRoleChange }: UserCardProps) {
-  const { actions } = useMemberNotifications()
   const memberType = useUserMemberType(user)
-
-  function handleOpenConnect(): void {
-    actions.openConnectUser(user)
-  }
 
   function handleMemberTypeChange(type: typeof memberType.meta.types[number] | null): void {
     if (type) void memberType.actions.change(type.id)
@@ -49,7 +42,7 @@ export function UserCard({ user, roles, canManage, onRoleChange }: UserCardProps
   }
 
   return (
-    <ListItemCard.Root className="flex-wrap sm:flex-nowrap">
+    <ListItemCard.Root className="flex-nowrap portrait:flex-wrap">
       <ListItemCard.Leading className="bg-transparent">
         <UserAvatar user={user} size="md" />
       </ListItemCard.Leading>
@@ -61,8 +54,7 @@ export function UserCard({ user, roles, canManage, onRoleChange }: UserCardProps
         <ListItemCard.Subtitle>{user.email}</ListItemCard.Subtitle>
 
       </ListItemCard.Content>
-      <ListItemCard.Trailing className="ml-13 w-[calc(100%-3.25rem)] justify-start sm:ml-0 sm:w-auto sm:justify-end">
-        {canManage && user.telegramChatId && <Button.Icon variant="ghost" icon={<Link2 />} onClick={handleOpenConnect} aria-label={`Connect events to ${user.name} ${user.surname}`} />}
+      <ListItemCard.Trailing className="ml-0 w-auto justify-end portrait:ml-13 portrait:w-[calc(100%-3.25rem)] portrait:justify-start">
         {canManage
           ? <UserRoleSelect userId={user.id} role={user.role} roles={roles} onChange={onRoleChange} />
           : <Badge label={user.role?.name ?? "No role"} color={getRoleColor(user.role?.name)} icon={<Shield />} />

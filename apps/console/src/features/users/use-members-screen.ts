@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState, type ChangeEvent } from "react"
-import type { ConnectEventsTarget } from "@/features/notifications/connect-events-modal"
 import type { PendingWorkspaceUser, UserWithRole } from "@/data/fetch-users"
 import { useUsers } from "@/features/users/users-provider"
 import { useWorkspace } from "@/lib/workspace-context"
@@ -28,7 +27,6 @@ export function useMembersScreen() {
   function changeSearch(event: ChangeEvent<HTMLInputElement>): void {
     setSearch(event.target.value)
   }
-  const [connectTarget, setConnectTarget] = useState<ConnectEventsTarget | null>(null)
   const { toast } = useFeedback()
   const [rejectTarget, setRejectTarget] = useState<PendingWorkspaceUser | null>(null)
   const [isRejecting, setIsRejecting] = useState(false)
@@ -107,21 +105,12 @@ export function useMembersScreen() {
     }
   }, [rejectTarget, rejectUser, toast])
 
-  function openConnectUser(user: UserWithRole): void {
-    if (!canManage || !currentWorkspaceId || !user.telegramChatId) return
-    setConnectTarget({ kind: 'user', workspaceId: currentWorkspaceId, userId: user.id, userName: `${user.name} ${user.surname}`.trim() })
-  }
-
-  function closeConnect(): void {
-    setConnectTarget(null)
-  }
-
   const rejectName = rejectTarget ? `${rejectTarget.name} ${rejectTarget.surname}`.trim() : ""
   const rejectDescription = `${rejectName || "This person"} will not be added to this workspace.`
 
   return {
-    actions: { changeSearch, retryLoad, openConnectUser, closeConnect, approve, updateRole, requestReject, handleRejectOpenChange, confirmReject },
+    actions: { changeSearch, retryLoad, approve, updateRole, requestReject, handleRejectOpenChange, confirmReject },
     state: { search, loadError: currentLoadError },
-    meta: { isFiltered: normalizedSearch.length > 0, connectTarget: canManage ? connectTarget : null, users: visibleUsers, totalUsers: users.length, pendingUsers, roles, isLoading, rejectTarget, rejectDescription, isRejecting, canManage, isInitialLoading: isInitialLoading && !currentLoadError },
+    meta: { isFiltered: normalizedSearch.length > 0, users: visibleUsers, totalUsers: users.length, pendingUsers, roles, isLoading, rejectTarget, rejectDescription, isRejecting, canManage, isInitialLoading: isInitialLoading && !currentLoadError },
   }
 }

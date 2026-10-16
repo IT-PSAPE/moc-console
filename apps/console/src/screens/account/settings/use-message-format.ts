@@ -3,6 +3,7 @@ import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { useWorkspace } from '@/lib/workspace-context'
 import { DEFAULT_DATE_FORMAT, DEFAULT_TIMEZONE, type DateFormatPreset, DATE_FORMAT_OPTIONS, formatInstant } from '@moc/notifications'
 import { fetchNotificationSettings, updateMessageFormat } from '@/data/notification-settings'
+import { useSettingsResourceLoading } from './settings-loading-context'
 
 const COMMON_TIMEZONES = ['Africa/Harare', 'Africa/Johannesburg', 'Africa/Lagos', 'Africa/Nairobi', 'Europe/London', 'Europe/Berlin', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Asia/Dubai', 'Asia/Shanghai', 'Asia/Tokyo', 'Australia/Sydney', 'UTC']
 const EXAMPLE_INSTANT = '2026-05-21T17:00:00Z'
@@ -13,6 +14,7 @@ export function useMessageFormat() {
     const [timezone, setTimezone] = useState(DEFAULT_TIMEZONE)
     const [dateFormat, setDateFormat] = useState<DateFormatPreset>(DEFAULT_DATE_FORMAT)
     const [isLoading, setIsLoading] = useState(true)
+    const [loadError, setLoadError] = useState<Error | null>(null)
 
     const load = useCallback(async () => {
         if (!currentWorkspaceId) {
@@ -20,11 +22,13 @@ export function useMessageFormat() {
             return
         }
         setIsLoading(true)
+        setLoadError(null)
         try {
             const settings = await fetchNotificationSettings(currentWorkspaceId)
             setTimezone(settings.timezone)
             setDateFormat(settings.dateFormat)
         } catch (error) {
+            setLoadError(error instanceof Error ? error : new Error('Unknown error'))
             toast({ title: "Couldn't load formatting settings", description: error instanceof Error ? error.message : 'Unknown error', variant: 'error' })
         } finally {
             setIsLoading(false)
@@ -32,6 +36,7 @@ export function useMessageFormat() {
     }, [currentWorkspaceId, toast])
 
     useEffect(() => { void load() }, [load])
+    useSettingsResourceLoading('date-time-settings', isLoading)
 
     const save = useCallback(async (nextTimezone: string, nextFormat: DateFormatPreset) => {
         if (!currentWorkspaceId) return
@@ -60,5 +65,5 @@ export function useMessageFormat() {
     const timezoneItems = timezoneOptions.map(value => ({ label: value, value }))
     const dateFormatItems = DATE_FORMAT_OPTIONS.map(option => ({ label: formatInstant(EXAMPLE_INSTANT, timezone, option.value), value: option.value }))
 
-    return { state: { timezone, dateFormat, isLoading, timezoneItems, dateFormatItems }, actions: { changeTimezone, changeDateFormat } }
+    return { state: { timezone, dateFormat, isLoading, loadError, timezoneItems, dateFormatItems }, actions: { changeTimezone, changeDateFormat, retryLoad: load } }
 }
