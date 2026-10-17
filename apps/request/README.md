@@ -16,7 +16,7 @@ Routed in [src/App.tsx](src/App.tsx); paths defined in [src/screens/console-rout
 | Path             | Screen             | Purpose                                            |
 | ---------------- | ------------------ | -------------------------------------------------- |
 | `/`              | HomeScreen         | Landing — links to request, equipment, venue, and tracking flows. |
-| `/request`       | RequestScreen      | Submit a new request (title, priority, details).   |
+| `/request`       | RequestScreen      | Submit a new request (title, category, details).    |
 | `/booking`       | BookingScreen      | Submit an equipment booking against a date range.  |
 | `/venue`         | VenueScreen        | Submit a venue booking against available time slots. |
 | `/confirmation`  | ConfirmationScreen | Success page after a submission; shows tracking code. |

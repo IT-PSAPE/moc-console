@@ -6,7 +6,6 @@ import type { VenueBookingFormData } from '../types/venue-booking'
 const EMPTY_REQUEST_DRAFT: RequestFormData = {
   title: '',
   requestedBy: '',
-  priority: 'medium',
   dueDate: '',
   category: '',
   who: '',
@@ -30,7 +29,7 @@ const EMPTY_BOOKING_DRAFT: BookingFormData = {
   notes: '',
 }
 
-export const requestTextFields: Array<Exclude<keyof RequestFormData, 'priority' | 'category'>> = [
+export const requestTextFields: Array<Exclude<keyof RequestFormData, 'category'>> = [
   'title', 'requestedBy', 'dueDate', 'who', 'what', 'whenText', 'whereText', 'why', 'how', 'notes', 'flow',
 ]
 
@@ -56,8 +55,7 @@ export function getEmptyVenueBookingDraft(bookingDate = formatCalendarDateKey(ne
 
 export function hasMeaningfulRequestDraft(data: RequestFormData, defaultCategory: string): boolean {
   const hasCategoryChange = hasText(data.category) && data.category !== defaultCategory
-  return data.priority !== EMPTY_REQUEST_DRAFT.priority
-    || hasCategoryChange
+  return hasCategoryChange
     || requestTextFields.some((field) => hasText(data[field]))
 }
 

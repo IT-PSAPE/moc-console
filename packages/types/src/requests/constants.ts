@@ -1,4 +1,3 @@
-import type { Priority } from "./priority.js";
 import type { Status } from "./status.js";
 
 // Legacy category metadata remains as a visual fallback for existing keys.
@@ -18,13 +17,6 @@ export const statusLabel: Record<Status, string> = {
     archived: "Archived",
 };
 
-export const priorityLabel: Record<Priority, string> = {
-    low: "Low",
-    medium: "Medium",
-    high: "High",
-    urgent: "Urgent",
-};
-
 // ─── Colors ────────────────────────────────────────────
 
 export const statusColor = {
@@ -33,13 +25,6 @@ export const statusColor = {
     completed: "green",
     archived: "gray",
 } as const satisfies Record<Status, string>;
-
-export const priorityColor = {
-    urgent: "red",
-    high: "yellow",
-    medium: "blue",
-    low: "gray",
-} as const satisfies Record<Priority, string>;
 
 export const categoryColor: Record<string, "orange" | "purple" | "blue" | "green" | "gray"> = {
     video_production: "orange",

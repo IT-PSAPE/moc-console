@@ -16,7 +16,7 @@ export const DEFAULT_TEMPLATES: Record<MessageType, string> = {
   "meeting.created":
     "<h3>🎥 Zoom meeting</h3>\n\n<b>{{topic}}</b>\n🗓 Starts {{startTime}}\n\n<blockquote>{{description}}</blockquote>\n\n🔗 <a href=\"{{joinUrl}}\">Join the meeting</a>",
   "request.created":
-    "<h3>📥 New request</h3>\n\n<b>{{title}}</b>\n🙋 From {{requesterName}}\n🗂️ Category: {{category}}\n🎯 Priority: {{priority}}\n📅 Due {{dueDate}}\n\n<blockquote>{{notes}}</blockquote>\n\n<p>{{trackingCode}}</p>",
+    "<h3>📥 New request</h3>\n\n<b>{{title}}</b>\n🙋 From {{requesterName}}\n🗂️ Category: {{category}}\n📅 Due {{dueDate}}\n\n<blockquote>{{notes}}</blockquote>\n\n<p>{{trackingCode}}</p>",
   "booking.created":
     "<h3>🎒 Equipment booking</h3>\n\n<b>{{title}}</b>\n🙋 From {{requesterName}}\n🔢 Items: {{itemCount}}\n🔄 Status: <i>{{status}}</i>\n\n<blockquote>{{notes}}</blockquote>\n\n<p>{{trackingCode}}</p>",
   "venue_booking.created":

@@ -32,7 +32,6 @@ export function buildRequestDetail(
     { label: "Why", value: request.why },
     { label: "How", value: request.how },
     { label: "Category", value: categoryName },
-    { label: "Priority", value: titleCase(request.priority) },
     { label: "Due", value: date(request.dueDate, format) },
   ]
 

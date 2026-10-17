@@ -27,13 +27,13 @@ function yesNo(v: boolean | null | undefined): string {
 export async function enrichRequest(requestId: string, options?: { throwOnError?: boolean }): Promise<TokenValues> {
   try {
     type RequestRow = QueryResultRow & {
-      title: string; status: string; priority: string | null; category: string | null; requested_by: string | null;
+      title: string; status: string; category: string | null; requested_by: string | null;
       due_date: string | null; created_at: string; updated_at: string; tracking_code: string | null; who: string | null;
       what: string | null; when_text: string | null; where_text: string | null; why: string | null; how: string | null;
       notes: string | null; flow: string | null; category_name: string | null;
     };
     const [data] = await queryRows<RequestRow>(
-      `SELECT request.title, request.status, request.priority, request.category, request.requested_by,
+      `SELECT request.title, request.status, request.category, request.requested_by,
          request.due_date, request.created_at, request.updated_at, request.tracking_code, request.who,
          request.what, request.when_text, request.where_text, request.why, request.how, request.notes,
          request.flow, category.name AS category_name
@@ -47,7 +47,6 @@ export async function enrichRequest(requestId: string, options?: { throwOnError?
     return {
       title: data.title,
       status: telegramStatusLabel("request", data.status),
-      priority: data.priority,
       category: data.category_name ?? data.category,
       requesterName: data.requested_by,
       requestedBy: data.requested_by,

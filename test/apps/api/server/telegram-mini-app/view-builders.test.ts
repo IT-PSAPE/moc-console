@@ -16,7 +16,6 @@ function requestRecord(overrides: Partial<RequestRecord> = {}): RequestRecord {
     title: "Lower third",
     trackingCode: "REQ-ABC123",
     status: "in_progress",
-    priority: "high",
     category: "graphic_design",
     requestedBy: "Craig",
     dueDate: "2026-09-30T10:00:00.000Z",
@@ -87,14 +86,13 @@ function checklistRecord(overrides: Partial<ChecklistRecord> = {}): ChecklistRec
 }
 
 describe("buildRequestDetail", () => {
-  it("formats the request's five-Ws plus category/priority/due fields", () => {
+  it("formats the request's five-Ws plus category/due fields", () => {
     const detail = buildRequestDetail(requestRecord(), "Graphic Design", format, [])
     assert.equal(detail.kind, "request")
     assert.equal(detail.status.label, "In Progress")
     assert.equal(detail.status.color, "yellow")
-    assert.deepEqual(detail.fields.map((f) => f.label), ["Who", "What", "When", "Where", "Why", "How", "Category", "Priority", "Due"])
+    assert.deepEqual(detail.fields.map((f) => f.label), ["Who", "What", "When", "Where", "Why", "How", "Category", "Due"])
     assert.equal(detail.fields.find((f) => f.label === "Category")?.value, "Graphic Design")
-    assert.equal(detail.fields.find((f) => f.label === "Priority")?.value, "High")
     assert.equal(detail.notes, "Spelling confirmed")
     assert.deepEqual(detail.equipment, [])
     assert.equal(detail.scanMode, null)

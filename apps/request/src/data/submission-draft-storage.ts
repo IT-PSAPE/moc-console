@@ -64,7 +64,6 @@ function isRequestFormData(value: unknown): value is RequestFormData {
   if (!isRecord(value)) return false
 
   return requestTextFields.every((field) => typeof value[field] === 'string')
-    && typeof value.priority === 'string'
     && typeof value.category === 'string'
 }
 
@@ -106,7 +105,20 @@ export function loadSubmissionDraft(kind: SubmissionDraftKind): AnyStoredSubmiss
     const value = readStoredValue(kind)
     if (!isDraftEnvelope(value)) return null
 
-    if (kind === 'request' && isRequestFormData(value.data)) return { step: value.step, data: value.data }
+    if (kind === 'request' && isRequestFormData(value.data)) {
+      const data = value.data
+      return {
+        step: value.step,
+        data: {
+          title: data.title, requestedBy: data.requestedBy,
+          dueDate: data.dueDate, category: data.category,
+          who: data.who, what: data.what,
+          whenText: data.whenText, whereText: data.whereText,
+          why: data.why, how: data.how,
+          notes: data.notes, flow: data.flow,
+        },
+      }
+    }
     if (kind === 'booking' && isBookingFormData(value.data)) return { step: value.step, data: value.data }
     if (kind === 'venue' && isVenueBookingFormData(value.data)) return { step: value.step, data: { ...value.data, recurrence: value.data.recurrence ?? null } }
     return null

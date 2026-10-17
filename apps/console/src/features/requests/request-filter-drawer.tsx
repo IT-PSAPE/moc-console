@@ -1,5 +1,6 @@
 import { Label } from "@moc/ui/components/display/text";
 import { Checkbox } from "@moc/ui/components/form/checkbox";
+import { FormField } from "@moc/ui/components/form/form-field";
 import { FormLabel } from "@moc/ui/components/form/form-label";
 import { Input } from "@moc/ui/components/form/input";
 import { ManagedOptionPicker } from "@moc/ui/components/form/managed-option-picker";
@@ -7,8 +8,7 @@ import { Radio, RadioGroup } from "@moc/ui/components/form/radio";
 import { Select } from "@moc/ui/components/form/select";
 import { Tabs } from "@moc/ui/components/layout/tabs";
 import { FilterDrawer } from "@moc/ui/components/overlays/filter-drawer";
-import { priorityLabel, statusLabel, type RequestCategoryDefinition } from "@moc/types/requests";
-import type { Priority } from "@moc/types/requests/priority";
+import { statusLabel, type RequestCategoryDefinition } from "@moc/types/requests";
 import type { Status } from "@moc/types/requests/status";
 import type { ChangeEvent } from "react";
 import { hasRequestResettableState, type useRequestFilters } from "./use-request-filters";
@@ -36,7 +36,7 @@ function getRequestTypeLabel(category: RequestCategoryDefinition): string { retu
 function getRequestTypeActive(category: RequestCategoryDefinition): boolean { return category.active; }
 
 export function RequestFilterDrawer({ filters, workView, onWorkViewChange, onReset }: RequestFilterDrawerProps) {
-    const { filters: state, togglePriority, toggleStatus, setDateRange, setSort, hasActiveFilters } = filters;
+    const { filters: state, toggleStatus, setDateRange, setSort, hasActiveFilters } = filters;
     const { role, currentWorkspaceId } = useWorkspace();
     const { state: requestState, actions: requestActions } = useRequests();
     const canManageTypes = role?.can_manage_roles === true;
@@ -62,10 +62,6 @@ export function RequestFilterDrawer({ filters, workView, onWorkViewChange, onRes
 
     function handleStatusChange(event: ChangeEvent<HTMLInputElement>) {
         toggleStatus(event.target.value as Status);
-    }
-
-    function handlePriorityChange(event: ChangeEvent<HTMLInputElement>) {
-        togglePriority(event.target.value as Priority);
     }
 
     function handleStartDateChange(event: ChangeEvent<HTMLInputElement>) {
@@ -120,24 +116,9 @@ export function RequestFilterDrawer({ filters, workView, onWorkViewChange, onRes
                                         ))}
                                     </FilterDrawer.Options>
                                 </FilterDrawer.Group>
-                                <FilterDrawer.Group label="Priority">
-                                    <FilterDrawer.Options>
-                                        {(Object.entries(priorityLabel) as [Priority, string][]).map(([key, label]) => (
-                                            <Checkbox
-                                                key={key}
-                                                checked={state.priorities.has(key)}
-                                                value={key}
-                                                onChange={handlePriorityChange}
-                                            >
-                                                <FormLabel label={label} />
-                                            </Checkbox>
-                                        ))}
-                                    </FilterDrawer.Options>
-                                </FilterDrawer.Group>
                                 <FilterDrawer.Group label="Timeline">
                                     <FilterDrawer.Options>
-                                        <label className="space-y-1 *:odd:ml-1">
-                                            <FormLabel label="Start Date" />
+                                        <FormField label="Start Date">
                                             <Input
                                                 aria-label="Request timeline start date"
                                                 name="request-timeline-start"
@@ -145,9 +126,8 @@ export function RequestFilterDrawer({ filters, workView, onWorkViewChange, onRes
                                                 value={state.dateRange.start}
                                                 onChange={handleStartDateChange}
                                             />
-                                        </label>
-                                        <label className="space-y-1 *:odd:ml-1">
-                                            <FormLabel label="End Date" />
+                                        </FormField>
+                                        <FormField label="End Date">
                                             <Input
                                                 aria-label="Request timeline end date"
                                                 name="request-timeline-end"
@@ -155,7 +135,7 @@ export function RequestFilterDrawer({ filters, workView, onWorkViewChange, onRes
                                                 value={state.dateRange.end}
                                                 onChange={handleEndDateChange}
                                             />
-                                        </label>
+                                        </FormField>
                                     </FilterDrawer.Options>
                                 </FilterDrawer.Group>
                             </Tabs.Panel>

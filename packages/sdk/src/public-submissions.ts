@@ -13,7 +13,6 @@ export type PublicVenueAvailability = {
 
 export type PublicRequestInput = {
   title: string;
-  priority: "low" | "medium" | "high" | "urgent";
   category: string;
   dueDate: string | null;
   requestedBy: string;

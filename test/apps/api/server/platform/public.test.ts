@@ -44,9 +44,9 @@ describe("public submission platform operations", () => {
 
     await expect(operations.submitRequest.run(context, {
       workspaceId,
-      data: { title: "Request", priority: "medium", category: "general", dueDate: "2030-10-12T16:00:00.000Z", requestedBy: "Craig", who: "Team", what: "Record", whenText: "Sunday", whereText: "Hall", why: "Archive", how: "Camera", notes: null, flow: null },
+      data: { title: "Request", category: "general", dueDate: "2030-10-12T16:00:00.000Z", requestedBy: "Craig", who: "Team", what: "Record", whenText: "Sunday", whereText: "Hall", why: "Archive", how: "Camera", notes: null, flow: null },
     })).resolves.toEqual({ id: "33333333-3333-4333-8333-333333333333", trackingCode: "REQ-ABC123" })
-    expect(calls[0]?.values[4]).toBe("2030-10-12T16:00:00.000Z")
+    expect(calls[0]?.values[3]).toBe("2030-10-12T16:00:00.000Z")
   })
 
   test("submits Other venue events with no event UUID and retains recurrence JSON", async () => {

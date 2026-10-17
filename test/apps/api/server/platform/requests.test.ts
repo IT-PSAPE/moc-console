@@ -17,7 +17,7 @@ describe("request platform operations", () => {
     const context = makeContext(async (text, params) => {
       sql = text
       values = params ?? []
-      return { rows: [{ id: "request-1", title: "Replace cable", priority: "high", status: "in_progress", category: "event", category_name: "Event", created_at: "created", updated_at: "updated", due_date: "due", requested_by: "Alex", who: "crew", what: "cable", when_text: "soon", where_text: "hall", why: "broken", how: "replace", notes: null, flow: null, content: null }] }
+      return { rows: [{ id: "request-1", title: "Replace cable", status: "in_progress", category: "event", category_name: "Event", created_at: "created", updated_at: "updated", due_date: "due", requested_by: "Alex", who: "crew", what: "cable", when_text: "soon", where_text: "hall", why: "broken", how: "replace", notes: null, flow: null, content: null }] }
     })
 
     const requests = await operations.list.run(context, {})
@@ -75,7 +75,7 @@ describe("request platform operations", () => {
     const updatedAt = new Date("2026-10-04T10:20:30.000Z")
     const dueDate = new Date("2026-10-05T10:15:30.000Z")
     const context = makeContext(async () => ({ rows: [{
-      id: "request-1", title: "Replace cable", priority: "high", status: "in_progress", category: "event",
+      id: "request-1", title: "Replace cable", status: "in_progress", category: "event",
       category_name: "Event", created_at: createdAt, updated_at: updatedAt, due_date: dueDate,
       requested_by: "Alex", who: "crew", what: "cable", when_text: "soon", where_text: "hall",
       why: "broken", how: "replace", notes: null, flow: null, content: null,
@@ -93,14 +93,14 @@ describe("request platform operations", () => {
   test("reloads the saved request with its category instead of referencing an unjoined table in RETURNING", async () => {
     let sql = ""
     const request = {
-      id: "00000000-0000-4000-8000-000000000001", title: "Replace cable", priority: "high", status: "in_progress",
+      id: "00000000-0000-4000-8000-000000000001", title: "Replace cable", status: "in_progress",
       category: "event", createdAt: "2026-10-04T10:15:30.000Z", updatedAt: "2026-10-04T10:20:30.000Z",
       dueDate: "2026-10-05T10:15:30.000Z", requestedBy: "Alex", who: "crew", what: "cable", when: "soon",
       where: "hall", why: "broken", how: "replace",
     }
     const context = makeContext(async (text) => {
       sql = text
-      return { rows: [{ id: request.id, title: request.title, priority: request.priority, status: request.status,
+      return { rows: [{ id: request.id, title: request.title, status: request.status,
         category: request.category, category_name: "Event", created_at: request.createdAt, updated_at: request.updatedAt,
         due_date: request.dueDate, requested_by: request.requestedBy, who: request.who, what: request.what,
         when_text: request.when, where_text: request.where, why: request.why, how: request.how,

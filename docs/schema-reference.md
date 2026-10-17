@@ -56,7 +56,6 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 
 | Name | Allowed values |
 | --- | --- |
-| `request_priority` | `low`, `medium`, `high`, `urgent` |
 | `request_status` | `not_started`, `in_progress`, `completed`, `archived` |
 | `request_category` | `video_production`, `video_shooting`, `graphic_design`, `event`, `education` |
 | `equipment_category` | `camera`, `lens`, `lighting`, `audio`, `support`, `monitor`, `cable`, `accessory` |
@@ -129,7 +128,6 @@ Additional constraint:
 | `id` | `uuid` | `gen_random_uuid()` | No | Yes | Primary key. |
 | `workspace_id` | `uuid` | None | No | No | Foreign key to `workspaces.id`. |
 | `title` | `text` | None | No | No | Request title. |
-| `priority` | `request_priority` | None | No | No | Enum-backed priority. |
 | `status` | `request_status` | `not_started` | No | No | Enum-backed request state. |
 | `category` | `request_category` | None | No | No | Request category. |
 | `created_at` | `timestamptz` | `now()` | No | No | Creation timestamp. |

@@ -1,5 +1,5 @@
 import type { BookingStatus, TrackingBookingItem } from "./booking"
-import type { RequestPriority, RequestStatus } from "./request"
+import type { RequestStatus } from "./request"
 import type { VenueBookingOccurrence, VenueBookingPhase, VenueRecurrence } from "@moc/types/venues"
 
 type TrackingBase = {
@@ -13,7 +13,6 @@ type TrackingBase = {
 export type TrackingRequestResult = TrackingBase & {
   type: "request"
   status: RequestStatus
-  priority: RequestPriority
   category: string
   categoryName: string
   requestedBy: string

@@ -1,6 +1,5 @@
 const TRACKING_CODE_PATTERN = /^(REQ|BKG|VEN)-(?:[A-F0-9]{6}|[A-F0-9]{12})$/
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-const PRIORITIES = new Set(["low", "medium", "high", "urgent"])
 
 export type SubmissionType = "request" | "booking" | "venue_booking"
 
@@ -62,9 +61,9 @@ function prefixMatches(type: SubmissionType, trackingCode: string): boolean {
 }
 
 function validRequestData(data: Record<string, unknown>): boolean {
-  const keys = ["title", "requestedBy", "priority", "dueDate", "category", "who", "what", "whenText", "whereText", "why", "how", "notes", "flow"]
+  const keys = ["title", "requestedBy", "dueDate", "category", "who", "what", "whenText", "whereText", "why", "how", "notes", "flow"]
   return hasExactKeys(data, keys)
-    && isText(data.title, 120) && isText(data.requestedBy, 200) && typeof data.priority === "string" && PRIORITIES.has(data.priority)
+    && isText(data.title, 120) && isText(data.requestedBy, 200)
     && isIsoDate(data.dueDate) && isText(data.category, 120) && isText(data.who, 4000) && isText(data.what, 4000)
     && isText(data.whenText, 4000) && isText(data.whereText, 4000) && isText(data.why, 4000) && isText(data.how, 4000)
     && isText(data.notes, 10000, false) && isText(data.flow, 10000, false)

@@ -5,10 +5,9 @@ import { Label, Paragraph, Title } from '@moc/ui/components/display/text'
 import { Hash, Package, User, CalendarDays, Flag, Tag, CalendarCheck, StickyNote, Building2, Repeat2 } from 'lucide-react'
 import { formatVenueRecurrenceEndLabel, formatVenueRecurrenceLabel, venueBookingPhaseLabel, venueBookingPhaseColor } from '@moc/types/venues'
 import type { VenueBookingPhase } from '@moc/types/venues'
-import { PRIORITY_LABELS, PRIORITY_COLORS, STATUS_LABELS, STATUS_COLORS } from '../constants'
+import { STATUS_LABELS, STATUS_COLORS } from '../constants'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import type { TrackingResult as TrackingResultType } from '@/types/tracking'
-import type { RequestPriority } from '@/types/request'
 
 const trackingTypeLabels: Record<TrackingResultType['type'], string> = {
   request: 'Request',
@@ -40,11 +39,6 @@ export function TrackingResult({ data }: { data: TrackingResultType }) {
                 </MetaRow>
               )}
               <MetaRow icon={<User />} label="Requested by">{data.requestedBy}</MetaRow>
-              {data.priority && (
-                <MetaRow icon={<Flag />} label="Priority">
-                  <Badge label={PRIORITY_LABELS[data.priority as RequestPriority] ?? data.priority} color={PRIORITY_COLORS[data.priority as RequestPriority] ?? 'gray'} />
-                </MetaRow>
-              )}
               {data.category && (
                 <MetaRow icon={<Tag />} label="Category">
                   <Badge label={data.categoryName} color="blue" variant="outline" />

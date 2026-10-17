@@ -57,6 +57,6 @@ export function filterRequestsForWorkView(requests: Request[], view: RequestWork
     const dueDay = calendarDay(request.dueDate, timezone);
     if (dueDay === null) return false;
     if (view === "due-soon") return dueDay >= today && dueDay < nextWeek;
-    return dueDay < today || request.priority === "high";
+    return dueDay < today;
   });
 }

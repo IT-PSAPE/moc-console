@@ -6,7 +6,6 @@ function makeRequest(id: string, category: string, categoryName: string): Reques
   return {
     id,
     title: id,
-    priority: "medium",
     status: "in_progress",
     category,
     categoryName,
@@ -38,7 +37,6 @@ describe("request type filtering", () => {
     const defaults: RequestFilters = {
       search: "",
       category: null,
-      priorities: new Set(),
       statuses: new Set(["not_started", "in_progress"]),
       dateRange: { start: "", end: "" },
       sortField: "createdAt",
@@ -55,7 +53,6 @@ describe("request type filtering", () => {
       workspaceA: {
         search: "",
         category: "custom-type-a",
-        priorities: new Set(),
         statuses: new Set(["not_started", "in_progress"]),
         dateRange: { start: "", end: "" },
         sortField: "createdAt",

@@ -36,7 +36,6 @@ export const SAMPLE_TOKENS: Record<MessageType, TokenValues> = {
   "request.created": {
     title: "Lower-third graphic for guest speaker",
     status: "not started",
-    priority: "High",
     category: "Graphics",
     requesterName: "Tendai M.",
     requestedBy: "Tendai M.",

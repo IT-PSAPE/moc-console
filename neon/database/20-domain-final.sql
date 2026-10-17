@@ -106,18 +106,6 @@ CREATE TYPE public.request_category AS ENUM (
 
 
 --
--- Name: request_priority; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE public.request_priority AS ENUM (
-    'low',
-    'medium',
-    'high',
-    'urgent'
-);
-
-
---
 -- Name: request_status; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -738,7 +726,7 @@ DECLARE
 BEGIN
   SELECT jsonb_build_object(
     'type', 'request', 'id', request.id, 'trackingCode', request.tracking_code,
-    'title', request.title, 'status', request.status::text, 'priority', request.priority::text,
+    'title', request.title, 'status', request.status::text,
     'category', request.category, 'categoryName', category.name,
     'requestedBy', request.requested_by, 'dueDate', request.due_date,
     'who', request.who, 'what', request.what, 'whenText', request.when_text,
@@ -909,7 +897,6 @@ BEGIN
     v_change_summary := concat_ws(', ',
       CASE WHEN v_request.title IS DISTINCT FROM btrim(p_data->>'title') THEN 'title' END,
       CASE WHEN v_request.requested_by IS DISTINCT FROM btrim(p_data->>'requestedBy') THEN 'requester' END,
-      CASE WHEN v_request.priority::text IS DISTINCT FROM p_data->>'priority' THEN 'priority' END,
       CASE WHEN v_request.category IS DISTINCT FROM p_data->>'category' THEN 'category' END,
       CASE WHEN v_request.due_date IS DISTINCT FROM (p_data->>'dueDate')::timestamptz THEN 'due date' END,
       CASE WHEN v_request.who IS DISTINCT FROM btrim(p_data->>'who') OR v_request.what IS DISTINCT FROM btrim(p_data->>'what')
@@ -920,7 +907,6 @@ BEGIN
 
     UPDATE public.requests SET
       title = btrim(p_data->>'title'), requested_by = btrim(p_data->>'requestedBy'),
-      priority = (p_data->>'priority')::public.request_priority,
       category = p_data->>'category', due_date = (p_data->>'dueDate')::timestamptz,
       who = btrim(p_data->>'who'), what = btrim(p_data->>'what'), when_text = btrim(p_data->>'whenText'),
       where_text = btrim(p_data->>'whereText'), why = btrim(p_data->>'why'), how = btrim(p_data->>'how'),
@@ -1243,7 +1229,6 @@ CREATE TABLE public.requests (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     workspace_id uuid NOT NULL,
     title text NOT NULL,
-    priority public.request_priority NOT NULL,
     status public.request_status DEFAULT 'not_started'::public.request_status NOT NULL,
     category text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -2880,7 +2865,6 @@ BEGIN
     'trackingCode', r.tracking_code,
     'title', r.title,
     'status', r.status::text,
-    'priority', r.priority::text,
     'category', r.category::text,
     'requestedBy', r.requested_by,
     'dueDate', r.due_date,
@@ -3002,10 +2986,10 @@ $$;
 
 
 --
--- Name: public_submit_request(uuid, text, public.request_priority, text, timestamp with time zone, text, text, text, text, text, text, text, text, text, text); Type: FUNCTION; Schema: public; Owner: -
+-- Name: public_submit_request(uuid, text, text, timestamp with time zone, text, text, text, text, text, text, text, text, text, text); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.public_submit_request(p_workspace_id uuid, p_title text, p_priority public.request_priority, p_category text, p_due_date timestamp with time zone, p_requested_by text, p_who text, p_what text, p_when_text text, p_where_text text, p_why text, p_how text, p_notes text DEFAULT NULL::text, p_flow text DEFAULT NULL::text, p_content text DEFAULT NULL::text) RETURNS jsonb
+CREATE FUNCTION public.public_submit_request(p_workspace_id uuid, p_title text, p_category text, p_due_date timestamp with time zone, p_requested_by text, p_who text, p_what text, p_when_text text, p_where_text text, p_why text, p_how text, p_notes text DEFAULT NULL::text, p_flow text DEFAULT NULL::text, p_content text DEFAULT NULL::text) RETURNS jsonb
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'pg_catalog', 'public'
     AS $$
@@ -3034,10 +3018,10 @@ BEGIN
   END IF;
 
   INSERT INTO public.requests (
-    workspace_id, title, priority, category, due_date, requested_by,
+    workspace_id, title, category, due_date, requested_by,
     who, what, when_text, where_text, why, how, notes, flow, content
   ) VALUES (
-    p_workspace_id, btrim(p_title), p_priority, p_category, p_due_date, btrim(p_requested_by),
+    p_workspace_id, btrim(p_title), p_category, p_due_date, btrim(p_requested_by),
     btrim(p_who), btrim(p_what), btrim(p_when_text), btrim(p_where_text), btrim(p_why), btrim(p_how),
     nullif(btrim(coalesce(p_notes, '')), ''), nullif(btrim(coalesce(p_flow, '')), ''), p_content
   )
@@ -9166,13 +9150,13 @@ GRANT ALL ON FUNCTION public.public_submit_booking_batch(p_workspace_id uuid, p_
 
 
 --
--- Name: FUNCTION public_submit_request(p_workspace_id uuid, p_title text, p_priority public.request_priority, p_category text, p_due_date timestamp with time zone, p_requested_by text, p_who text, p_what text, p_when_text text, p_where_text text, p_why text, p_how text, p_notes text, p_flow text, p_content text); Type: ACL; Schema: public; Owner: -
+-- Name: FUNCTION public_submit_request(p_workspace_id uuid, p_title text, p_category text, p_due_date timestamp with time zone, p_requested_by text, p_who text, p_what text, p_when_text text, p_where_text text, p_why text, p_how text, p_notes text, p_flow text, p_content text); Type: ACL; Schema: public; Owner: -
 --
 
-REVOKE ALL ON FUNCTION public.public_submit_request(p_workspace_id uuid, p_title text, p_priority public.request_priority, p_category text, p_due_date timestamp with time zone, p_requested_by text, p_who text, p_what text, p_when_text text, p_where_text text, p_why text, p_how text, p_notes text, p_flow text, p_content text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.public_submit_request(p_workspace_id uuid, p_title text, p_priority public.request_priority, p_category text, p_due_date timestamp with time zone, p_requested_by text, p_who text, p_what text, p_when_text text, p_where_text text, p_why text, p_how text, p_notes text, p_flow text, p_content text) TO moc_public;
-GRANT ALL ON FUNCTION public.public_submit_request(p_workspace_id uuid, p_title text, p_priority public.request_priority, p_category text, p_due_date timestamp with time zone, p_requested_by text, p_who text, p_what text, p_when_text text, p_where_text text, p_why text, p_how text, p_notes text, p_flow text, p_content text) TO moc_app;
-GRANT ALL ON FUNCTION public.public_submit_request(p_workspace_id uuid, p_title text, p_priority public.request_priority, p_category text, p_due_date timestamp with time zone, p_requested_by text, p_who text, p_what text, p_when_text text, p_where_text text, p_why text, p_how text, p_notes text, p_flow text, p_content text) TO moc_worker;
+REVOKE ALL ON FUNCTION public.public_submit_request(p_workspace_id uuid, p_title text, p_category text, p_due_date timestamp with time zone, p_requested_by text, p_who text, p_what text, p_when_text text, p_where_text text, p_why text, p_how text, p_notes text, p_flow text, p_content text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.public_submit_request(p_workspace_id uuid, p_title text, p_category text, p_due_date timestamp with time zone, p_requested_by text, p_who text, p_what text, p_when_text text, p_where_text text, p_why text, p_how text, p_notes text, p_flow text, p_content text) TO moc_public;
+GRANT ALL ON FUNCTION public.public_submit_request(p_workspace_id uuid, p_title text, p_category text, p_due_date timestamp with time zone, p_requested_by text, p_who text, p_what text, p_when_text text, p_where_text text, p_why text, p_how text, p_notes text, p_flow text, p_content text) TO moc_app;
+GRANT ALL ON FUNCTION public.public_submit_request(p_workspace_id uuid, p_title text, p_category text, p_due_date timestamp with time zone, p_requested_by text, p_who text, p_what text, p_when_text text, p_where_text text, p_why text, p_how text, p_notes text, p_flow text, p_content text) TO moc_worker;
 
 
 --

@@ -63,7 +63,6 @@ describe('meaningful submission drafts', () => {
     const data = { ...getEmptyRequestDraft(), category: 'production', title: '   ' }
 
     expect(hasMeaningfulRequestDraft(data, 'production')).toBe(false)
-    expect(hasMeaningfulRequestDraft({ ...data, priority: 'high' }, 'production')).toBe(true)
     expect(hasMeaningfulRequestDraft({ ...data, title: 'Sunday service' }, 'production')).toBe(true)
   })
 
@@ -97,6 +96,19 @@ describe('submission draft storage', () => {
     expect(loadSubmissionDraft('request')).toBeNull()
     expect(loadSubmissionDraft('booking')).toEqual({ step: 2, data: bookingData })
     expect(loadSubmissionDraft('venue')).toBeNull()
+  })
+
+  test('restores current request fields while discarding fields from older drafts', () => {
+    const currentData = { ...getEmptyRequestDraft(), title: 'Sunday service', category: 'production', notes: 'Use the side entrance' }
+    storage.setItem('moc-request-public-draft-request-v2', JSON.stringify({
+      step: 3,
+      data: { ...currentData, priority: 'urgent' },
+    }))
+
+    const restored = loadSubmissionDraft('request')
+
+    expect(restored).toEqual({ step: 3, data: currentData })
+    expect(restored?.data).not.toHaveProperty('priority')
   })
 
   test('rejects malformed recurrence rules instead of restoring an unusable draft', () => {

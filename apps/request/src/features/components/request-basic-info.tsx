@@ -4,12 +4,10 @@ import { FormLabel } from '@moc/ui/components/form/form-label'
 import { FieldError } from '@/features/components/field-error'
 import type { StepValidationErrors } from '@/features/hooks/use-step-validation'
 import { SelectField } from '@moc/ui/components/form/select-field'
-import { PRIORITIES, PRIORITY_LABELS } from '../constants'
 import type { RequestFormData } from '@/types/request'
 import type { RequestCategoryOption } from '@/types/tracking'
 import type { ChangeEvent } from 'react'
 
-const priorityItems = PRIORITIES.map((priority) => ({ label: PRIORITY_LABELS[priority], value: priority }))
 type RequestBasicInfoProps = {
   data: RequestFormData
   categories: RequestCategoryOption[]
@@ -24,10 +22,6 @@ export function RequestBasicInfo({ data, categories, onChange, errors }: Request
 
   function handleRequestedByChange(event: ChangeEvent<HTMLInputElement>) {
     onChange('requestedBy', event.target.value)
-  }
-
-  function handlePriorityChange(value: string) {
-    onChange('priority', value)
   }
 
   function handleCategoryChange(value: string) {
@@ -52,29 +46,16 @@ export function RequestBasicInfo({ data, categories, onChange, errors }: Request
         <FieldError id="requested-by-error" message={errors['requested-by']} />
       </div>
 
-      <div className="grid grid-cols-2 gap-5 portrait:grid-cols-1">
-        <div className="flex flex-col gap-1.5 w-full">
-          <FormLabel label="Priority" required />
-          <SelectField
-            label="Priority"
-            name="priority"
-            value={data.priority}
-            items={priorityItems}
-            onValueChange={handlePriorityChange}
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5 w-full">
-          <FormLabel label="Category" required />
-          <SelectField
-            label="Category"
-            name="category"
-            value={data.category}
-            items={categories}
-            onValueChange={handleCategoryChange}
-          />
-          <FieldError id="category-error" message={errors.category} />
-        </div>
+      <div className="flex flex-col gap-1.5">
+        <FormLabel label="Category" required />
+        <SelectField
+          label="Category"
+          name="category"
+          value={data.category}
+          items={categories}
+          onValueChange={handleCategoryChange}
+        />
+        <FieldError id="category-error" message={errors.category} />
       </div>
 
       <DateTimeFields

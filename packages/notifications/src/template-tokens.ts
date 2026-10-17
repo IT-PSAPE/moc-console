@@ -46,7 +46,7 @@ function specs(...names: string[]): readonly TokenSpec[] {
 // keyboard now carries that Open button instead, but a workspace that
 // customised its template around {{linkUrl}} keeps working.
 const REQUEST_TOKENS = specs(
-  "title", "status", "priority", "category", "requesterName", "requestedBy",
+  "title", "status", "category", "requesterName", "requestedBy",
   "dueDate", "createdAt", "updatedAt", "trackingCode",
   "who", "what", "whenText", "whereText", "why", "how", "notes", "flow",
   "linkUrl",

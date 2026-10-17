@@ -1,6 +1,5 @@
 import { useMemo, useState, type SetStateAction } from "react";
 import type { Request } from "@moc/types/requests";
-import type { Priority } from "@moc/types/requests/priority";
 import type { Status } from "@moc/types/requests/status";
 import { areSetsEqual } from "@/utils/sets";
 import { useQueryText } from "@/hooks/use-query-text";
@@ -14,7 +13,6 @@ export type SortDirection = "asc" | "desc";
 export type RequestFilters = {
     search: string;
     category: string | null;
-    priorities: Set<Priority>;
     statuses: Set<Status>;
     dateRange: { start: string; end: string };
     sortField: SortField;
@@ -24,7 +22,6 @@ export type RequestFilters = {
 const defaultFilters: RequestFilters = {
     search: "",
     category: null,
-    priorities: new Set(),
     statuses: new Set<Status>(["not_started", "in_progress"]),
     dateRange: { start: "", end: "" },
     sortField: "createdAt",
@@ -74,11 +71,6 @@ export function useRequestFilters(requests: Request[]) {
             );
         }
 
-        // Priority filter
-        if (filters.priorities.size > 0) {
-            result = result.filter((r) => filters.priorities.has(r.priority));
-        }
-
         // Date range
         if (filters.dateRange.start) {
             const start = new Date(filters.dateRange.start);
@@ -123,15 +115,6 @@ export function useRequestFilters(requests: Request[]) {
         setFilters((f) => ({ ...f, category }));
     }
 
-    function togglePriority(priority: Priority) {
-        setFilters((f) => {
-            const next = new Set(f.priorities);
-            if (next.has(priority)) next.delete(priority);
-            else next.add(priority);
-            return { ...f, priorities: next };
-        });
-    }
-
     function toggleStatus(status: Status) {
         setFilters((f) => {
             const next = new Set(f.statuses);
@@ -156,7 +139,6 @@ export function useRequestFilters(requests: Request[]) {
 
     const hasActiveFilters =
         filters.category !== null ||
-        filters.priorities.size > 0 ||
         !areSetsEqual(filters.statuses, defaultFilters.statuses) ||
         filters.dateRange.start !== "" ||
         filters.dateRange.end !== "";
@@ -173,7 +155,6 @@ export function useRequestFilters(requests: Request[]) {
         includesArchived,
         setSearch,
         setCategory,
-        togglePriority,
         toggleStatus,
         setDateRange,
         setSort,

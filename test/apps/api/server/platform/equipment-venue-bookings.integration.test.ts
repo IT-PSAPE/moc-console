@@ -189,7 +189,6 @@ suite("Task 6 operations against the local Neon PostgreSQL schema", () => {
     const request = {
       id: requestId,
       title: "Integration request",
-      priority: "medium",
       status: "not_started",
       category: "event",
       categoryName: "Event",

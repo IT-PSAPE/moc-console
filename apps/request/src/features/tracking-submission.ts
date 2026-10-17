@@ -48,7 +48,6 @@ export function canRequesterModify(result: TrackingRequestResult | TrackingBooki
 export function toRequestEditData(result: TrackingRequestResult): RequestFormData {
   return {
     title: result.title,
-    priority: result.priority,
     category: result.category,
     dueDate: formatUtcIsoForBrowserDateTimeInput(result.dueDate),
     requestedBy: result.requestedBy,

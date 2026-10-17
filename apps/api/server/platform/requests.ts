@@ -10,7 +10,7 @@ function isoTimestamp(value: DbTimestamp): string {
 }
 
 type RequestRow = {
-  id: string; title: string; priority: Request["priority"]; status: Status; category: string
+  id: string; title: string; status: Status; category: string
   created_at: DbTimestamp; updated_at: DbTimestamp; due_date: DbTimestamp; requested_by: string
   who: string; what: string; when_text: string; where_text: string; why: string; how: string
   notes: string | null; flow: string | null; content: string | null; category_name: string | null
@@ -27,14 +27,14 @@ type HistoryRow = {
   actor_surname: string | null; actor_avatar_url: string | null
 }
 
-const REQUEST_FIELDS = `requests.id, requests.title, requests.priority, requests.status, requests.category,
+const REQUEST_FIELDS = `requests.id, requests.title, requests.status, requests.category,
   requests.created_at, requests.updated_at, requests.due_date, requests.requested_by, requests.who,
   requests.what, requests.when_text, requests.where_text, requests.why, requests.how, requests.notes,
   requests.flow, requests.content, request_categories.name AS category_name`
 
 function mapRequest(row: RequestRow): Request {
   return {
-    id: row.id, title: row.title, priority: row.priority, status: row.status, category: row.category,
+    id: row.id, title: row.title, status: row.status, category: row.category,
     categoryName: getCategoryLabel(row.category, row.category_name ?? undefined), createdAt: isoTimestamp(row.created_at),
     updatedAt: isoTimestamp(row.updated_at), dueDate: isoTimestamp(row.due_date), requestedBy: row.requested_by, who: row.who,
     what: row.what, when: row.when_text, where: row.where_text, why: row.why, how: row.how,
@@ -63,13 +63,11 @@ function mapComment(row: HistoryRow): RequestComment {
 }
 
 function requestInput(value: unknown): Request {
-  const input = objectInput(value, ["id", "title", "priority", "status", "category", "categoryName", "createdAt", "updatedAt", "dueDate", "requestedBy", "who", "what", "when", "where", "why", "how", "notes", "flow", "content"])
-  const priority = stringField(input, "priority")
+  const input = objectInput(value, ["id", "title", "status", "category", "categoryName", "createdAt", "updatedAt", "dueDate", "requestedBy", "who", "what", "when", "where", "why", "how", "notes", "flow", "content"])
   const status = stringField(input, "status")
-  if (!["low", "medium", "high"].includes(priority)) throw new PlatformInputError("Invalid priority")
   if (!["not_started", "in_progress", "completed", "archived"].includes(status)) throw new PlatformInputError("Invalid status")
   return {
-    id: uuidField(input, "id"), title: stringField(input, "title"), priority: priority as Request["priority"],
+    id: uuidField(input, "id"), title: stringField(input, "title"),
     status: status as Status, category: stringField(input, "category"), createdAt: stringField(input, "createdAt"),
     updatedAt: stringField(input, "updatedAt"), dueDate: stringField(input, "dueDate"), requestedBy: stringField(input, "requestedBy"),
     who: stringField(input, "who"), what: stringField(input, "what"), when: stringField(input, "when"),
@@ -131,16 +129,16 @@ export const operations: Record<string, PlatformOperation> = {
     const input = objectInput(value, ["request"])
     const request = requestInput(input.request)
     const result = await db.query<RequestRow>(`WITH saved AS (INSERT INTO requests
-      (id, workspace_id, title, priority, status, category, created_at, updated_at, due_date, requested_by,
+      (id, workspace_id, title, status, category, created_at, updated_at, due_date, requested_by,
        who, what, when_text, where_text, why, how, notes, flow, content)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
-      ON CONFLICT (id) DO UPDATE SET title=EXCLUDED.title, priority=EXCLUDED.priority, status=EXCLUDED.status,
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+      ON CONFLICT (id) DO UPDATE SET title=EXCLUDED.title, status=EXCLUDED.status,
        category=EXCLUDED.category, updated_at=now(), due_date=EXCLUDED.due_date, requested_by=EXCLUDED.requested_by,
        who=EXCLUDED.who, what=EXCLUDED.what, when_text=EXCLUDED.when_text, where_text=EXCLUDED.where_text,
        why=EXCLUDED.why, how=EXCLUDED.how, notes=EXCLUDED.notes, flow=EXCLUDED.flow, content=EXCLUDED.content,
        created_at=EXCLUDED.created_at WHERE requests.workspace_id=$2
       RETURNING *) SELECT ${REQUEST_FIELDS} FROM saved AS requests
-      LEFT JOIN request_categories ON request_categories.workspace_id=requests.workspace_id AND request_categories.key=requests.category`, [request.id, workspaceId, request.title, request.priority, request.status,
+      LEFT JOIN request_categories ON request_categories.workspace_id=requests.workspace_id AND request_categories.key=requests.category`, [request.id, workspaceId, request.title, request.status,
         request.category, request.createdAt, request.updatedAt, request.dueDate, request.requestedBy, request.who,
         request.what, request.when, request.where, request.why, request.how, request.notes ?? null, request.flow ?? null, request.content ?? null])
     if (!result.rows[0]) throw new Error("Request could not be saved")

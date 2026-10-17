@@ -1,11 +1,9 @@
-export type RequestPriority = 'low' | 'medium' | 'high' | 'urgent'
 export type RequestStatus = 'not_started' | 'in_progress' | 'completed' | 'archived'
 export type RequestCategory = string
 
 export type RequestFormData = {
   title: string
   requestedBy: string
-  priority: RequestPriority
   dueDate: string
   category: RequestCategory
   who: string

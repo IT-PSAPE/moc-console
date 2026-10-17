@@ -95,13 +95,11 @@ async function getVenueAvailability(context: Parameters<PlatformOperation["run"]
 
 async function submitRequest(context: Parameters<PlatformOperation["run"]>[0], raw: unknown): Promise<unknown> {
   const input = workspaceInput(raw, ["data"]);
-  const data = objectInput(input.data, ["title", "priority", "category", "dueDate", "requestedBy", "who", "what", "whenText", "whereText", "why", "how", "notes", "flow"]);
-  const priority = stringField(data, "priority");
-  if (!["low", "medium", "high", "urgent"].includes(priority)) throw new PlatformInputError("Invalid priority");
+  const data = objectInput(input.data, ["title", "category", "dueDate", "requestedBy", "who", "what", "whenText", "whereText", "why", "how", "notes", "flow"]);
   const dueDate = data.dueDate === null ? null : validIso(data.dueDate, "dueDate");
   const result = await context.db.query<{ result: unknown }>(
-    "SELECT public.public_submit_request($1::uuid, $2::text, $3::public.request_priority, $4::text, $5::timestamptz, $6::text, $7::text, $8::text, $9::text, $10::text, $11::text, $12::text, $13::text, $14::text) AS result",
-    [input.workspaceId, stringField(data, "title"), priority, stringField(data, "category"), dueDate, stringField(data, "requestedBy"), stringField(data, "who"), stringField(data, "what"), stringField(data, "whenText"), stringField(data, "whereText"), stringField(data, "why"), stringField(data, "how"), textOrNull(data, "notes"), textOrNull(data, "flow")],
+    "SELECT public.public_submit_request($1::uuid, $2::text, $3::text, $4::timestamptz, $5::text, $6::text, $7::text, $8::text, $9::text, $10::text, $11::text, $12::text, $13::text) AS result",
+    [input.workspaceId, stringField(data, "title"), stringField(data, "category"), dueDate, stringField(data, "requestedBy"), stringField(data, "who"), stringField(data, "what"), stringField(data, "whenText"), stringField(data, "whereText"), stringField(data, "why"), stringField(data, "how"), textOrNull(data, "notes"), textOrNull(data, "flow")],
   );
   const row = jsonRecord(result.rows[0]?.result, "Request submission returned an invalid result");
   return { id: row.id, trackingCode: row.tracking_code };

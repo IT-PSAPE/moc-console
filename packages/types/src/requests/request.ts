@@ -1,11 +1,9 @@
-import type { Priority } from "./priority.js";
 import type { Status } from "./status.js";
 import type { Category } from "./category.js";
 
 export type Request = {
   id: string;
   title: string;
-  priority: Priority;
   status: Status;
   category: Category;
   categoryName?: string;

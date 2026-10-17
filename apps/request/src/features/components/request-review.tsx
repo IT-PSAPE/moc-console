@@ -2,9 +2,8 @@ import { Badge } from '@moc/ui/components/display/badge'
 import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Divider } from '@moc/ui/components/display/divider'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
-import { User, FileText, Flag, CalendarDays, Tag, Users, MapPin, Clock, Target, Lightbulb, Wrench, StickyNote, GitBranch } from 'lucide-react'
-import { PRIORITY_LABELS, PRIORITY_COLORS } from '../constants'
-import type { RequestFormData, RequestPriority } from '@/types/request'
+import { User, FileText, CalendarDays, Tag, Users, MapPin, Clock, Target, Lightbulb, Wrench, StickyNote, GitBranch } from 'lucide-react'
+import type { RequestFormData } from '@/types/request'
 import { formatDateTime } from '@/lib/utils'
 
 export function RequestReview({ data, categoryName }: { data: RequestFormData; categoryName: string }) {
@@ -18,9 +17,6 @@ export function RequestReview({ data, categoryName }: { data: RequestFormData; c
           </MetaRow>
           <MetaRow icon={<User />} label="Requested by">
             <Label.sm>{data.requestedBy}</Label.sm>
-          </MetaRow>
-          <MetaRow icon={<Flag />} label="Priority">
-            <Badge label={PRIORITY_LABELS[data.priority]} color={PRIORITY_COLORS[data.priority as RequestPriority]} />
           </MetaRow>
           <MetaRow icon={<Tag />} label="Category">
             <Badge label={categoryName || data.category} color="blue" variant="outline" />

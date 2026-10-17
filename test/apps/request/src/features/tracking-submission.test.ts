@@ -36,7 +36,6 @@ describe("tracking result edit data", () => {
       trackingCode: "REQ-123456789ABC",
       title: "Recap video",
       status: "not_started",
-      priority: "high",
       category: "video_production",
       categoryName: "Video Production",
       requestedBy: "Tendai",
@@ -53,7 +52,6 @@ describe("tracking result edit data", () => {
       updatedAt: "2026-09-19T08:00:00.000Z",
     }), {
       title: "Recap video",
-      priority: "high",
       category: "video_production",
       dueDate: "2026-10-01T12:00",
       requestedBy: "Tendai",
@@ -126,7 +124,7 @@ describe("canRequesterModify", () => {
     const base = {
       id: "request-1", trackingCode: "REQ-123456789ABC", title: "Request",
       createdAt: "2026-09-19T08:00:00.000Z", updatedAt: "2026-09-19T08:00:00.000Z",
-      priority: "medium" as const, category: "event", categoryName: "Event", requestedBy: "Craig",
+      category: "event", categoryName: "Event", requestedBy: "Craig",
       dueDate: "2026-10-01T12:00:00.000Z", who: "Team", what: "Record", whenText: "Sunday",
       whereText: "Hall", why: "Archive", how: "Camera", notes: null, flow: null,
     }

@@ -6,7 +6,6 @@ function makeRequest(id: string, overrides: Partial<Request> = {}): Request {
   return {
     id,
     title: id,
-    priority: "medium",
     status: "in_progress",
     category: "event",
     createdAt: "2026-10-01T10:00:00.000Z",
@@ -51,16 +50,16 @@ describe("request work views", () => {
     expect(filterRequestsForWorkView(requests, "due-soon", new Set(), now).map((request) => request.id)).toEqual(["today", "day-six"]);
   });
 
-  test("attention includes overdue or high-priority unfinished requests and skips invalid dates and closed requests", () => {
+  test("attention includes overdue unfinished requests and skips invalid dates and closed requests", () => {
     const requests = [
       makeRequest("overdue", { dueDate: localDate(-1, now) }),
-      makeRequest("high-priority", { priority: "high", dueDate: localDate(2, now) }),
-      makeRequest("invalid", { priority: "low", dueDate: "not-a-date" }),
-      makeRequest("completed-high", { priority: "high", status: "completed", dueDate: localDate(2, now) }),
+      makeRequest("future", { dueDate: localDate(2, now) }),
+      makeRequest("invalid", { dueDate: "not-a-date" }),
+      makeRequest("completed", { status: "completed", dueDate: localDate(2, now) }),
       makeRequest("archived-overdue", { status: "archived", dueDate: localDate(-1, now) }),
     ];
 
-    expect(filterRequestsForWorkView(requests, "attention", new Set(), now).map((request) => request.id)).toEqual(["overdue", "high-priority"]);
+    expect(filterRequestsForWorkView(requests, "attention", new Set(), now).map((request) => request.id)).toEqual(["overdue"]);
   });
 
   test("assigned view matches ids and keeps completed and archived requests out", () => {

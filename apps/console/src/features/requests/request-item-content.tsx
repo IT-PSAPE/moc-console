@@ -1,7 +1,7 @@
-import { CalendarFold, CircleAlert, Tag } from 'lucide-react'
+import { CalendarFold, Tag } from 'lucide-react'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import type { Request } from '@moc/types/requests'
-import { getCategoryLabel, priorityLabel } from '@moc/types/requests'
+import { getCategoryLabel } from '@moc/types/requests'
 import { formatUtcIsoInBrowserTimeZone } from '@moc/utils/browser-date-time'
 
 export function RequestItemContent({ request }: { request: Request }) {
@@ -10,8 +10,9 @@ export function RequestItemContent({ request }: { request: Request }) {
             <ListItemCard.Content>
                 <ListItemCard.Title>{request.title}</ListItemCard.Title>
                 <ListItemCard.Subtitle>{request.what}</ListItemCard.Subtitle>
+            </ListItemCard.Content>
+            <ListItemCard.Trailing>
                 <ListItemCard.Meta>
-                    <ListItemCard.MetaItem className={request.priority === 'urgent' ? 'text-error' : undefined} icon={<CircleAlert />}>{priorityLabel[request.priority]}</ListItemCard.MetaItem>
                     <ListItemCard.MetaItem icon={<Tag />}>{getCategoryLabel(request.category, request.categoryName)}</ListItemCard.MetaItem>
                     {request.dueDate && (
                         <ListItemCard.MetaItem icon={<CalendarFold />}>
@@ -19,7 +20,7 @@ export function RequestItemContent({ request }: { request: Request }) {
                         </ListItemCard.MetaItem>
                     )}
                 </ListItemCard.Meta>
-            </ListItemCard.Content>
+            </ListItemCard.Trailing>
         </ListItemCard.Root>
     )
 }

@@ -26,7 +26,6 @@ const requestSubmission: PublicSubmission = {
   status: "not_started",
   createdAt: "2026-09-18T10:00:00.000Z",
   updatedAt,
-  priority: "medium",
   category: "event",
   categoryName: "Event",
   requestedBy: "Craig",
@@ -89,7 +88,6 @@ function requestUpdateData(): Record<string, unknown> {
   return {
     title: "Updated request",
     requestedBy: "Craig",
-    priority: "high",
     dueDate: "2026-09-25T10:00:00.000Z",
     category: "event",
     who: "Team",
