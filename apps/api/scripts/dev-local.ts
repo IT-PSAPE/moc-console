@@ -122,28 +122,15 @@ function requestStatus(error: unknown): number {
 }
 
 function createResponse(response: ServerResponse): LocalApiResponse {
-  const apiResponse: LocalApiResponse = {
-    get statusCode() { return response.statusCode },
-    set statusCode(value: number) { response.statusCode = value },
-    get writableEnded() { return response.writableEnded },
-    status(code) {
-      response.statusCode = code
-      return apiResponse
-    },
-    json(body) {
-      if (!response.hasHeader("Content-Type")) response.setHeader("Content-Type", "application/json; charset=utf-8")
-      response.end(JSON.stringify(body) ?? "null")
-    },
-    setHeader(name, value) { response.setHeader(name, value) },
-    end(body) {
-      if (body === undefined) response.end()
-      else if (typeof body === "string" || body instanceof Uint8Array) response.end(body)
-      else response.end(String(body))
-    },
-    write(chunk) { return response.write(chunk) },
-    once(event, listener) { return response.once(event, listener) },
-    on(event, listener) { return response.on(event, listener) },
-    flushHeaders() { response.flushHeaders() },
+  // Keep the native writable stream intact for media pipelines and SSE.
+  const apiResponse = response as ServerResponse & LocalApiResponse
+  apiResponse.status = function status(code: number): LocalApiResponse {
+    response.statusCode = code
+    return apiResponse
+  }
+  apiResponse.json = function json(body: unknown): void {
+    if (!response.hasHeader("Content-Type")) response.setHeader("Content-Type", "application/json; charset=utf-8")
+    response.end(JSON.stringify(body) ?? "null")
   }
   return apiResponse
 }
