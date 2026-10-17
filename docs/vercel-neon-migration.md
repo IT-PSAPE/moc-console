@@ -91,31 +91,80 @@ Run its catalog verifier and `check-cutover.ts --schema` before activation.
 
 ## Existing data
 
-Provider-specific identity and object-import adapters have been removed. Moving
-existing accounts and assets now requires a separate export/import procedure,
-completed and verified before directing live users to the new deployment.
+The Supabase snapshot cutover uses `SUPABASE_URL` and
+`SUPABASE_SECRET_KEY` in ignored `neon/.env.local`. Use the current
+`sb_secret_...` key from Settings → API Keys → Publishable and secret API keys.
+Send it in the `apikey` header for the HTTPS Data and Storage APIs; it is not
+a JWT for `Authorization: Bearer`. The legacy `service_role` JWT is unnecessary.
+These are server secrets, never frontend environment variables. Destination
+credentials are `NEON_DATABASE_URL` and the `NEON_STORAGE_*` values in
+`neon/.env.example`.
 
-Preserve identity UUIDs, verified-email flags, supported password hashes and
-account restrictions in `moc_auth`; verify profile foreign keys and email parity.
-Old sessions and email-link tokens cannot authenticate against the new service.
-Arrange fresh sign-in, verification and recovery links before activation.
+The connected Supabase SQL tool exports schema/type metadata, independent table
+fingerprints, private OAuth rows, selected `auth.users` identity fields, and the
+Storage inventory into protected operator files. `export-supabase-snapshot.mjs`
+combines those files with explicitly selected domain rows from the Data API.
+This route does not require a source PostgreSQL password. A direct or session
+pooler `LEGACY_SOURCE_DATABASE_URL` remains an alternative for the generic
+PostgreSQL transfer tools; an API key cannot replace that database password.
+Supabase's separate S3 credentials are also optional when copying objects through
+its HTTPS Storage API. See the [current API key guidance](https://supabase.com/docs/guides/getting-started/api-keys),
+[Storage secret-key guidance](https://supabase.com/docs/guides/functions/storage-caching),
+and [separate S3 authentication](https://supabase.com/docs/guides/storage/s3/authentication).
 
-Generic PostgreSQL domain transfer tools remain in `neon/database`. They require
-`LEGACY_SOURCE_DATABASE_URL` and `NEON_DATABASE_URL`, existing target identities,
-and an empty target domain baseline. Dry-run before explicit writes:
+The snapshot importer validates all 49 source tables, source UUIDs, verified
+email/bcrypt credentials, source column types, and independent PostgreSQL
+fingerprints against the exported rows. It permits only two explicit type
+mappings: occurrence `send_on` dates become midnight UTC timestamps, and
+schedule `expiry_hours` integers widen to numeric. New request links and ordered
+attendee columns receive their target defaults. Unknown schema drift fails closed.
 
 ```sh
-node neon/database/import-domain-data.mjs
-node neon/database/import-domain-data.mjs --apply --confirm-empty-target
-node neon/database/verify-import-parity.mjs
+node --env-file=neon/.env.local neon/database/import-supabase-snapshot.mjs \
+  --snapshot output/supabase-migration/source-snapshot.json \
+  --plan output/supabase-migration/target-plan.json
 ```
 
-These tools validate schema, primary keys, foreign keys and row fingerprints.
-Unexpected source tables stop the transfer. Preserve private OAuth credentials,
-replay state and rate-limit counters without printing their values. Copy referenced
-assets into the private Neon buckets, verify size/hash/ownership metadata in
-`moc_private.storage_objects`, and set persistent asset URLs to API paths. Perform
-domain parity before deliberate URL rewrites, then verify those changes separately.
+Before cutover, back up the destination, review the dry-run counts and target
+fingerprint, and rehearse against a local restore of that backup. The replacement
+imports source-owned domain rows and auth identities together, preserving source
+UUIDs and passwords. Existing target sessions and verification tokens are cleared;
+users sign in again. The current source supports verified email/password accounts;
+unsupported restrictions or identity providers block import rather than being
+silently discarded. This is a replacement procedure, not a merge.
+
+After explicit cutover approval, apply the same reviewed plan by adding
+`--apply --confirm-replace-target`. The importer locks the affected tables,
+rechecks target and snapshot fingerprints, restores foreign keys and sequences,
+and verifies all source rows and imported credentials before committing. Errors
+roll back the transaction. Keep background workers stopped through database and
+file registration. Recheck source fingerprints before applying so source changes
+are not omitted from the export.
+
+The protected snapshot contains credential hashes and private OAuth values.
+Keep snapshots, backups, plans, manifests and downloaded files under ignored
+`output/supabase-migration`, with directories mode 0700 and files mode 0600.
+Never commit, attach or print their contents.
+
+`download-supabase-storage.mjs` downloads every inventoried object and verifies its
+size and SHA-256. Review its manifest before upload. Objects referenced by app rows
+receive verified owner/workspace/purpose metadata and API paths. Unreferenced
+objects are preserved privately under a `supabase-migration/` prefix with their
+original Storage row retained in object metadata. Ambiguous referenced objects
+block transfer. `upload-neon-storage.mjs` validates locally by default; approved
+`--apply` conditionally creates private destination objects and verifies their
+bytes and metadata without overwriting conflicting files.
+
+`register-neon-storage.mjs --rehearse` runs registration and exact URL rewrites
+against an explicit loopback `NEON_MIGRATION_REHEARSAL_DATABASE_URL`, then rolls
+back. Its approved `--apply` mode verifies remote bytes first, registers referenced
+objects, and rewrites imported avatar and broadcast URLs transactionally. Verify
+domain parity before URL rewrites and verify those deliberate changes separately.
+
+The generic `import-domain-data.mjs` and `verify-import-parity.mjs` remain available
+for PostgreSQL-to-PostgreSQL transfer to an empty compatible domain baseline.
+Their schema requirements and separate identity/file steps differ from the
+Supabase snapshot procedure; see `neon/database/README.md`.
 
 ## Deploy and exercise
 
