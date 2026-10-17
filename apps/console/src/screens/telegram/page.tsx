@@ -1,3 +1,4 @@
+import { DividedList } from '@moc/ui/components/display/divided-list'
 import { Page } from '@moc/ui/components/layout/page'
 import { Section } from '@moc/ui/components/display/section'
 import { Paragraph } from '@moc/ui/components/display/text'
@@ -27,19 +28,19 @@ function TelegramPageContent() {
     return <MemberDestinationRow key={user.id} user={user} onOpenConnect={actions.openMemberConnect} />
   }
 
-  if (!meta.canManage) return <Page><Page.Content><Section><Section.Header title="Telegram" /><Section.Body>Workspace administrator access is required.</Section.Body></Section></Page.Content></Page>
+  if (!meta.canManage) return <Page><Page.Content width="standard"><Section><Section.Header title="Telegram" /><Section.Body><Paragraph.sm className="text-tertiary">Workspace administrator access is required.</Paragraph.sm></Section.Body></Section></Page.Content></Page>
   if (state.isInitialLoading) return <Page.Loading />
 
   return (
     <>
       <Page>
-        <Page.Header><Page.Heading><Page.Title>Telegram</Page.Title></Page.Heading></Page.Header>
-        <Page.Content className="flex min-w-0 flex-col gap-10">
+        <Page.Header width="standard"><Page.Heading><Page.Title>Telegram</Page.Title></Page.Heading></Page.Header>
+        <Page.Content width="standard" className="flex min-w-0 flex-col gap-8">
           <TelegramGroupsSection />
           <Section>
             <Section.Header title="Individual members" description="Choose which events are sent to each linked member in Telegram." />
-            <Section.Body className="gap-4">
-              {state.membersError ? <RetryAlert title="Couldn't load members" description={state.membersError.message} onRetry={actions.loadMembers} isRetrying={state.isMembersLoading} /> : state.isMembersLoading ? <Paragraph.sm className="py-8 text-center text-tertiary">Loading members…</Paragraph.sm> : state.linkedUsers.length ? state.linkedUsers.map(renderUser) : <Paragraph.sm className="py-8 text-center text-tertiary">No linked members found.</Paragraph.sm>}
+            <Section.Body>
+              {state.membersError ? <RetryAlert title="Couldn't load members" description={state.membersError.message} onRetry={actions.loadMembers} isRetrying={state.isMembersLoading} /> : state.isMembersLoading ? <Paragraph.sm className="py-8 text-center text-tertiary">Loading members…</Paragraph.sm> : state.linkedUsers.length ? <DividedList>{state.linkedUsers.map(renderUser)}</DividedList> : <Paragraph.sm className="py-8 text-center text-tertiary">No linked members found.</Paragraph.sm>}
             </Section.Body>
           </Section>
         </Page.Content>

@@ -14,7 +14,6 @@ function toOptions(groups: Awaited<ReturnType<typeof fetchTelegramGroups>>): Des
     const options: DestinationOption[] = []
     for (const group of groups) {
         if (!group.active || group.removedAt) continue
-        options.push({ groupChatId: group.chatId, threadId: null, label: group.title, groupTitle: group.title })
         for (const topic of group.topics) {
             if (!topic.closed) options.push({ groupChatId: group.chatId, threadId: topic.threadId, label: `${group.title} › ${topic.name}`, groupTitle: group.title })
         }

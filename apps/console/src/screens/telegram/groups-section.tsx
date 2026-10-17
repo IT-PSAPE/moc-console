@@ -24,36 +24,33 @@ export function TelegramGroupsSection() {
     }
 
     return (
-        <div className="flex flex-col gap-10">
-            <Section>
-                <Section.Header title="Telegram groups" description="Choose which events reach each group or topic. Newly registered groups start paused." />
+        <Section>
+            <Section.Header title="Telegram groups" description="Choose which events reach each group or topic. Newly registered groups start paused." />
 
-                <Section.Body className="gap-4">
-                    {state.groupsError ? (
-                        <>
-                            <RetryAlert title="Telegram settings couldn't be loaded" description={state.groupsError.message} onRetry={actions.loadGroups} isRetrying={state.isGroupsLoading} />
+            <Section.Body className="gap-4">
+                {state.groupsError ? (
+                    <>
+                        <RetryAlert title="Telegram settings couldn't be loaded" description={state.groupsError.message} onRetry={actions.loadGroups} isRetrying={state.isGroupsLoading} />
+                        {state.groups.map(renderGroup)}
+                    </>
+                ) : (
+                    <Decision value={state.groups} loading={state.isGroupsLoading}>
+                        <Decision.Loading>
+                            <LoadingSpinner size="lg" />
+                        </Decision.Loading>
+                        <Decision.Empty>
+                            <EmptyState
+                                icon={<MessagesSquare />}
+                                title="No groups yet"
+                                description="Groups connected in Telegram appear here."
+                            />
+                        </Decision.Empty>
+                        <Decision.Data>
                             {state.groups.map(renderGroup)}
-                        </>
-                    ) : (
-                        <Decision value={state.groups} loading={state.isGroupsLoading}>
-                            <Decision.Loading>
-                                <LoadingSpinner size="lg" />
-                            </Decision.Loading>
-                            <Decision.Empty>
-                                <EmptyState
-                                    icon={<MessagesSquare />}
-                                    title="No groups yet"
-                                    description="Groups connected in Telegram appear here."
-                                />
-                            </Decision.Empty>
-                            <Decision.Data>
-                                {state.groups.map(renderGroup)}
-                            </Decision.Data>
-                        </Decision>
-                    )}
-                </Section.Body>
-            </Section>
-
-        </div>
+                        </Decision.Data>
+                    </Decision>
+                )}
+            </Section.Body>
+        </Section>
     );
 }

@@ -1,6 +1,7 @@
 import { Badge } from '@moc/ui/components/display/badge'
 import { Button } from '@moc/ui/components/controls/button'
-import { Label, Paragraph } from '@moc/ui/components/display/text'
+import { Paragraph } from '@moc/ui/components/display/text'
+import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import { Link2 } from 'lucide-react'
 import type { TelegramGroup, TelegramGroupTopic } from '@/data/fetch-telegram-groups'
 
@@ -16,19 +17,20 @@ export function TelegramTopicRow({ group, topic, onOpenConnect }: TelegramTopicR
     }
 
     return (
-        <div className="flex items-center justify-between border-b border-secondary px-3 py-2 last:border-b-0">
-            <div className="flex items-center gap-2">
-                <Label.sm>{topic.name || '(unnamed)'}</Label.sm>
-                <Paragraph.xs className="text-quaternary">#{topic.threadId}</Paragraph.xs>
+        <ListItemCard.Root className="flex-nowrap py-3">
+            <ListItemCard.Content className="flex-row flex-wrap items-center justify-start gap-2">
+                <ListItemCard.Title className="whitespace-normal break-words">{topic.name || '(unnamed)'}</ListItemCard.Title>
+                {topic.threadId !== null && <Paragraph.xs className="text-quaternary">#{topic.threadId}</Paragraph.xs>}
                 {topic.closed && <Badge label="closed" color="gray" variant="outline" />}
-            </div>
+            </ListItemCard.Content>
             <Button.Icon
+                size="sm"
                 variant="ghost"
                 icon={<Link2 />}
                 disabled={!group.active || topic.closed}
                 onClick={handleOpenConnect}
                 aria-label={`Connect events to ${topic.name || `topic ${topic.threadId}`}`}
             />
-        </div>
+        </ListItemCard.Root>
     )
 }
