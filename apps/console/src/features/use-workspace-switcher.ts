@@ -22,6 +22,6 @@ export function useWorkspaceSwitcher() {
 
   return {
     actions: { selectWorkspace },
-    meta: { displayName, roleName, initials, avatarUrl: profile?.avatarUrl ?? "", email: user?.email ?? "", workspaces: workspaces.map(workspace => ({ ...workspace, initials: workspace.name.slice(0, 1).toUpperCase() })), currentWorkspaceId, workspaceName: currentWorkspace?.name ?? "MOC Console" },
+    meta: { displayName, roleName, initials, avatarUrl: profile?.avatarUrl ?? "", email: user?.email ?? "", workspaces: workspaces.map(workspace => ({ ...workspace, initials: workspace.name.slice(0, 1).toUpperCase() })), currentWorkspaceId, workspaceName: currentWorkspace?.name ?? "MOC Console", currentWorkspaceInitials: (currentWorkspace?.name.slice(0, 1) ?? "M").toUpperCase() },
   }
 }

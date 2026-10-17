@@ -109,16 +109,44 @@ function ComboboxRoot<Value>({ children, defaultOpen, itemToStringLabel, modal, 
 // the prop to a plain string.
 type Styled<P> = Omit<P, 'className'> & { className?: string }
 
-const fieldShell = cn(
-    'flex min-h-0 landscape:min-h-11 w-full flex-wrap items-center gap-1 rounded-lg border border-secondary bg-secondary px-3 py-2',
-    'focus-within:border-brand focus-within:ring-3 focus-within:ring-border-brand/10',
-    'has-[:disabled]:cursor-not-allowed has-[:disabled]:bg-tertiary has-[:disabled]:border-primary',
+// `min-h-control` (not the fixed `h-control` every other control uses, see
+// docs/design-system.md §2) because the chips variant wraps selected values
+// onto a second line — a fixed height would clip them. The single-value
+// variant only ever renders one line, so it reads as the same 36px control.
+type FieldStyle = 'outline' | 'ghost'
+type FieldSize = 'md' | 'sm'
+
+const fieldShellBase = cn(
+    'flex w-full flex-wrap items-center gap-2 rounded-lg border px-3 py-1.5',
+    'transition-colors focus-within:border-brand focus-within:ring-3 focus-within:ring-border-brand/20',
+    'has-aria-invalid:border-error has-aria-invalid:focus-within:ring-border-error/20',
+    'has-[:disabled]:cursor-not-allowed has-[:disabled]:text-quaternary',
 )
+
+const fieldShellStyle: Record<FieldStyle, string> = {
+    outline: 'border-primary bg-primary shadow-xs has-[:disabled]:bg-tertiary has-[:disabled]:border-primary',
+    // Transparent until hovered/focused — for detail-page meta rows (spec §7).
+    ghost: 'border-transparent bg-transparent shadow-none hover:bg-secondary focus-within:bg-primary focus-within:border-brand',
+}
+
+const fieldShellSize: Record<FieldSize, string> = {
+    md: 'min-h-control landscape:min-h-control-lg',
+    sm: 'min-h-control-sm px-2.5 py-1 landscape:min-h-control-lg',
+}
+
+function fieldShellClass(style: FieldStyle = 'outline', size: FieldSize = 'md') {
+    return cn(fieldShellBase, fieldShellStyle[style], fieldShellSize[size])
+}
+
+const fieldShell = fieldShellClass()
+
+type FieldAppearance = { style?: FieldStyle; size?: FieldSize }
 
 // ─── Single-value field ──────────────────────────────────────────────
 
-function ComboboxField({ className, ...props }: Styled<React.ComponentProps<typeof BaseCombobox.Input>>) {
+function ComboboxField({ className, size, style, ...props }: Styled<Omit<React.ComponentProps<typeof BaseCombobox.Input>, 'size' | 'style'>> & FieldAppearance) {
     const { isLandscape, itemToStringLabel } = useComboboxContext()
+    const shell = fieldShellClass(style, size)
     function handleLandscapeKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
         const inputEvent = event as unknown as Parameters<NonNullable<typeof props.onKeyDown>>[0]
         props.onKeyDown?.(inputEvent)
@@ -126,7 +154,7 @@ function ComboboxField({ className, ...props }: Styled<React.ComponentProps<type
 
     if (isLandscape) {
         return (
-            <BaseCombobox.Trigger id={props.id} className={cn(fieldShell, 'flex-nowrap text-left', className)} disabled={props.disabled} aria-label={props['aria-label'] ?? props.placeholder} aria-keyshortcuts={props['aria-keyshortcuts']} onKeyDown={handleLandscapeKeyDown}>
+            <BaseCombobox.Trigger id={props.id} className={cn(shell, 'flex-nowrap text-left', className)} disabled={props.disabled} aria-label={props['aria-label'] ?? props.placeholder} aria-keyshortcuts={props['aria-keyshortcuts']} onKeyDown={handleLandscapeKeyDown}>
                 <span className="min-w-0 flex-1 truncate paragraph-sm text-primary">
                     <BaseCombobox.Value>
                         {(selected: unknown) => {
@@ -145,7 +173,7 @@ function ComboboxField({ className, ...props }: Styled<React.ComponentProps<type
     }
 
     return (
-        <BaseCombobox.InputGroup className={cn(fieldShell, 'flex-nowrap', className)}>
+        <BaseCombobox.InputGroup className={cn(shell, 'flex-nowrap', className)}>
             <BaseCombobox.Input
                 className="w-full min-w-0 flex-1 bg-transparent paragraph-sm !leading-none focus:!outline-none focus-visible:!outline-0 placeholder:text-quaternary disabled:cursor-not-allowed"
                 {...props}
@@ -159,7 +187,7 @@ function ComboboxField({ className, ...props }: Styled<React.ComponentProps<type
 
 // ─── Multi-value field ───────────────────────────────────────────────
 
-type ChipsFieldProps<Value> = {
+type ChipsFieldProps<Value> = FieldAppearance & {
     /** Chip text for one selected value. */
     chipLabel: (value: Value) => string
     /** Stable React key for one selected value. */
@@ -168,12 +196,13 @@ type ChipsFieldProps<Value> = {
     className?: string
 }
 
-function ComboboxChipsField<Value>({ chipLabel, chipKey, placeholder, className }: ChipsFieldProps<Value>) {
+function ComboboxChipsField<Value>({ chipLabel, chipKey, placeholder, className, size, style }: ChipsFieldProps<Value>) {
     const { isLandscape } = useComboboxContext()
+    const shell = fieldShellClass(style, size)
 
     if (isLandscape) {
         return (
-            <BaseCombobox.Trigger className={cn(fieldShell, 'flex-nowrap text-left', className)} aria-label={placeholder}>
+            <BaseCombobox.Trigger className={cn(shell, 'flex-nowrap text-left', className)} aria-label={placeholder}>
                 <span className="min-w-0 flex-1 truncate paragraph-sm text-primary">
                     <BaseCombobox.Value placeholder={placeholder}>
                         {(selected: Value[]) => {
@@ -190,7 +219,7 @@ function ComboboxChipsField<Value>({ chipLabel, chipKey, placeholder, className 
     }
 
     return (
-        <BaseCombobox.InputGroup className={cn(fieldShell, className)}>
+        <BaseCombobox.InputGroup className={cn(shell, className)}>
             <BaseCombobox.Chips className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
                 <BaseCombobox.Value>
                     {(selected: Value[]) => (
@@ -271,7 +300,7 @@ function ComboboxContent({ children, className, empty = 'No matches', footer, se
                                     {footer}
                                     {multiple ? (
                                         <div className="shrink-0 border-t border-secondary p-3">
-                                            <BaseCombobox.Trigger className="flex min-h-11 w-full items-center justify-center rounded-md bg-brand_solid px-3 label-sm text-on-brand">
+                                            <BaseCombobox.Trigger className="flex h-control-lg w-full items-center justify-center rounded-lg bg-brand_solid px-3 label-sm text-on-brand hover:bg-brand_solid/90">
                                                 Done
                                             </BaseCombobox.Trigger>
                                         </div>
@@ -294,7 +323,7 @@ function ComboboxContent({ children, className, empty = 'No matches', footer, se
                         // `pointer-events: none` so a portalled layer never blocks the
                         // page behind it, and each popup surface opts back in. Without
                         // it the list renders but no item can be clicked or hovered.
-                        'pointer-events-auto max-h-[min(var(--available-height),16rem)] w-[var(--anchor-width)] max-w-[var(--available-width)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none',
+                        'pointer-events-auto max-h-[min(var(--available-height),16rem)] w-[var(--anchor-width)] max-w-[var(--available-width)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg border border-secondary bg-primary p-1 shadow-lg outline-none',
                         'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150 motion-reduce:transition-none',
                         'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
                         'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
@@ -322,8 +351,8 @@ function ComboboxItem({ children, className, ...props }: Styled<React.ComponentP
     return (
         <BaseCombobox.Item
             className={cn(
-                'min-h-0 landscape:min-h-11 cursor-pointer items-center gap-2 rounded-sm landscape:rounded-lg px-2 landscape:px-4 py-1.5 landscape:py-2 paragraph-sm text-secondary outline-none select-none',
-                'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
+                'h-control landscape:h-control-lg cursor-pointer items-center gap-2 rounded-md px-2.5 label-sm font-medium text-secondary outline-none select-none',
+                'data-[highlighted]:bg-secondary data-[highlighted]:text-primary data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',
                 className,
             )}
             {...props}

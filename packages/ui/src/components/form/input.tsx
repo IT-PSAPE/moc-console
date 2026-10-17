@@ -13,8 +13,8 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 
 const inputVariants = cv({
     base: [
-        'flex min-h-0 landscape:min-h-11 w-full min-w-0 items-center gap-1.5 has-[:disabled]:cursor-not-allowed',
-        'bg-secondary has-[:disabled]:bg-tertiary',
+        'flex h-control landscape:h-control-lg w-full min-w-0 items-center gap-2 rounded-lg px-3',
+        'transition-colors has-[:disabled]:cursor-not-allowed',
     ],
     variants: {
         state: {
@@ -23,11 +23,16 @@ const inputVariants = cv({
         },
         style: {
             outline: [
-                'py-2 px-3 ',
-                'rounded-lg border border-secondary focus-within:border-brand has-[:disabled]:border-primary',
-                'focus-within:ring-3 focus-within:ring-border-brand/10'
+                'bg-primary border border-primary shadow-xs',
+                'focus-within:border-brand focus-within:ring-3 focus-within:ring-border-brand/20',
+                'has-aria-invalid:border-error has-aria-invalid:focus-within:ring-border-error/20',
+                'has-[:disabled]:border-primary has-[:disabled]:bg-tertiary',
             ],
-            ghost: ['rounded-md px-2 py-1.5'],
+            ghost: [
+                'bg-transparent border border-transparent shadow-none',
+                'hover:bg-secondary focus-within:bg-primary focus-within:border-brand',
+                'has-aria-invalid:border-error',
+            ],
         }
     },
     defaultVariants: {
@@ -35,11 +40,11 @@ const inputVariants = cv({
     },
 })
 
-export function Input({ className, style = 'outline', state, ...props }: InputProps) {
+export function Input({ className, icon, style = 'outline', state, ...props }: InputProps) {
     return (
         <div data-ui-control className={cn(inputVariants({ state: state, style: style }), className)}>
-            {props.icon && <span className='*:size-4 text-tertiary'>{props.icon}</span>}
-            <BaseInput className="w-full min-w-0 !p-0 focus:!outline-none focus-visible:!outline-0 !focus:ring-0 paragraph-sm !leading-none" {...props} />
+            {icon && <span className='*:size-4 text-quaternary'>{icon}</span>}
+            <BaseInput className="w-full min-w-0 !p-0 bg-transparent text-primary focus:!outline-none focus-visible:!outline-0 !focus:ring-0 paragraph-sm !leading-none placeholder:text-quaternary disabled:text-quaternary" {...props} />
         </div>
     )
 }

@@ -23,10 +23,10 @@ export function EquipmentNotesSection({
       : "Add notes about this equipment…";
 
   return (
-    <div className="px-4">
+    <div>
       <div className="flex items-center gap-2 pb-3">
         <StickyNote className="size-4 text-tertiary" />
-        <Label.md>Notes</Label.md>
+        <Label.sm className="text-primary">Notes</Label.sm>
       </div>
       <TextArea
         aria-label="Equipment notes"
@@ -35,6 +35,7 @@ export function EquipmentNotesSection({
         value={draft.notes}
         onChange={handleNotesChange}
         placeholder={placeholder}
+        style="ghost"
       />
     </div>
   );

@@ -193,29 +193,29 @@ export function DocEditorSortableBlock({
         >
             <div
                 className={cn(
-                    'absolute -left-13 top-1/2 flex -translate-y-1/2 items-center gap-0.5 transition-opacity',
+                    'absolute -left-12 top-1/2 flex -translate-y-1/2 items-center gap-0.5 transition-opacity',
                     isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
                 )}
             >
                 <BaseButton
                     type="button"
-                    className="flex size-5.5 items-center justify-center rounded text-quaternary hover:bg-tertiary hover:text-secondary"
+                    className="flex size-5.5 items-center justify-center rounded-md text-quaternary hover:bg-tertiary hover:text-secondary"
                     onMouseDown={handleButtonMouseDown}
                     onClick={handleAddBelow}
                 >
-                    <Plus size={12} />
+                    <Plus className="size-4" />
                 </BaseButton>
 
                 <div className="relative">
                     <BaseButton
                         ref={setMenuTriggerElement}
                         type="button"
-                        className="flex size-5.5 cursor-grab items-center justify-center rounded text-quaternary hover:bg-tertiary hover:text-secondary"
+                        className="flex size-5.5 cursor-grab items-center justify-center rounded-md text-quaternary hover:bg-tertiary hover:text-secondary"
                         onClick={handleMenuToggle}
                         {...listeners}
                         {...attributes}
                     >
-                        <GripVertical size={12} />
+                        <GripVertical className="size-4" />
                     </BaseButton>
                     {isMenuOpen ? <DocEditorBlockMenu anchorElement={menuTriggerElement} onAction={handleMenuAction} onClose={onMenuClose} /> : null}
                 </div>

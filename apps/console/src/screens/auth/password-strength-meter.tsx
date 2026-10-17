@@ -1,4 +1,5 @@
 import { cn } from "@moc/utils/cn"
+import { Label, Paragraph } from "@moc/ui/components/display/text"
 
 export type PasswordStrength = "weak" | "medium" | "strong"
 
@@ -25,22 +26,22 @@ export function PasswordStrengthMeter({ strength, tooShort }: { strength: Passwo
           ? "Looking good. Mix in numbers or symbols to make it stronger."
           : null
     return (
-        <div className="space-y-1 pt-1">
+        <div className="flex flex-col gap-1 pt-1">
             <div className="flex items-center gap-2">
                 <div className="flex flex-1 gap-1">
                     {[1, 2, 3].map((i) => (
                         <span
                             key={i}
                             className={cn(
-                                "h-1 flex-1 rounded-full transition-colors duration-300 motion-reduce:transition-none",
+                                "h-1.5 flex-1 rounded-full transition-colors duration-300 motion-reduce:transition-none",
                                 i <= filled ? "bg-brand_solid" : "bg-quaternary",
                             )}
                         />
                     ))}
                 </div>
-                <span className="label-xs text-tertiary whitespace-nowrap">{label}</span>
+                <Label.xs className="text-tertiary whitespace-nowrap">{label}</Label.xs>
             </div>
-            {hint && <p className="paragraph-xs text-tertiary">{hint}</p>}
+            {hint && <Paragraph.xs className="text-tertiary">{hint}</Paragraph.xs>}
         </div>
     )
 }

@@ -1,7 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import { Button } from '@moc/ui/components/controls/button'
-import { Label, Paragraph } from '@moc/ui/components/display/text'
+import { EmptyState } from '@moc/ui/components/feedback/empty-state'
 
 type FriendlyError = {
     title: string
@@ -83,21 +83,17 @@ function ErrorFallback({ error }: { error: Error }) {
     }
 
     return (
-        <div className="flex min-h-[60dvh] flex-col items-center justify-center gap-6 p-6 text-center">
-            <span className="flex size-14 items-center justify-center rounded-full bg-error text-error">
-                <AlertTriangle className="size-7" />
-            </span>
-
-            <div className="flex max-w-md flex-col gap-2">
-                <Label.lg className="text-primary">{friendly.title}</Label.lg>
-                <Paragraph.sm className="text-tertiary">{friendly.description}</Paragraph.sm>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-2">
-                <Button variant="secondary" icon={<RefreshCw />} onClick={handleRefresh}>
-                    Refresh page
-                </Button>
-            </div>
+        <div className="flex min-h-[60dvh] items-center justify-center">
+            <EmptyState
+                icon={<AlertTriangle />}
+                title={friendly.title}
+                description={friendly.description}
+                action={(
+                    <Button variant="secondary" icon={<RefreshCw />} onClick={handleRefresh}>
+                        Refresh page
+                    </Button>
+                )}
+            />
         </div>
     )
 }

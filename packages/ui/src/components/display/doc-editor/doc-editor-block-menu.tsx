@@ -18,11 +18,11 @@ type DocEditorMenuItem = {
 }
 
 const menuItems: DocEditorMenuItem[] = [
-    { id: 'delete', icon: <Trash2 size={14} />, label: 'Delete block', danger: true },
-    { id: 'duplicate', icon: <Copy size={14} />, label: 'Duplicate' },
+    { id: 'delete', icon: <Trash2 className="size-4" />, label: 'Delete block', danger: true },
+    { id: 'duplicate', icon: <Copy className="size-4" />, label: 'Duplicate' },
     { id: 'separator' },
-    { id: 'move-top', icon: <ArrowUpToLine size={14} />, label: 'Move to top' },
-    { id: 'move-bottom', icon: <ArrowDownToLine size={14} />, label: 'Move to bottom' },
+    { id: 'move-top', icon: <ArrowUpToLine className="size-4" />, label: 'Move to top' },
+    { id: 'move-bottom', icon: <ArrowDownToLine className="size-4" />, label: 'Move to bottom' },
 ]
 
 function DocEditorBlockMenuItem({ item, onAction }: { item: DocEditorMenuItem; onAction: (action: string) => void }) {
@@ -33,7 +33,7 @@ function DocEditorBlockMenuItem({ item, onAction }: { item: DocEditorMenuItem; o
     return (
         <Menu.Item
             className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 text-sm outline-none data-[highlighted]:bg-secondary',
+                'flex h-control cursor-pointer items-center gap-2 rounded-md px-2.5 label-sm font-medium outline-none data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
                 item.danger ? 'text-error' : 'text-secondary',
             )}
             onClick={handleClick}
@@ -55,7 +55,7 @@ export function DocEditorBlockMenu({ anchorElement, onAction, onClose }: DocEdit
         <Menu.Root open onOpenChange={handleOpenChange}>
             <Menu.Portal container={overlayState.rootElement ?? undefined}>
                 <Menu.Positioner anchor={anchorElement} side="bottom" align="center" sideOffset={6} className="z-[9050] outline-none">
-                    <Menu.Popup className="pointer-events-auto flex min-w-48 flex-col overflow-x-hidden overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none">
+                    <Menu.Popup className="pointer-events-auto flex min-w-48 flex-col overflow-x-hidden overflow-y-auto rounded-lg border border-secondary bg-primary p-1 shadow-lg outline-none">
                         {menuItems.map((item) => item.id === 'separator'
                             ? <Menu.Separator key={item.id} className="my-1 h-px bg-secondary" />
                             : <DocEditorBlockMenuItem key={item.id} item={item} onAction={onAction} />)}

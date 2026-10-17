@@ -1,21 +1,19 @@
+import { useCopyFeedback } from "@/hooks/use-copy-feedback";
 import { Button } from "@moc/ui/components/controls/button";
+import { Card } from "@moc/ui/components/display/card";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { QRCodeCanvas } from "qrcode.react";
-import { Download, Printer } from "lucide-react";
+import { Check, Copy, Download, Printer } from "lucide-react";
 import { useRef } from "react";
 import type { Equipment } from "@moc/types/equipment";
 import { buildEquipmentQrPayload } from "@moc/utils/equipment-scan";
 
-function toFileSlug(value: string) {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "equipment";
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] ?? char);
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+function toFileSlug(value: string) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "equipment";
 }
 
 // Generates the printable identity QR for a single equipment item. The encoded
@@ -24,6 +22,8 @@ function escapeHtml(value: string) {
 export function EquipmentQrSection({ equipment }: { equipment: Equipment }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const payload = buildEquipmentQrPayload(equipment);
+  const copied = useCopyFeedback<"payload">();
+  const hasCopied = copied.state.copiedField === "payload";
 
   function handleDownload() {
     const canvas = canvasRef.current;
@@ -64,25 +64,30 @@ export function EquipmentQrSection({ equipment }: { equipment: Equipment }) {
     printWindow.document.close();
   }
 
+  function handleCopy() {
+    copied.actions.copy(payload, "payload");
+  }
+
   return (
-    <section className="px-4">
-      <Label.xs className="uppercase tracking-wide text-quaternary">QR code</Label.xs>
-      <div className="mt-3 flex flex-wrap items-center gap-4">
-        <div className="rounded-lg border border-secondary bg-white p-3">
+    <section>
+      <Label.sm className="block pb-3 text-primary">QR code</Label.sm>
+      <div className="flex flex-col items-center gap-3">
+        <Card className="w-fit p-4">
           <QRCodeCanvas ref={canvasRef} value={payload} size={160} level="M" marginSize={4} />
-        </div>
-        <div className="flex flex-col gap-3">
-          <Paragraph.sm className="text-tertiary">
-            Print and attach to the item. Scanning it during booking collection ticks it off automatically.
-          </Paragraph.sm>
-          <div className="flex gap-2">
-            <Button variant="secondary" icon={<Download />} onClick={handleDownload}>
-              Download
-            </Button>
-            <Button variant="secondary" icon={<Printer />} onClick={handlePrint}>
-              Print
-            </Button>
-          </div>
+        </Card>
+        <Paragraph.xs className="max-w-xs text-center text-tertiary">
+          Print and attach to the item. Scanning it during booking collection ticks it off automatically.
+        </Paragraph.xs>
+        <div className="flex gap-2">
+          <Button size="sm" variant="secondary" icon={<Download />} onClick={handleDownload}>
+            Download
+          </Button>
+          <Button size="sm" variant="secondary" icon={<Printer />} onClick={handlePrint}>
+            Print
+          </Button>
+          <Button size="sm" variant="secondary" icon={hasCopied ? <Check className="text-success" /> : <Copy />} onClick={handleCopy}>
+            {hasCopied ? "Copied" : "Copy"}
+          </Button>
         </div>
       </div>
     </section>

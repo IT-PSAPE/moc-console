@@ -39,63 +39,61 @@ export function BroadcastForm({ broadcast, onOpenChange, onSubmit, open }: Broad
   return (
     <>
       <Modal.Content>
-        <div className="flex flex-col gap-4 p-4">
-          <FormField label="Title" htmlFor={titleId} required>
-            <Input
-              id={titleId}
-              aria-label="Broadcast title"
-              aria-describedby={state.errors.title ? titleErrorId : undefined}
-              aria-invalid={Boolean(state.errors.title) || undefined}
-              name="broadcast-title"
-              autoComplete="off"
-              placeholder="Sunday service"
-              value={state.title}
-              onChange={actions.changeTitle}
-              disabled={state.isSubmitting}
-            />
-            {state.errors.title ? <Paragraph.xs id={titleErrorId} role="alert" aria-live="polite" className="text-error">{state.errors.title}</Paragraph.xs> : null}
-          </FormField>
-
-          <FormField label="Description" htmlFor={descriptionId} optional>
-            <TextArea
-              id={descriptionId}
-              aria-label="Broadcast description"
-              name="broadcast-description"
-              placeholder="What listeners are tuning into"
-              value={state.description}
-              onChange={actions.changeDescription}
-              disabled={state.isSubmitting}
-            />
-          </FormField>
-
-          {meta.isEditing ? null : (
-            <FormField label="Media type" required>
-              <RadioGroup name="broadcast-kind" value={state.kind} onValueChange={actions.changeKind} disabled={state.isSubmitting} className="flex gap-6">
-                <Radio value="audio">{BROADCAST_KIND_LABELS.audio}</Radio>
-                <Radio value="video">{BROADCAST_KIND_LABELS.video}</Radio>
-              </RadioGroup>
-            </FormField>
-          )}
-
-          <BroadcastPlaylistField
-            error={state.errors.playlist}
-            isChecking={state.isCheckingFiles}
-            isLocked={state.isSubmitting}
-            items={state.items}
-            kind={state.kind}
-            onFilesAdd={handleFilesAdd}
-            onItemMove={actions.moveItem}
-            onItemRemove={actions.removeItem}
-            onRejectionsDismiss={actions.dismissRejections}
-            rejections={state.rejections}
-            uploadProgress={state.uploadProgress}
+        <FormField label="Title" htmlFor={titleId} required>
+          <Input
+            id={titleId}
+            aria-label="Broadcast title"
+            aria-describedby={state.errors.title ? titleErrorId : undefined}
+            aria-invalid={Boolean(state.errors.title) || undefined}
+            name="broadcast-title"
+            autoComplete="off"
+            placeholder="Sunday service"
+            value={state.title}
+            onChange={actions.changeTitle}
+            disabled={state.isSubmitting}
           />
-        </div>
+          {state.errors.title ? <Paragraph.xs id={titleErrorId} role="alert" aria-live="polite" className="text-error">{state.errors.title}</Paragraph.xs> : null}
+        </FormField>
+
+        <FormField label="Description" htmlFor={descriptionId} optional>
+          <TextArea
+            id={descriptionId}
+            aria-label="Broadcast description"
+            name="broadcast-description"
+            placeholder="What listeners are tuning into"
+            value={state.description}
+            onChange={actions.changeDescription}
+            disabled={state.isSubmitting}
+          />
+        </FormField>
+
+        {meta.isEditing ? null : (
+          <FormField label="Media type" required>
+            <RadioGroup name="broadcast-kind" value={state.kind} onValueChange={actions.changeKind} disabled={state.isSubmitting} className="flex gap-6">
+              <Radio value="audio">{BROADCAST_KIND_LABELS.audio}</Radio>
+              <Radio value="video">{BROADCAST_KIND_LABELS.video}</Radio>
+            </RadioGroup>
+          </FormField>
+        )}
+
+        <BroadcastPlaylistField
+          error={state.errors.playlist}
+          isChecking={state.isCheckingFiles}
+          isLocked={state.isSubmitting}
+          items={state.items}
+          kind={state.kind}
+          onFilesAdd={handleFilesAdd}
+          onItemMove={actions.moveItem}
+          onItemRemove={actions.removeItem}
+          onRejectionsDismiss={actions.dismissRejections}
+          rejections={state.rejections}
+          uploadProgress={state.uploadProgress}
+        />
       </Modal.Content>
 
       <Modal.Footer>
-        <Button disabled={state.isSubmitting || state.isCheckingFiles} onClick={handleSubmit}>{meta.submitLabel}</Button>
         <Button variant="secondary" disabled={state.isSubmitting} onClick={actions.requestClose}>Cancel</Button>
+        <Button disabled={state.isSubmitting || state.isCheckingFiles} onClick={handleSubmit}>{meta.submitLabel}</Button>
       </Modal.Footer>
       <UnsavedChangesDialog open={state.discardChangesOpen} onSave={handleSubmit} onDiscard={actions.discardChanges} onCancel={actions.cancelDiscardChanges} isSaving={state.isSubmitting} />
     </>

@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { Avatar } from '@moc/ui/components/display/avatar'
 import { Button } from '@moc/ui/components/controls/button'
-import { NavigationList } from '@moc/ui/components/navigation/navigation-list'
 import { Sidebar } from '@moc/ui/components/navigation/sidebar'
 import { Dropdown } from '@moc/ui/components/overlays/dropdown'
 import { useWorkspaceSwitcher } from './use-workspace-switcher'
@@ -17,18 +17,18 @@ export function WorkspaceNavigationHeader({ onToggle, toggleLabel, toggleIcon }:
     const { meta } = useWorkspaceSwitcher()
 
     return (
-        <Sidebar.Header className="border-b-0 pt-3 pb-1 [&>div]:gap-1">
+        <Sidebar.Header>
             <Dropdown placement="bottom-start">
                 <Dropdown.Trigger>
-                    <NavigationList.Item aria-label={`Switch workspace. Current workspace: ${meta.workspaceName}`} className="min-w-0 flex-1 gap-2 px-1 py-1">
-                        <img src="/logo.svg" alt="" className="size-6 shrink-0 rounded-md bg-brand_solid p-0.5" />
-                        <span className="min-w-0 truncate">{meta.workspaceName}</span>
-                        <ChevronDown className="size-3 shrink-0 text-tertiary" aria-hidden="true" />
-                    </NavigationList.Item>
+                    <Button.Unstyled aria-label={`Switch workspace. Current workspace: ${meta.workspaceName}`} className="flex h-control min-w-0 flex-1 items-center gap-2 rounded-lg px-3 label-sm text-tertiary transition-colors hover:bg-secondary hover:text-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-brand landscape:h-control-lg">
+                        <Avatar.initials size="xs" name={meta.currentWorkspaceInitials} />
+                        <span className="min-w-0 flex-1 truncate text-left">{meta.workspaceName}</span>
+                        <ChevronDown className="size-4 shrink-0 text-quaternary" aria-hidden="true" />
+                    </Button.Unstyled>
                 </Dropdown.Trigger>
                 <Dropdown.Panel className="w-72 p-1.5"><WorkspaceMenuItems /></Dropdown.Panel>
             </Dropdown>
-            <Button.Icon variant="ghost" aria-label={toggleLabel} title={toggleLabel} icon={toggleIcon} onClick={onToggle} className="size-8 min-h-8 shrink-0 p-1.5" />
+            <Button.Icon variant="ghost" size="sm" aria-label={toggleLabel} title={toggleLabel} icon={toggleIcon} onClick={onToggle} />
         </Sidebar.Header>
     )
 }

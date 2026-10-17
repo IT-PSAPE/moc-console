@@ -23,12 +23,12 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       </header>
 
       <main className="flex-1">
-        <article className="mx-auto max-w-content-sm px-page-gutter py-12 portrait:py-8">
+        <article className="mx-auto max-w-content-sm px-page-gutter py-10">
           {children}
         </article>
       </main>
 
-      <footer className="border-t border-secondary mt-16">
+      <footer className="border-t border-secondary mt-12">
         <div className="mx-auto flex max-w-content-md flex-wrap items-center gap-x-6 gap-y-2 px-page-gutter py-6">
           <p className="paragraph-xs text-tertiary">© 2026 PSAPE. All rights reserved.</p>
           <div className="ml-auto flex w-auto gap-4 portrait:ml-0 portrait:w-full">

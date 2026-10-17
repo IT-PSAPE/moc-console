@@ -44,21 +44,21 @@ export function EditProfileModal({ open, onOpenChange }: EditProfileModalProps) 
         <Modal.Portal>
           <Modal.Backdrop />
           <Modal.Positioner>
-            <Modal.FullScreenPanel className="w-full !max-w-lg landscape:!max-w-none">
+            <Modal.FullScreenPanel className="max-w-lg">
               <Modal.Header><Label.md>Edit profile</Label.md></Modal.Header>
               <Modal.Content>
                 {profile ? (
-                  <div className="flex flex-col gap-5 p-4">
+                  <div className="flex flex-col gap-5">
                     <div className="flex flex-col items-center gap-2 py-2">
                       <div className="relative">
                         {profile.avatarUrl
-                          ? <Avatar src={profile.avatarUrl} name={meta.initials} size="2xl" />
-                          : <Avatar.initials name={meta.initials} size="2xl" />}
+                          ? <Avatar src={profile.avatarUrl} name={meta.initials} size="xl" />
+                          : <Avatar.initials name={meta.initials} size="xl" />}
                         <Button.Icon
                           aria-label="Change profile photo"
                           variant="secondary"
                           icon={<Camera />}
-                          className="absolute -bottom-1 -right-1 rounded-full shadow-sm"
+                          className="absolute -bottom-1 -right-1 rounded-full"
                           disabled={state.isUploadingAvatar}
                           onClick={actions.pickAvatar}
                         />
@@ -100,7 +100,7 @@ export function EditProfileModal({ open, onOpenChange }: EditProfileModalProps) 
                       <TelegramLinkRow userId={profile.id} telegramChatId={profile.telegramChatId} />
                     </FormField>
                   </div>
-                ) : <Paragraph.sm className="p-4 text-tertiary">Sign in to edit your profile.</Paragraph.sm>}
+                ) : <Paragraph.sm className="text-tertiary">Sign in to edit your profile.</Paragraph.sm>}
               </Modal.Content>
               <Modal.Footer>
                 <Button variant="secondary" onClick={actions.requestClose}>Cancel</Button>

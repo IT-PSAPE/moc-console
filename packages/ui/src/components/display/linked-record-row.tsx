@@ -1,24 +1,20 @@
 import type { ReactElement } from "react"
-import { Unlink } from "lucide-react"
+import { ArrowUpRight, Unlink } from "lucide-react"
 import { Button } from "../controls/button"
-import { Paragraph } from "./text"
 
 type LinkedRecordRowProps = {
   label: string
-  detail?: string
   render: ReactElement
   onRemove?: () => void
   disabled?: boolean
 }
 
-export function LinkedRecordRow({ label, detail, render, onRemove, disabled }: LinkedRecordRowProps) {
+/** Compact link chip for a single linked record — used inside a `MetaRow` value column. */
+export function LinkedRecordRow({ label, render, onRemove, disabled }: LinkedRecordRowProps) {
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <div className="min-w-0 flex-1">
-        <Button.Link render={render} variant="ghost" className="max-w-full justify-start truncate">{label}</Button.Link>
-        {detail && <Paragraph.xs className="px-2 text-tertiary">{detail}</Paragraph.xs>}
-      </div>
-      {onRemove && <Button.Icon icon={<Unlink />} aria-label={`Unlink ${label}`} variant="ghost" onClick={onRemove} disabled={disabled} />}
+      <Button.Link render={render} variant="ghost" size="sm" icon={<ArrowUpRight />} iconPosition="trailing" className="min-w-0 flex-1 justify-start truncate">{label}</Button.Link>
+      {onRemove && <Button.Icon icon={<Unlink />} aria-label={`Unlink ${label}`} variant="ghost" size="sm" onClick={onRemove} disabled={disabled} />}
     </div>
   )
 }

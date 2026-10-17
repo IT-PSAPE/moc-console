@@ -10,7 +10,7 @@ export function SidebarRailItem({ title, icon, className, ...props }: SidebarRai
             <Tooltip.Trigger render={<SidebarRailButton {...props} title={title} icon={icon} className={className} />} />
             <Tooltip.Portal>
                 <Tooltip.Positioner side="right" sideOffset={8} className="z-[9100]">
-                    <Tooltip.Popup className="rounded-md border border-secondary bg-primary px-2 py-1 label-xs text-primary shadow-md">{title}</Tooltip.Popup>
+                    <Tooltip.Popup className="rounded-lg border border-secondary bg-primary px-2 py-1 label-xs text-primary shadow-lg">{title}</Tooltip.Popup>
                 </Tooltip.Positioner>
             </Tooltip.Portal>
         </Tooltip.Root>

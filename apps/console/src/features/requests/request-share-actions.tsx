@@ -18,6 +18,7 @@ type RequestShareActionsRootProps = {
 
 type RequestShareActionsContextValue = ReturnType<typeof useRequestShare>
 type IconVariant = ComponentProps<typeof Button.Icon>['variant']
+type IconSize = ComponentProps<typeof Button.Icon>['size']
 
 const RequestShareActionsContext = createContext<RequestShareActionsContextValue | null>(null)
 
@@ -26,12 +27,13 @@ function Root({ children, request, targetRef }: RequestShareActionsRootProps) {
   return <RequestShareActionsContext value={value}>{children}</RequestShareActionsContext>
 }
 
-function LinkButton({ variant = 'ghost' }: { variant?: IconVariant }) {
+function LinkButton({ variant = 'secondary', size }: { variant?: IconVariant; size?: IconSize }) {
   const { actions, state } = useRequestShareActionsContext()
 
   return (
     <Button.Icon
       variant={variant}
+      size={size}
       icon={state.isSharingLink ? <Loader className="animate-spin motion-reduce:animate-none" /> : <Share2 />}
       onClick={actions.shareLink}
       disabled={state.isSharingLink || state.isSharingScreenshot}
@@ -40,12 +42,13 @@ function LinkButton({ variant = 'ghost' }: { variant?: IconVariant }) {
   )
 }
 
-function ScreenshotButton({ variant = 'ghost' }: { variant?: IconVariant }) {
+function ScreenshotButton({ variant = 'secondary', size }: { variant?: IconVariant; size?: IconSize }) {
   const { actions, state } = useRequestShareActionsContext()
 
   return (
     <Button.Icon
       variant={variant}
+      size={size}
       icon={state.isSharingScreenshot ? <Loader className="animate-spin motion-reduce:animate-none" /> : <ImageUp />}
       onClick={actions.shareScreenshot}
       disabled={state.isSharingLink || state.isSharingScreenshot}
@@ -54,12 +57,13 @@ function ScreenshotButton({ variant = 'ghost' }: { variant?: IconVariant }) {
   )
 }
 
-function CopyButton({ variant = 'ghost' }: { variant?: IconVariant }) {
+function CopyButton({ variant = 'secondary', size }: { variant?: IconVariant; size?: IconSize }) {
   const { actions, state } = useRequestShareActionsContext()
 
   return (
     <Button.Icon
       variant={variant}
+      size={size}
       icon={
         state.isCopyingScreenshot
           ? <Loader className="animate-spin" />

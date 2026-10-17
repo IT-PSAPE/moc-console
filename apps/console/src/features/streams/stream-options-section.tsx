@@ -1,7 +1,7 @@
 import type { ChangeEvent, KeyboardEvent, MouseEvent } from "react"
 import { Select } from "@moc/ui/components/form/select"
 import { Input } from "@moc/ui/components/form/input"
-import { FormLabel } from "@moc/ui/components/form/form-label"
+import { FormField } from "@moc/ui/components/form/form-label"
 import { Button } from "@moc/ui/components/controls/button"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Accordion } from "@moc/ui/components/display/accordion"
@@ -72,8 +72,7 @@ export function StreamOptionsSection({
       <Accordion.Content>
         <div className="flex flex-col gap-4 pb-2 pt-1">
           {/* ─── Category ─── */}
-          <div className="flex flex-col gap-1.5">
-            <FormLabel label="Category" optional />
+          <FormField label="Category" optional>
             <Select.Root name="stream-category" items={categoryItems} value={categoryId ?? ""} onValueChange={handleCategoryChange}>
               <Select.Trigger aria-label="Category" />
               <Select.Content>
@@ -85,11 +84,10 @@ export function StreamOptionsSection({
               ))}
               </Select.Content>
             </Select.Root>
-          </div>
+          </FormField>
 
           {/* ─── Tags ─── */}
-          <div className="flex flex-col gap-1.5">
-            <FormLabel label="Tags" optional />
+          <FormField label="Tags" optional>
             <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-secondary bg-primary px-3 py-2 focus-within:border-brand focus-within:ring-1 focus-within:ring-border-brand">
               {tags.map((tag) => (
                 <span
@@ -122,11 +120,10 @@ export function StreamOptionsSection({
             <Paragraph.xs className="text-quaternary">
               Press Enter or comma to add. Max 500 characters total.
             </Paragraph.xs>
-          </div>
+          </FormField>
 
           {/* Playlist */}
-          <div className="flex flex-col gap-1.5">
-            <FormLabel label="Add to Playlist" optional />
+          <FormField label="Add to Playlist" optional>
             <Select.Root name="stream-playlist" items={playlistItems} value={playlistId ?? ""} onValueChange={handlePlaylistChange}>
               <Select.Trigger aria-label="Playlist" />
               <Select.Content>
@@ -138,7 +135,7 @@ export function StreamOptionsSection({
               ))}
               </Select.Content>
             </Select.Root>
-          </div>
+          </FormField>
         </div>
       </Accordion.Content>
     </Accordion.Item>

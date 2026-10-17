@@ -9,7 +9,7 @@ export function AvailableMemberRow({ user, onSelect }: { user: User; onSelect: (
   }
 
   return (
-    <Button variant="ghost" onClick={handleSelect} className="w-full justify-start rounded-lg px-2 py-1 hover:bg-secondary">
+    <Button variant="ghost" onClick={handleSelect} className="w-full justify-start">
       <UserAvatar size="sm" user={user} />
       <span className="min-w-0 flex-1 text-left"><Label.sm>{user.name} {user.surname}</Label.sm></span>
     </Button>

@@ -24,7 +24,7 @@ export function GeneralSection() {
 
       <Section.Body>
         <DividedList>
-          <SettingsRow label="Name" className="px-4 py-3 landscape:px-3">
+          <SettingsRow label="Name">
             <Input
               aria-label="Workspace name"
               autoComplete="off"
@@ -37,14 +37,14 @@ export function GeneralSection() {
             />
           </SettingsRow>
 
-          <SettingsRow label="Slug" className="px-4 py-3 landscape:px-3">
+          <SettingsRow label="Slug">
             <Input aria-label="Workspace slug" autoCapitalize="none" autoComplete="off" name="workspace-slug" spellCheck={false} value={meta.workspace.slug} className="max-w-md" disabled readOnly />
           </SettingsRow>
         </DividedList>
       </Section.Body>
 
       {meta.canManage && (
-        <div className="flex justify-end gap-2 pt-5">
+        <div className="flex justify-end gap-2 pt-3">
           {meta.hasChanges && <Button variant="ghost" onClick={actions.discard} disabled={state.isSaving}>Discard</Button>}
           <Button onClick={actions.save} disabled={!meta.canSave}>{state.isSaving ? "Saving…" : "Save changes"}</Button>
         </div>

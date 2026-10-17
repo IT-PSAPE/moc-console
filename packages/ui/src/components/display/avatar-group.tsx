@@ -32,7 +32,7 @@ const overflowClassBySize: Record<AvatarGroupSize, string> = {
 
 // Match the surface color so the ring around each avatar appears as a clean
 // "cutout" against the page background.
-const ringClass = 'shadow-[0_0_0_2px_var(--color-background-primary)]'
+const ringClass = 'ring-2 ring-background-primary'
 
 export function AvatarGroup({ items, max = 3, size = '2xs', className }: AvatarGroupProps) {
     if (items.length === 0) return null

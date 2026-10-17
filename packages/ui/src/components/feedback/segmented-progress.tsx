@@ -13,7 +13,7 @@ export function SegmentedProgress({ className, max, value, ...props }: Segmented
 
   function renderSegment(index: number) {
     const isReached = index < reachedCount
-    return <span key={index} aria-hidden="true" className={cn('h-1 flex-1 rounded-full transition-colors', isReached ? 'bg-brand_solid' : 'bg-quaternary')} />
+    return <span key={index} aria-hidden="true" className={cn('h-1.5 flex-1 rounded-full transition-colors', isReached ? 'bg-brand_solid' : 'bg-quaternary')} />
   }
 
   return (

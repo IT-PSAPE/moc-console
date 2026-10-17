@@ -88,7 +88,7 @@ function PopoverPanel({ children, className, anchor, sideOffset = 6, alignOffset
             <BasePopover.Positioner anchor={anchor} side={side} align={align} sideOffset={sideOffset} alignOffset={alignOffset} collisionPadding={collisionPadding} className="z-[9050] outline-none">
                 <BasePopover.Popup
                     className={cn(
-                        'pointer-events-auto flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-xl border border-secondary bg-primary shadow-lg outline-none',
+                        'pointer-events-auto flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-lg border border-secondary bg-primary shadow-lg outline-none',
                         'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150 motion-reduce:transition-none',
                         'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
                         'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',

@@ -54,9 +54,9 @@ export function RequestDetailContent({ request, syncRequest }: RequestDetailCont
                 <Button icon={<Save />} onClick={actions.handleSave} disabled={store.state.isSaving}>{store.state.isSaving ? "Saving…" : "Save"}</Button>
               </>
             )}
-            <RequestShareActions.LinkButton variant="secondary" />
-            <RequestShareActions.ScreenshotButton variant="secondary" />
-            <RequestShareActions.CopyButton variant="secondary" />
+            <RequestShareActions.LinkButton />
+            <RequestShareActions.ScreenshotButton />
+            <RequestShareActions.CopyButton />
             <Dropdown placement="bottom">
               <Dropdown.Trigger><Button.Icon aria-label="More request actions" variant="secondary" icon={<EllipsisVertical />} /></Dropdown.Trigger>
               <Dropdown.Panel>
@@ -80,7 +80,7 @@ export function RequestDetailContent({ request, syncRequest }: RequestDetailCont
             <DetailPage.Section><RequestAssigneeList assignees={assignees} onAddMember={actions.handleAddMember} onRemoveMember={actions.handleRemoveMember} /></DetailPage.Section>
             <DetailPage.Divider />
             <DetailPage.Section>
-              <Label.md className="block pb-3">Content</Label.md>
+              <Label.sm className="block pb-3 text-primary">Content</Label.sm>
               <DocEditor value={store.state.draft.content ?? ""} onChange={actions.handleContentChange} placeholder="Add notes, details, or additional context…" className="w-full" />
             </DetailPage.Section>
             <DetailPage.Divider />

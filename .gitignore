@@ -19,6 +19,7 @@ output
 **/output
 build
 **/build
+*.tsbuildinfo
 **/.env.local
 **/.env.production
 apps/api/.env

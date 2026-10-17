@@ -1,3 +1,4 @@
+import { Badge } from "@moc/ui/components/display/badge";
 import { Indicator } from "@moc/ui/components/display/indicator";
 import { KanbanBoard } from "@moc/ui/components/display/kanban-board";
 import { Label } from "@moc/ui/components/display/text";
@@ -18,8 +19,9 @@ export function InventoryKanbanView({ equipment }: { equipment: Equipment[] }) {
                     return (
                         <KanbanBoard.Column key={group.key} id={group.key}>
                             <KanbanBoard.ColumnHeader>
-                                <Indicator color={group.color} className="size-6" />
-                                <Label.sm>{group.label}</Label.sm>
+                                <Indicator.Dot color={group.color} className="size-2" />
+                                <Label.xs className="text-quaternary">{group.label}</Label.xs>
+                                <Badge label={String(items.length)} className="ml-auto" />
                             </KanbanBoard.ColumnHeader>
                             <KanbanBoard.ColumnContent>
                                 {items.map((e) => (

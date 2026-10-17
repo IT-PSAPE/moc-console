@@ -31,7 +31,7 @@ export function TelegramLinkFallback({ botUsername, pending, copied, onRetry, on
       </div>
 
       <div className="flex items-center gap-2">
-        <code className="flex-1 min-w-0 truncate rounded border border-secondary bg-primary px-2 py-1.5 text-xs font-mono">{pending.url}</code>
+        <code className="flex-1 min-w-0 truncate rounded-md border border-secondary bg-primary px-2 py-1.5 text-xs font-mono">{pending.url}</code>
         <Button.Icon
           aria-label="Copy Telegram link"
           variant="ghost"
@@ -41,7 +41,7 @@ export function TelegramLinkFallback({ botUsername, pending, copied, onRetry, on
       </div>
 
       <div className="flex items-center gap-2">
-        <code className="flex-1 min-w-0 truncate rounded border border-secondary bg-primary px-2 py-1.5 text-xs font-mono">{command}</code>
+        <code className="flex-1 min-w-0 truncate rounded-md border border-secondary bg-primary px-2 py-1.5 text-xs font-mono">{command}</code>
         <Button.Icon
           aria-label="Copy Telegram command"
           variant="ghost"

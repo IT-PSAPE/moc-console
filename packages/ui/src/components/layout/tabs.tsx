@@ -20,7 +20,7 @@ const tabsListVariants = cv({
     base: ['flex'],
     variants: {
         variant: {
-            default: ['gap-3 px-3 border-b border-secondary'],
+            default: ['gap-4 px-0 border-b border-secondary'],
             pill: ['gap-1 items-center'],
         },
     },
@@ -30,14 +30,14 @@ const tabsListVariants = cv({
 // Active styling keys off Base UI's `data-active` attribute rather than the
 // previous computed `${variant}-${active|inactive}` state string.
 const tabsTabVariants = cv({
-    base: ['flex min-h-0 landscape:min-h-11 cursor-pointer items-center transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-1 motion-reduce:transition-none'],
+    base: ['flex h-control landscape:h-control-lg cursor-pointer items-center justify-center label-sm text-tertiary transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-brand motion-reduce:transition-none'],
     variants: {
         variant: {
-            default: ['py-1.5 border-b-2 paragraph-sm border-transparent data-[active]:border-brand'],
+            default: ['px-1 -mb-px border-b-2 border-transparent hover:text-primary data-[active]:border-brand data-[active]:text-primary'],
             pill: [
-                'px-3 py-1.5 rounded-md label-sm border border-transparent',
-                'text-tertiary hover:text-primary hover:bg-secondary',
-                'data-[active]:bg-primary data-[active]:text-primary data-[active]:border-secondary data-[active]:shadow-xs',
+                'px-3 rounded-lg',
+                'hover:bg-secondary',
+                'data-[active]:bg-secondary data-[active]:text-primary',
             ],
         },
     },
@@ -83,8 +83,10 @@ function TabsTab({ children, className, value }: HTMLAttributes<HTMLDivElement> 
 
 // Base UI has no plural "Panels" wrapper — panels live directly under Root — so
 // this stays a layout-transparent passthrough for API compatibility.
+// Puts the spec's 16px gap between the tab list and whatever the active panel
+// renders (docs/design-system.md §2) so consumers don't each add it.
 function TabsPanels({ children, className }: HTMLAttributes<HTMLDivElement>) {
-    return <div className={cn(className)}>{children}</div>
+    return <div className={cn('pt-4', className)}>{children}</div>
 }
 
 function TabsPanel({ children, className, value }: HTMLAttributes<HTMLDivElement> & { value: string }) {

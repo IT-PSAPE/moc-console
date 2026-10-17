@@ -1,13 +1,17 @@
-import { Label } from "./text"
+import { Paragraph } from "./text"
+import type { ReactNode } from "react"
 
-export function MetaRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
+// Two-column label/value row for detail pages: a fixed-width label column
+// (icon + caption) on the left, the value — plain text or a `style="ghost"`
+// control — filling the remainder.
+export function MetaRow({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
-    <div className="flex items-start gap-3 [&_[data-ui-control]]:min-h-9">
-      <div className="flex min-h-6 w-40 shrink-0 flex-1 items-center gap-2 text-tertiary">
-        <span className="*:size-4">{icon}</span>
-        <Label.xs className="text-tertiary truncate w-full">{label}</Label.xs>
+    <div className="grid grid-cols-[9rem_minmax(0,1fr)] items-center gap-3 min-h-control [&_[data-ui-control]]:min-h-control-sm">
+      <div className="flex min-w-0 items-center gap-2 text-tertiary">
+        <span className="*:size-4 shrink-0">{icon}</span>
+        <Paragraph.xs className="w-full truncate text-tertiary">{label}</Paragraph.xs>
       </div>
-      <div className="flex min-h-6 min-w-0 flex-[2] items-center break-words">{children}</div>
+      <div className="min-w-0 break-words paragraph-sm text-primary">{children}</div>
     </div>
   )
 }

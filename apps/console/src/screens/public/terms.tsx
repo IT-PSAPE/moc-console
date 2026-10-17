@@ -5,7 +5,7 @@ import { PublicDocumentSection as Section } from "./public-document-section"
 export function TermsOfUseScreen() {
   return (
     <PublicLayout>
-      <Title.h1 className="mb-2 title-h3">Terms of Use</Title.h1>
+      <Title.h1 className="mb-2 title-h5">Terms of Use</Title.h1>
       <Paragraph.sm className="text-tertiary mb-8">Last updated: 25 September 2026</Paragraph.sm>
 
       <Paragraph.md className="mb-8">
@@ -133,7 +133,7 @@ export function TermsOfUseScreen() {
 
       <Section title="13. Contact">
         <Paragraph.md>If you have questions about these Terms, contact us at:</Paragraph.md>
-        <ul className="list-none pl-0 mt-3 space-y-1">
+        <ul className="list-none pl-0 mt-3 space-y-2">
           <li><Paragraph.md><strong>PSAPE</strong></Paragraph.md></li>
           <li><Paragraph.md>562 Hancock St, North End, Gqeberha</Paragraph.md></li>
           <li><Paragraph.md>Email: <strong>psape.dev@gmail.com</strong></Paragraph.md></li>

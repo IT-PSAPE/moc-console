@@ -22,7 +22,7 @@ export function AppNavigationRail() {
     return (
         <Sidebar.Rail ref={railRef}>
             <Popover placement="right-start" open={state.isPreviewOpen && !isLandscape} triggerId={previewTriggerId} onOpenChange={actions.changePreview}>
-                <Sidebar.Group className="items-center gap-2 py-0">{sections.map(renderSection)}</Sidebar.Group>
+                <Sidebar.Group className="items-center gap-1 py-0">{sections.map(renderSection)}</Sidebar.Group>
                 {!isLandscape ? <AppNavigationPreview /> : null}
             </Popover>
             <Sidebar.Footer className="mt-auto border-0 px-0 pt-3 pb-0">

@@ -11,8 +11,9 @@ export function AppNavigationSection({ section }: { section: (typeof navigationS
 
     if (!state.isCollapsed || isLandscape) return <Sidebar.RailItem title={section.title} icon={<Icon />} active={state.activeSection === section.id} tone="brand" data-section={section.id} onClick={actions.selectSection} aria-pressed={state.activeSection === section.id} aria-controls="secondary-navigation" />
 
+    // Open on entry rather than pointer rest; keep the safe-polygon close grace.
     return (
-        <Popover.Trigger id={`navigation-preview-${section.id}`} openOnHover delay={state.isPreviewOpen ? 0 : 180} closeDelay={350}>
+        <Popover.Trigger id={`navigation-preview-${section.id}`} openOnHover delay={0} closeDelay={350}>
             <Sidebar.RailButton title={section.title} icon={<Icon />} active={state.activeSection === section.id} tone="brand" data-section={section.id} onClick={actions.selectSection} onKeyDown={actions.openPreviewWithKeyboard} aria-pressed={state.activeSection === section.id} />
         </Popover.Trigger>
     )

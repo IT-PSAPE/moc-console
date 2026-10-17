@@ -21,13 +21,13 @@ export function DateTimeSection() {
             <Section.Body>
                 {state.loadError ? <ResourceLoadError title="Date and time settings couldn't be loaded" error={state.loadError} onRetry={actions.retryLoad} /> : state.isLoading ? <LoadingSpinner className="py-8" /> : (
                     <DividedList>
-                        <SettingsRow label="Time zone" className="px-4 py-3 landscape:px-3">
+                        <SettingsRow label="Time zone">
                             <Select.Root name="notification-timezone" items={state.timezoneItems} value={state.timezone} onValueChange={actions.changeTimezone}>
                                 <Select.Trigger aria-label="Time zone" className="max-w-md" />
                                 <Select.Content>{state.timezoneItems.map(renderTimezone)}</Select.Content>
                             </Select.Root>
                         </SettingsRow>
-                        <SettingsRow label="Date format" className="px-4 py-3 landscape:px-3">
+                        <SettingsRow label="Date format">
                             <Select.Root name="notification-date-format" items={state.dateFormatItems} value={state.dateFormat} onValueChange={actions.changeDateFormat}>
                                 <Select.Trigger aria-label="Date format" className="max-w-md" />
                                 <Select.Content>{state.dateFormatItems.map(renderDateFormat)}</Select.Content>

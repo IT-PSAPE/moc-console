@@ -51,7 +51,7 @@ export function DateTimeFields({ value, onChange, label, ariaLabel, name, dateLa
                     <Input id={timeId} aria-label={accessibleLabel ? `${accessibleLabel} time` : timeLabel} aria-describedby={feedbackText ? feedbackId : undefined} aria-invalid={hasError || undefined} name={name ? `${name}-time` : undefined} type="time" value={time} onChange={handleTimeChange} required={required} disabled={disabled} style={style} />
                 </div>
             </div>
-            {feedbackText && <Paragraph.xs id={feedbackId} role={hasError ? "alert" : undefined} aria-live="polite" className={hasError ? "text-error" : "text-quaternary"}>{feedbackText}</Paragraph.xs>}
+            {feedbackText && <Paragraph.xs id={feedbackId} role={hasError ? "alert" : undefined} aria-live="polite" className={hasError ? "text-error" : "text-tertiary"}>{feedbackText}</Paragraph.xs>}
         </div>
     );
 }

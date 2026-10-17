@@ -14,17 +14,14 @@ type WorkspaceSwitcherProps = {
     onSignOut: () => void
 }
 
-const menuItemClassName = 'min-h-9 gap-2 px-2 py-1.5 landscape:min-h-11'
-
 export function WorkspaceSwitcher({ isSigningOut, onEditProfile, onSignOut }: WorkspaceSwitcherProps) {
     const { meta } = useWorkspaceSwitcher()
-
 
     return (
         <Dropdown placement="top-start">
             <Dropdown.Trigger>
-                <NavigationList.Item aria-label={`Account menu for ${meta.displayName}. Current workspace: ${meta.workspaceName}`} className="size-11 min-h-11 justify-center p-1">
-                    <Avatar src={meta.avatarUrl} name={meta.initials} size="xs" />
+                <NavigationList.Item aria-label={`Account menu for ${meta.displayName}. Current workspace: ${meta.workspaceName}`} className="!size-control justify-center px-0 landscape:!size-control-lg">
+                    <Avatar src={meta.avatarUrl} name={meta.initials} size="sm" />
                 </NavigationList.Item>
             </Dropdown.Trigger>
             <Dropdown.Panel className="w-72 p-1.5">
@@ -39,19 +36,19 @@ export function WorkspaceSwitcher({ isSigningOut, onEditProfile, onSignOut }: Wo
                     </ListItemCard.Content>
                 </ListItemCard.Root>
                 <Dropdown.Separator />
-                <Dropdown.Link render={<Link to="/account/settings" />} className={menuItemClassName}>
-                    <Settings className="size-6 shrink-0 p-1" aria-hidden="true" />
+                <Dropdown.Link render={<Link to="/account/settings" />}>
+                    <Settings className="size-4 shrink-0" aria-hidden="true" />
                     Settings
                 </Dropdown.Link>
-                <Dropdown.Item onSelect={onEditProfile} className={menuItemClassName}>
-                    <UserRound className="size-6 shrink-0 p-1" aria-hidden="true" />
+                <Dropdown.Item onSelect={onEditProfile}>
+                    <UserRound className="size-4 shrink-0" aria-hidden="true" />
                     Edit profile
                 </Dropdown.Item>
                 <Dropdown.Separator />
                 <WorkspaceMenuItems />
                 <Dropdown.Separator />
-                <Dropdown.Item onSelect={onSignOut} disabled={isSigningOut} className={menuItemClassName}>
-                    <LogOut className="size-6 shrink-0 p-1 text-error" aria-hidden="true" />
+                <Dropdown.Item onSelect={onSignOut} disabled={isSigningOut}>
+                    <LogOut className="size-4 shrink-0 text-error" aria-hidden="true" />
                     <span className="text-error">{isSigningOut ? 'Logging out…' : 'Log out'}</span>
                 </Dropdown.Item>
             </Dropdown.Panel>

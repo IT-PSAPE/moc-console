@@ -106,7 +106,7 @@ function BreadcrumbItem({ label, isLast, onClick, icon }: BreadcrumbItemProps) {
     }
 
     return (
-        <BaseButton type="button" onClick={onClick} className="paragraph-sm text-tertiary hover:text-secondary cursor-pointer flex items-center gap-1" >
+        <BaseButton type="button" onClick={onClick} className="paragraph-sm text-tertiary hover:text-secondary cursor-pointer flex items-center gap-1 rounded-md outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-brand" >
             {icon} {label}
         </BaseButton>
     )
@@ -129,12 +129,12 @@ function BreadcrumbRoot({ className }: { className?: string }) {
     const crumbs = deriveBreadcrumbs(pathname, overrides)
 
     return (
-        <nav aria-label="Breadcrumb" className={cn("flex items-center", className)}>
-            <ol className="flex items-center gap-1">
+        <nav aria-label="Breadcrumb" className={cn("flex h-control items-center", className)}>
+            <ol className="flex items-center gap-1.5">
                 {crumbs.map((crumb, index) => {
                     const isLast = index === crumbs.length - 1
                     return (
-                        <li key={crumb.path} className="flex items-center gap-1">
+                        <li key={crumb.path} className="flex items-center gap-1.5">
                             {index > 0 && <BreadcrumbSeparator />}
                             <BreadcrumbItem label={crumb.label} isLast={isLast} onClick={() => navigate(crumb.path)} />
                         </li>

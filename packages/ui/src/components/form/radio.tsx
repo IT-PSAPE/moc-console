@@ -2,6 +2,7 @@ import { Radio as BaseRadio } from "@base-ui/react/radio";
 import { RadioGroup as BaseRadioGroup } from "@base-ui/react/radio-group";
 import { cn } from "@moc/utils/cn";
 import type { ReactNode } from "react";
+import { Label } from "../display/text";
 
 // ─── Group ───────────────────────────────────────────────
 //
@@ -46,29 +47,31 @@ type RadioProps = {
 }
 
 export function Radio({ value, children, className, disabled, ...rest }: RadioProps) {
+    const showLabel = children !== null && children !== undefined && children !== false
+
     return (
-        <label className="group flex min-h-0 landscape:min-h-11 w-fit items-center gap-1.5 has-[:disabled]:cursor-not-allowed">
+        <label className="group flex min-h-control-sm landscape:min-h-control-lg w-fit items-center gap-2 has-[:disabled]:cursor-not-allowed">
             <BaseRadio.Root
                 value={value}
                 disabled={disabled}
                 aria-label={rest["aria-label"]}
                 className={cn(
-                    "inline-flex size-4 shrink-0 items-center justify-center rounded-full border",
-                    "border-secondary bg-primary transition-colors",
+                    "inline-flex size-4 shrink-0 items-center justify-center rounded-full border shadow-xs",
+                    "border-primary bg-primary transition-colors",
                     "group-hover:border-brand",
                     // Focus moves to Base UI's Radio.Root (no sibling `peer` input).
-                    "focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-border-brand/10 focus-visible:outline-none",
+                    "focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-border-brand/20 focus-visible:outline-none",
                     "data-[checked]:border-brand data-[checked]:bg-brand_solid",
-                    "data-[disabled]:border-primary data-[disabled]:bg-tertiary",
+                    "data-[disabled]:bg-tertiary data-[disabled]:group-hover:border-primary",
                     className,
                 )}
             >
                 <BaseRadio.Indicator
                     keepMounted
-                    className="size-2 rounded-full bg-primary opacity-0 transition-opacity data-[checked]:opacity-100"
+                    className="size-1.5 rounded-full bg-white opacity-0 transition-opacity data-[checked]:opacity-100"
                 />
             </BaseRadio.Root>
-            {children}
+            {showLabel ? <Label.sm className="font-medium text-secondary">{children}</Label.sm> : null}
         </label>
     );
 }

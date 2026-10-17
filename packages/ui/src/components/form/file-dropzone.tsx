@@ -90,9 +90,9 @@ export function FileDropzone({ accept, className, fileName, fileNames, hint = "S
       <BaseButton
         type="button"
         className={cn(
-          "flex flex-col min-h-24 w-full items-center gap-3 rounded-lg border border-dashed bg-primary px-4 py-3 text-left transition-colors",
-          "border-secondary hover:border-brand hover:bg-tertiary",
-          "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-border-brand",
+          "flex flex-col min-h-24 w-full items-center gap-2 rounded-xl border border-dashed bg-primary p-6 text-left transition-colors",
+          "border-primary hover:border-brand hover:bg-tertiary",
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-brand",
           isDragging && "border-brand bg-tertiary ring-3 ring-border-brand/10",
           className,
         )}
@@ -102,14 +102,14 @@ export function FileDropzone({ accept, className, fileName, fileNames, hint = "S
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-tertiary", hasSelection && "text-success")}>
-          {hasSelection ? <Check className="size-4" /> : <Upload className="size-4" />}
+        <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-quaternary", hasSelection && "text-success")}>
+          {hasSelection ? <Check className="size-5" /> : <Upload className="size-5" />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <Paragraph.sm className={cn("text-secondary", !hasSelection && "text-tertiary")}>
+          <Paragraph.sm className={cn("text-secondary", !hasSelection && "text-quaternary")}>
             {displayName ?? placeholder}
           </Paragraph.sm>
-          <Paragraph.xs className="text-quaternary">
+          <Paragraph.xs className="text-tertiary">
             {hasSelection ? selectedHint : hint}
           </Paragraph.xs>
         </span>

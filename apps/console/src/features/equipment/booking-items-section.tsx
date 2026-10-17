@@ -1,15 +1,24 @@
 import { Badge } from "@moc/ui/components/display/badge";
-import { Button } from "@moc/ui/components/controls/button";
+import { DividedList } from "@moc/ui/components/display/divided-list";
+import { ListItemCard } from "@moc/ui/components/display/list-item-card";
+import { InteractiveSurface } from "@moc/ui/components/controls/interactive-surface";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { equipmentCategoryLabel } from "@moc/types/equipment";
 import type { BookingItem } from "@moc/types/equipment";
 import { ChevronRight, Package } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 // Shared between the booking drawer and the booking detail page so the
 // equipment-item list renders identically in both places. `scannedItemIds`
 // reflects transient, per-session scan progress and is only supplied where a
 // scan flow is active; the "Scanned" tick is not persisted state.
+//
+// NOTE: the design spec calls for the equipment serial number as a
+// `Badge variant="outline" font-mono` trailing each row, but `BookingItem`
+// (packages/types/src/equipment/booking.ts) and the API query that builds it
+// (apps/api/server/platform/bookings.ts) don't carry a serial number today —
+// see the audit report for the follow-up needed outside this agent's owned
+// directories. The category label stands in for now.
 export function BookingItemsSection({
   items,
   scannedItemIds,
@@ -20,58 +29,46 @@ export function BookingItemsSection({
   onNavigate?: () => void;
 }) {
   return (
-    <section className="mt-6 px-4">
-      <Label.xs className="uppercase tracking-wide text-quaternary">
+    <section>
+      <Label.sm className="block pb-3 text-primary">
         Items ({items.length})
-      </Label.xs>
-      <div className="mt-2 border-t border-border-secondary">
-        {items.length === 0 && (
-          <Paragraph.sm className="py-3 text-tertiary">
-            No equipment is associated with this booking.
-          </Paragraph.sm>
-        )}
-        {items.map((item) => (
-          <BookingItemRow
-            key={item.id}
-            item={item}
-            isScanned={scannedItemIds?.has(item.id) ?? false}
-            onNavigate={onNavigate}
-          />
-        ))}
-      </div>
+      </Label.sm>
+      {items.length === 0 ? (
+        <Paragraph.sm className="text-tertiary">
+          No equipment is associated with this booking.
+        </Paragraph.sm>
+      ) : (
+        <DividedList>
+          {items.map((item) => (
+            <BookingItemRow
+              key={item.id}
+              item={item}
+              isScanned={scannedItemIds?.has(item.id) ?? false}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </DividedList>
+      )}
     </section>
   );
 }
 
 function BookingItemRow({ item, isScanned, onNavigate }: { item: BookingItem; isScanned: boolean; onNavigate?: () => void }) {
-  const navigate = useNavigate();
-
-  function handleClick() {
-    onNavigate?.();
-    navigate(`/equipment/${item.equipmentId}`);
-  }
-
   return (
-    <Button.Unstyled
-      type="button"
-      onClick={handleClick}
-      className="flex w-full items-center gap-3 py-3 border-b border-border-secondary text-left hover:bg-tertiary transition-colors"
-    >
-      {item.equipmentThumbnail ? (
-        <img src={item.equipmentThumbnail} alt={item.equipmentName} width="40" height="40" className="size-10 rounded object-cover" />
-      ) : (
-        <span className="flex size-10 shrink-0 items-center justify-center rounded bg-secondary text-quaternary">
-          <Package className="size-5" />
-        </span>
-      )}
-      <div className="flex-1 min-w-0">
-        <Label.sm className="block truncate">{item.equipmentName}</Label.sm>
-        <Paragraph.xs className="text-tertiary">
-          {equipmentCategoryLabel[item.equipmentCategory]}
-        </Paragraph.xs>
-      </div>
-      {isScanned ? <Badge color="green" label="Scanned" /> : null}
-      <ChevronRight className="size-4 text-quaternary" />
-    </Button.Unstyled>
+    <InteractiveSurface.CardLink render={<Link to={`/equipment/${item.equipmentId}`} onClick={onNavigate} />} aria-label={item.equipmentName}>
+      <ListItemCard.Root>
+        <ListItemCard.Leading>
+          {item.equipmentThumbnail ? <img src={item.equipmentThumbnail} alt="" className="size-full object-cover" /> : <Package />}
+        </ListItemCard.Leading>
+        <ListItemCard.Content>
+          <ListItemCard.Title>{item.equipmentName}</ListItemCard.Title>
+          <ListItemCard.Subtitle>{equipmentCategoryLabel[item.equipmentCategory]}</ListItemCard.Subtitle>
+        </ListItemCard.Content>
+        <ListItemCard.Trailing>
+          {isScanned && <Badge color="green" label="Scanned" />}
+          <ChevronRight className="size-4 shrink-0 text-quaternary" aria-hidden="true" />
+        </ListItemCard.Trailing>
+      </ListItemCard.Root>
+    </InteractiveSurface.CardLink>
   );
 }

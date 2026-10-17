@@ -28,8 +28,8 @@ export function BookingListView({ bookings, onSelect }: { bookings: Booking[]; o
         return (
           <GroupedList.Group key={group.key}>
             <GroupedList.Header>
-              <Indicator color={group.color} className="size-6" />
-              <Label.sm>{group.label}</Label.sm>
+              <Indicator.Dot color={group.color} className="size-2" />
+              <Label.xs className="text-quaternary">{group.label}</Label.xs>
             </GroupedList.Header>
             <GroupedList.Content>
               {items.map(renderBooking)}

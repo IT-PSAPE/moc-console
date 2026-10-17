@@ -66,7 +66,7 @@ export function EquipmentPropertiesSection({
   }
 
   return (
-    <div className="px-4 space-y-3">
+    <div className="space-y-3">
       <MetaRow icon={<Hash />} label="Serial Number">
         <Paragraph.sm>{draft.serialNumber}</Paragraph.sm>
       </MetaRow>

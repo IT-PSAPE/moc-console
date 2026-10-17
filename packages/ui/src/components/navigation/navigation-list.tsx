@@ -7,14 +7,14 @@ type NavigationListItemTone = 'brand' | 'neutral'
 
 const navigationListItemVariants = cv({
     base: [
-        'inline-flex min-h-9 landscape:min-h-11 w-full cursor-pointer items-center justify-start gap-2 overflow-hidden rounded-md px-3 py-2 label-sm',
+        'inline-flex h-control landscape:h-control-lg w-full cursor-pointer items-center justify-start gap-2.5 overflow-hidden rounded-lg px-3 label-sm',
         'touch-manipulation transition-colors motion-reduce:transition-none',
-        'focus-visible:outline-2 focus-visible:outline-offset-1',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-brand',
         'disabled:cursor-not-allowed disabled:text-quaternary',
     ],
     variants: {
         state: {
-            inactive: ['bg-transparent text-secondary hover:bg-secondary active:bg-secondary'],
+            inactive: ['bg-transparent text-secondary hover:bg-tertiary active:bg-tertiary'],
             'active-brand': ['bg-brand text-brand hover:bg-brand active:bg-brand'],
             'active-neutral': ['bg-secondary text-primary hover:bg-secondary active:bg-secondary'],
         },
@@ -25,7 +25,7 @@ const navigationListItemVariants = cv({
 })
 
 function NavigationListRoot({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    return <div className={cn('flex w-full flex-col gap-1', className)} {...props}>{children}</div>
+    return <div className={cn('flex w-full flex-col gap-0.5', className)} {...props}>{children}</div>
 }
 
 type NavigationListItemProps = Omit<ComponentProps<typeof BaseButton>, 'className'> & {

@@ -1,6 +1,5 @@
 import { GroupedList } from "@moc/ui/components/display/grouped-list";
 import { Indicator } from "@moc/ui/components/display/indicator";
-import { Label } from "@moc/ui/components/display/text";
 import type { Request } from "@moc/types/requests";
 import { statusGroups } from "@moc/types/requests";
 import { ResponsiveDetailAction } from "@/features/responsive-detail-action";
@@ -28,8 +27,8 @@ export function RequestListView({ onSelect, requests }: { onSelect: (request: Re
                 return (
                     <GroupedList.Group key={group.key}>
                         <GroupedList.Header>
-                            <Indicator color={group.color} className='size-6' />
-                            <Label.sm>{group.label}</Label.sm>
+                            <Indicator.Dot color={group.color} className="size-2" />
+                            <span>{group.label}</span>
                         </GroupedList.Header>
                         <GroupedList.Content>
                             {items.map(renderRequest)}

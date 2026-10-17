@@ -2,6 +2,7 @@ import { Switch } from "@base-ui/react/switch";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
 import type { ReactNode } from "react";
+import { Label } from "../display/text";
 
 type ToggleProps = {
     checked: boolean
@@ -38,7 +39,7 @@ const trackVariants = cv({
 })
 
 const thumbVariants = cv({
-    base: ['inline-block rounded-full bg-white shadow translate-y-0.5 transition-transform motion-reduce:transition-none'],
+    base: ['inline-block rounded-full bg-white shadow-xs translate-y-0.5 transition-transform motion-reduce:transition-none'],
     variants: {
         size: {
             sm: ['size-3'],
@@ -74,9 +75,9 @@ export function Toggle({ checked, onChange, disabled, size = 'md', className, ch
     if (!children) return control
 
     return (
-        <label className={cn('inline-flex min-h-0 landscape:min-h-11 items-center gap-2 has-[:disabled]:cursor-not-allowed', className)}>
+        <label className={cn('inline-flex min-h-0 landscape:min-h-control-lg items-center gap-2 has-[:disabled]:cursor-not-allowed', className)}>
             {control}
-            {children}
+            <Label.sm className="font-medium text-secondary">{children}</Label.sm>
         </label>
     )
 }

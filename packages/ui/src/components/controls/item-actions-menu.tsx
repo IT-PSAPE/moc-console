@@ -5,15 +5,16 @@ import { Dropdown } from '../overlays/dropdown'
 type ItemActionsMenuProps = {
     label: string
     disabled?: boolean
+    size?: "sm" | "md"
     onEdit: () => void
     onDuplicate: () => void
     onDelete: () => void
 }
 
-export function ItemActionsMenu({ label, disabled, onEdit, onDuplicate, onDelete }: ItemActionsMenuProps) {
+export function ItemActionsMenu({ label, disabled, size = "sm", onEdit, onDuplicate, onDelete }: ItemActionsMenuProps) {
     return (
         <Dropdown placement="bottom-end">
-            <Dropdown.Trigger><Button.Icon aria-label={`Options for ${label}`} variant="ghost" icon={<EllipsisVertical />} disabled={disabled} /></Dropdown.Trigger>
+            <Dropdown.Trigger><Button.Icon aria-label={`Options for ${label}`} variant="ghost" size={size} icon={<EllipsisVertical />} disabled={disabled} /></Dropdown.Trigger>
             <Dropdown.Panel>
                 <Dropdown.Item onSelect={onEdit}><Pencil className="size-4" aria-hidden="true" />Edit</Dropdown.Item>
                 <Dropdown.Item onSelect={onDuplicate}><Copy className="size-4" aria-hidden="true" />Duplicate</Dropdown.Item>

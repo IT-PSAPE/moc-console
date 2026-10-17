@@ -134,7 +134,7 @@ function ModalBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>) 
     return (
         <BaseDrawer.Backdrop
             className={cn(
-                'pointer-events-auto fixed inset-0 z-0 bg-overlay/30 landscape:bg-overlay/40',
+                'pointer-events-auto fixed inset-0 z-0 bg-overlay/50 backdrop-blur-[2px]',
                 'transition-opacity duration-200 motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
                 className,
             )}
@@ -174,11 +174,11 @@ function ModalPanelSurface({ children, className, mode, ...props }: HTMLAttribut
         <BaseDrawer.Popup
             data-base-ui-swipe-ignore={isLandscape ? undefined : ''}
             className={cn(
-                'pointer-events-auto flex w-full flex-col border border-secondary bg-primary outline-none',
+                'pointer-events-auto flex w-full flex-col border border-secondary bg-primary shadow-xl outline-none',
                 isLandscape
                     ? cn(
                         mobileDrawerStackPopupClassName,
-                        '!max-w-none rounded-t-3xl border-b-0 shadow-xl',
+                        '!max-w-none rounded-t-xl border-b-0',
                         mode === 'full-screen'
                             ? 'h-[calc(100dvh-max(0.5rem,env(safe-area-inset-top)))]'
                             : 'min-h-[40dvh] max-h-[90dvh]',

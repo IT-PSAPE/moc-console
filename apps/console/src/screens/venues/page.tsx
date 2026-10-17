@@ -44,7 +44,7 @@ export function VenueBookingsScreen() {
           <Page.Title>Venues</Page.Title>
         </Page.Heading>
         <Page.Controls>
-          <Input aria-label="Search venue bookings" name="venue-booking-search" autoComplete="off" icon={<Search />} placeholder="Search bookings…" className="w-full max-w-md" value={filters.filters.search} onChange={handleSearch} />
+          <Input aria-label="Search venue bookings" name="venue-booking-search" autoComplete="off" icon={<Search />} placeholder="Search bookings…" value={filters.filters.search} onChange={handleSearch} />
           <Drawer mobileSide="bottom">
             <Drawer.Trigger>
               <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter venue bookings">Filter</CollectionToolbar.ActionButton>

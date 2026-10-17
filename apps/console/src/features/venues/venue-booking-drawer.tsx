@@ -6,7 +6,7 @@ import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { Dropdown } from "@moc/ui/components/overlays/dropdown";
 import { Divider } from "@moc/ui/components/display/divider";
 import { Button } from "@moc/ui/components/controls/button";
-import { Title } from "@moc/ui/components/display/text";
+import { Label } from "@moc/ui/components/display/text";
 import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 import type { VenueBooking } from "@moc/types/venues";
 import { routes } from "@/screens/console-routes";
@@ -83,12 +83,12 @@ export function VenueBookingPanelContent({ booking, onClose }: VenueBookingPanel
   return (
     <>
       <SplitPanel.Header className="flex items-center gap-1">
-        <Button.Icon aria-label="Close booking" variant="ghost" icon={<X />} onClick={onClose} />
-        <Button.IconLink aria-label="Open full page" variant="ghost" icon={<Maximize2 />} render={<Link state={linkState} to={`/${routes.venues}/${booking.id}`} />} />
+        <Button.Icon aria-label="Close booking" variant="ghost" size="sm" icon={<X />} onClick={onClose} />
+        <Button.IconLink aria-label="Open full page" variant="ghost" size="sm" icon={<Maximize2 />} render={<Link state={linkState} to={`/${routes.venues}/${booking.id}`} />} />
         <div className="flex-1" />
         <Dropdown placement="bottom">
           <Dropdown.Trigger>
-            <Button.Icon aria-label="More booking actions" variant="ghost" icon={<EllipsisVertical />} />
+            <Button.Icon aria-label="More booking actions" variant="secondary" size="sm" icon={<EllipsisVertical />} />
           </Dropdown.Trigger>
           <Dropdown.Panel>
             {canRestore ? (
@@ -120,28 +120,24 @@ export function VenueBookingPanelContent({ booking, onClose }: VenueBookingPanel
         </Dropdown>
       </SplitPanel.Header>
 
-      <SplitPanel.Content className="py-4">
-        <div className="px-4 pb-4">
-          <Title.h6>{booking.title}</Title.h6>
-        </div>
+      <SplitPanel.Content>
+        <Label.md>{booking.title}</Label.md>
 
-        <div className="px-4">
-          <VenueBookingMetaFields booking={booking} at={at} />
-        </div>
+        <VenueBookingMetaFields booking={booking} at={at} />
 
-        <RequestLinkField kind="venue-booking" id={booking.id} className="px-4 pt-5" />
+        <RequestLinkField kind="venue-booking" id={booking.id} />
 
         {booking.notes && (
           <>
-            <Divider className="my-6" />
-            <VenueBookingNotes booking={booking} className="px-4" />
+            <Divider className="my-0" />
+            <VenueBookingNotes booking={booking} />
           </>
         )}
 
         {isCancelled && (
           <>
-            <Divider className="my-6" />
-            <VenueBookingCancellationAudit booking={booking} className="px-4" />
+            <Divider className="my-0" />
+            <VenueBookingCancellationAudit booking={booking} />
           </>
         )}
       </SplitPanel.Content>

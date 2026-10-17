@@ -13,13 +13,15 @@ type EmptyStateProps = HTMLAttributes<HTMLDivElement> & {
 export function EmptyState({ icon, title, description, action, headingLevel = 'h2', className, ...props }: EmptyStateProps) {
     const Heading = headingLevel
     return (
-        <div className={cn('flex flex-col items-center justify-center text-center gap-3 py-16', className)} {...props}>
-            {icon && <span className="text-quaternary *:size-10">{icon}</span>}
-            <div className="flex flex-col gap-1">
-                <Heading className="label-sm text-secondary">{title}</Heading>
-                {description && <Paragraph.sm className="text-tertiary">{description}</Paragraph.sm>}
-            </div>
-            {action && <div className="pt-2">{action}</div>}
+        <div className={cn('mx-auto flex max-w-sm flex-col items-center justify-center gap-2 py-12 text-center', className)} {...props}>
+            {icon && (
+                <span className="mb-2 flex size-10 items-center justify-center rounded-lg border border-secondary bg-primary text-tertiary shadow-xs *:size-5">
+                    {icon}
+                </span>
+            )}
+            <Heading className="label-sm text-primary">{title}</Heading>
+            {description && <Paragraph.sm className="text-tertiary">{description}</Paragraph.sm>}
+            {action && <div className="mt-4">{action}</div>}
         </div>
     )
 }

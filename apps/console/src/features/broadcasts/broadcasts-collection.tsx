@@ -52,7 +52,6 @@ function BroadcastsCollection() {
                 autoComplete="off"
                 icon={<Search />}
                 placeholder="Search broadcasts…"
-                className="w-full max-w-md"
                 value={state.searchQuery}
                 onChange={handleSearchChange}
               />

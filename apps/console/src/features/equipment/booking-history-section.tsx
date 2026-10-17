@@ -1,28 +1,33 @@
-import { Accordion } from "@moc/ui/components/display/accordion";
 import { Badge } from "@moc/ui/components/display/badge";
+import { DividedList } from "@moc/ui/components/display/divided-list";
+import { InteractiveSurface } from "@moc/ui/components/controls/interactive-surface";
+import { ListItemCard } from "@moc/ui/components/display/list-item-card";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import { bookingStatusLabel, bookingStatusColor } from "@moc/types/equipment";
 import type { Booking } from "@moc/types/equipment";
-import { ChevronDown, History } from "lucide-react";
+import { History } from "lucide-react";
+import { Link } from "react-router-dom";
 import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time";
 
 type BookingHistorySectionProps = {
   bookings: Booking[];
   isLoading: boolean;
+  onNavigate?: () => void;
 };
 
 export function BookingHistorySection({
   bookings,
   isLoading,
+  onNavigate,
 }: BookingHistorySectionProps) {
   return (
-    <div className="px-4">
+    <div>
       <div className="flex items-center gap-2 pb-3">
         <History className="size-4 text-tertiary" />
-        <Label.md>
+        <Label.sm className="text-primary">
           Booking History{bookings.length > 0 && ` (${bookings.length})`}
-        </Label.md>
+        </Label.sm>
       </div>
 
       {isLoading ? (
@@ -32,78 +37,35 @@ export function BookingHistorySection({
           No booking history
         </Paragraph.sm>
       ) : (
-        <Accordion type="multiple">
+        <DividedList>
           {bookings.map((booking) => (
-            <BookingHistoryRow key={booking.id} booking={booking} />
+            <BookingHistoryRow key={booking.id} booking={booking} onNavigate={onNavigate} />
           ))}
-        </Accordion>
+        </DividedList>
       )}
     </div>
   );
 }
 
-function BookingHistoryRow({ booking }: { booking: Booking }) {
+function BookingHistoryRow({ booking, onNavigate }: { booking: Booking; onNavigate?: () => void }) {
   return (
-    <Accordion.Item
-      value={booking.id}
-      className="border-b border-secondary last:border-b-0"
-    >
-      <Accordion.Trigger className="flex items-center justify-between py-3 w-full">
-        <div className="flex flex-col items-start min-w-0 flex-1 text-left">
-          <Label.sm className="truncate">{booking.title}</Label.sm>
-          <Paragraph.xs className="text-tertiary truncate">
-            {booking.bookedBy} &middot; {formatUtcIsoInBrowserTimeZone(booking.checkedOutDate, {
+    <InteractiveSurface.CardLink render={<Link to={`/bookings/${booking.id}`} onClick={onNavigate} />} aria-label={booking.title}>
+      <ListItemCard.Root>
+        <ListItemCard.Content>
+          <ListItemCard.Title>{booking.title}</ListItemCard.Title>
+          <ListItemCard.Subtitle>{booking.bookedBy}</ListItemCard.Subtitle>
+        </ListItemCard.Content>
+        <ListItemCard.Trailing>
+          <Badge label={bookingStatusLabel[booking.status]} color={bookingStatusColor[booking.status]} />
+          <Paragraph.xs className="whitespace-nowrap text-tertiary">
+            {formatUtcIsoInBrowserTimeZone(booking.checkedOutDate, {
               day: "numeric",
               month: "short",
               year: "numeric",
             })}
           </Paragraph.xs>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <ChevronDown className="size-4 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
-        </div>
-      </Accordion.Trigger>
-      <Accordion.Content>
-        <div className="pb-3 space-y-1.5">
-          <div className="flex items-center gap-2">
-            <Paragraph.xs className="text-quaternary">Status:</Paragraph.xs>
-            <Badge
-              label={bookingStatusLabel[booking.status]}
-              color={bookingStatusColor[booking.status]}
-            />
-          </div>
-          {booking.returnedDate && (
-            <div className="flex items-center gap-2">
-              <Paragraph.xs className="text-quaternary">Returned:</Paragraph.xs>
-              <Paragraph.xs>
-                {formatUtcIsoInBrowserTimeZone(booking.returnedDate, {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </Paragraph.xs>
-            </div>
-          )}
-          {!booking.returnedDate && (
-            <div className="flex items-center gap-2">
-              <Paragraph.xs className="text-quaternary">Expected:</Paragraph.xs>
-              <Paragraph.xs>
-                {formatUtcIsoInBrowserTimeZone(booking.expectedReturnAt)}
-              </Paragraph.xs>
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <Paragraph.xs className="text-quaternary">Duration:</Paragraph.xs>
-            <Paragraph.xs>{booking.duration}</Paragraph.xs>
-          </div>
-          {booking.notes && (
-            <div className="flex items-center gap-2">
-              <Paragraph.xs className="text-quaternary">Notes:</Paragraph.xs>
-              <Paragraph.xs>{booking.notes}</Paragraph.xs>
-            </div>
-          )}
-        </div>
-      </Accordion.Content>
-    </Accordion.Item>
+        </ListItemCard.Trailing>
+      </ListItemCard.Root>
+    </InteractiveSurface.CardLink>
   );
 }

@@ -6,6 +6,7 @@ import { BookingDeleteModal } from "@/features/equipment/booking-delete-modal"
 import { BookingItemsSection } from "@/features/equipment/booking-items-section"
 import { BookingScanModal } from "@/features/equipment/booking-scan-modal"
 import { BookingStatusSelect } from "@/features/equipment/booking-status-select"
+import { BookingThumbnail } from "@/features/equipment/booking-thumbnail"
 import { useBookingEditor } from "@/features/equipment/use-booking-editor"
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal"
 import { TopBarActions } from "@/features/topbar"
@@ -22,7 +23,7 @@ import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { Page } from "@moc/ui/components/layout/page"
 import type { Booking } from "@moc/types/equipment"
 import { formatUtcIsoForBrowserDateTimeInput } from "@moc/utils/browser-date-time"
-import { Calendar, Clock, Loader, Package, Save, ScanLine, StickyNote, Trash2, Undo2, User } from "lucide-react"
+import { Calendar, Clock, Loader, Save, ScanLine, StickyNote, Trash2, Undo2, User } from "lucide-react"
 
 export function BookingDetailContent({ booking }: { booking: Booking }) {
   const back = useDetailReturn(`/${routes.bookings}`, "Back to bookings")
@@ -55,7 +56,7 @@ export function BookingDetailContent({ booking }: { booking: Booking }) {
 
         <DetailPage.Header>
           <Header.Lead className="gap-3">
-            <span className="flex size-14 items-center justify-center rounded-lg bg-secondary text-quaternary"><Package className="size-7" /></span>
+            <BookingThumbnail />
             <div className="min-w-0">
               <Page.Title className="truncate">{draft.title}</Page.Title>
               <Paragraph.sm className="text-tertiary">{draft.trackingCode}</Paragraph.sm>
@@ -75,9 +76,10 @@ export function BookingDetailContent({ booking }: { booking: Booking }) {
           </MetaRow>
         </DetailPage.Section>
 
+        <DetailPage.Divider />
         <DetailPage.Section><RequestLinkField kind="booking" id={booking.id} /></DetailPage.Section>
         <DetailPage.Divider />
-        <BookingItemsSection items={draft.items} scannedItemIds={collection.state.scannedItemIds} />
+        <DetailPage.Section><BookingItemsSection items={draft.items} scannedItemIds={collection.state.scannedItemIds} /></DetailPage.Section>
 
         <UnsavedChangesModal open={guard.state.isBlocked} onSave={guard.actions.saveAndContinue} onDiscard={guard.actions.discardAndContinue} onCancel={guard.actions.cancel} isSaving={store.state.isSaving} />
         <BookingDeleteModal open={editor.state.deleteOpen} isDeleting={editor.state.isDeleting} onConfirm={editor.actions.remove} onOpenChange={editor.actions.setDeleteOpen} />

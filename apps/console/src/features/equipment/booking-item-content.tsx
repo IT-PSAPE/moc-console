@@ -13,6 +13,8 @@ export function BookingItemContent({ booking }: { booking: Booking }) {
             <ListItemCard.Content>
                 <ListItemCard.Title>{booking.title}</ListItemCard.Title>
                 {booking.notes && <ListItemCard.Subtitle>{booking.notes}</ListItemCard.Subtitle>}
+            </ListItemCard.Content>
+            <ListItemCard.Trailing>
                 <ListItemCard.Meta>
                     <ListItemCard.MetaItem icon={<User />}>{booking.bookedBy}</ListItemCard.MetaItem>
                     <ListItemCard.MetaItem icon={<CalendarRange />}>
@@ -20,7 +22,7 @@ export function BookingItemContent({ booking }: { booking: Booking }) {
                     </ListItemCard.MetaItem>
                     <ListItemCard.MetaItem icon={<Package />}>{itemCount} item{itemCount === 1 ? '' : 's'}</ListItemCard.MetaItem>
                 </ListItemCard.Meta>
-            </ListItemCard.Content>
+            </ListItemCard.Trailing>
         </ListItemCard.Root>
     )
 }

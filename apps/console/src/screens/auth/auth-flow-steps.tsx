@@ -1,4 +1,5 @@
 import { cn } from "@moc/utils/cn"
+import { Paragraph } from "@moc/ui/components/display/text"
 
 export function AuthFlowSteps({ current, total }: { current: number; total: number }) {
   function renderStep(_: unknown, index: number) {
@@ -15,14 +16,17 @@ export function AuthFlowSteps({ current, total }: { current: number; total: numb
 
   return (
     <div
-      className="flex items-center gap-1.5 px-1"
+      className="flex flex-col gap-1.5"
       role="progressbar"
       aria-valuemin={1}
       aria-valuemax={total}
       aria-valuenow={current}
       aria-label={`Step ${current} of ${total}`}
     >
-      {Array.from({ length: total }).map(renderStep)}
+      <div className="flex items-center gap-1.5">
+        {Array.from({ length: total }).map(renderStep)}
+      </div>
+      <Paragraph.xs className="text-quaternary">{`Step ${current} of ${total}`}</Paragraph.xs>
     </div>
   )
 }

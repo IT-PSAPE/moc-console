@@ -43,7 +43,7 @@ export function VenueBookingCancelModal({ open, onCancel, onConfirm, isCancellin
                 <Modal.Positioner>
                     <Modal.Panel>
                         <Modal.Header><Label.md>Cancel booking?</Label.md></Modal.Header>
-                        <Modal.Content className="p-4">
+                        <Modal.Content>
                             <TextArea
                                 aria-label="Cancellation reason"
                                 autoComplete="off"
@@ -54,7 +54,7 @@ export function VenueBookingCancelModal({ open, onCancel, onConfirm, isCancellin
                                 onChange={handleReasonChange}
                             />
                         </Modal.Content>
-                        <Modal.Footer className="justify-end">
+                        <Modal.Footer>
                             <Button variant="secondary" onClick={onCancel} disabled={isCancelling}>Keep booking</Button>
                             <Button variant="danger" onClick={handleConfirm} disabled={!canSubmit}>{isCancelling ? "Cancelling…" : "Cancel booking"}</Button>
                         </Modal.Footer>

@@ -11,14 +11,14 @@ type SettingsRowProps = {
 
 export function SettingsRow({ label, description, children, className }: SettingsRowProps) {
     return (
-        <div className={cn("grid grid-cols-[minmax(8rem,11rem)_minmax(0,1fr)] items-start gap-6 py-2 portrait:grid-cols-1 portrait:gap-2", className)}>
-            <div className="pt-1.5">
+        <div className={cn("grid grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)] items-center gap-6 px-4 py-3 portrait:grid-cols-1 portrait:gap-2", className)}>
+            <div className="min-w-0">
                 <Label.sm className="block text-primary">{label}</Label.sm>
                 {description && (
-                    <Paragraph.xs className="text-tertiary pt-1">{description}</Paragraph.xs>
+                    <Paragraph.xs className="text-tertiary">{description}</Paragraph.xs>
                 )}
             </div>
-            <div className="flex min-w-0 flex-1 justify-end">{children}</div>
+            <div className="flex min-w-0 justify-end [&>*]:max-w-sm">{children}</div>
         </div>
     )
 }

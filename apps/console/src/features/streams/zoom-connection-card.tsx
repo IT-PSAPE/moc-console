@@ -6,7 +6,7 @@ export function ZoomConnectionCard() {
 
   return (
     <IntegrationCard
-      icon={<img src="/resources/logo/Zoom.svg" alt="Zoom" />}
+      icon={<img src="/resources/logo/Zoom.svg" alt="Zoom" className="size-full object-cover" />}
       name="Zoom"
       isLoading={meta.isLoading}
       isConnected={Boolean(meta.connection)}

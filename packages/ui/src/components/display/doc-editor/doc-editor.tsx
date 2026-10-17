@@ -315,7 +315,7 @@ export function DocEditor({ value, onChange, placeholder = 'Type something…', 
                     </SortableContext>
                 </DndContext>
 
-                <Button.Unstyled type="button" aria-label="Add a document block" className="block min-h-20 w-full cursor-text pl-13 pt-1 text-left" onClick={handleCanvasClick} />
+                <Button.Unstyled type="button" aria-label="Add a document block" className="block min-h-20 w-full cursor-text pl-12 pt-1 text-left" onClick={handleCanvasClick} />
             </div>
         </div>
     )

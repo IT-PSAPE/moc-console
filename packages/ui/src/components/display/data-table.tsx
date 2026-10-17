@@ -39,7 +39,7 @@ export function DataTable<T extends Record<string, unknown>>({
 
   return (
     <div className="w-full overflow-x-auto">
-      <Table className={cn("w-full table-fixed overflow-hidden rounded-lg border border-secondary", className)} style={{ minWidth }}>
+      <Table className={cn("table-fixed overflow-hidden rounded-xl border border-secondary shadow-xs", className)} style={{ minWidth }}>
         <Table.ColGroup>
           {columns.map((col) => (
             <Table.Col key={col.key} width={col.width} />
@@ -52,7 +52,7 @@ export function DataTable<T extends Record<string, unknown>>({
               <Table.Header
                 key={col.key}
                 className={cn(
-                  "h-10 overflow-hidden whitespace-nowrap px-3 py-2",
+                  "overflow-hidden",
                   col.align === "center" && "text-center",
                   col.align === "right" && "text-right",
                   col.className,
@@ -89,7 +89,7 @@ export function DataTable<T extends Record<string, unknown>>({
                     <Table.Cell
                       key={col.key}
                       className={cn(
-                        "h-12 overflow-hidden whitespace-nowrap px-3 py-1.5",
+                        "overflow-hidden whitespace-nowrap",
                         col.align === "center" && "text-center",
                         col.align === "right" && "text-right",
                         col.className,

@@ -30,7 +30,7 @@ export function VenueBookingCalendarView({ bookings }: { bookings: VenueBooking[
 
         return (
             <Drawer key={booking.id}>
-                <ResponsiveDrawerTrigger mobileHref={`/${routes.venues}/${booking.id}`} className="w-full rounded text-left">
+                <ResponsiveDrawerTrigger mobileHref={`/${routes.venues}/${booking.id}`} className="w-full rounded-md text-left">
                     <Calendar.Event color={event.color}>{event.label}</Calendar.Event>
                 </ResponsiveDrawerTrigger>
                 <VenueBookingDrawer booking={booking} />

@@ -9,6 +9,8 @@ export function VenueBookingItemContent({ booking }: { booking: VenueBooking }) 
             <ListItemCard.Content>
                 <ListItemCard.Title>{booking.title}</ListItemCard.Title>
                 <ListItemCard.Subtitle>{booking.venueDescription ? `${booking.venueName} · ${booking.venueDescription}` : booking.venueName}</ListItemCard.Subtitle>
+            </ListItemCard.Content>
+            <ListItemCard.Trailing>
                 <ListItemCard.Meta>
                     <ListItemCard.MetaItem icon={<CalendarClock />}>
                         {formatUtcIsoInBrowserTimeZone(booking.startsAt, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -16,7 +18,7 @@ export function VenueBookingItemContent({ booking }: { booking: VenueBooking }) 
                     <ListItemCard.MetaItem icon={<User />}>{booking.requestedBy}</ListItemCard.MetaItem>
                     <ListItemCard.MetaItem icon={<Ticket />}>{booking.trackingCode}</ListItemCard.MetaItem>
                 </ListItemCard.Meta>
-            </ListItemCard.Content>
+            </ListItemCard.Trailing>
         </ListItemCard.Root>
     )
 }

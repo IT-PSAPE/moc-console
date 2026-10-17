@@ -3,7 +3,7 @@ import { Drawer, useDrawer } from "@moc/ui/components/overlays/drawer";
 import { Dropdown } from "@moc/ui/components/overlays/dropdown";
 import { Divider } from "@moc/ui/components/display/divider";
 import { Button } from "@moc/ui/components/controls/button";
-import { Title } from "@moc/ui/components/display/text";
+import { Label } from "@moc/ui/components/display/text";
 import type { Request } from "@moc/types/requests";
 import { UnsavedChangesModal } from "./unsaved-changes-modal";
 import { DeleteRequestModal } from "./delete-request-modal";
@@ -110,21 +110,22 @@ export function RequestPanelContent({
     <>
       {/* Toolbar */}
       <RequestShareActions.Root request={store.state.draft} targetRef={shareTargetRef}>
-        <SplitPanel.Header className="flex items-center gap-1">
-          <Button.Icon aria-label="Close request" variant="ghost" icon={<X />} onClick={guard.actions.requestClose} />
+        <SplitPanel.Header className="gap-2">
+          <Button.Icon aria-label="Close request" variant="ghost" size="sm" icon={<X />} onClick={guard.actions.requestClose} />
           <Button.Icon
             variant="ghost"
+            size="sm"
             aria-label="Open full page"
             icon={<Maximize2 />}
             onClick={guard.actions.openFullPage}
           />
           <div className="flex-1" />
-          <RequestShareActions.LinkButton />
-          <RequestShareActions.ScreenshotButton />
-          <RequestShareActions.CopyButton />
+          <RequestShareActions.LinkButton size="sm" />
+          <RequestShareActions.ScreenshotButton size="sm" />
+          <RequestShareActions.CopyButton size="sm" />
           <Dropdown placement="bottom">
             <Dropdown.Trigger>
-              <Button.Icon aria-label="More request actions" variant="ghost" icon={<EllipsisVertical />} />
+              <Button.Icon aria-label="More request actions" variant="secondary" size="sm" icon={<EllipsisVertical />} />
             </Dropdown.Trigger>
             <Dropdown.Panel>
               <Dropdown.Item onSelect={detail.actions.handleArchiveToggle}>
@@ -138,7 +139,7 @@ export function RequestPanelContent({
                     <Archive className="size-4" />
                     Archive
                   </>
-              )}
+                )}
               </Dropdown.Item>
               <Dropdown.Separator />
               <Dropdown.Item onSelect={detail.actions.openDeleteModal}>
@@ -149,41 +150,35 @@ export function RequestPanelContent({
           </Dropdown>
         </SplitPanel.Header>
 
-        <SplitPanel.Content className="py-4">
-          <div ref={shareTargetRef}>
-            <div className="px-4 pb-4">
-              <Title.h6><RequestTitle value={store.state.draft.title} onChange={handleTitleChange} /></Title.h6>
-            </div>
+        <SplitPanel.Content>
+          <div ref={shareTargetRef} className="flex flex-col gap-4">
+            <Label.md><RequestTitle value={store.state.draft.title} onChange={handleTitleChange} /></Label.md>
 
-            <div className="px-4">
-              <RequestMetaFields
-                request={store.state.draft}
-                categories={requestCategories}
-                editable
-                onFieldChange={store.actions.updateField}
-              />
-            </div>
+            <RequestMetaFields
+              request={store.state.draft}
+              categories={requestCategories}
+              editable
+              onFieldChange={store.actions.updateField}
+            />
 
-            <>
-              <Divider className="my-6" />
-              <RequestFiveW request={store.state.draft} className="px-4" />
-            </>
+            <Divider className="my-0" />
+            <RequestFiveW request={store.state.draft} />
 
             {store.state.draft.notes && (
               <>
-                <Divider className="my-6" />
-                <RequestNotes request={store.state.draft} className="px-4" />
+                <Divider className="my-0" />
+                <RequestNotes request={store.state.draft} />
               </>
             )}
 
             {store.state.draft.flow && (
               <>
-                <Divider className="my-6" />
-                <RequestFlow request={store.state.draft} className="px-4" />
+                <Divider className="my-0" />
+                <RequestFlow request={store.state.draft} />
               </>
             )}
 
-            <Divider className="my-6" />
+            <Divider className="my-0" />
             {detail.isLoadingAssignees ? (
               <LoadingSpinner className="py-6" />
             ) : (
@@ -191,16 +186,15 @@ export function RequestPanelContent({
                 assignees={detail.assignees}
                 onAddMember={detail.actions.handleAddMember}
                 onRemoveMember={detail.actions.handleRemoveMember}
-                className="px-4"
               />
             )}
-            <Divider className="my-6" />
-            <RequestLinkedRecords request={request} enabled={open} className="px-4" />
-            <Divider className="my-6" />
+            <Divider className="my-0" />
+            <RequestLinkedRecords request={request} enabled={open} />
+            <Divider className="my-0" />
             <RequestDiscussion.Root requestId={request.id} refreshKey={store.state.draft.updatedAt} enabled={open}>
-              <div className="px-4"><RequestDiscussion.Activity /></div>
-              <Divider className="my-6" />
-              <div className="px-4"><RequestDiscussion.Comments /></div>
+              <RequestDiscussion.Activity />
+              <Divider className="my-0" />
+              <RequestDiscussion.Comments />
             </RequestDiscussion.Root>
           </div>
         </SplitPanel.Content>
@@ -208,8 +202,8 @@ export function RequestPanelContent({
 
       {/* Save footer — visible only when dirty */}
       {store.state.isDirty && (
-        <SplitPanel.Footer className="justify-end">
-          <Button variant="ghost" onClick={store.actions.discard}>
+        <SplitPanel.Footer>
+          <Button variant="secondary" onClick={store.actions.discard}>
             Discard
           </Button>
           <Button onClick={detail.actions.handleSave} disabled={store.state.isSaving}>

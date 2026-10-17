@@ -24,7 +24,7 @@ export function AvatarCropperModal({ open, file, onCancel, onConfirm }: AvatarCr
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
-          <Modal.FullScreenPanel className="w-full !max-w-md landscape:!max-w-none">
+          <Modal.FullScreenPanel>
                         <Modal.Header>
                             <div className="flex flex-col gap-0.5">
                                 <Label.md>Adjust your photo</Label.md>
@@ -34,7 +34,7 @@ export function AvatarCropperModal({ open, file, onCancel, onConfirm }: AvatarCr
                             </div>
                         </Modal.Header>
                         <Modal.Content>
-                            <div className="flex flex-col items-center gap-4 p-4">
+                            <div className="flex flex-col items-center gap-4">
                                 <Button.Unstyled
                                     type="button"
                                     aria-label="Position photo. Use arrow keys to move it; hold Shift for larger movements."
@@ -79,7 +79,7 @@ export function AvatarCropperModal({ open, file, onCancel, onConfirm }: AvatarCr
                                 />
                             </div>
                         </Modal.Content>
-                        <Modal.Footer className="justify-end">
+                        <Modal.Footer>
                             <Button variant="ghost" onClick={onCancel} disabled={isExporting}>Cancel</Button>
                             <Button onClick={cropper.actions.confirm} disabled={!natural || isExporting}>
                                 {isExporting ? 'Saving…' : 'Use photo'}

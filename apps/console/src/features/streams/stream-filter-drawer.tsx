@@ -1,6 +1,6 @@
 import { Label } from "@moc/ui/components/display/text"
 import { Checkbox } from "@moc/ui/components/form/checkbox"
-import { FormLabel } from "@moc/ui/components/form/form-label"
+import { FormField, FormLabel } from "@moc/ui/components/form/form-label"
 import { Input } from "@moc/ui/components/form/input"
 import { Radio, RadioGroup } from "@moc/ui/components/form/radio"
 import { Tabs } from "@moc/ui/components/layout/tabs"
@@ -101,26 +101,26 @@ export function StreamFilterDrawer({ filters }: StreamFilterDrawerProps) {
                 </FilterDrawer.Group>
                 <FilterDrawer.Group label="Scheduled Date">
                   <FilterDrawer.Options>
-                    <label className="space-y-1 *:odd:ml-1">
-                      <FormLabel label="From" />
+                    <FormField label="From" htmlFor="stream-scheduled-from">
                       <Input
+                        id="stream-scheduled-from"
                         aria-label="Scheduled from date"
                         name="stream-scheduled-from"
                         type="date"
                         value={state.scheduledDateRange.start}
                         onChange={handleStartDateChange}
                       />
-                    </label>
-                    <label className="space-y-1 *:odd:ml-1">
-                      <FormLabel label="To" />
+                    </FormField>
+                    <FormField label="To" htmlFor="stream-scheduled-to">
                       <Input
+                        id="stream-scheduled-to"
                         aria-label="Scheduled to date"
                         name="stream-scheduled-to"
                         type="date"
                         value={state.scheduledDateRange.end}
                         onChange={handleEndDateChange}
                       />
-                    </label>
+                    </FormField>
                   </FilterDrawer.Options>
                 </FilterDrawer.Group>
                 <FilterDrawer.Group label="Completed Streams">

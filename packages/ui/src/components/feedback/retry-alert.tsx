@@ -17,7 +17,7 @@ export function RetryAlert({ title, description, onRetry, isRetrying = false, re
             title={title}
             description={description}
             action={(
-                <Button variant="secondary" onClick={onRetry} disabled={isRetrying} aria-busy={isRetrying || undefined}>
+                <Button variant="secondary" size="sm" onClick={onRetry} disabled={isRetrying} aria-busy={isRetrying || undefined}>
                     {isRetrying ? <Spinner size="sm" /> : null}
                     {isRetrying ? 'Retrying…' : retryLabel}
                 </Button>

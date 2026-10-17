@@ -34,7 +34,7 @@ function SegmentedControlRoot({ children, className, defaultValue = '', fill = f
             defaultValue={isControlled ? undefined : (defaultValue ? [defaultValue] : [])}
             onValueChange={handleValueChange}
             className={cn(
-                'inline-flex items-center gap-1 rounded-lg bg-secondary p-1',
+                'inline-flex h-control items-center gap-0.5 rounded-lg bg-secondary p-0.5 landscape:h-control-lg',
                 fill && 'flex w-full',
                 className,
             )}
@@ -60,10 +60,10 @@ function SegmentedControlItem({ children, className, icon, value, hide, ...props
         <BaseToggle
             value={value}
             className={cn(
-                'inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-1.5 label-sm transition-colors',
-                'touch-manipulation focus-visible:outline-2 focus-visible:outline-offset-1 motion-reduce:transition-none',
+                'inline-flex h-full flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 label-sm transition-colors',
+                'touch-manipulation focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-brand motion-reduce:transition-none',
                 'text-tertiary hover:text-primary',
-                'data-[pressed]:bg-primary data-[pressed]:text-brand data-[pressed]:shadow-sm',
+                'data-[pressed]:bg-primary data-[pressed]:text-primary data-[pressed]:shadow-xs',
                 className,
             )}
             {...props}

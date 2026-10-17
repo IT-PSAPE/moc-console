@@ -1,16 +1,17 @@
 import { useDetailReturn } from "@/hooks/use-detail-return"
 import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { Link, useParams } from "react-router-dom"
-import { Header } from "@moc/ui/components/display/header"
 import { Badge } from "@moc/ui/components/display/badge"
 import { Button } from "@moc/ui/components/controls/button"
-import { Label, Paragraph } from "@moc/ui/components/display/text"
+import { Paragraph } from "@moc/ui/components/display/text"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
+import { Section } from "@moc/ui/components/display/section"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { useBreadcrumbOverride } from "@moc/ui/components/navigation/breadcrumb"
 import { TopBarActions } from "@/features/topbar"
 import { MeetingModal } from "@/features/streams/meeting-modal"
 import { useMeetingDetail } from "@/features/streams/use-meeting-detail"
+import { StreamProviderIcon } from "@/features/streams/stream-provider-icon"
 import { zoomRecurrenceLabel } from "@moc/types/streams/zoom-constants"
 import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
 import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
@@ -18,7 +19,7 @@ import { Page } from "@moc/ui/components/layout/page"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 import { routes } from "@/screens/console-routes"
-import { Calendar, Check, Clock, Copy, ExternalLink, Globe, Key, MessageCircle, Mic, Pencil, Repeat, ShieldCheck, Trash2, Video} from "lucide-react"
+import { Calendar, Check, Clock, Copy, ExternalLink, Globe, Key, Link2, MessageCircle, Mic, Pencil, Repeat, ShieldCheck, Trash2, Video } from "lucide-react"
 
 function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} minutes`
@@ -63,13 +64,15 @@ export function MeetingDetailScreen() {
   }
 
   const isPast = meeting.startTime ? new Date(meeting.startTime) < new Date() : false
+  const showLinksSection = Boolean(meeting.joinUrl) || Boolean(meeting.password)
+
   return (
     <DetailPage>
       <DetailPage.Back render={<Link to={back.href} />}>{back.label}</DetailPage.Back>
       <Paragraph.xs role="status" aria-live="polite" className="sr-only">{copyMessage}</Paragraph.xs>
       <TopBarActions>
         {meta.canEdit && (
-          <Button variant="secondary" icon={<Pencil />} onClick={handleOpenEdit}>Edit</Button>
+          <Button variant="ghost" icon={<Pencil />} onClick={handleOpenEdit}>Edit</Button>
         )}
         {meta.canDelete && (
           <Button.Icon aria-label="Delete meeting" variant="danger-secondary" icon={<Trash2 />} onClick={handleOpenDelete} />
@@ -79,23 +82,25 @@ export function MeetingDetailScreen() {
         )}
       </TopBarActions>
 
-      {/* Header */}
-      <DetailPage.Header>
-        <Header.Lead className="gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Page.Title>{meeting.topic}</Page.Title>
-            <Badge label={isPast ? "Past" : "Upcoming"} color={isPast ? "gray" : "green"} />
+      <DetailPage.Header className="pt-8">
+        <div className="flex w-full items-start gap-4 landscape:flex-col">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-secondary bg-secondary text-quaternary">
+            <StreamProviderIcon provider="zoom" decorative className="size-5" />
+          </span>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Page.Title className="truncate">{meeting.topic}</Page.Title>
+            <Badge dot label={isPast ? "Past" : "Upcoming"} color={isPast ? "gray" : "green"} />
+            <Paragraph.sm className="text-tertiary">{meeting.timezone}</Paragraph.sm>
+            <Paragraph.sm className="text-tertiary">{formatUtcIsoInTimezone(meeting.startTime, meeting.timezone)}</Paragraph.sm>
           </div>
-          {meeting.description && (
-            <Paragraph.sm className="text-tertiary">{meeting.description}</Paragraph.sm>
-          )}
-        </Header.Lead>
+        </div>
       </DetailPage.Header>
 
       <DetailPage.Section><RequestLinkField kind="meeting" id={meeting.id} /></DetailPage.Section>
 
-      {/* Schedule */}
+      <DetailPage.Divider />
       <DetailPage.Section>
+        <Section.Header title="Details" size="sm" />
         <div className="space-y-3">
           <MetaRow icon={<Calendar />} label="Start">
             <Paragraph.sm>{formatUtcIsoInTimezone(meeting.startTime, meeting.timezone)}</Paragraph.sm>
@@ -114,14 +119,7 @@ export function MeetingDetailScreen() {
               <Badge label={zoomRecurrenceLabel[meeting.recurrenceType]} color="blue" />
             </MetaRow>
           )}
-        </div>
-      </DetailPage.Section>
 
-      {/* Settings */}
-      <DetailPage.Divider />
-      <DetailPage.Section>
-        <Label.md className="block pb-3">Settings</Label.md>
-        <div className="space-y-3">
           <MetaRow icon={<ShieldCheck />} label="Waiting room">
             <Paragraph.sm>{meeting.waitingRoom ? "Enabled" : "Disabled"}</Paragraph.sm>
           </MetaRow>
@@ -136,31 +134,36 @@ export function MeetingDetailScreen() {
         </div>
       </DetailPage.Section>
 
-      {/* Join Link */}
-      {meeting.joinUrl && (
+      {showLinksSection && (
         <>
           <DetailPage.Divider />
           <DetailPage.Section>
-            <Label.md className="block pb-3">Join link</Label.md>
+            <Section.Header title="Links & setup" size="sm" />
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Paragraph.sm className="text-tertiary truncate flex-1">{meeting.joinUrl}</Paragraph.sm>
-                <Button.Icon
-                  aria-label="Copy join link"
-                  variant="ghost"
-                  icon={copiedField === "join" ? <Check className="text-success" /> : <Copy />}
-                  onClick={actions.copyJoinUrl}
-                />
-                <Button.IconLink render={<a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open join link" variant="ghost" icon={<ExternalLink />} />
-              </div>
+              {meeting.joinUrl && (
+                <MetaRow icon={<Link2 />} label="Join link">
+                  <div className="flex items-center gap-1 min-w-0">
+                    <Paragraph.sm className="text-tertiary truncate flex-1">{meeting.joinUrl}</Paragraph.sm>
+                    <Button.Icon
+                      aria-label="Copy join link"
+                      variant="ghost"
+                      size="sm"
+                      icon={copiedField === "join" ? <Check className="text-success" /> : <Copy />}
+                      onClick={actions.copyJoinUrl}
+                    />
+                    <Button.IconLink render={<a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open join link" variant="ghost" size="sm" icon={<ExternalLink />} />
+                  </div>
+                </MetaRow>
+              )}
 
               {meeting.password && (
                 <MetaRow icon={<Key />} label="Passcode">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 min-w-0">
                     <Paragraph.sm className="font-mono">{meeting.password}</Paragraph.sm>
                     <Button.Icon
                       aria-label="Copy passcode"
                       variant="ghost"
+                      size="sm"
                       icon={copiedField === "pass" ? <Check className="text-success" /> : <Copy />}
                       onClick={actions.copyPassword}
                     />

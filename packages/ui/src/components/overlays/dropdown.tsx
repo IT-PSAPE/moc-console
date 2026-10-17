@@ -36,9 +36,9 @@ type DropdownContextValue = {
 const DropdownContext = createContext<DropdownContextValue>({ isLandscape: false, isNested: false, placement: 'bottom' })
 
 const dropdownItemClassName = [
-    'flex min-h-0 cursor-pointer items-center gap-2 rounded-sm px-2 py-1 text-sm text-secondary outline-none landscape:min-h-11 landscape:rounded-lg landscape:px-4 landscape:py-2',
+    'flex h-control cursor-pointer items-center gap-2 rounded-md px-2.5 label-sm font-medium text-secondary outline-none landscape:h-control-lg',
     'data-[highlighted]:bg-secondary data-[highlighted]:text-primary',
-    'data-[disabled]:cursor-not-allowed data-[disabled]:text-quaternary',
+    'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',
 ].join(' ')
 
 // ─── Root ────────────────────────────────────────────────────────────
@@ -123,7 +123,7 @@ function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDiv
                 <Menu.Portal container={overlayState.rootElement ?? undefined}>
                     <Menu.Positioner className={mobileSheetPositionerClassName}>
                         <Drawer.Panel>
-                            <Drawer.Content className="overflow-hidden !pb-0">
+                            <Drawer.Content className="gap-0 overflow-hidden p-0">
                                 <Menu.Popup className={cn('min-h-0 flex-1 overflow-y-auto p-1 outline-none', className)} {...props}>
                                     {children}
                                 </Menu.Popup>
@@ -140,7 +140,7 @@ function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDiv
             <Menu.Positioner side={side} align={align} sideOffset={6} className="z-[9050] outline-none">
                 <Menu.Popup
                     className={cn(
-                        'pointer-events-auto flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none',
+                        'pointer-events-auto flex min-w-48 max-w-[calc(100vw-1rem)] flex-col overflow-x-hidden overflow-y-auto rounded-lg border border-secondary bg-primary p-1 shadow-lg outline-none',
                         'origin-[var(--transform-origin)] transition-[opacity,transform] duration-150 motion-reduce:transition-none',
                         'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
                         'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
@@ -198,7 +198,7 @@ function DropdownLink({ children, className, render }: DropdownLinkProps) {
 // ─── Separator ───────────────────────────────────────────────────────
 
 function DropdownSeparator({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    return <Menu.Separator className={cn('my-1 h-px bg-secondary', className)} {...props} />
+    return <Menu.Separator className={cn('my-1 -mx-1 h-px bg-border-secondary', className)} {...props} />
 }
 
 function DropdownSubmenu({ children }: { children: ReactNode }) {
@@ -218,7 +218,7 @@ function DropdownSubmenuPanel({ children, className, ...props }: HTMLAttributes<
     const { state: overlayState } = useOverlayStack()
     return <Menu.Portal container={overlayState.rootElement ?? undefined}>
         <Menu.Positioner side={isLandscape ? 'bottom' : 'right'} align="start" sideOffset={4} className="z-[9055] outline-none">
-            <Menu.Popup className={cn('pointer-events-auto flex max-h-[min(70dvh,32rem)] min-w-56 max-w-[calc(100vw-1rem)] flex-col overflow-y-auto rounded-md border border-secondary bg-primary p-1 shadow-lg outline-none', className)} {...props}>{children}</Menu.Popup>
+            <Menu.Popup className={cn('pointer-events-auto flex max-h-[min(70dvh,32rem)] min-w-56 max-w-[calc(100vw-1rem)] flex-col overflow-y-auto rounded-lg border border-secondary bg-primary p-1 shadow-lg outline-none', className)} {...props}>{children}</Menu.Popup>
         </Menu.Positioner>
     </Menu.Portal>
 }
@@ -230,13 +230,13 @@ function DropdownCheckboxList({ label, options, selected, name, onValueChange }:
     function renderOption(option: DropdownCheckboxOption) {
         function handleCheckedChange() { onValueChange(name, option.value) }
         return <Menu.CheckboxItem key={option.value} checked={selected.includes(option.value)} closeOnClick={false} onCheckedChange={handleCheckedChange} className={cn(dropdownItemClassName, 'group')}>
-            <span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center rounded border border-primary bg-primary shadow-xs group-data-[checked]:border-brand group-data-[checked]:bg-brand_solid group-data-[checked]:text-on-brand">
+            <span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center rounded border border-primary bg-primary shadow-xs group-data-[checked]:border-brand_solid group-data-[checked]:bg-brand_solid group-data-[checked]:text-on-brand">
                 <Menu.CheckboxItemIndicator keepMounted className="opacity-0 group-data-[checked]:opacity-100"><Check className="size-3" /></Menu.CheckboxItemIndicator>
             </span>
             <span className="min-w-0 flex-1 truncate">{option.label}</span>
         </Menu.CheckboxItem>
     }
-    return <div role="group" aria-label={label} className="max-h-52 overflow-y-auto">{options.length ? options.map(renderOption) : <Paragraph.sm className="px-2 py-1 text-tertiary">No options available.</Paragraph.sm>}</div>
+    return <div role="group" aria-label={label} className="max-h-52 overflow-y-auto">{options.length ? options.map(renderOption) : <Paragraph.sm className="px-2.5 py-2 text-tertiary">No options available.</Paragraph.sm>}</div>
 }
 
 // ─── Compound Export ─────────────────────────────────────────────────

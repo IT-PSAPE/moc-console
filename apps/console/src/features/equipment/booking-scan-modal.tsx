@@ -1,6 +1,6 @@
 import { Button } from "@moc/ui/components/controls/button";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
-import { Paragraph, Title } from "@moc/ui/components/display/text";
+import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { Badge } from "@moc/ui/components/display/badge";
 import { Alert } from "@moc/ui/components/feedback/alert";
 import { Input } from "@moc/ui/components/form/input";
@@ -57,13 +57,11 @@ export function BookingScanModal({
         <Modal.Backdrop />
         <Modal.Positioner>
           <Modal.FullScreenPanel className="overflow-hidden max-w-lg landscape:max-w-none">
-            <Modal.Header className="items-start">
-              <div>
-                <Title.h6>Scan booking items</Title.h6>
-              </div>
+            <Modal.Header>
+              <Label.md>Scan booking items</Label.md>
             </Modal.Header>
 
-            <Modal.Content className="flex-col gap-4 p-4">
+            <Modal.Content>
               <Badge label={`${scannedCount} of ${totalCount} scanned`} color="blue" />
 
               {isSupported ? (
@@ -110,7 +108,7 @@ export function BookingScanModal({
               </div>
             </Modal.Content>
 
-            <Modal.Footer className="justify-end">
+            <Modal.Footer>
               <Button variant="secondary" onClick={onClose} icon={isSupported ? <ScanLine /> : <Camera />}>
                 Close
               </Button>

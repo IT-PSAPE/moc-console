@@ -27,9 +27,9 @@ export function CreateStreamModal({ open, onOpenChange, youtubeAvailable, zoomAv
         <Modal.Backdrop />
         <Modal.Positioner>
           <Modal.FullScreenPanel className="w-full !max-w-lg landscape:!max-w-none">
+            <Modal.Header><Label.md>New stream</Label.md></Modal.Header>
             <Tabs defaultTab={youtubeAvailable ? "youtube" : "zoom"} className="flex min-h-0 flex-1 flex-col">
-              <Modal.Header><Label.md>New stream</Label.md></Modal.Header>
-              <Tabs.List className="shrink-0 px-4 pt-1">
+              <Tabs.List className="shrink-0 px-5">
                 {youtubeAvailable ? (
                   <Tabs.Tab value="youtube" className="gap-2">
                     <StreamProviderIcon provider="youtube" decorative />

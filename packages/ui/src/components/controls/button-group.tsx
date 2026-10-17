@@ -10,8 +10,8 @@ export function ButtonGroup({ children, className, ...props }: ButtonGroupProps)
         <div
             role="group"
             className={cn(
-                'inline-flex overflow-hidden rounded-md border border-secondary bg-primary',
-                '[&>*]:!rounded-none [&>*]:!border-y-0 [&>*]:!border-l-0 [&>*]:!border-r [&>*]:!border-secondary [&>*:last-child]:!border-r-0',
+                'inline-flex overflow-hidden rounded-lg border border-primary bg-primary',
+                '[&>*]:!rounded-none [&>*]:!border-y-0 [&>*]:!border-l-0 [&>*]:!border-r [&>*]:!border-primary [&>*:last-child]:!border-r-0',
                 className,
             )}
             {...props}

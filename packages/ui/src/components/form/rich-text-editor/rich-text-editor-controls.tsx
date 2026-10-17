@@ -8,7 +8,7 @@ import { useRichTextEditorContext } from './rich-text-editor-context'
 export function RichTextEditorControls() {
     const { state, actions } = useRichTextEditorContext()
     return <>
-            <Dropdown><Dropdown.Trigger><Button variant="ghost" icon={<ChevronDown />}>Text style</Button></Dropdown.Trigger><Dropdown.Panel>
+            <Dropdown><Dropdown.Trigger><Button variant="ghost" size="sm" icon={<ChevronDown />} className="rounded-md">Text style</Button></Dropdown.Trigger><Dropdown.Panel>
                 <RichTextEditorMenuCommand command="paragraph">Paragraph</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="h1">Heading 1</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="h2">Heading 2</RichTextEditorMenuCommand>
@@ -22,8 +22,8 @@ export function RichTextEditorControls() {
             <RichTextEditorCommand command="underline" label="Underline" icon={<Underline />} />
             <RichTextEditorCommand command="strike" label="Strikethrough" icon={<Strikethrough />} />
             <RichTextEditorCommand command="code" label="Inline code" icon={<Code />} />
-            <Button.Icon variant="ghost" icon={<Link2 />} aria-label="Edit link" title="Edit link" onMouseDown={actions.preserveSelection} onClick={actions.openLink} disabled={state.disabled || state.selection?.activeCommands.includes('code')} />
-            <Dropdown><Dropdown.Trigger><Button variant="ghost" icon={<Plus />}>Insert</Button></Dropdown.Trigger><Dropdown.Panel>
+            <Button.Icon variant="ghost" size="sm" icon={<Link2 />} aria-label="Edit link" title="Edit link" onMouseDown={actions.preserveSelection} onClick={actions.openLink} disabled={state.disabled || state.selection?.activeCommands.includes('code')} className="rounded-md" />
+            <Dropdown><Dropdown.Trigger><Button variant="ghost" size="sm" icon={<Plus />} className="rounded-md">Insert</Button></Dropdown.Trigger><Dropdown.Panel>
                 <RichTextEditorMenuCommand command="table">Table</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="bulletList">Bullet list</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="orderedList">Numbered list</RichTextEditorMenuCommand>
@@ -37,7 +37,7 @@ export function RichTextEditorControls() {
                 <RichTextEditorMenuCommand command="unlink">Remove link</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="clear">Clear formatting</RichTextEditorMenuCommand>
             </Dropdown.Panel></Dropdown>
-            {state.selection?.inTable && <Dropdown><Dropdown.Trigger><Button variant="ghost" icon={<Table2 />}>Table</Button></Dropdown.Trigger><Dropdown.Panel>
+            {state.selection?.inTable && <Dropdown><Dropdown.Trigger><Button variant="ghost" size="sm" icon={<Table2 />} className="rounded-md">Table</Button></Dropdown.Trigger><Dropdown.Panel>
                 <RichTextEditorMenuCommand command="addRow">Add row below</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="addColumn">Add column after</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="deleteRow">Delete row</RichTextEditorMenuCommand>

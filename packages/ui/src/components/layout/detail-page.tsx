@@ -15,23 +15,23 @@ function DetailPageRoot({ children, className, ...props }: HTMLAttributes<HTMLEl
 }
 
 function DetailPageHeader({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    return <Header className={cn("px-page-gutter pt-12 landscape:pt-6", className)} {...props}>{children}</Header>;
+    return <Header className={cn("px-page-gutter pt-2 pb-4", className)} {...props}>{children}</Header>;
 }
 
 function DetailPageBack({ children, className, ...props }: ComponentProps<typeof Button.Link>) {
     return (
-        <div className="px-page-gutter pt-4">
-            <Button.Link className={cn("-ml-3 w-fit px-3", className)} variant="ghost" icon={<ArrowLeft />} {...props}>{children}</Button.Link>
+        <div className="px-page-gutter pt-3">
+            <Button.Link size="sm" className={cn("-ml-2 w-fit gap-1.5 px-2", className)} variant="ghost" icon={<ArrowLeft />} {...props}>{children}</Button.Link>
         </div>
     );
 }
 
 function DetailPageSection({ children, className, ...props }: HTMLAttributes<HTMLElement>) {
-    return <section className={cn("px-page-gutter py-4", className)} {...props}>{children}</section>;
+    return <section className={cn("px-page-gutter py-5", className)} {...props}>{children}</section>;
 }
 
 function DetailPageDivider({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    return <Divider className={cn("my-2", className)} {...props} />;
+    return <Divider className={cn("my-0", className)} {...props} />;
 }
 
 export const DetailPage = Object.assign(DetailPageRoot, {

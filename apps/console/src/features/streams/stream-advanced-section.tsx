@@ -1,5 +1,5 @@
 import type { ChangeEvent } from "react"
-import { FormLabel } from "@moc/ui/components/form/form-label"
+import { FormField } from "@moc/ui/components/form/form-label"
 import { Checkbox } from "@moc/ui/components/form/checkbox"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Accordion } from "@moc/ui/components/display/accordion"
@@ -62,8 +62,7 @@ export function StreamAdvancedSection({
       <Accordion.Content>
         <div className="flex flex-col gap-4 pb-2 pt-1">
           {/* Latency */}
-          <div className="flex flex-col gap-1.5">
-            <FormLabel label="Latency" />
+          <FormField label="Latency">
             <SegmentedControl
               fill
               value={latencyPreference}
@@ -78,7 +77,7 @@ export function StreamAdvancedSection({
             <Paragraph.xs className="text-quaternary">
               {latencyPreferenceHint[latencyPreference]}
             </Paragraph.xs>
-          </div>
+          </FormField>
 
           {/* DVR */}
           <Checkbox

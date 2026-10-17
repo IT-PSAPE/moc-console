@@ -1,5 +1,6 @@
 import { Title, Paragraph, Label } from "@moc/ui/components/display/text"
 import { Card } from "@moc/ui/components/display/card"
+import { Accordion } from "@moc/ui/components/display/accordion"
 import { Link } from "react-router-dom"
 import { routes } from "@/screens/console-routes"
 import { PublicLayout } from "./layout"
@@ -9,7 +10,7 @@ import { PublicDocumentFaq } from "./public-document-faq"
 export function SupportScreen() {
   return (
     <PublicLayout>
-      <Title.h1 className="mb-2 title-h3">Support</Title.h1>
+      <Title.h1 className="mb-2 title-h5">Support</Title.h1>
       <Paragraph.sm className="text-tertiary mb-8">
         Help with connecting Zoom, syncing meetings, managing users, and everything else in MOC Console.
       </Paragraph.sm>
@@ -18,9 +19,9 @@ export function SupportScreen() {
         <Paragraph.md className="mb-3">
           The fastest way to reach the team is by email. We read every message and respond in the order received.
         </Paragraph.md>
-        <Card className="mb-4 p-5">
+        <Card className="mb-4 p-4">
           <Label.sm className="block mb-1">Email</Label.sm>
-          <a href="mailto:psape.dev@gmail.com" className="title-h6 text-brand hover:underline">psape.dev@gmail.com</a>
+          <a href="mailto:psape.dev@gmail.com" className="label-md text-brand hover:underline">psape.dev@gmail.com</a>
         </Card>
         <Paragraph.md>
           <strong>Response time:</strong> we aim to reply within <strong>2 business days</strong>.
@@ -40,11 +41,15 @@ export function SupportScreen() {
       </Section>
 
       <Section title="Common questions">
-        <PublicDocumentFaq question="How do I connect my Zoom account?">Open <em>Settings → Streaming connections</em> and click <strong>Connect Zoom</strong>. You'll be redirected to Zoom to approve the requested scopes, then returned to MOC Console. The full walkthrough is in the <Link to={`/${routes.zoomDocs}`} className="text-brand hover:underline">Zoom integration guide</Link>.</PublicDocumentFaq>
-        <PublicDocumentFaq question="My Zoom meetings aren't showing up.">Click <strong>Refresh</strong> in the Streams toolbar to trigger a manual sync. If meetings created outside MOC Console still don't appear, disconnect and reconnect Zoom to re-issue your access tokens.</PublicDocumentFaq>
-        <PublicDocumentFaq question="How do I disconnect Zoom?">Open <em>Settings → Streaming connections</em> and click <strong>Disconnect</strong>. This revokes the OAuth token with Zoom and deletes the stored connection, tokens, synced Zoom meeting metadata, and pending meeting notifications. Removing the app through Zoom Marketplace triggers the same cleanup when Zoom sends the removal notification.</PublicDocumentFaq>
-        <PublicDocumentFaq question="What data does MOC Console read from Zoom?">Only what the workflow needs: your Zoom user profile and metadata for the meetings you manage through the Service. No recordings, transcripts, chat messages, or participant lists. See the <Link to={`/${routes.privacy}`} className="text-brand hover:underline">Privacy Policy</Link> for details.</PublicDocumentFaq>
-        <PublicDocumentFaq question="How do I delete my account or my data?">Email <a href="mailto:psape.dev@gmail.com" className="text-brand hover:underline">psape.dev@gmail.com</a> from the address associated with your account and we will process the request within the timeframe required by applicable law. You can also disconnect Zoom at any time from Settings → Streaming connections.</PublicDocumentFaq>
+        <Card>
+          <Accordion type="single" className="divide-y divide-border-secondary">
+            <PublicDocumentFaq value="connect-zoom" question="How do I connect my Zoom account?">Open <em>Settings → Streaming connections</em> and click <strong>Connect Zoom</strong>. You'll be redirected to Zoom to approve the requested scopes, then returned to MOC Console. The full walkthrough is in the <Link to={`/${routes.zoomDocs}`} className="text-brand hover:underline">Zoom integration guide</Link>.</PublicDocumentFaq>
+            <PublicDocumentFaq value="missing-meetings" question="My Zoom meetings aren't showing up.">Click <strong>Refresh</strong> in the Streams toolbar to trigger a manual sync. If meetings created outside MOC Console still don't appear, disconnect and reconnect Zoom to re-issue your access tokens.</PublicDocumentFaq>
+            <PublicDocumentFaq value="disconnect-zoom" question="How do I disconnect Zoom?">Open <em>Settings → Streaming connections</em> and click <strong>Disconnect</strong>. This revokes the OAuth token with Zoom and deletes the stored connection, tokens, synced Zoom meeting metadata, and pending meeting notifications. Removing the app through Zoom Marketplace triggers the same cleanup when Zoom sends the removal notification.</PublicDocumentFaq>
+            <PublicDocumentFaq value="data-read" question="What data does MOC Console read from Zoom?">Only what the workflow needs: your Zoom user profile and metadata for the meetings you manage through the Service. No recordings, transcripts, chat messages, or participant lists. See the <Link to={`/${routes.privacy}`} className="text-brand hover:underline">Privacy Policy</Link> for details.</PublicDocumentFaq>
+            <PublicDocumentFaq value="delete-account" question="How do I delete my account or my data?">Email <a href="mailto:psape.dev@gmail.com" className="text-brand hover:underline">psape.dev@gmail.com</a> from the address associated with your account and we will process the request within the timeframe required by applicable law. You can also disconnect Zoom at any time from Settings → Streaming connections.</PublicDocumentFaq>
+          </Accordion>
+        </Card>
       </Section>
 
       <Section title="Status and incidents">

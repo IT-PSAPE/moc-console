@@ -4,7 +4,7 @@ import { type HTMLAttributes } from 'react'
 // ─── Header ──────────────────────────────────────────────────────────
 
 type OverlayHeaderProps = HTMLAttributes<HTMLDivElement>
-export const overlayHeaderClassName = 'flex min-h-14 shrink-0 items-center gap-2 border-b border-secondary px-3 py-2'
+export const overlayHeaderClassName = 'flex shrink-0 items-center gap-3 min-h-14 px-5 py-3 border-b border-secondary'
 
 export function OverlayHeader({ children, className, ...props }: OverlayHeaderProps) {
     return (
@@ -20,7 +20,7 @@ type OverlayContentProps = HTMLAttributes<HTMLDivElement>
 
 export function OverlayContent({ children, className, ...props }: OverlayContentProps) {
     return (
-        <div className={cn('min-h-0 flex flex-1 flex-col overflow-y-auto overscroll-contain', className)} {...props}>
+        <div className={cn('min-h-0 flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-5 py-4', className)} {...props}>
             {children}
         </div>
     )
@@ -32,7 +32,7 @@ type OverlayFooterProps = HTMLAttributes<HTMLDivElement>
 
 export function OverlayFooter({ children, className, ...props }: OverlayFooterProps) {
     return (
-        <div className={cn('flex shrink-0 flex-row items-center gap-2 border-t border-secondary p-3 *:w-auto [&_button]:w-auto landscape:flex-col landscape:pb-[max(0.75rem,env(safe-area-inset-bottom))] landscape:*:w-full landscape:[&_button]:w-full', className)} {...props}>
+        <div className={cn('flex shrink-0 items-center justify-end gap-2 border-t border-secondary px-5 py-3 landscape:flex-col-reverse landscape:*:w-full landscape:pb-[max(0.75rem,env(safe-area-inset-bottom))]', className)} {...props}>
             {children}
         </div>
     )

@@ -1,18 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useBlocker, useNavigate } from 'react-router-dom'
+import { useBlocker } from 'react-router-dom'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { useWorkspace } from '@/lib/workspace-context'
 import { DEFAULT_TEMPLATES, TEMPLATE_TOKENS, validateTemplate, type MessageType } from '@moc/notifications'
 import { deleteNotificationTemplate, fetchNotificationTemplates, upsertNotificationTemplate } from '@/data/notification-templates'
-import { routes } from '@/screens/console-routes'
 import { messageTypeMeta } from '../meta'
 import { templateHasContent } from '@/lib/template-editor-html'
 import { useTemplateBodyEditor } from '@/hooks/use-template-body-editor'
 
-const SETTINGS_TELEGRAM = `/${routes.settings}?tab=notifications`
-
 export function useMessageTemplateEditor(messageType: MessageType) {
-    const navigate = useNavigate()
     const { toast } = useFeedback()
     const { currentWorkspaceId } = useWorkspace()
     const templateMeta = messageTypeMeta(messageType)
@@ -77,10 +73,6 @@ export function useMessageTemplateEditor(messageType: MessageType) {
         return () => window.removeEventListener('beforeunload', preventUnload)
     }, [dirty])
 
-    function back() {
-        navigate(SETTINGS_TELEGRAM)
-    }
-
     const save = useCallback(async () => {
         if (!currentWorkspaceId || loadedWorkspaceId !== currentWorkspaceId || currentLoadError || isLoading) return false
         setSaving(true)
@@ -129,7 +121,7 @@ export function useMessageTemplateEditor(messageType: MessageType) {
 
     return {
         state: { isLoading, loadError: currentLoadError, hasCustom, body, saving, unknown, unknownMessage, editorHtml, unsupportedTags, dirty, canSave, navigationBlocked: blocker.state === 'blocked' },
-        actions: { back, ...bodyEditor.actions, save, saveAndProceed, discardAndProceed, cancelNavigation, restoreDefault, retryLoad: load },
+        actions: { ...bodyEditor.actions, save, saveAndProceed, discardAndProceed, cancelNavigation, restoreDefault, retryLoad: load },
         templateMeta,
         textareaRef: bodyEditor.meta.textareaRef,
         variables,

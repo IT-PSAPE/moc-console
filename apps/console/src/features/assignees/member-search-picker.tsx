@@ -50,7 +50,7 @@ export function MemberSearchPicker({
                                 <UserAvatar size="sm" user={user} />
                                 <span className="min-w-0 flex-1">
                                     <Label.sm>{user.name} {user.surname}</Label.sm>
-                                    <Paragraph.xs className="truncate text-quaternary">{user.currentDuty ?? user.email}</Paragraph.xs>
+                                    <Paragraph.xs className="truncate text-tertiary">{user.currentDuty ?? user.email}</Paragraph.xs>
                                 </span>
                             </span>
                         </Combobox.Item>

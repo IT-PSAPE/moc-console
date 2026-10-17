@@ -4,7 +4,8 @@ import { Lock, Mail, User } from "lucide-react"
 import { Button } from "@moc/ui/components/controls/button"
 import { Alert } from "@moc/ui/components/feedback/alert"
 import { RetryAlert } from "@moc/ui/components/feedback/retry-alert"
-import { FormLabel } from "@moc/ui/components/form/form-label"
+import { Label, Paragraph } from "@moc/ui/components/display/text"
+import { FormField } from "@moc/ui/components/form/form-label"
 import { Input } from "@moc/ui/components/form/input"
 import { Select } from "@moc/ui/components/form/select"
 import type { Workspace } from "@moc/types/workspace"
@@ -42,11 +43,11 @@ export function SignupScreen() {
   if (state.success) {
     return (
       <AuthLayout>
-        <div className="space-y-4 text-center">
-          <h2 className="title-h6">Check your email</h2>
-          <p className="paragraph-sm text-tertiary">We sent a confirmation link to <span className="font-medium text-primary">{state.email}</span>.</p>
-          <p className="paragraph-sm text-tertiary">After confirming your email, your workspace administrator will review your access request.</p>
-          <Button.Link render={<Link to="/login" />} variant="secondary" className="mt-2 w-full">Back to sign in</Button.Link>
+        <div className="flex flex-col items-center gap-4 text-center">
+          <Label.md>Check your email</Label.md>
+          <Paragraph.sm className="text-tertiary">We sent a confirmation link to <span className="font-medium text-primary">{state.email}</span>.</Paragraph.sm>
+          <Paragraph.sm className="text-tertiary">After confirming your email, your workspace administrator will review your access request.</Paragraph.sm>
+          <Button.Link render={<Link to="/login" />} variant="secondary" className="w-full">Back to sign in</Button.Link>
         </div>
       </AuthLayout>
     )
@@ -54,12 +55,11 @@ export function SignupScreen() {
 
   return (
     <AuthLayout>
-      <form onSubmit={actions.submit} className="space-y-4">
-        <h2 className="title-h6">Create an account</h2>
+      <form onSubmit={actions.submit} className="flex flex-col gap-4">
+        <Label.md>Create an account</Label.md>
         {state.error && <Alert variant="error" title={state.error} />}
 
-        <div className="space-y-1">
-          <FormLabel label="Name" htmlFor="signup-name" required />
+        <FormField label="Name" htmlFor="signup-name" required>
           <Input
             id="signup-name"
             aria-label="First name"
@@ -72,10 +72,9 @@ export function SignupScreen() {
             onChange={handleNameChange}
             required
           />
-        </div>
+        </FormField>
 
-        <div className="space-y-1">
-          <FormLabel label="Surname" htmlFor="signup-surname" required />
+        <FormField label="Surname" htmlFor="signup-surname" required>
           <Input
             id="signup-surname"
             aria-label="Surname"
@@ -88,10 +87,9 @@ export function SignupScreen() {
             onChange={handleSurnameChange}
             required
           />
-        </div>
+        </FormField>
 
-        <div className="space-y-1">
-          <FormLabel label="Email" htmlFor="signup-email" required />
+        <FormField label="Email" htmlFor="signup-email" required>
           <Input
             id="signup-email"
             aria-label="Email"
@@ -105,10 +103,9 @@ export function SignupScreen() {
             onChange={handleEmailChange}
             required
           />
-        </div>
+        </FormField>
 
-        <div className="space-y-1">
-          <FormLabel label="Workspace" htmlFor="signup-workspace" required />
+        <FormField label="Workspace" htmlFor="signup-workspace" required>
           {meta.workspacesError && <RetryAlert title="Couldn't load workspaces" description={meta.workspacesError} onRetry={actions.retryWorkspaces} isRetrying={meta.workspacesLoading} />}
           <Select.Root
             name="workspace"
@@ -126,10 +123,9 @@ export function SignupScreen() {
               {meta.workspaces.map(renderWorkspace)}
             </Select.Content>
           </Select.Root>
-        </div>
+        </FormField>
 
-        <div className="space-y-1">
-          <FormLabel label="Password" htmlFor="signup-password" required />
+        <FormField label="Password" htmlFor="signup-password" required>
           <Input
             id="signup-password"
             aria-label="Password"
@@ -143,10 +139,9 @@ export function SignupScreen() {
             onChange={handlePasswordChange}
             required
           />
-        </div>
+        </FormField>
 
-        <div className="space-y-1">
-          <FormLabel label="Confirm password" htmlFor="signup-confirm-password" required />
+        <FormField label="Confirm password" htmlFor="signup-confirm-password" required>
           <Input
             id="signup-confirm-password"
             aria-label="Confirm password"
@@ -159,10 +154,10 @@ export function SignupScreen() {
             onChange={handleConfirmPasswordChange}
             required
           />
-        </div>
+        </FormField>
 
         <Button type="submit" disabled={state.loading} className="w-full">{state.loading ? "Creating account…" : "Sign up"}</Button>
-        <p className="paragraph-sm text-center text-tertiary">Already have an account? <Link to="/login" className="text-brand hover:underline">Sign in</Link></p>
+        <Paragraph.sm className="text-center text-tertiary">Already have an account? <Button.Link render={<Link to="/login" />} variant="link">Sign in</Button.Link></Paragraph.sm>
       </form>
     </AuthLayout>
   )

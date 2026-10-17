@@ -6,7 +6,7 @@ export function PublicDocumentSection({ title, children }: { title: string; chil
   return (
     <section className="mb-8">
       <Divider className="mb-6" />
-      <Label.lg className="mb-3 block">{title}</Label.lg>
+      <Label.md className="mb-3 block">{title}</Label.md>
       {children}
     </section>
   )

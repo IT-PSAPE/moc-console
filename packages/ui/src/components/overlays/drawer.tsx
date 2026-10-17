@@ -68,13 +68,15 @@ type DrawerRootProps = {
     side?: Side
     mobileSide?: Side
     triggerRef?: RefObject<HTMLElement | null>
+    /** Snap point a phone bottom sheet opens at: `0.55` (peek, default) or `1` (full height). */
+    defaultSnapPoint?: number
 }
 
-function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = true, defaultOpen = false, mobileSide, onOpenChange, open, side = 'right', triggerRef }: DrawerRootProps) {
+function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = true, defaultOpen = false, defaultSnapPoint = MOBILE_SNAP_POINTS[0], mobileSide, onOpenChange, open, side = 'right', triggerRef }: DrawerRootProps) {
     const isLandscape = useIsLandscape()
     const isControlled = open !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
-    const [snapPoint, setSnapPoint] = useState<DrawerSnapPoint | null>(MOBILE_SNAP_POINTS[0])
+    const [snapPoint, setSnapPoint] = useState<DrawerSnapPoint | null>(defaultSnapPoint)
     const isOpen = isControlled ? open : uncontrolledOpen
     const hasNewPointerPress = useRef(false)
     useEffect(() => {
@@ -114,7 +116,7 @@ function DrawerRoot({ children, closeOnBackdropClick = true, closeOnEscape = tru
         }
 
         if (nextOpen && isLandscapeSheet && snapPoint === null) {
-            setSnapPoint(MOBILE_SNAP_POINTS[0])
+            setSnapPoint(defaultSnapPoint)
         }
         setOpen(nextOpen)
     }
@@ -176,7 +178,7 @@ function DrawerBackdrop({ className, ...props }: HTMLAttributes<HTMLDivElement>)
     return (
         <BaseDrawer.Backdrop
             className={cn(
-                'pointer-events-auto fixed inset-0 z-0 bg-overlay/30 landscape:bg-overlay/40',
+                'pointer-events-auto fixed inset-0 z-0 bg-overlay/50 backdrop-blur-[2px]',
                 'transition-opacity duration-200 motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
                 className,
             )}
@@ -217,7 +219,7 @@ function DrawerPanel({ children, className, ...props }: HTMLAttributes<HTMLDivEl
                 )}
                 {...props}
             >
-                <div className={cn('flex h-full flex-col border border-secondary bg-primary', state.isSheet ? 'rounded-t-3xl border-b-0 shadow-xl' : 'rounded-lg')}>
+                <div className={cn('flex h-full flex-col border border-secondary bg-primary shadow-xl', state.isSheet ? 'rounded-t-xl border-b-0' : 'rounded-xl')}>
                     {state.isSheet ? <MobileSheetHandle /> : null}
                     <div className={state.isSheet ? mobileDrawerStackContentClassName : 'flex min-h-0 flex-1 flex-col'}>{children}</div>
                 </div>
@@ -233,7 +235,7 @@ function DrawerHeader({ children, className, ...props }: HTMLAttributes<HTMLDivE
 }
 
 function DrawerContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    return <BaseDrawer.Content className={cn('min-h-0 flex flex-1 flex-col overflow-y-auto overscroll-contain landscape:pb-[max(1rem,env(safe-area-inset-bottom))]', className)} {...props} />
+    return <BaseDrawer.Content className={cn('min-h-0 flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-5 py-4 landscape:pb-[max(1rem,env(safe-area-inset-bottom))]', className)} {...props} />
 }
 
 function DrawerFooter(props: HTMLAttributes<HTMLDivElement>) {

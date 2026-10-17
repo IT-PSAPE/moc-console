@@ -1,6 +1,6 @@
 import { Clock3 } from "lucide-react"
 import { Button } from "@moc/ui/components/controls/button"
-import { Paragraph } from "@moc/ui/components/display/text"
+import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { AuthLayout } from "./auth-layout"
 
 type PendingAccessScreenProps = {
@@ -16,15 +16,15 @@ export function PendingAccessScreen({ checking, error, onCheckAgain, onSignOut }
 
   return (
     <AuthLayout>
-      <div className="space-y-5 text-center">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-brand text-brand">
-          <Clock3 className="size-6" aria-hidden="true" />
+      <div className="flex flex-col gap-5 text-center">
+        <div className="mx-auto flex size-10 items-center justify-center rounded-lg border border-secondary bg-primary text-tertiary shadow-xs">
+          <Clock3 className="size-5" aria-hidden="true" />
         </div>
-        <div className="space-y-2">
-          <h1 className="title-h6">{title}</h1>
+        <div className="flex flex-col gap-1.5">
+          <Label.md>{title}</Label.md>
           <Paragraph.sm className="text-tertiary">{description}</Paragraph.sm>
         </div>
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           <Button className="w-full" disabled={checking} onClick={onCheckAgain}>{checking ? "Checking…" : error ? "Try again" : "Check again"}</Button>
           <Button className="w-full" variant="secondary" onClick={onSignOut}>Sign out</Button>
         </div>

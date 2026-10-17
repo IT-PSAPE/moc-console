@@ -42,8 +42,9 @@ export function PasswordField({ value, onChange, onBlur, visible, onToggleVisibl
                 aria-label={visible ? "Hide password" : "Show password"}
                 aria-pressed={visible}
                 variant="ghost"
+                size="sm"
                 icon={visible ? <EyeOff /> : <Eye />}
-                className="absolute inset-y-0 right-1 my-auto !py-0 text-tertiary hover:text-secondary"
+                className="absolute inset-y-0 right-1 my-auto text-tertiary hover:text-secondary"
             />
         </div>
     )

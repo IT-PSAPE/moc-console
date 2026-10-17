@@ -4,25 +4,27 @@ import { cn } from "@moc/utils/cn";
 
 function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td className={cn("border-r last:border-r-0 border-b border-secondary", className)} {...props} />
+    <td className={cn("border-b border-secondary px-4 py-3 paragraph-sm text-tertiary align-middle", className)} {...props} />
   );
 }
 
+// No vertical borders anywhere. `last:*:border-b-0` drops the bottom border
+// off every cell in the last row; `hover:bg-secondary` highlights the whole row.
 function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
   return (
-    <tr className={cn(className, 'last:*:border-b-0')} {...props} />
+    <tr className={cn("last:*:border-b-0 hover:bg-secondary", className)} {...props} />
   );
 }
 
 function TableHeader({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <th className={cn("font-semibold bg-tertiary border-r last:border-r-0 !border-b border-secondary text-left", className)} {...props} />
+    <th className={cn("h-9 border-b border-secondary px-4 text-left label-xs font-semibold text-quaternary whitespace-nowrap align-middle", className)} {...props} />
   );
 }
 
 function TableHead({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
   return (
-    <thead className={cn("border border-secondary", className)} {...props} />
+    <thead className={cn("bg-secondary", className)} {...props} />
   );
 }
 
@@ -46,7 +48,7 @@ function TableCol({ width, className, style, ...props }: ColHTMLAttributes<HTMLT
 
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <table className={cn("isolate border-separate border-spacing-0 border-secondary paragraph-sm", className)} {...props} />
+    <table className={cn("isolate w-full border-separate border-spacing-0 paragraph-sm", className)} {...props} />
   );
 }
 

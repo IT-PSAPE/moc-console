@@ -1,6 +1,6 @@
-import { Button as BaseButton } from '@base-ui/react/button'
 import { cn } from '@moc/utils/cn'
 import { cv } from '@moc/utils/cv'
+import { Button } from '../controls/button'
 import { Label, Paragraph } from '../display/text'
 import { AlertCircle, CheckCircle2, Info, Lightbulb, TriangleAlert, X } from 'lucide-react'
 import type { HTMLAttributes, ReactNode } from 'react'
@@ -96,14 +96,13 @@ export function Alert({ title, description, action, variant = 'info', style = 'f
             </div>
             {action && <span className="shrink-0">{action}</span>}
             {dismissible && onDismiss && (
-                <BaseButton
-                    type="button"
-                    onClick={onDismiss}
-                    className="shrink-0 mt-0.5 cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
+                <Button.Icon
                     aria-label="Dismiss"
-                >
-                    <X className="size-4" />
-                </BaseButton>
+                    icon={<X />}
+                    variant="ghost"
+                    size="sm"
+                    onClick={onDismiss}
+                />
             )}
         </div>
     )

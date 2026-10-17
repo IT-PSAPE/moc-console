@@ -12,6 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { createContext, useContext, type HTMLAttributes, type ReactNode } from "react";
+import { ListSurfaceContext } from "./list-surface-context";
 
 type ColumnContextValue = {
     state: { isOver: boolean };
@@ -66,7 +67,7 @@ function KanbanBoardColumn({ id, children, className, ...props }: HTMLAttributes
         <ColumnContext.Provider value={{ state: { isOver }, actions: {}, meta: { setNodeRef } }}>
             <div
                 className={cn(
-                    "flex min-w-0 flex-col gap-1.5 rounded-lg border border-secondary bg-secondary p-1.5",
+                    "flex min-w-0 flex-col gap-2 rounded-xl bg-secondary p-2",
                     isOver ? "ring-2 ring-border-brand ring-offset-2 transition-shadow" : "transition-shadow",
                     className,
                 )}
@@ -78,9 +79,10 @@ function KanbanBoardColumn({ id, children, className, ...props }: HTMLAttributes
     );
 }
 
+// Pair with a count badge, e.g. `<KanbanBoard.ColumnHeader><Indicator.Dot .../><span>{label}</span><Badge label={String(items.length)} /></KanbanBoard.ColumnHeader>`.
 function KanbanBoardColumnHeader({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("flex min-h-8 items-center gap-1.5 px-1.5 landscape:flex-col landscape:items-start", className)} {...props}>
+        <div className={cn("flex items-center gap-2 px-1 pb-2 label-xs text-quaternary landscape:flex-col landscape:items-start", className)} {...props}>
             {children}
         </div>
     );
@@ -89,7 +91,7 @@ function KanbanBoardColumnHeader({ children, className, ...props }: HTMLAttribut
 function KanbanBoardColumnContent({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     const { meta: { setNodeRef } } = useColumnContext("KanbanBoard.ColumnContent");
     return (
-        <div ref={setNodeRef} className={cn("flex min-h-16 flex-col gap-1.5", className)} {...props}>
+        <div ref={setNodeRef} className={cn("flex min-h-16 flex-col gap-2", className)} {...props}>
             {children}
         </div>
     );
@@ -113,11 +115,16 @@ function KanbanBoardItem({ id, data, disabled = false, children }: ItemProps) {
         transform: isDragging ? undefined : CSS.Translate.toString(transform),
     };
 
+    // Nested `InteractiveSurface.Card` triggers (the item content's click/drag
+    // surface) render as a flat row — not another bordered card — inside the
+    // `ListSurfaceContext`, so this wrapper is the only card chrome.
     return (
         <div ref={setNodeRef} style={style} {...(disabled ? {} : { ...listeners, ...attributes })}>
-            <div className={isDragging ? "rounded-lg border-2 border-dashed border-secondary" : ""}>
-                <div className={isDragging ? "invisible" : ""}>{children}</div>
-            </div>
+            <ListSurfaceContext.Provider value={true}>
+                <div className={cn("overflow-hidden rounded-lg", isDragging ? "border-2 border-dashed border-secondary" : "border border-secondary bg-primary shadow-xs")}>
+                    <div className={isDragging ? "invisible" : ""}>{children}</div>
+                </div>
+            </ListSurfaceContext.Provider>
         </div>
     );
 }
@@ -125,7 +132,11 @@ function KanbanBoardItem({ id, data, disabled = false, children }: ItemProps) {
 function KanbanBoardOverlay({ children }: { children: ReactNode }) {
     return (
         <DragOverlay>
-            {children ? <div className="opacity-90 rotate-2 scale-105">{children}</div> : null}
+            {children ? (
+                <ListSurfaceContext.Provider value={true}>
+                    <div className="overflow-hidden rounded-lg border border-secondary bg-primary shadow-xs opacity-90 rotate-2 scale-105">{children}</div>
+                </ListSurfaceContext.Provider>
+            ) : null}
         </DragOverlay>
     );
 }

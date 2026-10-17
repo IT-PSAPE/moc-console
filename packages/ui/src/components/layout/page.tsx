@@ -32,9 +32,14 @@ function PageContainer({ children, className, width = 'wide', ...props }: PageCo
     )
 }
 
-function PageHeader({ children, className, ...props }: HTMLAttributes<HTMLElement>) {
+type PageHeaderProps = HTMLAttributes<HTMLElement> & {
+    /** Match the width passed to `Page.Content` so title and content share a left edge. */
+    width?: PageWidth
+}
+
+function PageHeader({ children, className, width = 'wide', ...props }: PageHeaderProps) {
     return (
-        <header className={cn('@container/collection-toolbar mx-auto flex w-full max-w-content flex-wrap items-center gap-4 pt-page-top landscape:pt-6 pr-[max(var(--spacing-page-gutter),env(safe-area-inset-right))] pb-4 pl-[max(var(--spacing-page-gutter),env(safe-area-inset-left))]', className)} {...props}>
+        <header className={cn('@container/collection-toolbar mx-auto flex w-full min-h-control flex-wrap items-center gap-3 pt-page-top pr-[max(var(--spacing-page-gutter),env(safe-area-inset-right))] pb-4 pl-[max(var(--spacing-page-gutter),env(safe-area-inset-left))]', widthClassName[width], className)} {...props}>
             {children}
         </header>
     )
@@ -42,7 +47,7 @@ function PageHeader({ children, className, ...props }: HTMLAttributes<HTMLElemen
 
 function PageHeading({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn('flex min-w-0 max-w-full flex-[1_0_auto] flex-col gap-1.5', className)} {...props}>
+        <div className={cn('flex min-w-0 max-w-full flex-[1_0_auto] flex-col gap-1', className)} {...props}>
             {children}
         </div>
     )
@@ -50,7 +55,7 @@ function PageHeading({ children, className, ...props }: HTMLAttributes<HTMLDivEl
 
 function PageTitle({ children, className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
     return (
-        <h1 className={cn('title-h5 text-pretty', className)} {...props}>
+        <h1 className={cn('title-h6 text-pretty', className)} {...props}>
             {children}
         </h1>
     )
@@ -74,7 +79,7 @@ function PageActions({ children, className, ...props }: HTMLAttributes<HTMLDivEl
 
 function PageControls({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn('flex min-w-0 flex-[1_1_28rem] flex-wrap items-center justify-end gap-2 [&>[data-ui-control]]:min-w-40 [&>[data-ui-control]]:max-w-md [&>[data-ui-control]]:flex-[1_1_12rem] landscape:[&>[data-ui-control]]:basis-full', className)} {...props}>
+        <div className={cn('flex min-w-0 flex-wrap items-center justify-end gap-2 landscape:w-full [&>[data-ui-control]]:w-64 [&>[data-ui-control]]:max-w-full landscape:[&>[data-ui-control]]:w-auto landscape:[&>[data-ui-control]]:min-w-0 landscape:[&>[data-ui-control]]:flex-1', className)} {...props}>
             {children}
         </div>
     )
@@ -82,7 +87,7 @@ function PageControls({ children, className, ...props }: HTMLAttributes<HTMLDivE
 
 function PageToolbar({ children, className, ...props }: PageContainerProps) {
     return (
-        <PageContainer className={cn('flex flex-row items-center gap-2 pb-4 landscape:flex-col landscape:items-stretch', className)} {...props}>
+        <PageContainer className={cn('flex items-center gap-2 pb-4', className)} {...props}>
             {children}
         </PageContainer>
     )

@@ -1,15 +1,16 @@
 import { Drawer, useDrawer } from "@moc/ui/components/overlays/drawer";
 import { Divider } from "@moc/ui/components/display/divider";
 import { Button } from "@moc/ui/components/controls/button";
-import { Paragraph, Title } from "@moc/ui/components/display/text";
+import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { DeleteEquipmentModal } from "./delete-equipment-modal";
 import { EquipmentPropertiesSection } from "./equipment-properties-section";
 import { EquipmentNotesSection } from "./equipment-notes-section";
+import { EquipmentThumbnail } from "./equipment-thumbnail";
 import { BookingHistorySection } from "./booking-history-section";
 import { useEquipmentEditor } from "./use-equipment-editor";
 import type { Equipment } from "@moc/types/equipment";
-import { Maximize2, Package, Trash2, X } from "lucide-react";
+import { Maximize2, Trash2, X } from "lucide-react";
 import type { RefObject } from "react";
 import { useDrawerClose } from "@/hooks/use-drawer-close";
 import { useDrawerEditorGuard } from "@/hooks/use-drawer-editor-guard";
@@ -81,43 +82,33 @@ export function EquipmentPanelContent({ equipment, onClose, open, isDirtyRef, re
     <>
       {/* Header */}
       <SplitPanel.Header className="flex items-center gap-1">
-        <Button.Icon aria-label="Close equipment" variant="ghost" icon={<X />} onClick={guard.actions.requestClose} />
+        <Button.Icon aria-label="Close equipment" variant="ghost" size="sm" icon={<X />} onClick={guard.actions.requestClose} />
         <Button.Icon
           variant="ghost"
+          size="sm"
           aria-label="Open full page"
           icon={<Maximize2 />}
           onClick={guard.actions.openFullPage}
         />
         <div className="flex-1" />
         <Button.Icon
-          variant="ghost"
+          variant="danger-secondary"
+          size="sm"
           aria-label="Delete equipment"
           icon={<Trash2 />}
           onClick={handleDeleteRequest}
         />
       </SplitPanel.Header>
 
-      <SplitPanel.Content className="py-4">
+      <SplitPanel.Content>
         {/* Thumbnail + Name */}
-        <div className="flex items-center gap-3 px-4 pb-4">
-          {draft.thumbnail ? (
-            <img
-              src={draft.thumbnail}
-              alt={draft.name}
-              width="48"
-              height="48"
-              className="size-12 rounded-lg object-cover"
-            />
-          ) : (
-            <span className="flex size-12 items-center justify-center rounded-lg bg-secondary text-quaternary">
-              <Package className="size-6" />
-            </span>
-          )}
+        <div className="flex items-center gap-3">
+          <EquipmentThumbnail equipment={draft} size="lg" />
           <div>
-            <Title.h6>{draft.name}</Title.h6>
-            <Paragraph.xs className="text-tertiary">
+            <Label.md className="block">{draft.name}</Label.md>
+            <Paragraph.sm className="text-tertiary">
               {draft.serialNumber}
-            </Paragraph.xs>
+            </Paragraph.sm>
           </div>
         </div>
 
@@ -126,23 +117,24 @@ export function EquipmentPanelContent({ equipment, onClose, open, isDirtyRef, re
           onUpdateField={store.actions.updateField}
         />
 
-        <Divider className="my-6" />
+        <Divider className="my-0" />
         <EquipmentNotesSection
           draft={draft}
           onUpdateField={store.actions.updateField}
         />
 
-        <Divider className="my-6" />
+        <Divider className="my-0" />
         <BookingHistorySection
           bookings={bookingHistory.state.bookings}
           isLoading={bookingHistory.state.isLoading}
+          onNavigate={onClose}
         />
       </SplitPanel.Content>
 
       {/* Save footer — visible only when dirty */}
       {store.state.isDirty && (
-        <SplitPanel.Footer className="justify-end">
-          <Button variant="ghost" onClick={store.actions.discard}>
+        <SplitPanel.Footer>
+          <Button variant="secondary" onClick={store.actions.discard}>
             Discard
           </Button>
           <Button onClick={editor.actions.save} disabled={store.state.isSaving}>

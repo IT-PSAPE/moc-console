@@ -6,6 +6,7 @@ import { DeleteEquipmentModal } from "@/features/equipment/delete-equipment-moda
 import { EquipmentNotesSection } from "@/features/equipment/equipment-notes-section"
 import { EquipmentPropertiesSection } from "@/features/equipment/equipment-properties-section"
 import { EquipmentQrSection } from "@/features/equipment/equipment-qr-section"
+import { EquipmentThumbnail } from "@/features/equipment/equipment-thumbnail"
 import { useEquipmentEditor } from "@/features/equipment/use-equipment-editor"
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal"
 import { TopBarActions } from "@/features/topbar"
@@ -17,7 +18,7 @@ import { Paragraph } from "@moc/ui/components/display/text"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { Page } from "@moc/ui/components/layout/page"
 import type { Equipment } from "@moc/types/equipment"
-import { Package, Save, Trash2, Undo2 } from "lucide-react"
+import { Save, Trash2, Undo2 } from "lucide-react"
 
 export function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
   const back = useDetailReturn(`/${routes.equipment}`, "Back to equipment")
@@ -51,11 +52,7 @@ export function EquipmentDetailContent({ equipment }: { equipment: Equipment }) 
 
         <DetailPage.Header>
           <Header.Lead className="gap-3">
-            {draft.thumbnail ? (
-              <img src={draft.thumbnail} alt={draft.name} width="56" height="56" className="size-14 rounded-lg object-cover" />
-            ) : (
-              <span className="flex size-14 items-center justify-center rounded-lg bg-secondary text-quaternary"><Package className="size-7" /></span>
-            )}
+            <EquipmentThumbnail equipment={draft} size="lg" />
             <div>
               <Page.Title>{draft.name}</Page.Title>
               <Paragraph.sm className="text-tertiary">{draft.serialNumber}</Paragraph.sm>
@@ -63,13 +60,13 @@ export function EquipmentDetailContent({ equipment }: { equipment: Equipment }) 
           </Header.Lead>
         </DetailPage.Header>
 
-        <div className="py-4"><EquipmentPropertiesSection draft={draft} onUpdateField={store.actions.updateField} /></div>
+        <DetailPage.Section><EquipmentPropertiesSection draft={draft} onUpdateField={store.actions.updateField} /></DetailPage.Section>
         <DetailPage.Divider />
-        <div className="py-4"><EquipmentNotesSection draft={draft} onUpdateField={store.actions.updateField} /></div>
+        <DetailPage.Section><EquipmentNotesSection draft={draft} onUpdateField={store.actions.updateField} /></DetailPage.Section>
         <DetailPage.Divider />
-        <div className="py-4"><BookingHistorySection bookings={bookingHistory.state.bookings} isLoading={bookingHistory.state.isLoading} /></div>
+        <DetailPage.Section><BookingHistorySection bookings={bookingHistory.state.bookings} isLoading={bookingHistory.state.isLoading} /></DetailPage.Section>
         <DetailPage.Divider />
-        <div className="py-4"><EquipmentQrSection equipment={draft} /></div>
+        <DetailPage.Section><EquipmentQrSection equipment={draft} /></DetailPage.Section>
 
         <UnsavedChangesModal open={guard.state.isBlocked} onSave={guard.actions.saveAndContinue} onDiscard={guard.actions.discardAndContinue} onCancel={guard.actions.cancel} isSaving={store.state.isSaving} />
         <DeleteEquipmentModal open={editor.state.deleteOpen} onDelete={editor.actions.remove} onCancel={closeDelete} isDeleting={editor.state.isDeleting} />

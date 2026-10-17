@@ -25,12 +25,12 @@ export function FormField({ label, htmlFor, required, optional, disabled, classN
     )
 }
 
-export function FormLabel({ label, htmlFor, required, optional, className }: LabelProps) {
+export function FormLabel({ label, htmlFor, required, optional, disabled, className }: LabelProps) {
     return (
         <label htmlFor={htmlFor} className={cn("flex justify-start items-center gap-0.5", className)}>
-            <TextLabel.xs className="text-primary">{label}</TextLabel.xs>
-            {required && <TextLabel.xs  className="text-brand">*</TextLabel.xs>}
-            {optional && <TextLabel.xs className="text-quaternary">(Optional)</TextLabel.xs>}
+            <TextLabel.sm className={cn("font-medium text-secondary", disabled && "text-quaternary")}>{label}</TextLabel.sm>
+            {required && <TextLabel.sm className="font-medium text-brand">*</TextLabel.sm>}
+            {optional && <TextLabel.sm className="font-medium text-quaternary">(Optional)</TextLabel.sm>}
         </label>
     )
 }

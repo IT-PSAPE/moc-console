@@ -8,7 +8,7 @@ import { PublicDocumentScopeRow as ScopeRow } from "./public-document-scope-row"
 export function ZoomReviewTestPlanScreen() {
   return (
     <PublicLayout>
-      <Title.h1 className="mb-2 title-h3">Zoom reviewer test plan</Title.h1>
+      <Title.h1 className="mb-2 title-h5">Zoom reviewer test plan</Title.h1>
       <Paragraph.sm className="text-tertiary mb-8">
         A production-app verification plan for Zoom Marketplace reviewers.
       </Paragraph.sm>

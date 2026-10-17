@@ -44,7 +44,7 @@ export function RequestsScreen() {
           <Page.Title>Requests</Page.Title>
         </Page.Heading>
         <Page.Controls>
-          <Input aria-label="Search requests" name="request-search" autoComplete="off" icon={<Search />} placeholder="Search requests…" className="w-full max-w-md" value={filters.filters.search} onChange={handleSearch} />
+          <Input aria-label="Search requests" name="request-search" autoComplete="off" icon={<Search />} placeholder="Search requests…" value={filters.filters.search} onChange={handleSearch} />
           <Drawer mobileSide="bottom">
             <Drawer.Trigger>
               <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter requests">Filter</CollectionToolbar.ActionButton>

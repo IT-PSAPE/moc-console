@@ -44,7 +44,7 @@ type AccordionTriggerProps = HTMLAttributes<HTMLButtonElement>;
 function AccordionTrigger({ children, className, ...props }: AccordionTriggerProps) {
     return (
         <BaseAccordion.Header className="m-0">
-            <BaseAccordion.Trigger className={cn("group w-full cursor-pointer", className)} {...props}>
+            <BaseAccordion.Trigger className={cn("group w-full cursor-pointer label-sm text-left", className)} {...props}>
                 {children}
             </BaseAccordion.Trigger>
         </BaseAccordion.Header>

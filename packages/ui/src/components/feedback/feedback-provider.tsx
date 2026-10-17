@@ -50,7 +50,7 @@ function ToastViewport({ container, zIndex }: { container: HTMLElement | null; z
     return (
         <BaseToast.Portal container={container}>
             <BaseToast.Viewport
-                className="pointer-events-none fixed right-[max(1.5rem,env(safe-area-inset-right))] bottom-[max(1.5rem,env(safe-area-inset-bottom))] w-[min(calc(100vw-2rem),24rem)] outline-none portrait:right-[max(1rem,env(safe-area-inset-right))] portrait:bottom-[max(1rem,env(safe-area-inset-bottom))]"
+                className="pointer-events-none fixed right-[max(1.5rem,env(safe-area-inset-right))] bottom-[max(1.5rem,env(safe-area-inset-bottom))] w-[min(calc(100vw-2rem),22rem)] outline-none portrait:right-[max(1rem,env(safe-area-inset-right))] portrait:bottom-[max(1rem,env(safe-area-inset-bottom))]"
                 style={{ zIndex }}
             >
                 {toasts.map(renderToast)}

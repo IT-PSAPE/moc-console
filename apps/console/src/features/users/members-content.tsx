@@ -17,13 +17,13 @@ export function MembersContent() {
   return (
     <>
       <Page>
-        <Page.Header>
+        <Page.Header width="standard">
           <Page.Heading><Page.Title>Members</Page.Title></Page.Heading>
           <Page.Controls>
             <Input aria-label="Search members" name="member-search" autoComplete="off" icon={<Search />} placeholder="Search members…" value={state.search} onChange={actions.changeSearch} />
           </Page.Controls>
         </Page.Header>
-        <Page.Content className="flex min-w-0 flex-col gap-8">
+        <Page.Content width="standard" className="flex min-w-0 flex-col gap-8">
               <Section>
                 <Section.Header title="Directory" description={`${meta.totalUsers} people have access to this workspace.`} />
                 <Section.Body>

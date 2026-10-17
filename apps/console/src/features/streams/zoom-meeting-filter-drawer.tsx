@@ -1,6 +1,6 @@
 import { Label } from "@moc/ui/components/display/text"
 import { Checkbox } from "@moc/ui/components/form/checkbox"
-import { FormLabel } from "@moc/ui/components/form/form-label"
+import { FormField, FormLabel } from "@moc/ui/components/form/form-label"
 import { Input } from "@moc/ui/components/form/input"
 import { Radio, RadioGroup } from "@moc/ui/components/form/radio"
 import { Tabs } from "@moc/ui/components/layout/tabs"
@@ -81,26 +81,26 @@ export function ZoomMeetingFilterDrawer({ filters }: ZoomMeetingFilterDrawerProp
                 </FilterDrawer.Group>
                 <FilterDrawer.Group label="Start Date">
                   <FilterDrawer.Options>
-                    <label className="space-y-1 *:odd:ml-1">
-                      <FormLabel label="From" />
+                    <FormField label="From" htmlFor="meeting-start-from">
                       <Input
+                        id="meeting-start-from"
                         aria-label="Meeting start date from"
                         name="meeting-start-from"
                         type="date"
                         value={state.dateRange.start}
                         onChange={handleStartDateChange}
                       />
-                    </label>
-                    <label className="space-y-1 *:odd:ml-1">
-                      <FormLabel label="To" />
+                    </FormField>
+                    <FormField label="To" htmlFor="meeting-start-to">
                       <Input
+                        id="meeting-start-to"
                         aria-label="Meeting start date to"
                         name="meeting-start-to"
                         type="date"
                         value={state.dateRange.end}
                         onChange={handleEndDateChange}
                       />
-                    </label>
+                    </FormField>
                   </FilterDrawer.Options>
                 </FilterDrawer.Group>
                 <FilterDrawer.Group label="Past Meetings">

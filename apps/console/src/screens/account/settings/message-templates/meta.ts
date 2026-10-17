@@ -12,6 +12,10 @@ import {
     type MessageType,
     type TemplateScope,
 } from "@moc/notifications";
+import { routes } from "@/screens/console-routes";
+
+// Shared by the list and the detail page so a settings-tab redirect never drifts.
+export const MESSAGE_TEMPLATES_PATH = `/${routes.settings}?tab=notifications`;
 
 // Only the five announcement events are templatable — every other event
 // now renders a short follow-up note instead (see @moc/notifications'

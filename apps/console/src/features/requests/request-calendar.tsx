@@ -27,7 +27,7 @@ export function RequestCalendarView({ requests }: { requests: Request[] }) {
 
         return (
             <Drawer key={request.id}>
-                <ResponsiveDrawerTrigger mobileHref={`/${routes.requests}/${request.id}`} className="w-full rounded text-left">
+                <ResponsiveDrawerTrigger mobileHref={`/${routes.requests}/${request.id}`} className="w-full rounded-md text-left">
                     <Calendar.Event color={event.color}>{event.label}</Calendar.Event>
                 </ResponsiveDrawerTrigger>
                 <RequestDrawer request={request} />

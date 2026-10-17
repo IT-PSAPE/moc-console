@@ -2,9 +2,9 @@ import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { SplitPanel } from "@moc/ui/components/layout/split-panel"
 import { Button } from "@moc/ui/components/controls/button"
 import { Badge } from "@moc/ui/components/display/badge"
-import { Label, Paragraph, Title } from "@moc/ui/components/display/text"
-import { Divider } from "@moc/ui/components/display/divider"
+import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
+import { Section } from "@moc/ui/components/display/section"
 import { zoomRecurrenceLabel } from "@moc/types/streams/zoom-constants"
 import type { ZoomMeeting } from "@moc/types/streams/zoom"
 import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
@@ -16,6 +16,7 @@ import {
   ExternalLink,
   Globe,
   Key,
+  Link2,
   Maximize2,
   MessageCircle,
   Mic,
@@ -26,6 +27,7 @@ import {
   X,
 } from "lucide-react"
 import { useMeetingDetailDrawer } from "./use-meeting-detail-drawer"
+import { StreamProviderIcon } from "./stream-provider-icon"
 
 type MeetingDetailPanelProps = {
   meeting: ZoomMeeting
@@ -43,116 +45,111 @@ function formatDuration(minutes: number): string {
 
 export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: MeetingDetailPanelProps) {
   const drawer = useMeetingDetailDrawer(meeting, onClose, onEdit, onDelete)
-
   const isPast = meeting.startTime ? new Date(meeting.startTime) < new Date() : false
 
   return (
     <>
-          <Paragraph.xs role="status" aria-live="polite" className="sr-only">{drawer.state.copyMessage}</Paragraph.xs>
-          <SplitPanel.Header className="flex items-center gap-1">
-            <Button.Icon aria-label="Close meeting" variant="ghost" icon={<X />} onClick={drawer.actions.close} />
-            <Button.Icon aria-label="Open full page" variant="ghost" icon={<Maximize2 />} onClick={drawer.actions.openFullPage} />
-            <div className="flex-1" />
-            {drawer.meta.canEdit && (
-              <Button.Icon aria-label="Edit meeting" variant="ghost" icon={<Pencil />} onClick={drawer.actions.edit} />
+      <Paragraph.xs role="status" aria-live="polite" className="sr-only">{drawer.state.copyMessage}</Paragraph.xs>
+      <SplitPanel.Header className="flex items-center gap-1">
+        <Button.Icon aria-label="Close meeting" variant="ghost" size="sm" icon={<X />} onClick={drawer.actions.close} />
+        <Button.Icon aria-label="Open full page" variant="ghost" size="sm" icon={<Maximize2 />} onClick={drawer.actions.openFullPage} />
+        <div className="flex-1" />
+        {drawer.meta.canEdit && (
+          <Button.Icon aria-label="Edit meeting" variant="ghost" size="sm" icon={<Pencil />} onClick={drawer.actions.edit} />
+        )}
+        {drawer.meta.canDelete && (
+          <Button.Icon aria-label="Delete meeting" variant="danger-secondary" size="sm" icon={<Trash2 />} onClick={drawer.actions.remove} />
+        )}
+      </SplitPanel.Header>
+
+      <SplitPanel.Content>
+        <div className="flex items-start gap-4 landscape:flex-col">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-secondary bg-secondary text-quaternary">
+            <StreamProviderIcon provider="zoom" decorative className="size-5" />
+          </span>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label.md className="truncate">{meeting.topic}</Label.md>
+            <Badge dot label={isPast ? "Past" : "Upcoming"} color={isPast ? "gray" : "green"} />
+            <Paragraph.sm className="text-tertiary">{meeting.timezone}</Paragraph.sm>
+            <Paragraph.sm className="text-tertiary">{formatUtcIsoInTimezone(meeting.startTime, meeting.timezone)}</Paragraph.sm>
+          </div>
+        </div>
+
+        <RequestLinkField kind="meeting" id={meeting.id} />
+
+        <Section>
+          <Section.Header title="Details" size="sm" />
+          <Section.Body className="gap-3">
+            <MetaRow icon={<Calendar />} label="Start">
+              <Paragraph.sm>{formatUtcIsoInTimezone(meeting.startTime, meeting.timezone)}</Paragraph.sm>
+            </MetaRow>
+
+            <MetaRow icon={<Clock />} label="Duration">
+              <Paragraph.sm>{formatDuration(meeting.duration)}</Paragraph.sm>
+            </MetaRow>
+
+            <MetaRow icon={<Globe />} label="Timezone">
+              <Paragraph.sm>{meeting.timezone}</Paragraph.sm>
+            </MetaRow>
+
+            {meeting.recurrenceType !== "none" && (
+              <MetaRow icon={<Repeat />} label="Recurrence">
+                <Badge label={zoomRecurrenceLabel[meeting.recurrenceType]} color="blue" />
+              </MetaRow>
             )}
-            {drawer.meta.canDelete && (
-              <Button.Icon aria-label="Delete meeting" variant="ghost" icon={<Trash2 />} onClick={drawer.actions.remove} />
-            )}
-          </SplitPanel.Header>
 
-          <SplitPanel.Content className="py-4">
-            <div className="px-4 pb-4">
-              <Title.h6>{meeting.topic}</Title.h6>
-              {meeting.description && (
-                <Paragraph.sm className="text-tertiary mt-1">{meeting.description}</Paragraph.sm>
-              )}
-            </div>
+            <MetaRow icon={<ShieldCheck />} label="Waiting room">
+              <Paragraph.sm>{meeting.waitingRoom ? "Enabled" : "Disabled"}</Paragraph.sm>
+            </MetaRow>
 
-            <div className="px-4 space-y-3">
-              <MetaRow icon={<Calendar />} label="Start">
-                <Paragraph.xs>{formatUtcIsoInTimezone(meeting.startTime, meeting.timezone)}</Paragraph.xs>
-              </MetaRow>
+            <MetaRow icon={<Mic />} label="Mute on entry">
+              <Paragraph.sm>{meeting.muteOnEntry ? "On" : "Off"}</Paragraph.sm>
+            </MetaRow>
 
-              <MetaRow icon={<Clock />} label="Duration">
-                <Paragraph.xs>{formatDuration(meeting.duration)}</Paragraph.xs>
-              </MetaRow>
+            <MetaRow icon={<MessageCircle />} label="Continuous chat">
+              <Paragraph.sm>{meeting.continuousChat ? "Enabled" : "Disabled"}</Paragraph.sm>
+            </MetaRow>
+          </Section.Body>
+        </Section>
 
-              <MetaRow icon={<Globe />} label="Timezone">
-                <Paragraph.xs>{meeting.timezone}</Paragraph.xs>
-              </MetaRow>
-
-              {meeting.recurrenceType !== "none" && (
-                <MetaRow icon={<Repeat />} label="Recurrence">
-                  <Badge label={zoomRecurrenceLabel[meeting.recurrenceType]} color="blue" />
-                </MetaRow>
-              )}
-
-              <MetaRow icon={<Badge label={isPast ? "Past" : "Upcoming"} color={isPast ? "gray" : "green"} />} label="Status">
-                <Paragraph.xs>{isPast ? "This meeting has passed" : "Upcoming"}</Paragraph.xs>
-              </MetaRow>
-            </div>
-
-            <RequestLinkField kind="meeting" id={meeting.id} className="px-4 pt-5" />
-
-            <Divider className="my-6" />
-
-            <div className="px-4 space-y-3">
-              <Label.md>Settings</Label.md>
-
-              <MetaRow icon={<ShieldCheck />} label="Waiting room">
-                <Paragraph.xs>{meeting.waitingRoom ? "Enabled" : "Disabled"}</Paragraph.xs>
-              </MetaRow>
-
-              <MetaRow icon={<Mic />} label="Mute on entry">
-                <Paragraph.xs>{meeting.muteOnEntry ? "On" : "Off"}</Paragraph.xs>
-              </MetaRow>
-
-              <MetaRow icon={<MessageCircle />} label="Continuous chat">
-                <Paragraph.xs>{meeting.continuousChat ? "Enabled" : "Disabled"}</Paragraph.xs>
-              </MetaRow>
-            </div>
-
-            {meeting.joinUrl && (
-              <>
-                <Divider className="my-6" />
-                <div className="px-4 space-y-3">
-                  <Label.md>Join link</Label.md>
-                  <div className="flex items-center gap-2">
-                    <Paragraph.xs className="text-tertiary truncate flex-1">
-                      {meeting.joinUrl}
-                    </Paragraph.xs>
+        {(meeting.joinUrl || meeting.password) && (
+          <Section>
+            <Section.Header title="Links & setup" size="sm" />
+            <Section.Body className="gap-3">
+              {meeting.joinUrl && (
+                <MetaRow icon={<Link2 />} label="Join link">
+                  <div className="flex items-center gap-1">
+                    <Paragraph.sm className="min-w-0 flex-1 truncate text-tertiary">{meeting.joinUrl}</Paragraph.sm>
                     <Button.Icon
                       aria-label="Copy join link"
                       variant="ghost"
+                      size="sm"
                       icon={drawer.state.copiedField === "join" ? <Check className="text-success" /> : <Copy />}
                       onClick={drawer.actions.copyJoinUrl}
                     />
-                    <Button.IconLink render={<a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open join link" variant="ghost" icon={<ExternalLink />} />
+                    <Button.IconLink render={<a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open join link" variant="ghost" size="sm" icon={<ExternalLink />} />
                   </div>
-                </div>
-              </>
-            )}
+                </MetaRow>
+              )}
 
-            {meeting.password && (
-              <>
-                <Divider className="my-6" />
-                <div className="px-4 space-y-3">
-                  <MetaRow icon={<Key />} label="Passcode">
-                    <div className="flex items-center gap-1">
-                      <Paragraph.xs className="font-mono">{meeting.password}</Paragraph.xs>
-                      <Button.Icon
-                        aria-label="Copy passcode"
-                        variant="ghost"
-                        icon={drawer.state.copiedField === "pass" ? <Check className="text-success" /> : <Copy />}
-                        onClick={drawer.actions.copyPassword}
-                      />
-                    </div>
-                  </MetaRow>
-                </div>
-              </>
-            )}
-          </SplitPanel.Content>
+              {meeting.password && (
+                <MetaRow icon={<Key />} label="Passcode">
+                  <div className="flex items-center gap-1">
+                    <Paragraph.sm className="font-mono">{meeting.password}</Paragraph.sm>
+                    <Button.Icon
+                      aria-label="Copy passcode"
+                      variant="ghost"
+                      size="sm"
+                      icon={drawer.state.copiedField === "pass" ? <Check className="text-success" /> : <Copy />}
+                      onClick={drawer.actions.copyPassword}
+                    />
+                  </div>
+                </MetaRow>
+              )}
+            </Section.Body>
+          </Section>
+        )}
+      </SplitPanel.Content>
     </>
   )
 }

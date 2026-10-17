@@ -1,8 +1,9 @@
+import { Badge } from "@moc/ui/components/display/badge"
 import { ListItemCard } from "@moc/ui/components/display/list-item-card"
-import { streamStatusLabel } from "@moc/types/streams/stream-constants"
+import { streamStatusColor, streamStatusLabel } from "@moc/types/streams/stream-constants"
 import type { Stream } from "@moc/types/streams/stream"
 import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
-import { Calendar, Loader } from "lucide-react"
+import { Calendar } from "lucide-react"
 import { ResponsiveDetailAction } from "@/features/responsive-detail-action"
 import { routes } from "@/screens/console-routes"
 import { StreamProviderIcon } from "./stream-provider-icon"
@@ -29,16 +30,18 @@ export function StreamListItem({ stream, onSelect }: StreamListItemProps) {
     >
       <ListItemCard.Root>
         <ListItemCard.Leading>
-          <StreamProviderIcon provider="youtube" />
+          <StreamProviderIcon provider="youtube" className="size-full object-cover" />
         </ListItemCard.Leading>
         <ListItemCard.Content>
           <ListItemCard.Title>{stream.title}</ListItemCard.Title>
           {stream.description && <ListItemCard.Subtitle>{stream.description}</ListItemCard.Subtitle>}
+        </ListItemCard.Content>
+        <ListItemCard.Trailing>
+          <Badge dot color={streamStatusColor[stream.streamStatus]} label={streamStatusLabel[stream.streamStatus]} />
           <ListItemCard.Meta>
-            <ListItemCard.MetaItem icon={<Loader />}>{streamStatusLabel[stream.streamStatus]}</ListItemCard.MetaItem>
             <ListItemCard.MetaItem icon={<Calendar />}>{formatScheduledTime(stream.scheduledStartTime)}</ListItemCard.MetaItem>
           </ListItemCard.Meta>
-        </ListItemCard.Content>
+        </ListItemCard.Trailing>
       </ListItemCard.Root>
     </ResponsiveDetailAction.Card>
   )

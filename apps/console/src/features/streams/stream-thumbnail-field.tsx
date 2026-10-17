@@ -1,7 +1,7 @@
 import type { ChangeEvent } from "react"
 import { Button } from "@moc/ui/components/controls/button"
 import { Input } from "@moc/ui/components/form/input"
-import { FormLabel } from "@moc/ui/components/form/form-label"
+import { FormField } from "@moc/ui/components/form/form-label"
 import { FileDropzone } from "@moc/ui/components/form/file-dropzone"
 import { Paragraph } from "@moc/ui/components/display/text"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
@@ -52,14 +52,12 @@ export function StreamThumbnailField({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <FormLabel label="Thumbnail" optional />
-
+    <FormField label="Thumbnail" optional>
       {hasSelection ? (
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 rounded-lg border border-secondary bg-primary p-2">
             {previewUrl && (
-              <img src={previewUrl} alt="" width="32" height="32" className="size-8 shrink-0 rounded object-cover" />
+              <img src={previewUrl} alt="" width="32" height="32" className="size-8 shrink-0 rounded-lg object-cover" />
             )}
             <Paragraph.sm className="text-secondary truncate flex-1">{selectionName}</Paragraph.sm>
             {status === "resolving" && (
@@ -78,7 +76,7 @@ export function StreamThumbnailField({
         <div className="flex flex-col gap-2">
           {previewUrl && (
             <div className="flex items-center gap-2 rounded-lg border border-secondary bg-primary p-2">
-              <img src={previewUrl} alt="" width="32" height="32" className="size-8 shrink-0 rounded object-cover" />
+              <img src={previewUrl} alt="" width="32" height="32" className="size-8 shrink-0 rounded-lg object-cover" />
               <Paragraph.sm className="text-quaternary truncate flex-1">
                 Current thumbnail — choose a source below to replace it.
               </Paragraph.sm>
@@ -130,6 +128,6 @@ export function StreamThumbnailField({
           </Paragraph.xs>
         </div>
       )}
-    </div>
+    </FormField>
   )
 }

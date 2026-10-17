@@ -5,7 +5,7 @@ import { PublicDocumentSection as Section } from "./public-document-section"
 export function PrivacyPolicyScreen() {
   return (
     <PublicLayout>
-      <Title.h1 className="mb-2 title-h3">Privacy policy</Title.h1>
+      <Title.h1 className="mb-2 title-h5">Privacy policy</Title.h1>
       <Paragraph.sm className="text-tertiary mb-8">Last updated: 25 September 2026</Paragraph.sm>
 
       <Paragraph.md className="mb-8">
@@ -17,7 +17,7 @@ export function PrivacyPolicyScreen() {
       <Section title="1. Information We Collect">
         <Paragraph.md className="mb-3"><strong>Account information.</strong> When you create an account or are invited to a workspace, we collect your name, email address, and the organization/workspace you belong to. Authentication requests are handled by the MOC API and its authentication service.</Paragraph.md>
         <Paragraph.md className="mb-3"><strong>Zoom information.</strong> When you connect a Zoom account, we receive and store:</Paragraph.md>
-        <ul className="list-disc pl-6 space-y-1 mb-3">
+        <ul className="list-disc pl-6 space-y-2 mb-3">
           <li><Paragraph.md>Your Zoom user profile (Zoom user ID, email address, display name).</Paragraph.md></li>
           <li><Paragraph.md>Metadata for meetings you schedule, read, edit, or delete through the Service (topic, description, start time, duration, timezone, recurrence settings, join URL, passcode, meeting ID).</Paragraph.md></li>
           <li><Paragraph.md>OAuth access tokens and refresh tokens issued by Zoom.</Paragraph.md></li>
@@ -60,7 +60,7 @@ export function PrivacyPolicyScreen() {
         <Paragraph.md className="mb-3">
           Zoom access tokens, refresh tokens, and meeting metadata are stored in Neon PostgreSQL. The MOC API
           controls access to service data based on account and workspace permissions. The Zoom
-          <code className="mx-1 px-1.5 py-0.5 rounded bg-secondary text-secondary font-mono text-[0.95em]">client_secret</code>
+          <code className="mx-1 rounded-md bg-secondary px-1.5 py-0.5 paragraph-sm font-mono text-secondary">client_secret</code>
           is never sent to the browser and is kept in server-side configuration. Your browser connects to MOC
           Console over HTTPS; the API handles service data access and communication with Zoom. No security
           program is perfect, and we cannot guarantee absolute security.
@@ -117,7 +117,7 @@ export function PrivacyPolicyScreen() {
         <Paragraph.md>
           If you have questions about this Privacy Policy or our data practices, contact us at:
         </Paragraph.md>
-        <ul className="list-none pl-0 mt-3 space-y-1">
+        <ul className="list-none pl-0 mt-3 space-y-2">
           <li><Paragraph.md><strong>PSAPE</strong></Paragraph.md></li>
           <li><Paragraph.md>562 Hancock St, North End, Gqeberha</Paragraph.md></li>
           <li><Paragraph.md>Email: <strong>psape.dev@gmail.com</strong></Paragraph.md></li>

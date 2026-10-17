@@ -49,7 +49,7 @@ export function BroadcastPlaylistItem({ isFirst, isLast, isLocked, item, kind, o
 
   return (
     <ListItemCard.Root className="px-2 py-2">
-      <ListItemCard.Leading className="size-9">{kind === "audio" ? <FileAudio /> : <FileVideo />}</ListItemCard.Leading>
+      <ListItemCard.Leading>{kind === "audio" ? <FileAudio /> : <FileVideo />}</ListItemCard.Leading>
       <ListItemCard.Content>
         <ListItemCard.Title>{title}</ListItemCard.Title>
         <ListItemCard.Meta>

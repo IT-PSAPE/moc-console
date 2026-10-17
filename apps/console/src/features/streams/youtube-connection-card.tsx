@@ -6,7 +6,7 @@ export function YouTubeConnectionCard() {
 
   return (
     <IntegrationCard
-      icon={<img src="/resources/logo/Youtube.svg" alt="YouTube" />}
+      icon={<img src="/resources/logo/Youtube.svg" alt="YouTube" className="size-full object-cover" />}
       name="YouTube"
       isLoading={meta.isLoading}
       isConnected={Boolean(meta.connection)}

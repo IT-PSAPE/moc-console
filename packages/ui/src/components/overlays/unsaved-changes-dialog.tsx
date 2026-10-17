@@ -26,11 +26,13 @@ export function UnsavedChangesDialog({ open, onSave, onDiscard, onCancel, isSavi
                 <Modal.Positioner>
                     <Modal.Panel>
                         <Modal.Header><Label.md>Unsaved changes</Label.md></Modal.Header>
-                        <Modal.Content className="flex-row gap-4 p-4">
-                            <TriangleAlert className="size-8 shrink-0" aria-hidden="true" />
-                            <Paragraph.sm className="text-secondary">{message}</Paragraph.sm>
+                        <Modal.Content className="flex-row items-start">
+                            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-warning text-warning">
+                                <TriangleAlert className="size-5" aria-hidden="true" />
+                            </span>
+                            <Paragraph.sm className="text-tertiary">{message}</Paragraph.sm>
                         </Modal.Content>
-                        <Modal.Footer className="justify-end">
+                        <Modal.Footer>
                             <Button variant="danger-secondary" onClick={onDiscard} className="mr-auto">Discard</Button>
                             <Button variant="secondary" onClick={onCancel}>Cancel</Button>
                             <Button onClick={onSave} disabled={isSaving}>{isSaving ? "Saving…" : "Save changes"}</Button>

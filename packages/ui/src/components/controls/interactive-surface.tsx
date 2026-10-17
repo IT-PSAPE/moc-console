@@ -12,7 +12,7 @@ function InteractiveSurfaceRoot({ children, className, type = 'button', ...props
     return (
         <BaseButton
             type={type}
-            className={cn('touch-manipulation text-left focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none', className)}
+            className={cn('touch-manipulation text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-brand motion-reduce:transition-none', className)}
             {...props}
         >
             {children}
@@ -30,7 +30,7 @@ function InteractiveSurfaceLink({ children, className, render, ...props }: Inter
             nativeButton={false}
             role="link"
             render={render}
-            className={cn('touch-manipulation text-left focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none', className)}
+            className={cn('touch-manipulation text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-brand motion-reduce:transition-none', className)}
             {...props}
         >
             {children}
@@ -38,9 +38,9 @@ function InteractiveSurfaceLink({ children, className, render, ...props }: Inter
     )
 }
 
-const rowClassName = 'w-full transition-colors hover:bg-tertiary active:bg-tertiary'
+const rowClassName = 'w-full transition-colors hover:bg-secondary active:bg-secondary'
 
-const cardClassName = 'w-full rounded-lg border border-secondary bg-primary shadow-xs transition-colors hover:bg-tertiary active:bg-tertiary'
+const cardClassName = 'w-full rounded-xl border border-secondary bg-primary shadow-xs transition-colors hover:bg-secondary active:bg-secondary'
 
 function InteractiveSurfaceCard({ className, ...props }: InteractiveSurfaceProps) {
     const isListRow = useContext(ListSurfaceContext)

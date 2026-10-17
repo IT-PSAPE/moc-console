@@ -9,13 +9,18 @@ export function VenueBookingCancellationAudit({ booking, className }: { booking:
 
   return (
     <div className={cn(className)}>
-      <Label.md className="block pb-3">Cancellation</Label.md>
-      <div className="space-y-3">
+      <Label.sm className="block pb-3 text-primary">Cancellation</Label.sm>
+      <div className="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1">
         {booking.cancelledAt && (
-          <div><Label.sm className="text-primary">Cancelled: </Label.sm><Paragraph.sm className="inline text-tertiary">{formatUtcIsoInBrowserTimeZone(booking.cancelledAt)}</Paragraph.sm></div>
+          <>
+            <Label.sm className="text-tertiary">Cancelled</Label.sm>
+            <Paragraph.sm className="text-primary">{formatUtcIsoInBrowserTimeZone(booking.cancelledAt)}</Paragraph.sm>
+          </>
         )}
-        <div><Label.sm className="text-primary">By: </Label.sm><Paragraph.sm className="inline text-tertiary">{booking.cancelledBy ?? "Unknown"}</Paragraph.sm></div>
-        <div><Label.sm className="text-primary">Reason: </Label.sm><Paragraph.sm className="inline text-tertiary">{booking.cancelReason ?? "No reason given"}</Paragraph.sm></div>
+        <Label.sm className="text-tertiary">By</Label.sm>
+        <Paragraph.sm className="text-primary">{booking.cancelledBy ?? "Unknown"}</Paragraph.sm>
+        <Label.sm className="text-tertiary">Reason</Label.sm>
+        <Paragraph.sm className="text-primary">{booking.cancelReason ?? "No reason given"}</Paragraph.sm>
       </div>
     </div>
   );

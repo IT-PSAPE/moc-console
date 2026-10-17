@@ -1,7 +1,8 @@
 import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { Button } from "@moc/ui/components/controls/button";
-import { Paragraph, Title } from "@moc/ui/components/display/text";
+import { Divider } from "@moc/ui/components/display/divider";
+import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { MetaRow } from "@moc/ui/components/display/meta-row";
 import { Input } from "@moc/ui/components/form/input";
 import { DateTimeFields } from "@moc/ui/components/form/date-time-fields";
@@ -12,8 +13,9 @@ import { BookingItemsSection } from "./booking-items-section";
 import { BookingDeleteModal } from "./booking-delete-modal";
 import { BookingScanModal } from "./booking-scan-modal";
 import { BookingStatusSelect } from "./booking-status-select";
+import { BookingThumbnail } from "./booking-thumbnail";
 import type { Booking } from "@moc/types/equipment";
-import { Calendar, Clock, Loader, Maximize2, Package, ScanLine, StickyNote, Trash2, User, X } from "lucide-react";
+import { Calendar, Clock, Loader, Maximize2, ScanLine, StickyNote, Trash2, User, X } from "lucide-react";
 import type { RefObject } from "react";
 import { formatUtcIsoForBrowserDateTimeInput } from "@moc/utils/browser-date-time";
 import { useDrawerClose } from "@/hooks/use-drawer-close";
@@ -69,33 +71,32 @@ export function BookingPanelContent({ booking, onClose, isDirtyRef, requestClose
   return (
     <>
       <SplitPanel.Header className="flex items-center gap-1">
-        <Button.Icon aria-label="Close booking" variant="ghost" icon={<X />} onClick={guard.actions.requestClose} />
+        <Button.Icon aria-label="Close booking" variant="ghost" size="sm" icon={<X />} onClick={guard.actions.requestClose} />
         <div className="flex-1" />
         <Button.Icon
           variant="secondary"
+          size="sm"
           aria-label={collection.state.isComplete ? "All items scanned" : "Scan booking items"}
           disabled={!collection.state.canScan}
           icon={<ScanLine />}
           onClick={collection.actions.openScanner}
         />
-        <Button.Icon variant="ghost" icon={<Maximize2 />} onClick={guard.actions.openFullPage} aria-label="Open full page" />
-        <Button.Icon aria-label="Delete booking" variant="danger-secondary" icon={<Trash2 />} onClick={handleDeleteRequest} />
+        <Button.Icon variant="ghost" size="sm" icon={<Maximize2 />} onClick={guard.actions.openFullPage} aria-label="Open full page" />
+        <Button.Icon aria-label="Delete booking" variant="danger-secondary" size="sm" icon={<Trash2 />} onClick={handleDeleteRequest} />
       </SplitPanel.Header>
 
-      <SplitPanel.Content className="py-4">
+      <SplitPanel.Content>
         {/* Header — title is owned by the requester, so display only. */}
-        <div className="flex items-center gap-3 px-4 pb-4">
-          <span className="flex size-12 items-center justify-center rounded-lg bg-secondary text-quaternary">
-            <Package className="size-6" />
-          </span>
+        <div className="flex items-center gap-3">
+          <BookingThumbnail />
           <div className="min-w-0">
-            <Title.h6 className="truncate">{draft.title}</Title.h6>
-            <Paragraph.xs className="text-tertiary">Booking</Paragraph.xs>
+            <Label.md className="block truncate">{draft.title}</Label.md>
+            <Paragraph.sm className="text-tertiary">Booking</Paragraph.sm>
           </div>
         </div>
 
         {/* Properties */}
-        <div className="px-4 space-y-3">
+        <div className="space-y-3">
           {/* Status */}
           <MetaRow icon={<Loader />} label="Status">
             <BookingStatusSelect status={draft.status} onSelectStatus={editor.actions.selectStatus} />
@@ -173,15 +174,16 @@ export function BookingPanelContent({ booking, onClose, isDirtyRef, requestClose
           </MetaRow>
         </div>
 
-        <RequestLinkField kind="booking" id={booking.id} className="px-4 pt-5" />
+        <RequestLinkField kind="booking" id={booking.id} />
 
+        <Divider className="my-0" />
         {/* Items */}
         <BookingItemsSection items={draft.items} scannedItemIds={collection.state.scannedItemIds} onNavigate={onClose} />
       </SplitPanel.Content>
 
       {store.state.isDirty && (
-        <SplitPanel.Footer className="justify-end">
-          <Button variant="ghost" onClick={store.actions.discard}>Discard</Button>
+        <SplitPanel.Footer>
+          <Button variant="secondary" onClick={store.actions.discard}>Discard</Button>
           <Button onClick={editor.actions.save} disabled={store.state.isSaving}>
             {store.state.isSaving ? "Saving…" : "Save"}
           </Button>

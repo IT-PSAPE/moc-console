@@ -31,80 +31,78 @@ export function StreamForm({ open, onOpenChange, onSubmit, stream, preset, initi
   return (
     <>
       <Modal.Content>
-        <div className="flex flex-col gap-4 p-4">
-          <StreamBasicFields
-            title={state.title}
-            description={state.description}
-            scheduledStartTime={state.scheduledStartTime}
-            privacyStatus={state.privacyStatus}
-            isForKids={state.isForKids}
-            onTitleChange={actions.updateTitle}
-            onDescriptionChange={actions.updateDescription}
-            onScheduledStartChange={actions.updateScheduledStartTime}
-            onPrivacyChange={actions.updatePrivacyStatus}
-            onIsForKidsChange={actions.updateIsForKids}
+        <StreamBasicFields
+          title={state.title}
+          description={state.description}
+          scheduledStartTime={state.scheduledStartTime}
+          privacyStatus={state.privacyStatus}
+          isForKids={state.isForKids}
+          onTitleChange={actions.updateTitle}
+          onDescriptionChange={actions.updateDescription}
+          onScheduledStartChange={actions.updateScheduledStartTime}
+          onPrivacyChange={actions.updatePrivacyStatus}
+          onIsForKidsChange={actions.updateIsForKids}
+        />
+
+        <StreamThumbnailField
+          hasSelection={state.thumbSelection !== null}
+          selectionName={state.thumbName}
+          previewUrl={state.thumbSelection ? state.thumbPreviewUrl : meta.isEditing ? meta.stream?.thumbnailUrl ?? null : null}
+          status={state.thumbStatus}
+          errorMessage={state.thumbError}
+          thumbnailUrlInput={state.thumbnailUrlInput}
+          thumbnailMode={state.thumbnailMode}
+          onModeChange={actions.updateThumbnailMode}
+          onFileSelect={actions.handleFileSelect}
+          onUrlInputChange={actions.updateThumbnailUrlInput}
+          onUrlConfirm={actions.handleThumbnailUrlConfirm}
+          onClear={actions.clearThumbnail}
+        />
+
+        {!meta.isEditing ? <NotifyDestinationField value={state.notifyDestinations} onChange={actions.updateNotifyDestinations} /> : null}
+
+        {!meta.isEditing ? (
+          <Checkbox checked={state.savePreset} onChange={actions.handleSavePresetChange}>
+            <div className="flex flex-col">
+              <Paragraph.sm>Remember these settings</Paragraph.sm>
+              <Paragraph.xs className="text-quaternary">Use these values as defaults for the next stream.</Paragraph.xs>
+            </div>
+          </Checkbox>
+        ) : null}
+
+        <Accordion type="multiple">
+          <StreamOptionsSection
+            categoryId={state.categoryId}
+            categories={state.categories}
+            tags={state.tags}
+            tagInput={state.tagInput}
+            playlistId={state.playlistId}
+            playlists={state.playlists}
+            onCategoryChange={actions.updateCategoryId}
+            onTagInputChange={actions.updateTagInput}
+            onTagKeyDown={actions.handleTagKeyDown}
+            onTagBlur={actions.handleTagInputBlur}
+            onRemoveTag={actions.handleRemoveTag}
+            onPlaylistChange={actions.updatePlaylistId}
           />
-
-          <StreamThumbnailField
-            hasSelection={state.thumbSelection !== null}
-            selectionName={state.thumbName}
-            previewUrl={state.thumbSelection ? state.thumbPreviewUrl : meta.isEditing ? meta.stream?.thumbnailUrl ?? null : null}
-            status={state.thumbStatus}
-            errorMessage={state.thumbError}
-            thumbnailUrlInput={state.thumbnailUrlInput}
-            thumbnailMode={state.thumbnailMode}
-            onModeChange={actions.updateThumbnailMode}
-            onFileSelect={actions.handleFileSelect}
-            onUrlInputChange={actions.updateThumbnailUrlInput}
-            onUrlConfirm={actions.handleThumbnailUrlConfirm}
-            onClear={actions.clearThumbnail}
+          <StreamAdvancedSection
+            latencyPreference={state.latencyPreference}
+            enableDvr={state.enableDvr}
+            enableEmbed={state.enableEmbed}
+            enableAutoStart={state.enableAutoStart}
+            enableAutoStop={state.enableAutoStop}
+            onLatencyChange={actions.updateLatencyPreference}
+            onDvrChange={actions.updateEnableDvr}
+            onEmbedChange={actions.updateEnableEmbed}
+            onAutoStartChange={actions.updateEnableAutoStart}
+            onAutoStopChange={actions.updateEnableAutoStop}
           />
-
-          {!meta.isEditing ? <NotifyDestinationField value={state.notifyDestinations} onChange={actions.updateNotifyDestinations} /> : null}
-
-          {!meta.isEditing ? (
-            <Checkbox checked={state.savePreset} onChange={actions.handleSavePresetChange}>
-              <div className="flex flex-col">
-                <Paragraph.sm>Remember these settings</Paragraph.sm>
-                <Paragraph.xs className="text-quaternary">Use these values as defaults for the next stream.</Paragraph.xs>
-              </div>
-            </Checkbox>
-          ) : null}
-
-          <Accordion type="multiple">
-            <StreamOptionsSection
-              categoryId={state.categoryId}
-              categories={state.categories}
-              tags={state.tags}
-              tagInput={state.tagInput}
-              playlistId={state.playlistId}
-              playlists={state.playlists}
-              onCategoryChange={actions.updateCategoryId}
-              onTagInputChange={actions.updateTagInput}
-              onTagKeyDown={actions.handleTagKeyDown}
-              onTagBlur={actions.handleTagInputBlur}
-              onRemoveTag={actions.handleRemoveTag}
-              onPlaylistChange={actions.updatePlaylistId}
-            />
-            <StreamAdvancedSection
-              latencyPreference={state.latencyPreference}
-              enableDvr={state.enableDvr}
-              enableEmbed={state.enableEmbed}
-              enableAutoStart={state.enableAutoStart}
-              enableAutoStop={state.enableAutoStop}
-              onLatencyChange={actions.updateLatencyPreference}
-              onDvrChange={actions.updateEnableDvr}
-              onEmbedChange={actions.updateEnableEmbed}
-              onAutoStartChange={actions.updateEnableAutoStart}
-              onAutoStopChange={actions.updateEnableAutoStop}
-            />
-          </Accordion>
-        </div>
+        </Accordion>
       </Modal.Content>
 
       <Modal.Footer>
-        <Button disabled={!meta.canSubmit} onClick={actions.handleSubmit}>{submitLabel}</Button>
         <Button variant="secondary" onClick={actions.requestClose}>Cancel</Button>
+        <Button disabled={!meta.canSubmit} onClick={actions.handleSubmit}>{submitLabel}</Button>
       </Modal.Footer>
       <UnsavedChangesDialog open={state.discardChangesOpen} onSave={actions.handleSubmit} onDiscard={actions.discardChanges} onCancel={actions.cancelDiscardChanges} isSaving={state.isSubmitting} />
     </>

@@ -1,5 +1,5 @@
 import { Combobox } from "@moc/ui/components/form/combobox"
-import { FormLabel } from "@moc/ui/components/form/form-label"
+import { FormField } from "@moc/ui/components/form/form-label"
 import { Paragraph } from "@moc/ui/components/display/text"
 import {
   notifyDestinationKey,
@@ -44,9 +44,7 @@ export function NotifyDestinationField({ value, onChange }: NotifyDestinationFie
   const hasOptions = options.length > 0
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <FormLabel label="Send notification to" optional />
-
+    <FormField label="Send notification to" optional>
       <Combobox.Root
         multiple
         items={options}
@@ -87,6 +85,6 @@ export function NotifyDestinationField({ value, onChange }: NotifyDestinationFie
             : "Leave empty to follow your notification settings."}
         </Paragraph.xs>
       )}
-    </div>
+    </FormField>
   )
 }

@@ -1,19 +1,30 @@
-/* Native inline-code styling from Tiptap's Simple Editor example. */
-.rich-text-editor-content .tiptap :not(pre) > code {
-    background-color: rgba(15, 22, 36, 0.05);
-    color: rgba(35, 37, 42, 0.87);
-    border: 1px solid rgba(37, 39, 45, 0.1);
-    border-radius: 0.375rem;
-    padding: 0.1em 0.2em;
-    font-family: "JetBrains Mono NL", monospace;
-    font-size: 0.875em;
-    line-height: 1.4;
+/* Font size/line-height for the editable document, and its headings — kept
+   here instead of Tailwind's raw `text-*` utilities so the WYSIWYG content
+   area reads from the same design tokens as the rest of the app. */
+.rich-text-editor-content .tiptap {
+    font-size: var(--text-paragraph-sm);
+    line-height: var(--text-paragraph-sm--line-height);
+    caret-color: var(--color-text-brand);
 }
 
-[data-theme="dark"] .rich-text-editor-content .tiptap :not(pre) > code {
-    background-color: rgba(231, 231, 243, 0.07);
-    color: rgba(251, 251, 254, 0.75);
-    border-color: rgba(238, 238, 246, 0.11);
+.rich-text-editor-content .tiptap h1 { font-size: var(--text-title-h5); line-height: var(--text-title-h5--line-height); }
+.rich-text-editor-content .tiptap h2 { font-size: var(--text-title-h6); line-height: var(--text-title-h6--line-height); }
+.rich-text-editor-content .tiptap h3 { font-size: var(--text-label-md); line-height: var(--text-label-md--line-height); }
+.rich-text-editor-content .tiptap h4 { font-size: var(--text-label-sm); line-height: var(--text-label-sm--line-height); }
+.rich-text-editor-content .tiptap h5,
+.rich-text-editor-content .tiptap h6 { font-size: var(--text-label-xs); line-height: var(--text-label-xs--line-height); }
+
+/* Native inline-code styling from Tiptap's Simple Editor example, re-tokenised
+   onto the design system's semantic colours (was hard-coded rgba()). */
+.rich-text-editor-content .tiptap :not(pre) > code {
+    background-color: var(--color-background-tertiary);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-secondary);
+    border-radius: 0.375rem;
+    padding: 0.1em 0.2em;
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    line-height: 1.4;
 }
 
 /* Variables use the inline-code geometry, with inherited text and brand tint. */
@@ -30,6 +41,6 @@
     padding: 0 0.2em;
     height: 1em;
     border: none;
-    border-radius: 0.25rem;
+    border-radius: 0.375rem;
     outline: 1px solid color-mix(in srgb, var(--color-border-brand) 30%, transparent);
 }

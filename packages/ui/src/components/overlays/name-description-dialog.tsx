@@ -24,18 +24,16 @@ export function NameDescriptionDialog({ open, title, submitLabel, name, descript
     return (
         <Modal open={open} onOpenChange={onOpenChange}>
             <Modal.Portal><Modal.Backdrop /><Modal.Positioner>
-                <Modal.FullScreenPanel className="w-full max-w-md landscape:max-w-none">
+                <Modal.FullScreenPanel>
                     <Modal.Header><Label.md>{title}</Label.md></Modal.Header>
                     <Modal.Content>
-                        <div className="flex flex-col gap-4 p-4">
-                            <div className="flex flex-col gap-1.5">
-                                <FormLabel label="Name" required />
-                                <Input aria-label="Name" name="option-name" autoComplete="off" maxLength={120} value={name} onChange={onNameChange} />
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                <FormLabel label="Description" optional />
-                                <TextArea aria-label="Description" name="option-description" value={description} onChange={onDescriptionChange} />
-                            </div>
+                        <div className="flex flex-col gap-1.5">
+                            <FormLabel label="Name" required />
+                            <Input aria-label="Name" name="option-name" autoComplete="off" maxLength={120} value={name} onChange={onNameChange} />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <FormLabel label="Description" optional />
+                            <TextArea aria-label="Description" name="option-description" value={description} onChange={onDescriptionChange} />
                         </div>
                     </Modal.Content>
                     <Modal.Footer>

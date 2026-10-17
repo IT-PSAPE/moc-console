@@ -13,14 +13,44 @@ export { useSidebar } from './sidebar-context'
 
 // ─── Context ─────────────────────────────────────────────
 
+const SIDEBAR_WIDTH_KEY = 'moc.sidebar.width'
+const SIDEBAR_DEFAULT_WIDTH = 256
+const SIDEBAR_MIN_WIDTH = 200
+const SIDEBAR_MAX_WIDTH = 400
+
+function clampWidth(width: number): number {
+    return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, Math.round(width)))
+}
+
+function readStoredWidth(): number {
+    try {
+        const parsed = Number.parseFloat(window.localStorage.getItem(SIDEBAR_WIDTH_KEY) ?? '')
+        return Number.isFinite(parsed) ? clampWidth(parsed) : SIDEBAR_DEFAULT_WIDTH
+    } catch {
+        return SIDEBAR_DEFAULT_WIDTH
+    }
+}
+
+function writeStoredWidth(width: number): void {
+    try { window.localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width)) } catch { /* storage unavailable */ }
+}
+
 export function SidebarProvider({ children }: { children: ReactNode }) {
     const [isCollapsed, setIsCollapsed] = useState(false)
     const [isLandscapeOpen, setIsLandscapeOpen] = useState(false)
+    const [isResizing, setResizing] = useState(false)
+    const [width, setWidthState] = useState(readStoredWidth)
 
     const toggleCollapsed = useCallback(() => setIsCollapsed(prev => !prev), [])
     const openLandscape = useCallback(() => setIsLandscapeOpen(true), [])
     const closeLandscape = useCallback(() => setIsLandscapeOpen(false), [])
     const expand = useCallback(() => setIsCollapsed(false), [])
+    const setWidth = useCallback((next: number) => {
+        const clamped = clampWidth(next)
+        setWidthState(clamped)
+        writeStoredWidth(clamped)
+    }, [])
+    const resetWidth = useCallback(() => setWidth(SIDEBAR_DEFAULT_WIDTH), [setWidth])
 
     const actions = useMemo(() => ({
         toggleCollapsed,
@@ -28,13 +58,16 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
         closeLandscape,
         setLandscapeOpen: setIsLandscapeOpen,
         expand,
-    }), [toggleCollapsed, openLandscape, closeLandscape, expand])
+        setWidth,
+        resetWidth,
+        setResizing,
+    }), [toggleCollapsed, openLandscape, closeLandscape, expand, setWidth, resetWidth])
 
     const value: SidebarContextValue = useMemo(() => ({
-        state: { isCollapsed, isLandscapeOpen },
+        state: { isCollapsed, isLandscapeOpen, isResizing, width },
         actions,
-        meta: {},
-    }), [isCollapsed, isLandscapeOpen, actions])
+        meta: { minWidth: SIDEBAR_MIN_WIDTH, maxWidth: SIDEBAR_MAX_WIDTH, defaultWidth: SIDEBAR_DEFAULT_WIDTH },
+    }), [isCollapsed, isLandscapeOpen, isResizing, width, actions])
 
     return (
         <BaseTooltip.Provider delay={350} closeDelay={100}>
@@ -63,8 +96,8 @@ function SidebarPanel({ children, className, ...props }: HTMLAttributes<HTMLElem
 
 function SidebarHeader({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <header className={cn("px-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-2 border-b border-secondary inline-flex justify-start items-center overflow-hidden", className)}>
-            <div className="flex min-w-0 flex-1 items-center gap-2.5 h-8">
+        <header className={cn("h-14 px-3 border-b border-secondary inline-flex justify-start items-center overflow-hidden", className)}>
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
                 {children}
             </div>
         </header>
@@ -73,7 +106,7 @@ function SidebarHeader({ children, className }: HTMLAttributes<HTMLDivElement>) 
 
 function SidebarContent({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("w-full py-1.5 flex flex-col items-start min-h-0 flex-1 overflow-y-auto scrollbar-hidden", className)}>
+        <div className={cn("w-full py-2 flex flex-col items-start min-h-0 flex-1 overflow-y-auto scrollbar-hidden", className)}>
             {children}
         </div>
     )
@@ -81,7 +114,7 @@ function SidebarContent({ children, className }: HTMLAttributes<HTMLDivElement>)
 
 function SidebarFooter({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <div className={cn("px-2 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] border-t border-secondary inline-flex justify-start items-center overflow-hidden", className)}>
+        <div className={cn("px-3 py-3 border-t border-secondary inline-flex justify-start items-center overflow-hidden", className)}>
             <div className="flex-1 rounded-lg flex justify-start items-center gap-2">
                 {children}
             </div>
@@ -99,15 +132,15 @@ function SidebarGroup({ children, className }: HTMLAttributes<HTMLDivElement>) {
 
 function SidebarGroupTitle({ title, className }: { title: string, className?: string }) {
     return (
-        <div className={cn("px-4 py-1.5 inline-flex justify-start items-center gap-2.5", className)}>
-            <h3 className="text-neutral-500 text-xs">{title}</h3>
+        <div className={cn("px-3 pt-4 pb-1 inline-flex justify-start items-center gap-2.5", className)}>
+            <h3 className="label-xs text-quaternary">{title}</h3>
         </div>
     )
 }
 
 function SidebarGroupContent({ children, className }: HTMLAttributes<HTMLDivElement>) {
     return (
-        <NavigationList.Root className={cn('px-2', className)}>
+        <NavigationList.Root className={cn('px-3', className)}>
             {children}
         </NavigationList.Root>
     )
@@ -129,13 +162,12 @@ function SidebarMenuItem({ title, icon, active = false, onClick, render }: Sideb
             nativeButton={render === undefined}
             render={render}
             type={render ? undefined : 'button'}
-            className="px-2 py-1"
             onClick={onClick}
             aria-current={render && active ? 'page' : undefined}
             role={render ? 'link' : undefined}
         >
-                <div className="flex-1 flex items-center gap-2">
-                    <div className="size-6 shrink-0 flex items-center justify-center overflow-hidden">
+                <div className="flex-1 flex items-center gap-2.5">
+                    <div className={cn('size-5 shrink-0 flex items-center justify-center overflow-hidden', active ? 'text-inherit' : 'text-quaternary')}>
                         {icon}
                     </div>
                         <Label.sm className="flex-1 text-left whitespace-nowrap text-inherit">

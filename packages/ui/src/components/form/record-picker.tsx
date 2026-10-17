@@ -8,10 +8,13 @@ type RecordPickerProps = {
   value: string | null
   disabled?: boolean
   onSelect: (value: string | null) => void
+  /** Field appearance passthrough — `style="ghost"` for detail-page meta rows. */
+  style?: "outline" | "ghost"
+  size?: "md" | "sm"
 }
 
 /** Searchable association control; persistence belongs to its consumer. */
-export function RecordPicker({ label, placeholder, options, value, disabled, onSelect }: RecordPickerProps) {
+export function RecordPicker({ label, placeholder, options, value, disabled, onSelect, style, size }: RecordPickerProps) {
   const selected = options.find((option) => option.value === value) ?? null
   function select(option: RecordPickerOption | null) { onSelect(option?.value ?? null) }
   function renderOption(option: RecordPickerOption) {
@@ -21,7 +24,7 @@ export function RecordPicker({ label, placeholder, options, value, disabled, onS
 
   return (
     <Combobox.Root items={options} value={selected} onValueChange={select} disabled={disabled} isItemEqualToValue={equals}>
-      <Combobox.Field aria-label={label} placeholder={placeholder} disabled={disabled} />
+      <Combobox.Field aria-label={label} placeholder={placeholder} disabled={disabled} style={style} size={size} />
       <Combobox.Content empty="No matching records" searchPlaceholder="Search" title={label}>{options.map(renderOption)}</Combobox.Content>
     </Combobox.Root>
   )

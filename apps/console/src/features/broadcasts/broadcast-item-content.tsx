@@ -14,11 +14,13 @@ export function BroadcastItemContent({ broadcast }: { broadcast: Broadcast }) {
       <ListItemCard.Content>
         <ListItemCard.Title>{broadcast.title}</ListItemCard.Title>
         {broadcast.description ? <ListItemCard.Subtitle>{broadcast.description}</ListItemCard.Subtitle> : null}
+      </ListItemCard.Content>
+      <ListItemCard.Trailing>
         <ListItemCard.Meta>
           <ListItemCard.MetaItem icon={<ListMusic />}>{`${BROADCAST_KIND_LABELS[broadcast.kind]} · ${formatItemCount(broadcast.items.length)}`}</ListItemCard.MetaItem>
           <ListItemCard.MetaItem icon={<Clock />}>{formatUtcIsoInBrowserTimeZone(broadcast.updatedAt, { dateStyle: "medium", timeStyle: "short" })}</ListItemCard.MetaItem>
         </ListItemCard.Meta>
-      </ListItemCard.Content>
+      </ListItemCard.Trailing>
     </ListItemCard.Root>
   )
 }

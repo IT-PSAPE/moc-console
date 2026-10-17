@@ -1,8 +1,9 @@
 import type { ChangeEvent } from "react"
+import { useId } from "react"
 import { Input } from "@moc/ui/components/form/input"
 import { DateTimeFields } from "@moc/ui/components/form/date-time-fields"
 import { TextArea } from "@moc/ui/components/form/text-area"
-import { FormLabel } from "@moc/ui/components/form/form-label"
+import { FormField } from "@moc/ui/components/form/form-label"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import type { StreamPrivacy } from "@moc/types/streams/stream"
 import { streamPrivacyLabel } from "@moc/types/streams/stream-constants"
@@ -32,6 +33,10 @@ export function StreamBasicFields({
   onPrivacyChange,
   onIsForKidsChange,
 }: StreamBasicFieldsProps) {
+  const fieldId = useId()
+  const titleId = `${fieldId}-title`
+  const descriptionId = `${fieldId}-description`
+
   function handleTitleChange(event: ChangeEvent<HTMLInputElement>) {
     onTitleChange(event.target.value)
   }
@@ -54,10 +59,9 @@ export function StreamBasicFields({
 
   return (
     <>
-      {/* ─── Title ─── */}
-      <div className="flex flex-col gap-1.5">
-        <FormLabel label="Title" required />
+      <FormField label="Title" htmlFor={titleId} required>
         <Input
+          id={titleId}
           aria-label="Stream title"
           name="stream-title"
           autoComplete="off"
@@ -65,12 +69,11 @@ export function StreamBasicFields({
           onChange={handleTitleChange}
           placeholder="Stream title"
         />
-      </div>
+      </FormField>
 
-      {/* ─── Description ─── */}
-      <div className="flex flex-col gap-1.5">
-        <FormLabel label="Description" />
+      <FormField label="Description" htmlFor={descriptionId} optional>
         <TextArea
+          id={descriptionId}
           aria-label="Stream description"
           name="stream-description"
           value={description}
@@ -78,9 +81,8 @@ export function StreamBasicFields({
           placeholder="Stream description…"
           rows={3}
         />
-      </div>
+      </FormField>
 
-      {/* ─── Scheduled Start ─── */}
       <DateTimeFields
         label="Scheduled start"
         name="scheduled-start"
@@ -90,9 +92,7 @@ export function StreamBasicFields({
         helperText={!scheduledStartTime ? "Leave empty to start immediately when going live." : undefined}
       />
 
-      {/* ─── Privacy ─── */}
-      <div className="flex flex-col gap-1.5">
-        <FormLabel label="Privacy" />
+      <FormField label="Privacy">
         <SegmentedControl
           fill
           value={privacyStatus}
@@ -104,11 +104,9 @@ export function StreamBasicFields({
             </SegmentedControl.Item>
           ))}
         </SegmentedControl>
-      </div>
+      </FormField>
 
-      {/* ─── Made for kids ─── */}
-      <div className="flex flex-col gap-1.5">
-        <FormLabel label="Made for kids" />
+      <FormField label="Made for kids">
         <SegmentedControl
           fill
           value={isForKids ? "yes" : "no"}
@@ -117,7 +115,7 @@ export function StreamBasicFields({
           <SegmentedControl.Item value="no">No</SegmentedControl.Item>
           <SegmentedControl.Item value="yes">Yes</SegmentedControl.Item>
         </SegmentedControl>
-      </div>
+      </FormField>
     </>
   )
 }

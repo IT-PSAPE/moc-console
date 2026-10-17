@@ -12,7 +12,7 @@ import { PublicDocumentTroubleshoot as Troubleshoot } from "./public-document-tr
 export function ZoomDocsScreen() {
   return (
     <PublicLayout>
-      <Title.h1 className="mb-2 title-h3">Zoom integration guide</Title.h1>
+      <Title.h1 className="mb-2 title-h5">Zoom integration guide</Title.h1>
       <Paragraph.sm className="text-tertiary mb-8">
         How to add, use, and remove the MOC Console Zoom app. Applies to all MOC Console workspaces.
       </Paragraph.sm>

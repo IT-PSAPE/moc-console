@@ -82,8 +82,12 @@ export function VenueBookingDetailContent({ booking }: VenueBookingDetailContent
       </TopBarActions>
 
       <DetailPage.Header><Header.Lead className="gap-2"><Page.Title>{booking.title}</Page.Title></Header.Lead></DetailPage.Header>
-      <DetailPage.Section><VenueBookingMetaFields booking={booking} at={at} /></DetailPage.Section>
-      <DetailPage.Section><RequestLinkField kind="venue-booking" id={booking.id} /></DetailPage.Section>
+      <DetailPage.Section>
+        <div className="flex flex-col gap-4">
+          <VenueBookingMetaFields booking={booking} at={at} />
+          <RequestLinkField kind="venue-booking" id={booking.id} />
+        </div>
+      </DetailPage.Section>
       {booking.notes && <><DetailPage.Divider /><DetailPage.Section><VenueBookingNotes booking={booking} /></DetailPage.Section></>}
       {isCancelled && <><DetailPage.Divider /><DetailPage.Section><VenueBookingCancellationAudit booking={booking} /></DetailPage.Section></>}
 

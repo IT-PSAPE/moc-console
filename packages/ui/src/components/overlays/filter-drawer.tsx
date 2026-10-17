@@ -4,7 +4,6 @@ import { Button } from '../controls/button'
 import { Label } from '../display/text'
 import { Drawer } from './drawer'
 import { cn } from '@moc/utils/cn'
-import { Paragraph } from '../display/text'
 
 type FilterDrawerProps = {
     children: ReactNode
@@ -21,18 +20,18 @@ function FilterDrawerRoot({ children, hasActiveFilters = false, onReset, title =
                 <Drawer.Header>
                     <Label.md className="flex-1">{title}</Label.md>
                     <Drawer.Close>
-                        <Button.Icon aria-label="Close filters" variant="ghost" icon={<X />} />
+                        <Button.Icon aria-label="Close filters" variant="ghost" size="sm" icon={<X />} />
                     </Drawer.Close>
                 </Drawer.Header>
                 <Drawer.Content>{children}</Drawer.Content>
-                <Drawer.Footer className="landscape:*:w-full">
+                <Drawer.Footer>
                     {hasActiveFilters && onReset && (
-                        <Button variant="secondary" icon={<RotateCcw />} className="w-full" onClick={onReset}>
+                        <Button variant="secondary" icon={<RotateCcw />} onClick={onReset}>
                             Reset
                         </Button>
                     )}
                     <Drawer.Close>
-                        <Button className="w-full">Done</Button>
+                        <Button>Done</Button>
                     </Drawer.Close>
                 </Drawer.Footer>
             </Drawer.Panel>
@@ -46,15 +45,15 @@ type FilterDrawerGroupProps = HTMLAttributes<HTMLElement> & {
 
 function FilterDrawerGroup({ children, className, label, ...props }: FilterDrawerGroupProps) {
     return (
-        <section className={cn('border-t border-secondary px-3 py-3 first:border-t-0', className)} {...props}>
-            <Paragraph.sm className="pb-2 text-quaternary">{label}</Paragraph.sm>
+        <section className={cn('not-first:pt-4', className)} {...props}>
+            <Label.xs className="block pb-2 text-quaternary">{label}</Label.xs>
             {children}
         </section>
     )
 }
 
 function FilterDrawerOptions({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    return <div className={cn('grid grid-cols-2 gap-2', className)} {...props}>{children}</div>
+    return <div className={cn('grid grid-cols-2 gap-x-4 gap-y-1', className)} {...props}>{children}</div>
 }
 
 export const FilterDrawer = Object.assign(FilterDrawerRoot, {

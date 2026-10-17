@@ -50,7 +50,6 @@ export function EquipmentScreen() {
             autoComplete="off"
             icon={<Search />}
             placeholder="Search equipment…"
-            className="w-full max-w-md"
             value={state.filterState.search}
             onChange={handleSearchChange}
           />

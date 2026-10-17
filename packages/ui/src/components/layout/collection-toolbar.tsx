@@ -22,8 +22,8 @@ function CollectionToolbarViews({ children, className, ...props }: HTMLAttribute
 
 function CollectionToolbarViewItem({ children, className, ...props }: ComponentProps<typeof SegmentedControl.Item>) {
     return (
-        <SegmentedControl.Item className={cn('@max-[36rem]/collection-toolbar:px-2 landscape:@max-[36rem]/collection-toolbar:px-3', className)} {...props}>
-            <span className="@max-[36rem]/collection-toolbar:sr-only landscape:@max-[36rem]/collection-toolbar:not-sr-only">{children}</span>
+        <SegmentedControl.Item className={className} {...props}>
+            <span className="whitespace-nowrap @max-[36rem]/collection-toolbar:sr-only landscape:not-sr-only landscape:whitespace-nowrap">{children}</span>
         </SegmentedControl.Item>
     )
 }
@@ -36,8 +36,8 @@ function CollectionToolbarActionButton({ children, className, ...props }: Collec
     return (
         <Button
             className={cn(
-                'landscape:gap-0 landscape:px-2 landscape:[&>span:last-child]:sr-only',
-                '@max-[36rem]/collection-toolbar:gap-0 @max-[36rem]/collection-toolbar:px-2 @max-[36rem]/collection-toolbar:[&>span:last-child]:sr-only',
+                'landscape:size-control-lg landscape:gap-0 landscape:px-0 landscape:[&>span:last-child]:sr-only',
+                '@max-[36rem]/collection-toolbar:size-control @max-[36rem]/collection-toolbar:gap-0 @max-[36rem]/collection-toolbar:px-0 @max-[36rem]/collection-toolbar:[&>span:last-child]:sr-only',
                 className,
             )}
             {...props}

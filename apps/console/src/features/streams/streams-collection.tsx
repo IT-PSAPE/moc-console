@@ -64,7 +64,6 @@ export function StreamsCollection() {
             autoComplete="off"
             icon={<Search />}
             placeholder="Search streams and meetings…"
-            className="w-full max-w-md"
             value={state.searchQuery}
             onChange={handleSearchChange}
           />

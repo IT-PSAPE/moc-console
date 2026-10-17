@@ -36,7 +36,7 @@ export function ConnectEventsModal({ target, onClose }: ConnectEventsModalProps)
         if (state.error) {
             return <RetryAlert title="Couldn't load event connections" description={state.error.message} onRetry={actions.retryRoutes} isRetrying={state.isLoading} />
         }
-        return <div className="divide-y divide-border-secondary px-3 py-1">{state.notificationOptions.map(renderEvent)}</div>
+        return <div className="divide-y divide-secondary">{state.notificationOptions.map(renderEvent)}</div>
     }
 
     return (
@@ -48,7 +48,7 @@ export function ConnectEventsModal({ target, onClose }: ConnectEventsModalProps)
                         <Modal.Header>
                             <div className="flex flex-col gap-1">
                                 <Label.md>Connect events</Label.md>
-                                <Paragraph.xs className="text-quaternary">{state.destinationLabel}</Paragraph.xs>
+                                <Paragraph.xs className="text-tertiary">{state.destinationLabel}</Paragraph.xs>
                             </div>
                         </Modal.Header>
                         <Modal.Content>

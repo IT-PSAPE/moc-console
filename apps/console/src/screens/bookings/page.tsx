@@ -37,7 +37,7 @@ export function BookingsScreen() {
           <Page.Title>Equipment Bookings</Page.Title>
         </Page.Heading>
         <Page.Controls>
-          <Input aria-label="Search bookings" name="booking-search" autoComplete="off" icon={<Search />} placeholder="Search bookings…" className="w-full max-w-md" value={filters.filters.search} onChange={handleSearch} />
+          <Input aria-label="Search bookings" name="booking-search" autoComplete="off" icon={<Search />} placeholder="Search bookings…" value={filters.filters.search} onChange={handleSearch} />
           <Drawer mobileSide="bottom">
             <Drawer.Trigger>
               <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter bookings">Filter</CollectionToolbar.ActionButton>

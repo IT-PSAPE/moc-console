@@ -1,7 +1,7 @@
 import { Select as BaseSelect } from "@base-ui/react/select";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
-import { ChevronDown } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { createContext, useContext, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { useIsLandscape } from "../../hooks/use-is-landscape";
 import { Drawer } from "../overlays/drawer";
@@ -58,9 +58,10 @@ type SelectTriggerProps = Omit<ComponentProps<typeof BaseSelect.Trigger>, "child
 
 const triggerVariants = cv({
     base: [
-        "relative flex min-h-0 landscape:min-h-11 w-full items-center gap-1.5 text-left paragraph-sm !leading-none",
-        "bg-secondary data-[disabled]:cursor-not-allowed data-[disabled]:bg-tertiary",
-        "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-border-brand/10",
+        "relative flex w-full items-center gap-2 rounded-lg text-left text-primary paragraph-sm !leading-none",
+        "transition-colors data-[disabled]:cursor-not-allowed data-[disabled]:text-quaternary",
+        "focus-within:outline-none focus-within:border-brand focus-within:ring-3 focus-within:ring-border-brand/20",
+        "aria-invalid:border-error aria-invalid:focus-within:ring-border-error/20",
     ],
     variants: {
         state: {
@@ -69,14 +70,17 @@ const triggerVariants = cv({
         },
         style: {
             outline: [
-                "rounded-lg border border-secondary px-3 py-2",
-                "focus-visible:border-brand data-[disabled]:border-primary",
+                "bg-primary border border-primary shadow-xs",
+                "data-[disabled]:border-primary data-[disabled]:bg-tertiary",
             ],
-            ghost: ["rounded-md px-2 py-1.5"],
+            ghost: [
+                "bg-transparent border border-transparent shadow-none",
+                "hover:bg-secondary focus-within:bg-primary",
+            ],
         },
         size: {
-            sm: ["min-h-0 landscape:min-h-9 px-3 py-1.5 text-sm"],
-            md: [],
+            sm: ["h-control-sm px-2.5 landscape:h-control-lg"],
+            md: ["h-control px-3 landscape:h-control-lg"],
         },
     },
     defaultVariants: {
@@ -92,7 +96,7 @@ function SelectTrigger({ children, className, placeholder, size, state, style = 
             {children ?? (
                 <>
                     <BaseSelect.Value className="min-w-0 flex-1 truncate" placeholder={placeholder} />
-                    <BaseSelect.Icon className="shrink-0 text-tertiary">
+                    <BaseSelect.Icon className="shrink-0 text-quaternary">
                         <ChevronDown className="size-4" />
                     </BaseSelect.Icon>
                 </>
@@ -128,7 +132,7 @@ function SelectContent({ children, className }: { children: ReactNode; className
                 <BaseSelect.Positioner alignItemWithTrigger={false} sideOffset={6} className="z-[9050] outline-none">
                     <BaseSelect.Popup
                         className={cn(
-                            "pointer-events-auto max-h-[min(var(--available-height),16rem)] min-w-[var(--anchor-width)] max-w-[var(--available-width)] overflow-hidden rounded-xl border border-secondary bg-primary shadow-lg outline-none",
+                            "pointer-events-auto max-h-[min(var(--available-height),16rem)] min-w-[var(--anchor-width)] max-w-[var(--available-width)] overflow-hidden rounded-lg border border-secondary bg-primary shadow-lg outline-none",
                             "origin-[var(--transform-origin)] transition-[opacity,transform] duration-150 motion-reduce:transition-none",
                             "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
                             "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
@@ -149,21 +153,19 @@ function SelectItem({ children, className, description, ...props }: Styled<Compo
     return (
         <BaseSelect.Item
             className={cn(
-                "group flex min-h-0 landscape:min-h-11 w-full cursor-default items-center gap-2 rounded-lg px-3 landscape:px-4 py-2 paragraph-sm text-secondary outline-none",
+                "group flex h-control landscape:h-control-lg w-full cursor-default items-center gap-2 rounded-md px-2.5 label-sm font-medium text-secondary outline-none",
                 "data-[highlighted]:bg-secondary data-[highlighted]:text-primary data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
                 className,
             )}
             {...props}
         >
-            <span className="flex min-w-0 flex-1 flex-col">
+            <span className="flex min-w-0 flex-1 flex-col justify-center">
                 <BaseSelect.ItemText className="truncate">{children}</BaseSelect.ItemText>
                 {description && <span className="paragraph-xs whitespace-normal text-tertiary">{description}</span>}
             </span>
-            <span className="flex size-4 shrink-0 items-center justify-center rounded-full border border-secondary group-data-[selected]:border-brand">
-                <BaseSelect.ItemIndicator keepMounted className="flex size-full items-center justify-center opacity-0 group-data-[selected]:opacity-100">
-                    <span className="size-2 rounded-full bg-brand_solid" />
-                </BaseSelect.ItemIndicator>
-            </span>
+            <BaseSelect.ItemIndicator keepMounted className="flex size-4 shrink-0 items-center justify-center opacity-0 group-data-[selected]:opacity-100">
+                <Check className="size-4 text-brand" />
+            </BaseSelect.ItemIndicator>
         </BaseSelect.Item>
     );
 }

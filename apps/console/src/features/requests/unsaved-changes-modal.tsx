@@ -29,14 +29,14 @@ export function UnsavedChangesModal({ open, onSave, onDiscard, onCancel, isSavin
                         <Modal.Header>
                             <Label.md>Unsaved changes</Label.md>
                         </Modal.Header>
-                        <Modal.Content className="p-4 flex-row gap-4">
+                        <Modal.Content className="flex-row">
                             <TriangleAlert className='size-8 shrink-0' />
                             <Paragraph.sm className="text-secondary">
                                 {message}
                             </Paragraph.sm>
                         </Modal.Content>
-                        <Modal.Footer className="justify-end">
-                            <Button variant="danger-secondary" onClick={onDiscard} className='mr-auto'>
+                        <Modal.Footer>
+                            <Button variant="danger" onClick={onDiscard}>
                                 Discard
                             </Button>
                             <Button variant="secondary" onClick={onCancel}>
