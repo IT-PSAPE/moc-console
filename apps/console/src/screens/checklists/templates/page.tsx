@@ -36,10 +36,10 @@ export function ChecklistTemplatesScreen() {
             </Page.Header>
 
             <Page.Toolbar>
-                <Input aria-label="Search checklist templates" name="checklist-template-search" autoComplete="off" icon={<Search />} placeholder="Search checklist templates…" className="w-full max-w-md" value={state.search} onChange={handleSearchChange} />
+                <Input aria-label="Search checklist templates" name="checklist-template-search" autoComplete="off" icon={<Search />} placeholder="Search checklist templates…" className="w-64 max-w-full" value={state.search} onChange={handleSearchChange} />
             </Page.Toolbar>
 
-            <Page.Content className="flex flex-col gap-1.5">
+            <Page.Content>
                 <Decision value={meta.templates}>
                     <Decision.Empty>
                         <EmptyState

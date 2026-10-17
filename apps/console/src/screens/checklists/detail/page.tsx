@@ -64,28 +64,28 @@ export function ChecklistDetailScreen() {
 
         <DetailPage.Header>
           <Header.Lead className="gap-2">
-            <Page.Title><InlineEditableText value={checklist.name} onSave={actions.updateName} className="title-h5" /></Page.Title>
+            <Page.Title><InlineEditableText value={checklist.name} onSave={actions.updateName} className="title-h6" /></Page.Title>
           </Header.Lead>
         </DetailPage.Header>
 
         <DetailPage.Section className="flex items-center gap-3 pb-0 pt-2">
           <Badge label={`${counts.checked}/${counts.total}`} icon={<ListChecks />} color={counts.checked === counts.total && counts.total > 0 ? "green" : "gray"} />
           <Paragraph.sm className="text-tertiary">
-            <InlineEditableText value={checklist.description} onSave={actions.updateDescription} className="text-sm text-tertiary" placeholder="Add description" />
+            <InlineEditableText value={checklist.description} onSave={actions.updateDescription} className="paragraph-sm text-tertiary" placeholder="Add description" />
           </Paragraph.sm>
         </DetailPage.Section>
 
         {checklist.kind === "instance" && (
           <DetailPage.Section className="pb-0 pt-4">
-            <div className="pt-4"><RequestLinkField kind="checklist" id={checklist.id} /></div>
+            <RequestLinkField kind="checklist" id={checklist.id} />
           </DetailPage.Section>
         )}
 
         <DetailPage.Divider className="my-6" />
 
         <DetailPage.Section className="pb-8">
-          <Label.md className="block pb-4">Items</Label.md>
-          <Card className="overflow-hidden">
+          <Label.sm className="block pb-3 text-primary">Items</Label.sm>
+          <Card className="px-5">
             <ChecklistEditorContent checklist={checklist} onUpdate={actions.update} addRequest={state.addRequest} onAddRequestDismiss={actions.dismissAdd} />
           </Card>
         </DetailPage.Section>

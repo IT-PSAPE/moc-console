@@ -1,7 +1,7 @@
 import { Modal } from '@moc/ui/components/overlays/modal'
 import { Button } from '@moc/ui/components/controls/button'
 import { Input } from '@moc/ui/components/form/input'
-import { FormLabel } from '@moc/ui/components/form/form-label'
+import { FormField } from '@moc/ui/components/form/form-field'
 import { Label } from '@moc/ui/components/display/text'
 import type { Checklist } from '@moc/types/checklists'
 import { useCreateChecklistRun, type ChecklistRunSubmit } from './use-create-checklist-run'
@@ -22,21 +22,17 @@ export function CreateChecklistRunModal({ open, onOpenChange, template, onSubmit
             <Modal.Portal>
                 <Modal.Backdrop />
                 <Modal.Positioner>
-                    <Modal.FullScreenPanel className="w-full max-w-md landscape:max-w-none">
+                    <Modal.FullScreenPanel className="w-full max-w-lg landscape:max-w-none">
                         <Modal.Header>
                             <Label.md>{meta.title}</Label.md>
                         </Modal.Header>
                         <Modal.Content>
-                            <div className="flex flex-col gap-4 p-4">
-                                <div className="flex flex-col gap-1.5">
-                                    <FormLabel label="Name" required />
-                                    <Input aria-label="Checklist name" name="checklist-name" autoComplete="off" placeholder="Checklist name" value={state.name} onChange={actions.changeName} />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <FormLabel label="Description" optional />
-                                    <Input aria-label="Checklist description" name="checklist-description" autoComplete="off" placeholder="Brief description" value={state.description} onChange={actions.changeDescription} />
-                                </div>
-                            </div>
+                            <FormField label="Name" required>
+                                <Input aria-label="Checklist name" name="checklist-name" autoComplete="off" placeholder="Checklist name" value={state.name} onChange={actions.changeName} />
+                            </FormField>
+                            <FormField label="Description" optional>
+                                <Input aria-label="Checklist description" name="checklist-description" autoComplete="off" placeholder="Brief description" value={state.description} onChange={actions.changeDescription} />
+                            </FormField>
                         </Modal.Content>
                         <Modal.Footer>
                             <Modal.Close>

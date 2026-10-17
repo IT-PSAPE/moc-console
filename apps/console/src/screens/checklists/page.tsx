@@ -1,23 +1,19 @@
-import { FilePlus2, ListChecks, Plus, Search, Settings2 } from 'lucide-react'
+import { FilePlus2, ListChecks, Plus, Search } from 'lucide-react'
 import { Button } from '@moc/ui/components/controls/button'
 import { GroupedList } from '@moc/ui/components/display/grouped-list'
 import { Indicator } from '@moc/ui/components/display/indicator'
-import { Label } from '@moc/ui/components/display/text'
 import { Page } from '@moc/ui/components/layout/page'
 import { Input } from '@moc/ui/components/form/input'
 import { Decision } from '@moc/ui/components/display/decision'
 import { EmptyState } from '@moc/ui/components/feedback/empty-state'
-import { Drawer } from '@moc/ui/components/overlays/drawer'
 import { Dropdown } from '@moc/ui/components/overlays/dropdown'
 import { ChecklistItemCard } from '@/features/checklists/checklist-item'
-import { ChecklistRunFilterDrawer } from '@/features/checklists/checklist-run-filter-drawer'
 import { CreateChecklistRunModal } from '@/features/checklists/create-checklist-run-modal'
 import { useChecklistsScreen } from '@/features/checklists/use-checklists-screen'
 import type { ChangeEvent } from 'react'
 import type { Checklist } from '@moc/types/checklists'
 import { SplitPanel } from '@moc/ui/components/layout/split-panel'
 import { ChecklistPanelContent } from '@/features/checklists/checklist-drawer-content'
-import { CollectionToolbar } from '@moc/ui/components/layout/collection-toolbar'
 
 export function ChecklistsScreen() {
     const { state, actions, meta } = useChecklistsScreen()
@@ -47,13 +43,7 @@ export function ChecklistsScreen() {
                     <Page.Title>Checklists</Page.Title>
                 </Page.Heading>
               <Page.Controls>
-                <Input aria-label="Search checklists" name="checklist-search" autoComplete="off" icon={<Search />} placeholder="Search checklists…" className="w-full max-w-md" value={state.search} onChange={handleSearchChange} />
-                <Drawer mobileSide="bottom">
-                    <Drawer.Trigger>
-                        <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter checklists">Filter</CollectionToolbar.ActionButton>
-                    </Drawer.Trigger>
-                    <ChecklistRunFilterDrawer filters={meta.filters} />
-                </Drawer>
+                <Input aria-label="Search checklists" name="checklist-search" autoComplete="off" icon={<Search />} placeholder="Search checklists…" value={state.search} onChange={handleSearchChange} />
                 <Dropdown placement="bottom">
                     <Dropdown.Trigger>
                         <Button.Icon aria-label="Create checklist" variant='secondary' icon={<Plus />} />
@@ -81,23 +71,23 @@ export function ChecklistsScreen() {
                         <EmptyState
                             icon={<ListChecks />}
                             title={state.search.trim() ? "No checklist runs match your search" : "No checklist runs"}
-                            description={state.search.trim() ? "Try a different search term or clear filters." : "Create a checklist run to see it here."}
+                            description={state.search.trim() ? "Try a different search term." : "Create a checklist run to see it here."}
                         />
                     </Decision.Empty>
                     <Decision.Data>
                         <GroupedList>
-                            {state.showActive && state.active.length > 0 && <GroupedList.Group>
+                            {state.active.length > 0 && <GroupedList.Group>
                                 <GroupedList.Header>
-                                    <Indicator color="blue" className="size-6" />
-                                    <Label.sm>Active</Label.sm>
+                                    <Indicator.Dot color="blue" className="size-2" />
+                                    Active
                                 </GroupedList.Header>
                                 <GroupedList.Content>{state.active.map(renderChecklist)}</GroupedList.Content>
                             </GroupedList.Group>}
 
-                            {state.showCompleted && state.completed.length > 0 && <GroupedList.Group>
+                            {state.completed.length > 0 && <GroupedList.Group>
                                 <GroupedList.Header>
-                                    <Indicator color="green" className="size-6" />
-                                    <Label.sm>Complete</Label.sm>
+                                    <Indicator.Dot color="green" className="size-2" />
+                                    Complete
                                 </GroupedList.Header>
                                 <GroupedList.Content>{state.completed.map(renderChecklist)}</GroupedList.Content>
                             </GroupedList.Group>}

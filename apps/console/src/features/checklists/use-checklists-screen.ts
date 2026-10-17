@@ -5,8 +5,13 @@ import { routes } from '@/screens/console-routes'
 import type { ChecklistRunSubmit } from './use-create-checklist-run'
 import { useChecklists } from './checklists-provider'
 import { partitionChecklistRuns } from './run-status'
-import { useChecklistRunFilters } from './use-checklist-run-filters'
 import { useListDetailSelection } from '@/hooks/use-list-detail-selection'
+import { useQueryText } from '@/hooks/use-query-text'
+
+function matchesSearch(checklist: Checklist, query: string) {
+    if (!query) return true
+    return checklist.name.toLowerCase().includes(query) || checklist.description.toLowerCase().includes(query)
+}
 
 export function useChecklistsScreen() {
     const { state: checklistState, actions: checklistActions } = useChecklists()
@@ -14,12 +19,14 @@ export function useChecklistsScreen() {
     const navigate = useNavigate()
     const [modalOpen, setModalOpen] = useState(false)
     const [modalTemplate, setModalTemplate] = useState<Checklist | null>(null)
+    const [search, setSearch] = useQueryText()
     const templates = useMemo(() => checklistState.checklists.filter((checklist) => checklist.kind === 'template'), [checklistState.checklists])
     const runs = useMemo(() => checklistState.checklists.filter((checklist) => checklist.kind === 'instance'), [checklistState.checklists])
-    const filters = useChecklistRunFilters(runs)
-    const groups = useMemo(() => partitionChecklistRuns(filters.filtered), [filters.filtered])
-    const showActive = filters.filters.completion !== 'complete'
-    const showCompleted = filters.filters.completion !== 'open'
+    const filtered = useMemo(() => {
+        const query = search.trim().toLowerCase()
+        return runs.filter((checklist) => matchesSearch(checklist, query))
+    }, [runs, search])
+    const groups = useMemo(() => partitionChecklistRuns(filtered), [filtered])
     const detail = useListDetailSelection<Checklist>(runs)
     const { close: closeDetail, select: selectChecklist } = detail.actions
 
@@ -43,8 +50,8 @@ export function useChecklistsScreen() {
     const openTemplates = useCallback(() => navigate(`/${routes.checklistTemplates}`), [navigate])
 
     return {
-        state: { modalOpen, modalTemplate, templates, active: groups.active, completed: groups.completed, detailOpen: detail.state.isOpen, selectedChecklist: detail.state.selectedItem, showActive, showCompleted, isLoading: checklistState.isLoadingChecklists, isInitialLoading: checklistState.isInitialLoadingChecklists, search: filters.filters.search },
-        actions: { closeDetail, selectChecklist, setModalOpen, pickBlank, pickTemplate, submit, openTemplates, setSearch: filters.setSearch },
-        meta: { filters, filtered: filters.filtered },
+        state: { modalOpen, modalTemplate, templates, active: groups.active, completed: groups.completed, detailOpen: detail.state.isOpen, selectedChecklist: detail.state.selectedItem, isLoading: checklistState.isLoadingChecklists, isInitialLoading: checklistState.isInitialLoadingChecklists, search },
+        actions: { closeDetail, selectChecklist, setModalOpen, pickBlank, pickTemplate, submit, openTemplates, setSearch },
+        meta: { filtered },
     }
 }
