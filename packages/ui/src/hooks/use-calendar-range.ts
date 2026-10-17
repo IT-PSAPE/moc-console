@@ -18,7 +18,7 @@ export function useCalendarRange<T>(date: Date, events: CalendarEvent<T>[], days
     }), [date, days, events])
     useEffect(() => {
         // Set the initial position once; date navigation and data updates keep the user's scroll.
-        if (viewportRef.current) viewportRef.current.scrollTop = 7 * 64
+        if (viewportRef.current) viewportRef.current.scrollTop = 7 * 128
     }, [])
     return { state: { dates, todayKey: getCalendarDateKey(now), currentMinute: now.getHours() * 60 + now.getMinutes() }, meta: { viewportRef } }
 }

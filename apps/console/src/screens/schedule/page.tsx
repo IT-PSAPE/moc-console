@@ -12,12 +12,11 @@ import { CalendarDays, MapPin, Search, Tag } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { getEventTime, getVisibleEventTitle } from "@/features/schedule/schedule-events";
 import { useSchedule } from "@/features/schedule/use-schedule";
-import type { ScheduleEvent, ScheduleView } from "@/features/schedule/schedule-types";
+import type { ScheduleEvent } from "@/features/schedule/schedule-types";
 import { useDetailLinkState } from "@/hooks/use-detail-return";
-
-const viewOptions: { value: ScheduleView; label: string }[] = [
-  { value: "day", label: "Day view" }, { value: "week", label: "Week view" }, { value: "month", label: "Month view" }, { value: "agenda", label: "Agenda view" },
-];
+import { calendarViewOptions } from "@/features/preferences/calendar-view-options";
+import { scheduleItemIcons } from "@/features/schedule/schedule-item-icons";
+import { ScheduleEventRow } from "@/features/schedule/schedule-event-row";
 
 export function SchedulePage() {
   const { state, actions, meta } = useSchedule();
@@ -26,8 +25,13 @@ export function SchedulePage() {
   function renderEvent(event: CalendarEvent<ScheduleEvent>) {
     const scheduleEvent = event.data;
     if (!scheduleEvent) return null;
+    const Icon = scheduleItemIcons[scheduleEvent.kind];
     const time = getEventTime(event, state.view === "day" || state.view === "week");
-    return <InteractiveSurface.Link key={event.id} render={<Link to={scheduleEvent.href} state={{ returnTo }} />} className="block h-full w-full min-w-0" aria-label={event.label}><Calendar.Event color={event.color} title={event.label} time={time}>{getVisibleEventTitle(scheduleEvent)}</Calendar.Event></InteractiveSurface.Link>;
+    return <InteractiveSurface.Link key={event.id} render={<Link to={scheduleEvent.href} state={{ returnTo }} />} className="block h-full w-full min-w-0" aria-label={event.label}><Calendar.Event color={event.color} title={event.label} time={time} icon={<Icon />}>{getVisibleEventTitle(scheduleEvent)}</Calendar.Event></InteractiveSurface.Link>;
+  }
+  function renderPreviewEvent(event: CalendarEvent<ScheduleEvent>) {
+    const item = event.id ? state.eventDetails.get(event.id) : undefined;
+    return item ? <ScheduleEventRow item={item} returnTo={returnTo} /> : null;
   }
   function handlePrevious() { actions.changePeriod(-1); }
   function handleNext() { actions.changePeriod(1); }
@@ -35,14 +39,14 @@ export function SchedulePage() {
 
   if (state.isInitialLoading) return <Page.Loading />;
   return (
-    <Page className="flex h-full min-h-0 min-w-0 flex-col gap-2 p-2">
-      <Page.Header className="!max-w-none flex-wrap !p-2">
+    <Page className="flex h-full min-h-0 min-w-0 flex-col">
+      <Page.Header className="!max-w-none">
         <Page.Heading><Page.Title>Work</Page.Title></Page.Heading>
         <Page.Controls>
-          <Input aria-label="Search work" name="work-search" autoComplete="off" icon={<Search />} placeholder="Search work…" className="w-full max-w-md" value={state.search} onChange={handleSearchChange} />
+          <Input aria-label="Search work" name="work-search" autoComplete="off" icon={<Search />} placeholder="Search work…" className="w-64 max-w-full" value={state.search} onChange={handleSearchChange} />
         </Page.Controls>
       </Page.Header>
-      <CollectionToolbar className="!max-w-none shrink-0 !px-2 !py-0">
+      <CollectionToolbar className="!max-w-none shrink-0">
         <CollectionToolbar.Views>
           <SegmentedControl aria-label="Work item types" className="portrait:[&>button]:px-2" value={state.itemType} onValueChange={actions.changeItemType}>
             <SegmentedControl.Item value="all">All</SegmentedControl.Item>
@@ -52,10 +56,10 @@ export function SchedulePage() {
           </SegmentedControl>
         </CollectionToolbar.Views>
       </CollectionToolbar>
-      <Page.Content className="!max-w-none flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden !p-0">
+      <Page.Content className="!max-w-none flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-0! pb-0!">
         {state.error ? <RetryAlert title="Work couldn't load" description={state.error.message} onRetry={actions.retry} isRetrying={state.isLoading} /> : null}
-        {!state.error ? <Calendar.Container className="flex min-h-0 flex-1 flex-col landscape:rounded-none [&>header]:shrink-0 [&_[data-calendar-month-days]]:min-h-0 [&_[data-calendar-month-days]]:flex-1 [&_[data-calendar-month-days]]:overflow-y-auto [&_[data-calendar-range-root]]:flex [&_[data-calendar-range-root]]:min-h-0 [&_[data-calendar-range-root]]:flex-1 [&_[data-calendar-range-root]]:flex-col [&_[data-calendar-range-content]]:flex [&_[data-calendar-range-content]]:min-h-0 [&_[data-calendar-range-content]]:flex-1 [&_[data-calendar-range-content]]:flex-col [&_[data-calendar-range-viewport]]:h-full [&_[data-calendar-range-viewport]]:max-h-none [&_[data-calendar-range-viewport]]:min-h-0 [&_[data-calendar-range-viewport]]:flex-1">
-          <Calendar.Toolbar date={state.date} view={state.view} views={viewOptions} onViewChange={actions.changeView} onPrevious={handlePrevious} onNext={handleNext} onToday={actions.goToToday}>
+        {!state.error ? <Calendar.Container className="flex min-h-0 flex-1 flex-col rounded-none border-0 shadow-none [&>header]:shrink-0 [&_[data-calendar-month-days]]:min-h-0 [&_[data-calendar-month-days]]:flex-1 [&_[data-calendar-range-root]]:flex [&_[data-calendar-range-root]]:min-h-0 [&_[data-calendar-range-root]]:flex-1 [&_[data-calendar-range-root]]:flex-col [&_[data-calendar-range-content]]:flex [&_[data-calendar-range-content]]:min-h-0 [&_[data-calendar-range-content]]:flex-1 [&_[data-calendar-range-content]]:flex-col [&_[data-calendar-range-viewport]]:h-full [&_[data-calendar-range-viewport]]:max-h-none [&_[data-calendar-range-viewport]]:min-h-0 [&_[data-calendar-range-viewport]]:flex-1">
+          <Calendar.Toolbar className="pr-[max(var(--spacing-page-gutter),env(safe-area-inset-right))] pl-[max(var(--spacing-page-gutter),env(safe-area-inset-left))]" date={state.date} view={state.view} views={calendarViewOptions} onViewChange={actions.changeView} onPrevious={handlePrevious} onNext={handleNext} onToday={actions.goToToday}>
             <FilterMenu.Root hasActiveFilters={state.hasActiveFilters} onReset={actions.resetFilters}>
               <FilterMenu.Trigger aria-label="Filter work" />
               <FilterMenu.Content>
@@ -75,7 +79,7 @@ export function SchedulePage() {
               </FilterMenu.Content>
             </FilterMenu.Root>
           </Calendar.Toolbar>
-          {state.view === "month" ? <Calendar.Month className="flex min-h-0 flex-1 flex-col" onDateSelect={actions.selectDate} date={state.month} events={state.events} renderEvent={renderEvent} /> : state.view === "day" ? <Calendar.Day date={state.date} events={state.events} renderEvent={renderEvent} /> : state.view === "week" ? <Calendar.Week date={state.date} events={state.events} renderEvent={renderEvent} /> : <ScheduleAgendaList groups={state.agendaGroups} returnTo={returnTo} />}
+          {state.view === "month" ? <Calendar.Month className="flex min-h-0 flex-1 flex-col" onDateSelect={actions.selectDate} date={state.month} events={state.events} renderEvent={renderEvent} renderPreviewEvent={renderPreviewEvent} /> : state.view === "day" ? <Calendar.Day date={state.date} events={state.events} renderEvent={renderEvent} /> : state.view === "week" ? <Calendar.Week date={state.date} events={state.events} renderEvent={renderEvent} /> : <ScheduleAgendaList groups={state.agendaGroups} returnTo={returnTo} />}
         </Calendar.Container> : null}
       </Page.Content>
     </Page>

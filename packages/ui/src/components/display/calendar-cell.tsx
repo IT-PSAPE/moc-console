@@ -27,7 +27,7 @@ export function CalendarCell<T = unknown>({ date, events, isCurrentMonth, isLand
         return <span key={event.id ?? index} className={cn('size-1 shrink-0 rounded-full', eventDotColorMap[event.color ?? 'gray'])} />
     }
     const dayLabel = `${formatCalendarDate(date)}, ${events.length} item${events.length === 1 ? '' : 's'}`
-    const dateClass = cn('inline-flex size-6 shrink-0 items-center justify-center rounded-full label-xs', isToday ? 'bg-brand_solid font-semibold text-on-brand' : isCurrentMonth ? 'text-secondary' : 'text-quaternary')
+    const dateClass = cn('inline-flex size-6 shrink-0 items-center justify-center rounded-full paragraph-xs', isToday ? 'bg-brand_solid text-on-brand' : isCurrentMonth ? 'text-secondary' : 'text-quaternary')
     if (isLandscape) return <InteractiveSurface aria-label={dayLabel} aria-haspopup="dialog" aria-pressed={isSelected} onClick={selectDate} className={cn('flex min-h-20 min-w-0 flex-col items-center gap-1 border-r border-b border-secondary px-0.5 py-2', !isCurrentMonth && 'bg-secondary', isSelected && 'bg-brand')}>
         <span className={dateClass}>{date.getDate()}</span><span className="flex flex-wrap justify-center gap-0.5" aria-hidden="true">{events.slice(0, 3).map(renderDot)}{events.length > 3 && <span className="text-[9px] text-tertiary">+{events.length - 3}</span>}</span>
     </InteractiveSurface>

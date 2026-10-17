@@ -16,6 +16,7 @@ import { TopBarProvider } from './features/topbar'
 import { WorkspaceProvider } from './lib/workspace-context'
 import { useWorkspace } from './lib/workspace-context'
 import { PendingAccessScreen } from './screens/auth/pending-access'
+import { UserPreferencesProvider } from './features/preferences/user-preferences-provider'
 
 const StreamsScreen = lazy(() => import('@/screens/streams/page').then((m) => ({ default: m.StreamsScreen })))
 const BroadcastsScreen = lazy(() => import('@/screens/broadcasts/page').then((m) => ({ default: m.BroadcastsScreen })))
@@ -69,9 +70,9 @@ function RequireAuth() {
     }
 
     return (
-        <WorkspaceProvider>
+        <UserPreferencesProvider key={session.user.id}><WorkspaceProvider>
             <WorkspaceAccessGate />
-        </WorkspaceProvider>
+        </WorkspaceProvider></UserPreferencesProvider>
     )
 }
 

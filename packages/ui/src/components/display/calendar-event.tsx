@@ -1,19 +1,13 @@
 import { cn } from '@moc/utils/cn'
 import type { CalendarEvent } from './calendar-types'
-import type { HTMLAttributes } from 'react'
+import type { HTMLAttributes, ReactNode } from 'react'
+import { calendarEventColorClasses } from './calendar-event-colors'
 
-const eventColorMap: Record<NonNullable<CalendarEvent['color']>, string> = {
-    red: 'bg-error text-error border-current/20',
-    orange: 'bg-warning text-warning border-current/20',
-    yellow: 'bg-warning text-warning border-current/20',
-    green: 'bg-success text-success border-current/20',
-    blue: 'bg-utility-blue-50 text-utility-blue-700 border-current/20',
-    purple: 'bg-utility-purple-50 text-utility-purple-700 border-current/20',
-    gray: 'bg-secondary text-secondary border-secondary',
-}
+type CalendarEventContentProps = HTMLAttributes<HTMLDivElement> & { color?: CalendarEvent['color']; time?: string; icon?: ReactNode }
 
-type CalendarEventContentProps = HTMLAttributes<HTMLDivElement> & { color?: CalendarEvent['color']; time?: string }
-
-export function CalendarEventContent({ children, className, color = 'gray', time, ...props }: CalendarEventContentProps) {
-    return <div data-calendar-event="" className={cn('flex h-full min-w-0 items-start gap-1 overflow-hidden rounded-md border px-1.5 py-1 paragraph-xs [&[data-timed]]:flex-col [&[data-timed]]:gap-0.5', eventColorMap[color], className)} {...props}><span className="min-w-0 flex-1 truncate font-medium">{children}</span>{time && <span className="shrink-0 text-[10px] opacity-80">{time}</span>}</div>
+// Default is the compact all-day/month chip (`h-6`). Timed week/day blocks
+// need a duration-driven height instead — `calendar-range.tsx` overrides this
+// back to `h-full flex-col items-start gap-0.5` for just those.
+export function CalendarEventContent({ children, className, color = 'gray', time, icon, ...props }: CalendarEventContentProps) {
+    return <div data-calendar-event="" className={cn('flex h-6 min-w-0 items-center gap-1 overflow-hidden rounded-md border px-1.5 text-xs font-medium whitespace-nowrap', calendarEventColorClasses[color], className)} {...props}><span className="flex min-w-0 max-w-full flex-1 items-start gap-1">{icon && <span aria-hidden="true" className="flex size-[1lh] shrink-0 items-center justify-center [&_svg]:size-full">{icon}</span>}<span data-calendar-event-title="" className="min-w-0 truncate">{children}</span></span>{time && <span className="shrink-0 text-[10px] opacity-80">{time}</span>}</div>
 }

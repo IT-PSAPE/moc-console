@@ -12,14 +12,14 @@ export type { CalendarEvent } from './calendar-types'
 type CalendarRootProps<T = unknown> = HTMLAttributes<HTMLDivElement> & Omit<CalendarMonthProps<T>, 'date' | 'onDateSelect'> & { defaultMonth?: Date; onMonthChange?: (date: Date) => void }
 
 function CalendarContainer({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-    return <div className={cn('min-w-0 overflow-hidden rounded-xl border border-secondary bg-primary', className)} {...props} />
+    return <div className={cn('min-w-0 overflow-hidden rounded-xl border border-secondary bg-primary shadow-xs', className)} {...props} />
 }
 
-function CalendarRoot<T = unknown>({ className, defaultMonth, events, onMonthChange, renderDay, renderEvent, ...props }: CalendarRootProps<T>) {
+function CalendarRoot<T = unknown>({ className, defaultMonth, events, onMonthChange, renderDay, renderEvent, renderPreviewEvent, ...props }: CalendarRootProps<T>) {
     const { state, actions } = useCalendarNavigation(defaultMonth, onMonthChange)
     return <CalendarContainer className={className} {...props}>
         <CalendarToolbar date={state.date} view="month" onPrevious={actions.previous} onNext={actions.next} onToday={actions.today} />
-        <CalendarMonth onDateSelect={actions.selectDate} date={state.date} events={events} renderDay={renderDay} renderEvent={renderEvent} />
+        <CalendarMonth onDateSelect={actions.selectDate} date={state.date} events={events} renderDay={renderDay} renderEvent={renderEvent} renderPreviewEvent={renderPreviewEvent} />
     </CalendarContainer>
 }
 

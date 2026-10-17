@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getScheduleAgendaGroups } from '../../../../../apps/console/src/features/schedule/schedule-agenda'
+import { getScheduleAgendaGroups, getScheduleEventItem } from '../../../../../apps/console/src/features/schedule/schedule-agenda'
 import type { CalendarEvent } from '../../../../../packages/ui/src/components/display/calendar-types'
 import type { ScheduleEvent } from '../../../../../apps/console/src/features/schedule/schedule-types'
 
@@ -14,6 +14,22 @@ function event(id: string, date: Date, timing: Partial<CalendarEvent<ScheduleEve
 }
 
 describe('agenda presentation', () => {
+  it('builds readable event details for request, venue, and equipment events', () => {
+    const request = getScheduleEventItem(event('request', new Date(2026, 9, 16, 11)), options)
+    const venue = getScheduleEventItem(event('venue', new Date(2026, 9, 16, 8, 45), { endDate: new Date(2026, 9, 16, 10) }, { type: 'venue', kind: 'venue', venueId: 'studio', eventId: 'training', href: '/venues/booking-1' }), options)
+    const collection = getScheduleEventItem(event('collection', new Date(2026, 9, 16, 9), {}, { type: 'equipment', kind: 'equipment-checkout' }), options)
+    const returnItem = getScheduleEventItem(event('return', new Date(2026, 9, 16, 16), {}, { type: 'equipment', kind: 'equipment-return', outstanding: true }), options)
+
+    expect(request).toMatchObject({ kind: 'request', detail: 'Request · Photography', timeLabel: '11:00', href: '/requests/request' })
+    expect(venue).toMatchObject({ kind: 'venue', detail: 'Venue booking · Studio A · Training', timeLabel: '08:45 – 10:00', href: '/venues/booking-1' })
+    expect(collection).toMatchObject({ kind: 'equipment-checkout', detail: 'Equipment collection', timeLabel: '09:00' })
+    expect(returnItem).toMatchObject({ kind: 'equipment-return', detail: 'Equipment return', timeLabel: '16:00' })
+  })
+
+  it('returns no event item when the calendar event has no linked data', () => {
+    expect(getScheduleEventItem({ date: today, label: 'Unlinked event' }, options)).toBeNull()
+  })
+
   it('groups dates in order, marks today and overdue work, and sorts all-day items before timed items', () => {
     const groups = getScheduleAgendaGroups([
       event('later', new Date(2026, 9, 16, 15)),

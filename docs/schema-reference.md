@@ -76,6 +76,7 @@ It does not describe denormalized frontend entities. Those live in [value-guide.
 | `surname` | `text` | None | No | No | Family name. |
 | `email` | `text` | None | No | Yes | Login/profile email. |
 | `telegram_chat_id` | `text` | `null` | Yes | Yes | Telegram chat identifier for future bot/integration flows. |
+| `default_calendar_view` | `text` | `'week'` | No | No | Personal Work default: `day`, `week`, `month`, or `agenda`. |
 
 ### `workspaces`
 

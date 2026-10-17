@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto"
 import type { User } from "@moc/types/requests/assignee"
 import type { MemberType } from "@moc/notifications"
 import type { PlatformContext, PlatformOperation } from "./context.js"
-import { objectInput, optionalUuidField, stringField, uuidField } from "./input.js"
+import { objectInput, optionalUuidField, PlatformInputError, stringField, uuidField } from "./input.js"
 
 type UserRow = {
   id: string; name: string; surname: string; email: string; telegram_chat_id: string | null
@@ -59,6 +59,26 @@ function notFound(message: string): Error {
 }
 
 export const operations: Record<string, PlatformOperation> = {
+  getPreferences: {
+    permission: "authenticated",
+    async run(context, input) {
+      emptyInput(input)
+      const result = await context.db.query<{ default_calendar_view: string }>("SELECT default_calendar_view FROM public.users WHERE id = $1", [context.userId])
+      if (!result.rows[0]) throw notFound("User not found")
+      return { defaultCalendarView: result.rows[0].default_calendar_view }
+    },
+  },
+  updatePreferences: {
+    permission: "authenticated",
+    async run(context, input) {
+      const record = objectInput(input, ["defaultCalendarView"])
+      const view = stringField(record, "defaultCalendarView")
+      if (!["day", "week", "month", "agenda"].includes(view)) throw new PlatformInputError("Invalid calendar view")
+      const result = await context.db.query("UPDATE public.users SET default_calendar_view = $2 WHERE id = $1", [context.userId, view])
+      if (result.rowCount === 0) throw notFound("User not found")
+      return null
+    },
+  },
   getProfile: {
     permission: "authenticated",
     async run(context, input) {
