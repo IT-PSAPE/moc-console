@@ -10,6 +10,7 @@ const aliases: Record<string, string> = {
 }
 await build({
     configFile: false,
+    define: { 'process.env.NODE_ENV': JSON.stringify('production') },
     resolve: {
         alias: [
             { find: /.*(?:workspace-context|scheduled-message-service)$/, replacement: dependency },

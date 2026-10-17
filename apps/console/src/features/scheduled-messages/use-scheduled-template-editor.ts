@@ -1,4 +1,5 @@
 import { useRef, useState, type ChangeEvent } from 'react'
+import { formatUtcIsoInTimezone } from '@moc/utils/zoned-date-time'
 import { flushSync } from 'react-dom'
 import { useNavigate, useParams } from 'react-router-dom'
 import { SCHEDULED_VARIABLES, SCHEDULED_DEFAULT_BODIES, SCHEDULED_FIELDS, validateScheduledAttendanceGroups, validateScheduledBody, validateScheduledFields, type ScheduledAttendanceGroup, type ScheduledMessageType, type ScheduledTemplate } from '@moc/notifications'
@@ -30,7 +31,6 @@ export function useScheduledTemplateEditor() {
     const variables = [...SCHEDULED_VARIABLES]
     const bodyEditor = useTemplateBodyEditor(draft.body, changeBody)
     const preview = scheduledMessagePreview({ ...draft, id: draft.id ?? 'preview', expiresAt: new Date(Date.now() + 72 * 3600_000).toISOString(), timezone: 'Africa/Johannesburg' }, messages.snapshot.members)
-    function ignorePreviewChange(): void { /* Generated attendees are not editable template content. */ }
     function changeName(event: ChangeEvent<HTMLInputElement>): void { setDraft(current => ({ ...current, name: event.target.value })) }
     function changeType(value: string): void {
         const messageType = value as ScheduledMessageType
@@ -70,7 +70,7 @@ export function useScheduledTemplateEditor() {
     }
     return {
         state: { draft, busy: messages.busy, loading: messages.loading, isInitialLoading: messages.isInitialLoading, error: error || messages.error, missing: Boolean(id && !messages.loading && !row), navigationBlocked: guard.state.isBlocked, ...bodyEditor.state },
-        actions: { changeName, changeType, changeField, changeAudience, changeArrival, changeAttendanceGroup: attendanceGroups.change, addAttendanceGroup: attendanceGroups.add, enableAttendanceGroups: attendanceGroups.enable, clearAttendanceGroups: attendanceGroups.clear, removeAttendanceGroup: attendanceGroups.remove, saveAndBack, ignorePreviewChange, ...bodyEditor.actions, ...guard.actions },
-        meta: { typeItems, fields: SCHEDULED_FIELDS[draft.messageType], variables, memberTypes: messages.snapshot.memberTypes, preview, isAttendance: draft.messageType === 'pre_attendance', textareaRef: bodyEditor.meta.textareaRef },
+        actions: { changeName, changeType, changeField, changeAudience, changeArrival, changeAttendanceGroup: attendanceGroups.change, addAttendanceGroup: attendanceGroups.add, enableAttendanceGroups: attendanceGroups.enable, clearAttendanceGroups: attendanceGroups.clear, removeAttendanceGroup: attendanceGroups.remove, saveAndBack, ...bodyEditor.actions, ...guard.actions },
+        meta: { typeItems, fields: SCHEDULED_FIELDS[draft.messageType], variables, memberTypes: messages.snapshot.memberTypes, preview, previewSendTime: formatUtcIsoInTimezone(new Date().toISOString(), 'Africa/Johannesburg', { timeStyle: 'short', hourCycle: 'h23' }), isAttendance: draft.messageType === 'pre_attendance', textareaRef: bodyEditor.meta.textareaRef },
     }
 }

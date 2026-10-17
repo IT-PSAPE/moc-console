@@ -46,7 +46,7 @@ export async function getSchedule(id: string, client?: PoolClient): Promise<Sche
   return row
 }
 export async function getResponses(id: string, client?: PoolClient): Promise<AttendanceResponse[]> {
-  return queryRows<AttendanceResponse & import('pg').QueryResultRow>('SELECT user_id,name,status,arrival_time,group_id FROM public.scheduled_message_responses WHERE occurrence_id=$1 ORDER BY name', [id], client)
+  return queryRows<AttendanceResponse & import('pg').QueryResultRow>('SELECT r.user_id,r.name,r.status,r.arrival_time,r.group_id FROM public.scheduled_message_responses r JOIN public.scheduled_message_occurrences o ON o.id=r.occurrence_id WHERE r.occurrence_id=$1 ORDER BY coalesce(array_position(o.attendee_ids,r.user_id),2147483647),r.name', [id], client)
 }
 export function assertActive(o: Occurrence): void {
   if (Date.parse(o.expires_at) <= Date.now() || ['cancelled','unknown','sending'].includes(o.state)) throw new Error('Message is no longer actionable. Reopen the management flow.')

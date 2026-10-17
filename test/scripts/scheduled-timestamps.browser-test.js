@@ -58,14 +58,15 @@ async (page) => {
  await page.getByLabel('Message expiry time',{exact:true}).fill('07:30');
  await page.getByRole('combobox',{name:'Repeat',exact:true}).click();
  await page.getByRole('option',{name:'Daily',exact:true}).click();
- await page.getByRole('button',{name:'Preview message',exact:true}).click();
- if(!(await page.getByText('431004 07:30',{exact:false}).count())) throw new Error('Preview did not derive expiry date/time');
+ await page.getByRole('button',{name:'Preview',exact:true}).click();
+ const preview=page.getByRole('region',{name:'Message preview',exact:true});
+ if(!(await preview.getByText('431004 07:30',{exact:false}).count())) throw new Error('Preview did not derive expiry date/time');
  await page.getByRole('button',{name:'Review schedule',exact:true}).click();
  const dialog=page.getByRole('alertdialog');
  await dialog.getByRole('button',{name:'Schedule message',exact:true}).click();
  await page.waitForURL('**/scheduled-messages');
  if(schedule.startsOn!=='2026-10-03T16:15:00.000Z' || schedule.expiresAt!=='2026-10-04T05:30:00.000Z' || schedule.frequency!=='daily') throw new Error(`Wrong scheduled timestamps: ${JSON.stringify(schedule)}`);
- await page.getByRole('tab',{name:'Templates',exact:true}).click();
+ await page.getByRole('button',{name:'Templates',exact:true}).click();
  await page.getByRole('button',{name:'Use template',exact:true}).click();
  await page.setViewportSize({width:375,height:812});
  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw new Error('Date/time controls overflow mobile');

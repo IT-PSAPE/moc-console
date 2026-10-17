@@ -1,6 +1,19 @@
 // Run via playwright-cli in an isolated local fixture; no live data is touched.
 async (page) => {
   if (!page.url().startsWith('http://127.0.0.1:5195/')) throw new Error('Use the isolated template fixture on port 5195');
+  // Under 768px the template panel is a bottom sheet that opens peeked at 55%
+  // height; its footer (Save template) starts below the fold, so drag the
+  // sheet fully open before reaching it.
+  async function expandMobileSheet() {
+    const sheet = page.getByRole('dialog');
+    const box = await sheet.boundingBox();
+    if (!box) return;
+    await page.mouse.move(box.x + box.width / 2, box.y + 10);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2, box.y - 400, { steps: 10 });
+    await page.mouse.up();
+    await page.waitForTimeout(200);
+  }
   let templates = [];
   let saves = 0;
   let deletes = 0;
@@ -116,6 +129,7 @@ async (page) => {
   const variables = await page.getByRole('textbox', { name: 'Rich text editor', exact: true }).locator('code').allTextContents();
   if (variables.join(',') !== 'title,date,time,instructions') throw new Error(`Unexpected template variables: ${variables}`);
   await page.screenshot({ path: 'output/playwright/pre-attendance-instructions-mobile.png', fullPage: true, animations: 'disabled' });
+  await expandMobileSheet();
   await page.getByRole('button', { name: 'Save template', exact: true }).click();
   await page.waitForURL('**/scheduled-messages');
   const attendance = templates.find(row => row.name === 'Service attendance');

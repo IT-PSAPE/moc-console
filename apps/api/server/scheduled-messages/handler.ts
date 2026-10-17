@@ -35,7 +35,7 @@ export async function scheduledSnapshot(workspace: string,client?:PoolClient,mat
        WHERE g.workspace_id=$1 AND g.active AND g.removed_at IS NULL GROUP BY g.chat_id,g.title`,[workspace],client),
     queryRows<QueryResultRow & { user_id:string;member_type_id:string;name:string;surname:string }>(
       `SELECT w.user_id,w.member_type_id,u.name,u.surname FROM public.workspace_users w JOIN public.users u ON u.id=w.user_id
-       WHERE w.workspace_id=$1 AND nullif(btrim(u.telegram_chat_id),'') IS NOT NULL`,[workspace],client),
+       WHERE w.workspace_id=$1 ORDER BY u.name,u.surname,w.user_id`,[workspace],client),
   ])
   const normalizedGroups=groups.map(({ topics,...group })=>({...group,telegram_group_topics:topics}))
   const normalizedMembers=members.map(row=>({id:row.user_id,memberTypeId:row.member_type_id,name:`${row.name} ${row.surname}`.trim()}))
@@ -55,7 +55,20 @@ export async function mutateScheduledMessages(actor: string,workspace: string,bo
   } else if(body.op==='template.delete') {
     await scheduledRpc('delete_scheduled_template',{p_actor:actor,p_workspace:workspace,p_id:uuid(data.id)},client)
   } else if(body.op==='schedule.create') {
-    uuid(data.templateId)
+    if(data.templateId!==undefined) uuid(data.templateId)
+    else {
+      const messageType=string(data.messageType) as ScheduledMessageType
+      if(!['announcement','pre_attendance'].includes(messageType)) throw new Error('Invalid message type')
+      validateScheduledFields(messageType,data.fields)
+      validateScheduledBody(messageType,string(data.body))
+      validateScheduledAttendanceGroups(messageType,data.attendanceGroups??[])
+    }
+    if(data.attendeeIds!==undefined) {
+      if(!Array.isArray(data.attendeeIds)) throw new Error('Invalid attendees')
+      const ids=data.attendeeIds.map(uuid)
+      if(new Set(ids).size!==ids.length) throw new Error('Attendees cannot be duplicated')
+      data.attendeeIds=ids
+    }
     await scheduledRpc('create_scheduled_schedule',{p_actor:actor,p_workspace:workspace,p_data:data},client)
   } else if(body.op==='commands.sync') {
     const result=await syncManagementCommands(workspace)

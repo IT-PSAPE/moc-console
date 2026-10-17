@@ -54,6 +54,7 @@ trap record_failure EXIT
   printf '## Final-schema lifecycle SQL assertions\n\n'
   for test_file in \
     scheduled-attendance-groups.sql \
+    scheduled-direct-messages.sql \
     scheduled-resend.sql \
     scheduled-deletion.sql \
     scheduled-timestamps.sql \

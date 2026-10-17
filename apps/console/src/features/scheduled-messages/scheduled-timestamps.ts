@@ -1,4 +1,4 @@
-import { formatUtcIsoForDateTimeInput, parseDateTimeInputToUtcIso } from '@moc/utils/zoned-date-time'
+import { formatUtcIsoForDateTimeInput, formatUtcIsoInTimezone, parseDateTimeInputToUtcIso } from '@moc/utils/zoned-date-time'
 
 export function scheduledTimestamp(value: string, timezone: string): string {
     new Intl.DateTimeFormat('en', { timeZone: timezone })
@@ -17,4 +17,9 @@ export function scheduleTimestamps(startsOn: string, expiresAt: string, timezone
 
 export function previewExpiry(value: string, timezone: string): string | undefined {
     try { return scheduledTimestamp(value, timezone) } catch { return undefined }
+}
+
+export function previewSendTime(value: string, timezone: string): string {
+    try { return formatUtcIsoInTimezone(scheduledTimestamp(value, timezone), timezone, { timeStyle: 'short', hourCycle: 'h23' }) }
+    catch { return '' }
 }

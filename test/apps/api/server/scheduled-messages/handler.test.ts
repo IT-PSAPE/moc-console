@@ -6,7 +6,7 @@ import { runWithSqlFixture, setSqlFixture } from '../sql-fixture.js'
 import { authCookieHeaders, configureAuthSessionTestEnvironment, withAuthSessionResponse } from '../../auth-test-session.js'
 
 function it(name:string,body:()=>Promise<void>):void { runnerIt(name,()=>runWithSqlFixture(body)) }
-const {handleScheduledMessages}=await import('../../../../../apps/api/server/scheduled-messages/handler.js')
+const {handleScheduledMessages,mutateScheduledMessages}=await import('../../../../../apps/api/server/scheduled-messages/handler.js')
 
 async function requestWithoutSession(method: string, origin?: string): Promise<{ status: number; body: unknown }> {
   let status = 200
@@ -42,7 +42,7 @@ describe('scheduled message browser origin checks', () => {
 })
 
 describe('scheduled message attendee snapshot', () => {
-  it('returns only Telegram-connected workspace members without exposing their Telegram IDs', async () => {
+  it('returns all current workspace members without exposing their Telegram IDs', async () => {
     const originalFetch = globalThis.fetch
     const cleanupAuth=configureAuthSessionTestEnvironment()
     const workspaceId = '10000000-0000-4000-8000-000000000001'
@@ -53,7 +53,7 @@ describe('scheduled message attendee snapshot', () => {
         if(text.includes('FROM public.workspace_users w JOIN public.users u')) {
           rosterRead=true
           assert.equal(values[0],workspaceId)
-          assert.ok(text.includes("nullif(btrim(u.telegram_chat_id),'') IS NOT NULL"))
+          assert.ok(!text.includes("nullif(btrim(u.telegram_chat_id),'') IS NOT NULL"))
           return [
             {user_id:'member',member_type_id:'members',name:'Craig',surname:'Hero'},
             {user_id:'volunteer',member_type_id:'volunteers',name:'Sarah',surname:'Volunteer'},
@@ -78,5 +78,36 @@ describe('scheduled message attendee snapshot', () => {
       globalThis.fetch = originalFetch
       cleanupAuth()
     }
+  })
+})
+
+describe('direct scheduled message input', () => {
+  const actor = '20000000-0000-4000-8000-000000000002'
+  const workspace = '10000000-0000-4000-8000-000000000001'
+  const data = {
+    messageType: 'pre_attendance', body: '{{title}}', fields: { title: 'Service' },
+    attendeeIds: ['20000000-0000-4000-8000-000000000004', actor],
+  }
+
+  it('passes a template-free message and its ordered attendees to the schedule RPC', async () => {
+    let received: unknown
+    setSqlFixture({ queryActor: async (text, values = []) => {
+      assert.ok(text.includes('public.create_scheduled_schedule'))
+      assert.deepEqual(values.slice(0, 2), [actor, workspace])
+      received = JSON.parse(String(values[2])) as unknown
+      return []
+    } })
+    await mutateScheduledMessages(actor, workspace, { op: 'schedule.create', data })
+    assert.deepEqual(received, data)
+  })
+
+  it('rejects duplicate attendees and unsupported message variables before database work', async () => {
+    setSqlFixture({ queryActor: async () => { throw new Error('Unexpected database call') } })
+    await assert.rejects(mutateScheduledMessages(actor, workspace, {
+      op: 'schedule.create', data: { ...data, attendeeIds: [actor, actor] },
+    }), /Attendees cannot be duplicated/)
+    await assert.rejects(mutateScheduledMessages(actor, workspace, {
+      op: 'schedule.create', data: { ...data, body: '{{unsupported}}' },
+    }), /Unknown template field/)
   })
 })

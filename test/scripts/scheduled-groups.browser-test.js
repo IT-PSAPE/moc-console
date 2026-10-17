@@ -62,8 +62,9 @@ async (page) => {
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.waitForURL('**/scheduled-messages');
   await page.getByRole('button', { name: 'Use template', exact: true }).first().click();
-  await page.getByRole('button', { name: 'Preview message', exact: true }).click();
-  const schedulePreview = page.getByRole('textbox', { name: 'Rich text editor', exact: true });
+  await page.getByRole('checkbox', { name: 'Craig Hero', exact: true }).check();
+  await page.getByRole('button', { name: 'Preview', exact: true }).click();
+  const schedulePreview = page.getByRole('region', { name: 'Message preview', exact: true });
   await schedulePreview.getByText('East', { exact: false }).waitFor();
   await schedulePreview.getByText('West', { exact: false }).waitFor();
   await page.goto(`http://127.0.0.1:5195/scheduled-messages/templates/${id}`);

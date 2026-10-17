@@ -12,7 +12,7 @@ export function VariableTextEditorRich() {
     return <>
         <RichTextEditor.Content />
         <div className="mt-3 flex flex-wrap items-center gap-1.5" aria-label="Insert a variable">
-            <Label.xs className="mr-1 text-tertiary">Insert variable</Label.xs>
+            <Label.xs className="mr-1 text-quaternary">Insert variable</Label.xs>
             {meta.variables.map(renderVariable)}
         </div>
     </>

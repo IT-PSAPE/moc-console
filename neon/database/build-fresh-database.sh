@@ -20,6 +20,7 @@ psql "$database_url" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1
   -f "$script_dir/00-auth-schema.sql" \
   -f "$script_dir/01-runtime-roles.sql" \
   -f "$script_dir/20-domain-final.sql" \
+  -f "$script_dir/scheduled-direct-messages.sql" \
   -f "$script_dir/storage.sql" \
   -f "$script_dir/broadcast-revisions.sql" \
   -f "$script_dir/90-runtime-grants.sql" \

@@ -2,6 +2,16 @@
 
 Status: approved for implementation on 3 October 2026, with the amendments below incorporated. The supplied screenshots are historical context, not instructions to execute. This proposal follows the user's latest explanation: predefined message templates with controlled editable fields, scheduled delivery to linked Telegram groups/topics, and native Telegram interactions. No AI interpreter or additional Mini App is needed.
 
+Amendment approved on 17 October 2026: new Console messages can be composed
+directly without a saved template. Saved templates remain optional starting
+points. New pre-attendance messages select individual workspace members in an
+explicit order, independent of member-type classifications and Telegram linkage.
+The chosen roster is copied into each occurrence and frozen at send time;
+responses and resends retain that order and the existing Telegram interactions.
+Previously scheduled template audiences retain their existing behavior. This
+amendment supersedes the mandatory-template and member-type selection rules
+below for newly composed messages.
+
 ## Current flow, verified in the repository
 
 | Area | Current behavior | Reuse or change |

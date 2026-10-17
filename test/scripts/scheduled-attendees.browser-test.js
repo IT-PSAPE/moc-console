@@ -1,6 +1,19 @@
 // Isolated production UI fixture: no hosted database or Telegram calls.
 async (page) => {
     if (!page.url().startsWith('http://127.0.0.1:5195/')) throw new Error('Use the isolated template fixture on port 5195');
+    // Crossing 768px remounts the panel (SplitPanel.Detail swaps between a
+    // region and a bottom sheet), which resets any in-progress draft, and the
+    // sheet itself opens peeked at 55% height with its footer below the fold.
+    async function expandMobileSheet() {
+        const sheet = page.getByRole('dialog');
+        const box = await sheet.boundingBox();
+        if (!box) return;
+        await page.mouse.move(box.x + box.width / 2, box.y + 10);
+        await page.mouse.down();
+        await page.mouse.move(box.x + box.width / 2, box.y - 400, { steps: 10 });
+        await page.mouse.up();
+        await page.waitForTimeout(200);
+    }
     const members = [
         { id: 'craig', name: 'Craig Hero', memberTypeId: 'members' },
         { id: 'sarah', name: 'Sarah <Volunteer>', memberTypeId: 'volunteers' },
@@ -58,11 +71,17 @@ async (page) => {
     await assertRoster(['Sarah <Volunteer>']);
     await page.getByRole('checkbox', { name: 'Volunteers', exact: true }).uncheck();
     await page.getByRole('checkbox', { name: 'New team', exact: true }).check();
-    await preview.getByText('No attendees match the selected member types.', { exact: true }).waitFor();
+    await preview.getByText('No members with Telegram connected match the selected member types.', { exact: true }).waitFor();
     await page.getByRole('checkbox', { name: 'Volunteers', exact: true }).check();
     await page.setViewportSize({ width: 375, height: 812 });
     if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)) throw new Error('Attendee preview overflows mobile viewport');
     await page.screenshot({ path: 'output/playwright/scheduled-attendees-mobile.png', fullPage: true });
+    // The breakpoint crossing above remounted the editor and reset the draft;
+    // redo the edits the save below depends on.
+    await page.getByRole('checkbox', { name: 'Volunteers', exact: true }).check();
+    await page.getByRole('checkbox', { name: 'Members' }).uncheck();
+    await page.getByRole('textbox', { name: 'Default Instructions', exact: true }).fill('Bring your equipment.');
+    await expandMobileSheet();
     await page.getByRole('button', { name: 'Save template', exact: true }).click();
     await page.waitForURL('**/scheduled-messages');
     if (templates[0].body.includes('Sarah') || templates[0].fields.instructions !== 'Bring your equipment.') throw new Error('Generated attendees contaminated reusable template');
@@ -76,8 +95,9 @@ async (page) => {
     await page.getByRole('button', { name: 'Discard', exact: true }).click();
     await page.waitForURL('**/scheduled-messages');
     await page.goto(`http://127.0.0.1:5195/scheduled-messages/new?template=${attendance.id}`);
-    await page.getByRole('button', { name: 'Preview message', exact: true }).click();
-    const scheduledPreview = page.getByRole('textbox', { name: 'Rich text editor', exact: true });
+    await page.getByRole('checkbox', { name: 'Sarah <Volunteer>', exact: true }).check();
+    await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    const scheduledPreview = page.getByRole('region', { name: 'Message preview', exact: true });
     const scheduledText = await scheduledPreview.textContent();
     if (!scheduledText.includes('🔁 Sarah <Volunteer>') || scheduledText.includes('Craig Hero') || scheduledText.includes('John Worker')) throw new Error('Scheduling preview differs from the selected audience');
     await page.goto('http://127.0.0.1:5195/scheduled-messages/templates/new');
