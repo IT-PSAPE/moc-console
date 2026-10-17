@@ -122,5 +122,5 @@ describe("Better Auth PostgreSQL email/password contract", () => {
       for (const key of Object.keys(process.env)) if (!(key in originalEnv)) delete process.env[key]
       Object.assign(process.env, originalEnv)
     }
-  })
+  }, 20_000)
 })

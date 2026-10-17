@@ -38,6 +38,7 @@ jobs:
       - run: npm install --global npm@11.12.1
       - run: npm ci
       - run: bash neon/database/build-fresh-database.sh "$MOC_TEST_DATABASE_URL"
+      - run: psql "$MOC_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f neon/database/request-links.sql
       - run: npm run build
       - run: npm run test
       - run: psql "$MOC_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c 'CREATE DATABASE moc_auth_test'
