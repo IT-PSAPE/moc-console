@@ -1,161 +1,90 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { fetchBroadcastById, fetchPublicBroadcast } from "@/data/fetch-public-broadcast"
 import { moc } from "@/lib/moc-client"
 import type { Broadcast } from "@moc/types/broadcast/broadcast"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef } from "react"
 
 const DEBOUNCE_MS = 500
 const FALLBACK_REFRESH_MS = 60_000
+export const publicBroadcastQueryKey = (slug: string | undefined) => ["public-broadcast", slug ?? null] as const
+export const publicBroadcastByIdQueryKey = (id: string) => ["public-broadcast-by-id", id] as const
 
 export function usePublicBroadcast(slug: string | undefined) {
-  const [broadcast, setBroadcast] = useState<Broadcast | null>(null)
-  const [broadcastId, setBroadcastId] = useState<string | null>(null)
-  const [loadedSlug, setLoadedSlug] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [reloadVersion, setReloadVersion] = useState(0)
-
-  const broadcastIdRef = useRef<string | null>(null)
+  const queryClient = useQueryClient()
+  const query = useQuery({
+    queryKey: publicBroadcastQueryKey(slug),
+    queryFn: () => fetchPublicBroadcast(slug as string),
+    enabled: Boolean(slug),
+    staleTime: FALLBACK_REFRESH_MS,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })
+  const broadcast = slug ? query.data ?? null : null
+  const broadcastIdRef = useRef<string | null>(broadcast?.id ?? null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const refreshGenerationRef = useRef(0)
 
-  async function refreshBroadcast(requestedId: string, generation: number) {
+  const refreshBroadcast = useCallback(async (requestedId: string) => {
     try {
-      const next = await fetchBroadcastById(requestedId)
-      if (broadcastIdRef.current !== requestedId || refreshGenerationRef.current !== generation) {
-        return
-      }
-
-      if (!next) {
-        setBroadcast(null)
-        setBroadcastId(null)
-        broadcastIdRef.current = null
-        return
-      }
-      setBroadcast(next)
+      await queryClient.invalidateQueries({ queryKey: publicBroadcastByIdQueryKey(requestedId), exact: true })
+      const next = await queryClient.fetchQuery<Broadcast | null>({
+        queryKey: publicBroadcastByIdQueryKey(requestedId),
+        queryFn: () => fetchBroadcastById(requestedId),
+        staleTime: 0,
+      })
+      if (broadcastIdRef.current !== requestedId) return
+      queryClient.setQueryData<Broadcast | null>(publicBroadcastQueryKey(slug), next)
     } catch {
-      // background refresh failure is non-destructive
+      // Keep the last successful public broadcast visible during background errors.
     }
-  }
+  }, [queryClient, slug])
 
   const scheduleRefetch = useCallback(() => {
     const requestedId = broadcastIdRef.current
-    const generation = refreshGenerationRef.current
-    if (!requestedId) {
-      return
-    }
-
-    if (debounceTimerRef.current !== null) {
-      clearTimeout(debounceTimerRef.current)
-    }
-
-    debounceTimerRef.current = setTimeout(async () => {
+    if (!requestedId) return
+    if (debounceTimerRef.current !== null) clearTimeout(debounceTimerRef.current)
+    debounceTimerRef.current = setTimeout(() => {
       debounceTimerRef.current = null
-      await refreshBroadcast(requestedId, generation)
+      void refreshBroadcast(requestedId)
     }, DEBOUNCE_MS)
-  }, [])
+  }, [refreshBroadcast])
 
-  // Initial fetch by slug
   useEffect(() => {
-    if (!slug) {
-      setBroadcast(null)
-      setBroadcastId(null)
-      setLoadedSlug(null)
-      broadcastIdRef.current = null
-      setIsLoading(false)
-      return
-    }
+    broadcastIdRef.current = broadcast?.id ?? null
+  }, [broadcast?.id])
 
-    const broadcastSlug = slug
-    let cancelled = false
-    const generation = refreshGenerationRef.current + 1
-    refreshGenerationRef.current = generation
-
-    async function load() {
-      setIsLoading(true)
-      setError(null)
-
-      try {
-        const next = await fetchPublicBroadcast(broadcastSlug)
-
-        if (cancelled || refreshGenerationRef.current !== generation) {
-          return
-        }
-
-        setBroadcast(next)
-        setBroadcastId(next?.id ?? null)
-        setLoadedSlug(broadcastSlug)
-        broadcastIdRef.current = next?.id ?? null
-      } catch (err) {
-        if (!cancelled && refreshGenerationRef.current === generation) {
-          setBroadcast(null)
-          setLoadedSlug(broadcastSlug)
-          setError(err instanceof Error ? err.message : "The broadcast could not be loaded.")
-        }
-      } finally {
-        if (!cancelled && refreshGenerationRef.current === generation) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    void load()
-
-    return () => {
-      cancelled = true
-      refreshGenerationRef.current += 1
-      setBroadcastId(null)
-      broadcastIdRef.current = null
-    }
-  }, [slug, reloadVersion])
-
-  // Revision events cover broadcast rows, playlist rows, and deletion in one stream.
   useEffect(() => {
+    const broadcastId = broadcast?.id
     if (!broadcastId) return
     return moc.broadcasts.subscribe(broadcastId, scheduleRefetch)
-  }, [broadcastId, scheduleRefetch])
+  }, [broadcast?.id, scheduleRefetch])
 
-  // Periodic fallback refresh
   useEffect(() => {
+    const broadcastId = broadcast?.id
     if (!broadcastId) return
-    const requestedId = broadcastId
-    const generation = refreshGenerationRef.current
+    const interval = setInterval(() => void refreshBroadcast(broadcastId), FALLBACK_REFRESH_MS)
+    return () => clearInterval(interval)
+  }, [broadcast?.id, refreshBroadcast])
 
-    const interval = setInterval(async () => {
-      await refreshBroadcast(requestedId, generation)
-    }, FALLBACK_REFRESH_MS)
-
-    return () => {
-      clearInterval(interval)
-    }
-  }, [broadcastId])
-
-  // Refresh when the tab becomes visible
   useEffect(() => {
     function handleVisibilityChange() {
-      if (document.visibilityState === "visible") {
-        scheduleRefetch()
-      }
+      if (document.visibilityState === "visible") scheduleRefetch()
     }
-
     document.addEventListener("visibilitychange", handleVisibilityChange)
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange)
-    }
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
   }, [scheduleRefetch])
 
-  const normalizedSlug = slug ?? null
-  const hasCurrentResult = loadedSlug === normalizedSlug
+  useEffect(() => () => {
+    if (debounceTimerRef.current !== null) clearTimeout(debounceTimerRef.current)
+  }, [])
 
   function retry() {
-    setIsLoading(true)
-    setError(null)
-    setReloadVersion((current) => current + 1)
+    return query.refetch()
   }
 
   return {
-    broadcast: hasCurrentResult ? broadcast : null,
-    isLoading: isLoading || !hasCurrentResult,
-    error: hasCurrentResult ? error : null,
+    broadcast,
+    isLoading: Boolean(slug) && query.isPending,
+    error: query.data === undefined && query.error instanceof Error ? query.error.message : null,
     retry,
   }
 }

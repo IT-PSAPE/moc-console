@@ -1,6 +1,7 @@
 import { moc } from '@/lib/moc-client'
 import { VENUE_EVENT_OTHER_ID } from '@moc/types/venues'
 import { workspaceId } from '@/lib/workspace'
+import { queryClient } from '@/lib/query-client'
 import type { VenueBookingFormData, SubmitVenueBookingResult } from '@/types/venue-booking'
 
 export async function submitPublicVenueBooking(data: VenueBookingFormData): Promise<SubmitVenueBookingResult> {
@@ -16,6 +17,7 @@ export async function submitPublicVenueBooking(data: VenueBookingFormData): Prom
     eventOther: isOtherEvent ? data.eventOther : null,
     recurrence: data.recurrence,
   })
+  await queryClient.invalidateQueries({ queryKey: ['public', workspaceId, 'venue-availability'] })
   moc.publicSubmissions.notifyCreated('venue-booking', result.id, result.trackingCode)
   return result
 }

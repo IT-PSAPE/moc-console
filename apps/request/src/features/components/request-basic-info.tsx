@@ -11,11 +11,13 @@ import type { ChangeEvent } from 'react'
 type RequestBasicInfoProps = {
   data: RequestFormData
   categories: RequestCategoryOption[]
+  categoryUnavailable: boolean
+  categoryPlaceholder: string
   onChange: (field: keyof RequestFormData, value: string) => void
   errors: StepValidationErrors
 }
 
-export function RequestBasicInfo({ data, categories, onChange, errors }: RequestBasicInfoProps) {
+export function RequestBasicInfo({ data, categories, categoryUnavailable, categoryPlaceholder, onChange, errors }: RequestBasicInfoProps) {
   function handleTitleChange(event: ChangeEvent<HTMLInputElement>) {
     onChange('title', event.target.value)
   }
@@ -53,6 +55,8 @@ export function RequestBasicInfo({ data, categories, onChange, errors }: Request
           name="category"
           value={data.category}
           items={categories}
+          disabled={categoryUnavailable}
+          placeholder={categoryPlaceholder}
           onValueChange={handleCategoryChange}
         />
         <FieldError id="category-error" message={errors.category} />

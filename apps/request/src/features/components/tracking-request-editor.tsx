@@ -26,7 +26,7 @@ export function TrackingRequestEditor({ result, onSaved, onCancel }: TrackingReq
     <form className="flex flex-col gap-8" noValidate onSubmit={handleSubmit}>
       <StepErrorSummary errors={editor.state.validationErrors} />
       {editor.state.categoriesError && <RetryAlert title="Request categories unavailable" description="Your current category stays selected. Retry to load other choices." onRetry={editor.actions.retryCategories} isRetrying={editor.state.categoriesLoading} />}
-      <RequestBasicInfo data={editor.state.data} categories={editor.state.categories} onChange={editor.actions.setField} errors={editor.state.validationErrors} />
+      <RequestBasicInfo data={editor.state.data} categories={editor.state.categories} categoryUnavailable={editor.state.categoryAvailability.unavailable} categoryPlaceholder={editor.state.categoryAvailability.placeholder} onChange={editor.actions.setField} errors={editor.state.validationErrors} />
       <RequestDetails data={editor.state.data} onChange={editor.actions.setField} errors={editor.state.validationErrors} />
       <RequestFlow data={editor.state.data} onChange={editor.actions.setField} />
       <TrackingEditorActions saving={editor.state.saving} error={editor.state.error} onCancel={onCancel} />

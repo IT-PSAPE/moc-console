@@ -1,5 +1,7 @@
 import { PublicSubmissionApiError } from "@moc/sdk"
 import { moc } from "@/lib/moc-client"
+import { queryClient } from "@/lib/query-client"
+import { workspaceId } from "@/lib/workspace"
 import { parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time"
 import type { BookingFormData } from "@/types/booking"
 import type { RequestFormData } from "@/types/request"
@@ -61,7 +63,7 @@ export async function updateTrackedBooking(result: Extract<TrackingResult, { typ
 }
 
 export async function updateTrackedVenueBooking(result: TrackingVenueBookingResult, data: VenueBookingFormData): Promise<TrackingResult> {
-  return retainTrackingError(moc.publicSubmissions.updateTracking<TrackingResult>({
+  const updated = await retainTrackingError(moc.publicSubmissions.updateTracking<TrackingResult>({
     trackingCode: result.trackingCode,
     type: result.type,
     updatedAt: result.updatedAt,
@@ -74,6 +76,8 @@ export async function updateTrackedVenueBooking(result: TrackingVenueBookingResu
       recurrence: data.recurrence,
     },
   }))
+  await queryClient.invalidateQueries({ queryKey: ["public", workspaceId, "venue-availability"] })
+  return updated
 }
 
 export async function deleteTrackedSubmission(result: TrackingResult): Promise<void> {
@@ -82,4 +86,7 @@ export async function deleteTrackedSubmission(result: TrackingResult): Promise<v
     type: result.type,
     updatedAt: result.updatedAt,
   }))
+  if (result.type === "venue_booking") {
+    await queryClient.invalidateQueries({ queryKey: ["public", workspaceId, "venue-availability"] })
+  }
 }

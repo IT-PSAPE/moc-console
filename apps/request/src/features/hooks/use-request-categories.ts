@@ -1,37 +1,25 @@
-import { useEffect, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { fetchPublicRequestCategories } from "@/data/fetch-request-categories"
-import type { RequestCategoryOption } from "@/types/tracking"
+import { workspaceId } from "@/lib/workspace"
 
-type RequestCategoriesState = {
-  categories: RequestCategoryOption[]
-  loading: boolean
-  error: string | null
-}
+export const requestCategoriesQueryKey = ["public", workspaceId, "request-categories"] as const
 
 export function useRequestCategories() {
-  const [state, setState] = useState<RequestCategoriesState>({ categories: [], loading: true, error: null })
-  const [reloadVersion, setReloadVersion] = useState(0)
-
-  useEffect(() => {
-    let cancelled = false
-
-    fetchPublicRequestCategories()
-      .then((categories) => {
-        if (!cancelled) setState({ categories, loading: false, error: null })
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) setState((current) => ({ ...current, loading: false, error: error instanceof Error ? error.message : "Failed to load request categories" }))
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [reloadVersion])
-
-  function retry() {
-    setState((current) => ({ ...current, loading: true, error: null }))
-    setReloadVersion((current) => current + 1)
+  const query = useQuery({
+    queryKey: requestCategoriesQueryKey,
+    queryFn: fetchPublicRequestCategories,
+    staleTime: 5 * 60_000,
+  })
+  const categories = query.data ?? []
+  const categoryAvailability = {
+    unavailable: query.isPending || categories.length === 0,
+    placeholder: query.isPending ? "Loading categories…"
+      : query.isError && query.data === undefined ? "Categories unavailable"
+        : categories.length === 0 ? "No categories available" : "Select a category",
   }
 
-  return { state, actions: { retry } }
+  return {
+    state: { categories, loading: query.isPending, error: query.data === undefined && query.error instanceof Error ? query.error.message : null, categoryAvailability },
+    actions: { retry: () => query.refetch() },
+  }
 }

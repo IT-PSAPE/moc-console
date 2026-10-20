@@ -27,9 +27,11 @@ export function RequestScreen() {
   const categoryOptions = useRequestCategories()
   const { state, actions } = useRequestForm(categoryOptions.state.categories)
   const isLastStep = state.step === 4
+  const categoryAvailability = categoryOptions.state.categoryAvailability
   const categoryName = resolveCategoryName(categoryOptions.state.categories, state.data.category)
 
   async function handleNext() {
+    if (categoryAvailability.unavailable) return
     if (!actions.validateCurrentStep()) return
 
     if (isLastStep) {
@@ -66,7 +68,7 @@ export function RequestScreen() {
 
         <StepErrorSummary errors={state.validationErrors} />
 
-        {state.step === 1 && <RequestBasicInfo data={state.data} categories={categoryOptions.state.categories} onChange={actions.setField} errors={state.validationErrors} />}
+        {state.step === 1 && <RequestBasicInfo data={state.data} categories={categoryOptions.state.categories} categoryUnavailable={categoryAvailability.unavailable} categoryPlaceholder={categoryAvailability.placeholder} onChange={actions.setField} errors={state.validationErrors} />}
         {state.step === 2 && <RequestDetails data={state.data} onChange={actions.setField} errors={state.validationErrors} />}
         {state.step === 3 && <RequestFlow data={state.data} onChange={actions.setField} />}
         {state.step === 4 && <RequestReview data={state.data} categoryName={categoryName} />}
@@ -76,7 +78,7 @@ export function RequestScreen() {
         {state.error && <Alert title="Submission failed" description={state.error} variant="error" style="filled" />}
 
         <PublicFlow.Actions>
-          <Button type="submit" disabled={state.submitting || categoryOptions.state.loading || categoryOptions.state.categories.length === 0} className="rounded-full">
+          <Button type="submit" disabled={state.submitting || categoryAvailability.unavailable} className="rounded-full">
             {state.submitting || categoryOptions.state.loading ? <Spinner size="sm" /> : null}
             {state.submitting ? 'Submitting…' : categoryOptions.state.loading ? 'Loading options…' : isLastStep ? 'Submit' : 'Next'}
           </Button>
