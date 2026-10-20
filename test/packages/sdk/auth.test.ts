@@ -18,7 +18,14 @@ describe("MoC auth callbacks", () => {
   it("exposes Better Auth callback errors to the login screen", () => {
     expect(authCallbackError(new URL("https://console.example.test/login?error=invalid_token&error_description=Verification%20failed")))
       .toBe("Verification failed")
-    expect(authCallbackError(new URL("https://console.example.test/login?error=invalid_token"))).toBe("invalid token")
+    expect(authCallbackError(new URL("https://console.example.test/login?error=invalid_token")))
+      .toBe("This verification email link has expired or is invalid. Request a new verification email.")
+  })
+
+  it("offers a clear recovery action for expired verification and password reset links", () => {
+    expect(authCallbackError(new URL("https://console.example.test/login?error=token_expired"))).toContain("verification email")
+    expect(authCallbackError(new URL("https://console.example.test/password-recovery?error=INVALID_TOKEN")))
+      .toBe("This password reset link has expired or is invalid. Request a new link.")
   })
 
   it("sends a verification email through the allowlisted auth SDK route", async () => {

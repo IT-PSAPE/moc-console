@@ -31,6 +31,10 @@ export function useLogin() {
   }
 
   async function resendVerificationEmail() {
+    if (!email.trim()) {
+      setError("Enter your email address to request a new verification email.")
+      return
+    }
     setResendLoading(true)
     setError("")
     const result = await resendVerification(email.trim())

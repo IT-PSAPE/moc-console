@@ -43,8 +43,10 @@ For local setup, use `http://localhost:5173` for both canonical origins and incl
 it in both trusted-origin lists. Deploy a separate `authdev` Function configured
 with the local secrets and link origins; point `apps/api/.env.local` at that
 Function. Keep the production `auth` Function configured for
-`https://console.psape.co.za`. Cookie security follows the canonical URL unless
-explicitly overridden with `MOC_AUTH_COOKIE_SECURE`.
+`https://console.psape.co.za`. The auth Function rejects mismatched canonical
+origins and requires the public origin to be in its trusted-origin list.
+Cookie security follows the canonical URL. HTTPS origins require secure cookies;
+`MOC_AUTH_COOKIE_SECURE=false` is only supported for local HTTP development.
 
 Configure SMTP and verify outbound connectivity, sender delivery and link origins.
 Provider OAuth client IDs, registered redirects, webhook URLs and Telegram Mini
@@ -59,6 +61,21 @@ the verified domain. Port 465 uses implicit TLS. Store the key only in ignored
 Neon environment files or deployment secrets. Signup, verification email and
 password recovery return `EMAIL_UNAVAILABLE` before identity changes while SMTP
 configuration is missing. Verify delivery and links after adding credentials.
+
+The application renders the shared HTML and plain-text verification and password
+reset emails in `packages/backend/src/auth/email-template.ts`; Resend delivers
+those messages over SMTP. Supabase's old Go-template HTML and `token_hash` URLs
+are not used by this auth service. Both current link types expire after one hour.
+Verification links enter `/api/auth/verify-email` before returning to
+`/login?auth=verified`; reset links enter `/api/auth/reset-password/<token>` before
+returning to `/password-recovery?token=...`. Keep their first hop on the public
+Console origin so the signed API proxy and host-only cookies are used.
+
+Before production activation, run the local PostgreSQL/fake SMTP auth-flow test
+with `MOC_AUTH_TEST_DATABASE_URL` set to a disposable loopback database, then
+verify one signup/resend and password-reset email in a real inbox against the
+deployed Console. Check invalid/expired links and confirm a reset token cannot be
+reused. Local `localhost` links only work on the computer running the dev server.
 
 ## Provision and verify
 

@@ -2,6 +2,8 @@ import { betterAuth } from "better-auth"
 import { Pool } from "pg"
 import type { Pool as PoolType } from "pg"
 import { sendAuthEmail } from "./email.js"
+import { AUTH_EMAIL_LINK_LIFETIME_SECONDS, renderAuthEmail } from "./email-template.js"
+import { getAuthConfiguration } from "./configuration.js"
 import { createProfileAndJoinRequest, syncProfileEmail } from "./profile.js"
 import { hashPassword, verifyPassword } from "./password.js"
 
@@ -25,37 +27,32 @@ function getAuthPool(): PoolType {
   return authPool
 }
 
-function trustedOrigins(): string[] {
-  const configured = (process.env.MOC_AUTH_TRUSTED_ORIGINS ?? "").split(",").map((origin) => origin.trim()).filter(Boolean)
-  return configured.length ? configured : ["http://localhost:5173"]
-}
-
 export function getAuth() {
   const secret = process.env.BETTER_AUTH_SECRET
   if (!secret && process.env.NODE_ENV === "production") throw new Error("BETTER_AUTH_SECRET is required in production")
-  const authPublicBaseUrl = process.env.MOC_AUTH_PUBLIC_BASE_URL ?? process.env.MOC_CONSOLE_ORIGIN ?? "http://localhost:5173"
-  const secureCookies = process.env.MOC_AUTH_COOKIE_SECURE === "true"
-    || (process.env.MOC_AUTH_COOKIE_SECURE !== "false" && new URL(authPublicBaseUrl).protocol === "https:")
+  const { publicBaseUrl, secureCookies, trustedOrigins } = getAuthConfiguration()
   return betterAuth({
     secret,
     database: getAuthPool(),
-    baseURL: authPublicBaseUrl,
-    trustedOrigins: trustedOrigins(),
+    baseURL: publicBaseUrl,
+    trustedOrigins,
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
       autoSignIn: false,
       revokeSessionsOnPasswordReset: true,
+      resetPasswordTokenExpiresIn: AUTH_EMAIL_LINK_LIFETIME_SECONDS,
       password: { hash: hashPassword, verify: verifyPassword },
       sendResetPassword: async ({ user, url }) => {
-        await sendAuthEmail({ to: user.email, subject: "Reset your MoC password", text: `Reset your password using this link:\n\n${url}` })
+        await sendAuthEmail({ to: user.email, ...renderAuthEmail("password-reset", url) })
       },
     },
     emailVerification: {
       sendOnSignUp: true,
       autoSignInAfterVerification: true,
+      expiresIn: AUTH_EMAIL_LINK_LIFETIME_SECONDS,
       sendVerificationEmail: async ({ user, url }) => {
-        await sendAuthEmail({ to: user.email, subject: "Verify your MoC email", text: `Verify your email using this link:\n\n${url}` })
+        await sendAuthEmail({ to: user.email, ...renderAuthEmail("verification", url) })
       },
     },
     user: {

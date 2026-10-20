@@ -25,7 +25,7 @@ export function LoginScreen() {
       <form onSubmit={actions.submit} className="flex flex-col gap-4">
         <Label.md>Sign in</Label.md>
         {state.error && <Alert variant="error" title={state.error} />}
-        {state.verificationSent && <Alert variant="success" title="Verification email sent" description="Check your inbox for a new sign-in link." />}
+        {state.verificationSent && <Alert variant="success" title="Verification email sent" description="Check your inbox for a new verification link." />}
 
         <FormField label="Email" htmlFor="login-email" required>
           <Input

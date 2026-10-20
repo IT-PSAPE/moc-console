@@ -1,4 +1,5 @@
 import { Pool } from 'pg'
+import { authConfigurationIssues } from '../../packages/backend/src/auth/configuration.js'
 
 const required = [
   'NEON_DATABASE_URL', 'NEON_PROJECT_ID',
@@ -33,7 +34,8 @@ export function checkCutoverEnvironment(env: NodeJS.ProcessEnv): { missing: stri
     }
   }
   if (env.MOC_ENABLE_PRODUCTION_JOBS === 'true' && env.MOC_NEON_BRANCH !== 'production') invalid.push('MOC_NEON_BRANCH')
-  return { missing, invalid }
+  invalid.push(...authConfigurationIssues({ ...env, NODE_ENV: 'production' }).filter(name => Boolean(env[name]?.trim())))
+  return { missing, invalid: [...new Set(invalid)] }
 }
 
 async function checkTargetSchema(connectionString: string): Promise<boolean> {

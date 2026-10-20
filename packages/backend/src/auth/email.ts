@@ -1,4 +1,5 @@
 import nodemailer, { type Transporter } from "nodemailer"
+import type { AuthEmailContent } from "./email-template.js"
 
 let mailTransport: Transporter | undefined
 
@@ -26,8 +27,8 @@ function getMailTransport(): Transporter {
   return mailTransport
 }
 
-export async function sendAuthEmail(input: { to: string; subject: string; text: string }): Promise<void> {
+export async function sendAuthEmail(input: AuthEmailContent & { to: string }): Promise<void> {
   const from = process.env.SMTP_FROM
   if (!from) throw new Error("SMTP sender is not configured")
-  await getMailTransport().sendMail({ from, to: input.to, subject: input.subject, text: input.text })
+  await getMailTransport().sendMail({ from, to: input.to, subject: input.subject, text: input.text, html: input.html })
 }

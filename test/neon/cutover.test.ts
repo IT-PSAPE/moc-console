@@ -25,3 +25,14 @@ test('cutover preflight accepts Frankfurt target and live auth/email settings', 
   })
   expect(report).toEqual({ missing: [], invalid: [] })
 })
+
+test('cutover rejects mismatched email-link and Console origins', () => {
+  const report = checkCutoverEnvironment({
+    MOC_AUTH_PUBLIC_BASE_URL: 'https://api.example.test',
+    MOC_CONSOLE_ORIGIN: 'https://console.example.test',
+    MOC_AUTH_TRUSTED_ORIGINS: 'https://console.example.test',
+  })
+  expect(report.invalid).toContain('MOC_AUTH_PUBLIC_BASE_URL')
+  expect(report.invalid).toContain('MOC_CONSOLE_ORIGIN')
+  expect(report.invalid).toContain('MOC_AUTH_TRUSTED_ORIGINS')
+})
