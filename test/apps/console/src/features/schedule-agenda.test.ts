@@ -38,10 +38,27 @@ describe('agenda presentation', () => {
       event('all-day', new Date(2026, 9, 16), { allDay: true }),
       event('late-return', new Date(2026, 9, 15), { allDay: true, color: 'orange' }, { type: 'equipment', kind: 'equipment-return', outstanding: true }),
     ], options, today)
-    expect(groups.map(group => group.relativeLabel)).toEqual(['Overdue', 'Today', undefined])
+    expect(groups.map(group => group.relativeLabel)).toEqual([undefined, 'Today', undefined])
+    expect(groups[0]).toMatchObject({ key: 'overdue', label: 'Overdue' })
     expect(groups[1].items.map(item => item.id)).toEqual(['all-day', 'earlier', 'later'])
     expect(groups[1].items[0].timeLabel).toBe('All day')
-    expect(groups[0].items[0].detail).toBe('Equipment return')
+    expect(groups[0].items[0].detail).toContain('Equipment return')
+  })
+
+  it('combines overdue dates into one chronological list with dates retained on every item', () => {
+    const groups = getScheduleAgendaGroups([
+      event('recent-overdue', new Date(2026, 9, 15, 14)),
+      event('today', new Date(2026, 9, 16, 9)),
+      event('older-overdue', new Date(2026, 9, 12, 11)),
+    ], options, today)
+    expect(groups).toHaveLength(2)
+    expect(groups[0].key).toBe('overdue')
+    expect(groups[1].relativeLabel).toBe('Today')
+    expect(groups[0].items.map(item => item.id)).toEqual(['older-overdue', 'recent-overdue'])
+    expect(groups[0].items[0].detail).toMatch(/12.*2026.*Request/)
+    expect(groups[0].items[1].detail).toMatch(/15.*2026.*Request/)
+    expect(groups[0].items[0].accessibleLabel).toMatch(/12.*2026/)
+    expect(groups[1].items[0].detail).toBe('Request · Photography')
   })
 
   it('uses configured labels and real venue start/end times without changing destination links', () => {

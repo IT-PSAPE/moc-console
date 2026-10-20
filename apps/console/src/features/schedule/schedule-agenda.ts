@@ -16,7 +16,7 @@ export type ScheduleAgendaItem = {
 export type ScheduleAgendaGroup = {
   key: string
   label: string
-  relativeLabel?: 'Today' | 'Overdue'
+  relativeLabel?: 'Today'
   items: ScheduleAgendaItem[]
 }
 export type ScheduleAgendaLabelOption = { value: string; label: string }
@@ -66,14 +66,21 @@ function compareEvents(left: CalendarEvent, right: CalendarEvent): number {
 export function getScheduleAgendaGroups(events: CalendarEvent<ScheduleEvent>[], options: ScheduleAgendaOptions, today = new Date()): ScheduleAgendaGroup[] {
   const todayKey = getCalendarDateKey(today)
   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
-  return getAgendaGroups(events).flatMap(group => {
+  const overdue: ScheduleAgendaGroup = { key: 'overdue', label: 'Overdue', items: [] }
+  const groups: ScheduleAgendaGroup[] = []
+  for (const group of getAgendaGroups(events)) {
     const items = [...group.events].sort(compareEvents).flatMap(event => {
       const item = getScheduleEventItem(event, options)
       return item ? [item] : []
     })
-    if (!items.length) return []
+    if (!items.length) continue
+    const dateLabel = dateFormatter.format(group.date)
+    if (group.date.getTime() < todayStart) {
+      overdue.items.push(...items.map(item => ({ ...item, detail: `${dateLabel} · ${item.detail}`, accessibleLabel: `${item.accessibleLabel}, ${dateLabel}` })))
+      continue
+    }
     const key = getCalendarDateKey(group.date)
-    const relativeLabel = key === todayKey ? 'Today' : group.date.getTime() < todayStart ? 'Overdue' : undefined
-    return [{ key, label: dateFormatter.format(group.date), relativeLabel, items }]
-  })
+    groups.push({ key, label: dateLabel, relativeLabel: key === todayKey ? 'Today' : undefined, items })
+  }
+  return overdue.items.length ? [overdue, ...groups] : groups
 }

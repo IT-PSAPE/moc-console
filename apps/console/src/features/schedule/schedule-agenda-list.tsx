@@ -14,10 +14,10 @@ export function ScheduleAgendaList({ groups, returnTo }: ScheduleAgendaListProps
   function renderGroup(group: ScheduleAgendaGroup) {
     return <GroupedList.Group key={group.key} aria-label={group.label}>
       <GroupedList.Header className="gap-2 px-2">
-        {group.relativeLabel && <Label.xs className={group.relativeLabel === 'Overdue' ? 'text-error' : 'text-brand'}>{group.relativeLabel}</Label.xs>}
-        <h2><Label.xs>{group.label}</Label.xs></h2>
+        {group.relativeLabel && <Label.xs className="text-brand">{group.relativeLabel}</Label.xs>}
+        <h2><Label.xs className={group.key === 'overdue' ? 'text-error' : undefined}>{group.label}</Label.xs></h2>
       </GroupedList.Header>
-      <GroupedList.Content>{group.items.map(renderItem)}</GroupedList.Content>
+      <GroupedList.Content className="gap-2 overflow-visible rounded-none border-0 bg-transparent shadow-none divide-y-0">{group.items.map(renderItem)}</GroupedList.Content>
     </GroupedList.Group>
   }
   return <section aria-label="Agenda" className="min-h-0 min-w-0 flex-1 overflow-y-auto p-2">
