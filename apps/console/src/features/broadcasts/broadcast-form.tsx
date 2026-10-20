@@ -1,4 +1,3 @@
-import type { Broadcast } from "@moc/types/broadcast/broadcast"
 import type { FilePartition } from "@moc/utils/file-constraints"
 import { BROADCAST_KIND_LABELS } from "@moc/types/broadcast/broadcast-constants"
 import { Button } from "@moc/ui/components/controls/button"
@@ -15,14 +14,13 @@ import { BroadcastPlaylistField } from "./broadcast-playlist-field"
 import { useBroadcastForm } from "./use-broadcast-form"
 
 type BroadcastFormProps = {
-  broadcast?: Broadcast | null
   onOpenChange: (open: boolean) => void
   onSubmit: (params: BroadcastFormSubmit) => Promise<void>
   open: boolean
 }
 
-export function BroadcastForm({ broadcast, onOpenChange, onSubmit, open }: BroadcastFormProps) {
-  const { state, actions, meta } = useBroadcastForm({ broadcast, onOpenChange, onSubmit, open })
+export function BroadcastForm({ onOpenChange, onSubmit, open }: BroadcastFormProps) {
+  const { state, actions, meta } = useBroadcastForm({ onOpenChange, onSubmit, open })
   const fieldId = useId()
   const titleId = `${fieldId}-title`
   const titleErrorId = `${fieldId}-title-error`
@@ -67,23 +65,21 @@ export function BroadcastForm({ broadcast, onOpenChange, onSubmit, open }: Broad
           />
         </FormField>
 
-        {meta.isEditing ? null : (
-          <FormField label="Media type" required>
-            <RadioGroup name="broadcast-kind" value={state.kind} onValueChange={actions.changeKind} disabled={state.isSubmitting} className="flex gap-6">
-              <Radio value="audio">{BROADCAST_KIND_LABELS.audio}</Radio>
-              <Radio value="video">{BROADCAST_KIND_LABELS.video}</Radio>
-            </RadioGroup>
-          </FormField>
-        )}
+        <FormField label="Media type" required>
+          <RadioGroup name="broadcast-kind" value={state.kind} onValueChange={actions.changeKind} disabled={state.isSubmitting} className="flex gap-6">
+            <Radio value="audio">{BROADCAST_KIND_LABELS.audio}</Radio>
+            <Radio value="video">{BROADCAST_KIND_LABELS.video}</Radio>
+          </RadioGroup>
+        </FormField>
 
         <BroadcastPlaylistField
           error={state.errors.playlist}
-          isChecking={state.isCheckingFiles}
+          isChecking={state.isChecking}
           isLocked={state.isSubmitting}
           items={state.items}
           kind={state.kind}
           onFilesAdd={handleFilesAdd}
-          onItemMove={actions.moveItem}
+          onItemReorder={actions.reorderItems}
           onItemRemove={actions.removeItem}
           onRejectionsDismiss={actions.dismissRejections}
           rejections={state.rejections}
@@ -93,7 +89,7 @@ export function BroadcastForm({ broadcast, onOpenChange, onSubmit, open }: Broad
 
       <Modal.Footer>
         <Button variant="secondary" disabled={state.isSubmitting} onClick={actions.requestClose}>Cancel</Button>
-        <Button disabled={state.isSubmitting || state.isCheckingFiles} onClick={handleSubmit}>{meta.submitLabel}</Button>
+        <Button disabled={state.isSubmitting || state.isChecking} onClick={handleSubmit}>{meta.submitLabel}</Button>
       </Modal.Footer>
       <UnsavedChangesDialog open={state.discardChangesOpen} onSave={handleSubmit} onDiscard={actions.discardChanges} onCancel={actions.cancelDiscardChanges} isSaving={state.isSubmitting} />
     </>

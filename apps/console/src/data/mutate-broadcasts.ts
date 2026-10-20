@@ -4,7 +4,6 @@ import type { Broadcast, BroadcastItem, BroadcastKind } from "@moc/types/broadca
 import { BROADCAST_MEDIA_BUCKET } from "@moc/types/broadcast/broadcast-constants"
 import { buildBroadcastMutationRows } from "./broadcast-mutation-rows"
 import { createBroadcastSlug } from "./broadcast-slug"
-import { fetchBroadcastById } from "./fetch-broadcasts"
 
 export type BroadcastUploadStatus = "queued" | "uploading" | "complete" | "error"
 export type BroadcastUploadFile = { clientId: string; file: File }
@@ -114,19 +113,13 @@ function toMutationItem(item: UploadedBroadcastItem) {
   }
 }
 
-async function reloadBroadcast(id: string, workspaceId: string): Promise<Broadcast> {
-  const broadcast = await fetchBroadcastById(id, workspaceId)
-  if (!broadcast) throw new Error("The broadcast was saved but could not be reloaded")
-  return broadcast
-}
-
 export async function createBroadcast(params: CreateBroadcastParams): Promise<Broadcast> {
   const broadcastId = crypto.randomUUID()
   const slug = createBroadcastSlug(params.title)
   let uploadedItems: UploadedBroadcastItem[] = []
   try {
     uploadedItems = await uploadFiles({ files: params.files, kind: params.kind, onStatusChange: params.onUploadStatusChange, workspaceId: params.workspaceId })
-    await moc.broadcasts.create({
+    return await moc.broadcasts.create({
       id: broadcastId,
       workspaceId: params.workspaceId,
       title: params.title,
@@ -139,7 +132,6 @@ export async function createBroadcast(params: CreateBroadcastParams): Promise<Br
     await removeStoragePaths(uploadedItems.map((item) => item.storagePath), params.kind, params.workspaceId).catch(() => undefined)
     throw error
   }
-  return reloadBroadcast(broadcastId, params.workspaceId)
 }
 
 export async function updateBroadcast(params: UpdateBroadcastParams): Promise<Broadcast> {
@@ -168,8 +160,9 @@ export async function updateBroadcast(params: UpdateBroadcastParams): Promise<Br
     }] : []
   })
 
+  let saved: Broadcast
   try {
-    await moc.broadcasts.update({
+    saved = await moc.broadcasts.update({
       id: params.id,
       workspaceId: params.workspaceId,
       expectedUpdatedAt: params.expectedUpdatedAt,
@@ -183,7 +176,7 @@ export async function updateBroadcast(params: UpdateBroadcastParams): Promise<Br
     throw error
   }
   await removeStoragePaths(removedItems.map((item) => item.storagePath), params.kind, params.workspaceId).catch(() => undefined)
-  return reloadBroadcast(params.id, params.workspaceId)
+  return saved
 }
 
 export async function deleteBroadcast(params: DeleteBroadcastParams): Promise<DeleteBroadcastResult> {

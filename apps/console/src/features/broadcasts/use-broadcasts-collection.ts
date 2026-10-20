@@ -13,11 +13,10 @@ function matchesQuery(broadcast: Broadcast, query: string): boolean {
 
 export function useBroadcastsCollection() {
   const { state: broadcastsState, actions: broadcastActions, meta: broadcastsMeta } = useBroadcasts()
-  const { createBroadcast, deleteBroadcast, loadBroadcasts, retryBroadcasts, updateBroadcast } = broadcastActions
+  const { createBroadcast, deleteBroadcast, loadBroadcasts, retryBroadcasts } = broadcastActions
   const { toast } = useFeedback()
   const [searchQuery, setSearchQuery] = useState("")
   const [editorOpen, setEditorOpen] = useState(false)
-  const [editingBroadcast, setEditingBroadcast] = useState<Broadcast | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Broadcast | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -33,12 +32,6 @@ export function useBroadcastsCollection() {
   const { close: closeDetail, select: selectBroadcast } = detail.actions
 
   const openCreate = useCallback(() => {
-    setEditingBroadcast(null)
-    setEditorOpen(true)
-  }, [])
-
-  const openEdit = useCallback((broadcast: Broadcast) => {
-    setEditingBroadcast(broadcast)
     setEditorOpen(true)
   }, [])
 
@@ -57,7 +50,6 @@ export function useBroadcastsCollection() {
     try {
       const result = await deleteBroadcast({ id: deleteTarget.id })
       closeDetail()
-      setEditingBroadcast((current) => current?.id === deleteTarget.id ? null : current)
       setDeleteTarget(null)
 
       if (result.storageCleanupError) {
@@ -78,22 +70,6 @@ export function useBroadcastsCollection() {
   }, [closeDetail, deleteBroadcast, deleteTarget, toast])
 
   const submitEditor = useCallback(async ({ description, items, kind, onUploadStatusChange, title }: BroadcastFormSubmit) => {
-    if (editingBroadcast) {
-      const saved = await updateBroadcast({
-        currentItems: editingBroadcast.items,
-        description,
-        expectedUpdatedAt: editingBroadcast.updatedAt,
-        id: editingBroadcast.id,
-        items: items.map((item) => item.source === "existing" ? { id: item.item.id, source: "existing" } : { clientId: item.key, file: item.file, source: "upload" }),
-        kind,
-        onUploadStatusChange,
-        title,
-      })
-      setEditingBroadcast(saved)
-      toast({ title: "Broadcast updated", variant: "success" })
-      return
-    }
-
     const created = await createBroadcast({
       description,
       files: items.flatMap((item) => item.source === "upload" ? [{ clientId: item.key, file: item.file }] : []),
@@ -103,7 +79,7 @@ export function useBroadcastsCollection() {
     })
     selectBroadcast(created)
     toast({ title: "Broadcast created", variant: "success" })
-  }, [createBroadcast, editingBroadcast, selectBroadcast, toast, updateBroadcast])
+  }, [createBroadcast, selectBroadcast, toast])
 
   const retry = useCallback(() => { void retryBroadcasts() }, [retryBroadcasts])
 
@@ -111,7 +87,6 @@ export function useBroadcastsCollection() {
     state: {
       detailOpen: detail.state.isOpen,
       deleteTarget,
-      editingBroadcast,
       editorOpen,
       isLoading: broadcastsState.isLoadingBroadcasts,
       isInitialLoadingBroadcasts: broadcastsState.isInitialLoadingBroadcasts,
@@ -120,11 +95,10 @@ export function useBroadcastsCollection() {
       searchQuery,
       selectedBroadcast: detail.state.selectedItem,
     },
-    actions: { closeDetail, confirmDelete, openCreate, openDelete, openEdit, retry, selectBroadcast, setDeleteOpen, setEditorOpen, setSearchQuery, submitEditor },
+    actions: { closeDetail, confirmDelete, openCreate, openDelete, retry, selectBroadcast, setDeleteOpen, setEditorOpen, setSearchQuery, submitEditor },
     meta: {
       canCreate: broadcastsMeta.canCreate,
       canDelete: broadcastsMeta.canDelete,
-      canEdit: broadcastsMeta.canUpdate,
       filtered,
       isFiltered: searchQuery.trim().length > 0,
     },

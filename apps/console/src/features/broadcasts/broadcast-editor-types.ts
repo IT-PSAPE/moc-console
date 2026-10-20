@@ -29,3 +29,8 @@ export type BroadcastFormSubmit = {
   onUploadStatusChange: BroadcastUploadStatusChange
   title: string
 }
+
+export type BroadcastUploadSubmit = {
+  items: BroadcastEditorItem[]
+  onUploadStatusChange: BroadcastUploadStatusChange
+}

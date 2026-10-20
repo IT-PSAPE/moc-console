@@ -89,7 +89,6 @@ function BroadcastsCollection() {
           </Page.Content>
 
           <BroadcastModal
-            broadcast={state.editingBroadcast}
             open={state.editorOpen}
             onOpenChange={actions.setEditorOpen}
             onSubmit={actions.submitEditor}
@@ -108,7 +107,7 @@ function BroadcastsCollection() {
       <SplitPanel.ResizeHandle />
       <SplitPanel.Detail>
         {state.selectedBroadcast ? (
-          <BroadcastDetailPanel broadcast={state.selectedBroadcast} canDelete={meta.canDelete} canEdit={meta.canEdit} onDelete={actions.openDelete} onEdit={actions.openEdit} />
+          <BroadcastDetailPanel key={state.selectedBroadcast.id} broadcast={state.selectedBroadcast} canDelete={meta.canDelete} onDelete={actions.openDelete} />
         ) : null}
       </SplitPanel.Detail>
     </SplitPanel>

@@ -1,4 +1,5 @@
 import { DividedList } from "@moc/ui/components/display/divided-list"
+import { SortableList } from "@moc/ui/components/display/sortable-list"
 import type { BroadcastKind } from "@moc/types/broadcast/broadcast"
 import { BROADCAST_FILE_ACCEPT, BROADCAST_KIND_LABELS, BROADCAST_MAX_FILE_BYTES, BROADCAST_MIN_FILE_BYTES } from "@moc/types/broadcast/broadcast-constants"
 import { Paragraph } from "@moc/ui/components/display/text"
@@ -18,34 +19,32 @@ type BroadcastPlaylistFieldProps = {
   items: BroadcastEditorItem[]
   kind: BroadcastKind
   onFilesAdd: (batch: FilePartition) => void
-  onItemMove: (key: string, direction: -1 | 1) => void
+  onItemReorder: (activeId: string, overId: string) => void
   onItemRemove: (key: string) => void
   onRejectionsDismiss: () => void
   rejections: FileRejection[]
   uploadProgress: { complete: number; total: number }
 }
 
-export function BroadcastPlaylistField({ error, isChecking, isLocked, items, kind, onFilesAdd, onItemMove, onItemRemove, onRejectionsDismiss, rejections, uploadProgress }: BroadcastPlaylistFieldProps) {
+export function BroadcastPlaylistField({ error, isChecking, isLocked, items, kind, onFilesAdd, onItemReorder, onItemRemove, onRejectionsDismiss, rejections, uploadProgress }: BroadcastPlaylistFieldProps) {
   const mediaLabel = BROADCAST_KIND_LABELS[kind].toLowerCase()
+  const itemIds = items.map((item) => item.key)
 
-  function renderItem(item: BroadcastEditorItem, index: number) {
+  function handleReorder(activeId: string, overId: string) {
+    onItemReorder(activeId, overId)
+  }
+
+  function renderItem(item: BroadcastEditorItem) {
     return (
-      <BroadcastPlaylistItem
-        key={item.key}
-        isFirst={index === 0}
-        isLast={index === items.length - 1}
-        isLocked={isLocked}
-        item={item}
-        kind={kind}
-        onMove={onItemMove}
-        onRemove={onItemRemove}
-      />
+      <SortableList.Item key={item.key} id={item.key} aria-label={item.source === "existing" ? item.item.title : item.file.name}>
+        <BroadcastPlaylistItem isLocked={isLocked} item={item} kind={kind} onRemove={onItemRemove} />
+      </SortableList.Item>
     )
   }
 
   return (
     <FormField label="Playlist" required>
-      <div aria-busy={isLocked || undefined} className="flex flex-col gap-3">
+      <div aria-busy={isLocked || isChecking || undefined} className="flex flex-col gap-3">
         <FileDropzone
           accept={BROADCAST_FILE_ACCEPT[kind]}
           maxSizeBytes={BROADCAST_MAX_FILE_BYTES[kind]}
@@ -55,12 +54,15 @@ export function BroadcastPlaylistField({ error, isChecking, isLocked, items, kin
           placeholder={`Drop ${mediaLabel} files or click to browse.`}
           hint={getBroadcastFileHint(kind)}
           selectedHint={getBroadcastFileHint(kind)}
+          disabled={isLocked || isChecking}
         />
         {isChecking ? <Paragraph.xs role="status" aria-live="polite" className="text-quaternary">Checking files…</Paragraph.xs> : null}
         <BroadcastRejectedFiles rejections={rejections} onDismiss={onRejectionsDismiss} />
         {error ? <Paragraph.xs role="alert" aria-live="polite" className="text-error">{error}</Paragraph.xs> : null}
         {items.length > 0 ? (
-          <DividedList>{items.map(renderItem)}</DividedList>
+          <SortableList.Root items={itemIds} onReorder={handleReorder} disabled={isLocked || isChecking}>
+            <DividedList>{items.map(renderItem)}</DividedList>
+          </SortableList.Root>
         ) : (
           <Paragraph.xs className="text-quaternary">Files play top to bottom. Reorder them before saving.</Paragraph.xs>
         )}

@@ -10,6 +10,7 @@ import { partitionFiles, type FilePartition } from "@moc/utils/file-constraints"
 type FileDropzoneProps = {
   accept?: string
   className?: string
+  disabled?: boolean
   fileName?: string
   fileNames?: string[]
   hint?: string
@@ -22,7 +23,7 @@ type FileDropzoneProps = {
   selectedHint?: string
 }
 
-export function FileDropzone({ accept, className, fileName, fileNames, hint = "Supports image, audio, and video files.", maxSizeBytes, minSizeBytes, multiple = false, onFileSelect, onFilesChange, placeholder = "Drag and drop a file here, or click to browse.", selectedHint = "Drop a new file or click to replace it." }: FileDropzoneProps) {
+export function FileDropzone({ accept, className, disabled = false, fileName, fileNames, hint = "Supports image, audio, and video files.", maxSizeBytes, minSizeBytes, multiple = false, onFileSelect, onFilesChange, placeholder = "Drag and drop a file here, or click to browse.", selectedHint = "Drop a new file or click to replace it." }: FileDropzoneProps) {
   const [isDragging, setIsDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const selectedFileNames = fileNames?.length ? fileNames : fileName ? [fileName] : []
@@ -50,27 +51,35 @@ export function FileDropzone({ accept, className, fileName, fileNames, hint = "S
   }
 
   function handleTriggerClick() {
+    if (disabled) return
     inputRef.current?.click()
   }
 
   function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
+    if (disabled) return
     emitFiles(Array.from(event.target.files ?? []))
     event.target.value = ""
   }
 
   function handleDragEnter(event: DragEvent<HTMLButtonElement>) {
     event.preventDefault()
+    if (disabled) return
     setIsDragging(true)
   }
 
   function handleDragOver(event: DragEvent<HTMLButtonElement>) {
     event.preventDefault()
+    if (disabled) return
     event.dataTransfer.dropEffect = "copy"
     if (!isDragging) setIsDragging(true)
   }
 
   function handleDragLeave(event: DragEvent<HTMLButtonElement>) {
     event.preventDefault()
+    if (disabled) {
+      setIsDragging(false)
+      return
+    }
 
     const nextTarget = event.relatedTarget
     if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) return
@@ -81,19 +90,22 @@ export function FileDropzone({ accept, className, fileName, fileNames, hint = "S
   function handleDrop(event: DragEvent<HTMLButtonElement>) {
     event.preventDefault()
     setIsDragging(false)
+    if (disabled) return
     emitFiles(Array.from(event.dataTransfer.files ?? []))
   }
 
   return (
     <>
-      <BaseInput ref={inputRef} type="file" accept={accept} multiple={multiple} className="hidden" onChange={handleInputChange} />
+      <BaseInput ref={inputRef} type="file" accept={accept} multiple={multiple} disabled={disabled} className="hidden" onChange={handleInputChange} />
       <BaseButton
         type="button"
+        disabled={disabled}
         className={cn(
           "flex flex-col min-h-24 w-full items-center gap-2 rounded-xl border border-dashed bg-primary p-6 text-left transition-colors",
           "border-primary hover:border-brand hover:bg-tertiary",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-brand",
-          isDragging && "border-brand bg-tertiary ring-3 ring-border-brand/10",
+          disabled && "cursor-not-allowed opacity-50",
+          isDragging && !disabled && "border-brand bg-tertiary ring-3 ring-border-brand/10",
           className,
         )}
         onClick={handleTriggerClick}

@@ -1,164 +1,58 @@
-import type { BroadcastUploadStatus } from "@/data/mutate-broadcasts"
-import type { Broadcast, BroadcastKind } from "@moc/types/broadcast/broadcast"
+import type { BroadcastKind } from "@moc/types/broadcast/broadcast"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { useEffect, useMemo, useState, type ChangeEvent } from "react"
-import type { BroadcastEditorErrors, BroadcastEditorItem, BroadcastEditorUploadItem, BroadcastFormSubmit } from "./broadcast-editor-types"
+import type { BroadcastEditorErrors, BroadcastFormSubmit } from "./broadcast-editor-types"
 import { getBroadcastEditorErrors } from "./broadcast-editor-validation"
-import { checkBroadcastFiles } from "./broadcast-file-check"
-import type { FilePartition, FileRejection } from "@moc/utils/file-constraints"
+import { useBroadcastFiles } from "./use-broadcast-files"
 
-type BroadcastFormOptions = {
-  broadcast?: Broadcast | null
-  onOpenChange: (open: boolean) => void
-  onSubmit: (params: BroadcastFormSubmit) => Promise<void>
-  open: boolean
-}
+type BroadcastFormOptions = { onOpenChange: (open: boolean) => void; onSubmit: (params: BroadcastFormSubmit) => Promise<void>; open: boolean }
 
-const defaultKind: BroadcastKind = "audio"
-
-function toEditorItems(broadcast: Broadcast | null | undefined): BroadcastEditorItem[] {
-  return (broadcast?.items ?? []).map((item) => ({ item, key: `existing:${item.id}`, source: "existing" }))
-}
-
-export function useBroadcastForm({ broadcast, onOpenChange, onSubmit, open }: BroadcastFormOptions) {
+export function useBroadcastForm({ onOpenChange, onSubmit, open }: BroadcastFormOptions) {
   const { toast } = useFeedback()
-  const isEditing = Boolean(broadcast)
-  const [title, setTitle] = useState(broadcast?.title ?? "")
-  const [description, setDescription] = useState(broadcast?.description ?? "")
-  const [kind, setKind] = useState<BroadcastKind>(broadcast?.kind ?? defaultKind)
-  const [items, setItems] = useState<BroadcastEditorItem[]>(() => toEditorItems(broadcast))
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [kind, setKind] = useState<BroadcastKind>("audio")
   const [errors, setErrors] = useState<BroadcastEditorErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isCheckingFiles, setIsCheckingFiles] = useState(false)
-  const [rejections, setRejections] = useState<FileRejection[]>([])
   const [discardChangesOpen, setDiscardChangesOpen] = useState(false)
+  const files = useBroadcastFiles({ kind, open })
+  const isDirty = useMemo(() => title.trim().length > 0 || description.trim().length > 0 || files.state.items.length > 0, [description, files.state.items.length, title])
 
   useEffect(() => {
     if (!open) return
-    setTitle(broadcast?.title ?? "")
-    setDescription(broadcast?.description ?? "")
-    setKind(broadcast?.kind ?? defaultKind)
-    setItems(toEditorItems(broadcast))
+    setTitle("")
+    setDescription("")
+    setKind("audio")
     setErrors({})
-    setRejections([])
     setDiscardChangesOpen(false)
-  }, [broadcast, open])
-
-  const uploadProgress = useMemo(() => {
-    const uploads = items.filter((item): item is BroadcastEditorUploadItem => item.source === "upload")
-    return { complete: uploads.filter((item) => item.status === "complete").length, total: uploads.length }
-  }, [items])
-
-  const isDirty = useMemo(() => {
-    if (!isEditing) return title.trim().length > 0 || description.trim().length > 0 || items.length > 0
-    const originalKeys = toEditorItems(broadcast).map((item) => item.key).join("|")
-    const currentKeys = items.map((item) => item.key).join("|")
-    return title !== broadcast?.title || description !== broadcast?.description || originalKeys !== currentKeys
-  }, [broadcast, description, isEditing, items, title])
+  }, [open])
 
   function changeTitle(event: ChangeEvent<HTMLInputElement>) {
     setTitle(event.target.value)
     setErrors((current) => ({ ...current, title: undefined }))
   }
 
-  function changeDescription(event: ChangeEvent<HTMLTextAreaElement>) {
-    setDescription(event.target.value)
-  }
+  function changeDescription(event: ChangeEvent<HTMLTextAreaElement>) { setDescription(event.target.value) }
 
   function changeKind(value: string) {
-    if (isEditing || value === kind) return
+    if (value === kind) return
     setKind(value as BroadcastKind)
-    setItems([])
-    setRejections([])
+    files.actions.reset()
     setErrors((current) => ({ ...current, playlist: undefined }))
-  }
-
-  // One batch, one verdict. The dropzone has already turned away the wrong
-  // types and sizes; the decode probe runs over what is left. Every file is
-  // checked — a bad one never discards the rest — and the two sets of
-  // rejections are reported together so the user sees the whole outcome once.
-  async function addFiles({ acceptedFiles, rejections: constraintRejections }: FilePartition) {
-    if (acceptedFiles.length === 0 && constraintRejections.length === 0) return
-
-    setRejections(constraintRejections)
-    setIsCheckingFiles(true)
-
-    try {
-      const checked = await checkBroadcastFiles(acceptedFiles, kind)
-      const addedItems = checked.acceptedFiles.map((file): BroadcastEditorUploadItem => ({ file, key: crypto.randomUUID(), source: "upload", status: "queued" }))
-      const batchRejections = [...constraintRejections, ...checked.rejections]
-
-      if (addedItems.length > 0) {
-        setItems((current) => [...current, ...addedItems])
-        setErrors((current) => ({ ...current, playlist: undefined }))
-      }
-
-      setRejections(batchRejections)
-      if (batchRejections.length > 0) notifyRejections(batchRejections, addedItems.length)
-    } finally {
-      setIsCheckingFiles(false)
-    }
-  }
-
-  function notifyRejections(batchRejections: FileRejection[], addedCount: number) {
-    const [first] = batchRejections
-
-    toast({
-      title: `${batchRejections.length} ${batchRejections.length === 1 ? "file" : "files"} rejected`,
-      description: batchRejections.length === 1
-        ? `${first.file.name} — ${first.reason}`
-        : `${addedCount} added. Each rejected file is listed with its reason.`,
-      variant: "error",
-    })
-  }
-
-  function dismissRejections() {
-    setRejections([])
-  }
-
-  function removeItem(key: string) {
-    setItems((current) => current.filter((item) => item.key !== key))
-    setErrors((current) => ({ ...current, playlist: undefined }))
-  }
-
-  function moveItem(key: string, direction: -1 | 1) {
-    setItems((current) => {
-      const index = current.findIndex((item) => item.key === key)
-      const nextIndex = index + direction
-      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return current
-      const next = [...current]
-      const [moved] = next.splice(index, 1)
-      next.splice(nextIndex, 0, moved)
-      return next
-    })
-  }
-
-  function updateUploadStatus(clientId: string, status: BroadcastUploadStatus, error?: string) {
-    setItems((current) => current.map((item) => item.source === "upload" && item.key === clientId ? { ...item, error, status } : item))
-  }
-
-  function markUploadsQueued() {
-    setItems((current) => current.map((item) => item.source === "upload" ? { ...item, error: undefined, status: "queued" } : item))
   }
 
   async function submit() {
-    const nextErrors = getBroadcastEditorErrors({ itemCount: items.length, title })
+    const nextErrors = getBroadcastEditorErrors({ itemCount: files.state.items.length, title })
     setErrors(nextErrors)
     if (nextErrors.playlist || nextErrors.title) return
-
-    markUploadsQueued()
+    files.actions.markUploadsQueued()
     setIsSubmitting(true)
-
     try {
-      await onSubmit({ description: description.trim(), items, kind, onUploadStatusChange: updateUploadStatus, title: title.trim() })
+      await onSubmit({ description: description.trim(), items: files.state.items, kind, onUploadStatusChange: files.actions.updateUploadStatus, title: title.trim() })
       setDiscardChangesOpen(false)
       onOpenChange(false)
     } catch (error) {
-      toast({
-        title: isEditing ? "Broadcast not updated" : "Broadcast not created",
-        description: error instanceof Error ? error.message : "The broadcast could not be saved.",
-        variant: "error",
-      })
+      toast({ title: "Broadcast not created", description: error instanceof Error ? error.message : "The broadcast could not be created.", variant: "error" })
     } finally {
       setIsSubmitting(false)
     }
@@ -166,33 +60,16 @@ export function useBroadcastForm({ broadcast, onOpenChange, onSubmit, open }: Br
 
   function requestClose() {
     if (isSubmitting) return
-    if (isDirty) {
-      setDiscardChangesOpen(true)
-      return
-    }
+    if (isDirty) { setDiscardChangesOpen(true); return }
     onOpenChange(false)
   }
 
-  function discardChanges() {
-    setDiscardChangesOpen(false)
-    onOpenChange(false)
-  }
-
-  function cancelDiscardChanges() {
-    setDiscardChangesOpen(false)
-  }
-
-  function changeOpen(nextOpen: boolean) {
-    if (nextOpen) {
-      onOpenChange(true)
-      return
-    }
-    requestClose()
-  }
+  function discardChanges() { setDiscardChangesOpen(false); onOpenChange(false) }
+  function cancelDiscardChanges() { setDiscardChangesOpen(false) }
 
   return {
-    state: { description, discardChangesOpen, errors, isCheckingFiles, isSubmitting, items, kind, rejections, title, uploadProgress },
-    actions: { addFiles, cancelDiscardChanges, changeDescription, changeKind, changeOpen, changeTitle, discardChanges, dismissRejections, moveItem, removeItem, requestClose, submit },
-    meta: { isEditing, submitLabel: isSubmitting ? (isEditing ? "Saving…" : "Creating…") : (isEditing ? "Save changes" : "Create broadcast") },
+    state: { ...files.state, description, discardChangesOpen, errors, isSubmitting, items: files.state.items, kind, title, uploadProgress: files.state.uploadProgress },
+    actions: { ...files.actions, changeDescription, changeKind, changeTitle, discardChanges, requestClose, cancelDiscardChanges, submit },
+    meta: { submitLabel: isSubmitting ? "Creating…" : "Create broadcast" },
   }
 }
