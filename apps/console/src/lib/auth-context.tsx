@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
 import type { ReactNode } from "react"
 import type { MoCSession, MoCUser } from "@moc/sdk/auth"
 import type { User as Profile } from "@moc/types/requests/assignee"
@@ -81,22 +81,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ? null
     : authCallbackError(new URL(window.location.href)))
   const [loading, setLoading] = useState(true)
+  const sessionUserIdRef = useRef<string | null>(null)
+  const sessionRequestRef = useRef(0)
+  const signingOutRef = useRef(false)
+  const userId = user?.id ?? null
 
   const refreshSession = useCallback(async () => {
+    if (signingOutRef.current) return
+    const request = ++sessionRequestRef.current
     try {
       const nextSession = await moc.auth.getSession()
+      if (request !== sessionRequestRef.current) return
+      const nextUserId = nextSession?.user.id ?? null
+      if (nextUserId !== sessionUserIdRef.current) {
+        clearCurrentWorkspaceCache()
+        setProfile(null)
+      }
+      sessionUserIdRef.current = nextUserId
       setSession(nextSession)
       setUser(nextSession?.user ?? null)
-      clearCurrentWorkspaceCache()
       if (!nextSession?.user) setProfile(null)
       setIsPasswordRecovery(callbackOutcome() === "password-recovery")
     } catch (error) {
+      if (request !== sessionRequestRef.current) return
       if (import.meta.env.DEV) console.error("Failed to restore authentication session:", error)
+      sessionUserIdRef.current = null
+      clearCurrentWorkspaceCache()
       setSession(null)
       setUser(null)
       setProfile(null)
     } finally {
-      setLoading(false)
+      if (request === sessionRequestRef.current) setLoading(false)
     }
   }, [])
 
@@ -125,25 +140,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       active = false
+      sessionRequestRef.current += 1
       channel?.close()
       window.removeEventListener("focus", refreshOnFocus)
     }
   }, [refreshSession])
 
   const refreshProfile = useCallback(async () => {
-    if (!user) return
+    if (!userId) return
     try {
-      setProfile(await fetchProfile())
+      const nextProfile = await fetchProfile()
+      if (sessionUserIdRef.current === userId) setProfile(nextProfile)
     } catch (error) {
       if (import.meta.env.DEV) console.error("Failed to fetch user profile:", error)
     }
-  }, [user])
+  }, [userId])
 
   useEffect(() => {
     if (!user) return
+    const requestedUserId = user.id
     let active = true
     fetchProfile().then((nextProfile) => {
-      if (active) setProfile(nextProfile)
+      if (active && sessionUserIdRef.current === requestedUserId) setProfile(nextProfile)
     }).catch((error: unknown) => {
       if (active && import.meta.env.DEV) console.error("Failed to fetch user profile:", error)
     })
@@ -165,6 +183,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signOut() {
+    signingOutRef.current = true
+    sessionRequestRef.current += 1
     let error: Error | null = null
     try {
       const result = await moc.auth.signOut()
@@ -173,10 +193,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error = cause instanceof Error ? cause : new Error("Sign-out failed")
     }
     clearCurrentWorkspaceCache()
+    sessionUserIdRef.current = null
     setSession(null)
     setUser(null)
     setProfile(null)
     setIsPasswordRecovery(false)
+    setLoading(false)
+    signingOutRef.current = false
     notifyOtherTabs()
     return { error }
   }

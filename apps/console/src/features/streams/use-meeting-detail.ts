@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchZoomMeetingById } from "@/data/fetch-zoom";
 import { deleteLocalZoomMeetingRecord, deleteZoomMeeting, updateZoomMeeting, type CreateMeetingParams } from "@/data/mutate-zoom";
@@ -14,7 +14,7 @@ export function useMeetingDetail(id: string | undefined) {
   const { toast } = useFeedback();
   const { currentWorkspaceId, role } = useWorkspace();
   const { state: { zoomMeetings }, actions: { syncMeeting, removeMeeting } } = useStreams();
-  const detail = useWorkspaceDetail({ fetcher: fetchZoomMeetingById, id, workspaceId: currentWorkspaceId });
+  const detail = useWorkspaceDetail({ resource: "zoom-meetings", fetcher: fetchZoomMeetingById, id, workspaceId: currentWorkspaceId });
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -22,17 +22,13 @@ export function useMeetingDetail(id: string | undefined) {
   const [isRemovingLocal, setIsRemovingLocal] = useState(false);
   const copied = useCopyFeedback<"join" | "pass">();
   const cachedMeeting = zoomMeetings.find((item) => item.id === id) ?? null;
-  const meeting = cachedMeeting ?? detail.data;
+  const meeting = detail.data ?? cachedMeeting;
   const canCleanupLocal = Boolean(
     meeting
     && meeting.recurrenceType === "none"
     && meeting.startTime
     && new Date(meeting.startTime).getTime() + meeting.duration * 60_000 < Date.now(),
   );
-
-  useEffect(() => {
-    if (detail.data) syncMeeting(detail.data);
-  }, [detail.data, syncMeeting]);
 
   const update = useCallback(async (params: CreateMeetingParams) => {
     if (!meeting) return;

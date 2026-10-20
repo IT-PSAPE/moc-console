@@ -36,7 +36,7 @@ const emptyChecklists: Checklist[] = [];
 
 export function ChecklistsProvider({ children }: { children: ReactNode }) {
   const { currentWorkspaceId } = useWorkspace();
-  const { data: checklists, error: checklistsError, isLoading: isLoadingChecklists, isInitialLoading: isInitialLoadingChecklists, load, updateData } = useWorkspaceResource({ emptyValue: emptyChecklists, fetcher: fetchChecklists, resource: "checklists", workspaceId: currentWorkspaceId });
+  const { data: checklists, error: checklistsError, isLoading: isLoadingChecklists, isInitialLoading: isInitialLoadingChecklists, load, updateData } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyChecklists, fetcher: fetchChecklists, resource: "checklists", workspaceId: currentWorkspaceId });
 
   const loadChecklists = useCallback(async () => {
     await load();

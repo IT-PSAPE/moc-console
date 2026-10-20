@@ -1,0 +1,12 @@
+{
+  "name": "@moc/query",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.104.5"
+  }
+}

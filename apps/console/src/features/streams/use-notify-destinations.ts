@@ -1,14 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { fetchTelegramGroups } from '@/data/fetch-telegram-groups'
 import { useWorkspace } from '@/lib/workspace-context'
+import { useWorkspaceResource } from '@/hooks/use-workspace-resource'
 import { sameNotifyDestination, type NotifyDestination } from '@moc/types/streams'
 import type { DestinationOption } from './notify-destination-field'
-
-type LoadState = {
-    workspaceId: string | null
-    status: 'loading' | 'ready' | 'failed'
-    options: DestinationOption[]
-}
 
 function toOptions(groups: Awaited<ReturnType<typeof fetchTelegramGroups>>): DestinationOption[] {
     const options: DestinationOption[] = []
@@ -23,31 +18,15 @@ function toOptions(groups: Awaited<ReturnType<typeof fetchTelegramGroups>>): Des
 
 export function useNotifyDestinations(value: NotifyDestination[], onChange: (destinations: NotifyDestination[]) => void) {
     const { currentWorkspaceId } = useWorkspace()
-    const [load, setLoad] = useState<LoadState>({ workspaceId: null, status: 'loading', options: [] })
-
-    if (currentWorkspaceId && load.workspaceId !== currentWorkspaceId) {
-        setLoad({ workspaceId: currentWorkspaceId, status: 'loading', options: [] })
-    }
-
-    useEffect(() => {
-        if (!currentWorkspaceId) return
-        let cancelled = false
-        fetchTelegramGroups(currentWorkspaceId)
-            .then((groups) => {
-                if (!cancelled) setLoad((previous) => previous.workspaceId === currentWorkspaceId ? { ...previous, status: 'ready', options: toOptions(groups) } : previous)
-            })
-            .catch((error: unknown) => {
-                console.error('Failed to load Telegram destinations', error)
-                if (!cancelled) setLoad((previous) => previous.workspaceId === currentWorkspaceId ? { ...previous, status: 'failed' } : previous)
-            })
-        return () => { cancelled = true }
-    }, [currentWorkspaceId])
-
-    const selected = useMemo(() => value.map((destination) => load.options.find((option) => sameNotifyDestination(option, destination))).filter((option): option is DestinationOption => option !== undefined), [load.options, value])
+    const fetcher = useCallback((workspaceId: string) => fetchTelegramGroups(workspaceId), [])
+    const resource = useWorkspaceResource({ emptyValue: [], fetcher, resource: 'telegram-groups', workspaceId: currentWorkspaceId })
+    const options = useMemo(() => toOptions(resource.data), [resource.data])
+    const selected = useMemo(() => value.map((destination) => options.find((option) => sameNotifyDestination(option, destination))).filter((option): option is DestinationOption => option !== undefined), [options, value])
 
     function changeDestinations(next: DestinationOption[]) {
         onChange(next.map(({ groupChatId, threadId }) => ({ groupChatId, threadId })))
     }
 
-    return { state: { options: load.options, selected, status: load.status }, actions: { changeDestinations } }
+    const status = resource.error ? 'failed' : resource.isLoading ? 'loading' : 'ready'
+    return { state: { options, selected, status }, actions: { changeDestinations } }
 }

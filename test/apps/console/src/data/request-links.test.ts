@@ -1,3 +1,4 @@
+import { queryClient } from "../../../../../apps/console/src/lib/query-client"
 import { beforeEach, expect, test, vi } from "vitest"
 import { setRecordRequest } from "../../../../../apps/console/src/data/request-links"
 import { getWorkspaceResourceState, setWorkspaceResourceData } from "../../../../../apps/console/src/data/workspace-resource-cache"
@@ -19,7 +20,7 @@ test("relationship updates preserve the rest of the cached collection and record
   expect(getWorkspaceResourceState("workspace", "checklists").data).toEqual([
     { ...initial[0], requestId: undefined }, initial[1],
   ])
-  expect(getWorkspaceResourceState("workspace", "request-linked-records").data).toBeUndefined()
+  expect(queryClient.getQueryState(["workspace", "workspace", "request-linked-records"])?.isInvalidated).toBe(true)
 })
 
 test("a failed association keeps cached records intact", async () => {

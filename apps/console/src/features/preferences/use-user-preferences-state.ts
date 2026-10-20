@@ -1,39 +1,36 @@
-import { useCallback, useEffect, useState } from 'react'
-import type { CalendarView } from '@moc/sdk/users'
+import { useCallback, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import type { UserPreferences } from '@moc/sdk/users'
 import { fetchUserPreferences, saveUserPreferences } from '@/data/user-preferences'
+import { getCurrentWorkspaceGeneration } from '@/data/current-workspace'
+import { useAuth } from '@/lib/auth-context'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { calendarViewOptions } from './calendar-view-options'
+import { consoleQueryPolicy } from '@/lib/console-query-policy'
 
 export function useUserPreferencesState() {
-  const [defaultCalendarView, setDefaultCalendarView] = useState<CalendarView>('week')
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
-  const [attempt, setAttempt] = useState(0)
+  const { user } = useAuth()
+  const generation = getCurrentWorkspaceGeneration()
+  const queryClient = useQueryClient()
   const { toast } = useFeedback()
+  const [isSaving, setIsSaving] = useState(false)
+  const queryKey = ['user', user?.id ?? null, 'preferences'] as const
+  const query = useQuery({ ...consoleQueryPolicy('preferences'), queryKey, queryFn: fetchUserPreferences, enabled: Boolean(user?.id) })
+  const refetch = query.refetch
+  const defaultCalendarView = query.data?.defaultCalendarView ?? 'week'
 
-  useEffect(() => {
-    let active = true
-    setIsLoading(true)
-    fetchUserPreferences().then(preferences => {
-      if (!active) return
-      setDefaultCalendarView(preferences.defaultCalendarView)
-      setError(null)
-    }).catch((cause: unknown) => {
-      if (active) setError(cause instanceof Error ? cause : new Error('Preferences could not load'))
-    }).finally(() => { if (active) setIsLoading(false) })
-    return () => { active = false }
-  }, [attempt])
-
-  const retry = useCallback(() => setAttempt(current => current + 1), [])
+  const retry = useCallback(() => refetch(), [refetch])
 
   async function changeDefaultCalendarView(value: string | null): Promise<void> {
     const view = calendarViewOptions.find(option => option.value === value)?.value
-    if (!view || view === defaultCalendarView || isSaving) return
+    if (!user?.id || !view || view === defaultCalendarView || isSaving) return
     setIsSaving(true)
     try {
       await saveUserPreferences({ defaultCalendarView: view })
-      setDefaultCalendarView(view)
+      if (generation === getCurrentWorkspaceGeneration()) {
+        void queryClient.cancelQueries({ queryKey, exact: true })
+        queryClient.setQueryData<UserPreferences>(queryKey, current => current ? { ...current, defaultCalendarView: view } : current)
+      }
       toast({ title: 'Preference saved', variant: 'success' })
     } catch (cause) {
       toast({ title: 'Could not save preference', description: cause instanceof Error ? cause.message : 'Please try again.', variant: 'error' })
@@ -42,5 +39,5 @@ export function useUserPreferencesState() {
     }
   }
 
-  return { state: { defaultCalendarView, isLoading, isSaving, error }, actions: { changeDefaultCalendarView, retry }, meta: { viewOptions: calendarViewOptions } }
+  return { state: { defaultCalendarView, isLoading: query.isPending, isSaving, error: query.data === undefined ? query.error : null }, actions: { changeDefaultCalendarView, retry }, meta: { viewOptions: calendarViewOptions } }
 }

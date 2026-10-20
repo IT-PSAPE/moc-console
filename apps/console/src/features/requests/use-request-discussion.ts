@@ -1,56 +1,34 @@
 import { createRequestComment, fetchRequestActivity, fetchRequestComments } from "@/data/request-history";
+import { useWorkspaceResource } from "@/hooks/use-workspace-resource";
 import { useWorkspace } from "@/lib/workspace-context";
 import { getErrorMessage } from "@moc/utils/get-error-message";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { RequestActivity, RequestComment } from "@moc/types/requests";
 
+type RequestDiscussion = { activity: RequestActivity[]; comments: RequestComment[] };
+const emptyDiscussion: RequestDiscussion = { activity: [], comments: [] };
+
 export function useRequestDiscussion(requestId: string, enabled = true, refreshKey?: string) {
   const { currentWorkspaceId } = useWorkspace();
-  const [activity, setActivity] = useState<RequestActivity[]>([]);
-  const [comments, setComments] = useState<RequestComment[]>([]);
   const [commentDraft, setCommentDraft] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const refreshGenerationRef = useRef(0);
-
-  const refresh = useCallback(async () => {
-    if (!requestId || !currentWorkspaceId) return;
-
-    const generation = refreshGenerationRef.current + 1;
-    refreshGenerationRef.current = generation;
-
-    setIsLoading(true);
-    setLoadError(null);
-    try {
-      const [nextActivity, nextComments] = await Promise.all([
-        fetchRequestActivity(requestId),
-        fetchRequestComments(requestId),
-      ]);
-      if (refreshGenerationRef.current !== generation) return;
-      setActivity(nextActivity);
-      setComments(nextComments);
-    } catch (error) {
-      if (refreshGenerationRef.current !== generation) return;
-      setLoadError(getErrorMessage(error, "The request history could not be loaded."));
-    } finally {
-      if (refreshGenerationRef.current === generation) setIsLoading(false);
-    }
-  }, [currentWorkspaceId, requestId]);
+  const previousRefreshKey = useRef(refreshKey);
+  const fetcher = useCallback(async (workspaceId: string): Promise<RequestDiscussion> => {
+    if (!workspaceId) return emptyDiscussion;
+    const [activity, comments] = await Promise.all([fetchRequestActivity(requestId), fetchRequestComments(requestId)]);
+    return { activity, comments };
+  }, [requestId]);
+  const resource = useWorkspaceResource({ emptyValue: emptyDiscussion, fetcher, resource: `request-discussion:${requestId}`, workspaceId: currentWorkspaceId, enabled: enabled && Boolean(requestId) });
+  const { data, error, isLoading, load: refresh, updateData } = resource;
+  const refreshNow = useCallback(() => refresh(true), [refresh]);
 
   useEffect(() => {
-    refreshGenerationRef.current += 1;
-    setActivity([]);
-    setComments([]);
-    setLoadError(null);
-    setIsLoading(false);
-    if (enabled) void refresh();
-    return () => {
-      refreshGenerationRef.current += 1;
-    };
-  }, [currentWorkspaceId, enabled, refresh, refreshKey, requestId]);
+    const hasRefreshKeyChanged = previousRefreshKey.current !== refreshKey;
+    previousRefreshKey.current = refreshKey;
+    if (hasRefreshKeyChanged && enabled && requestId) void refreshNow();
+  }, [enabled, refreshKey, refreshNow, requestId]);
 
   const changeCommentDraft = useCallback((event: ChangeEvent<HTMLTextAreaElement>) => {
     setCommentDraft(event.target.value);
@@ -63,17 +41,17 @@ export function useRequestDiscussion(requestId: string, enabled = true, refreshK
     setSubmitError(null);
     try {
       const comment = await createRequestComment(requestId, commentDraft);
-      setComments((current) => [comment, ...current]);
+      updateData((current) => ({ ...current, comments: [comment, ...current.comments] }));
       setCommentDraft("");
     } catch (error) {
       setSubmitError(getErrorMessage(error, "The comment could not be added. Please try again."));
     } finally {
       setIsSubmitting(false);
     }
-  }, [commentDraft, isSubmitting, requestId]);
+  }, [commentDraft, isSubmitting, requestId, updateData]);
 
   return {
-    state: { activity, comments, commentDraft, isLoading, loadError, submitError, isSubmitting },
-    actions: { changeCommentDraft, refresh, submitComment },
+    state: { activity: data.activity, comments: data.comments, commentDraft, isLoading, loadError: error ? getErrorMessage(error, "The request history could not be loaded.") : null, submitError, isSubmitting },
+    actions: { changeCommentDraft, refresh: refreshNow, submitComment },
   };
 }

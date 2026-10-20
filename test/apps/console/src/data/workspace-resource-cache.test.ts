@@ -1,7 +1,21 @@
 import { describe, expect, test } from "vitest"
-import { getWorkspaceResourceState, loadWorkspaceResource, setWorkspaceResourceData } from "../../../../../apps/console/src/data/workspace-resource-cache"
+import { clearWorkspaceResources, getWorkspaceResourceState, loadWorkspaceResource, setWorkspaceResourceData } from "../../../../../apps/console/src/data/workspace-resource-cache"
+import { deferred } from "../../../../helpers/async"
 
 describe("workspace resource cache", () => {
+  test("clearing resources also discards in-flight data from the previous account", async () => {
+    const pending = deferred<string[]>()
+    const load = loadWorkspaceResource('session-workspace', 'requests', () => pending.promise)
+    setWorkspaceResourceData('other-workspace', 'equipment', ['private'])
+    clearWorkspaceResources()
+    setWorkspaceResourceData('session-workspace', 'requests', ['new account'])
+    pending.resolve(['old account'])
+    await load.catch(() => undefined)
+
+    expect(getWorkspaceResourceState('session-workspace', 'requests').data).toEqual(['new account'])
+    expect(getWorkspaceResourceState('other-workspace', 'equipment').data).toBeUndefined()
+  })
+
   test("does not restore data from a load invalidated by a destructive write", async () => {
     let resolveFetch: (value: string[]) => void = () => undefined
     const pendingFetch = new Promise<string[]>((resolve) => {
@@ -13,7 +27,7 @@ describe("workspace resource cache", () => {
     const load = loadWorkspaceResource(workspaceId, resource, async () => pendingFetch)
     setWorkspaceResourceData(workspaceId, resource, [])
     resolveFetch(["stale meeting"])
-    await load
+    await load.catch(() => undefined)
 
     const state = getWorkspaceResourceState<string[]>(workspaceId, resource)
     expect(state.data).toEqual([])

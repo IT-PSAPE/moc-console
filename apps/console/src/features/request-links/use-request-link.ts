@@ -1,9 +1,9 @@
-import { fetchRecordRequest, fetchRequestLinkOptions, setRecordRequest, type RequestLinkedKind, type RequestLinkOption } from "@/data/request-links"
+import { fetchRecordRequest, fetchRequestLinkOptions, requestLinkResource, setRecordRequest, type RequestLinkedKind, type RequestLinkOption } from "@/data/request-links"
 import { useWorkspaceResource } from "@/hooks/use-workspace-resource"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { getErrorMessage } from "@moc/utils/get-error-message"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 
 type LinkData = { requestId: string | null; options: RequestLinkOption[] }
 const emptyData: LinkData = { requestId: null, options: [] }
@@ -17,9 +17,8 @@ export function useRequestLink(kind: RequestLinkedKind, id: string) {
     const [requestId, options] = await Promise.all([fetchRecordRequest(kind, id, workspaceId), fetchRequestLinkOptions(workspaceId)])
     return { requestId, options }
   }, [id, kind])
-  const resource = useWorkspaceResource({ emptyValue: emptyData, resource: `${kind}:${id}:request-link`, fetcher, workspaceId: currentWorkspaceId })
+  const resource = useWorkspaceResource({ emptyValue: emptyData, resource: requestLinkResource(kind, id), fetcher, workspaceId: currentWorkspaceId })
   const { data, load, setData } = resource
-  useEffect(() => { void load(true) }, [load])
 
   const change = useCallback(async (requestId: string | null) => {
     if (!currentWorkspaceId || !role?.can_update || busy.current || requestId === data.requestId) return

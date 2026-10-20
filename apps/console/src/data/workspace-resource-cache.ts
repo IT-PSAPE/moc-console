@@ -1,106 +1,102 @@
+import { queryClient } from "@/lib/query-client"
+import { consoleQueryPolicy } from "@/lib/console-query-policy"
+
 export type WorkspaceResourceState<T> = {
-  data: T | undefined;
-  error: Error | null;
-  isLoading: boolean;
-  isLoaded: boolean;
-};
-
-type WorkspaceResourceRecord<T> = {
-  data: T | undefined;
-  error: Error | null;
-  promise: Promise<T> | null;
-  version: number;
-};
-
-const resources = new Map<string, WorkspaceResourceRecord<unknown>>();
-
-function getResourceKey(workspaceId: string, resource: string) {
-  return `${workspaceId}:${resource}`;
+  data: T | undefined
+  error: Error | null
+  isLoading: boolean
+  isLoaded: boolean
 }
 
-function getRecord<T>(workspaceId: string, resource: string): WorkspaceResourceRecord<T> {
-  const key = getResourceKey(workspaceId, resource);
-  const existing = resources.get(key) as WorkspaceResourceRecord<T> | undefined;
+export function workspaceResourceKey(workspaceId: string | null, resource: string) {
+  return ["workspace", workspaceId, resource] as const
+}
 
-  if (existing) {
-    return existing;
+const dependents: Record<string, readonly string[]> = {
+  requests: ['work-calendar', 'request-linked-records'],
+  bookings: ['work-calendar', 'request-linked-records', 'equipment-bookings'],
+  'venue-bookings': ['work-calendar', 'request-linked-records'],
+  checklists: ['request-linked-records'],
+  streams: ['request-linked-records'],
+  'zoom-meetings': ['request-linked-records'],
+  venues: ['work-calendar', 'venue-bookings', 'request-linked-records'],
+  'venue-events': ['work-calendar', 'venue-bookings'],
+  'telegram-groups': ['scheduled-messages'],
+  users: ['members', 'users', 'scheduled-messages'],
+  'member-types': ['scheduled-messages'],
+}
+
+function refreshDependents(workspaceId: string, resource: string): void {
+  const family = resource.split(':')[0]
+  const affected = dependents[family]
+  if (!affected) return
+  const filters = {
+    queryKey: ['workspace', workspaceId],
+    predicate: (query: { queryKey: readonly unknown[] }): boolean => {
+      const candidate = query.queryKey[2]
+      return typeof candidate === 'string' && candidate !== resource
+        && (affected.includes(candidate.split(':')[0]) || (family === 'requests' && candidate.endsWith(':request-link')))
+    },
   }
+  void queryClient.cancelQueries(filters)
+  void queryClient.invalidateQueries(filters)
+}
 
-  const record: WorkspaceResourceRecord<T> = { data: undefined, error: null, promise: null, version: 0 };
-  resources.set(key, record);
-  return record;
+function refreshDetails(queryKey: ReturnType<typeof workspaceResourceKey>): void {
+  const detailKey = [...queryKey, "detail"]
+  void queryClient.cancelQueries({ queryKey: detailKey })
+  void queryClient.invalidateQueries({ queryKey: detailKey })
 }
 
 export function getWorkspaceResourceState<T>(workspaceId: string | null, resource: string): WorkspaceResourceState<T> {
-  if (!workspaceId) {
-    return { data: undefined, error: null, isLoading: false, isLoaded: false };
+  const state = workspaceId ? queryClient.getQueryState<T>(workspaceResourceKey(workspaceId, resource)) : undefined
+  return {
+    data: state?.data,
+    error: state?.error ?? null,
+    isLoading: state?.fetchStatus === "fetching",
+    isLoaded: state?.data !== undefined,
   }
-
-  const record = getRecord<T>(workspaceId, resource);
-  return { data: record.data, error: record.error, isLoading: record.promise !== null, isLoaded: record.data !== undefined };
 }
 
-export function getWorkspaceResourceVersion(workspaceId: string, resource: string): number {
-  return getRecord(workspaceId, resource).version;
+export function loadWorkspaceResource<T>(workspaceId: string, resource: string, fetcher: (workspaceId: string) => Promise<T>, force = false): Promise<T> {
+  return queryClient.fetchQuery({
+    ...consoleQueryPolicy(resource),
+    queryKey: workspaceResourceKey(workspaceId, resource),
+    queryFn: () => fetcher(workspaceId),
+    ...(force ? { staleTime: 0 } : {}),
+  })
 }
 
-export async function loadWorkspaceResource<T>(workspaceId: string, resource: string, fetcher: (workspaceId: string) => Promise<T>, force = false): Promise<T> {
-  const record = getRecord<T>(workspaceId, resource);
-
-  if (record.promise) {
-    return record.promise;
-  }
-
-  if (!force && record.data !== undefined) {
-    return record.data;
-  }
-
-  record.error = null;
-  const version = record.version;
-  const promise = fetcher(workspaceId)
-    .then((data) => {
-      if (record.version === version) {
-        record.data = data;
-      }
-      return data;
-    })
-    .catch((error: unknown) => {
-      const resourceError = error instanceof Error ? error : new Error("Failed to load workspace data");
-      if (record.version === version) {
-        record.error = resourceError;
-      }
-      throw resourceError;
-    })
-    .finally(() => {
-      if (record.version === version) {
-        record.promise = null;
-      }
-    });
-  record.promise = promise;
-
-  return promise;
+export function setWorkspaceResourceData<T>(workspaceId: string, resource: string, data: T): void {
+  const queryKey = workspaceResourceKey(workspaceId, resource)
+  void queryClient.cancelQueries({ queryKey, exact: true })
+  queryClient.setQueryData<T>(queryKey, data)
+  refreshDetails(queryKey)
+  refreshDependents(workspaceId, resource)
 }
 
-export function setWorkspaceResourceData<T>(workspaceId: string, resource: string, data: T) {
-  const record = getRecord<T>(workspaceId, resource);
-  record.version += 1;
-  record.data = data;
-  record.error = null;
-  record.promise = null;
+export function setWorkspaceDetailData<T>(workspaceId: string, resource: string, id: string, data: T | null): void {
+  const queryKey = [...workspaceResourceKey(workspaceId, resource), "detail", id]
+  void queryClient.cancelQueries({ queryKey, exact: true })
+  queryClient.setQueryData<T | null>(queryKey, data)
 }
 
-export function updateWorkspaceResourceData<T>(workspaceId: string, resource: string, updater: (current: T | undefined) => T | undefined) {
-  const record = getRecord<T>(workspaceId, resource);
-  record.version += 1;
-  record.data = updater(record.data);
-  record.error = null;
-  record.promise = null;
+export function updateWorkspaceResourceData<T>(workspaceId: string, resource: string, updater: (current: T | undefined) => T | undefined): void {
+  const queryKey = workspaceResourceKey(workspaceId, resource)
+  void queryClient.cancelQueries({ queryKey, exact: true })
+  queryClient.setQueryData<T>(queryKey, updater)
+  refreshDetails(queryKey)
+  refreshDependents(workspaceId, resource)
 }
 
-export function invalidateWorkspaceResource(workspaceId: string, resource: string) {
-  const record = getRecord(workspaceId, resource);
-  record.version += 1;
-  record.data = undefined;
-  record.error = null;
-  record.promise = null;
+export function invalidateWorkspaceResource(workspaceId: string, resource: string): void {
+  const queryKey = workspaceResourceKey(workspaceId, resource)
+  void queryClient.cancelQueries({ queryKey })
+  void queryClient.invalidateQueries({ queryKey })
+  refreshDependents(workspaceId, resource)
+}
+
+export function clearWorkspaceResources(): void {
+  // Clearing destroys pending queries too; late responses cannot reinsert old account data.
+  queryClient.clear()
 }

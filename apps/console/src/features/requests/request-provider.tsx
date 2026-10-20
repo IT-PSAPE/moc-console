@@ -1,10 +1,13 @@
-import { fetchArchivedRequests, fetchRequestById, fetchRequests } from '@/data/fetch-requests'
+import { fetchArchivedRequests, fetchRequests } from '@/data/fetch-requests'
 import { fetchRequestCategories } from '@/data/fetch-request-categories'
 import { createRequestCategory, setRequestCategoryActive, updateRequestCategory } from '@/data/mutate-request-categories'
+import { queryClient } from "@/lib/query-client"
+import { setWorkspaceDetailData, workspaceResourceKey } from "@/data/workspace-resource-cache"
+import { getCurrentWorkspaceGeneration } from "@/data/current-workspace"
 import { useWorkspaceResource } from '@/hooks/use-workspace-resource'
 import { useWorkspace } from '@/lib/workspace-context'
 import type { Request, RequestCategoryDefinition } from '@moc/types/requests'
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react'
 
 type RequestsContextValue = {
     state: {
@@ -30,7 +33,6 @@ type RequestsContextValue = {
         retryActiveRequests: () => Promise<void>
         retryArchivedRequests: () => Promise<void>
         retryCategories: () => Promise<void>
-        loadRequest: (id: string) => Promise<void>
         syncRequest: (request: Request) => void
         removeRequest: (id: string) => void
         createRequestType: (name: string) => Promise<RequestCategoryDefinition>
@@ -70,14 +72,11 @@ function renameRequestCategoryLabels(requests: Request[], key: string, name: str
 
 export function RequestsProvider({ children }: { children: ReactNode }) {
     const { currentWorkspaceId } = useWorkspace()
-    const { data: activeData, error: activeError, isLoading: isLoadingActive, isInitialLoading: isInitialLoadingActive, load: loadActiveResource, updateData: updateActive } = useWorkspaceResource({ emptyValue: emptyRequests, fetcher: fetchRequests, resource: 'requests:active', workspaceId: currentWorkspaceId })
-    const { data: archivedData, error: archivedError, isLoading: isLoadingArchived, isInitialLoading: isInitialLoadingArchived, load: loadArchivedResource, updateData: updateArchived } = useWorkspaceResource({ emptyValue: emptyRequests, fetcher: fetchArchivedRequests, resource: 'requests:archived', workspaceId: currentWorkspaceId })
+    const { data: activeData, error: activeError, isLoading: isLoadingActive, isInitialLoading: isInitialLoadingActive, load: loadActiveResource, updateData: updateActive } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyRequests, fetcher: fetchRequests, resource: 'requests:active', workspaceId: currentWorkspaceId })
+    const { data: archivedData, error: archivedError, isLoading: isLoadingArchived, isInitialLoading: isInitialLoadingArchived, load: loadArchivedResource, updateData: updateArchived } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyRequests, fetcher: fetchArchivedRequests, resource: 'requests:archived', workspaceId: currentWorkspaceId })
     const { data: requestCategories, error: categoriesError, isLoading: isLoadingCategories, isInitialLoading: isInitialLoadingCategories, load: loadCategoriesResource, updateData: updateCategories } = useWorkspaceResource({ emptyValue: emptyCategories, fetcher: fetchRequestCategories, resource: 'request-categories', workspaceId: currentWorkspaceId })
-    const [detailRequestsByWorkspace, setDetailRequestsByWorkspace] = useState<Record<string, Record<string, Request>>>({})
-    const requestsById = useMemo(() => {
-        const detailRequests = currentWorkspaceId ? detailRequestsByWorkspace[currentWorkspaceId] ?? {} : {}
-        return { ...mergeRequests(mergeRequests({}, activeData), archivedData), ...detailRequests }
-    }, [activeData, archivedData, currentWorkspaceId, detailRequestsByWorkspace])
+    const generation = getCurrentWorkspaceGeneration()
+    const requestsById = useMemo(() => mergeRequests(mergeRequests({}, activeData), archivedData), [activeData, archivedData])
 
     const loadActiveRequests = useCallback(async () => {
         await Promise.all([loadActiveResource(), loadCategoriesResource()])
@@ -104,27 +103,18 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
     }, [loadCategoriesResource])
 
     const syncRequest = useCallback((request: Request) => {
-        if (currentWorkspaceId) {
-            setDetailRequestsByWorkspace((previous) => ({
-                ...previous,
-                [currentWorkspaceId]: { ...(previous[currentWorkspaceId] ?? {}), [request.id]: request },
-            }))
-        }
+        if (!currentWorkspaceId || generation !== getCurrentWorkspaceGeneration()) return
+        setWorkspaceDetailData(currentWorkspaceId, 'requests', request.id, request)
         updateActive((requests) => syncIntoRequests(requests, request, request.status !== 'archived'))
         updateArchived((requests) => syncIntoRequests(requests, request, request.status === 'archived'))
-    }, [currentWorkspaceId, updateActive, updateArchived])
+    }, [currentWorkspaceId, generation, updateActive, updateArchived])
 
     const removeRequest = useCallback((id: string) => {
-        if (currentWorkspaceId) {
-            setDetailRequestsByWorkspace((previous) => {
-                const nextWorkspaceRequests = { ...(previous[currentWorkspaceId] ?? {}) }
-                delete nextWorkspaceRequests[id]
-                return { ...previous, [currentWorkspaceId]: nextWorkspaceRequests }
-            })
-        }
+        if (!currentWorkspaceId || generation !== getCurrentWorkspaceGeneration()) return
+        setWorkspaceDetailData(currentWorkspaceId, 'requests', id, null)
         updateActive((requests) => removeFromRequests(requests, id))
         updateArchived((requests) => removeFromRequests(requests, id))
-    }, [currentWorkspaceId, updateActive, updateArchived])
+    }, [currentWorkspaceId, generation, updateActive, updateArchived])
 
     const createRequestType = useCallback(async (name: string) => {
         if (!currentWorkspaceId) throw new Error('Choose a workspace before creating a request type.')
@@ -139,15 +129,14 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
         updateCategories((categories) => categories.map((item) => item.id === updated.id ? updated : item))
         updateActive((requests) => renameRequestCategoryLabels(requests, updated.key, updated.name))
         updateArchived((requests) => renameRequestCategoryLabels(requests, updated.key, updated.name))
-        setDetailRequestsByWorkspace((previous) => {
-            const requests = previous[currentWorkspaceId] ?? {}
-            return {
-                ...previous,
-                [currentWorkspaceId]: Object.fromEntries(Object.entries(requests).map(([id, request]) => [id, request.category === updated.key ? { ...request, categoryName: updated.name } : request])),
-            }
-        })
+        if (generation === getCurrentWorkspaceGeneration()) {
+            const queryKey = [...workspaceResourceKey(currentWorkspaceId, 'requests'), 'detail']
+            void queryClient.cancelQueries({ queryKey })
+            queryClient.setQueriesData<Request | null>({ queryKey }, (request) => request?.category === updated.key ? { ...request, categoryName: updated.name } : request)
+            void queryClient.invalidateQueries({ queryKey })
+        }
         return updated
-    }, [currentWorkspaceId, updateActive, updateArchived, updateCategories])
+    }, [currentWorkspaceId, generation, updateActive, updateArchived, updateCategories])
 
     const setRequestTypeActive = useCallback(async (category: RequestCategoryDefinition, active: boolean) => {
         if (!currentWorkspaceId) throw new Error('Choose a workspace before changing a request type.')
@@ -156,19 +145,6 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
         updateCategories((categories) => categories.map((item) => item.id === updated.id ? updated : item))
         return updated
     }, [currentWorkspaceId, updateCategories])
-
-    const loadRequest = useCallback(async (id: string) => {
-        if (!currentWorkspaceId) return
-        await loadCategoriesResource()
-        if (requestsById[id]) return
-
-        const request = await fetchRequestById(id, currentWorkspaceId)
-        if (!request) return
-        setDetailRequestsByWorkspace((previous) => ({
-            ...previous,
-            [currentWorkspaceId]: { ...(previous[currentWorkspaceId] ?? {}), [request.id]: request },
-        }))
-    }, [currentWorkspaceId, loadCategoriesResource, requestsById])
 
     const allRequests = useMemo(() => Object.values(requestsById), [requestsById])
     const activeRequests = useMemo(() => allRequests.filter((request) => request.status !== 'archived'), [allRequests])
@@ -198,14 +174,13 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
             retryActiveRequests,
             retryArchivedRequests,
             retryCategories,
-            loadRequest,
             syncRequest,
             removeRequest,
             createRequestType,
             renameRequestType,
             setRequestTypeActive,
         },
-    }), [activeError, activeRequests, allRequests, archivedError, archivedRequests, categoriesError, createRequestType, isInitialLoadingActive, isInitialLoadingArchived, isInitialLoadingCategories, isLoadingActive, isLoadingArchived, isLoadingCategories, loadActiveRequests, loadArchivedRequests, loadCategories, loadRequest, requestCategories, requestsById, retryActiveRequests, retryArchivedRequests, retryCategories, removeRequest, renameRequestType, setRequestTypeActive, syncRequest])
+    }), [activeError, activeRequests, allRequests, archivedError, archivedRequests, categoriesError, createRequestType, isInitialLoadingActive, isInitialLoadingArchived, isInitialLoadingCategories, isLoadingActive, isLoadingArchived, isLoadingCategories, loadActiveRequests, loadArchivedRequests, loadCategories, requestCategories, requestsById, retryActiveRequests, retryArchivedRequests, retryCategories, removeRequest, renameRequestType, setRequestTypeActive, syncRequest])
 
     return <RequestsContext.Provider value={value}>{children}</RequestsContext.Provider>
 }

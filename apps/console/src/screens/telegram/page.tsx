@@ -40,7 +40,8 @@ function TelegramPageContent() {
           <Section>
             <Section.Header title="Individual members" description="Choose which events are sent to each linked member in Telegram." />
             <Section.Body>
-              {state.membersError ? <RetryAlert title="Couldn't load members" description={state.membersError.message} onRetry={actions.loadMembers} isRetrying={state.isMembersLoading} /> : state.isMembersLoading ? <Paragraph.sm className="py-8 text-center text-tertiary">Loading members…</Paragraph.sm> : state.linkedUsers.length ? <DividedList>{state.linkedUsers.map(renderUser)}</DividedList> : <Paragraph.sm className="py-8 text-center text-tertiary">No linked members found.</Paragraph.sm>}
+              {state.membersError && <RetryAlert title="Couldn't load members" description={state.membersError.message} onRetry={actions.loadMembers} isRetrying={state.isMembersLoading} />}
+              {state.linkedUsers.length > 0 ? <DividedList>{state.linkedUsers.map(renderUser)}</DividedList> : state.membersError ? null : state.isMembersLoading ? <Paragraph.sm className="py-8 text-center text-tertiary">Loading members…</Paragraph.sm> : <Paragraph.sm className="py-8 text-center text-tertiary">No linked members found.</Paragraph.sm>}
             </Section.Body>
           </Section>
         </Page.Content>

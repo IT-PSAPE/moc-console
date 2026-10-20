@@ -4,7 +4,7 @@ import { useWorkspaceResource } from "@/hooks/use-workspace-resource"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
 import { getErrorMessage } from "@moc/utils/get-error-message"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 
 const emptyRecords: RequestLinkedRecord[] = []
 
@@ -13,10 +13,8 @@ export function useRequestLinkedRecords(requestId: string, enabled = true) {
   const { toast } = useFeedback()
   const [isSaving, setIsSaving] = useState(false)
   const busy = useRef(false)
-  const resource = useWorkspaceResource({ emptyValue: emptyRecords, resource: "request-linked-records", fetcher: fetchRequestLinkedRecords, workspaceId: currentWorkspaceId })
+  const resource = useWorkspaceResource({ emptyValue: emptyRecords, resource: "request-linked-records", fetcher: fetchRequestLinkedRecords, workspaceId: currentWorkspaceId, enabled })
   const { data, load, setData } = resource
-
-  useEffect(() => { if (enabled) void load(true) }, [enabled, load])
 
   const change = useCallback(async (record: RequestLinkedRecord, linkedRequestId: string | null) => {
     if (!currentWorkspaceId || !role?.can_update || busy.current) return

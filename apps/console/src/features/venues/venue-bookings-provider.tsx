@@ -41,7 +41,7 @@ function mergeBookings(previous: Record<string, VenueBooking>, bookings: VenueBo
 
 export function VenueBookingsProvider({ children }: { children: ReactNode }) {
     const { currentWorkspaceId } = useWorkspace()
-    const { data, error, isLoading, isInitialLoading, load, updateData } = useWorkspaceResource({ emptyValue: emptyBookings, fetcher: fetchVenueBookings, resource: 'venue-bookings', workspaceId: currentWorkspaceId })
+    const { data, error, isLoading, isInitialLoading, load, updateData } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyBookings, fetcher: fetchVenueBookings, resource: 'venue-bookings', workspaceId: currentWorkspaceId })
     const [detailBookingsByWorkspace, setDetailBookingsByWorkspace] = useState<Record<string, Record<string, VenueBooking>>>({})
 
     const bookingsById = useMemo(() => {

@@ -51,10 +51,10 @@ const emptyMeetings: ZoomMeeting[] = []
 
 export function StreamsProvider({ children }: { children: ReactNode }) {
   const { currentWorkspaceId } = useWorkspace()
-  const { data: streams, error: streamsError, isLoading: isLoadingStreams, isInitialLoading: isInitialLoadingStreams, load: loadStreamsResource, setData: setStreams, updateData: updateStreams } = useWorkspaceResource({ emptyValue: emptyStreams, fetcher: fetchStreams, resource: "streams", workspaceId: currentWorkspaceId })
-  const { data: youtubeConnection, error: youtubeConnectionError, isLoading: isLoadingConnection, isInitialLoading: isInitialLoadingConnection, load: loadYouTubeConnectionResource, setData: setYouTubeConnection } = useWorkspaceResource({ emptyValue: null, fetcher: fetchYouTubeConnection, resource: "youtube-connection", workspaceId: currentWorkspaceId })
-  const { data: zoomConnection, error: zoomConnectionError, isLoading: isLoadingZoomConnection, isInitialLoading: isInitialLoadingZoomConnection, load: loadZoomConnectionResource, setData: setZoomConnection } = useWorkspaceResource({ emptyValue: null, fetcher: fetchZoomConnection, resource: "zoom-connection", workspaceId: currentWorkspaceId })
-  const { data: zoomMeetings, error: zoomMeetingsError, isLoading: isLoadingZoomMeetings, isInitialLoading: isInitialLoadingZoomMeetings, load: loadZoomMeetingsResource, setData: setZoomMeetings, updateData: updateZoomMeetings } = useWorkspaceResource({ emptyValue: emptyMeetings, fetcher: fetchZoomMeetings, resource: "zoom-meetings", workspaceId: currentWorkspaceId })
+  const { data: streams, error: streamsError, isLoading: isLoadingStreams, isInitialLoading: isInitialLoadingStreams, load: loadStreamsResource, setData: setStreams, updateData: updateStreams, setDetailData: setStreamDetail } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyStreams, fetcher: fetchStreams, resource: "streams", workspaceId: currentWorkspaceId })
+  const { data: youtubeConnection, error: youtubeConnectionError, isLoading: isLoadingConnection, isInitialLoading: isInitialLoadingConnection, load: loadYouTubeConnectionResource, setData: setYouTubeConnection } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: null, fetcher: fetchYouTubeConnection, resource: "youtube-connection", workspaceId: currentWorkspaceId })
+  const { data: zoomConnection, error: zoomConnectionError, isLoading: isLoadingZoomConnection, isInitialLoading: isInitialLoadingZoomConnection, load: loadZoomConnectionResource, setData: setZoomConnection } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: null, fetcher: fetchZoomConnection, resource: "zoom-connection", workspaceId: currentWorkspaceId })
+  const { data: zoomMeetings, error: zoomMeetingsError, isLoading: isLoadingZoomMeetings, isInitialLoading: isInitialLoadingZoomMeetings, load: loadZoomMeetingsResource, setData: setZoomMeetings, updateData: updateZoomMeetings, setDetailData: setMeetingDetail } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyMeetings, fetcher: fetchZoomMeetings, resource: "zoom-meetings", workspaceId: currentWorkspaceId })
 
   const syncStream = useCallback((updated: Stream) => {
     updateStreams((current) => {
@@ -62,11 +62,13 @@ export function StreamsProvider({ children }: { children: ReactNode }) {
       if (exists) return current.map((stream) => stream.id === updated.id ? updated : stream)
       return [updated, ...current]
     })
-  }, [updateStreams])
+    setStreamDetail(updated.id, updated)
+  }, [setStreamDetail, updateStreams])
 
   const removeStream = useCallback((id: string) => {
     updateStreams((current) => current.filter((stream) => stream.id !== id))
-  }, [updateStreams])
+    setStreamDetail(id, null)
+  }, [setStreamDetail, updateStreams])
 
   const syncMeeting = useCallback((updated: ZoomMeeting) => {
     updateZoomMeetings((current) => {
@@ -74,11 +76,13 @@ export function StreamsProvider({ children }: { children: ReactNode }) {
       if (exists) return current.map((meeting) => meeting.id === updated.id ? updated : meeting)
       return [updated, ...current]
     })
-  }, [updateZoomMeetings])
+    setMeetingDetail(updated.id, updated)
+  }, [setMeetingDetail, updateZoomMeetings])
 
   const removeMeeting = useCallback((id: string) => {
     updateZoomMeetings((current) => current.filter((meeting) => meeting.id !== id))
-  }, [updateZoomMeetings])
+    setMeetingDetail(id, null)
+  }, [setMeetingDetail, updateZoomMeetings])
 
   const loadStreams = useCallback(async () => {
     await loadStreamsResource()

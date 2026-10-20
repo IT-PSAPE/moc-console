@@ -49,7 +49,7 @@ export function useSchedule() {
   const fetcher = useCallback((workspaceId: string) => fetchScheduleData(workspaceId), []);
   const { data, error: resourceError, isLoading, isInitialLoading, load } = useWorkspaceResource({ emptyValue: emptyData, fetcher, resource: "work-calendar", workspaceId: currentWorkspaceId });
   useEffect(() => {
-    void load(true);
+    void load();
     void loadCategories();
   }, [load, loadCategories]);
   const allEvents = useMemo(() => getScheduleEvents(data, displayTimezone), [data, displayTimezone]);

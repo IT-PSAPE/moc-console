@@ -169,6 +169,43 @@ Inside a frontend app:
 - `src/lib` for app infrastructure such as the SDK singleton and auth context
 - `docs` for project documentation
 
+## Server data caching
+
+Browser apps use TanStack Query with a separate in-memory QueryClient per app.
+The shared `@moc/query` factory retains inactive queries for 30 minutes, with
+no automatic retries for reads or mutations. Console policies live in
+`apps/console/src/lib/console-query-policy.ts` and apply to both observed reads
+and imperative cache-aware loads.
+
+| Data | Freshness | Automatic refresh |
+| --- | --- | --- |
+| Telegram groups, member connections, event routes, Messages | 30 seconds | Every 30 seconds while their page/drawer is mounted and visible |
+| Request discussions | 1 minute | Every 15 seconds while open and visible |
+| Requests, checklists, bookings, calendar, streams, linked records | 1 minute | When stale on navigation, focus, or network reconnect |
+| Settings, preferences, categories, venues, member types, YouTube playlists | 5 minutes | When stale on navigation, focus, or reconnect |
+| YouTube categories | 1 hour | When stale on navigation, focus, or reconnect |
+| Public request catalogs | 5 minutes | When stale on navigation, focus, or reconnect |
+| Public venue availability | 15 seconds | Every 15 seconds while visible, plus booking mutation invalidation |
+| Public broadcast player | 1 minute | Revision events, visibility return, and 60-second fallback refresh by stable ID |
+
+Returning to a fresh query does not make another request. Returning to a stale
+query displays cached data immediately while refreshing in the background.
+Only reads without cached data block the page. Background failures preserve
+the last successful data; `refreshError` is separate from initial-load errors.
+Polling pauses in hidden tabs and ends when the page/drawer unmounts. Global
+collection providers do not poll just because a page was visited previously.
+
+Console features use `useWorkspaceResource` and `useWorkspaceDetail`. Keys include
+the workspace and resource (plus the record ID for details); user preferences
+and workspace directories include the user ID. Resource writes cancel stale
+reads, update all observers, and refresh affected detail queries. Related mutation
+invalidation refreshes calendar and linked-record aggregates after request/booking
+changes, and Messages after group/member changes. Explicit retry/refresh actions
+bypass freshness. Sign-out and
+account replacement clear the entire console QueryClient. Keep form drafts and
+interaction state local; authentication and bearer-code tracking stay fresh
+rather than being reused from a shared cache.
+
 ## Data Model Documentation
 
 Two documentation files describe the current codebase schema and expected values:

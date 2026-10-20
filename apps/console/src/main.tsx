@@ -1,3 +1,5 @@
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClient } from './lib/query-client'
 import './lib/oauth-interceptors'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -14,13 +16,15 @@ void removeLegacyServiceWorker().catch(() => undefined)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <OverlayProvider>
-        <FeedbackProvider>
-          <ConnectivityMonitor />
-          <App />
-        </FeedbackProvider>
-      </OverlayProvider>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <OverlayProvider>
+          <FeedbackProvider>
+            <ConnectivityMonitor />
+            <App />
+          </FeedbackProvider>
+        </OverlayProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   </StrictMode>,
 )

@@ -4,6 +4,10 @@ import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 import type { NotifyDestination } from "@moc/types/streams";
 import type { LatencyPreference, Stream, StreamPreset, StreamPrivacy, YouTubeCategory, YouTubePlaylist } from "@moc/types/streams/stream";
 import { ProviderRequestError } from "@/lib/provider-request-error";
+import { useWorkspace } from "@/lib/workspace-context";
+import { useAuth } from "@/lib/auth-context";
+import { useWorkspaceResource } from "@/hooks/use-workspace-resource";
+import { useStreams } from "./streams-provider";
 import { fetchImageBlob, UNFETCHABLE_THUMBNAIL_MESSAGE } from "@moc/utils/blob-fetch";
 import { formatUtcIsoForDateTimeInput, parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time";
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
@@ -76,6 +80,9 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset, in
   const isEditing = Boolean(stream);
   const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const { toast } = useFeedback();
+  const { currentWorkspaceId } = useWorkspace();
+  const { user } = useAuth();
+  const { state: { youtubeConnection } } = useStreams();
   const seed = stream ?? preset ?? null;
   const seedScheduledStart = stream ? stream.scheduledStartTime : preset?.scheduledStartTime ?? null;
   const presetThumbnailUrl = !isEditing ? preset?.thumbnailUrl ?? null : null;
@@ -110,8 +117,11 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset, in
   const [enableEmbed, setEnableEmbed] = useState(seed?.enableEmbed ?? true);
   const [enableAutoStart, setEnableAutoStart] = useState(seed?.enableAutoStart ?? false);
   const [enableAutoStop, setEnableAutoStop] = useState(seed?.enableAutoStop ?? true);
-  const [categories, setCategories] = useState<YouTubeCategory[]>([]);
-  const [playlists, setPlaylists] = useState<YouTubePlaylist[]>([]);
+  const youtubeOwner = `${user?.id ?? "anonymous"}:${youtubeConnection?.channelId ?? "unconnected"}`;
+  const categoriesResource = useWorkspaceResource({ emptyValue: [] as YouTubeCategory[], fetcher: fetchCategories, resource: `youtube-categories:${youtubeOwner}:US`, workspaceId: currentWorkspaceId, enabled: open });
+  const playlistsResource = useWorkspaceResource({ emptyValue: [] as YouTubePlaylist[], fetcher: fetchPlaylists, resource: `youtube-playlists:${youtubeOwner}`, workspaceId: currentWorkspaceId, enabled: open });
+  const categories = categoriesResource.data;
+  const playlists = playlistsResource.data;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [discardChangesOpen, setDiscardChangesOpen] = useState(false);
@@ -147,25 +157,13 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset, in
   }
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || categoriesResource.isLoading || playlistsResource.isLoading) return;
     const failures: string[] = [];
     const errors: unknown[] = [];
-    void Promise.all([
-      fetchCategories().then(setCategories).catch((error: unknown) => {
-        console.error("Failed to load YouTube categories", error);
-        failures.push("categories");
-        errors.push(error);
-      }),
-      fetchPlaylists().then(setPlaylists).catch((error: unknown) => {
-        console.error("Failed to load YouTube playlists", error);
-        failures.push("playlists");
-        errors.push(error);
-      }),
-    ]).then(() => {
-      if (failures.length === 0) return;
-      toast({ ...streamOptionsFailureToast(failures, errors), variant: "error" });
-    });
-  }, [open, toast]);
+    if (categoriesResource.error) { failures.push("categories"); errors.push(categoriesResource.error); }
+    if (playlistsResource.error) { failures.push("playlists"); errors.push(playlistsResource.error); }
+    if (failures.length) toast({ ...streamOptionsFailureToast(failures, errors), variant: "error" });
+  }, [categoriesResource.error, categoriesResource.isLoading, open, playlistsResource.error, playlistsResource.isLoading, toast]);
 
   useEffect(() => {
     if (!open) return;

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useBlocker } from 'react-router-dom'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { useWorkspace } from '@/lib/workspace-context'
 import { DEFAULT_TEMPLATES, TEMPLATE_TOKENS, validateTemplate, type MessageType } from '@moc/notifications'
-import { deleteNotificationTemplate, fetchNotificationTemplates, upsertNotificationTemplate } from '@/data/notification-templates'
+import { deleteNotificationTemplate, fetchNotificationTemplates, upsertNotificationTemplate, type NotificationTemplate } from '@/data/notification-templates'
+import { useWorkspaceResource } from '@/hooks/use-workspace-resource'
 import { messageTypeMeta } from '../meta'
 import { templateHasContent } from '@/lib/template-editor-html'
 import { useTemplateBodyEditor } from '@/hooks/use-template-body-editor'
@@ -13,54 +14,30 @@ export function useMessageTemplateEditor(messageType: MessageType) {
     const { currentWorkspaceId } = useWorkspace()
     const templateMeta = messageTypeMeta(messageType)
     const defaultBody = DEFAULT_TEMPLATES[messageType]
-    const [isLoading, setIsLoading] = useState(true)
-    const [hasCustom, setHasCustom] = useState(false)
-    const [savedBody, setSavedBody] = useState<string | null>(null)
-    const [body, setBody] = useState(defaultBody)
+    const resource = useWorkspaceResource({ emptyValue: [] as NotificationTemplate[], fetcher: fetchNotificationTemplates, resource: 'notification-templates', workspaceId: currentWorkspaceId })
+    const updateResource = resource.updateData
+    const loadResource = resource.load
+    const [draft, setDraft] = useState<{ workspaceId: string | null; messageType: MessageType; body: string } | null>(null)
+    const savedTemplate = resource.data.find((template) => template.messageType === messageType)
+    const savedBody = savedTemplate?.body ?? null
+    const hasCustom = Boolean(savedTemplate)
+    const hasCurrentDraft = draft?.workspaceId === currentWorkspaceId && draft.messageType === messageType
+    const body = hasCurrentDraft ? draft.body : savedBody ?? defaultBody
     const [saving, setSaving] = useState(false)
-    const [loadedWorkspaceId, setLoadedWorkspaceId] = useState<string | null>(null)
-    const [loadError, setLoadError] = useState<{ workspaceId: string | null; error: Error } | null>(null)
-    const loadRequestRef = useRef(0)
     const variables = TEMPLATE_TOKENS[messageType].map(token => token.name)
-    const bodyEditor = useTemplateBodyEditor(body, setBody)
-
-    const load = useCallback(async () => {
-        const requestId = ++loadRequestRef.current
-        if (!currentWorkspaceId) {
-            setLoadError({ workspaceId: null, error: new Error('Select a workspace before editing message templates.') })
-            setIsLoading(false)
-            return
-        }
-        const requestedWorkspaceId = currentWorkspaceId
-        setIsLoading(true)
-        setLoadError(null)
-        try {
-            const rows = await fetchNotificationTemplates(requestedWorkspaceId)
-            if (loadRequestRef.current === requestId) {
-                const row = rows.find((template) => template.messageType === messageType)
-                setHasCustom(Boolean(row))
-                setSavedBody(row?.body ?? null)
-                setBody(row?.body ?? defaultBody)
-                setLoadedWorkspaceId(requestedWorkspaceId)
-            }
-        } catch (reason: unknown) {
-            if (loadRequestRef.current === requestId) {
-                const error = reason instanceof Error ? reason : new Error('Could not load this message template.')
-                setLoadError({ workspaceId: requestedWorkspaceId, error })
-            }
-        } finally {
-            if (loadRequestRef.current === requestId) setIsLoading(false)
-        }
-    }, [currentWorkspaceId, defaultBody, messageType])
-
-    useEffect(() => { void load() }, [load])
+    const updateBody = useCallback((nextBody: string) => {
+        setDraft({ workspaceId: currentWorkspaceId, messageType, body: nextBody })
+    }, [currentWorkspaceId, messageType])
+    const bodyEditor = useTemplateBodyEditor(body, updateBody)
+    const isLoading = resource.isLoading
+    const loadError = currentWorkspaceId ? (resource.hasData ? null : resource.error) : new Error('Select a workspace before editing message templates.')
 
     const unknown = useMemo(() => validateTemplate(messageType, body), [body, messageType])
     const { editorHtml, unsupportedTags } = bodyEditor.state
     const unknownMessage = unknown.length ? `Unknown placeholder${unknown.length > 1 ? 's' : ''} for this message: ${unknown.map(name => `{{${name}}}`).join(', ')}` : ''
     const dirty = body !== (savedBody ?? defaultBody)
-    const currentLoadError = loadError?.workspaceId === currentWorkspaceId ? loadError.error : null
-    const isReady = currentWorkspaceId !== null && loadedWorkspaceId === currentWorkspaceId && currentLoadError === null && !isLoading
+    const currentLoadError = loadError
+    const isReady = currentWorkspaceId !== null && currentLoadError === null && !isLoading
     const canSave = isReady && dirty && unknown.length === 0 && templateHasContent(body) && !saving
     const blocker = useBlocker(dirty)
 
@@ -74,12 +51,12 @@ export function useMessageTemplateEditor(messageType: MessageType) {
     }, [dirty])
 
     const save = useCallback(async () => {
-        if (!currentWorkspaceId || loadedWorkspaceId !== currentWorkspaceId || currentLoadError || isLoading) return false
+        if (!currentWorkspaceId || currentLoadError || isLoading) return false
         setSaving(true)
         try {
-            await upsertNotificationTemplate({ workspaceId: currentWorkspaceId, scope: templateMeta.scope, messageType, body })
-            setSavedBody(body)
-            setHasCustom(true)
+            const savedTemplate = await upsertNotificationTemplate({ workspaceId: currentWorkspaceId, scope: templateMeta.scope, messageType, body })
+            updateResource((rows) => [...rows.filter((template) => template.messageType !== messageType), savedTemplate])
+            setDraft(null)
             toast({ title: 'Template saved', variant: 'success' })
             return true
         } catch (error) {
@@ -88,40 +65,41 @@ export function useMessageTemplateEditor(messageType: MessageType) {
         } finally {
             setSaving(false)
         }
-    }, [body, currentLoadError, currentWorkspaceId, isLoading, loadedWorkspaceId, messageType, templateMeta.scope, toast])
+    }, [body, currentLoadError, currentWorkspaceId, isLoading, messageType, templateMeta.scope, toast, updateResource])
 
     const saveAndProceed = useCallback(async () => {
         if (await save() && blocker.state === 'blocked') blocker.proceed()
     }, [blocker, save])
 
     const discardAndProceed = useCallback(() => {
-        setBody(savedBody ?? defaultBody)
+        setDraft(null)
         if (blocker.state === 'blocked') blocker.proceed()
-    }, [blocker, defaultBody, savedBody])
+    }, [blocker])
 
     const cancelNavigation = useCallback(() => {
         if (blocker.state === 'blocked') blocker.reset()
     }, [blocker])
 
     const restoreDefault = useCallback(async () => {
-        if (!currentWorkspaceId || loadedWorkspaceId !== currentWorkspaceId || currentLoadError || isLoading) return
+        if (!currentWorkspaceId || currentLoadError || isLoading) return
         setSaving(true)
         try {
             await deleteNotificationTemplate({ workspaceId: currentWorkspaceId, scope: templateMeta.scope, messageType })
-            setSavedBody(null)
-            setHasCustom(false)
-            setBody(defaultBody)
+            updateResource((rows) => rows.filter((template) => template.messageType !== messageType))
+            setDraft(null)
             toast({ title: 'Default restored', variant: 'success' })
         } catch (error) {
             toast({ title: "Couldn't restore default", description: error instanceof Error ? error.message : 'Unknown error', variant: 'error' })
         } finally {
             setSaving(false)
         }
-    }, [currentLoadError, currentWorkspaceId, defaultBody, isLoading, loadedWorkspaceId, messageType, templateMeta.scope, toast])
+    }, [currentLoadError, currentWorkspaceId, isLoading, messageType, templateMeta.scope, toast, updateResource])
+
+    const retryLoad = useCallback(() => loadResource(true), [loadResource])
 
     return {
         state: { isLoading, loadError: currentLoadError, hasCustom, body, saving, unknown, unknownMessage, editorHtml, unsupportedTags, dirty, canSave, navigationBlocked: blocker.state === 'blocked' },
-        actions: { ...bodyEditor.actions, save, saveAndProceed, discardAndProceed, cancelNavigation, restoreDefault, retryLoad: load },
+        actions: { ...bodyEditor.actions, save, saveAndProceed, discardAndProceed, cancelNavigation, restoreDefault, retryLoad },
         templateMeta,
         textareaRef: bodyEditor.meta.textareaRef,
         variables,

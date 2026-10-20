@@ -37,8 +37,8 @@ const emptyBookings: Booking[] = [];
 
 export function EquipmentProvider({ children }: { children: ReactNode }) {
   const { currentWorkspaceId } = useWorkspace();
-  const { data: equipment, error: equipmentError, isLoading: isLoadingEquipment, isInitialLoading: isInitialLoadingEquipment, load: loadEquipmentResource, updateData: updateEquipment } = useWorkspaceResource({ emptyValue: emptyEquipment, fetcher: fetchEquipment, resource: "equipment", workspaceId: currentWorkspaceId });
-  const { data: bookings, error: bookingsError, isLoading: isLoadingBookings, isInitialLoading: isInitialLoadingBookings, load: loadBookingsResource, updateData: updateBookings } = useWorkspaceResource({ emptyValue: emptyBookings, fetcher: fetchBookings, resource: "bookings", workspaceId: currentWorkspaceId });
+  const { data: equipment, error: equipmentError, isLoading: isLoadingEquipment, isInitialLoading: isInitialLoadingEquipment, load: loadEquipmentResource, updateData: updateEquipment } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyEquipment, fetcher: fetchEquipment, resource: "equipment", workspaceId: currentWorkspaceId });
+  const { data: bookings, error: bookingsError, isLoading: isLoadingBookings, isInitialLoading: isInitialLoadingBookings, load: loadBookingsResource, updateData: updateBookings, setDetailData: setBookingDetail } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyBookings, fetcher: fetchBookings, resource: "bookings", workspaceId: currentWorkspaceId });
 
   const addEquipment = useCallback((newItem: Equipment) => {
     updateEquipment((current) => [newItem, ...current]);
@@ -58,11 +58,13 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
       if (!exists) return [updated, ...current];
       return current.map((booking) => booking.id === updated.id ? updated : booking);
     });
-  }, [updateBookings]);
+    setBookingDetail(updated.id, updated);
+  }, [setBookingDetail, updateBookings]);
 
   const removeBooking = useCallback((id: string) => {
     updateBookings((current) => current.filter((booking) => booking.id !== id));
-  }, [updateBookings]);
+    setBookingDetail(id, null);
+  }, [setBookingDetail, updateBookings]);
 
   const removeBookingItemsByEquipmentId = useCallback((equipmentId: string) => {
     updateBookings((current) =>

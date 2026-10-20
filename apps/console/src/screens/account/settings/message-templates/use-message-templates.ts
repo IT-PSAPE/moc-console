@@ -1,52 +1,31 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
+import { useCallback, useState } from 'react'
 import { useWorkspace } from '@/lib/workspace-context'
-import { fetchNotificationTemplates } from '@/data/notification-templates'
+import { fetchNotificationTemplates, type NotificationTemplate } from '@/data/notification-templates'
 import type { MessageType } from '@moc/notifications'
+import { useWorkspaceResource } from '@/hooks/use-workspace-resource'
 import { useSettingsResourceLoading } from '../settings-loading-context'
 
+const emptyTemplates: NotificationTemplate[] = []
+
 export function useMessageTemplates() {
-    const { toast } = useFeedback()
-    const { currentWorkspaceId } = useWorkspace()
-    const [loadedWorkspaceId, setLoadedWorkspaceId] = useState<string | null>(null)
-    const [customised, setCustomised] = useState<Set<MessageType>>(new Set())
-    const [loadError, setLoadError] = useState<Error | null>(null)
-    const [isRetrying, setIsRetrying] = useState(false)
-    const loadRequestRef = useRef(0)
+  const { currentWorkspaceId } = useWorkspace()
+  const resource = useWorkspaceResource({ emptyValue: emptyTemplates, fetcher: fetchNotificationTemplates, resource: 'notification-templates', workspaceId: currentWorkspaceId })
+  const loadResource = resource.load
+  const [isRetrying, setIsRetrying] = useState(false)
+  const isLoading = resource.isInitialLoading
+  useSettingsResourceLoading('message-templates', isLoading)
 
-    const load = useCallback(async () => {
-        const requestId = ++loadRequestRef.current
-        if (!currentWorkspaceId) return
-        const requestedWorkspaceId = currentWorkspaceId
-        setLoadError(null)
-        try {
-            const rows = await fetchNotificationTemplates(requestedWorkspaceId)
-            if (loadRequestRef.current === requestId) setCustomised(new Set(rows.map((row) => row.messageType)))
-        } catch (error) {
-            const nextError = error instanceof Error ? error : new Error('Unknown error')
-            if (loadRequestRef.current === requestId) {
-                setLoadError(nextError)
-                toast({ title: "Couldn't load message templates", description: nextError.message, variant: 'error' })
-            }
-        } finally {
-            if (loadRequestRef.current === requestId) {
-                setLoadedWorkspaceId(requestedWorkspaceId)
-                setIsRetrying(false)
-            }
-        }
-    }, [currentWorkspaceId, toast])
+  const retryLoad = useCallback(async () => {
+    setIsRetrying(true)
+    try {
+      await loadResource(true)
+    } finally {
+      setIsRetrying(false)
+    }
+  }, [loadResource])
+  const customised = new Set<MessageType>(resource.data.map((row) => row.messageType))
 
-    useEffect(() => {
-        void load()
-    }, [load])
+  const loadError = resource.hasData ? null : resource.error
 
-    const isLoading = currentWorkspaceId !== null && loadedWorkspaceId !== currentWorkspaceId
-    useSettingsResourceLoading('message-templates', isLoading)
-
-    const retryLoad = useCallback(async () => {
-        setIsRetrying(true)
-        await load()
-    }, [load])
-
-    return { state: { isLoading, customised, hasWorkspace: currentWorkspaceId !== null, loadError, isRetrying }, actions: { retryLoad } }
+  return { state: { isLoading, customised, hasWorkspace: currentWorkspaceId !== null, loadError, isRetrying }, actions: { retryLoad } }
 }

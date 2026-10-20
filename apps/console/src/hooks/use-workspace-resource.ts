@@ -1,107 +1,70 @@
-import { getCurrentWorkspaceGeneration } from "@/data/current-workspace";
-import { getWorkspaceResourceState, getWorkspaceResourceVersion, loadWorkspaceResource, setWorkspaceResourceData, updateWorkspaceResourceData } from "@/data/workspace-resource-cache";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getCurrentWorkspaceGeneration } from "@/data/current-workspace"
+import { getWorkspaceResourceState, invalidateWorkspaceResource, loadWorkspaceResource, setWorkspaceDetailData, setWorkspaceResourceData, updateWorkspaceResourceData, workspaceResourceKey } from "@/data/workspace-resource-cache"
+import { useQuery } from "@tanstack/react-query"
+import { consoleQueryPolicy } from "@/lib/console-query-policy"
+import { useCallback } from "react"
 
 type WorkspaceResourceOptions<T> = {
-  emptyValue: T;
-  fetcher: (workspaceId: string) => Promise<T>;
-  resource: string;
-  workspaceId: string | null;
-};
-
-type WorkspaceSnapshot = {
-  generation: number;
-  id: string | null;
-};
-
-function isSameWorkspace(left: WorkspaceSnapshot, right: WorkspaceSnapshot) {
-  return left.id === right.id && left.generation === right.generation;
+  emptyValue: T
+  fetcher: (workspaceId: string) => Promise<T>
+  resource: string
+  workspaceId: string | null
+  enabled?: boolean
+  deferInitialLoad?: boolean
 }
 
-function getSnapshotKey({ generation, id }: WorkspaceSnapshot, resource: string) {
-  return `${resource}:${id ?? "none"}:${generation}`;
-}
+export function useWorkspaceResource<T>({ emptyValue, fetcher, resource, workspaceId, enabled = true, deferInitialLoad = false }: WorkspaceResourceOptions<T>) {
+  const generation = getCurrentWorkspaceGeneration()
+  const query = useQuery({
+    ...consoleQueryPolicy(resource),
+    queryKey: workspaceResourceKey(workspaceId, resource),
+    queryFn: () => {
+      if (!workspaceId) throw new Error("Select a workspace")
+      return fetcher(workspaceId)
+    },
+    enabled: (current) => Boolean(workspaceId) && enabled && (!deferInitialLoad || current.state.data !== undefined),
+    retryOnMount: false,
+  })
 
-export function useWorkspaceResource<T>({ emptyValue, fetcher, resource, workspaceId }: WorkspaceResourceOptions<T>) {
-  const generation = getCurrentWorkspaceGeneration();
-  const snapshot = { id: workspaceId, generation };
-  const snapshotKey = getSnapshotKey(snapshot, resource);
-  const initial = getWorkspaceResourceState<T>(workspaceId, resource);
-  const initialLoadPending = Boolean(workspaceId && !initial.isLoaded && !initial.error);
-  const [data, setDataState] = useState<T>(initial.data ?? emptyValue);
-  const [error, setError] = useState<Error | null>(initial.error);
-  const [isLoading, setIsLoading] = useState(initial.isLoading || initialLoadPending);
-  const [stateSnapshotKey, setStateSnapshotKey] = useState(snapshotKey);
-  const currentSnapshotRef = useRef(snapshot);
-  const emptyValueRef = useRef(emptyValue);
-  currentSnapshotRef.current = snapshot;
-  emptyValueRef.current = emptyValue;
-
-  useEffect(() => {
-    const cached = getWorkspaceResourceState<T>(workspaceId, resource);
-    setDataState(cached.data ?? emptyValueRef.current);
-    setError(cached.error);
-    setIsLoading(cached.isLoading || Boolean(workspaceId && !cached.isLoaded && !cached.error));
-    setStateSnapshotKey(snapshotKey);
-  }, [generation, resource, snapshotKey, workspaceId]);
-
-  const load = useCallback(async (force = false) => {
-    if (!workspaceId) return;
-
-    const requestedSnapshot = { id: workspaceId, generation };
-    const cached = getWorkspaceResourceState<T>(workspaceId, resource);
-    const requestedVersion = getWorkspaceResourceVersion(workspaceId, resource);
-    setIsLoading(cached.isLoading || !cached.isLoaded || force);
-    setError(null);
-
+  const load = useCallback(async (force = false): Promise<void> => {
+    if (!workspaceId || getCurrentWorkspaceGeneration() !== generation) return
     try {
-      const next = await loadWorkspaceResource(workspaceId, resource, fetcher, force);
-      if (isSameWorkspace(currentSnapshotRef.current, requestedSnapshot) && getWorkspaceResourceVersion(workspaceId, resource) === requestedVersion) {
-        setDataState(next);
-        setError(null);
-        setStateSnapshotKey(getSnapshotKey(requestedSnapshot, resource));
-      }
-    } catch (reason: unknown) {
-      const nextError = reason instanceof Error ? reason : new Error("Failed to load workspace data");
-      if (isSameWorkspace(currentSnapshotRef.current, requestedSnapshot) && getWorkspaceResourceVersion(workspaceId, resource) === requestedVersion) {
-        setError(nextError);
-        setStateSnapshotKey(getSnapshotKey(requestedSnapshot, resource));
-      }
-    } finally {
-      if (isSameWorkspace(currentSnapshotRef.current, requestedSnapshot) && getWorkspaceResourceVersion(workspaceId, resource) === requestedVersion) {
-        setIsLoading(false);
-      }
+      await loadWorkspaceResource(workspaceId, resource, fetcher, force)
+    } catch {
+      // The observed query owns the error and keeps any previously loaded data visible.
     }
-  }, [fetcher, generation, resource, workspaceId]);
+  }, [fetcher, generation, resource, workspaceId])
 
-  const setData = useCallback((next: T) => {
-    if (!workspaceId) return;
+  const setData = useCallback((next: T): void => {
+    if (!workspaceId || getCurrentWorkspaceGeneration() !== generation) return
+    setWorkspaceResourceData(workspaceId, resource, next)
+  }, [generation, resource, workspaceId])
 
-    setWorkspaceResourceData(workspaceId, resource, next);
-    setDataState(next);
-    setError(null);
-    setIsLoading(false);
-    setStateSnapshotKey(snapshotKey);
-  }, [resource, snapshotKey, workspaceId]);
+  const updateData = useCallback((updater: (current: T) => T): void => {
+    if (!workspaceId || getCurrentWorkspaceGeneration() !== generation) return
+    if (getWorkspaceResourceState<T>(workspaceId, resource).data === undefined) {
+      invalidateWorkspaceResource(workspaceId, resource)
+      return
+    }
+    updateWorkspaceResourceData<T>(workspaceId, resource, (current) => current === undefined ? undefined : updater(current))
+  }, [generation, resource, workspaceId])
 
-  const updateData = useCallback((updater: (current: T) => T) => {
-    if (!workspaceId) return;
+  const setDetailData = useCallback(<Detail,>(id: string, data: Detail | null): void => {
+    if (!workspaceId || getCurrentWorkspaceGeneration() !== generation) return
+    setWorkspaceDetailData(workspaceId, resource, id, data)
+  }, [generation, resource, workspaceId])
 
-    let next = emptyValueRef.current;
-    updateWorkspaceResourceData<T>(workspaceId, resource, (current) => {
-      next = updater(current ?? emptyValueRef.current);
-      return next;
-    });
-    setDataState(next);
-    setError(null);
-    setIsLoading(false);
-    setStateSnapshotKey(snapshotKey);
-  }, [resource, snapshotKey, workspaceId]);
-
-  const stateIsCurrent = stateSnapshotKey === snapshotKey;
-  const visibleData = stateIsCurrent ? data : initial.data ?? emptyValue;
-  const visibleError = stateIsCurrent ? error : initial.error;
-  const visibleLoading = stateIsCurrent ? isLoading : initial.isLoading || initialLoadPending;
-
-  return useMemo(() => ({ data: visibleData, error: visibleError, isLoading: visibleLoading, isInitialLoading: initialLoadPending, load, setData, updateData }), [initialLoadPending, load, setData, updateData, visibleData, visibleError, visibleLoading]);
+  return {
+    data: query.data ?? emptyValue,
+    error: query.data === undefined ? query.error : null,
+    refreshError: query.data !== undefined ? query.error : null,
+    hasData: query.data !== undefined,
+    isLoading: Boolean(workspaceId) && enabled && query.isPending,
+    isInitialLoading: Boolean(workspaceId) && enabled && query.isPending,
+    isFetching: query.isFetching,
+    load,
+    setData,
+    updateData,
+    setDetailData,
+  }
 }

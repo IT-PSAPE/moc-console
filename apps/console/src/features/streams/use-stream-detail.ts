@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteLocalStreamRecord, deleteStream, updateStream } from "@/data/mutate-streams";
 import { fetchStreamById } from "@/data/fetch-streams";
@@ -15,7 +15,7 @@ export function useStreamDetail(id: string | undefined) {
   const { toast } = useFeedback();
   const { currentWorkspaceId, role } = useWorkspace();
   const { state: { streams }, actions: { syncStream, removeStream } } = useStreams();
-  const detail = useWorkspaceDetail({ fetcher: fetchStreamById, id, workspaceId: currentWorkspaceId });
+  const detail = useWorkspaceDetail({ resource: "streams", fetcher: fetchStreamById, id, workspaceId: currentWorkspaceId });
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -23,17 +23,13 @@ export function useStreamDetail(id: string | undefined) {
   const [isRemovingLocal, setIsRemovingLocal] = useState(false);
   const copied = useCopyFeedback<"url" | "key" | "ingestion">();
   const cachedStream = streams.find((item) => item.id === id) ?? null;
-  const stream = cachedStream ?? detail.data;
+  const stream = detail.data ?? cachedStream;
   const canCleanupLocal = Boolean(
     stream
     && (stream.streamStatus === "complete"
       || stream.actualEndTime
       || (stream.scheduledStartTime && new Date(stream.scheduledStartTime).getTime() < Date.now())),
   );
-
-  useEffect(() => {
-    if (detail.data) syncStream(detail.data);
-  }, [detail.data, syncStream]);
 
   const update = useCallback(async (params: StreamFormData) => {
     if (!stream) return;

@@ -8,15 +8,12 @@ import { mutateScheduledMessage } from '@/features/scheduled-messages/services/s
 
 export function useMembersScreen() {
   const {
-    state: { users, pendingUsers, roles, isLoading, isInitialLoading },
-    actions: { loadUsers, changeRole, approveUser, rejectUser },
+    state: { users, pendingUsers, roles, isLoading, isInitialLoading, error },
+    actions: { loadUsers, retryUsers, changeRole, approveUser, rejectUser },
   } = useUsers()
   const { role, currentWorkspaceId } = useWorkspace()
   const canManage = role?.can_manage_roles === true
   const [search, setSearch] = useQueryText()
-  const [loadError, setLoadError] = useState<Error | null>(null)
-  const [loadErrorWorkspaceId, setLoadErrorWorkspaceId] = useState<string | null>(null)
-  const currentLoadError = loadErrorWorkspaceId === currentWorkspaceId ? loadError : null
   const normalizedSearch = search.trim().toLowerCase()
   const visibleUsers = users.filter(matchesSearch)
 
@@ -30,23 +27,12 @@ export function useMembersScreen() {
   const { toast } = useFeedback()
   const [rejectTarget, setRejectTarget] = useState<PendingWorkspaceUser | null>(null)
   const [isRejecting, setIsRejecting] = useState(false)
-  const handleLoadError = useCallback((reason: unknown): void => {
-    setLoadErrorWorkspaceId(currentWorkspaceId)
-    setLoadError(reason instanceof Error ? reason : new Error("Couldn't load members"))
-  }, [currentWorkspaceId])
   useEffect(() => {
-    let cancelled = false
-    setLoadError(null)
-    setLoadErrorWorkspaceId(currentWorkspaceId)
-    void loadUsers().catch((reason: unknown) => {
-      if (!cancelled) handleLoadError(reason)
-    })
-    return () => { cancelled = true }
-  }, [currentWorkspaceId, handleLoadError, loadUsers])
+    void loadUsers()
+  }, [currentWorkspaceId, loadUsers])
 
   async function retryLoad(): Promise<void> {
-    setLoadError(null)
-    await loadUsers().catch(handleLoadError)
+    await retryUsers()
   }
 
   const updateRole = useCallback(async (userId: string, roleId: string) => {
@@ -110,7 +96,7 @@ export function useMembersScreen() {
 
   return {
     actions: { changeSearch, retryLoad, approve, updateRole, requestReject, handleRejectOpenChange, confirmReject },
-    state: { search, loadError: currentLoadError },
-    meta: { isFiltered: normalizedSearch.length > 0, users: visibleUsers, totalUsers: users.length, pendingUsers, roles, isLoading, rejectTarget, rejectDescription, isRejecting, canManage, isInitialLoading: isInitialLoading && !currentLoadError },
+    state: { search, loadError: error },
+    meta: { isFiltered: normalizedSearch.length > 0, users: visibleUsers, totalUsers: users.length, pendingUsers, roles, isLoading, rejectTarget, rejectDescription, isRejecting, canManage, isInitialLoading: isInitialLoading && !error },
   }
 }

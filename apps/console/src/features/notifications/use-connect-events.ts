@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import type { NotificationEventDefinition, NotificationEventKey } from '@moc/notifications'
 import { createNotificationRoute, createUserNotificationRoute, deleteNotificationRoute, fetchNotificationRoutesForTarget, fetchNotificationRoutesForUser, type NotificationRoute } from '@/data/notification-routes'
 import type { ConnectEventsTarget } from './connect-events-modal'
+import { useWorkspaceResource } from '@/hooks/use-workspace-resource'
 
 const NOTIFICATION_OPTIONS = [
     { key: 'stream.created', label: 'YouTube stream', trigger: 'a YouTube stream is created or first found during sync.' },
@@ -34,36 +35,12 @@ function labelForTarget(target: ConnectEventsTarget | null): string {
 
 export function useConnectEvents(target: ConnectEventsTarget | null, onClose: () => void) {
     const { toast } = useFeedback()
-    const [routes, setRoutes] = useState<NotificationRoute[]>([])
-    const [isLoading, setIsLoading] = useState(false)
+    const fetcher = useCallback((workspaceId: string) => workspaceId && target ? fetchRoutesForTarget(target) : Promise.resolve([]), [target])
+    const resourceId = target?.kind === 'group' ? `group:${target.groupChatId}:${target.threadId ?? 'main'}` : target?.kind === 'user' ? `user:${target.userId}` : 'closed'
+    const resource = useWorkspaceResource({ emptyValue: [] as NotificationRoute[], fetcher, resource: `notification-routes:${resourceId}`, workspaceId: target?.workspaceId ?? null, enabled: Boolean(target) })
+    const { data: routes, isLoading, error: resourceError, load, updateData } = resource
     const [pendingKey, setPendingKey] = useState<NotificationEventKey | null>(null)
-    const [error, setError] = useState<Error | null>(null)
-    const [loadAttempt, setLoadAttempt] = useState(0)
-
-    useEffect(() => {
-        if (!target) {
-            setRoutes([])
-            setError(null)
-            return
-        }
-        let cancelled = false
-        setIsLoading(true)
-        setError(null)
-        fetchRoutesForTarget(target)
-            .then((data) => {
-                if (!cancelled) {
-                    setRoutes(data)
-                    setError(null)
-                }
-            })
-            .catch((reason: unknown) => {
-                if (!cancelled) setError(reason instanceof Error ? reason : new Error("Couldn't load event connections"))
-            })
-            .finally(() => {
-                if (!cancelled) setIsLoading(false)
-            })
-        return () => { cancelled = true }
-    }, [loadAttempt, target])
+    const error = useMemo(() => resourceError instanceof Error ? resourceError : resourceError ? new Error("Couldn't load event connections") : null, [resourceError])
 
     const routeByEvent = useMemo(() => new Map(routes.map((route) => [route.eventType, route])), [routes])
 
@@ -74,20 +51,20 @@ export function useConnectEvents(target: ConnectEventsTarget | null, onClose: ()
         try {
             if (connected && !existing) {
                 const created = await createRouteForTarget(target, eventKey)
-                setRoutes((current) => [...current, created])
+                updateData((current) => [...current, created])
             } else if (!connected && existing) {
                 await deleteNotificationRoute(target.workspaceId, existing.id)
-                setRoutes((current) => current.filter((route) => route.id !== existing.id))
+                updateData((current) => current.filter((route) => route.id !== existing.id))
             }
         } catch (error) {
             toast({ title: connected ? "Couldn't connect event" : "Couldn't disconnect event", description: error instanceof Error ? error.message : 'Unknown error', variant: 'error' })
         } finally {
             setPendingKey(null)
         }
-    }, [error, routeByEvent, target, toast])
+    }, [error, routeByEvent, target, toast, updateData])
 
     function retryRoutes() {
-        setLoadAttempt((attempt) => attempt + 1)
+        void load(true)
     }
 
     function changeOpen(open: boolean) {

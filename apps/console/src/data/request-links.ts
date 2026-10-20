@@ -15,6 +15,10 @@ export type RequestLinkedRecord = {
 }
 export type RequestLinkOption = { id: string; label: string }
 
+export function requestLinkResource(kind: RequestLinkedKind, id: string): string {
+  return `${kind}:${id}:request-link`
+}
+
 export async function fetchRequestLinkOptions(workspaceId: string): Promise<RequestLinkOption[]> {
   const [requests, archived] = await Promise.all([moc.requests.list(workspaceId), moc.requests.listArchived(workspaceId)])
   return [...requests, ...archived].map((request) => ({ id: request.id, label: `${request.title} · ${request.id.slice(0, 8)}` }))
@@ -52,6 +56,7 @@ export async function setRecordRequest(kind: RequestLinkedKind, id: string, requ
   }
   updateWorkspaceResourceData<LinkedSummary[]>(workspaceId, resource, (current) => current?.map(updateRecord))
   invalidateWorkspaceResource(workspaceId, "request-linked-records")
+  invalidateWorkspaceResource(workspaceId, requestLinkResource(kind, id))
 }
 
 export async function fetchRecordRequest(kind: RequestLinkedKind, id: string, workspaceId: string): Promise<string | null> {

@@ -14,15 +14,17 @@
     "@dnd-kit/sortable": "10.0.0",
     "@dnd-kit/utilities": "3.2.2",
     "@moc/notifications": "*",
+    "@moc/query": "^0.0.0",
+    "@moc/sdk": "*",
     "@moc/types": "*",
     "@moc/ui": "*",
     "@moc/utils": "*",
+    "@tanstack/react-query": "5.104.5",
     "lucide-react": "1.16.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-router-dom": "7.13.2",
-    "tailwind-merge": "3.5.0",
-    "@moc/sdk": "*"
+    "tailwind-merge": "3.5.0"
   },
   "devDependencies": {
     "@babel/core": "7.29.0",

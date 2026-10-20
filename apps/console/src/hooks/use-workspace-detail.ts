@@ -1,69 +1,31 @@
-import { getCurrentWorkspaceGeneration } from "@/data/current-workspace";
-import { useCallback, useEffect, useState } from "react";
+import { workspaceResourceKey } from "@/data/workspace-resource-cache"
+import { useQuery } from "@tanstack/react-query"
+import { useCallback } from "react"
+import { consoleQueryPolicy } from "@/lib/console-query-policy"
 
 type WorkspaceDetailOptions<T> = {
-  fetcher: (id: string, workspaceId: string) => Promise<T | undefined>;
-  id: string | undefined;
-  workspaceId: string | null;
-};
-
-type DetailSnapshot = {
-  attempt: number;
-  generation: number;
-  id: string | undefined;
-  workspaceId: string | null;
-};
-
-type DetailState<T> = {
-  data: T | null;
-  error: Error | null;
-  settledKey: string | null;
-};
-
-function getSnapshotKey({ attempt, generation, id, workspaceId }: DetailSnapshot) {
-  return `${workspaceId ?? "none"}:${generation}:${id ?? "none"}:${attempt}`;
+  fetcher: (id: string, workspaceId: string) => Promise<T | undefined>
+  id: string | undefined
+  workspaceId: string | null
+  resource: string
+  initialData?: T
+  initialDataUpdatedAt?: number
 }
 
-export function useWorkspaceDetail<T>({ fetcher, id, workspaceId }: WorkspaceDetailOptions<T>) {
-  const generation = getCurrentWorkspaceGeneration();
-  const [attempt, setAttempt] = useState(0);
-  const snapshot = { attempt, generation, id, workspaceId };
-  const snapshotKey = getSnapshotKey(snapshot);
-  const [state, setState] = useState<DetailState<T>>({ data: null, error: null, settledKey: null });
-
-  useEffect(() => {
-    if (!id || !workspaceId) return;
-
-    let cancelled = false;
-    const requestedSnapshot = { attempt, generation, id, workspaceId };
-
-    void fetcher(id, workspaceId)
-      .then((data) => {
-        if (cancelled) return;
-        setState({ data: data ?? null, error: null, settledKey: getSnapshotKey(requestedSnapshot) });
-      })
-      .catch((reason: unknown) => {
-        if (cancelled) return;
-        const error = reason instanceof Error ? reason : new Error("Failed to load this item");
-        setState({ data: null, error, settledKey: getSnapshotKey(requestedSnapshot) });
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [attempt, fetcher, generation, id, workspaceId]);
-
-  const retry = useCallback(() => {
-    setAttempt((current) => current + 1);
-  }, [setAttempt]);
-
-  const isAvailable = Boolean(id && workspaceId);
-  const isCurrent = state.settledKey === snapshotKey;
-
-  return {
-    data: isCurrent ? state.data : null,
-    error: isCurrent ? state.error : null,
-    isLoading: isAvailable && !isCurrent,
-    retry,
-  };
+export function useWorkspaceDetail<T>({ fetcher, id, workspaceId, resource, initialData, initialDataUpdatedAt }: WorkspaceDetailOptions<T>) {
+  const query = useQuery({
+    ...consoleQueryPolicy(resource),
+    queryKey: [...workspaceResourceKey(workspaceId, resource), "detail", id],
+    queryFn: async () => {
+      if (!id || !workspaceId) throw new Error("Select an item and workspace")
+      return await fetcher(id, workspaceId) ?? null
+    },
+    enabled: Boolean(id && workspaceId),
+    initialData,
+    initialDataUpdatedAt,
+  })
+  const { refetch } = query
+  const retry = useCallback(() => { void refetch() }, [refetch])
+  const collectionIsNewer = initialData !== undefined && (initialDataUpdatedAt ?? 0) > query.dataUpdatedAt
+  return { data: collectionIsNewer ? initialData : query.data ?? null, error: query.data === undefined ? query.error : null, refreshError: query.data !== undefined ? query.error : null, isLoading: Boolean(id && workspaceId) && query.isPending, retry }
 }

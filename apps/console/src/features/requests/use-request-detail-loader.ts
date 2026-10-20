@@ -1,66 +1,19 @@
-import { getCurrentWorkspaceGeneration } from "@/data/current-workspace";
-import { useWorkspace } from "@/lib/workspace-context";
-import { useCallback, useEffect, useState } from "react";
-import { useRequests } from "./request-provider";
-
-type RequestSnapshot = {
-  attempt: number;
-  generation: number;
-  id: string | undefined;
-  workspaceId: string | null;
-};
-
-function getSnapshotKey({ attempt, generation, id, workspaceId }: RequestSnapshot) {
-  return `${workspaceId ?? "none"}:${generation}:${id ?? "none"}:${attempt}`;
-}
+import { fetchRequestById } from "@/data/fetch-requests"
+import { useWorkspaceDetail } from "@/hooks/use-workspace-detail"
+import { useWorkspace } from "@/lib/workspace-context"
+import { queryClient } from "@/lib/query-client"
+import { workspaceResourceKey } from "@/data/workspace-resource-cache"
+import { useRequests } from "./request-provider"
 
 export function useRequestDetailLoader(id: string | undefined) {
-  const { currentWorkspaceId } = useWorkspace();
-  const { state, actions } = useRequests();
-  const { loadRequest, syncRequest } = actions;
-  const generation = getCurrentWorkspaceGeneration();
-  const [attempt, setAttempt] = useState(0);
-  const snapshot = { attempt, generation, id, workspaceId: currentWorkspaceId };
-  const snapshotKey = getSnapshotKey(snapshot);
-  const [settledKey, setSettledKey] = useState<string | null>(null);
-  const [error, setError] = useState<Error | null>(null);
-  const request = id ? state.requestsById[id] ?? null : null;
-
-  useEffect(() => {
-    if (!id || !currentWorkspaceId) return;
-
-    let cancelled = false;
-    const requestedSnapshot = { attempt, generation, id, workspaceId: currentWorkspaceId };
-
-    void loadRequest(id)
-      .then(() => {
-        if (cancelled) return;
-        setError(null);
-        setSettledKey(getSnapshotKey(requestedSnapshot));
-      })
-      .catch((reason: unknown) => {
-        if (cancelled) return;
-        setError(reason instanceof Error ? reason : new Error("Failed to load this request"));
-        setSettledKey(getSnapshotKey(requestedSnapshot));
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [attempt, currentWorkspaceId, generation, id, loadRequest]);
-
-  const retry = useCallback(() => {
-    setAttempt((current) => current + 1);
-  }, [setAttempt]);
-
-  const isCurrent = settledKey === snapshotKey;
-
+  const { currentWorkspaceId } = useWorkspace()
+  const { state: { requestsById }, actions: { syncRequest } } = useRequests()
+  const initialData = id ? requestsById[id] : undefined
+  const collectionResource = initialData?.status === "archived" ? "requests:archived" : "requests:active"
+  const initialDataUpdatedAt = queryClient.getQueryState(workspaceResourceKey(currentWorkspaceId, collectionResource))?.dataUpdatedAt
+  const detail = useWorkspaceDetail({ fetcher: fetchRequestById, resource: "requests", id, workspaceId: currentWorkspaceId, initialData, initialDataUpdatedAt })
   return {
-    state: {
-      request,
-      error: isCurrent ? error : null,
-      isLoading: Boolean(!request && id && currentWorkspaceId && !isCurrent),
-    },
-    actions: { retry, syncRequest },
-  };
+    state: { request: detail.data, error: detail.error, isLoading: detail.isLoading },
+    actions: { retry: detail.retry, syncRequest },
+  }
 }

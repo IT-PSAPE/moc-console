@@ -27,9 +27,10 @@ export function MembersContent() {
               <Section>
                 <Section.Header title="Directory" description={`${meta.totalUsers} people have access to this workspace.`} />
                 <Section.Body>
-                  {state.loadError ? <ResourceLoadError title="Couldn't load members" error={state.loadError} onRetry={actions.retryLoad} /> : meta.isLoading
+                  {state.loadError && <ResourceLoadError title="Couldn't load members" error={state.loadError} onRetry={actions.retryLoad} />}
+                  {meta.totalUsers > 0 || !state.loadError ? meta.isLoading && meta.totalUsers === 0
                     ? <LoadingSpinner className="py-16" />
-                    : <UsersList users={meta.users} isFiltered={meta.isFiltered} roles={meta.roles} canManage={meta.canManage} onRoleChange={actions.updateRole} />}
+                    : <UsersList users={meta.users} isFiltered={meta.isFiltered} roles={meta.roles} canManage={meta.canManage} onRoleChange={actions.updateRole} /> : null}
                 </Section.Body>
               </Section>
               {meta.canManage && meta.pendingUsers.length > 0 && <Section>
