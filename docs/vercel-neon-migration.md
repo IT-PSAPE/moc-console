@@ -20,6 +20,8 @@ The two auth secrets must be independent, high-entropy values of at least 32 byt
 Use the exact Console public origin for `MOC_AUTH_PUBLIC_BASE_URL` and
 `MOC_CONSOLE_ORIGIN`; list exact accepted app/dev origins in
 `MOC_AUTH_TRUSTED_ORIGINS` and API `ALLOWED_ORIGINS`. Test preview origins explicitly.
+An alternate Console port, such as `http://localhost:5177`, must appear in both
+lists: successful Google login does not authorize that origin to call the API.
 
 Neon injects branch-scoped `DATABASE_URL` and S3 environment values into Functions.
 The Vercel API needs its own server-only pooled URL, private S3 credentials,

@@ -15,6 +15,8 @@ import { SidebarProvider } from '@moc/ui/components/navigation/sidebar'
 import { TopBarProvider } from './features/topbar'
 import { WorkspaceProvider } from './lib/workspace-context'
 import { useWorkspace } from './lib/workspace-context'
+import { AuthLayout } from './screens/auth/auth-layout'
+import { ResourceLoadError } from './components/feedback/resource-load-error'
 import { WorkspaceAccessRequired } from './screens/auth/workspace-access-required'
 import { UserPreferencesProvider } from './features/preferences/user-preferences-provider'
 
@@ -74,8 +76,12 @@ function RequireAuth() {
 }
 
 function WorkspaceAccessGate() {
-    const { currentWorkspaceId, loading } = useWorkspace()
+    const { currentWorkspaceId, loading, error, refresh } = useWorkspace()
     const { signOut } = useAuth()
+
+    function retryWorkspaceAccess(): void {
+        void refresh()
+    }
 
     function signOutUser() {
         void signOut()
@@ -83,6 +89,10 @@ function WorkspaceAccessGate() {
 
     if (loading) {
         return <Page.Loading />
+    }
+
+    if (error) {
+        return <AuthLayout><ResourceLoadError error={error} title="Couldn't load workspace access" onRetry={retryWorkspaceAccess} /></AuthLayout>
     }
 
     if (!currentWorkspaceId) {

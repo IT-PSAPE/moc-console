@@ -54,3 +54,24 @@ test('an older directory response cannot replace refreshed workspace access', as
   expect(refreshed.loading).toBe(false)
   runtime.unmount()
 })
+
+
+test('keeps workspace request failures distinct from missing membership and recovers on retry', async () => {
+  const failure = new Error('Origin not allowed')
+  fetchWorkspaceDirectory.mockRejectedValueOnce(failure).mockResolvedValueOnce(directory)
+  const runtime = new HookRuntime(WorkspaceProvider)
+  runtime.render({ children: null })
+  await settle()
+  const failed = runtime.rerender().props.value as WorkspaceValue
+
+  expect(failed.error).toBe(failure)
+  expect(failed.currentWorkspaceId).toBeNull()
+  expect(failed.loading).toBe(false)
+
+  await failed.refresh()
+  const recovered = runtime.rerender().props.value as WorkspaceValue
+  expect(recovered.error).toBeNull()
+  expect(recovered.currentWorkspaceId).toBe('workspace-a')
+  expect(recovered.workspaces).toEqual(directory.workspaces)
+  runtime.unmount()
+})
