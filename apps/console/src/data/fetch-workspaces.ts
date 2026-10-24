@@ -6,10 +6,6 @@ export type WorkspaceDirectory = {
   memberships: WorkspaceMembership[]
 }
 
-export async function fetchSignupWorkspaces(): Promise<Workspace[]> {
-  return moc.workspaces.signupWorkspaces()
-}
-
 export async function fetchWorkspaceDirectory(): Promise<WorkspaceDirectory> {
   return moc.workspaces.directory()
 }

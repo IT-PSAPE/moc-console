@@ -9,7 +9,7 @@ function configuredEnvironment(names: readonly string[], env: NodeJS.ProcessEnv)
 export function createNeonConfig(env: NodeJS.ProcessEnv = process.env) {
   const jobsEnabled = env.MOC_ENABLE_PRODUCTION_JOBS === 'true' && env.MOC_NEON_BRANCH === 'production'
   const shared = configuredEnvironment(['CONSOLE_BASE_URL', 'TELEGRAM_BOT_TOKEN', 'TELEGRAM_BOT_USERNAME', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'ZOOM_CLIENT_ID', 'ZOOM_CLIENT_SECRET'], env)
-  const auth = configuredEnvironment(['BETTER_AUTH_SECRET', 'MOC_AUTH_SERVICE_SECRET', 'MOC_AUTH_TRUSTED_ORIGINS', 'MOC_AUTH_PUBLIC_BASE_URL', 'MOC_CONSOLE_ORIGIN', 'MOC_AUTH_COOKIE_SECURE', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM'], env)
+  const auth = configuredEnvironment(['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'BETTER_AUTH_SECRET', 'MOC_AUTH_SERVICE_SECRET', 'MOC_AUTH_TRUSTED_ORIGINS', 'MOC_AUTH_PUBLIC_BASE_URL', 'MOC_CONSOLE_ORIGIN', 'MOC_AUTH_COOKIE_SECURE', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM'], env)
   // Neon injects branch-scoped database and S3 credentials. These are never
   // copied into browser builds or pinned to a different branch's database.
   return defineConfig({

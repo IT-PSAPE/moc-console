@@ -11,10 +11,8 @@ export type UserWithRole = User & {
   memberTypeId: string
 }
 
-export type PendingWorkspaceUser = User & {
-  requestId: string
-  requestedAt: string
-}
+export type WorkspaceInvitation = { id: string; email: string; createdAt: string; expiresAt: string }
+export type WorkspaceInvitationResult = { invitation: WorkspaceInvitation; emailSent: boolean }
 
 export type UserProfileUpdate = {
   name?: string
@@ -31,13 +29,14 @@ export function createUsersClient(transport: MocTransport) {
     getProfile: () => transport.call<User | null>("users", "getProfile"),
     all: (workspaceId: string) => transport.call<User[]>("users", "all", undefined, workspaceId),
     withRoles: (workspaceId: string) => transport.call<UserWithRole[]>("users", "withRoles", undefined, workspaceId),
-    pending: (workspaceId: string) => transport.call<PendingWorkspaceUser[]>("users", "pending", undefined, workspaceId),
+    invitations: (workspaceId: string) => transport.call<WorkspaceInvitation[]>("users", "invitations", undefined, workspaceId),
+    invite: (workspaceId: string, email: string) => transport.call<WorkspaceInvitationResult>("users", "invite", { email }, workspaceId),
+    resendInvitation: (workspaceId: string, invitationId: string) => transport.call<WorkspaceInvitationResult>("users", "resendInvitation", { invitationId }, workspaceId),
+    revokeInvitation: (workspaceId: string, invitationId: string) => transport.call<void>("users", "revokeInvitation", { invitationId }, workspaceId),
     availableRoles: () => transport.call<Role[]>("users", "availableRoles"),
     updateProfile: (updates: UserProfileUpdate) => transport.call<void>("users", "updateProfile", updates),
     assignRole: (workspaceId: string, userId: string, roleId: string) =>
       transport.call<void>("users", "assignRole", { userId, roleId }, workspaceId),
-    approveJoinRequest: (requestId: string, workspaceId: string) => transport.call<void>("users", "approveJoinRequest", { requestId }, workspaceId),
-    rejectJoinRequest: (requestId: string, workspaceId: string) => transport.call<void>("users", "rejectJoinRequest", { requestId }, workspaceId),
     createTelegramLinkToken: () => transport.call<{ token: string }>("users", "createTelegramLinkToken"),
     unlinkTelegram: () => transport.call<void>("users", "unlinkTelegram"),
     requestAssignees: (requestId: string, workspaceId: string) =>

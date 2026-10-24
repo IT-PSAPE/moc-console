@@ -1,11 +1,9 @@
 import { betterAuth } from "better-auth"
 import { Pool } from "pg"
 import type { Pool as PoolType } from "pg"
-import { sendAuthEmail } from "./email.js"
-import { AUTH_EMAIL_LINK_LIFETIME_SECONDS, renderAuthEmail } from "./email-template.js"
 import { getAuthConfiguration } from "./configuration.js"
-import { createProfileAndJoinRequest, syncProfileEmail } from "./profile.js"
-import { hashPassword, verifyPassword } from "./password.js"
+import { verifiedGoogleUserInfo } from "./google.js"
+import { acceptInvitations, canSignInWithEmail } from "./invitations.js"
 
 let authPool: PoolType | undefined
 
@@ -36,36 +34,41 @@ export function getAuth() {
     database: getAuthPool(),
     baseURL: publicBaseUrl,
     trustedOrigins,
-    emailAndPassword: {
-      enabled: true,
-      requireEmailVerification: true,
-      autoSignIn: false,
-      revokeSessionsOnPasswordReset: true,
-      resetPasswordTokenExpiresIn: AUTH_EMAIL_LINK_LIFETIME_SECONDS,
-      password: { hash: hashPassword, verify: verifyPassword },
-      sendResetPassword: async ({ user, url }) => {
-        await sendAuthEmail({ to: user.email, ...renderAuthEmail("password-reset", url) })
-      },
-    },
-    emailVerification: {
-      sendOnSignUp: true,
-      autoSignInAfterVerification: true,
-      expiresIn: AUTH_EMAIL_LINK_LIFETIME_SECONDS,
-      sendVerificationEmail: async ({ user, url }) => {
-        await sendAuthEmail({ to: user.email, ...renderAuthEmail("verification", url) })
+    onAPIError: { errorURL: `${publicBaseUrl}/login` },
+    emailAndPassword: { enabled: false },
+    socialProviders: {
+      google: {
+        clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+        prompt: "select_account",
+        includeGrantedScopes: false,
+        getUserInfo: async (tokens) => verifiedGoogleUserInfo(tokens, process.env.GOOGLE_CLIENT_ID ?? ""),
       },
     },
     user: {
+      async validateUserInfo({ user, source }, context) {
+        if (source.method !== "oauth" || source.oauth?.providerId !== "google"
+          || source.oauth.profile?.email_verified !== true || user.emailVerified !== true
+          || typeof user.email !== "string" || !await canSignInWithEmail(user.email)) {
+          return { error: "invitation_required", errorDescription: "Sign in with the Google account invited to this workspace." }
+        }
+        // An existing Google identity must still assert the same email. Email
+        // changes require an administrator to reconcile access explicitly.
+        if (source.action !== "create-user" && typeof user.id === "string") {
+          const stored = await context.context.internalAdapter.findUserById(user.id)
+          if (!stored || stored.email.trim().toLowerCase() !== user.email.trim().toLowerCase()) return { error: "account_email_changed" }
+        }
+      },
       fields: { emailVerified: "email_verified", createdAt: "created_at", updatedAt: "updated_at" },
       additionalFields: {
-        surname: { type: "string", required: true, input: true, fieldName: "surname" },
-        workspaceSlug: { type: "string", required: false, input: true, fieldName: "workspace_slug" },
+        surname: { type: "string", required: false, defaultValue: "", input: true, fieldName: "surname" },
       },
     },
     session: {
       fields: { expiresAt: "expires_at", createdAt: "created_at", updatedAt: "updated_at", userId: "user_id", ipAddress: "ip_address", userAgent: "user_agent" },
     },
     account: {
+      accountLinking: { enabled: true, trustedProviders: ["google"], requireLocalEmailVerified: true, allowDifferentEmails: false, updateUserInfoOnLink: false },
       fields: {
         accountId: "account_id", providerId: "provider_id", userId: "user_id", accessToken: "access_token",
         refreshToken: "refresh_token", idToken: "id_token", accessTokenExpiresAt: "access_token_expires_at",
@@ -74,9 +77,17 @@ export function getAuth() {
     },
     verification: { fields: { expiresAt: "expires_at", createdAt: "created_at", updatedAt: "updated_at" } },
     databaseHooks: {
-      user: {
-        create: { after: async (user) => createProfileAndJoinRequest(user) },
-        update: { after: async (user) => syncProfileEmail(user) },
+      account: { create: { before: async (account) => account.providerId === "google" } },
+      session: {
+        create: {
+          async before(session, context) {
+            if (!context) return false
+            const user = await context.context.internalAdapter.findUserById(session.userId)
+            const accounts = await context.context.internalAdapter.findAccounts(session.userId)
+            if (!user?.emailVerified || !accounts.some((account) => account.providerId === "google")) return false
+            await acceptInvitations({ ...user, surname: "surname" in user && typeof user.surname === "string" ? user.surname : "" })
+          },
+        },
       },
     },
     advanced: {

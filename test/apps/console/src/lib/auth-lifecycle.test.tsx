@@ -10,8 +10,7 @@ const signOut = vi.fn(async () => ({ error: null }))
 vi.doMock('react', () => ({ ...React, ...createMockReactModule() }))
 vi.doMock('../../../../../apps/console/src/lib/moc-client', () => ({
   moc: {
-    auth: { getSession, signOut }, users: { getProfile },
-    workspaces: { signupWorkspaces: async () => [{ id: 'fallback-workspace', slug: 'default-workspace', name: 'Default', description: null }] },
+    auth: { getSession, signOut }, users: { getProfile }, workspaces: {},
   },
 }))
 

@@ -1,9 +1,9 @@
+import { isAuthPath } from "../../../packages/backend/src/auth/routes.js"
 import type { ApiRequest, ApiResponse } from "./http.js"
 import { headerValue } from "./http.js"
 
 export type AuthProxyResponse = ApiResponse & { setHeader: (name: string, value: string | string[]) => void }
 export const MAX_AUTH_BODY_BYTES = 64 * 1024
-const AUTH_PATH = /^\/api\/auth\/(?:sign-up\/email|sign-in\/email|sign-out|get-session|send-verification-email|verify-email|request-password-reset|reset-password(?:\/[^/]+)?|change-password)$/
 
 export function jsonAuthBody(body: unknown): string {
   return body === undefined || body === null ? "" : typeof body === "string" ? body : JSON.stringify(body)
@@ -40,7 +40,7 @@ export function authRequestPath(request: ApiRequest): { path: string; query: str
       if (rewrittenPaths.length !== 1) return null
       path = `/api/auth/${rewrittenPaths[0]}`
     }
-    if (!AUTH_PATH.test(path)) return null
+    if (!isAuthPath(path)) return null
     parsed.searchParams.delete("authPath")
     parsed.searchParams.delete("path")
     return { path, query: parsed.search }

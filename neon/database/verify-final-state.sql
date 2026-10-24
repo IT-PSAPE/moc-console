@@ -15,7 +15,7 @@ DECLARE
     'telegram_group_topics', 'telegram_groups', 'telegram_link_tokens',
     'telegram_webhook_updates', 'template_items', 'template_sections', 'users',
     'venue_booking_slots', 'venue_bookings', 'venue_events', 'venues',
-    'workspace_join_requests', 'workspace_member_types', 'workspace_users',
+    'workspace_invitations', 'workspace_join_requests', 'workspace_member_types', 'workspace_users',
     'workspaces', 'youtube_connections', 'zoom_connections', 'zoom_meetings'
   ];
   actual_tables text[];
@@ -110,6 +110,11 @@ BEGIN
   END IF;
 
   IF NOT has_table_privilege('moc_app', 'public.broadcast_revisions', 'SELECT')
+    OR NOT has_table_privilege('moc_app', 'public.workspace_invitations', 'SELECT')
+    OR NOT has_table_privilege('moc_app', 'public.workspace_invitations', 'INSERT')
+    OR NOT has_table_privilege('moc_app', 'public.workspace_invitations', 'UPDATE')
+    OR NOT has_table_privilege('moc_worker', 'public.workspace_invitations', 'SELECT')
+    OR NOT has_table_privilege('moc_worker', 'public.workspace_invitations', 'UPDATE')
     OR has_table_privilege('moc_public', 'public.notification_outbox', 'SELECT')
     OR has_table_privilege('moc_public', 'public.requests', 'SELECT')
     OR has_table_privilege('moc_app', 'moc_private.integration_oauth_tokens', 'SELECT')

@@ -3,6 +3,7 @@ import type { User } from "@moc/types/requests/assignee"
 import type { MemberType } from "@moc/notifications"
 import type { PlatformContext, PlatformOperation } from "./context.js"
 import { objectInput, optionalUuidField, PlatformInputError, stringField, uuidField } from "./input.js"
+import { invitationOperations } from "./user-invitations.js"
 
 type UserRow = {
   id: string; name: string; surname: string; email: string; telegram_chat_id: string | null
@@ -10,7 +11,6 @@ type UserRow = {
 }
 type RoleRow = { id: string; name: string; can_create: boolean; can_read: boolean; can_update: boolean; can_delete: boolean; can_manage_roles: boolean }
 type UserWithRoleRow = UserRow & { role_id: string; role_name: string; can_create: boolean; can_read: boolean; can_update: boolean; can_delete: boolean; can_manage_roles: boolean; member_type_id: string; workspace_id: string }
-type PendingRow = UserRow & { request_id: string; requested_at: string }
 type MemberTypeRow = MemberType
 
 const USER_FIELDS = "id, name, surname, email, telegram_chat_id, avatar_url, current_duty, status_message"
@@ -31,11 +31,6 @@ function mapUserWithRole(row: UserWithRoleRow) {
     role: { id: row.role_id, name: row.role_name, can_create: row.can_create, can_read: row.can_read, can_update: row.can_update, can_delete: row.can_delete, can_manage_roles: row.can_manage_roles },
     memberTypeId: row.member_type_id,
   }
-}
-
-function mapPending(row: PendingRow) {
-  const { request_id, requested_at, ...user } = row
-  return { ...mapUser(user), requestId: request_id, requestedAt: requested_at }
 }
 
 async function listWithRoles(context: PlatformContext) {
@@ -106,19 +101,6 @@ export const operations: Record<string, PlatformOperation> = {
       return listWithRoles(context)
     },
   },
-  pending: {
-    permission: "can_manage_roles",
-    async run(context, input) {
-      emptyInput(input)
-      const result = await context.db.query<PendingRow>(
-        `SELECT j.id AS request_id, j.requested_at::text AS requested_at, u.${USER_FIELDS.split(", ").join(", u.")}
-         FROM public.workspace_join_requests j JOIN public.users u ON u.id = j.user_id
-         WHERE j.workspace_id = $1 ORDER BY j.requested_at`,
-        [context.workspaceId],
-      )
-      return result.rows.map(mapPending)
-    },
-  },
   availableRoles: {
     permission: "authenticated",
     async run(context, input) {
@@ -151,34 +133,6 @@ export const operations: Record<string, PlatformOperation> = {
     async run(context, input) {
       const record = objectInput(input, ["userId", "roleId"])
       await context.db.query("SELECT public.set_workspace_member_role($1, $2, $3)", [context.workspaceId, uuidField(record, "userId"), uuidField(record, "roleId")])
-      return null
-    },
-  },
-  approveJoinRequest: {
-    permission: "can_manage_roles",
-    async run(context, input) {
-      const { requestId } = objectInput(input, ["requestId"])
-      const id = uuidField({ requestId }, "requestId")
-      const request = await context.db.query<{ user_id: string }>(
-        "SELECT user_id FROM public.workspace_join_requests WHERE id = $1 AND workspace_id = $2",
-        [id, context.workspaceId],
-      )
-      if (!request.rows[0]) throw notFound("Pending access request not found")
-      await context.db.query("SELECT public.approve_workspace_join_request($1)", [id])
-      return null
-    },
-  },
-  rejectJoinRequest: {
-    permission: "can_manage_roles",
-    async run(context, input) {
-      const record = objectInput(input, ["requestId"])
-      const id = uuidField(record, "requestId")
-      const request = await context.db.query<{ user_id: string }>(
-        "SELECT user_id FROM public.workspace_join_requests WHERE id = $1 AND workspace_id = $2",
-        [id, context.workspaceId],
-      )
-      if (!request.rows[0]) throw notFound("Pending access request not found")
-      await context.db.query("SELECT public.reject_workspace_join_request($1)", [id])
       return null
     },
   },
@@ -260,4 +214,5 @@ export const operations: Record<string, PlatformOperation> = {
       return null
     },
   },
+  ...invitationOperations,
 }

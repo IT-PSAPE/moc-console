@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, it } from "vitest"
 import { randomUUID } from "node:crypto"
 import { createInternalAuthHeaders } from "../../packages/backend/src/auth/internal-request.js"
 import { createAuthFunctionHandler } from "../../neon/functions/auth.js"
@@ -58,16 +58,27 @@ describe("Neon auth Function boundary", () => {
     expect(dispatches).toBe(1)
   })
 
-  it("rejects signup before identity creation when email delivery is not configured", async () => {
-    vi.stubEnv("SMTP_PASSWORD", "")
-    try {
-      const handler = createAuthFunctionHandler({ secret, trustedOrigins: [trustedOrigin], now: () => now, claimNonce: async () => true })
-      const response = await handler(signedRequest("email_nonce_123456789012345", "", { method: "POST", path: "/api/auth/sign-up/email", body: "{}" }))
-      expect(response.status).toBe(503)
-      expect(await response.json()).toEqual({ code: "EMAIL_UNAVAILABLE", message: "Email delivery is temporarily unavailable. Please try again later." })
-    } finally {
-      vi.unstubAllEnvs()
+  it("rejects all legacy password and signup endpoints before dispatch", async () => {
+    const handler = createAuthFunctionHandler({ secret, trustedOrigins: [trustedOrigin], now: () => now, claimNonce: async () => true, handleAuth: async () => { throw new Error("Must not dispatch") } })
+    for (const path of ["sign-up/email", "sign-in/email", "request-password-reset", "send-verification-email", "verify-email", "reset-password/opaque", "change-password"]) {
+      expect((await handler(signedRequest("legacy_nonce_123456789012345", "", { method: "POST", path: `/api/auth/${path}`, body: "{}" }))).status).toBe(404)
     }
+  })
+
+  it("denies an old session when workspace membership has been removed", async () => {
+    const handler = createAuthFunctionHandler({ secret, trustedOrigins: [trustedOrigin], now: () => now, claimNonce: async () => true,
+      handleAuth: async () => Response.json({ session: { id: "session" }, user: { id: "user" } }), hasMembership: async () => false })
+    const response = await handler(signedRequest("removed_nonce_123456789012345"))
+    expect(await response.json()).toBeNull()
+  })
+
+  it("keeps admitted sessions and rejects callback method and forged social payloads", async () => {
+    const handler = createAuthFunctionHandler({ secret, trustedOrigins: [trustedOrigin], now: () => now, claimNonce: async () => true,
+      handleAuth: async () => Response.json({ session: { id: "session" }, user: { id: "user" } }), hasMembership: async () => true })
+    const response = await handler(signedRequest("member_nonce_123456789012345"))
+    expect(await response.json()).toMatchObject({ user: { id: "user" } })
+    expect((await handler(signedRequest("method_nonce_123456789012345", "", { method: "POST", path: "/api/auth/callback/google", body: "{}" }))).status).toBe(405)
+    expect((await handler(signedRequest("social_nonce_123456789012345", "", { method: "POST", path: "/api/auth/sign-in/social", body: '{"provider":"github"}' }))).status).toBe(400)
   })
 })
 

@@ -1,5 +1,5 @@
 import type { MocTransport } from "./transport"
-export { authCallbackError, authCallbackOutcome, type AuthCallbackOutcome } from "./auth-callback"
+export { authCallbackError } from "./auth-callback"
 
 export type MoCUser = {
   id: string
@@ -22,19 +22,12 @@ export class MoCAuthError extends Error {
 }
 
 export type MoCAuthResult = { error: MoCAuthError | null }
+export type GoogleSignInResult = { url: string | null; error: MoCAuthError | null }
 
 type BetterAuthUser = Partial<MoCUser> & { id: string; email: string }
 type BetterAuthSession = { id: string; userId: string; expiresAt: string }
 type SessionEnvelope = { session?: BetterAuthSession | null; user?: BetterAuthUser | null } | null
-
-type SignUpInput = {
-  email: string
-  password: string
-  name: string
-  surname: string
-  workspaceSlug?: string
-  callbackURL: string
-}
+type SocialSignInResponse = { url?: unknown } | null
 
 function asUser(user: BetterAuthUser): MoCUser {
   return {
@@ -60,31 +53,15 @@ export function createAuthClient(transport: MocTransport) {
     return { ...envelope.session, user: asUser(envelope.user) }
   }
 
-  async function signUp(input: SignUpInput): Promise<MoCAuthResult> {
+  async function signInWithGoogle(callbackURL: string, errorCallbackURL: string): Promise<GoogleSignInResult> {
     try {
-      await transport.request("/api/auth/sign-up/email", {
+      const response = await transport.request<SocialSignInResponse>("/api/auth/sign-in/social", {
         method: "POST",
-        json: {
-          email: input.email,
-          password: input.password,
-          name: input.name,
-          surname: input.surname,
-          ...(input.workspaceSlug ? { workspaceSlug: input.workspaceSlug } : {}),
-          callbackURL: input.callbackURL,
-        },
+        json: { provider: "google", callbackURL, errorCallbackURL, disableRedirect: true },
       })
-      return { error: null }
+      return { url: typeof response?.url === "string" ? response.url : null, error: null }
     } catch (error) {
-      return { error: asError(error) }
-    }
-  }
-
-  async function signIn(email: string, password: string): Promise<MoCAuthResult> {
-    try {
-      await transport.request("/api/auth/sign-in/email", { method: "POST", json: { email, password } })
-      return { error: null }
-    } catch (error) {
-      return { error: asError(error) }
+      return { url: null, error: asError(error) }
     }
   }
 
@@ -97,32 +74,5 @@ export function createAuthClient(transport: MocTransport) {
     }
   }
 
-  async function requestPasswordReset(email: string, redirectTo: string): Promise<MoCAuthResult> {
-    try {
-      await transport.request("/api/auth/request-password-reset", { method: "POST", json: { email, redirectTo } })
-      return { error: null }
-    } catch (error) {
-      return { error: asError(error) }
-    }
-  }
-
-  async function sendVerificationEmail(email: string, redirectTo: string): Promise<MoCAuthResult> {
-    try {
-      await transport.request("/api/auth/send-verification-email", { method: "POST", json: { email, callbackURL: redirectTo } })
-      return { error: null }
-    } catch (error) {
-      return { error: asError(error) }
-    }
-  }
-
-  async function resetPassword(token: string, newPassword: string): Promise<MoCAuthResult> {
-    try {
-      await transport.request("/api/auth/reset-password", { method: "POST", json: { token, newPassword } })
-      return { error: null }
-    } catch (error) {
-      return { error: asError(error) }
-    }
-  }
-
-  return { getSession, signUp, signIn, signOut, requestPasswordReset, sendVerificationEmail, resetPassword }
+  return { getSession, signInWithGoogle, signOut }
 }

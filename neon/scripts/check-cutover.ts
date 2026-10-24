@@ -4,7 +4,7 @@ import { authConfigurationIssues } from '../../packages/backend/src/auth/configu
 const required = [
   'NEON_DATABASE_URL', 'NEON_PROJECT_ID',
   'BETTER_AUTH_SECRET', 'MOC_AUTH_SERVICE_SECRET', 'MOC_AUTH_TRUSTED_ORIGINS',
-  'MOC_AUTH_PUBLIC_BASE_URL', 'MOC_CONSOLE_ORIGIN', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM',
+  'MOC_AUTH_PUBLIC_BASE_URL', 'MOC_CONSOLE_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM',
 ] as const
 
 export function checkCutoverEnvironment(env: NodeJS.ProcessEnv): { missing: string[]; invalid: string[] } {
@@ -45,7 +45,8 @@ async function checkTargetSchema(connectionString: string): Promise<boolean> {
       `SELECT to_regclass('moc_auth."user"') IS NOT NULL
         AND to_regclass('moc_auth.account') IS NOT NULL
         AND to_regclass('moc_auth.session') IS NOT NULL
-        AND to_regclass('moc_auth.verification') IS NOT NULL AS ready`,
+        AND to_regclass('moc_auth.verification') IS NOT NULL
+        AND to_regclass('public.workspace_invitations') IS NOT NULL AS ready`,
     )
     return result.rows[0]?.ready === true
   } finally { await pool.end() }

@@ -39,3 +39,14 @@ test('does not return a stale fallback after the selected workspace changes', as
 
   expect(await getCurrentWorkspaceId()).toBe('selected-workspace')
 })
+
+test('does not resolve an authenticated workspace when no profile exists', async () => {
+  getProfile.mockResolvedValueOnce(null)
+  await expect(getCurrentWorkspaceId()).rejects.toThrow('No authenticated profile was found')
+  expect(directory).not.toHaveBeenCalled()
+})
+
+test('does not substitute a default workspace when membership is absent', async () => {
+  directory.mockResolvedValueOnce({ workspaces: [], memberships: [] })
+  await expect(getCurrentWorkspaceId()).rejects.toThrow('No workspace membership was found')
+})

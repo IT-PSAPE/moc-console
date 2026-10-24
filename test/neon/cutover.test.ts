@@ -18,6 +18,8 @@ test('cutover preflight accepts Frankfurt target and live auth/email settings', 
     MOC_AUTH_TRUSTED_ORIGINS: 'https://console.example.test',
     MOC_AUTH_PUBLIC_BASE_URL: 'https://console.example.test',
     MOC_CONSOLE_ORIGIN: 'https://console.example.test',
+    GOOGLE_CLIENT_ID: 'google-client.apps.googleusercontent.com',
+    GOOGLE_CLIENT_SECRET: 'google-secret',
     SMTP_HOST: 'smtp.example.test',
     SMTP_USER: 'user',
     SMTP_PASSWORD: 'password',
@@ -35,4 +37,10 @@ test('cutover rejects mismatched email-link and Console origins', () => {
   expect(report.invalid).toContain('MOC_AUTH_PUBLIC_BASE_URL')
   expect(report.invalid).toContain('MOC_CONSOLE_ORIGIN')
   expect(report.invalid).toContain('MOC_AUTH_TRUSTED_ORIGINS')
+})
+
+test('cutover requires Google OAuth credentials for invitation sign-in', () => {
+  const report = checkCutoverEnvironment({})
+  expect(report.missing).toContain('GOOGLE_CLIENT_ID')
+  expect(report.missing).toContain('GOOGLE_CLIENT_SECRET')
 })

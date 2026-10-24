@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate, Outlet, RouterProvider, useLocation } from 'react-router-dom'
 import { routes } from './screens/console-routes'
 import { Page } from '@moc/ui/components/layout/page'
@@ -15,7 +15,7 @@ import { SidebarProvider } from '@moc/ui/components/navigation/sidebar'
 import { TopBarProvider } from './features/topbar'
 import { WorkspaceProvider } from './lib/workspace-context'
 import { useWorkspace } from './lib/workspace-context'
-import { PendingAccessScreen } from './screens/auth/pending-access'
+import { WorkspaceAccessRequired } from './screens/auth/workspace-access-required'
 import { UserPreferencesProvider } from './features/preferences/user-preferences-provider'
 
 const StreamsScreen = lazy(() => import('@/screens/streams/page').then((m) => ({ default: m.StreamsScreen })))
@@ -39,9 +39,6 @@ const ChecklistsScreen = lazy(() => import('@/screens/checklists/page').then((m)
 const ChecklistTemplatesScreen = lazy(() => import('@/screens/checklists/templates/page').then((m) => ({ default: m.ChecklistTemplatesScreen })))
 const ChecklistDetailScreen = lazy(() => import('@/screens/checklists/detail/page').then((m) => ({ default: m.ChecklistDetailScreen })))
 const LoginScreen = lazy(() => import('./screens/auth/login').then((m) => ({ default: m.LoginScreen })))
-const SignupScreen = lazy(() => import('./screens/auth/signup').then((m) => ({ default: m.SignupScreen })))
-const ResetPasswordScreen = lazy(() => import('./screens/auth/reset-password').then((m) => ({ default: m.ResetPasswordScreen })))
-const PasswordRecoveryScreen = lazy(() => import('./screens/auth/password-recovery').then((m) => ({ default: m.PasswordRecoveryScreen })))
 const PrivacyPolicyScreen = lazy(() => import('./screens/public/privacy').then((m) => ({ default: m.PrivacyPolicyScreen })))
 const TermsOfUseScreen = lazy(() => import('./screens/public/terms').then((m) => ({ default: m.TermsOfUseScreen })))
 const SupportScreen = lazy(() => import('./screens/public/support').then((m) => ({ default: m.SupportScreen })))
@@ -77,18 +74,8 @@ function RequireAuth() {
 }
 
 function WorkspaceAccessGate() {
-    const { currentWorkspaceId, loading, error, refresh } = useWorkspace()
+    const { currentWorkspaceId, loading } = useWorkspace()
     const { signOut } = useAuth()
-    const [checking, setChecking] = useState(false)
-
-    async function checkAgain() {
-        setChecking(true)
-        try {
-            await refresh()
-        } finally {
-            setChecking(false)
-        }
-    }
 
     function signOutUser() {
         void signOut()
@@ -99,7 +86,7 @@ function WorkspaceAccessGate() {
     }
 
     if (!currentWorkspaceId) {
-        return <PendingAccessScreen checking={checking} error={error} onCheckAgain={checkAgain} onSignOut={signOutUser} />
+        return <WorkspaceAccessRequired onSignOut={signOutUser} />
     }
 
     return (
@@ -170,9 +157,6 @@ function LegacyScheduleRoute() {
 const router = createBrowserRouter([
     // Auth routes — redirect to overview if already signed in
     { path: routes.login, element: <RedirectIfAuth><SuspenseRoute><LoginScreen /></SuspenseRoute></RedirectIfAuth> },
-    { path: routes.signup, element: <RedirectIfAuth><SuspenseRoute><SignupScreen /></SuspenseRoute></RedirectIfAuth> },
-    { path: routes.resetPassword, element: <RedirectIfAuth><SuspenseRoute><ResetPasswordScreen /></SuspenseRoute></RedirectIfAuth> },
-    { path: routes.passwordRecovery, element: <SuspenseRoute><PasswordRecoveryScreen /></SuspenseRoute> },
 
     // Public pages — no auth required
     { path: routes.privacy, element: <SuspenseRoute><PrivacyPolicyScreen /></SuspenseRoute> },

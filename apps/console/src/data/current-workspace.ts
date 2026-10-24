@@ -1,8 +1,5 @@
-import { MocApiError } from "@moc/sdk"
 import { moc } from "@/lib/moc-client"
 import { clearWorkspaceResources } from "./workspace-resource-cache"
-
-const fallbackWorkspaceSlug = "default-workspace"
 
 let cachedUserId: string | null = null
 let cachedWorkspaceId: string | null = null
@@ -14,14 +11,6 @@ function requireWorkspaceGeneration(generation: number): void {
   if (generation !== currentWorkspaceGeneration) throw new Error("Workspace changed. Please try again.")
 }
 
-async function resolveFallbackWorkspaceId(generation: number): Promise<string> {
-  const workspaces = await moc.workspaces.signupWorkspaces()
-  requireWorkspaceGeneration(generation)
-  const workspace = workspaces.find((candidate) => candidate.slug === fallbackWorkspaceSlug)
-  if (!workspace) throw new Error("Default workspace not found")
-  return workspace.id
-}
-
 export async function getCurrentWorkspaceId(): Promise<string> {
   if (currentWorkspaceIdMirror) return currentWorkspaceIdMirror
   const generation = currentWorkspaceGeneration
@@ -31,12 +20,11 @@ export async function getCurrentWorkspaceId(): Promise<string> {
     user = await moc.users.getProfile()
   } catch (error) {
     requireWorkspaceGeneration(generation)
-    if (error instanceof MocApiError && error.status === 401) return resolveFallbackWorkspaceId(generation)
     throw error
   }
 
   requireWorkspaceGeneration(generation)
-  if (!user) return resolveFallbackWorkspaceId(generation)
+  if (!user) throw new Error("No authenticated profile was found")
   if (cachedUserId === user.id && cachedWorkspaceId) return cachedWorkspaceId
   if (pendingWorkspaceIdPromise) return pendingWorkspaceIdPromise
 
@@ -45,7 +33,7 @@ export async function getCurrentWorkspaceId(): Promise<string> {
       const { memberships } = await moc.workspaces.directory()
       requireWorkspaceGeneration(generation)
       const membership = memberships.find((candidate) => candidate.userId === user.id)
-      if (!membership?.workspaceId) throw new Error("Workspace access is pending approval")
+      if (!membership?.workspaceId) throw new Error("No workspace membership was found")
       cachedUserId = user.id
       cachedWorkspaceId = membership.workspaceId
       return membership.workspaceId

@@ -8,8 +8,8 @@ local Vite servers proxy to `MOC_API_PROXY_TARGET` (default `http://127.0.0.1:30
 
 The selected target is **PSAPE / Frankfurt**, Neon project `blue-wind-16947728`,
 branch `br-gentle-butterfly-b1quozc3` (`production`). MoC uses the application-owned
-`moc_auth` schema and Better Auth in a Neon Function. Identity IDs are UUIDs and
-passwords use bcrypt. API cookies are opaque, host-only, HttpOnly, Secure on HTTPS
+`moc_auth` schema and Better Auth in a Neon Function. Identity IDs are UUIDs; console sign-in uses verified Google identities
+and server-owned workspace invitations. API cookies are opaque, host-only, HttpOnly, Secure on HTTPS
 and scoped to `/api`.
 
 ## Configuration
@@ -48,34 +48,49 @@ origins and requires the public origin to be in its trusted-origin list.
 Cookie security follows the canonical URL. HTTPS origins require secure cookies;
 `MOC_AUTH_COOKIE_SECURE=false` is only supported for local HTTP development.
 
-Configure SMTP and verify outbound connectivity, sender delivery and link origins.
-Provider OAuth client IDs, registered redirects, webhook URLs and Telegram Mini
-App URLs retain their existing values. Supply provider secrets and bot credentials
-to the corresponding Neon workers. Frontends need no backend credentials or API
-base URL; local API routing uses the server-only `MOC_API_PROXY_TARGET` setting.
+Console authentication is invitation-only and uses Google OAuth in the existing
+Better Auth Neon Function. Keep `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in
+the auth Function environment, and register
+`<MOC_AUTH_PUBLIC_BASE_URL>/api/auth/callback/google` as an authorized redirect URI
+in that Google OAuth client. Any Google account, including Workspace, is accepted
+when Google verifies its email and that exact email has an active invitation or
+an existing workspace membership. The API exposes only social sign-in, the Google
+callback, session lookup, and sign-out. Email/password and public signup routes
+are disabled.
 
-For Resend SMTP, verify the sender domain and create a Sending Access key scoped
-to that domain. Set `SMTP_HOST=smtp.resend.com`, `SMTP_PORT=465`,
-`SMTP_USER=resend`, `SMTP_PASSWORD` to the key and `SMTP_FROM` to a sender on
-the verified domain. Port 465 uses implicit TLS. Store the key only in ignored
-Neon environment files or deployment secrets. Signup, verification email and
-password recovery return `EMAIL_UNAVAILABLE` before identity changes while SMTP
-configuration is missing. Verify delivery and links after adding credentials.
+Apply `neon/database/workspace-invitations.sql` before deploying the new auth
+Function and API. Administrators invite from Members using an email address;
+new members receive the viewer role. Invitations expire after seven days and can
+be resent or revoked. Existing member IDs, roles and edited profile names are
+preserved. Old pending join requests do not grant access. Revoking a pending
+invitation prevents acceptance; accepted access is controlled by membership.
 
-The application renders the shared HTML and plain-text verification and password
-reset emails in `packages/backend/src/auth/email-template.ts`; Resend delivers
-those messages over SMTP. Supabase's old Go-template HTML and `token_hash` URLs
-are not used by this auth service. Both current link types expire after one hour.
-Verification links enter `/api/auth/verify-email` before returning to
-`/login?auth=verified`; reset links enter `/api/auth/reset-password/<token>` before
-returning to `/password-recovery?token=...`. Keep their first hop on the public
-Console origin so the signed API proxy and host-only cookies are used.
+Configure SMTP on the **API deployment** for invitation delivery; the API sends
+email after its invitation transaction commits. SMTP settings on the Neon auth
+Function alone do not configure the API. For Resend, use `SMTP_HOST=smtp.resend.com`,
+`SMTP_PORT=465`, `SMTP_USER=resend`, a domain-scoped Sending Access key as
+`SMTP_PASSWORD`, and a verified-domain `SMTP_FROM`. Invitation HTML/plain text
+lives in `packages/backend/src/auth/email-template.ts`. The invitation is committed
+before email is sent; a delivery failure is shown honestly and can be retried.
+The email links to `/login`; Google identity, rather than possession of the link,
+proves eligibility. Secrets stay in ignored environment files or deployment settings.
 
-Before production activation, run the local PostgreSQL/fake SMTP auth-flow test
-with `MOC_AUTH_TEST_DATABASE_URL` set to a disposable loopback database, then
-verify one signup/resend and password-reset email in a real inbox against the
-deployed Console. Check invalid/expired links and confirm a reset token cannot be
-reused. Local `localhost` links only work on the computer running the dev server.
+On a fresh installation with no manager, an operator must provision the first
+administrator using the database owner connection: insert a seven-day invitation
+for the chosen email/workspace, let that person sign in with Google, then assign
+the existing admin role to that verified identity's workspace membership. Do not
+create a public bootstrap endpoint or choose an arbitrary first signer. Existing
+installations retain their current managers and need no bootstrap.
+
+Verify changes on an isolated Neon branch before production. The OAuth contract
+tests use mocked Google token/JWKS responses and a real disposable database;
+they never contact a real inbox. For the current test branch, set
+`MOC_AUTH_TEST_BRANCH=dev-invite-auth-20261024` and
+`MOC_AUTH_TEST_DATABASE_URL` to its direct URL. The fixture also checks the exact
+branch hostname and refuses other databases. CI uses a freshly bootstrapped
+loopback database with `MOC_AUTH_TEST_BRANCH=local`. Run the auth-flow suite and invitation
+integration tests, then verify the login and Members surfaces. A real Google login
+still requires the registered redirect URI and a human-controlled invited account.
 
 ## Provision and verify
 
@@ -87,9 +102,10 @@ npm test
 node neon/scripts/check-cutover.ts
 ```
 
-Use `MOC_TEST_DATABASE_URL` for a disposable local PostgreSQL database and
-`MOC_AUTH_TEST_DATABASE_URL` for a separate auth-contract database. Neither may
-point at production. The auth fixture creates its own schema and fake SMTP server.
+Use `MOC_TEST_DATABASE_URL` for a disposable PostgreSQL database and
+`MOC_AUTH_TEST_DATABASE_URL` for the guarded auth-contract Neon branch. Neither
+may point at production. The auth fixture uses the full schema and seeds only
+its own test identities; invitation email tests use a fake SMTP server.
 CI runs PostgreSQL-backed integration tests alongside boundary and unit suites.
 
 Link the Neon CLI to the selected project and production branch. Review
@@ -188,10 +204,10 @@ Supabase snapshot procedure; see `neon/database/README.md`.
 Deploy the API, then the three apps with SDK rewrites. Preserve project domains
 and integration callbacks. Stage the API with `vercel deploy --prod --skip-domain`
 and verify it with `vercel curl` before promoting its custom domain. The API's
-explicit auth rewrite routes nested signup, sign-in and reset links into its
+explicit auth rewrite routes social sign-in and the Google callback into its
 Node Function; verify those routes on the deployment as well as locally.
-Exercise signup, access approval, verification,
-recovery, sign-in/out, workspace switching, requests, checklists, equipment and
+Exercise invitation creation, resend/revoke, Google sign-in/out, editable names,
+workspace switching, requests, checklists, equipment and
 venue bookings, providers, Telegram, scheduled messages and notification retries
 in real desktop and mobile browsers. Capture network requests to verify all
 application operations stay on `/api/*`.

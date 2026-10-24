@@ -15,7 +15,6 @@ export type WorkspaceUpdate = {
 export function createWorkspacesClient(transport: MocTransport) {
   return {
     directory: () => transport.call<WorkspaceDirectory>("workspaces", "directory"),
-    signupWorkspaces: () => transport.call<Workspace[]>("workspaces", "signupWorkspaces"),
     update: (workspaceId: string, updates: WorkspaceUpdate) =>
       transport.call<Workspace>("workspaces", "update", updates, workspaceId),
   }

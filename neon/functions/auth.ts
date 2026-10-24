@@ -1,17 +1,16 @@
 import { queryRows } from "../../packages/backend/src/database.js"
 import { getAuth } from "../../packages/backend/src/auth/index.js"
-import { isAuthEmailConfigured } from "../../packages/backend/src/auth/email.js"
+import { hasWorkspaceMembership } from "../../packages/backend/src/auth/invitations.js"
+import { isAuthPath, isAuthMethodAllowed, isGoogleSignInBody } from "../../packages/backend/src/auth/routes.js"
 import { verifyInternalAuthRequest } from "../../packages/backend/src/auth/internal-request.js"
 
 type NonceRow = { nonce: string }
-const AUTH_ROUTE = /^\/api\/auth\/(?:sign-up\/email|sign-in\/email|sign-out|get-session|send-verification-email|verify-email|request-password-reset|reset-password(?:\/[^/]+)?|change-password)$/
-const GET_AUTH_ROUTE = /^\/api\/auth\/(?:get-session|verify-email|reset-password\/[^/]+)$/
-const EMAIL_AUTH_ROUTE = /^\/api\/auth\/(?:sign-up\/email|send-verification-email|request-password-reset)$/
 type AuthFunctionOptions = {
   secret: string
   trustedOrigins: readonly string[]
   now?: () => number
   claimNonce?: (nonce: string, expiresAt: Date) => Promise<boolean>
+  hasMembership?: (userId: string) => Promise<boolean>
   handleAuth?: (request: Request) => Promise<Response>
 }
 
@@ -32,10 +31,22 @@ function unauthorized(): Response {
 }
 
 async function handleConfiguredAuth(request: Request): Promise<Response> {
-  if (EMAIL_AUTH_ROUTE.test(new URL(request.url).pathname) && !isAuthEmailConfigured()) {
-    return Response.json({ code: "EMAIL_UNAVAILABLE", message: "Email delivery is temporarily unavailable. Please try again later." }, { status: 503 })
+  if (new URL(request.url).pathname === "/api/auth/sign-in/social"
+    && (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET)) {
+    return Response.json({ code: "GOOGLE_UNAVAILABLE", message: "Google sign-in is not configured." }, { status: 503 })
   }
   return getAuth().handler(request)
+}
+
+async function admittedSession(response: Response, hasMembership: (userId: string) => Promise<boolean>): Promise<Response> {
+  if (!response.ok) return response
+  const result: unknown = await response.clone().json()
+  if (!result || typeof result !== "object" || !("user" in result) || !result.user) return response
+  const user = result.user
+  if (typeof user === "object" && "id" in user && typeof user.id === "string" && await hasMembership(user.id)) return response
+  // The API also resolves sessions through this endpoint, so old pending
+  // accounts and removed members cannot use an otherwise valid session cookie.
+  return Response.json(null, { headers: { "Cache-Control": "no-store" } })
 }
 
 export function createAuthFunctionHandler(options: AuthFunctionOptions) {
@@ -43,12 +54,12 @@ export function createAuthFunctionHandler(options: AuthFunctionOptions) {
   const now = options.now ?? Date.now
   const acceptNonce = options.claimNonce ?? claimNonce
   const handleAuth = options.handleAuth ?? handleConfiguredAuth
+  const hasMembership = options.hasMembership ?? hasWorkspaceMembership
 
   return async function handleInternalAuth(request: Request): Promise<Response> {
     const url = new URL(request.url)
-    if (!AUTH_ROUTE.test(url.pathname)) return Response.json({ error: "Not found" }, { status: 404 })
-    if (request.method !== "GET" && request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405 })
-    if (request.method === "GET" && !GET_AUTH_ROUTE.test(url.pathname)) return Response.json({ error: "Method not allowed" }, { status: 405 })
+    if (!isAuthPath(url.pathname)) return Response.json({ error: "Not found" }, { status: 404 })
+    if (!isAuthMethodAllowed(url.pathname, request.method)) return Response.json({ error: "Method not allowed" }, { status: 405 })
 
     const body = request.method === "POST" ? await request.text() : ""
     const cookie = request.headers.get("cookie") ?? ""
@@ -60,6 +71,10 @@ export function createAuthFunctionHandler(options: AuthFunctionOptions) {
     )
     if (!verified || !trustedOrigins.has(verified.origin)) return unauthorized()
     if (!await acceptNonce(verified.nonce, verified.expiresAt)) return Response.json({ error: "Request replayed" }, { status: 409 })
+
+    if (url.pathname === "/api/auth/sign-in/social" && !isGoogleSignInBody(body)) {
+      return Response.json({ code: "INVALID_SIGN_IN", message: "Use Google sign-in." }, { status: 400 })
+    }
 
     const headers = new Headers()
     for (const name of ["content-type", "cookie"]) {
@@ -74,7 +89,8 @@ export function createAuthFunctionHandler(options: AuthFunctionOptions) {
       ...(request.method === "POST" ? { body } : {}),
       redirect: "manual",
     })
-    return handleAuth(authRequest)
+    const response = await handleAuth(authRequest)
+    return url.pathname === "/api/auth/get-session" ? admittedSession(response, hasMembership) : response
   }
 }
 

@@ -62,31 +62,6 @@ describe("workspace, user and notification platform operations", () => {
     expect(calls[1].values[0]).toBe(context.workspaceId)
   })
 
-  test("join approval locks and removes only a request in the verified workspace", async () => {
-    const { context, calls } = createContext(async (text) => {
-      if (text.includes("SELECT user_id")) return { rows: [{ user_id: "00000000-0000-4000-8000-000000000003" }], rowCount: 1 }
-      return { rows: [], rowCount: 1 }
-    })
-    await userOperations.approveJoinRequest.run(context, { requestId: "00000000-0000-4000-8000-000000000005" })
-    expect(calls[0].text).toContain("id = $1 AND workspace_id = $2")
-    expect(calls[0].values[1]).toBe(context.workspaceId)
-    expect(calls[1].text).toContain("public.approve_workspace_join_request($1)")
-    expect(calls[1].values).toEqual(["00000000-0000-4000-8000-000000000005"])
-  })
-
-  test("join rejection uses the security-definer operation and scopes its lookup", async () => {
-    const { context, calls } = createContext(async (text) =>
-      text.includes("SELECT user_id") ? { rows: [{ user_id: "00000000-0000-4000-8000-000000000003" }], rowCount: 1 } : { rows: [], rowCount: 1 },
-    )
-
-    await userOperations.rejectJoinRequest.run(context, { requestId: "00000000-0000-4000-8000-000000000005" })
-
-    expect(calls[0].text).toContain("id = $1 AND workspace_id = $2")
-    expect(calls[0].values[1]).toBe(context.workspaceId)
-    expect(calls[1].text).toContain("public.reject_workspace_join_request($1)")
-    expect(calls[1].values).toEqual(["00000000-0000-4000-8000-000000000005"])
-  })
-
   test("notification mutations scope settings and route writes to verified workspace", async () => {
     const { context, calls } = createContext(async () => ({ rows: [], rowCount: 1 }))
     await notificationOperations.updateAutoArchiveDays.run(context, { completedRequestsDays: 5, returnedBookingsDays: 6 })

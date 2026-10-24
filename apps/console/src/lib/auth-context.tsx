@@ -5,21 +5,16 @@ import type { User as Profile } from "@moc/types/requests/assignee"
 import { routes } from "@/screens/console-routes"
 import { clearCurrentWorkspaceCache } from "@/data/current-workspace"
 import { moc } from "@/lib/moc-client"
-import { authCallbackError, authCallbackOutcome } from "@moc/sdk/auth"
+import { authCallbackError } from "@moc/sdk/auth"
 
 type AuthState = {
   session: MoCSession | null
   user: MoCUser | null
   profile: Profile | null
-  isPasswordRecovery: boolean
   callbackError: string | null
   loading: boolean
-  signUp: (email: string, password: string, name: string, surname: string, workspaceSlug?: string) => Promise<{ error: Error | null }>
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>
+  signInWithGoogle: () => Promise<{ error: Error | null }>
   signOut: () => Promise<{ error: Error | null }>
-  resetPassword: (email: string) => Promise<{ error: Error | null }>
-  updatePassword: (password: string) => Promise<{ error: Error | null }>
-  resendVerification: (email: string) => Promise<{ error: Error | null }>
   refreshProfile: () => Promise<void>
 }
 
@@ -27,42 +22,17 @@ const AuthContext = createContext<AuthState | null>(null)
 const AUTH_CHANNEL = "moc-auth-session"
 
 
-function passwordResetToken(): string | null {
-  if (typeof window === "undefined") return null
-  return new URLSearchParams(window.location.search).get("token")
-}
-
-function cleanAuthCallbackUrl(outcome: ReturnType<typeof authCallbackOutcome>): void {
-  if (typeof window === "undefined" || outcome === null) return
+function cleanAuthCallbackUrl(): void {
+  if (typeof window === "undefined") return
   const url = new URL(window.location.href)
-  url.searchParams.delete("auth")
   url.searchParams.delete("error")
   url.searchParams.delete("error_description")
   url.hash = ""
   window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`)
 }
 
-function callbackOutcome(): ReturnType<typeof authCallbackOutcome> {
-  if (typeof window === "undefined") return null
-  return authCallbackOutcome(new URL(window.location.href))
-}
-
-function currentRecoveryToken(): string | null {
-  return passwordResetToken()
-}
-
 async function fetchProfile(): Promise<Profile | null> {
   return moc.users.getProfile()
-}
-
-function recoveryRedirectUrl(): string {
-  return new URL(`/${routes.passwordRecovery}`, window.location.origin).toString()
-}
-
-function signupCallbackUrl(): string {
-  const url = new URL(`/${routes.login}`, window.location.origin)
-  url.searchParams.set("auth", "verified")
-  return url.toString()
 }
 
 function notifyOtherTabs(): void {
@@ -76,10 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<MoCSession | null>(null)
   const [user, setUser] = useState<MoCUser | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
-  const [callbackError] = useState<string | null>(() => typeof window === "undefined"
-    ? null
-    : authCallbackError(new URL(window.location.href)))
+  const [callbackError, setCallbackError] = useState<string | null>(() => typeof window === "undefined" ? null : authCallbackError(new URL(window.location.href)))
   const [loading, setLoading] = useState(true)
   const sessionUserIdRef = useRef<string | null>(null)
   const sessionRequestRef = useRef(0)
@@ -101,7 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(nextSession)
       setUser(nextSession?.user ?? null)
       if (!nextSession?.user) setProfile(null)
-      setIsPasswordRecovery(callbackOutcome() === "password-recovery")
     } catch (error) {
       if (request !== sessionRequestRef.current) return
       if (import.meta.env.DEV) console.error("Failed to restore authentication session:", error)
@@ -118,18 +84,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true
     const initialize = async () => {
-      const outcome = callbackOutcome()
-      if (authCallbackError(new URL(window.location.href))) {
-        const url = new URL(window.location.href)
-        url.searchParams.delete("error")
-        url.searchParams.delete("error_description")
-        url.hash = ""
-        window.history.replaceState({}, "", `${url.pathname}${url.search}`)
+      const callbackFailure = authCallbackError(new URL(window.location.href))
+      if (callbackFailure) {
+        setCallbackError(callbackFailure)
+        cleanAuthCallbackUrl()
       }
       await refreshSession()
       if (!active) return
-      if (outcome === "password-recovery") setIsPasswordRecovery(true)
-      if (outcome === "verified") cleanAuthCallbackUrl(outcome)
     }
     void initialize()
 
@@ -168,18 +129,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { active = false }
   }, [user])
 
-  async function signUp(email: string, password: string, name: string, surname: string, workspaceSlug?: string) {
-    const result = await moc.auth.signUp({ email, password, name, surname, workspaceSlug, callbackURL: signupCallbackUrl() })
-    return { error: result.error }
-  }
-
-  async function signIn(email: string, password: string) {
-    const result = await moc.auth.signIn(email, password)
-    if (!result.error) {
-      await refreshSession()
-      notifyOtherTabs()
-    }
-    return { error: result.error }
+  async function signInWithGoogle() {
+    const callbackURL = new URL(`/${routes.overview}`, window.location.origin).toString()
+    const errorCallbackURL = new URL(`/${routes.login}`, window.location.origin).toString()
+    const result = await moc.auth.signInWithGoogle(callbackURL, errorCallbackURL)
+    if (result.error) return { error: result.error }
+    if (!result.url) return { error: new Error("Google sign-in did not return an authorization URL") }
+    window.location.assign(result.url)
+    return { error: null }
   }
 
   async function signOut() {
@@ -197,38 +154,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null)
     setUser(null)
     setProfile(null)
-    setIsPasswordRecovery(false)
     setLoading(false)
     signingOutRef.current = false
     notifyOtherTabs()
     return { error }
   }
 
-  async function resetPassword(email: string) {
-    const result = await moc.auth.requestPasswordReset(email, recoveryRedirectUrl())
-    return { error: result.error }
-  }
-
-  async function updatePassword(password: string) {
-    const token = currentRecoveryToken()
-    if (!token) return { error: new Error("This password recovery link is missing or has expired") }
-    const result = await moc.auth.resetPassword(token, password)
-    if (!result.error) {
-      setIsPasswordRecovery(false)
-      const url = new URL(window.location.href)
-      url.searchParams.delete("token")
-      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`)
-    }
-    return { error: result.error }
-  }
-
-  async function resendVerification(email: string) {
-    const result = await moc.auth.sendVerificationEmail(email, signupCallbackUrl())
-    return { error: result.error }
-  }
-
   return (
-    <AuthContext value={{ session, user, profile, isPasswordRecovery, callbackError, loading, signUp, signIn, signOut, resetPassword, updatePassword, resendVerification, refreshProfile }}>
+    <AuthContext value={{ session, user, profile, callbackError, loading, signInWithGoogle, signOut, refreshProfile }}>
       {children}
     </AuthContext>
   )

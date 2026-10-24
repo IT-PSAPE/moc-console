@@ -19,12 +19,12 @@ function responseRecorder() {
 
 describe("auth proxy", () => {
   it("resolves nested deployment rewrites without forwarding routing metadata", () => {
-    expect(authRequestPath({ url: "/api/auth/_proxy?authPath=sign-up%2Femail&path=_proxy", headers: {} }))
-      .toEqual({ path: "/api/auth/sign-up/email", query: "" })
-    expect(authRequestPath({ url: "/api/auth/[...path]?authPath=reset-password%2Freset-token&callbackURL=https%3A%2F%2Fconsole.example.test%2Flogin", headers: {} }))
-      .toEqual({ path: "/api/auth/reset-password/reset-token", query: "?callbackURL=https%3A%2F%2Fconsole.example.test%2Flogin" })
-    expect(authRequestPath({ url: "/api/auth/verify-email?token=verification-token&callbackURL=%2Flogin&path=verify-email", headers: {} }))
-      .toEqual({ path: "/api/auth/verify-email", query: "?token=verification-token&callbackURL=%2Flogin" })
+    expect(authRequestPath({ url: "/api/auth/_proxy?authPath=sign-in%2Fsocial&path=_proxy", headers: {} }))
+      .toEqual({ path: "/api/auth/sign-in/social", query: "" })
+    expect(authRequestPath({ url: "/api/auth/[...path]?authPath=callback%2Fgoogle&code=test&state=opaque", headers: {} }))
+      .toEqual({ path: "/api/auth/callback/google", query: "?code=test&state=opaque" })
+    expect(authRequestPath({ url: "/api/auth/get-session?path=get-session", headers: {} }))
+      .toEqual({ path: "/api/auth/get-session", query: "" })
   })
 
   it("rejects missing, ambiguous and unlisted rewritten auth routes", () => {
@@ -87,9 +87,25 @@ describe("auth proxy", () => {
     })
     const response = responseRecorder()
 
-    await handler({ method: "POST", url: "/api/auth/sign-in/email", headers: { origin: "https://attacker.test" }, body: {} }, response)
+    await handler({ method: "POST", url: "/api/auth/sign-in/social", headers: { origin: "https://attacker.test" }, body: {} }, response)
 
     expect(dispatched).toBe(false)
     expect(response.statusCode).toBe(403)
   })
+  it("rejects legacy password routes and non-Google or extra sign-in payload fields", async () => {
+    let dispatches = 0
+    const handler = createAuthProxyHandler({ functionUrl: "https://auth.test", secret: "test-secret", trustedOrigins: ["https://console.test"], fetch: async () => { dispatches += 1; return Response.json({}) } })
+    for (const path of ["sign-up/email", "sign-in/email", "request-password-reset", "verify-email", "change-password", "callback/github"]) {
+      const response = responseRecorder()
+      await handler({ method: "POST", url: `/api/auth/${path}`, headers: { origin: "https://console.test" }, body: {} }, response)
+      expect(response.statusCode).toBe(404)
+    }
+    for (const extra of [{ provider: "github" }, { idToken: { token: "untrusted" } }, { additionalData: { surname: "untrusted" } }]) {
+      const response = responseRecorder()
+      await handler({ method: "POST", url: "/api/auth/sign-in/social", headers: { origin: "https://console.test" }, body: { provider: "google", callbackURL: "https://console.test/overview", errorCallbackURL: "https://console.test/login", ...extra } }, response)
+      expect(response.statusCode).toBe(400)
+    }
+    expect(dispatches).toBe(0)
+  })
+
 })

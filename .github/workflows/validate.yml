@@ -42,7 +42,9 @@ jobs:
       - run: npm run build
       - run: npm run test
       - run: psql "$MOC_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c 'CREATE DATABASE moc_auth_test'
-      - run: npm test -- test/packages/backend/auth-flow.integration.test.ts
+      - run: bash neon/database/build-fresh-database.sh "postgresql://postgres:postgres@localhost:5432/moc_auth_test"
+      - run: npm test -- test/packages/backend/auth-flow.integration.test.ts test/packages/backend/auth-invitations.integration.test.ts
         env:
           MOC_AUTH_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/moc_auth_test
+          MOC_AUTH_TEST_BRANCH: local
       - run: npm run lint

@@ -1,8 +1,5 @@
 export const routes = {
     login: 'login',
-    signup: 'signup',
-    resetPassword: 'reset-password',
-    passwordRecovery: 'password-recovery',
     broadcasts: 'broadcasts',
     overview: 'overview',
     work: 'work',

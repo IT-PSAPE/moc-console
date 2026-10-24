@@ -1,3 +1,4 @@
+import { isAuthMethodAllowed, isGoogleSignInBody } from "../../../packages/backend/src/auth/routes.js"
 import { createAuthNonce, createInternalAuthHeaders } from "../../../packages/backend/src/auth/internal-request.js"
 import type { ApiRequest } from "./http.js"
 import { headerValue } from "./http.js"
@@ -34,6 +35,11 @@ export function createAuthProxyHandler(options: AuthProxyOptions) {
       return
     }
 
+    if (!isAuthMethodAllowed(path.path, method)) {
+      authErrorResponse(response, 405, "method_not_allowed", "Method not allowed")
+      return
+    }
+
     const origin = trustedRequestOrigin(request, options.canonicalOrigin, trustedOrigins)
     if (!origin) {
       authErrorResponse(response, 403, "untrusted_origin", "Request origin is not allowed")
@@ -48,6 +54,11 @@ export function createAuthProxyHandler(options: AuthProxyOptions) {
     const callerContentType = headerValue(request.headers, "content-type")
     if (method === "POST" && callerContentType && !callerContentType.toLowerCase().startsWith("application/json")) {
       authErrorResponse(response, 415, "unsupported_media_type", "Auth requests must use JSON")
+      return
+    }
+
+    if (path.path === "/api/auth/sign-in/social" && !isGoogleSignInBody(body)) {
+      authErrorResponse(response, 400, "invalid_sign_in", "Use Google sign-in with a console callback URL")
       return
     }
 

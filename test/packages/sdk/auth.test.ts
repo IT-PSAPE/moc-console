@@ -1,58 +1,66 @@
 import { describe, expect, it } from "vitest"
-import { authCallbackError, authCallbackOutcome, createAuthClient } from "../../../packages/sdk/src/auth.js"
+import { authCallbackError, createAuthClient } from "../../../packages/sdk/src/auth.js"
 import type { MocTransport } from "../../../packages/sdk/src/transport.js"
 
-describe("MoC auth callbacks", () => {
-  it("maps supported verification and recovery callbacks", () => {
-    expect(authCallbackOutcome(new URL("https://console.example.test/login?auth=verified"))).toBe("verified")
-    expect(authCallbackOutcome(new URL("https://console.example.test/reset-password?token=opaque"))).toBe("password-recovery")
+describe("MoC Google auth", () => {
+  it("reads provider errors from query and hash callbacks", () => {
+    expect(authCallbackError(new URL("https://console.example.test/login?error=invitation_required"))).toBe("invitation required")
+    expect(authCallbackError(new URL("https://console.example.test/login#error_description=Google%20is%20unavailable"))).toBe("Google is unavailable")
+    expect(authCallbackError(new URL("https://console.example.test/login?code=opaque"))).toBeNull()
   })
 
-  it("ignores provider-specific OTP and PKCE callback parameters", () => {
-    expect(authCallbackOutcome(new URL("https://console.example.test/login?token_hash=abc&type=signup"))).toBeNull()
-    expect(authCallbackOutcome(new URL("https://console.example.test/reset-password?token_hash=abc&type=recovery"))).toBeNull()
-    expect(authCallbackOutcome(new URL("https://console.example.test/login?code=legacy"))).toBeNull()
-    expect(authCallbackError(new URL("https://console.example.test/login?token_hash=abc&type=signup"))).toBeNull()
-  })
-
-  it("exposes Better Auth callback errors to the login screen", () => {
-    expect(authCallbackError(new URL("https://console.example.test/login?error=invalid_token&error_description=Verification%20failed")))
-      .toBe("Verification failed")
-    expect(authCallbackError(new URL("https://console.example.test/login?error=invalid_token")))
-      .toBe("This verification email link has expired or is invalid. Request a new verification email.")
-  })
-
-  it("offers a clear recovery action for expired verification and password reset links", () => {
-    expect(authCallbackError(new URL("https://console.example.test/login?error=token_expired"))).toContain("verification email")
-    expect(authCallbackError(new URL("https://console.example.test/password-recovery?error=INVALID_TOKEN")))
-      .toBe("This password reset link has expired or is invalid. Request a new link.")
-  })
-
-  it("sends a verification email through the allowlisted auth SDK route", async () => {
+  it("requests Google social sign-in without redirecting the browser", async () => {
     let requested: { path: string; options?: unknown } | undefined
     const transport: MocTransport = {
       async request<T>(path, options) {
         requested = { path, options }
+        return { url: "https://accounts.google.test/authorize" } as T
+      },
+      async call<T>() { return null as T },
+      url(path) { return path },
+    }
+    const result = await createAuthClient(transport).signInWithGoogle("https://console.example.test/overview", "https://console.example.test/login")
+    expect(result).toEqual({ url: "https://accounts.google.test/authorize", error: null })
+    expect(requested).toEqual({
+      path: "/api/auth/sign-in/social",
+      options: {
+        method: "POST",
+        json: {
+          provider: "google",
+          callbackURL: "https://console.example.test/overview",
+          errorCallbackURL: "https://console.example.test/login",
+          disableRedirect: true,
+        },
+      },
+    })
+  })
+
+  it("preserves provider configuration and invitation error codes", async () => {
+    const transport: MocTransport = {
+      async request<T>(): Promise<T> { throw Object.assign(new Error("Invitation required"), { code: "INVITATION_REQUIRED" }) },
+      async call<T>() { return null as T },
+      url(path) { return path },
+    }
+    const result = await createAuthClient(transport).signInWithGoogle("https://console.example.test/overview", "https://console.example.test/login")
+    expect(result.url).toBeNull()
+    expect(result.error?.code).toBe("INVITATION_REQUIRED")
+  })
+
+  it("keeps existing session restoration and sign-out endpoints", async () => {
+    const calls: string[] = []
+    const transport: MocTransport = {
+      async request<T>(path): Promise<T> {
+        calls.push(path)
+        if (path === "/api/auth/get-session") return { session: { id: "s1", userId: "u1", expiresAt: "2027-01-01" }, user: { id: "u1", email: "person@example.test" } } as T
         return null as T
       },
       async call<T>() { return null as T },
       url(path) { return path },
     }
-    const result = await createAuthClient(transport).sendVerificationEmail("person@example.test", "https://console.example.test/login?auth=verified")
-    expect(result.error).toBeNull()
-    expect(requested).toEqual({
-      path: "/api/auth/send-verification-email",
-      options: { method: "POST", json: { email: "person@example.test", callbackURL: "https://console.example.test/login?auth=verified" } },
-    })
-  })
-
-  it("preserves Better Auth's unverified-account error code for the resend action", async () => {
-    const transport: MocTransport = {
-      async request<T>(): Promise<T> { throw Object.assign(new Error("Email not verified"), { code: "EMAIL_NOT_VERIFIED" }) },
-      async call<T>() { return null as T },
-      url(path) { return path },
-    }
-    const result = await createAuthClient(transport).signIn("person@example.test", "password")
-    expect(result.error?.code).toBe("EMAIL_NOT_VERIFIED")
+    const auth = createAuthClient(transport)
+    const session = await auth.getSession()
+    await auth.signOut()
+    expect(session?.user).toMatchObject({ id: "u1", email: "person@example.test", name: "", surname: "", emailVerified: false, image: null })
+    expect(calls).toEqual(["/api/auth/get-session", "/api/auth/sign-out"])
   })
 })

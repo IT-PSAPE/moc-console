@@ -1,16 +1,28 @@
 import { moc } from "@/lib/moc-client"
-import type { UserWithRole, PendingWorkspaceUser, UserProfileUpdate } from "@moc/sdk/users"
+import type { UserWithRole, WorkspaceInvitation, UserProfileUpdate } from "@moc/sdk/users"
 import type { Role } from "@moc/types/requests/assignee"
 import { uploadUserAvatarStorage } from "./upload-user-avatar"
 
-export type { UserWithRole, PendingWorkspaceUser }
+export type { UserWithRole, WorkspaceInvitation }
 
 export async function fetchUsersWithRoles(workspaceId: string): Promise<UserWithRole[]> {
   return moc.users.withRoles(workspaceId)
 }
 
-export async function fetchPendingWorkspaceUsers(workspaceId: string): Promise<PendingWorkspaceUser[]> {
-  return moc.users.pending(workspaceId)
+export async function fetchWorkspaceInvitations(workspaceId: string): Promise<WorkspaceInvitation[]> {
+  return moc.users.invitations(workspaceId)
+}
+
+export async function inviteWorkspaceEmail(workspaceId: string, email: string): Promise<{ invitation: WorkspaceInvitation; emailSent: boolean }> {
+  return moc.users.invite(workspaceId, email)
+}
+
+export async function resendWorkspaceInvitation(workspaceId: string, invitationId: string): Promise<{ invitation: WorkspaceInvitation; emailSent: boolean }> {
+  return moc.users.resendInvitation(workspaceId, invitationId)
+}
+
+export async function revokeWorkspaceInvitation(workspaceId: string, invitationId: string): Promise<void> {
+  await moc.users.revokeInvitation(workspaceId, invitationId)
 }
 
 export async function fetchAvailableRoles(): Promise<Role[]> {
@@ -54,14 +66,6 @@ export async function removeUserAvatar(_userId: string): Promise<void> {
 
 export async function assignUserRole(workspaceId: string, userId: string, roleId: string): Promise<void> {
   await moc.users.assignRole(workspaceId, userId, roleId)
-}
-
-export async function approveWorkspaceJoinRequest(requestId: string, workspaceId: string): Promise<void> {
-  await moc.users.approveJoinRequest(requestId, workspaceId)
-}
-
-export async function rejectWorkspaceJoinRequest(requestId: string, workspaceId: string): Promise<void> {
-  await moc.users.rejectJoinRequest(requestId, workspaceId)
 }
 
 export async function createTelegramLinkToken(_userId: string): Promise<{ token: string }> {

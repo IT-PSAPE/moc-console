@@ -46,16 +46,6 @@ export const operations: Record<string, PlatformOperation> = {
       return directory(context)
     },
   },
-  signupWorkspaces: {
-    permission: "public",
-    async run(context, input) {
-      emptyInput(input)
-      const result = await context.db.query<Pick<WorkspaceRow, "id" | "name" | "slug">>(
-        "SELECT id, name, slug FROM public.list_signup_workspaces()",
-      )
-      return result.rows.map((row) => ({ ...row, description: null }))
-    },
-  },
   update: {
     permission: "can_manage_roles",
     async run(context, input) {

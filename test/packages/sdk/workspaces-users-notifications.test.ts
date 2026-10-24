@@ -44,15 +44,19 @@ describe("workspace, user and notification SDK clients", () => {
     ])
   })
 
-  test("join request decisions carry the selected workspace for role authorization", async () => {
+  test("invitation management carries the selected workspace for role authorization", async () => {
     const { transport, calls } = createTransport()
     const users = createUsersClient(transport)
-    await users.approveJoinRequest("request-1", "workspace-1")
-    await users.rejectJoinRequest("request-2", "workspace-1")
+    await users.invitations("workspace-1")
+    await users.invite("workspace-1", "member@example.test")
+    await users.resendInvitation("workspace-1", "invitation-1")
+    await users.revokeInvitation("workspace-1", "invitation-2")
 
     expect(calls).toEqual([
-      { capability: "users", operation: "approveJoinRequest", input: { requestId: "request-1" }, workspaceId: "workspace-1" },
-      { capability: "users", operation: "rejectJoinRequest", input: { requestId: "request-2" }, workspaceId: "workspace-1" },
+      { capability: "users", operation: "invitations", input: undefined, workspaceId: "workspace-1" },
+      { capability: "users", operation: "invite", input: { email: "member@example.test" }, workspaceId: "workspace-1" },
+      { capability: "users", operation: "resendInvitation", input: { invitationId: "invitation-1" }, workspaceId: "workspace-1" },
+      { capability: "users", operation: "revokeInvitation", input: { invitationId: "invitation-2" }, workspaceId: "workspace-1" },
     ])
   })
 
