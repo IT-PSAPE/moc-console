@@ -4,14 +4,12 @@ export type BookingFormData = {
   title: string
   equipmentIds: string[]
   // Public bookings currently capture requested equipment labels rather than
-  // allocating inventory rows. The backend stores these separately from notes
-  // so the requester can safely edit them later.
+  // allocating inventory rows so the requester can safely edit them later.
   requestedEquipment: string[]
   otherEquipment: string
   bookedBy: string
   checkedOutAt: string
   expectedReturnAt: string
-  notes: string
 }
 
 export type SubmitBookingResult = {

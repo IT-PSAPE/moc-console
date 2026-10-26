@@ -14,7 +14,6 @@ const EMPTY_REQUEST_DRAFT: RequestFormData = {
   whereText: '',
   why: '',
   how: '',
-  notes: '',
   flow: '',
 }
 
@@ -26,15 +25,14 @@ const EMPTY_BOOKING_DRAFT: BookingFormData = {
   bookedBy: '',
   checkedOutAt: '',
   expectedReturnAt: '',
-  notes: '',
 }
 
 export const requestTextFields: Array<Exclude<keyof RequestFormData, 'category'>> = [
-  'title', 'requestedBy', 'dueDate', 'who', 'what', 'whenText', 'whereText', 'why', 'how', 'notes', 'flow',
+  'title', 'requestedBy', 'dueDate', 'who', 'what', 'whenText', 'whereText', 'why', 'how', 'flow',
 ]
 
 export const bookingTextFields: Array<Exclude<keyof BookingFormData, 'equipmentIds' | 'requestedEquipment'>> = [
-  'title', 'otherEquipment', 'bookedBy', 'checkedOutAt', 'expectedReturnAt', 'notes',
+  'title', 'otherEquipment', 'bookedBy', 'checkedOutAt', 'expectedReturnAt',
 ]
 
 function hasText(value: string): boolean {
@@ -47,6 +45,23 @@ export function getEmptyRequestDraft(): RequestFormData {
 
 export function getEmptyBookingDraft(): BookingFormData {
   return { ...EMPTY_BOOKING_DRAFT, equipmentIds: [], requestedEquipment: [] }
+}
+
+export function restoreRequestDraft(data: RequestFormData): RequestFormData {
+  const legacyNotes = 'notes' in data && typeof data.notes === 'string' ? data.notes : ''
+  return {
+    title: data.title, requestedBy: data.requestedBy, dueDate: data.dueDate, category: data.category,
+    who: data.who, what: legacyNotes.trim() ? [data.what, legacyNotes].filter(Boolean).join('\n\n') : data.what,
+    whenText: data.whenText, whereText: data.whereText, why: data.why, how: data.how, flow: data.flow,
+  }
+}
+
+export function restoreBookingDraft(data: BookingFormData): BookingFormData {
+  return {
+    title: data.title, equipmentIds: data.equipmentIds, requestedEquipment: data.requestedEquipment,
+    otherEquipment: data.otherEquipment, bookedBy: data.bookedBy,
+    checkedOutAt: data.checkedOutAt, expectedReturnAt: data.expectedReturnAt,
+  }
 }
 
 export function getEmptyVenueBookingDraft(bookingDate = formatCalendarDateKey(new Date())): VenueBookingFormData {

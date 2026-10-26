@@ -1,7 +1,7 @@
 import { Badge } from '@moc/ui/components/display/badge'
 import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Label } from '@moc/ui/components/display/text'
-import { Package, User, CalendarDays, CalendarCheck, StickyNote, FileText, Plus } from 'lucide-react'
+import { Package, User, CalendarDays, CalendarCheck, FileText, Plus } from 'lucide-react'
 import type { BookingFormData } from '@/types/booking'
 import { formatDateTime } from '@/lib/utils'
 
@@ -45,11 +45,6 @@ export function BookingReview({ data }: BookingReviewProps) {
           <MetaRow icon={<CalendarCheck />} label="Expected return">
             <Label.sm>{formatDateTime(data.expectedReturnAt)}</Label.sm>
           </MetaRow>
-          {data.notes && (
-            <MetaRow icon={<StickyNote />} label="Notes">
-              <Label.sm>{data.notes}</Label.sm>
-            </MetaRow>
-          )}
         </div>
       </section>
     </div>

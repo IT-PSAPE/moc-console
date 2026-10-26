@@ -23,7 +23,6 @@ export type TrackingRequestResult = TrackingBase & {
   whereText: string
   why: string
   how: string
-  notes: string | null
   flow: string | null
 }
 
@@ -34,7 +33,6 @@ export type TrackingBookingResult = TrackingBase & {
   checkedOutAt: string
   expectedReturnAt: string
   returnedAt: string | null
-  notes: string | null
   requestedEquipment: string[]
   otherEquipment: string
   items: TrackingBookingItem[]
@@ -56,7 +54,6 @@ export type TrackingVenueBookingResult = TrackingBase & {
   slotStarts: string[]
   recurrence: VenueRecurrence | null
   occurrences: VenueBookingOccurrence[]
-  notes: string | null
 }
 
 export type TrackingResult = TrackingRequestResult | TrackingBookingResult | TrackingVenueBookingResult

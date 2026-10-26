@@ -57,7 +57,6 @@ export function toRequestEditData(result: TrackingRequestResult): RequestFormDat
     whereText: result.whereText,
     why: result.why,
     how: result.how,
-    notes: result.notes ?? "",
     flow: result.flow ?? "",
   }
 }
@@ -71,7 +70,6 @@ export function toBookingEditData(result: TrackingBookingResult): BookingFormDat
     bookedBy: result.bookedBy,
     checkedOutAt: formatUtcIsoForBrowserDateTimeInput(result.checkedOutAt),
     expectedReturnAt: formatUtcIsoForBrowserDateTimeInput(result.expectedReturnAt),
-    notes: result.notes ?? "",
   }
 }
 

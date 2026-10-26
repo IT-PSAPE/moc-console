@@ -9,7 +9,6 @@ export async function submitPublicBookingBatch(data: BookingFormData): Promise<S
     bookedBy: data.bookedBy,
     checkedOutAt: new Date(data.checkedOutAt).toISOString(),
     expectedReturnAt: new Date(data.expectedReturnAt).toISOString(),
-    notes: data.notes || null,
     requestedEquipment: data.requestedEquipment,
     otherEquipment: data.otherEquipment.trim() || null,
   })

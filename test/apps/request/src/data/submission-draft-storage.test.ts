@@ -71,7 +71,7 @@ describe('meaningful submission drafts', () => {
 
     expect(hasMeaningfulBookingDraft(empty)).toBe(false)
     expect(hasMeaningfulBookingDraft({ ...empty, requestedEquipment: ['Camera'] })).toBe(true)
-    expect(hasMeaningfulBookingDraft({ ...empty, notes: '   ' })).toBe(false)
+    expect(hasMeaningfulBookingDraft({ ...empty, otherEquipment: '   ' })).toBe(false)
   })
 
   test('compares venue booking progress with the date initially shown to the user', () => {
@@ -99,7 +99,7 @@ describe('submission draft storage', () => {
   })
 
   test('restores current request fields while discarding fields from older drafts', () => {
-    const currentData = { ...getEmptyRequestDraft(), title: 'Sunday service', category: 'production', notes: 'Use the side entrance' }
+    const currentData = { ...getEmptyRequestDraft(), title: 'Sunday service', category: 'production' }
     storage.setItem('moc-request-public-draft-request-v2', JSON.stringify({
       step: 3,
       data: { ...currentData, priority: 'urgent' },
@@ -109,6 +109,39 @@ describe('submission draft storage', () => {
 
     expect(restored).toEqual({ step: 3, data: currentData })
     expect(restored?.data).not.toHaveProperty('priority')
+  })
+
+  test('preserves unsent legacy request notes as context without restoring a notes field', () => {
+    const currentData = { ...getEmptyRequestDraft(), title: 'Sunday service', what: 'Record the service' }
+    storage.setItem('moc-request-public-draft-request-v2', JSON.stringify({
+      step: 2,
+      data: { ...currentData, notes: 'Use the side entrance\nAsk for Craig' },
+    }))
+
+    const restored = loadSubmissionDraft('request')
+
+    expect(restored?.data.what).toBe('Record the service\n\nUse the side entrance\nAsk for Craig')
+    expect(restored?.data).not.toHaveProperty('notes')
+    expect(restored).not.toBeNull()
+    if (!restored) throw new Error('Expected request draft')
+    saveSubmissionDraft('request', restored, true)
+    expect(loadSubmissionDraft('request')).toEqual(restored)
+  })
+
+  test('retains the original booking draft before removing legacy notes from the form', () => {
+    const currentData = { ...getEmptyBookingDraft(), title: 'Sunday setup', requestedEquipment: ['Camera'] }
+    const original = JSON.stringify({ step: 2, data: { ...currentData, notes: 'Collect at the side entrance\nAsk for Craig' } })
+    storage.setItem('moc-request-public-draft-booking-v2', original)
+
+    const restored = loadSubmissionDraft('booking')
+
+    expect(restored).toEqual({ step: 2, data: currentData })
+    expect(restored?.data).not.toHaveProperty('notes')
+    expect(storage.getItem('moc-request-public-draft-booking-v2-legacy')).toBe(original)
+    if (!restored) throw new Error('Expected booking draft')
+    saveSubmissionDraft('booking', restored, true)
+    expect(loadSubmissionDraft('booking')).toEqual(restored)
+    expect(storage.getItem('moc-request-public-draft-booking-v2-legacy')).toBe(original)
   })
 
   test('rejects malformed recurrence rules instead of restoring an unusable draft', () => {

@@ -47,10 +47,6 @@ export function RequestDetails({ data, onChange, errors }: RequestDetailsProps) 
         <TextArea id="how" aria-label="How" aria-invalid={Boolean(errors.how) || undefined} aria-describedby={errors.how ? 'how-error' : undefined} name="how" placeholder="How should this be executed?" value={data.how} onChange={handleChange} rows={2} required />
         <FieldError id="how-error" message={errors.how} />
       </FormField>
-
-      <FormField label="Notes" optional>
-        <TextArea aria-label="Notes" name="notes" placeholder="Any additional notes or context…" value={data.notes} onChange={handleChange} rows={3} />
-      </FormField>
     </div>
   )
 }

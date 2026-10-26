@@ -39,7 +39,6 @@ export async function updateTrackedRequest(result: Extract<TrackingResult, { typ
     data: {
       ...data,
       dueDate: parseBrowserDateTimeInputToUtcIso(data.dueDate),
-      notes: data.notes.trim(),
       flow: data.flow.trim(),
     },
   }))
@@ -55,7 +54,6 @@ export async function updateTrackedBooking(result: Extract<TrackingResult, { typ
       bookedBy: data.bookedBy,
       checkedOutAt: parseBrowserDateTimeInputToUtcIso(data.checkedOutAt),
       expectedReturnAt: parseBrowserDateTimeInputToUtcIso(data.expectedReturnAt),
-      notes: data.notes.trim(),
       requestedEquipment: data.requestedEquipment,
       otherEquipment: data.otherEquipment.trim(),
     },

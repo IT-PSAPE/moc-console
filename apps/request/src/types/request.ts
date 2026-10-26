@@ -12,7 +12,6 @@ export type RequestFormData = {
   whereText: string
   why: string
   how: string
-  notes: string
   flow: string
 }
 

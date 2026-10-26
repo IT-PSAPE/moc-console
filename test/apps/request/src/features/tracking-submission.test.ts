@@ -46,7 +46,6 @@ describe("tracking result edit data", () => {
       whereText: "Main auditorium",
       why: "Weekly recap",
       how: "Use the standard package",
-      notes: null,
       flow: null,
       createdAt: "2026-09-19T08:00:00.000Z",
       updatedAt: "2026-09-19T08:00:00.000Z",
@@ -61,7 +60,6 @@ describe("tracking result edit data", () => {
       whereText: "Main auditorium",
       why: "Weekly recap",
       how: "Use the standard package",
-      notes: "",
       flow: "",
     })
   })
@@ -77,7 +75,6 @@ describe("tracking result edit data", () => {
       checkedOutAt: "2026-10-02T06:30:00.000Z",
       expectedReturnAt: "2026-10-02T12:30:00.000Z",
       returnedAt: null,
-      notes: null,
       requestedEquipment: ["Camera"],
       otherEquipment: "Tripod",
       items: [],
@@ -104,7 +101,6 @@ describe("tracking result edit data", () => {
       slotStarts: ["2026-10-03T16:00:00.000Z"],
       recurrence: null,
       occurrences: [{ index: 0, startsAt: "2026-10-03T16:00:00.000Z", endsAt: "2026-10-03T18:00:00.000Z" }],
-      notes: null,
       createdAt: "2026-09-19T08:00:00.000Z",
       updatedAt: "2026-09-19T08:00:00.000Z",
     }), {
@@ -126,7 +122,7 @@ describe("canRequesterModify", () => {
       createdAt: "2026-09-19T08:00:00.000Z", updatedAt: "2026-09-19T08:00:00.000Z",
       category: "event", categoryName: "Event", requestedBy: "Craig",
       dueDate: "2026-10-01T12:00:00.000Z", who: "Team", what: "Record", whenText: "Sunday",
-      whereText: "Hall", why: "Archive", how: "Camera", notes: null, flow: null,
+      whereText: "Hall", why: "Archive", how: "Camera", flow: null,
     }
     assert.equal(canRequesterModify({ ...base, type: "request", status: "not_started" }), true)
     assert.equal(canRequesterModify({ ...base, type: "request", status: "completed" }), false)
@@ -138,7 +134,6 @@ describe("canRequesterModify", () => {
       eventOther: "Youth night", timeZone: "Africa/Johannesburg", endsAt: "2026-10-03T18:00:00.000Z",
       slotStarts: ["2026-10-03T16:00:00.000Z"], recurrence: null,
       occurrences: [{ index: 0, startsAt: "2026-10-03T16:00:00.000Z", endsAt: "2026-10-03T18:00:00.000Z" }],
-      notes: null,
       createdAt: "2026-09-19T08:00:00.000Z", updatedAt: "2026-09-19T08:00:00.000Z",
     }
     assert.equal(canRequesterModify({ ...venue, startsAt: "2026-10-03T16:00:00.000Z" }, new Date("2026-10-03T15:59:59.000Z")), true)

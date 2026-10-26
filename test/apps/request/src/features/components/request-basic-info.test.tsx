@@ -7,7 +7,7 @@ import type { RequestCategoryOption } from '../../../../../../apps/request/src/t
 
 const data = {
   title: '', requestedBy: '', dueDate: '', category: '', who: '', what: '',
-  whenText: '', whereText: '', why: '', how: '', notes: '', flow: '',
+  whenText: '', whereText: '', why: '', how: '', flow: '',
 }
 
 function renderRequestBasicInfo(categoryUnavailable: boolean, categoryPlaceholder: string, categories: RequestCategoryOption[] = []) {

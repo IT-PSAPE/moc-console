@@ -36,7 +36,6 @@ function createRequestResult(trackingCode: string): TrackingResult {
     whereText: "Hall",
     why: "Needed",
     how: "Together",
-    notes: null,
     flow: null,
     createdAt: "2026-10-20T09:00:00.000Z",
     updatedAt: "2026-10-20T09:00:00.000Z",

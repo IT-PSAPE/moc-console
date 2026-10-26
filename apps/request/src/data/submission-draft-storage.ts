@@ -1,4 +1,4 @@
-import { bookingTextFields, requestTextFields } from './submission-draft-values'
+import { bookingTextFields, requestTextFields, restoreBookingDraft, restoreRequestDraft } from './submission-draft-values'
 import type { BookingFormData } from '../types/booking'
 import type { RequestFormData } from '../types/request'
 import type { VenueBookingFormData } from '../types/venue-booking'
@@ -89,7 +89,15 @@ function isVenueBookingFormData(value: unknown): value is VenueBookingFormData {
 
 function readStoredValue(kind: SubmissionDraftKind): unknown {
   const raw = window.localStorage.getItem(STORAGE_KEYS[kind])
-  return raw ? JSON.parse(raw) : null
+  const value: unknown = raw ? JSON.parse(raw) : null
+  if (kind === 'booking' && raw && isDraftEnvelope(value) && isRecord(value.data) && typeof value.data.notes === 'string' && value.data.notes.trim()) {
+    try {
+      window.localStorage.setItem(`${STORAGE_KEYS.booking}-legacy`, raw)
+    } catch {
+      // Restore the current fields even if storage cannot retain the legacy backup.
+    }
+  }
+  return value
 }
 
 function isDraftEnvelope(value: unknown): value is { step: number; data: unknown } {
@@ -105,28 +113,14 @@ export function loadSubmissionDraft(kind: SubmissionDraftKind): AnyStoredSubmiss
     const value = readStoredValue(kind)
     if (!isDraftEnvelope(value)) return null
 
-    if (kind === 'request' && isRequestFormData(value.data)) {
-      const data = value.data
-      return {
-        step: value.step,
-        data: {
-          title: data.title, requestedBy: data.requestedBy,
-          dueDate: data.dueDate, category: data.category,
-          who: data.who, what: data.what,
-          whenText: data.whenText, whereText: data.whereText,
-          why: data.why, how: data.how,
-          notes: data.notes, flow: data.flow,
-        },
-      }
-    }
-    if (kind === 'booking' && isBookingFormData(value.data)) return { step: value.step, data: value.data }
+    if (kind === 'request' && isRequestFormData(value.data)) return { step: value.step, data: restoreRequestDraft(value.data) }
+    if (kind === 'booking' && isBookingFormData(value.data)) return { step: value.step, data: restoreBookingDraft(value.data) }
     if (kind === 'venue' && isVenueBookingFormData(value.data)) return { step: value.step, data: { ...value.data, recurrence: value.data.recurrence ?? null } }
     return null
   } catch {
     return null
   }
 }
-
 export function saveSubmissionDraft<K extends SubmissionDraftKind>(kind: K, draft: StoredSubmissionDraft<K>, hasMeaningfulChanges: boolean): void {
   if (!hasMeaningfulChanges) {
     clearSubmissionDraft(kind)

@@ -2,7 +2,7 @@ import { Badge } from '@moc/ui/components/display/badge'
 import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Divider } from '@moc/ui/components/display/divider'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
-import { User, FileText, CalendarDays, Tag, Users, MapPin, Clock, Target, Lightbulb, Wrench, StickyNote, GitBranch } from 'lucide-react'
+import { User, FileText, CalendarDays, Tag, Users, MapPin, Clock, Target, Lightbulb, Wrench, GitBranch } from 'lucide-react'
 import type { RequestFormData } from '@/types/request'
 import { formatDateTime } from '@/lib/utils'
 
@@ -50,9 +50,6 @@ export function RequestReview({ data, categoryName }: { data: RequestFormData; c
           <MetaRow icon={<Wrench />} label="How">
             <Label.sm>{data.how}</Label.sm>
           </MetaRow>
-          {data.notes && <MetaRow icon={<StickyNote />} label="Notes">
-            <Label.sm>{data.notes}</Label.sm>
-          </MetaRow>}
         </div>
       </section>
 

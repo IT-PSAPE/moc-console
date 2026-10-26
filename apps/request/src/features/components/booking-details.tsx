@@ -1,6 +1,5 @@
 import { Input } from '@moc/ui/components/form/input'
 import { DateTimeFields } from '@moc/ui/components/form/date-time-fields'
-import { TextArea } from '@moc/ui/components/form/text-area'
 import { FormLabel } from '@moc/ui/components/form/form-label'
 import { FieldError } from '@/features/components/field-error'
 import type { StepValidationErrors } from '@/features/hooks/use-step-validation'
@@ -34,10 +33,6 @@ export function BookingDetails({ data, onChange, errors }: BookingDetailsProps) 
     onChange('bookedBy', event.target.value)
   }
 
-  function handleNotesChange(event: ChangeEvent<HTMLTextAreaElement>) {
-    onChange('notes', event.target.value)
-  }
-
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
@@ -69,11 +64,6 @@ export function BookingDetails({ data, onChange, errors }: BookingDetailsProps) 
         onChange={handleExpectedReturnAtChange}
         errorText={expectedReturnError}
       />
-
-      <div className="flex flex-col gap-1.5">
-        <FormLabel label="Notes" optional />
-        <TextArea aria-label="Notes" name="notes" placeholder="Any notes about this booking…" value={data.notes} onChange={handleNotesChange} rows={3} />
-      </div>
     </div>
   )
 }

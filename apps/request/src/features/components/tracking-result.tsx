@@ -2,7 +2,7 @@ import { Badge } from '@moc/ui/components/display/badge'
 import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Divider } from '@moc/ui/components/display/divider'
 import { Label, Paragraph, Title } from '@moc/ui/components/display/text'
-import { Hash, Package, User, CalendarDays, Flag, Tag, CalendarCheck, StickyNote, Building2, Repeat2 } from 'lucide-react'
+import { Hash, Package, User, CalendarDays, Flag, Tag, CalendarCheck, Building2, Repeat2 } from 'lucide-react'
 import { formatVenueRecurrenceEndLabel, formatVenueRecurrenceLabel, venueBookingPhaseLabel, venueBookingPhaseColor } from '@moc/types/venues'
 import type { VenueBookingPhase } from '@moc/types/venues'
 import { STATUS_LABELS, STATUS_COLORS } from '../constants'
@@ -67,9 +67,6 @@ export function TrackingResult({ data }: { data: TrackingResultType }) {
               {data.returnedAt && (
                 <MetaRow icon={<CalendarCheck />} label="Returned">{formatDateTime(data.returnedAt)}</MetaRow>
               )}
-              {data.notes && (
-                <MetaRow icon={<StickyNote />} label="Notes">{data.notes}</MetaRow>
-              )}
             </>
           )}
 
@@ -98,9 +95,6 @@ export function TrackingResult({ data }: { data: TrackingResultType }) {
                   {recurrenceEndLabel && <Paragraph.xs className="text-tertiary">{data.occurrences.length} occurrences · {recurrenceEndLabel}</Paragraph.xs>}
                 </div>
               </MetaRow>
-              {data.notes && (
-                <MetaRow icon={<StickyNote />} label="Notes">{data.notes}</MetaRow>
-              )}
             </>
           )}
 

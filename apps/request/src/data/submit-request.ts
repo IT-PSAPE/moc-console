@@ -7,7 +7,6 @@ export async function submitPublicRequest(data: RequestFormData): Promise<Submit
   const result = await moc.publicSubmissions.submitRequest(workspaceId, {
     ...data,
     dueDate: parseBrowserDateTimeInputToUtcIso(data.dueDate),
-    notes: data.notes || null,
     flow: data.flow || null,
   })
   moc.publicSubmissions.notifyCreated('request', result.id, result.trackingCode)

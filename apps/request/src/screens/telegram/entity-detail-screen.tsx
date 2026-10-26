@@ -20,7 +20,7 @@ export function EntityDetailScreen({ detail, autoStartScan }: EntityDetailScreen
       <EntityStatusHeader title={detail.title} status={detail.status} trackingCode={detail.trackingCode} />
 
       <Divider />
-      <EntityFieldsList fields={detail.fields} notes={detail.notes} />
+      <EntityFieldsList fields={detail.fields} />
 
       {hasEquipment && (
         <>
