@@ -8,7 +8,6 @@ export type Equipment = {
   category: EquipmentCategory;
   status: EquipmentStatus;
   location: string;
-  notes: string;
   lastActiveDate: string;
   bookedBy: string | null;
   thumbnail: string | null;

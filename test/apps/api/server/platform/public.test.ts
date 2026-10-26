@@ -44,9 +44,24 @@ describe("public submission platform operations", () => {
 
     await expect(operations.submitRequest.run(context, {
       workspaceId,
-      data: { title: "Request", category: "general", dueDate: "2030-10-12T16:00:00.000Z", requestedBy: "Craig", who: "Team", what: "Record", whenText: "Sunday", whereText: "Hall", why: "Archive", how: "Camera", notes: null, flow: null },
+      data: { title: "Request", category: "general", dueDate: "2030-10-12T16:00:00.000Z", requestedBy: "Craig", who: "Team", what: "Record", whenText: "Sunday", whereText: "Hall", why: "Archive", how: "Camera", flow: "Setup first" },
     })).resolves.toEqual({ id: "33333333-3333-4333-8333-333333333333", trackingCode: "REQ-ABC123" })
     expect(calls[0]?.values[3]).toBe("2030-10-12T16:00:00.000Z")
+    expect(calls[0]?.values).toHaveLength(12)
+    expect(calls[0]?.values[11]).toBe("Setup first")
+    expect(calls[0]?.sql).not.toContain("$13")
+  })
+
+  test("submits equipment selections with the eight-argument booking contract", async () => {
+    const { context, calls } = contextWithQuery(() => [{ result: { booking_id: "33333333-3333-4333-8333-333333333333", tracking_code: "BKG-ABC123", title: "Sunday setup" } }])
+
+    await expect(operations.submitBooking.run(context, {
+      workspaceId,
+      data: { title: "Sunday setup", equipmentIds: [], bookedBy: "Craig", checkedOutAt: "2030-10-12T16:00:00.000Z", expectedReturnAt: "2030-10-12T18:00:00.000Z", requestedEquipment: ["Camera"], otherEquipment: "Tripod" },
+    })).resolves.toEqual({ bookingId: "33333333-3333-4333-8333-333333333333", trackingCode: "BKG-ABC123", title: "Sunday setup" })
+
+    expect(calls[0]?.values).toEqual([workspaceId, "Sunday setup", [], "Craig", "2030-10-12T16:00:00.000Z", "2030-10-12T18:00:00.000Z", ["Camera"], "Tripod"])
+    expect(calls[0]?.sql).not.toContain("$9")
   })
 
   test("submits Other venue events with no event UUID and retains recurrence JSON", async () => {
@@ -57,7 +72,8 @@ describe("public submission platform operations", () => {
       workspaceId,
       data: { venueId: "22222222-2222-4222-8222-222222222222", requestedBy: "Craig", slotStarts: ["2030-10-12T16:00:00.000Z", "2030-10-12T16:30:00.000Z"], eventId: null, eventOther: "Youth night", recurrence },
     })).resolves.toEqual({ id: "33333333-3333-4333-8333-333333333333", trackingCode: "VEN-ABC123", title: "Youth night", startsAt: "2030-10-12T16:00:00.000Z", endsAt: "2030-10-12T17:00:00.000Z" })
-    expect(calls[0]?.values).toEqual([workspaceId, "22222222-2222-4222-8222-222222222222", "Craig", ["2030-10-12T16:00:00.000Z", "2030-10-12T16:30:00.000Z"], null, "Youth night", null, recurrence])
+    expect(calls[0]?.values).toEqual([workspaceId, "22222222-2222-4222-8222-222222222222", "Craig", ["2030-10-12T16:00:00.000Z", "2030-10-12T16:30:00.000Z"], null, "Youth night", recurrence])
+    expect(calls[0]?.sql).not.toContain("$8")
   })
 
   test("sends no recurrence to PostgreSQL as SQL null", async () => {
@@ -67,6 +83,6 @@ describe("public submission platform operations", () => {
       workspaceId,
       data: { venueId: "22222222-2222-4222-8222-222222222222", requestedBy: "Craig", slotStarts: ["2030-10-12T16:00:00.000Z"], eventId: null, eventOther: "Youth night", recurrence: null },
     })
-    expect(calls[0]?.values[7]).toBeNull()
+    expect(calls[0]?.values[6]).toBeNull()
   })
 })

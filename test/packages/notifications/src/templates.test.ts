@@ -41,8 +41,8 @@ describe("DEFAULT_TEMPLATES", () => {
     assert.ok(DEFAULT_TEMPLATES["meeting.created"].includes("{{joinUrl}}"))
   })
 
-  it("puts notes in a blockquote and the tracking code in a native paragraph", () => {
-    assert.ok(DEFAULT_TEMPLATES["request.created"].includes("<blockquote>{{notes}}</blockquote>"))
+  it("puts request context in a blockquote and the tracking code in a native paragraph", () => {
+    assert.ok(DEFAULT_TEMPLATES["request.created"].includes("<blockquote>{{what}}</blockquote>"))
     assert.ok(DEFAULT_TEMPLATES["request.created"].includes("<p>{{trackingCode}}</p>"))
   })
 
@@ -52,7 +52,7 @@ describe("DEFAULT_TEMPLATES", () => {
   })
 
   it("drops a line whose only token is empty (one fact per line)", () => {
-    const rendered = renderTemplate(DEFAULT_TEMPLATES["request.created"], { ...SAMPLE_TOKENS["request.created"], notes: "" })
+    const rendered = renderTemplate(DEFAULT_TEMPLATES["request.created"], { ...SAMPLE_TOKENS["request.created"], what: "" })
     assert.equal(rendered.includes("<blockquote>"), false)
   })
 })
@@ -64,5 +64,12 @@ describe("validateTemplate", () => {
 
   it("flags a token that isn't valid for the type", () => {
     assert.deepEqual(validateTemplate("request.created", "{{notARealToken}}"), ["notARealToken"])
+  })
+
+  it("removes notes from all entity announcement and assignment templates", () => {
+    assert.deepEqual(validateTemplate("request.created", "{{notes}}"), ["notes"])
+    assert.deepEqual(validateTemplate("assignment.request", "{{notes}}"), ["notes"])
+    assert.deepEqual(validateTemplate("booking.created", "{{notes}}"), ["notes"])
+    assert.deepEqual(validateTemplate("venue_booking.created", "{{notes}}"), ["notes"])
   })
 })

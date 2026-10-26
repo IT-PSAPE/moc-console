@@ -95,11 +95,11 @@ async function getVenueAvailability(context: Parameters<PlatformOperation["run"]
 
 async function submitRequest(context: Parameters<PlatformOperation["run"]>[0], raw: unknown): Promise<unknown> {
   const input = workspaceInput(raw, ["data"]);
-  const data = objectInput(input.data, ["title", "category", "dueDate", "requestedBy", "who", "what", "whenText", "whereText", "why", "how", "notes", "flow"]);
+  const data = objectInput(input.data, ["title", "category", "dueDate", "requestedBy", "who", "what", "whenText", "whereText", "why", "how", "flow"]);
   const dueDate = data.dueDate === null ? null : validIso(data.dueDate, "dueDate");
   const result = await context.db.query<{ result: unknown }>(
-    "SELECT public.public_submit_request($1::uuid, $2::text, $3::text, $4::timestamptz, $5::text, $6::text, $7::text, $8::text, $9::text, $10::text, $11::text, $12::text, $13::text) AS result",
-    [input.workspaceId, stringField(data, "title"), stringField(data, "category"), dueDate, stringField(data, "requestedBy"), stringField(data, "who"), stringField(data, "what"), stringField(data, "whenText"), stringField(data, "whereText"), stringField(data, "why"), stringField(data, "how"), textOrNull(data, "notes"), textOrNull(data, "flow")],
+    "SELECT public.public_submit_request($1::uuid, $2::text, $3::text, $4::timestamptz, $5::text, $6::text, $7::text, $8::text, $9::text, $10::text, $11::text, $12::text) AS result",
+    [input.workspaceId, stringField(data, "title"), stringField(data, "category"), dueDate, stringField(data, "requestedBy"), stringField(data, "who"), stringField(data, "what"), stringField(data, "whenText"), stringField(data, "whereText"), stringField(data, "why"), stringField(data, "how"), textOrNull(data, "flow")],
   );
   const row = jsonRecord(result.rows[0]?.result, "Request submission returned an invalid result");
   return { id: row.id, trackingCode: row.tracking_code };
@@ -107,13 +107,13 @@ async function submitRequest(context: Parameters<PlatformOperation["run"]>[0], r
 
 async function submitBooking(context: Parameters<PlatformOperation["run"]>[0], raw: unknown): Promise<unknown> {
   const input = workspaceInput(raw, ["data"]);
-  const data = objectInput(input.data, ["title", "equipmentIds", "bookedBy", "checkedOutAt", "expectedReturnAt", "notes", "requestedEquipment", "otherEquipment"]);
+  const data = objectInput(input.data, ["title", "equipmentIds", "bookedBy", "checkedOutAt", "expectedReturnAt", "requestedEquipment", "otherEquipment"]);
   const equipmentIds = stringArray(data.equipmentIds, "equipmentIds");
   const checkedOutAt = validIso(data.checkedOutAt, "checkedOutAt");
   const expectedReturnAt = validIso(data.expectedReturnAt, "expectedReturnAt");
   const result = await context.db.query<{ result: unknown }>(
-    "SELECT public.public_submit_booking_batch($1::uuid, $2::text, $3::uuid[], $4::text, $5::timestamptz, $6::timestamptz, $7::text, $8::text[], $9::text) AS result",
-    [input.workspaceId, stringField(data, "title"), equipmentIds, stringField(data, "bookedBy"), checkedOutAt, expectedReturnAt, textOrNull(data, "notes"), stringArray(data.requestedEquipment, "requestedEquipment"), textOrNull(data, "otherEquipment")],
+    "SELECT public.public_submit_booking_batch($1::uuid, $2::text, $3::uuid[], $4::text, $5::timestamptz, $6::timestamptz, $7::text[], $8::text) AS result",
+    [input.workspaceId, stringField(data, "title"), equipmentIds, stringField(data, "bookedBy"), checkedOutAt, expectedReturnAt, stringArray(data.requestedEquipment, "requestedEquipment"), textOrNull(data, "otherEquipment")],
   );
   const row = jsonRecord(result.rows[0]?.result, "Booking submission returned an invalid result");
   return { bookingId: row.booking_id, trackingCode: row.tracking_code, title: row.title };
@@ -126,8 +126,8 @@ async function submitVenueBooking(context: Parameters<PlatformOperation["run"]>[
   const eventId = data.eventId === null ? null : uuidField(data, "eventId");
   const slotStarts = stringArray(data.slotStarts, "slotStarts").map((slot) => validIso(slot, "slotStarts"));
   const result = await context.db.query<{ result: unknown }>(
-    "SELECT public.public_submit_venue_booking($1::uuid, $2::uuid, $3::text, $4::timestamptz[], $5::uuid, $6::text, $7::text, $8::jsonb) AS result",
-    [input.workspaceId, venueId, stringField(data, "requestedBy"), slotStarts, eventId, textOrNull(data, "eventOther"), null, recurrenceValue(data.recurrence ?? null)],
+    "SELECT public.public_submit_venue_booking($1::uuid, $2::uuid, $3::text, $4::timestamptz[], $5::uuid, $6::text, $7::jsonb) AS result",
+    [input.workspaceId, venueId, stringField(data, "requestedBy"), slotStarts, eventId, textOrNull(data, "eventOther"), recurrenceValue(data.recurrence ?? null)],
   );
   const row = jsonRecord(result.rows[0]?.result, "Venue booking submission returned an invalid result");
   return { id: row.id, trackingCode: row.tracking_code, title: row.title, startsAt: row.starts_at, endsAt: row.ends_at };

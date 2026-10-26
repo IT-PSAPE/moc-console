@@ -36,7 +36,6 @@ const requestSubmission: PublicSubmission = {
   whereText: "Auditorium",
   why: "Archive",
   how: "Cameras",
-  notes: null,
   flow: null,
 }
 
@@ -96,7 +95,6 @@ function requestUpdateData(): Record<string, unknown> {
     whereText: "Auditorium",
     why: "Archive",
     how: "Cameras",
-    notes: "Bring batteries",
     flow: "Setup first",
   }
 }
@@ -107,7 +105,6 @@ function bookingUpdateData(): Record<string, unknown> {
     bookedBy: "Craig",
     checkedOutAt: "2030-09-25T10:00:00.000Z",
     expectedReturnAt: "2030-09-25T12:00:00.000Z",
-    notes: "",
     requestedEquipment: ["Camera"],
     otherEquipment: "",
   }
@@ -139,8 +136,10 @@ describe("public submission input", () => {
   it("validates the complete type-specific update payload", () => {
     const parsed = parseUpdateBody({ trackingCode: "REQ-ABC123", type: "request", updatedAt, data: requestUpdateData() })
     assert.notEqual(typeof parsed, "string")
+    assert.equal(typeof parseUpdateBody({ trackingCode: "REQ-ABC123", type: "request", updatedAt, data: { ...requestUpdateData(), notes: "Old field" } }), "string")
     const booking = parseUpdateBody({ trackingCode: "BKG-ABC123", type: "booking", updatedAt, data: bookingUpdateData() })
     assert.notEqual(typeof booking, "string")
+    assert.equal(typeof parseUpdateBody({ trackingCode: "BKG-ABC123", type: "booking", updatedAt, data: { ...bookingUpdateData(), notes: "Old field" } }), "string")
     const venue = parseUpdateBody({ trackingCode: "VEN-ABC123", type: "venue_booking", updatedAt, data: venueUpdateData() })
     assert.notEqual(typeof venue, "string")
     const customVenue = parseUpdateBody({

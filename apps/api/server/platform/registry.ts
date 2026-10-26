@@ -12,11 +12,13 @@ import { operations as capability9 } from "./users.js"
 import { operations as capability10 } from "./venue-bookings.js"
 import { operations as capability11 } from "./venues.js"
 import { operations as capability12 } from "./workspaces.js"
+import { operations as discussion } from "./discussion.js"
 
 export const platformRegistry: PlatformRegistry = {
   "bookings": capability0,
   "broadcasts": capability1,
   "checklists": capability2,
+  "discussion": discussion,
   "equipment": capability3,
   "notification-settings": capability4,
   "publicSubmissions": capability5,

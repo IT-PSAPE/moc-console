@@ -27,7 +27,6 @@ export type VenueBooking = {
   trackingCode: string;
   title: string;
   requestedBy: string;
-  notes: string | null;
   /**
    * The stored state: 'auto', 'approved', 'rejected' or 'cancelled'. For the
    * status a reader should see, call deriveVenueBookingPhase — do not branch

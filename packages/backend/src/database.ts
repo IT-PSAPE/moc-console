@@ -4,6 +4,7 @@ export type DatabaseActor = {
   userId: string | null;
   workspaceId: string | null;
   role: 'moc_app' | 'moc_public' | 'moc_worker';
+  source?: { kind: 'system' | 'integration'; name?: string };
 };
 
 const poolConfig = {
@@ -54,6 +55,9 @@ function validateActor(actor: DatabaseActor): void {
   if (actor.role === 'moc_public' && actor.userId) {
     throw new Error('Public database actors cannot set a user id');
   }
+  if (actor.source && actor.role !== 'moc_worker') throw new Error('Only worker actors can set an activity source');
+  if (actor.source && !['system', 'integration'].includes(actor.source.kind)) throw new Error('Activity source kind is invalid');
+  if (actor.source?.name && actor.source.name.length > 120) throw new Error('Activity source name is too long');
 }
 
 export async function withActor<T>(actor: DatabaseActor, work: (client: PoolClient) => Promise<T>): Promise<T> {
@@ -63,7 +67,8 @@ export async function withActor<T>(actor: DatabaseActor, work: (client: PoolClie
   try {
     await client.query('BEGIN');
     await client.query(`SET LOCAL ROLE ${actor.role}`);
-    await client.query("SELECT set_config('moc.user_id', $1, true), set_config('moc.workspace_id', $2, true)", [actor.userId ?? '', actor.workspaceId ?? '']);
+    const sourceKind = actor.userId ? 'member' : actor.role === 'moc_public' ? 'requester' : actor.source?.kind ?? 'system';
+    await client.query("SELECT set_config('moc.user_id', $1, true), set_config('moc.workspace_id', $2, true), set_config('moc.actor_kind', $3, true), set_config('moc.actor_name', $4, true)", [actor.userId ?? '', actor.workspaceId ?? '', sourceKind, actor.source?.name?.trim() ?? '']);
     const result = await work(client);
     await client.query('COMMIT');
     return result;

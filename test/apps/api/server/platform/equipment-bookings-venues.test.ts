@@ -26,7 +26,7 @@ describe("equipment, bookings and venue booking platform operations", () => {
     const { context, calls } = createContext(async () => ({
       rows: [{
         id: "00000000-0000-4000-8000-000000000003", name: "Camera", serial_number: "CAM-1", category: "camera", status: "booked",
-        location: "Shelf A", notes: null, last_active_on: null, thumbnail_url: null, booked_by: "Craig", checked_out_at: "2026-01-01T10:00:00.000Z",
+        location: "Shelf A", last_active_on: null, thumbnail_url: null, booked_by: "Craig", checked_out_at: "2026-01-01T10:00:00.000Z",
       }], rowCount: 1,
     }))
 
@@ -34,6 +34,38 @@ describe("equipment, bookings and venue booking platform operations", () => {
     expect(result[0]).toMatchObject({ bookedBy: "Craig", lastActiveDate: "2026-01-01T10:00:00.000Z" })
     expect(calls[0].text).toContain("WHERE e.workspace_id = $1")
     expect(calls[0].values).toEqual([context.workspaceId])
+    expect(calls[0].text).not.toMatch(/\bnotes\b/)
+    expect(result[0]).not.toHaveProperty("notes")
+  })
+
+  test.each(["create", "update"])("equipment %s persists only current properties", async (operation) => {
+    const equipment = { id: "00000000-0000-4000-8000-000000000003", name: "Camera", serialNumber: "CAM-1", category: "camera", status: "available", location: "Shelf A", lastActiveDate: "2026-10-26T10:00:00.000Z", thumbnail: null }
+    const { context, calls } = createContext(async (text) => ({ rows: text.startsWith("SELECT") ? [{ id: equipment.id, name: equipment.name, serial_number: equipment.serialNumber, category: equipment.category, status: equipment.status, location: equipment.location, last_active_on: "2026-10-26", thumbnail_url: null, booked_by: null }] : [], rowCount: 1 }))
+    const result = await equipmentOperations[operation].run(context, { equipment })
+    expect(result).not.toHaveProperty("notes")
+    expect(calls[0].text).not.toMatch(/\bnotes\b/)
+    expect(calls[0].values).toEqual(operation === "create"
+      ? [equipment.id, context.workspaceId, equipment.name, equipment.serialNumber, equipment.category, equipment.status, equipment.location, "2026-10-26", null]
+      : [context.workspaceId, equipment.id, equipment.name, equipment.serialNumber, equipment.category, equipment.status, equipment.location, "2026-10-26", null])
+  })
+
+  test("booking update persists current properties and reads back without Notes", async () => {
+    const booking = { id: "00000000-0000-4000-8000-000000000003", bookedBy: "Craig", checkedOutDate: "2026-10-26T10:00:00.000Z", expectedReturnAt: "2026-10-26T12:00:00.000Z", returnedDate: null, status: "checked_out" }
+    const { context, calls } = createContext(async (text) => ({ rows: text.startsWith("SELECT") ? [{ id: booking.id, booked_by: booking.bookedBy, checked_out_at: booking.checkedOutDate, expected_return_at: booking.expectedReturnAt, returned_at: null, status: booking.status, items: [] }] : [], rowCount: 1 }))
+    const result = await bookingOperations.update.run(context, { booking })
+    expect(calls[0].values).toEqual([context.workspaceId, booking.id, booking.bookedBy, booking.checkedOutDate, booking.expectedReturnAt, null, booking.status])
+    expect(calls.every((call) => !/\bnotes\b/.test(call.text))).toBe(true)
+    expect(result).not.toHaveProperty("notes")
+  })
+
+  test.each([
+    { operation: equipmentOperations.create, input: { equipment: { notes: "Obsolete" } } },
+    { operation: equipmentOperations.update, input: { equipment: { notes: "Obsolete" } } },
+    { operation: bookingOperations.update, input: { booking: { notes: "Obsolete" } } },
+  ])("rejects obsolete Notes input before querying", async ({ operation, input }) => {
+    const { context, calls } = createContext(async () => ({ rows: [], rowCount: 0 }))
+    await expect(operation.run(context, input)).rejects.toThrow("Unexpected input field")
+    expect(calls).toHaveLength(0)
   })
 
   test("archiving a booking leaves its checkout and return timestamps intact", async () => {
@@ -45,11 +77,26 @@ describe("equipment, bookings and venue booking platform operations", () => {
     expect(calls[0].values.slice(0, 3)).toEqual([context.workspaceId, "00000000-0000-4000-8000-000000000003", "archived"])
   })
 
+  test.each(["checked_out", "returned"])("retrying the already-applied %s status skips writes and preserves timestamps", async (status) => {
+    const id = "00000000-0000-4000-8000-000000000003"
+    const { context, calls } = createContext(async (text) => text.startsWith("UPDATE") ? { rows: [], rowCount: 0 } : { rows: [{ id }], rowCount: 1 })
+    await expect(bookingOperations.updateStatus.run(context, { id, status })).resolves.toBeNull()
+
+    expect(calls[0].text).toContain("AND status IS DISTINCT FROM $3::public.booking_status")
+    expect(calls).toHaveLength(2)
+    expect(calls[1]).toEqual({ text: "SELECT id FROM public.bookings WHERE workspace_id=$1 AND id=$2", values: [context.workspaceId, id] })
+  })
+
+  test("a skipped status update still reports missing or cross-workspace bookings", async () => {
+    const { context } = createContext(async () => ({ rows: [], rowCount: 0 }))
+    await expect(bookingOperations.updateStatus.run(context, { id: "00000000-0000-4000-8000-000000000003", status: "returned" })).rejects.toMatchObject({ status: 404, code: "not_found" })
+  })
+
   test("cancellation records the verified actor and retains recurrence occurrence grouping", async () => {
     const calls: QueryCall[] = []
     const bookingRow = {
       id: "00000000-0000-4000-8000-000000000003", workspace_id: "00000000-0000-4000-8000-000000000001", venue_id: "00000000-0000-4000-8000-000000000004",
-      event_id: null, event_other: "Workshop", tracking_code: "VEN-ABC123", title: "Workshop", requested_by: "Craig", notes: null, status: "cancelled",
+      event_id: null, event_other: "Workshop", tracking_code: "VEN-ABC123", title: "Workshop", requested_by: "Craig", status: "cancelled",
       starts_at: "2026-09-01T10:00:00.000Z", ends_at: "2026-09-08T11:00:00.000Z",
       recurrence: { custom: false, frequency: "week", interval: 1, weekdays: [2], end: { type: "count", count: 2 } },
       cancelled_at: "2026-08-01T10:00:00.000Z", cancelled_by: "00000000-0000-4000-8000-000000000002", cancel_reason: "Change of plans",
@@ -79,6 +126,8 @@ describe("equipment, bookings and venue booking platform operations", () => {
       { index: 0, startsAt: "2026-09-01T10:00:00.000Z", endsAt: "2026-09-01T10:30:00.000Z" },
       { index: 1, startsAt: "2026-09-08T10:00:00.000Z", endsAt: "2026-09-08T11:00:00.000Z" },
     ])
+    expect(calls.every((call) => !/\bnotes\b/.test(call.text))).toBe(true)
+    expect(result).not.toHaveProperty("notes")
   })
 
   test("restoring a booking turns a slot unique violation into the established conflict", async () => {

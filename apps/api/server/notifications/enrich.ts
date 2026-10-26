@@ -30,12 +30,12 @@ export async function enrichRequest(requestId: string, options?: { throwOnError?
       title: string; status: string; category: string | null; requested_by: string | null;
       due_date: string | null; created_at: string; updated_at: string; tracking_code: string | null; who: string | null;
       what: string | null; when_text: string | null; where_text: string | null; why: string | null; how: string | null;
-      notes: string | null; flow: string | null; category_name: string | null;
+      flow: string | null; category_name: string | null;
     };
     const [data] = await queryRows<RequestRow>(
       `SELECT request.title, request.status, request.category, request.requested_by,
          request.due_date, request.created_at, request.updated_at, request.tracking_code, request.who,
-         request.what, request.when_text, request.where_text, request.why, request.how, request.notes,
+         request.what, request.when_text, request.where_text, request.why, request.how,
          request.flow, category.name AS category_name
        FROM public.requests AS request
        LEFT JOIN public.request_categories AS category
@@ -60,7 +60,6 @@ export async function enrichRequest(requestId: string, options?: { throwOnError?
       whereText: data.where_text,
       why: data.why,
       how: data.how,
-      notes: data.notes,
       flow: data.flow,
     };
   } catch (error) {
@@ -106,7 +105,6 @@ type BookingRow = QueryResultRow & {
   checked_out_at: string | null;
   expected_return_at: string | null;
   returned_at: string | null;
-  notes: string | null;
   tracking_code: string;
   equipment_name: string | null;
   equipment_category: string | null;
@@ -125,7 +123,7 @@ export async function enrichBooking(
   try {
     const rows = await queryRows<BookingRow>(
        `SELECT booking.booked_by, booking.status, booking.checked_out_at, booking.expected_return_at,
-         booking.returned_at, booking.notes, booking.tracking_code, equipment.name AS equipment_name,
+         booking.returned_at, booking.tracking_code, equipment.name AS equipment_name,
          equipment.category AS equipment_category, equipment.location AS equipment_location,
          equipment.serial_number AS equipment_serial_number, equipment.names AS equipment_names
        FROM public.bookings AS booking
@@ -152,7 +150,6 @@ export async function enrichBooking(
       checkedOutAt: fmtDate(first.checked_out_at),
       expectedReturnAt: fmtDate(first.expected_return_at),
       returnedAt: fmtDate(first.returned_at),
-      notes: first.notes,
       trackingCode: first.tracking_code,
       itemCount: String(rows.length),
       equipmentName: first.equipment_name ?? "",
@@ -203,7 +200,6 @@ type VenueBookingRow = QueryResultRow & {
   requested_by: string;
   tracking_code: string;
   event_other: string | null;
-  notes: string | null;
   status: string;
   starts_at: string;
   ends_at: string;
@@ -268,7 +264,7 @@ export function deriveVenueBookingSeriesStatus(
 export async function enrichVenueBooking(venueBookingId: string, options?: { throwOnError?: boolean }): Promise<TokenValues> {
   try {
     const [data] = await queryRows<VenueBookingRow>(
-      `SELECT booking.title, booking.requested_by, booking.tracking_code, booking.event_other, booking.notes,
+      `SELECT booking.title, booking.requested_by, booking.tracking_code, booking.event_other,
          booking.status, booking.starts_at, booking.ends_at, booking.recurrence, booking.cancel_reason,
          booking.cancelled_at, venue.name AS venue_name, venue.description AS venue_description,
          event.name AS event_name,
@@ -301,7 +297,6 @@ export async function enrichVenueBooking(venueBookingId: string, options?: { thr
       eventName: row.event_name ?? row.event_other ?? undefined,
       startsAt: fmtDate(row.starts_at),
       endsAt: fmtDate(row.ends_at),
-      notes: row.notes,
       cancelReason: row.cancel_reason,
       cancelledAt: fmtDate(row.cancelled_at),
       status: deriveVenueBookingSeriesStatus(row.status, row.venue_booking_slots, row.starts_at, row.ends_at),

@@ -61,19 +61,19 @@ function prefixMatches(type: SubmissionType, trackingCode: string): boolean {
 }
 
 function validRequestData(data: Record<string, unknown>): boolean {
-  const keys = ["title", "requestedBy", "dueDate", "category", "who", "what", "whenText", "whereText", "why", "how", "notes", "flow"]
+  const keys = ["title", "requestedBy", "dueDate", "category", "who", "what", "whenText", "whereText", "why", "how", "flow"]
   return hasExactKeys(data, keys)
     && isText(data.title, 120) && isText(data.requestedBy, 200)
     && isIsoDate(data.dueDate) && isText(data.category, 120) && isText(data.who, 4000) && isText(data.what, 4000)
     && isText(data.whenText, 4000) && isText(data.whereText, 4000) && isText(data.why, 4000) && isText(data.how, 4000)
-    && isText(data.notes, 10000, false) && isText(data.flow, 10000, false)
+    && isText(data.flow, 10000, false)
 }
 
 function validBookingData(data: Record<string, unknown>): boolean {
-  const keys = ["title", "bookedBy", "checkedOutAt", "expectedReturnAt", "notes", "requestedEquipment", "otherEquipment"]
+  const keys = ["title", "bookedBy", "checkedOutAt", "expectedReturnAt", "requestedEquipment", "otherEquipment"]
   return hasExactKeys(data, keys)
     && isText(data.title, 120) && isText(data.bookedBy, 200) && isIsoDate(data.checkedOutAt) && isIsoDate(data.expectedReturnAt)
-    && Date.parse(data.checkedOutAt) > Date.now() && Date.parse(data.expectedReturnAt) > Date.parse(data.checkedOutAt) && isText(data.notes, 10000, false)
+    && Date.parse(data.checkedOutAt) > Date.now() && Date.parse(data.expectedReturnAt) > Date.parse(data.checkedOutAt)
     && isTextArray(data.requestedEquipment, 50, 120) && isText(data.otherEquipment, 1000, false)
     && (data.requestedEquipment.length > 0 || data.otherEquipment.trim().length > 0)
 }

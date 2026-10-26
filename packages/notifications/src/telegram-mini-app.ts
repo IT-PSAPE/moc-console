@@ -73,7 +73,6 @@ export type MiniAppEntityDetail = {
   trackingCode: string | null;
   status: MiniAppStatus;
   fields: MiniAppField[];
-  notes: string | null;
   /** Only actions the viewer may take right now; empty for read-only viewers. */
   actions: MiniAppAction[];
   /** Equipment bookings only. */

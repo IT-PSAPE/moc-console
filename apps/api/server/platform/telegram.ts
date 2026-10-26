@@ -1,5 +1,5 @@
 import type { PlatformOperation } from './context.js'
-import { scheduledSnapshot, mutateScheduledMessages } from '../scheduled-messages/handler.js'
+import { scheduledSnapshot, scheduledSnapshotView, mutateScheduledMessages } from '../scheduled-messages/handler.js'
 
 function inputRecord(input: unknown): Record<string, unknown> {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Invalid request')
@@ -8,7 +8,7 @@ function inputRecord(input: unknown): Record<string, unknown> {
 
 const scheduledSnapshotOperation: PlatformOperation = {
   permission: 'can_update',
-  run: (context) => scheduledSnapshot(context.workspaceId,context.db,false),
+  run: async (context, input) => scheduledSnapshot(context.workspaceId,context.db,false,scheduledSnapshotView(input == null ? undefined : inputRecord(input).view),input == null ? undefined : inputRecord(input).cursor),
 }
 
 const scheduledMutateOperation: PlatformOperation = {

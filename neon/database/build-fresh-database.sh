@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ "$#" -ne 1 ]; then
-  echo 'Usage: neon/database/build-fresh-database.sh <empty-database-url>' >&2
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ] || { [ "$#" -eq 2 ] && [ "$2" != '--legacy-import' ]; }; then
+  echo 'Usage: neon/database/build-fresh-database.sh <empty-database-url> [--legacy-import]' >&2
   exit 1
 fi
 
@@ -27,4 +27,10 @@ psql "$database_url" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1
   -f "$script_dir/broadcast-revisions.sql" \
   -f "$script_dir/90-runtime-grants.sql" \
   -f "$script_dir/verify-final-state.sql"
+if [ "${2:-}" != '--legacy-import' ]; then
+  psql "$database_url" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1 \
+    -f "$script_dir/item-discussion.sql" \
+    -f "$script_dir/verify-item-discussion.sql" \
+    -f "$script_dir/verify-final-state.sql"
+fi
 printf 'Fresh MoC Neon schema installed and verified.\n'

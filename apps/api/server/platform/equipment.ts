@@ -9,17 +9,16 @@ type EquipmentRow = {
   category: Equipment["category"]
   status: Equipment["status"]
   location: string
-  notes: string | null
   last_active_on: string | null
   thumbnail_url: string | null
   booked_by: string | null
   checked_out_at: string | null
 }
 
-const equipmentFields = ["id", "name", "serialNumber", "category", "status", "location", "notes", "lastActiveDate", "thumbnail"] as const
+const equipmentFields = ["id", "name", "serialNumber", "category", "status", "location", "lastActiveDate", "thumbnail"] as const
 const categories: readonly Equipment["category"][] = ["camera", "lens", "lighting", "audio", "support", "monitor", "cable", "accessory"]
 const statuses: readonly Equipment["status"][] = ["available", "booked", "booked_out", "maintenance"]
-const SELECT = `id, name, serial_number, category, status, location, notes, last_active_on::text AS last_active_on,
+const SELECT = `id, name, serial_number, category, status, location, last_active_on::text AS last_active_on,
   thumbnail_url,
   (SELECT b.booked_by FROM public.bookings b JOIN public.booking_items bi ON bi.booking_id = b.id
    WHERE bi.equipment_id = e.id AND b.workspace_id = e.workspace_id AND b.status <> 'returned'
@@ -36,7 +35,6 @@ function mapEquipment(row: EquipmentRow): Equipment {
     category: row.category,
     status: row.status,
     location: row.location,
-    notes: row.notes ?? "",
     lastActiveDate: row.last_active_on ?? row.checked_out_at ?? new Date().toISOString(),
     bookedBy: row.booked_by,
     thumbnail: row.thumbnail_url,
@@ -61,7 +59,6 @@ function readEquipment(input: unknown): Equipment {
     category,
     status,
     location: stringField(record, "location"),
-    notes: nullableString("notes") ?? "",
     lastActiveDate: nullableString("lastActiveDate") ?? new Date().toISOString(),
     bookedBy: null,
     thumbnail: nullableString("thumbnail"),
@@ -108,9 +105,9 @@ export const operations: Record<string, PlatformOperation> = {
       const { equipment: source } = objectInput(input, ["equipment"])
       const equipment = readEquipment(source)
       await context.db.query(
-        `INSERT INTO public.equipment (id, workspace_id, name, serial_number, category, status, location, notes, last_active_on, thumbnail_url)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::date, $10)`,
-        [equipment.id, context.workspaceId, equipment.name, equipment.serialNumber, equipment.category, equipment.status, equipment.location, equipment.notes || null, equipment.lastActiveDate.slice(0, 10), equipment.thumbnail],
+        `INSERT INTO public.equipment (id, workspace_id, name, serial_number, category, status, location, last_active_on, thumbnail_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8::date, $9)`,
+        [equipment.id, context.workspaceId, equipment.name, equipment.serialNumber, equipment.category, equipment.status, equipment.location, equipment.lastActiveDate.slice(0, 10), equipment.thumbnail],
       )
       const created = await findEquipment(context, equipment.id)
       if (!created) throw notFound()
@@ -123,9 +120,9 @@ export const operations: Record<string, PlatformOperation> = {
       const { equipment: source } = objectInput(input, ["equipment"])
       const equipment = readEquipment(source)
       const result = await context.db.query<EquipmentRow>(
-        `UPDATE public.equipment SET name=$3, serial_number=$4, category=$5, status=$6, location=$7, notes=$8, last_active_on=$9::date, thumbnail_url=$10
+        `UPDATE public.equipment SET name=$3, serial_number=$4, category=$5, status=$6, location=$7, last_active_on=$8::date, thumbnail_url=$9
          WHERE workspace_id=$1 AND id=$2`,
-        [context.workspaceId, equipment.id, equipment.name, equipment.serialNumber, equipment.category, equipment.status, equipment.location, equipment.notes || null, equipment.lastActiveDate.slice(0, 10), equipment.thumbnail],
+        [context.workspaceId, equipment.id, equipment.name, equipment.serialNumber, equipment.category, equipment.status, equipment.location, equipment.lastActiveDate.slice(0, 10), equipment.thumbnail],
       )
       if (result.rowCount === 0) throw notFound()
       const updated = await findEquipment(context, equipment.id)

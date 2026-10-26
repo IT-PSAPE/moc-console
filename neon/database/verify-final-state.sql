@@ -25,6 +25,15 @@ DECLARE
   missing_routines text[];
   invalid_role text;
 BEGIN
+  -- The import baseline preserves source layouts; current application schemas
+  -- replace request-only history with shared item history after parity checks.
+  IF to_regclass('public.item_activity') IS NOT NULL OR to_regclass('public.item_comments') IS NOT NULL THEN
+    expected_tables := array_remove(array_remove(expected_tables, 'request_activity'), 'request_comments')
+      || ARRAY['item_activity', 'item_comments'];
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND ((table_name='requests' AND column_name IN ('notes','content')) OR (table_name IN ('equipment','bookings','venue_bookings') AND column_name='notes'))) THEN
+      RAISE EXCEPTION 'Shared discussion migration left obsolete request fields';
+    END IF;
+  END IF;
   SELECT array_agg(tablename ORDER BY tablename)
   INTO actual_tables
   FROM pg_tables

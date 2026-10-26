@@ -2,6 +2,7 @@ import { createAuthClient } from "./auth"
 import { createBookingsClient } from "./bookings"
 import { createBroadcastsClient } from "./broadcasts"
 import { createChecklistsClient } from "./checklists"
+import { createDiscussionClient } from "./discussion"
 import { createEquipmentClient } from "./equipment"
 import { createIntegrationsClient } from "./integrations"
 import { createNotificationSettingsClient } from "./notification-settings"
@@ -25,6 +26,7 @@ export function createMocClient(baseUrl: string, options: MocTransportOptions = 
     bookings: createBookingsClient(transport),
     broadcasts: createBroadcastsClient(transport),
     checklists: createChecklistsClient(transport),
+    discussion: createDiscussionClient(transport),
     equipment: createEquipmentClient(transport),
     integrations: createIntegrationsClient(transport),
     notificationSettings: createNotificationSettingsClient(transport),

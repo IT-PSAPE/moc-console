@@ -24,20 +24,6 @@ describe("requests SDK", () => {
     ])
   })
 
-  test("trims comment bodies before sending and returns typed result", async () => {
-    const transport = {
-      call: async (_capability: string, operation: string, input?: unknown, workspaceId?: string) => {
-        expect(operation).toBe("createComment")
-        expect(input).toEqual({ requestId: "request-1", body: "Need a new cable" })
-        expect(workspaceId).toBe("workspace-1")
-        return { id: "comment-1", requestId: "request-1", body: "Need a new cable", actor: null, createdAt: "now" }
-      },
-    } as MocTransport
-    const client = createRequestsClient(transport)
-
-    await expect(client.createComment("request-1", "  Need a new cable  ", "workspace-1")).resolves.toMatchObject({ id: "comment-1" })
-  })
-
   test("sends only the new name when renaming a request type", async () => {
     const transport = {
       call: async (_capability: string, operation: string, input?: unknown, workspaceId?: string) => {

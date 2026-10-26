@@ -42,7 +42,6 @@ export function buildRequestDetail(
     trackingCode: request.trackingCode,
     status: { value: request.status, label: requestStatusLabel(request.status), color: requestStatusColor(request.status) },
     fields,
-    notes: request.notes,
     actions,
     equipment: [],
     scanMode: null,
@@ -80,7 +79,6 @@ export function buildBookingDetail(
     trackingCode: booking.trackingCode,
     status: { value: booking.status, label: bookingStatusLabel(booking.status), color: bookingStatusColor(booking.status) },
     fields,
-    notes: booking.notes,
     actions,
     equipment: booking.items.map((item) => ({
       id: item.id,
@@ -141,7 +139,6 @@ export function buildVenueBookingDetail(
     trackingCode: record.trackingCode,
     status: { value: phase, label: venueBookingPhaseLabel[phase] ?? titleCase(phase), color: venuePhaseColor(phase) },
     fields,
-    notes: record.notes,
     actions,
     equipment: [],
     scanMode: null,

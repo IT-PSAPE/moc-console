@@ -15,7 +15,6 @@ type VenueBookingRow = {
   tracking_code: string
   title: string
   requested_by: string
-  notes: string | null
   status: VenueBookingStatus
   starts_at: string
   ends_at: string
@@ -38,7 +37,7 @@ type VenueBookingRow = {
   slots: SlotRow[] | null
 }
 
-const SELECT = `b.id, b.request_id, b.workspace_id, b.venue_id, b.event_id, b.event_other, b.tracking_code, b.title, b.requested_by, b.notes,
+const SELECT = `b.id, b.request_id, b.workspace_id, b.venue_id, b.event_id, b.event_other, b.tracking_code, b.title, b.requested_by,
   b.status, b.starts_at::text, b.ends_at::text, b.recurrence, b.cancelled_at::text, b.cancelled_by, b.cancel_reason,
   b.approved_at::text, b.approved_by, b.rejected_at::text, b.rejected_by, b.created_at::text, b.updated_at::text,
   v.name AS venue_name, v.description AS venue_description, e.name AS event_name,
@@ -86,7 +85,6 @@ function mapBooking(row: VenueBookingRow): VenueBooking {
     trackingCode: row.tracking_code,
     title: row.title,
     requestedBy: row.requested_by,
-    notes: row.notes,
     status: row.status,
     startsAt: row.starts_at,
     endsAt: row.ends_at,

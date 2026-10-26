@@ -88,7 +88,9 @@ export const youTubeSyncStore: YouTubeSyncDependencies = {
   },
   deleteStreams: async (workspaceId, broadcastIds) => {
     if (broadcastIds.length === 0) return
-    await queryRows("DELETE FROM public.streams WHERE workspace_id=$1 AND youtube_broadcast_id=ANY($2::text[])", [workspaceId, broadcastIds])
+    await withActor({ userId: null, workspaceId, role: "moc_worker", source: { kind: "integration", name: "YouTube" } }, async (client) => {
+      await client.query("DELETE FROM public.streams WHERE workspace_id=$1 AND youtube_broadcast_id=ANY($2::text[])", [workspaceId, broadcastIds])
+    })
   },
   fetchAuthenticatedChannelId: async (workspaceId) => {
     const response = await proxyYouTubeApiRequest({ method: "GET", path: "/channels?part=id&mine=true", workspaceId })
@@ -113,7 +115,7 @@ export const youTubeSyncStore: YouTubeSyncDependencies = {
   upsertStreams: async (rows) => {
     if (rows.length === 0) return
     const columns = ["workspace_id", "youtube_broadcast_id", "youtube_stream_id", "title", "description", "thumbnail_url", "privacy_status", "is_for_kids", "scheduled_start_time", "actual_start_time", "actual_end_time", "stream_status", "stream_url", "enable_dvr", "enable_embed", "enable_auto_start", "enable_auto_stop", "latency_preference", "created_by"] as const
-    await withActor({ userId: null, workspaceId: null, role: "moc_worker" }, async (client) => {
+    await withActor({ userId: null, workspaceId: null, role: "moc_worker", source: { kind: "integration", name: "YouTube" } }, async (client) => {
       for (const row of rows) {
         const values = [row.workspace_id, row.youtube_broadcast_id, row.youtube_stream_id, row.title, row.description, row.thumbnail_url,
           row.privacy_status, row.is_for_kids, row.scheduled_start_time, row.actual_start_time, row.actual_end_time, row.stream_status,

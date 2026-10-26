@@ -17,7 +17,5 @@ export type Request = {
   where: string;
   why: string;
   how: string;
-  notes?: string;
   flow?: string;
-  content?: string;
 };

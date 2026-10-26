@@ -1,8 +1,6 @@
 import type {
   Request,
-  RequestActivity,
   RequestCategoryDefinition,
-  RequestComment,
   Status,
 } from "@moc/types/requests"
 import type { MocTransport } from "./transport"
@@ -27,9 +25,6 @@ type RequestsClient = {
   updateCategory(id: string, rename: RequestCategoryRename, workspaceId: string): Promise<RequestCategoryDefinition>
   setCategoryActive(id: string, active: boolean, workspaceId: string): Promise<void>
   deleteCategory(id: string, workspaceId: string): Promise<void>
-  listActivity(requestId: string, workspaceId: string): Promise<RequestActivity[]>
-  listComments(requestId: string, workspaceId: string): Promise<RequestComment[]>
-  createComment(requestId: string, body: string, workspaceId: string): Promise<RequestComment>
 }
 
 export function createRequestsClient(transport: MocTransport): RequestsClient {
@@ -57,8 +52,5 @@ export function createRequestsClient(transport: MocTransport): RequestsClient {
     updateCategory: (id, rename, workspaceId) => call<RequestCategoryDefinition>("updateCategory", { id, ...rename }, workspaceId),
     setCategoryActive: (id, active, workspaceId) => callVoid("setCategoryActive", { id, active }, workspaceId),
     deleteCategory: (id, workspaceId) => callVoid("deleteCategory", { id }, workspaceId),
-    listActivity: (requestId, workspaceId) => call<RequestActivity[]>("listActivity", { requestId }, workspaceId),
-    listComments: (requestId, workspaceId) => call<RequestComment[]>("listComments", { requestId }, workspaceId),
-    createComment: (requestId, body, workspaceId) => call<RequestComment>("createComment", { requestId, body: body.trim() }, workspaceId),
   }
 }

@@ -21,7 +21,6 @@ export type Booking = {
   expectedReturnAt: string;
   returnedDate: string | null;
   duration: string;
-  notes: string;
   status: BookingStatus;
   items: BookingItem[];
   createdAt: string;

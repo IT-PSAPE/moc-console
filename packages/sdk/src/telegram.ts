@@ -3,8 +3,8 @@ import type { MocTransport } from './transport'
 
 export function createTelegramClient(transport: MocTransport) {
   return {
-    scheduledMessages(workspaceId: string): Promise<ScheduledSnapshot> {
-      return transport.call('telegram', 'scheduled.snapshot', {}, workspaceId)
+    scheduledMessages(workspaceId: string, view: 'active' | 'history' = 'active', cursor?: string): Promise<ScheduledSnapshot> {
+      return transport.call('telegram', 'scheduled.snapshot', view === 'history' ? { view, cursor } : {}, workspaceId)
     },
     mutateScheduledMessage(workspaceId: string, op: string, data: unknown): Promise<ScheduledSnapshot> {
       return transport.call('telegram', 'scheduled.mutate', { op, data }, workspaceId)

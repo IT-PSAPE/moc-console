@@ -35,8 +35,8 @@ describe("public submissions SDK", () => {
         return { id: "submission-1", trackingCode: "REQ-ABC123" } as T
       },
     })
-    const request = { title: "Request", category: "general", dueDate: null, requestedBy: "A", who: "B", what: "C", whenText: "D", whereText: "E", why: "F", how: "G", notes: null, flow: null }
-    const booking = { title: "Booking", equipmentIds: ["item-1"], bookedBy: "A", checkedOutAt: "2030-10-12T10:00:00.000Z", expectedReturnAt: "2030-10-12T12:00:00.000Z", notes: null, requestedEquipment: [], otherEquipment: null }
+    const request = { title: "Request", category: "general", dueDate: null, requestedBy: "A", who: "B", what: "C", whenText: "D", whereText: "E", why: "F", how: "G", flow: null }
+    const booking = { title: "Booking", equipmentIds: ["item-1"], bookedBy: "A", checkedOutAt: "2030-10-12T10:00:00.000Z", expectedReturnAt: "2030-10-12T12:00:00.000Z", requestedEquipment: [], otherEquipment: null }
     const venue = { venueId: "venue-1", requestedBy: "A", slotStarts: ["2030-10-12T10:00:00.000Z"], eventId: null, eventOther: "Youth night", recurrence: { custom: true, frequency: "week", interval: 1, weekdays: [6], end: { type: "count", count: 3 } } }
 
     await client.submitRequest("workspace-1", request)

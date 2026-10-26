@@ -48,13 +48,13 @@ function specs(...names: string[]): readonly TokenSpec[] {
 const REQUEST_TOKENS = specs(
   "title", "status", "category", "requesterName", "requestedBy",
   "dueDate", "createdAt", "updatedAt", "trackingCode",
-  "who", "what", "whenText", "whereText", "why", "how", "notes", "flow",
+  "who", "what", "whenText", "whereText", "why", "how", "flow",
   "linkUrl",
 );
 
 const BOOKING_TOKENS = specs(
   "title", "status", "requesterName", "bookedBy",
-  "checkedOutAt", "expectedReturnAt", "returnedAt", "notes", "trackingCode",
+  "checkedOutAt", "expectedReturnAt", "returnedAt", "trackingCode",
   "itemCount", "equipmentName", "equipmentNames",
   "equipmentCategory", "equipmentLocation", "equipmentSerial",
   "linkUrl",
@@ -63,7 +63,7 @@ const BOOKING_TOKENS = specs(
 const VENUE_BOOKING_TOKENS = specs(
   "title", "status", "requesterName",
   "venueName", "venueDescription", "eventName",
-  "startsAt", "endsAt", "slotCount", "duration", "notes",
+  "startsAt", "endsAt", "slotCount", "duration",
   "repeatPattern", "occurrenceCount",
   "trackingCode",
   "linkUrl",

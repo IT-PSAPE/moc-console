@@ -25,7 +25,6 @@ function requestRecord(overrides: Partial<RequestRecord> = {}): RequestRecord {
     whereText: "Main hall",
     why: "Introduce guest",
     how: "Match template",
-    notes: "Spelling confirmed",
     ...overrides,
   }
 }
@@ -41,7 +40,6 @@ function bookingRecord(overrides: Partial<BookingRecord> = {}): BookingRecord {
     checkedOutAt: "2026-09-30T10:00:00.000Z",
     expectedReturnAt: "2026-09-30T18:00:00.000Z",
     returnedAt: null,
-    notes: null,
     items: [
       { id: "i1", equipmentId: "e1", name: "Camera A", serialNumber: "SN1", category: "camera" },
       { id: "i2", equipmentId: "e2", name: "Lens A", serialNumber: "SN2", category: "lens" },
@@ -62,7 +60,6 @@ function venueRecord(overrides: Partial<VenueBookingRecord> = {}): VenueBookingR
     eventOther: "Youth night",
     startsAt: "2026-09-30T10:00:00.000Z",
     endsAt: "2026-09-30T12:00:00.000Z",
-    notes: null,
     recurrence: null,
     occurrences: [],
     ...overrides,
@@ -93,7 +90,7 @@ describe("buildRequestDetail", () => {
     assert.equal(detail.status.color, "yellow")
     assert.deepEqual(detail.fields.map((f) => f.label), ["Who", "What", "When", "Where", "Why", "How", "Category", "Due"])
     assert.equal(detail.fields.find((f) => f.label === "Category")?.value, "Graphic Design")
-    assert.equal(detail.notes, "Spelling confirmed")
+    assert.equal('notes' in detail, false)
     assert.deepEqual(detail.equipment, [])
     assert.equal(detail.scanMode, null)
   })

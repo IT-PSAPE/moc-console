@@ -41,7 +41,7 @@ function allowedDecision(): RateLimitDecision {
 const okDetailResponse: MiniAppResponse = {
   ok: true,
   viewer: { userId: "u1", name: "Craig", canUpdate: true },
-  detail: { kind: "request", id: "r1", title: "T", trackingCode: "REQ-ABC123", status: { value: "not_started", label: "Not Started", color: "gray" }, fields: [], notes: null, actions: [], equipment: [], scanMode: null },
+  detail: { kind: "request", id: "r1", title: "T", trackingCode: "REQ-ABC123", status: { value: "not_started", label: "Not Started", color: "gray" }, fields: [], actions: [], equipment: [], scanMode: null },
 }
 
 function createDeps(overrides: Partial<TelegramMiniAppDeps> = {}): TelegramMiniAppDeps {

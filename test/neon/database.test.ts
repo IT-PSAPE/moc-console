@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import type { PoolClient } from 'pg';
 import { queryRows, withActor, type DatabaseActor } from '../../packages/backend/src/database';
 
 const databaseUrl = process.env.MOC_TEST_DATABASE_URL;
@@ -41,6 +42,19 @@ describe.skipIf(!databaseUrl)('Neon database adapter', () => {
     const injectedRole = 'moc_app; SELECT pg_sleep(10)' as DatabaseActor['role'];
     await expect(withActor({ userId: null, workspaceId: null, role: injectedRole }, async () => null))
       .rejects.toThrow('Database actor role is invalid');
+    await expect(withActor({ userId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', workspaceId: null, role: 'moc_app', source: { kind: 'integration' } }, async () => null))
+      .rejects.toThrow('Only worker actors can set an activity source');
+  });
+
+  test('keeps trusted integration attribution local to its transaction', async () => {
+    const readSource = async (client: PoolClient) => {
+      const result = await client.query<{ kind: string; name: string }>("SELECT current_setting('moc.actor_kind', true) AS kind, current_setting('moc.actor_name', true) AS name");
+      return result.rows[0];
+    };
+    const source = await withActor({ userId: null, workspaceId: null, role: 'moc_worker', source: { kind: 'integration', name: 'YouTube' } }, readSource);
+    expect(source).toEqual({ kind: 'integration', name: 'YouTube' });
+    const nextSource = await withActor({ userId: null, workspaceId: null, role: 'moc_worker' }, readSource);
+    expect(nextSource).toEqual({ kind: 'system', name: '' });
   });
 
   test('discards a client when rollback fails after connection loss', async () => {

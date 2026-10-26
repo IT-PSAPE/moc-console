@@ -17,7 +17,7 @@ describe("request platform operations", () => {
     const context = makeContext(async (text, params) => {
       sql = text
       values = params ?? []
-      return { rows: [{ id: "request-1", title: "Replace cable", status: "in_progress", category: "event", category_name: "Event", created_at: "created", updated_at: "updated", due_date: "due", requested_by: "Alex", who: "crew", what: "cable", when_text: "soon", where_text: "hall", why: "broken", how: "replace", notes: null, flow: null, content: null }] }
+      return { rows: [{ id: "request-1", title: "Replace cable", status: "in_progress", category: "event", category_name: "Event", created_at: "created", updated_at: "updated", due_date: "due", requested_by: "Alex", who: "crew", what: "cable", when_text: "soon", where_text: "hall", why: "broken", how: "replace", flow: null }] }
     })
 
     const requests = await operations.list.run(context, {})
@@ -78,7 +78,7 @@ describe("request platform operations", () => {
       id: "request-1", title: "Replace cable", status: "in_progress", category: "event",
       category_name: "Event", created_at: createdAt, updated_at: updatedAt, due_date: dueDate,
       requested_by: "Alex", who: "crew", what: "cable", when_text: "soon", where_text: "hall",
-      why: "broken", how: "replace", notes: null, flow: null, content: null,
+      why: "broken", how: "replace", flow: null,
     }] }))
 
     const [request] = await operations.list.run(context, {}) as Array<{ createdAt: string; updatedAt: string; dueDate: string }>
@@ -104,7 +104,7 @@ describe("request platform operations", () => {
         category: request.category, category_name: "Event", created_at: request.createdAt, updated_at: request.updatedAt,
         due_date: request.dueDate, requested_by: request.requestedBy, who: request.who, what: request.what,
         when_text: request.when, where_text: request.where, why: request.why, how: request.how,
-        notes: null, flow: null, content: null }] }
+        flow: null }] }
     })
 
     await operations.save.run(context, { request })
@@ -159,17 +159,4 @@ describe("request platform operations", () => {
     expect(operations.addAssignee.permission).toBe("can_write")
   })
 
-  test("history joins actor details and sorts newest first", async () => {
-    let sql = ""
-    const context = makeContext(async (text) => {
-      sql = text
-      return { rows: [{ id: "event-1", request_id: "00000000-0000-4000-8000-000000000001", event_type: "status_changed", details: { to_status: "completed" }, created_at: "later", actor_id: "user-1", actor_name: "Alex", actor_surname: "Smith", actor_avatar_url: null }] }
-    })
-
-    const activity = await operations.listActivity.run(context, { requestId: "00000000-0000-4000-8000-000000000001" })
-
-    expect(sql).toContain("LEFT JOIN users ON users.id = history.actor_id")
-    expect(sql).toContain("ORDER BY history.created_at DESC")
-    expect(activity).toMatchObject([{ type: "status_changed", actor: { id: "user-1", name: "Alex", surname: "Smith" } }])
-  })
 })

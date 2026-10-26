@@ -64,7 +64,9 @@ export const zoomSyncStore: ZoomSyncDependencies = {
   },
   deleteMeetings: async (workspaceId, meetingRowIds) => {
     if (meetingRowIds.length === 0) return
-    await queryRows("DELETE FROM public.zoom_meetings WHERE workspace_id=$1 AND id=ANY($2::uuid[])", [workspaceId, meetingRowIds])
+    await withActor({ userId: null, workspaceId, role: "moc_worker", source: { kind: "integration", name: "Zoom" } }, async (client) => {
+      await client.query("DELETE FROM public.zoom_meetings WHERE workspace_id=$1 AND id=ANY($2::uuid[])", [workspaceId, meetingRowIds])
+    })
   },
   fetchUpcomingMeetings,
   // Throws ProviderUpstreamError("not_found") only when Zoom itself names the
@@ -103,7 +105,7 @@ export const zoomSyncStore: ZoomSyncDependencies = {
   },
   upsertMeetings: async (rows) => {
     if (rows.length === 0) return
-    await withActor({ userId: null, workspaceId: null, role: "moc_worker" }, async (client) => {
+    await withActor({ userId: null, workspaceId: null, role: "moc_worker", source: { kind: "integration", name: "Zoom" } }, async (client) => {
       for (const row of rows) {
         await client.query(
           `INSERT INTO public.zoom_meetings(workspace_id,zoom_connection_id,zoom_meeting_id,topic,description,meeting_type,start_time,

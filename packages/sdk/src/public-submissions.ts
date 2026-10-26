@@ -22,7 +22,6 @@ export type PublicRequestInput = {
   whereText: string;
   why: string;
   how: string;
-  notes: string | null;
   flow: string | null;
 };
 
@@ -32,7 +31,6 @@ export type PublicBookingInput = {
   bookedBy: string;
   checkedOutAt: string;
   expectedReturnAt: string;
-  notes: string | null;
   requestedEquipment: string[];
   otherEquipment: string | null;
 };

@@ -115,7 +115,7 @@ suite("Task 6 operations against the local Neon PostgreSQL schema", () => {
     expect(availableSlot).toBeDefined()
     const slotStart = new Date(availableSlot!.slotStart).toISOString()
 
-    const existing = await pool!.query("SELECT id,status,notes,starts_at FROM public.venue_bookings WHERE venue_id=$1 ORDER BY id", [venueId])
+    const existing = await pool!.query("SELECT id,status,starts_at FROM public.venue_bookings WHERE venue_id=$1 ORDER BY id", [venueId])
     await runOperation(venueOperations.setActive, { id: venueId, active: false })
 
     const publicVenues = await runPublicOperation<Array<{ id: string }>>(publicOperations.listVenues, { workspaceId })
@@ -127,7 +127,7 @@ suite("Task 6 operations against the local Neon PostgreSQL schema", () => {
       eventOther: "Integration workshop", recurrence: null,
     } })).rejects.toMatchObject({ code: "23514" })
 
-    expect((await pool!.query("SELECT id,status,notes,starts_at FROM public.venue_bookings WHERE venue_id=$1 ORDER BY id", [venueId])).rows).toEqual(existing.rows)
+    expect((await pool!.query("SELECT id,status,starts_at FROM public.venue_bookings WHERE venue_id=$1 ORDER BY id", [venueId])).rows).toEqual(existing.rows)
     await runOperation(venueOperations.setActive, { id: venueId, active: true })
 
     const reactivatedVenues = await runPublicOperation<Array<{ id: string }>>(publicOperations.listVenues, { workspaceId })
@@ -140,7 +140,7 @@ suite("Task 6 operations against the local Neon PostgreSQL schema", () => {
       eventOther: "Integration workshop", recurrence: null,
     } })
     expect(booking.trackingCode).toMatch(/^VEN-/)
-    const after = await pool!.query("SELECT id,status,notes,starts_at FROM public.venue_bookings WHERE id=ANY($1::uuid[]) ORDER BY id", [existing.rows.map((row) => row.id)])
+    const after = await pool!.query("SELECT id,status,starts_at FROM public.venue_bookings WHERE id=ANY($1::uuid[]) ORDER BY id", [existing.rows.map((row) => row.id)])
     expect(after.rows).toEqual(existing.rows)
   })
 
@@ -162,7 +162,6 @@ suite("Task 6 operations against the local Neon PostgreSQL schema", () => {
       bookedBy: "Batch requester",
       checkedOutAt: new Date(Date.now() + 3_600_000).toISOString(),
       expectedReturnAt: new Date(Date.now() + 86_400_000).toISOString(),
-      notes: "Atomic insert test",
       requestedEquipment: [" tripod ", "camera", "camera"],
       otherEquipment: null,
     }
@@ -202,9 +201,7 @@ suite("Task 6 operations against the local Neon PostgreSQL schema", () => {
       where: "Integration Hall",
       why: "Integration test",
       how: "Run test",
-      notes: "Request operation test",
       flow: undefined,
-      content: undefined,
     }
     const savedRequest = await runOperation<{ id: string; categoryName: string }>(requestOperations.save, { request })
     expect(savedRequest).toMatchObject({ id: requestId, categoryName: "Event" })

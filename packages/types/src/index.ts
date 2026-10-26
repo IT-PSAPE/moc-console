@@ -1,5 +1,6 @@
 export * from './broadcast/index.js'
 export * from './checklists.js'
+export * from './discussion.js'
 export * from './streams/index.js'
 export * from './equipment/index.js'
 export * from './requests/index.js'
