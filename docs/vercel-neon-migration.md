@@ -126,6 +126,16 @@ Run its catalog verifier and `check-cutover.ts --schema` before activation.
 
 ## Existing data
 
+For a destination that will receive existing data, initialize the empty database
+with the source-compatible schema instead of the default current schema:
+
+```sh
+bash neon/database/build-fresh-database.sh "$NEON_DATABASE_URL" --legacy-import
+```
+
+The import and parity tools require the legacy request fields and history tables.
+Keep that schema until the imported rows have passed parity verification.
+
 The Supabase snapshot cutover uses `SUPABASE_URL` and
 `SUPABASE_SECRET_KEY` in ignored `neon/.env.local`. Use the current
 `sb_secret_...` key from Settings → API Keys → Publishable and secret API keys.
@@ -175,6 +185,28 @@ and verifies all source rows and imported credentials before committing. Errors
 roll back the transaction. Keep background workers stopped through database and
 file registration. Recheck source fingerprints before applying so source changes
 are not omitted from the export.
+
+After import and parity verification, install the shared discussion schema before
+starting the updated API and apps:
+
+```sh
+psql "$NEON_DATABASE_URL" --single-transaction -v ON_ERROR_STOP=1 -f neon/database/item-discussion.sql
+psql "$NEON_DATABASE_URL" -v ON_ERROR_STOP=1 -f neon/database/verify-item-discussion.sql
+```
+
+This migration preserves request history and moves saved request notes/content,
+equipment notes, booking notes and venue-booking notes into comments before
+removing their old fields and tables. Imported note comments use the migration
+time and an unknown author because the source fields have no authorship history.
+For an existing live
+installation, coordinate this migration with the API and app release: the previous
+API still reads those fields. Rehearse against a local backup and retain the
+owner-only migration backup until the release has been verified.
+Release the API, Console and Request apps together with the notification and
+provider-sync Functions. The notification worker also reads the retired fields;
+the provider-sync update records integration attribution. Preserve existing job
+enablement and pause writes/workers during the schema switch so older clients
+cannot write fields after their final migration copy.
 
 The protected snapshot contains credential hashes and private OAuth values.
 Keep snapshots, backups, plans, manifests and downloaded files under ignored
