@@ -5,7 +5,7 @@ import { headerValue, normaliseHeaders, type ApiRequest, type ApiResponse } from
 import { queryRows } from '@moc/backend/database'
 import type { PoolClient, QueryResultRow } from 'pg'
 import { WorkspaceAccessError } from '../workspace-access.js'
-import { authorizeManagement, changeOccurrence, deleteOccurrence, getOccurrence, listActive, scheduledRpc, sendOccurrence, resendOccurrence } from './store.js'
+import { authorizeManagement, changeOccurrence, deleteOccurrence, getOccurrence, listActive, listHistory, scheduledRpc, sendOccurrence, resendOccurrence } from './store.js'
 import { syncOccurrence, syncWorkspace } from './worker.js'
 import { syncManagementCommands } from './commands.js'
 import type { EditScope } from './types.js'
@@ -23,8 +23,14 @@ function uuid(value: unknown): string {
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw new Error('Invalid ID')
   return id
 }
-export async function scheduledSnapshot(workspace: string,client?:PoolClient,materialize=true): Promise<unknown> {
-  const occurrences=await listActive(workspace,undefined,client,materialize)
+export function scheduledSnapshotView(value: unknown): 'active' | 'history' {
+  if(value===undefined || value==='active') return 'active'
+  if(value==='history') return 'history'
+  throw new Error('Invalid scheduled message view')
+}
+export async function scheduledSnapshot(workspace: string,client?:PoolClient,materialize=true,view: 'active' | 'history'='active',cursor?:unknown): Promise<unknown> {
+  const history=view==='history'?await listHistory(workspace,client,cursor):null
+  const occurrences=history?.occurrences??await listActive(workspace,undefined,client,materialize)
   const [templates,schedules,memberTypes,groups,members]=await Promise.all([
     queryRows<QueryResultRow>('SELECT * FROM public.scheduled_message_templates WHERE workspace_id=$1 AND deleted_at IS NULL ORDER BY name',[workspace],client),
     queryRows<QueryResultRow>('SELECT * FROM public.scheduled_message_schedules WHERE workspace_id=$1',[workspace],client),
@@ -39,7 +45,7 @@ export async function scheduledSnapshot(workspace: string,client?:PoolClient,mat
   ])
   const normalizedGroups=groups.map(({ topics,...group })=>({...group,telegram_group_topics:topics}))
   const normalizedMembers=members.map(row=>({id:row.user_id,memberTypeId:row.member_type_id,name:`${row.name} ${row.surname}`.trim()}))
-  return {occurrences,templates,schedules,memberTypes,groups:normalizedGroups,members:normalizedMembers}
+  return {occurrences,templates,schedules,memberTypes,groups:normalizedGroups,members:normalizedMembers,...(history?{nextHistoryCursor:history.nextHistoryCursor}:{})}
 }
 export async function mutateScheduledMessages(actor: string,workspace: string,body: Record<string,unknown>,client?:PoolClient): Promise<void> {
   const data=object(body.data)
@@ -119,7 +125,8 @@ export async function handleScheduledMessages(request: ApiRequest,response: ApiR
     const workspace=uuid(request.method==='GET'?request.query?.workspaceId:body.workspaceId)
     await authorizeManagement(actor.userId,workspace)
     if(request.method==='POST') await mutateScheduledMessages(actor.userId,workspace,body)
-    response.status(200).json(await scheduledSnapshot(workspace))
+    const view=request.method==='GET'?scheduledSnapshotView(request.query?.view):'active'
+    response.status(200).json(await scheduledSnapshot(workspace,undefined,true,view,request.query?.cursor))
   } catch(error) {
     const status=error instanceof AuthError?401:error instanceof WorkspaceAccessError||(error instanceof Error&&error.message==='Not authorised')?403:400
     response.status(status).json({error:error instanceof Error?error.message:'Scheduled message operation failed'})

@@ -1,6 +1,7 @@
 import { queryRows, withActor } from '@moc/backend/database'
 import type { PoolClient, QueryResultRow } from 'pg'
 import type { AttendanceResponse, EditScope, Occurrence, Schedule } from './types.js'
+import { decodeScheduledHistoryCursor, encodeScheduledHistoryCursor } from './history-cursor.js'
 
 type RpcArguments = Record<string, unknown>
 
@@ -58,6 +59,28 @@ export async function listActive(workspaceId: string, chatId?: string, client?: 
      WHERE o.workspace_id=$1 AND s.enabled AND o.expires_at>now() AND o.state<>'cancelled' AND ($2::text IS NULL OR s.group_chat_id=$2)
      ORDER BY o.send_on LIMIT 500`, [workspaceId, chatId ?? null], client,
   )
+}
+/** Keyset pagination keeps every historical occurrence reachable without changing active scheduling reads. */
+export async function listHistory(workspaceId: string, client?: PoolClient, cursorValue?: unknown): Promise<{ occurrences: Occurrence[]; nextHistoryCursor: string | null }> {
+  const cursor = decodeScheduledHistoryCursor(cursorValue, workspaceId)
+  const rows = await queryRows<Occurrence & QueryResultRow & { cursor_send_on: string }>(
+    `SELECT o.*,to_char(o.send_on AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS cursor_send_on
+     FROM public.scheduled_message_occurrences o JOIN public.scheduled_message_schedules s ON s.id=o.schedule_id
+     WHERE o.workspace_id=$1 AND (o.expires_at<=now() OR o.state IN ('cancelled','unknown') OR o.last_sync_error IS NOT NULL OR NOT s.enabled)
+       AND ($2::timestamptz IS NULL OR (o.send_on,o.id)<($2::timestamptz,$3::uuid))
+     ORDER BY o.send_on DESC,o.id DESC LIMIT 101`, [workspaceId,cursor?.sendOn ?? null,cursor?.id ?? null], client,
+  )
+  const visible = rows.slice(0, 100)
+  const last = visible.at(-1)
+  return {
+    occurrences: visible.map(occurrenceRecord),
+    nextHistoryCursor: rows.length > 100 && last ? encodeScheduledHistoryCursor({ workspaceId, sendOn: last.cursor_send_on, id: last.id }) : null,
+  }
+}
+function occurrenceRecord(row: Occurrence & { cursor_send_on: string }): Occurrence {
+  const occurrence: Occurrence & { cursor_send_on?: string } = { ...row }
+  delete occurrence.cursor_send_on
+  return occurrence
 }
 export async function changeOccurrence(actor: string, id: string, revision: number, field: string, value: string, scope: EditScope, client?: PoolClient): Promise<void> {
   await scheduledRpc('change_scheduled_occurrence',{p_actor:actor,p_id:id,p_revision:revision,p_field:field,p_value:value,p_scope:scope},client)

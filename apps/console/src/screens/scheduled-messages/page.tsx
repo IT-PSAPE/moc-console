@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { FileText, ListRestart, MessageSquare, Plus, RefreshCw } from 'lucide-react'
+import { FileText, History, ListRestart, MessageSquare, Plus, RefreshCw } from 'lucide-react'
 import { Page } from '@moc/ui/components/layout/page'
 import { CollectionToolbar } from '@moc/ui/components/layout/collection-toolbar'
 import { SegmentedControl } from '@moc/ui/components/controls/segmented-control'
@@ -36,13 +36,14 @@ export function ScheduledMessagesScreen() {
             <CollectionToolbar.Views>
                 <SegmentedControl value={state.tab} onValueChange={actions.setTab}>
                     <SegmentedControl.Item value="active" icon={<MessageSquare />} className="whitespace-nowrap">Active messages</SegmentedControl.Item>
+                    <SegmentedControl.Item value="history" icon={<History />} className="whitespace-nowrap">History</SegmentedControl.Item>
                     <SegmentedControl.Item value="templates" icon={<FileText />} className="whitespace-nowrap">Templates</SegmentedControl.Item>
                 </SegmentedControl>
             </CollectionToolbar.Views>
         </CollectionToolbar>
         <Page.Content>{state.loadError ? <Alert variant="error" title="Couldn't load messages" description={state.loadError} action={<Button variant="secondary" onClick={actions.reload}>Retry</Button>} /> : <>
             {state.error ? <Alert variant="error" title="Couldn't complete action" description={state.error} /> : null}
-            {state.tab === 'active' ? <ScheduledMessages.Occurrences /> : <ScheduledMessages.Templates />}
+            {state.tab === 'templates' ? <ScheduledMessages.Templates /> : <ScheduledMessages.Occurrences />}
         </>}</Page.Content>
         <ScheduledMessages.TemplatePicker open={pickerOpen} onOpenChange={setPickerOpen} />
     </Page>

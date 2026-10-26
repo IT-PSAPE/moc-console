@@ -25,6 +25,7 @@ export function ScheduledMessagesLayout() {
                 <SplitPanel.Detail><Outlet /></SplitPanel.Detail>
             </SplitPanel>
             <ScheduledMessages.Editor />
+            <ScheduledMessages.History />
         </ScheduledMessages.Root>
     )
 }

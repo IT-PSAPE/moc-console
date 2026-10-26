@@ -9,6 +9,7 @@ import { formatUtcIsoInTimezone, formatUtcIsoForDateTimeInput } from '@moc/utils
 import { fetchScheduledMessages, mutateScheduledMessage } from './services/scheduled-message-service'
 import { scheduleTimestamps, scheduledTimestamp, previewExpiry, previewSendTime } from './scheduled-timestamps'
 import { scheduledMessagePreview } from './scheduled-message-preview'
+import { useScheduledMessageHistory } from './use-scheduled-message-history'
 import { useScheduledAttendanceGroupEditor } from './use-scheduled-attendance-group-editor'
 import { useTemplateBodyEditor } from '@/hooks/use-template-body-editor'
 
@@ -24,16 +25,20 @@ function defaultSchedule(): ScheduleDraft {
 
 export function useScheduledMessages() {
     const { currentWorkspaceId } = useWorkspace()
+    const [tab, setTab] = useState('active')
     const navigate = useNavigate()
     const fetcher = useCallback((workspaceId: string) => fetchScheduledMessages(workspaceId), [])
     const resource = useWorkspaceResource({ emptyValue: empty, fetcher, resource: 'scheduled-messages', workspaceId: currentWorkspaceId })
-    const { data: snapshot, isLoading: loading, isInitialLoading, error: resourceError, load, setData } = resource
+    const history = useScheduledMessageHistory(tab === 'history')
+    const { data: snapshot, isInitialLoading, setData, load: reloadActive } = resource
+    const { load: reloadHistory } = history
+    const selectedResource = tab === 'history' ? history : resource
+    const { isLoading: loading, error: resourceError } = selectedResource
     const [loadedWorkspaceId, setLoadedWorkspaceId] = useState<string | null>(currentWorkspaceId)
     const [busy, setBusy] = useState(false)
     const mutating = useRef<object | null>(null)
     const [error, setError] = useState('')
     const loadError = resourceError instanceof Error ? resourceError.message : resourceError ? 'Loading failed' : ''
-    const [tab, setTab] = useState('active')
     const [now, setNow] = useState(() => Date.now())
     const [schedule, setSchedule] = useState<ScheduleDraft>(defaultSchedule)
     const setScheduleBody = useCallback((body: string) => setSchedule(current => ({ ...current, body })), [])
@@ -41,6 +46,7 @@ export function useScheduledMessages() {
     const [deleting, setDeleting] = useState<ScheduledOccurrence | null>(null)
     const [deleteScope, setDeleteScope] = useState<ScheduledEditScope>('occurrence')
     const [editing, setEditing] = useState<ScheduledOccurrence | null>(null)
+    const [details, setDetails] = useState<ScheduledOccurrence | null>(null)
     const [edit, setEdit] = useState<EditDraft>({ id: '', revision: 0, field: 'title', value: '', scope: 'occurrence' })
     function parsedEditGroups(value: string): ScheduledAttendanceGroup[] {
         try { return JSON.parse(value) as ScheduledAttendanceGroup[] }
@@ -53,10 +59,11 @@ export function useScheduledMessages() {
     const visibleSnapshot = useMemo(() => ({ ...snapshot, occurrences: snapshot.occurrences.filter(occurrence => Date.parse(occurrence.expires_at) > now) }), [now, snapshot])
     const reload = useCallback(async () => {
         if (mutating.current) return
-        await load(true)
-    }, [load])
+        if (tab === 'history') await reloadHistory()
+        else await reloadActive(true)
+    }, [reloadActive, reloadHistory, tab])
     useEffect(() => {
-        setBusy(false); setLoadedWorkspaceId(currentWorkspaceId); setEditing(null); setDeleting(null); setConfirmation(null); setSchedule(defaultSchedule())
+        setBusy(false); setLoadedWorkspaceId(currentWorkspaceId); setEditing(null); setDetails(null); setDeleting(null); setConfirmation(null); setSchedule(defaultSchedule())
         return () => { mutating.current = null }
     }, [currentWorkspaceId])
     const updateClock = useCallback(() => setNow(Date.now()), [])
@@ -75,6 +82,7 @@ export function useScheduledMessages() {
             const next = await mutateScheduledMessage(currentWorkspaceId, op, data)
             if (!isCurrent()) return false
             setData(next); setLoadedWorkspaceId(currentWorkspaceId)
+            if (history.hasData || tab === 'history') void history.load()
             return true
         }
         catch (e) { if (isCurrent()) setError(e instanceof Error ? e.message : 'Operation failed'); return false }
@@ -130,6 +138,11 @@ export function useScheduledMessages() {
         if (!o || !['scheduled', 'sent'].includes(o.state)) return
         setError(''); setEditing(o); setEdit({ id: o.id, revision: o.revision, field: 'title', value: o.fields.title, scope: 'occurrence' })
     }
+    function viewHistory(id: string): void {
+        const occurrence = snapshot.occurrences.find(row => row.id === id) ?? history.data.occurrences.find(row => row.id === id)
+        if (occurrence) setDetails(occurrence)
+    }
+    function changeDetailsOpen(open: boolean): void { if (!open) setDetails(null) }
     function changeEditField(field: string): void {
         if (!editing) return
         const s = snapshot.schedules.find(row => row.id === editing.schedule_id)
@@ -198,10 +211,12 @@ export function useScheduledMessages() {
         }
     }
     async function syncCommands(): Promise<void> { await mutate('commands.sync', {}) }
-    function occurrenceRow(o: ScheduledOccurrence): ScheduledOccurrence & { summary: string } {
-        const timezone = snapshot.schedules.find(s => s.id === o.schedule_id)?.timezone ?? 'UTC'
+    function occurrenceRow(o: ScheduledOccurrence): ScheduledOccurrence & { summary: string; canManage: boolean; canDelete: boolean } {
+        const sourceSchedule = (tab === 'history' ? history.data : snapshot).schedules.find(s => s.id === o.schedule_id)
+        const timezone = sourceSchedule?.timezone ?? 'UTC'
         const dates = { sendOn: formatUtcIsoInTimezone(o.send_on, timezone, { dateStyle: 'medium', timeStyle: 'short' }), expiresAt: formatUtcIsoInTimezone(o.expires_at, timezone, { timeZoneName: 'short' }) }
-        return { ...o, summary: scheduledOccurrenceSummary(o, dates) }
+        const isActive = Date.parse(o.expires_at) > now && sourceSchedule?.enabled === true
+        return { ...o, summary: scheduledOccurrenceSummary(o, dates), canManage: isActive && ['scheduled', 'sent'].includes(o.state), canDelete: isActive && o.state !== 'sending' }
     }
     const selectedSchedule = snapshot.schedules.find(s => s.id === editing?.schedule_id)
     const selectedTemplate = snapshot.templates.find(t => t.id === schedule.templateId)
@@ -212,8 +227,8 @@ export function useScheduledMessages() {
     const topics = snapshot.groups.find(g => g.chat_id === schedule.groupChatId)?.telegram_group_topics ?? []
     const topicItems = [{ value: 'main', label: 'General' }, ...topics.filter(t => !t.closed).map(t => ({ value: String(t.thread_id), label: t.name }))]
     return {
-        state: { snapshot: loadedWorkspaceId === currentWorkspaceId ? visibleSnapshot : empty, schedule, editing: loadedWorkspaceId === currentWorkspaceId ? editing : null, deleting: loadedWorkspaceId === currentWorkspaceId ? deleting : null, deleteScope, edit, confirmation: loadedWorkspaceId === currentWorkspaceId ? confirmation : null, error, loadError, loading, isInitialLoading: isInitialLoading || loadedWorkspaceId !== currentWorkspaceId, busy, tab },
-        actions: { reload, mutate, setTab, startSchedule, changeSchedule, setStartsOn, setExpiresAt, setEditTimestamp, changeScheduleField, changeScheduleType, changeScheduleArrival, changeScheduleAttendee, changeMemberSearch, changeBody: bodyEditor.actions.changeBody, changeRichBody: bodyEditor.actions.changeRichBody, insertTokenFromButton: bodyEditor.actions.insertTokenFromButton, setGroup, setTopic, setFrequency, changeAutoSend, requestSchedule, selectOccurrence, changeEditField, changeEditValue, changeScope, changeAttendanceGroup: occurrenceGroupEditor.change, addAttendanceGroup: occurrenceGroupEditor.add, enableAttendanceGroups: occurrenceGroupEditor.enable, removeAttendanceGroup: occurrenceGroupEditor.remove, clearAttendanceGroups: occurrenceGroupEditor.clear, changeScheduleGroup: scheduleGroupEditor.change, addScheduleGroup: scheduleGroupEditor.add, enableScheduleGroups: scheduleGroupEditor.enable, removeScheduleGroup: scheduleGroupEditor.remove, clearScheduleGroups: scheduleGroupEditor.clear, requestEdit, requestSend, requestTemplateDelete, requestDelete, changeDeleteScope, changeDeleteOpen, reviewDelete, changeEditorOpen, changeConfirmationOpen, confirm, syncCommands },
-        meta: { frequencyItems, typeItems, variables: [...SCHEDULED_VARIABLES], scopeItems, fieldItems, topicItems, templateRows, preview, previewSendTime: previewSendTime(schedule.startsOn, schedule.timezone), previewError: preview.error, editGroups: edit.field === 'attendanceGroups' ? parsedEditGroups(edit.value) : editing?.attendance_groups ?? [], isAttendance: schedule.messageType === 'pre_attendance', scheduleFields: SCHEDULED_FIELDS[schedule.messageType], members: snapshot.members.map(member => { const index = schedule.attendeeIds.indexOf(member.id); return { ...member, selected: index >= 0, position: index >= 0 ? index + 1 : null, matchesSearch: member.name.toLocaleLowerCase().includes(schedule.memberSearch.toLocaleLowerCase()) } }), selectedAttendeeCount: schedule.attendeeIds.length, hasMatchingMembers: snapshot.members.some(member => member.name.toLocaleLowerCase().includes(schedule.memberSearch.toLocaleLowerCase())), memberSearch: schedule.memberSearch, scheduleBodyEditor: bodyEditor.state, scheduleBodyMeta: bodyEditor.meta, hasTopics: topicItems.length > 1, isRecurring: schedule.frequency !== 'once', occurrences: visibleSnapshot.occurrences.map(occurrenceRow), templateName: selectedTemplate?.name.trim() ?? '', groupItems: snapshot.groups.map(g => ({ value: g.chat_id, label: g.title })), showScope: selectedSchedule?.frequency !== 'once' && !['sendOn', 'expiresAt'].includes(edit.field) },
+        state: { historyLoadingMore: history.isLoadingMore, historyPageError: tab === 'history' && history.pageError ? (history.pageError instanceof Error ? history.pageError.message : 'Could not load older messages') : '', details: loadedWorkspaceId === currentWorkspaceId && details ? occurrenceRow(details) : null, snapshot: loadedWorkspaceId === currentWorkspaceId ? visibleSnapshot : empty, schedule, editing: loadedWorkspaceId === currentWorkspaceId ? editing : null, deleting: loadedWorkspaceId === currentWorkspaceId ? deleting : null, deleteScope, edit, confirmation: loadedWorkspaceId === currentWorkspaceId ? confirmation : null, error, loadError, loading, isInitialLoading: isInitialLoading || loadedWorkspaceId !== currentWorkspaceId, busy, tab },
+        actions: { reload, mutate, setTab, startSchedule, changeSchedule, setStartsOn, setExpiresAt, setEditTimestamp, changeScheduleField, changeScheduleType, changeScheduleArrival, changeScheduleAttendee, changeMemberSearch, changeBody: bodyEditor.actions.changeBody, changeRichBody: bodyEditor.actions.changeRichBody, insertTokenFromButton: bodyEditor.actions.insertTokenFromButton, setGroup, setTopic, setFrequency, changeAutoSend, requestSchedule, loadMoreHistory: history.loadMore, selectOccurrence, viewHistory, changeDetailsOpen, changeEditField, changeEditValue, changeScope, changeAttendanceGroup: occurrenceGroupEditor.change, addAttendanceGroup: occurrenceGroupEditor.add, enableAttendanceGroups: occurrenceGroupEditor.enable, removeAttendanceGroup: occurrenceGroupEditor.remove, clearAttendanceGroups: occurrenceGroupEditor.clear, changeScheduleGroup: scheduleGroupEditor.change, addScheduleGroup: scheduleGroupEditor.add, enableScheduleGroups: scheduleGroupEditor.enable, removeScheduleGroup: scheduleGroupEditor.remove, clearScheduleGroups: scheduleGroupEditor.clear, requestEdit, requestSend, requestTemplateDelete, requestDelete, changeDeleteScope, changeDeleteOpen, reviewDelete, changeEditorOpen, changeConfirmationOpen, confirm, syncCommands },
+        meta: { hasMoreHistory: tab === 'history' && history.hasMore, frequencyItems, typeItems, variables: [...SCHEDULED_VARIABLES], scopeItems, fieldItems, topicItems, templateRows, preview, previewSendTime: previewSendTime(schedule.startsOn, schedule.timezone), previewError: preview.error, editGroups: edit.field === 'attendanceGroups' ? parsedEditGroups(edit.value) : editing?.attendance_groups ?? [], isAttendance: schedule.messageType === 'pre_attendance', scheduleFields: SCHEDULED_FIELDS[schedule.messageType], members: snapshot.members.map(member => { const index = schedule.attendeeIds.indexOf(member.id); return { ...member, selected: index >= 0, position: index >= 0 ? index + 1 : null, matchesSearch: member.name.toLocaleLowerCase().includes(schedule.memberSearch.toLocaleLowerCase()) } }), selectedAttendeeCount: schedule.attendeeIds.length, hasMatchingMembers: snapshot.members.some(member => member.name.toLocaleLowerCase().includes(schedule.memberSearch.toLocaleLowerCase())), memberSearch: schedule.memberSearch, scheduleBodyEditor: bodyEditor.state, scheduleBodyMeta: bodyEditor.meta, hasTopics: topicItems.length > 1, isRecurring: schedule.frequency !== 'once', occurrences: (tab === 'history' ? history.data.occurrences : visibleSnapshot.occurrences).map(occurrenceRow), occurrenceLoading: selectedResource.isInitialLoading, occurrenceEmptyTitle: tab === 'history' ? 'No message history' : 'No active messages', occurrenceEmptyDescription: tab === 'history' ? 'Past, cancelled and failed messages appear here.' : 'Schedule a message once or on a recurring basis. Sent messages stay here until they expire.', templateName: selectedTemplate?.name.trim() ?? '', groupItems: snapshot.groups.map(g => ({ value: g.chat_id, label: g.title })), showScope: selectedSchedule?.frequency !== 'once' && !['sendOn', 'expiresAt'].includes(edit.field) },
     }
 }

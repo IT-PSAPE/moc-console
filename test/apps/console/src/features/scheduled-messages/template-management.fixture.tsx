@@ -7,7 +7,7 @@ import { ScheduledTemplateScreen } from '@/screens/scheduled-messages/templates/
 import { ScheduledMessageComposeScreen } from '@/screens/scheduled-messages/compose/page'
 
 function Layout() {
-    return <ScheduledMessages.Root><Outlet /><ScheduledMessages.Editor /></ScheduledMessages.Root>
+    return <ScheduledMessages.Root><Outlet /><ScheduledMessages.Editor /><ScheduledMessages.History /></ScheduledMessages.Root>
 }
 const router = createBrowserRouter([{ element: <Layout />, children: [
     { path: '/scheduled-messages', element: <ScheduledMessagesScreen /> },

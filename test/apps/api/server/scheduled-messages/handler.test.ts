@@ -111,3 +111,29 @@ describe('direct scheduled message input', () => {
     }), /Unknown template field/)
   })
 })
+
+
+describe('scheduled history permissions', () => {
+  it('does not read history or recipients when management permission is denied', async () => {
+    const originalFetch = globalThis.fetch
+    const cleanupAuth = configureAuthSessionTestEnvironment()
+    globalThis.fetch = withAuthSessionResponse(originalFetch, '20000000-0000-4000-8000-000000000002', 'reader@example.test')
+    let dataReads = 0
+    setSqlFixture({
+      queryRows: async () => { dataReads += 1; return [] },
+      queryActor: async () => [{ allowed: false }],
+    })
+    try {
+      let status = 200
+      let body: unknown
+      const response: ApiResponse = { status(code) { status = code; return response }, json(value) { body = value }, setHeader() {} }
+      await handleScheduledMessages({ method: 'GET', headers: { ...authCookieHeaders, origin: undefined }, query: { workspaceId: '10000000-0000-4000-8000-000000000001', view: 'history' } }, response)
+      assert.equal(status, 403)
+      assert.deepEqual(body, { error: 'Not authorised' })
+      assert.equal(dataReads, 0)
+    } finally {
+      globalThis.fetch = originalFetch
+      cleanupAuth()
+    }
+  })
+})
