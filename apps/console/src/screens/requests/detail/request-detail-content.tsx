@@ -8,18 +8,15 @@ import { RequestAssigneeList } from "@/features/requests/request-assignee-list"
 import { RequestFiveW } from "@/features/requests/request-five-w"
 import { RequestFlow } from "@/features/requests/request-flow"
 import { RequestMetaFields } from "@/features/requests/request-meta-fields"
-import { RequestNotes } from "@/features/requests/request-notes"
 import { RequestShareActions } from "@/features/requests/request-share-actions"
-import { RequestDiscussion } from "@/features/requests/request-discussion"
+import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { RequestTitle } from "@/features/requests/request-title"
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal"
 import { useRequestDetail } from "@/features/requests/use-request-detail"
 import { TopBarActions } from "@/features/topbar"
 import { routes } from "@/screens/console-routes"
 import { Button } from "@moc/ui/components/controls/button"
-import { DocEditor } from "@moc/ui/components/display/doc-editor/doc-editor"
 import { Header } from "@moc/ui/components/display/header"
-import { Label } from "@moc/ui/components/display/text"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { Page } from "@moc/ui/components/layout/page"
 import { Dropdown } from "@moc/ui/components/overlays/dropdown"
@@ -36,7 +33,7 @@ export function RequestDetailContent({ request, syncRequest }: RequestDetailCont
   const shareTargetRef = useRef<HTMLDivElement | null>(null)
   const { state: { requestCategories } } = useRequests()
   const detail = useRequestDetail({ request, syncRequest })
-  const { assignees, blockerState, isDeleting, showDeleteModal, store } = detail
+  const { blockerState, isDeleting, showDeleteModal, store } = detail
   const actions = detail.actions
 
   function handleTitleChange(value: string) {
@@ -71,26 +68,17 @@ export function RequestDetailContent({ request, syncRequest }: RequestDetailCont
 
           <div ref={shareTargetRef}>
             <DetailPage.Header><Header.Lead className="gap-2"><Page.Title><RequestTitle value={store.state.draft.title} onChange={handleTitleChange} /></Page.Title></Header.Lead></DetailPage.Header>
-            <DetailPage.Section><RequestMetaFields request={store.state.draft} categories={requestCategories} editable onFieldChange={store.actions.updateField} /></DetailPage.Section>
-            <DetailPage.Divider />
-            <DetailPage.Section><RequestFiveW request={store.state.draft} /></DetailPage.Section>
-            {store.state.draft.notes && <><DetailPage.Divider /><DetailPage.Section><RequestNotes request={store.state.draft} /></DetailPage.Section></>}
-            {store.state.draft.flow && <><DetailPage.Divider /><DetailPage.Section><RequestFlow request={store.state.draft} /></DetailPage.Section></>}
-            <DetailPage.Divider />
-            <DetailPage.Section><RequestAssigneeList assignees={assignees} onAddMember={actions.handleAddMember} onRemoveMember={actions.handleRemoveMember} /></DetailPage.Section>
-            <DetailPage.Divider />
             <DetailPage.Section>
-              <Label.sm className="block pb-3 text-primary">Content</Label.sm>
-              <DocEditor value={store.state.draft.content ?? ""} onChange={actions.handleContentChange} placeholder="Add notes, details, or additional context…" className="w-full" />
+              <RequestMetaFields request={store.state.draft} categories={requestCategories} editable onFieldChange={store.actions.updateField}>
+                <RequestAssigneeList assignees={detail.assignees} label={detail.assigneeLabel} isLoading={detail.isLoadingAssignees} onAddMember={actions.handleAddMember} onRemoveMember={actions.handleRemoveMember} />
+                <RequestLinkedRecords request={request} />
+              </RequestMetaFields>
             </DetailPage.Section>
             <DetailPage.Divider />
-            <DetailPage.Section><RequestLinkedRecords request={request} /></DetailPage.Section>
+            <DetailPage.Section><RequestFiveW request={store.state.draft} /></DetailPage.Section>
+            {store.state.draft.flow && <><DetailPage.Divider /><DetailPage.Section><RequestFlow request={store.state.draft} /></DetailPage.Section></>}
             <DetailPage.Divider />
-            <RequestDiscussion.Root requestId={request.id} refreshKey={store.state.draft.updatedAt}>
-              <DetailPage.Section><RequestDiscussion.Activity /></DetailPage.Section>
-              <DetailPage.Divider />
-              <DetailPage.Section><RequestDiscussion.Comments /></DetailPage.Section>
-            </RequestDiscussion.Root>
+            <DetailPage.Section><ItemDiscussionPanel kind="request" itemId={request.id} /></DetailPage.Section>
           </div>
         </RequestShareActions.Root>
 

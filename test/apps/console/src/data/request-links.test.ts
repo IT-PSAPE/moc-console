@@ -30,3 +30,13 @@ test("a failed association keeps cached records intact", async () => {
   await expect(setRecordRequest("booking", "booking", "next", "workspace")).rejects.toThrow("Denied")
   expect(getWorkspaceResourceState("workspace", "bookings").data).toEqual(initial)
 })
+
+test('link changes refresh both requests and the item even when its collection was never loaded', async () => {
+  const workspaceId = 'unloaded-link-workspace'
+  setWorkspaceResourceData(workspaceId, 'booking:booking:request-link', { requestId: 'previous', options: [] })
+  const keys = ['item-activity:booking:booking', 'item-activity:request:previous', 'item-activity:request:next']
+  for (const resource of keys) queryClient.setQueryData(['workspace', workspaceId, resource], [])
+  await setRecordRequest('booking', 'booking', 'next', workspaceId)
+  for (const resource of keys) expect(queryClient.getQueryState(['workspace', workspaceId, resource])?.isInvalidated).toBe(true)
+  expect(getWorkspaceResourceState(workspaceId, 'bookings').data).toBeUndefined()
+})

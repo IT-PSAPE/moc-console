@@ -1,3 +1,4 @@
+import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import type { Broadcast } from "@moc/types/broadcast/broadcast"
 import { Button } from "@moc/ui/components/controls/button"
 import { DividedList } from "@moc/ui/components/display/divided-list"
@@ -86,6 +87,7 @@ export function BroadcastDetailPanel({ broadcast, canDelete, onDelete }: Broadca
             <DividedList>{state.items.map(renderItem)}</DividedList>
           </SortableList.Root>
         </Section>
+        <ItemDiscussionPanel kind="broadcast" itemId={broadcast.id} />
       </SplitPanel.Content>
       <BroadcastUploadModal broadcast={broadcast} open={state.uploadOpen} onOpenChange={actions.changeUploadOpen} onSubmit={actions.submitUploads} />
     </>

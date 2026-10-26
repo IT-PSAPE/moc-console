@@ -101,7 +101,7 @@ export function ChecklistsScreen() {
             </SplitPanel.Primary>
             <SplitPanel.ResizeHandle />
             <SplitPanel.Detail>
-                {state.selectedChecklist && <ChecklistPanelContent checklist={state.selectedChecklist} onClose={actions.closeDetail} />}
+                {state.selectedChecklist && <ChecklistPanelContent checklist={state.selectedChecklist} open={state.detailOpen} onClose={actions.closeDetail} />}
             </SplitPanel.Detail>
         </SplitPanel>
     )

@@ -4,7 +4,7 @@ import { getCurrentWorkspaceId } from "./current-workspace";
 import { notifyEntityChanged } from "./notify-event";
 
 // The API deliberately preserves the requester's title when staff update the
-// booking lifecycle and notes.
+// booking lifecycle.
 export async function updateBooking(booking: Booking): Promise<Booking> {
   const workspaceId = await getCurrentWorkspaceId();
   return moc.bookings.update(booking, workspaceId);

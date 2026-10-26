@@ -1,9 +1,9 @@
+import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { useDetailReturn } from "@/hooks/use-detail-return"
 import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { Ban, Check, EllipsisVertical, RotateCcw, X } from "lucide-react"
 import { Link } from "react-router-dom"
 import { VenueBookingMetaFields } from "@/features/venues/venue-booking-meta-fields"
-import { VenueBookingNotes } from "@/features/venues/venue-booking-notes"
 import { VenueBookingCancellationAudit } from "@/features/venues/venue-booking-cancellation-audit"
 import { VenueBookingCancelModal } from "@/features/venues/venue-booking-cancel-modal"
 import { VenueBookingRejectModal } from "@/features/venues/venue-booking-reject-modal"
@@ -88,8 +88,10 @@ export function VenueBookingDetailContent({ booking }: VenueBookingDetailContent
           <RequestLinkField kind="venue-booking" id={booking.id} />
         </div>
       </DetailPage.Section>
-      {booking.notes && <><DetailPage.Divider /><DetailPage.Section><VenueBookingNotes booking={booking} /></DetailPage.Section></>}
       {isCancelled && <><DetailPage.Divider /><DetailPage.Section><VenueBookingCancellationAudit booking={booking} /></DetailPage.Section></>}
+
+      <DetailPage.Divider />
+      <DetailPage.Section><ItemDiscussionPanel kind="venue-booking" itemId={booking.id} /></DetailPage.Section>
 
       <VenueBookingCancelModal
         open={cancel.state.cancelTarget !== null}

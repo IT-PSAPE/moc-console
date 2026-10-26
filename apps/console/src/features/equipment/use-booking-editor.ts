@@ -73,14 +73,10 @@ export function useBookingEditor(booking: Booking, onDeleted?: () => void) {
         store.actions.updateField('returnedDate', value ? parseBrowserDateTimeInputToUtcIso(value) : null)
     }
 
-    function changeNotes(event: ChangeEvent<HTMLTextAreaElement>) {
-        store.actions.updateField('notes', event.target.value)
-    }
-
     return {
         store,
         collection,
         state: { deleteOpen, isDeleting },
-        actions: { save, remove, setDeleteOpen, selectStatus, changeBookedBy, changeCheckedOutDate, changeExpectedReturn, changeReturnedDate, changeNotes },
+        actions: { save, remove, setDeleteOpen, selectStatus, changeBookedBy, changeCheckedOutDate, changeExpectedReturn, changeReturnedDate },
     }
 }

@@ -8,7 +8,6 @@ import type { Request } from "@moc/types/requests";
 import { UnsavedChangesModal } from "./unsaved-changes-modal";
 import { DeleteRequestModal } from "./delete-request-modal";
 import { useRequests } from "./request-provider";
-import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import {
   Archive,
   ArchiveRestore,
@@ -22,9 +21,8 @@ import { RequestAssigneeList } from "./request-assignee-list";
 import { RequestFiveW } from "./request-five-w";
 import { RequestFlow } from "./request-flow";
 import { RequestMetaFields } from "./request-meta-fields";
-import { RequestNotes } from "./request-notes";
 import { RequestShareActions } from "./request-share-actions";
-import { RequestDiscussion } from "./request-discussion";
+import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel";
 import { RequestTitle } from "./request-title";
 import { useRequestDetail } from "./use-request-detail";
 import { useDrawerClose } from "@/hooks/use-drawer-close";
@@ -38,12 +36,7 @@ export type RequestDrawerProps = {
   requestCloseRef?: RefObject<(() => void) | null>;
 };
 
-export function RequestDrawer({
-  request,
-  onRequestClose,
-  isDirtyRef,
-  requestCloseRef,
-}: RequestDrawerProps) {
+export function RequestDrawer({ request, onRequestClose, isDirtyRef, requestCloseRef }: RequestDrawerProps) {
   return (
     <Drawer.Portal>
       <Drawer.Backdrop />
@@ -59,12 +52,7 @@ export function RequestDrawer({
   );
 }
 
-function RequestDrawerContent({
-  request,
-  onRequestClose,
-  isDirtyRef,
-  requestCloseRef,
-}: RequestDrawerProps) {
+function RequestDrawerContent({ request, onRequestClose, isDirtyRef, requestCloseRef }: RequestDrawerProps) {
   const { state: drawerState } = useDrawer();
   const closeDrawer = useDrawerClose(onRequestClose);
 
@@ -84,13 +72,7 @@ type RequestPanelContentProps = Omit<RequestDrawerProps, "onRequestClose"> & {
   open: boolean;
 };
 
-export function RequestPanelContent({
-  request,
-  onClose,
-  open,
-  isDirtyRef,
-  requestCloseRef,
-}: RequestPanelContentProps) {
+export function RequestPanelContent({ request, onClose, open, isDirtyRef, requestCloseRef }: RequestPanelContentProps) {
   const shareTargetRef = useRef<HTMLDivElement | null>(null);
   const {
     state: { requestCategories },
@@ -159,17 +141,13 @@ export function RequestPanelContent({
               categories={requestCategories}
               editable
               onFieldChange={store.actions.updateField}
-            />
+            >
+              <RequestAssigneeList assignees={detail.assignees} label={detail.assigneeLabel} isLoading={detail.isLoadingAssignees} onAddMember={detail.actions.handleAddMember} onRemoveMember={detail.actions.handleRemoveMember} />
+              <RequestLinkedRecords request={request} enabled={open} />
+            </RequestMetaFields>
 
             <Divider className="my-0" />
             <RequestFiveW request={store.state.draft} />
-
-            {store.state.draft.notes && (
-              <>
-                <Divider className="my-0" />
-                <RequestNotes request={store.state.draft} />
-              </>
-            )}
 
             {store.state.draft.flow && (
               <>
@@ -179,23 +157,7 @@ export function RequestPanelContent({
             )}
 
             <Divider className="my-0" />
-            {detail.isLoadingAssignees ? (
-              <LoadingSpinner className="py-6" />
-            ) : (
-              <RequestAssigneeList
-                assignees={detail.assignees}
-                onAddMember={detail.actions.handleAddMember}
-                onRemoveMember={detail.actions.handleRemoveMember}
-              />
-            )}
-            <Divider className="my-0" />
-            <RequestLinkedRecords request={request} enabled={open} />
-            <Divider className="my-0" />
-            <RequestDiscussion.Root requestId={request.id} refreshKey={store.state.draft.updatedAt} enabled={open}>
-              <RequestDiscussion.Activity />
-              <Divider className="my-0" />
-              <RequestDiscussion.Comments />
-            </RequestDiscussion.Root>
+            <ItemDiscussionPanel kind="request" itemId={request.id} enabled={open} />
           </div>
         </SplitPanel.Content>
       </RequestShareActions.Root>

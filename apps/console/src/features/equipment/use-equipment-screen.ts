@@ -37,7 +37,7 @@ export function useEquipmentScreen() {
   }, [activeView, closeDetail])
 
   const create = useCallback(async ({ name, serialNumber, category, location }: NewEquipment) => {
-    const equipment: Equipment = { id: randomId(), name, serialNumber, category, status: 'available', location, notes: '', lastActiveDate: new Date().toISOString(), bookedBy: null, thumbnail: null }
+    const equipment: Equipment = { id: randomId(), name, serialNumber, category, status: 'available', location, lastActiveDate: new Date().toISOString(), bookedBy: null, thumbnail: null }
     try {
       const saved = await createEquipment(equipment)
       addEquipment(saved)

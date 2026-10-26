@@ -1,3 +1,4 @@
+import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { SplitPanel } from "@moc/ui/components/layout/split-panel"
 import { Button } from "@moc/ui/components/controls/button"
@@ -149,6 +150,7 @@ export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: Meeti
             </Section.Body>
           </Section>
         )}
+        <ItemDiscussionPanel kind="meeting" itemId={meeting.id} />
       </SplitPanel.Content>
     </>
   )

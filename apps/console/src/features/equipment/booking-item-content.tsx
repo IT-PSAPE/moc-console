@@ -12,7 +12,6 @@ export function BookingItemContent({ booking }: { booking: Booking }) {
         <ListItemCard.Root>
             <ListItemCard.Content>
                 <ListItemCard.Title>{booking.title}</ListItemCard.Title>
-                {booking.notes && <ListItemCard.Subtitle>{booking.notes}</ListItemCard.Subtitle>}
             </ListItemCard.Content>
             <ListItemCard.Trailing>
                 <ListItemCard.Meta>

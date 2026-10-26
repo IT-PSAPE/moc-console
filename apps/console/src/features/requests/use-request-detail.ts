@@ -21,7 +21,7 @@ export function useRequestDetail({ request, syncRequest, assigneesEnabled = true
     const { toast } = useFeedback()
     const { actions: { removeRequest } } = useRequests()
     const store = useRequestStore(request, { syncRequest })
-    const { discard, save, updateField } = store.actions
+    const { discard, save } = store.actions
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
     const blocker = useBlocker(store.state.isDirty)
@@ -113,13 +113,10 @@ export function useRequestDetail({ request, syncRequest, assigneesEnabled = true
         }
     }, [navigate, onDeleted, removeRequest, request.id, toast])
 
-    const handleContentChange = useCallback((content: string) => {
-        updateField('content', content)
-    }, [updateField])
-
     return {
         blockerState: blocker.state,
         assignees: assigneeStore.state.assignees,
+        assigneeLabel: assigneeStore.state.label,
         isLoadingAssignees: assigneeStore.state.isLoading,
         isDeleting,
         showDeleteModal,
@@ -131,7 +128,6 @@ export function useRequestDetail({ request, syncRequest, assigneesEnabled = true
             handleBlockerCancel,
             handleBlockerDiscard,
             handleBlockerSave,
-            handleContentChange,
             handleDelete,
             handleRemoveMember: assigneeStore.actions.removeMember,
             handleSave,

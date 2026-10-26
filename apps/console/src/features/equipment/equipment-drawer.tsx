@@ -1,3 +1,4 @@
+import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { Drawer, useDrawer } from "@moc/ui/components/overlays/drawer";
 import { Divider } from "@moc/ui/components/display/divider";
 import { Button } from "@moc/ui/components/controls/button";
@@ -5,7 +6,6 @@ import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { DeleteEquipmentModal } from "./delete-equipment-modal";
 import { EquipmentPropertiesSection } from "./equipment-properties-section";
-import { EquipmentNotesSection } from "./equipment-notes-section";
 import { EquipmentThumbnail } from "./equipment-thumbnail";
 import { BookingHistorySection } from "./booking-history-section";
 import { useEquipmentEditor } from "./use-equipment-editor";
@@ -118,17 +118,14 @@ export function EquipmentPanelContent({ equipment, onClose, open, isDirtyRef, re
         />
 
         <Divider className="my-0" />
-        <EquipmentNotesSection
-          draft={draft}
-          onUpdateField={store.actions.updateField}
-        />
-
-        <Divider className="my-0" />
         <BookingHistorySection
           bookings={bookingHistory.state.bookings}
           isLoading={bookingHistory.state.isLoading}
           onNavigate={onClose}
         />
+
+        <Divider className="my-0" />
+        <ItemDiscussionPanel kind="equipment" itemId={equipment.id} enabled={open} />
       </SplitPanel.Content>
 
       {/* Save footer — visible only when dirty */}

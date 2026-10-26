@@ -6,7 +6,7 @@ function booking(occurrences: VenueBooking["occurrences"]): VenueBooking {
   return {
     id: "booking", workspaceId: "workspace", venueId: "venue", venueName: "Hall", venueDescription: null,
     eventId: null, eventName: null, eventOther: "Rehearsal", trackingCode: "VEN-ABC123", title: "Rehearsal",
-    requestedBy: "Craig", notes: null, status: "auto", startsAt: "2026-09-01T10:00:00.000Z",
+    requestedBy: "Craig", status: "auto", startsAt: "2026-09-01T10:00:00.000Z",
     endsAt: "2026-09-01T11:00:00.000Z", recurrence: null, occurrences, cancelledAt: null,
     cancelledBy: null, cancelReason: null, approvedAt: null, approvedBy: null, rejectedAt: null, rejectedBy: null, createdAt: "2026-08-01T10:00:00.000Z", updatedAt: "2026-08-01T10:00:00.000Z",
   };

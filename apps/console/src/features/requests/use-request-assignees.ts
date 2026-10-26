@@ -20,9 +20,9 @@ export function useRequestAssignees(requestId: string, enabled = true) {
     if (error) toast({ title: "Failed to load members", description: getErrorMessage(error, "The request members could not be loaded."), variant: "error" });
   }, [error, toast]);
 
-  const addMember = useCallback(async (userId: string, duty: string) => {
+  const addMember = useCallback(async (userId: string) => {
     try {
-      await addRequestAssignee(requestId, userId, duty);
+      await addRequestAssignee(requestId, userId, "");
       await refreshNow();
     } catch (error) {
       toast({ title: "Failed to add member", description: getErrorMessage(error, "The request member could not be added."), variant: "error" });
@@ -39,7 +39,7 @@ export function useRequestAssignees(requestId: string, enabled = true) {
   }, [refreshNow, requestId, toast]);
 
   return {
-    state: { assignees, isLoading },
+    state: { assignees, isLoading, label: assignees.length ? assignees.map((assignee) => `${assignee.name} ${assignee.surname}`).join(", ") : "Assign members…" },
     actions: { addMember, refresh: refreshNow, removeMember },
   };
 }

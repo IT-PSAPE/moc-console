@@ -3,8 +3,8 @@ import type { Checklist } from '@moc/types/checklists'
 import { ChecklistPanelContent } from './checklist-drawer-content'
 
 function ChecklistDrawerPanel({ checklist }: { checklist: Checklist }) {
-    const { actions } = useDrawer()
-    return <ChecklistPanelContent checklist={checklist} onClose={actions.close} />
+    const { state, actions } = useDrawer()
+    return <ChecklistPanelContent checklist={checklist} open={state.isOpen} onClose={actions.close} />
 }
 
 export function ChecklistDrawer({ checklist }: { checklist: Checklist }) {

@@ -1,3 +1,4 @@
+import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { useDetailReturn } from "@/hooks/use-detail-return"
 import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { Link, useParams } from "react-router-dom"
@@ -219,6 +220,9 @@ export function StreamDetailScreen() {
           </DetailPage.Section>
         </>
       )}
+
+      <DetailPage.Divider />
+      <DetailPage.Section><ItemDiscussionPanel kind="stream" itemId={stream.id} /></DetailPage.Section>
 
       <StreamModal
         open={editOpen}

@@ -1,7 +1,8 @@
 import { getChecklistCounts } from "@/features/checklists/checklist-helpers"
 import { moc } from "@/lib/moc-client"
 import { routes } from "@/screens/console-routes"
-import { invalidateWorkspaceResource, updateWorkspaceResourceData } from "./workspace-resource-cache"
+import { getWorkspaceResourceState, invalidateWorkspaceResource, updateWorkspaceResourceData } from "./workspace-resource-cache"
+import { refreshChangedItemActivity } from './item-discussion-cache'
 
 export type RequestLinkedKind = "checklist" | "booking" | "venue-booking" | "stream" | "meeting"
 export type RequestLinkedRecord = {
@@ -42,6 +43,16 @@ export async function fetchRequestLinkedRecords(workspaceId: string): Promise<Re
 }
 
 export async function setRecordRequest(kind: RequestLinkedKind, id: string, requestId: string | null, workspaceId: string): Promise<void> {
+  const resource = { checklist: "checklists", booking: "bookings", "venue-booking": "venue-bookings", stream: "streams", meeting: "zoom-meetings" }[kind]
+  type LinkedSummary = { id: string; requestId?: string | null }
+  const cachedLink = getWorkspaceResourceState<{ requestId: string | null }>(workspaceId, requestLinkResource(kind, id)).data
+  const cachedRecord = getWorkspaceResourceState<LinkedSummary[]>(workspaceId, resource).data?.find(matchesId)
+  const cachedRelation = getWorkspaceResourceState<RequestLinkedRecord[]>(workspaceId, 'request-linked-records').data?.find(matchesRelation)
+  const previousRequestId = cachedLink ? cachedLink.requestId : cachedRecord ? cachedRecord.requestId : cachedRelation?.requestId
+
+  function matchesId(record: LinkedSummary): boolean { return record.id === id }
+  function matchesRelation(record: RequestLinkedRecord): boolean { return record.kind === kind && record.id === id }
+
   switch (kind) {
     case "checklist": await moc.checklists.setRequest(id, requestId, workspaceId); break
     case "booking": await moc.bookings.setRequest(id, requestId, workspaceId); break
@@ -49,12 +60,11 @@ export async function setRecordRequest(kind: RequestLinkedKind, id: string, requ
     case "stream": await moc.streams.setStreamRequest(id, requestId, workspaceId); break
     case "meeting": await moc.streams.setMeetingRequest(id, requestId, workspaceId); break
   }
-  const resource = { checklist: "checklists", booking: "bookings", "venue-booking": "venue-bookings", stream: "streams", meeting: "zoom-meetings" }[kind]
-  type LinkedSummary = { id: string; requestId?: string | null }
   function updateRecord(record: LinkedSummary): LinkedSummary {
     return record.id === id ? { ...record, requestId: kind === "checklist" ? requestId ?? undefined : requestId } : record
   }
   updateWorkspaceResourceData<LinkedSummary[]>(workspaceId, resource, (current) => current?.map(updateRecord))
+  if (previousRequestId !== requestId) refreshChangedItemActivity(workspaceId, requestLinkResource(kind, id), { requestId: previousRequestId }, { requestId })
   invalidateWorkspaceResource(workspaceId, "request-linked-records")
   invalidateWorkspaceResource(workspaceId, requestLinkResource(kind, id))
 }

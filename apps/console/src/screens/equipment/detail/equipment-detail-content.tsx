@@ -1,9 +1,9 @@
+import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { useDetailReturn } from "@/hooks/use-detail-return"
 import { useCallback } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { BookingHistorySection } from "@/features/equipment/booking-history-section"
 import { DeleteEquipmentModal } from "@/features/equipment/delete-equipment-modal"
-import { EquipmentNotesSection } from "@/features/equipment/equipment-notes-section"
 import { EquipmentPropertiesSection } from "@/features/equipment/equipment-properties-section"
 import { EquipmentQrSection } from "@/features/equipment/equipment-qr-section"
 import { EquipmentThumbnail } from "@/features/equipment/equipment-thumbnail"
@@ -62,11 +62,11 @@ export function EquipmentDetailContent({ equipment }: { equipment: Equipment }) 
 
         <DetailPage.Section><EquipmentPropertiesSection draft={draft} onUpdateField={store.actions.updateField} /></DetailPage.Section>
         <DetailPage.Divider />
-        <DetailPage.Section><EquipmentNotesSection draft={draft} onUpdateField={store.actions.updateField} /></DetailPage.Section>
-        <DetailPage.Divider />
         <DetailPage.Section><BookingHistorySection bookings={bookingHistory.state.bookings} isLoading={bookingHistory.state.isLoading} /></DetailPage.Section>
         <DetailPage.Divider />
         <DetailPage.Section><EquipmentQrSection equipment={draft} /></DetailPage.Section>
+        <DetailPage.Divider />
+        <DetailPage.Section><ItemDiscussionPanel kind="equipment" itemId={equipment.id} /></DetailPage.Section>
 
         <UnsavedChangesModal open={guard.state.isBlocked} onSave={guard.actions.saveAndContinue} onDiscard={guard.actions.discardAndContinue} onCancel={guard.actions.cancel} isSaving={store.state.isSaving} />
         <DeleteEquipmentModal open={editor.state.deleteOpen} onDelete={editor.actions.remove} onCancel={closeDelete} isDeleting={editor.state.isDeleting} />

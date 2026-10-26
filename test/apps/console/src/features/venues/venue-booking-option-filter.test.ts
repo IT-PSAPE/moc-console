@@ -15,7 +15,6 @@ function booking(overrides: Partial<VenueBooking> = {}): VenueBooking {
         trackingCode: "VEN-ABC123",
         title: "Screening",
         requestedBy: "Jordan",
-        notes: null,
         status: "auto",
         startsAt: "2026-10-14T08:00:00.000Z",
         endsAt: "2026-10-14T09:00:00.000Z",

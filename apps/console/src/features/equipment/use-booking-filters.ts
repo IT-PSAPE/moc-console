@@ -32,14 +32,13 @@ export function useBookingFilters(bookings: Booking[]) {
   const results = useMemo(() => {
     let result = bookings;
 
-    // Search — title, bookedBy, notes, and any item's equipment name.
+    // Search — title, bookedBy, and any item's equipment name.
     if (filters.search) {
       const q = filters.search.toLowerCase();
       result = result.filter(
         (b) =>
           b.title.toLowerCase().includes(q) ||
           b.bookedBy.toLowerCase().includes(q) ||
-          b.notes.toLowerCase().includes(q) ||
           b.items.some((item) => item.equipmentName.toLowerCase().includes(q)),
       );
     }

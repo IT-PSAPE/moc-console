@@ -1,3 +1,4 @@
+import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { CopyPlus, FolderPlus, Maximize2, Plus, SquarePlus, Trash2, X } from "lucide-react";
 import { Button } from "@moc/ui/components/controls/button";
 import { Divider } from "@moc/ui/components/display/divider";
@@ -11,7 +12,7 @@ import { useChecklistPanel } from "./use-checklist-panel";
 import { ChecklistEditorContent } from "./checklist-editor-content";
 import { RequestLinkField } from "@/features/request-links/request-link-field";
 
-export function ChecklistPanelContent({ checklist, onClose }: { checklist: Checklist; onClose: () => void }) {
+export function ChecklistPanelContent({ checklist, open, onClose }: { checklist: Checklist; open: boolean; onClose: () => void }) {
   const { state, actions, meta } = useChecklistPanel(checklist, onClose);
 
   return (
@@ -44,6 +45,9 @@ export function ChecklistPanelContent({ checklist, onClose }: { checklist: Check
 
         <Divider className="my-0" />
         <ChecklistEditorContent checklist={checklist} onUpdate={actions.updateChecklist} addRequest={state.addRequest} onAddRequestDismiss={actions.dismissAdd} />
+
+        <Divider className="my-0" />
+        <ItemDiscussionPanel kind="checklist" itemId={checklist.id} enabled={open} />
       </SplitPanel.Content>
 
       <ConfirmationDialog open={state.deleteOpen} onOpenChange={actions.setDeleteOpen} title="Delete checklist?" description="This permanently deletes the checklist and cannot be undone." confirmLabel="Delete checklist" onConfirm={actions.remove} />

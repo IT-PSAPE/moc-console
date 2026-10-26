@@ -1,3 +1,4 @@
+import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { useDetailReturn } from "@/hooks/use-detail-return"
 import { Link } from "react-router-dom"
 import { routes } from "@/screens/console-routes"
@@ -89,6 +90,9 @@ export function ChecklistDetailScreen() {
             <ChecklistEditorContent checklist={checklist} onUpdate={actions.update} addRequest={state.addRequest} onAddRequestDismiss={actions.dismissAdd} />
           </Card>
         </DetailPage.Section>
+
+        <DetailPage.Divider />
+        <DetailPage.Section><ItemDiscussionPanel kind="checklist" itemId={checklist.id} /></DetailPage.Section>
 
         <ConfirmationDialog
           open={state.deleteOpen}

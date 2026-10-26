@@ -84,7 +84,7 @@ export function VenueBookingsScreen() {
       </SplitPanel.Primary>
       <SplitPanel.ResizeHandle />
       <SplitPanel.Detail>
-        {state.selectedBooking && <VenueBookingPanelContent booking={state.selectedBooking} onClose={actions.closeDetail} />}
+        {state.selectedBooking && <VenueBookingPanelContent booking={state.selectedBooking} open={state.detailOpen} onClose={actions.closeDetail} />}
       </SplitPanel.Detail>
     </SplitPanel>
   );

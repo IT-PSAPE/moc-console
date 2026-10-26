@@ -99,3 +99,16 @@ test('global collection observers do not become polling jobs after visiting thei
   expect(queryFn).toHaveBeenCalledTimes(1)
   stop()
 })
+
+test('item history polls every fifteen seconds while observed and stops after leaving', async () => {
+  const queryFn = vi.fn(async () => ({ pages: [] }))
+  const observer = new tanstack.QueryObserver(client, {
+    ...consoleQueryPolicy('item-activity:request:item'), queryKey: ['activity'], queryFn,
+  })
+  const stop = observer.subscribe(() => undefined)
+  await vi.advanceTimersByTimeAsync(15_000)
+  expect(queryFn).toHaveBeenCalledTimes(2)
+  stop()
+  await vi.advanceTimersByTimeAsync(45_000)
+  expect(queryFn).toHaveBeenCalledTimes(2)
+})

@@ -1,12 +1,12 @@
+import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { RequestLinkField } from "@/features/request-links/request-link-field"
-import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { Drawer, useDrawer } from "@moc/ui/components/overlays/drawer";
 import { Button } from "@moc/ui/components/controls/button";
 import { Divider } from "@moc/ui/components/display/divider";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { MetaRow } from "@moc/ui/components/display/meta-row";
 import { Input } from "@moc/ui/components/form/input";
 import { DateTimeFields } from "@moc/ui/components/form/date-time-fields";
-import { TextArea } from "@moc/ui/components/form/text-area";
 import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { useBookingEditor } from "./use-booking-editor";
 import { BookingItemsSection } from "./booking-items-section";
@@ -15,7 +15,7 @@ import { BookingScanModal } from "./booking-scan-modal";
 import { BookingStatusSelect } from "./booking-status-select";
 import { BookingThumbnail } from "./booking-thumbnail";
 import type { Booking } from "@moc/types/equipment";
-import { Calendar, Clock, Loader, Maximize2, ScanLine, StickyNote, Trash2, User, X } from "lucide-react";
+import { Calendar, Clock, Loader, Maximize2, ScanLine, Trash2, User, X } from "lucide-react";
 import type { RefObject } from "react";
 import { formatUtcIsoForBrowserDateTimeInput } from "@moc/utils/browser-date-time";
 import { useDrawerClose } from "@/hooks/use-drawer-close";
@@ -46,16 +46,18 @@ export function BookingDrawer({ booking, onBookingClose, isDirtyRef, requestClos
 }
 
 function BookingDrawerContent({ booking, onBookingClose, isDirtyRef, requestCloseRef }: BookingDrawerProps) {
+  const { state: drawerState } = useDrawer();
   const closeDrawer = useDrawerClose(onBookingClose);
 
-  return <BookingPanelContent booking={booking} onClose={closeDrawer} isDirtyRef={isDirtyRef} requestCloseRef={requestCloseRef} />;
+  return <BookingPanelContent booking={booking} open={drawerState.isOpen} onClose={closeDrawer} isDirtyRef={isDirtyRef} requestCloseRef={requestCloseRef} />;
 }
 
 type BookingPanelContentProps = Omit<BookingDrawerProps, "onBookingClose"> & {
   onClose: () => void;
+  open: boolean;
 };
 
-export function BookingPanelContent({ booking, onClose, isDirtyRef, requestCloseRef }: BookingPanelContentProps) {
+export function BookingPanelContent({ booking, open, onClose, isDirtyRef, requestCloseRef }: BookingPanelContentProps) {
 
   const editor = useBookingEditor(booking, onClose);
   const { store, collection } = editor;
@@ -159,26 +161,16 @@ export function BookingPanelContent({ booking, onClose, isDirtyRef, requestClose
             <Paragraph.sm>{draft.duration}</Paragraph.sm>
           </MetaRow>
 
-          {/* Notes */}
-          <MetaRow icon={<StickyNote />} label="Notes">
-            <TextArea
-              aria-label="Booking notes"
-              name="booking-notes"
-              value={draft.notes}
-              onChange={editor.actions.changeNotes}
-              placeholder="Add notes…"
-              style="ghost"
-              rows={5}
-              className="w-full whitespace-pre-wrap"
-            />
-          </MetaRow>
-        </div>
+          <RequestLinkField kind="booking" id={booking.id} />
 
-        <RequestLinkField kind="booking" id={booking.id} />
+        </div>
 
         <Divider className="my-0" />
         {/* Items */}
         <BookingItemsSection items={draft.items} scannedItemIds={collection.state.scannedItemIds} onNavigate={onClose} />
+
+        <Divider className="my-0" />
+        <ItemDiscussionPanel kind="booking" itemId={booking.id} enabled={open} />
       </SplitPanel.Content>
 
       {store.state.isDirty && (

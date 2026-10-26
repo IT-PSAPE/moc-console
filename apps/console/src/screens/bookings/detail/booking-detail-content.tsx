@@ -1,3 +1,4 @@
+import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { useDetailReturn } from "@/hooks/use-detail-return"
 import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { useCallback } from "react"
@@ -18,12 +19,11 @@ import { MetaRow } from "@moc/ui/components/display/meta-row"
 import { Paragraph } from "@moc/ui/components/display/text"
 import { DateTimeFields } from "@moc/ui/components/form/date-time-fields"
 import { Input } from "@moc/ui/components/form/input"
-import { TextArea } from "@moc/ui/components/form/text-area"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { Page } from "@moc/ui/components/layout/page"
 import type { Booking } from "@moc/types/equipment"
 import { formatUtcIsoForBrowserDateTimeInput } from "@moc/utils/browser-date-time"
-import { Calendar, Clock, Loader, Save, ScanLine, StickyNote, Trash2, Undo2, User } from "lucide-react"
+import { Calendar, Clock, Loader, Save, ScanLine, Trash2, Undo2, User } from "lucide-react"
 
 export function BookingDetailContent({ booking }: { booking: Booking }) {
   const back = useDetailReturn(`/${routes.bookings}`, "Back to bookings")
@@ -71,15 +71,13 @@ export function BookingDetailContent({ booking }: { booking: Booking }) {
           <MetaRow icon={<Clock />} label="Expected return"><DateTimeFields ariaLabel="Expected return" name="expected-return" value={formatUtcIsoForBrowserDateTimeInput(draft.expectedReturnAt)} onChange={editor.actions.changeExpectedReturn} style="ghost" fieldLabels="hidden" required /></MetaRow>
           <MetaRow icon={<Calendar />} label="Returned"><DateTimeFields ariaLabel="Returned" name="returned" value={draft.returnedDate ? formatUtcIsoForBrowserDateTimeInput(draft.returnedDate) : ""} onChange={editor.actions.changeReturnedDate} style="ghost" fieldLabels="hidden" /></MetaRow>
           <MetaRow icon={<Clock />} label="Duration"><Paragraph.sm>{draft.duration}</Paragraph.sm></MetaRow>
-          <MetaRow icon={<StickyNote />} label="Notes">
-            <TextArea aria-label="Booking notes" name="booking-notes" value={draft.notes} onChange={editor.actions.changeNotes} placeholder="Add notes…" style="ghost" rows={5} className="w-full whitespace-pre-wrap" />
-          </MetaRow>
+          <RequestLinkField kind="booking" id={booking.id} />
         </DetailPage.Section>
 
         <DetailPage.Divider />
-        <DetailPage.Section><RequestLinkField kind="booking" id={booking.id} /></DetailPage.Section>
-        <DetailPage.Divider />
         <DetailPage.Section><BookingItemsSection items={draft.items} scannedItemIds={collection.state.scannedItemIds} /></DetailPage.Section>
+        <DetailPage.Divider />
+        <DetailPage.Section><ItemDiscussionPanel kind="booking" itemId={booking.id} /></DetailPage.Section>
 
         <UnsavedChangesModal open={guard.state.isBlocked} onSave={guard.actions.saveAndContinue} onDiscard={guard.actions.discardAndContinue} onCancel={guard.actions.cancel} isSaving={store.state.isSaving} />
         <BookingDeleteModal open={editor.state.deleteOpen} isDeleting={editor.state.isDeleting} onConfirm={editor.actions.remove} onOpenChange={editor.actions.setDeleteOpen} />

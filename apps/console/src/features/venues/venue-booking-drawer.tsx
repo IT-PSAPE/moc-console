@@ -1,8 +1,9 @@
+import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { useDetailLinkState } from "@/hooks/use-detail-return"
 import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { Ban, Check, EllipsisVertical, Maximize2, RotateCcw, X } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Drawer } from "@moc/ui/components/overlays/drawer";
+import { Drawer, useDrawer } from "@moc/ui/components/overlays/drawer";
 import { Dropdown } from "@moc/ui/components/overlays/dropdown";
 import { Divider } from "@moc/ui/components/display/divider";
 import { Button } from "@moc/ui/components/controls/button";
@@ -12,7 +13,6 @@ import type { VenueBooking } from "@moc/types/venues";
 import { routes } from "@/screens/console-routes";
 import { useDrawerClose } from "@/hooks/use-drawer-close";
 import { VenueBookingMetaFields } from "./venue-booking-meta-fields";
-import { VenueBookingNotes } from "./venue-booking-notes";
 import { VenueBookingCancellationAudit } from "./venue-booking-cancellation-audit";
 import { VenueBookingCancelModal } from "./venue-booking-cancel-modal";
 import { VenueBookingRejectModal } from "./venue-booking-reject-modal";
@@ -27,13 +27,14 @@ export type VenueBookingDrawerProps = {
 };
 
 export function VenueBookingDrawer({ booking, onClose }: VenueBookingDrawerProps) {
+  const { state: drawerState } = useDrawer();
   const closeDrawer = useDrawerClose(onClose);
 
   return (
     <Drawer.Portal>
       <Drawer.Backdrop />
       <Drawer.Panel aria-label={booking.title} className="max-w-lg">
-        <VenueBookingPanelContent booking={booking} onClose={closeDrawer} />
+        <VenueBookingPanelContent booking={booking} open={drawerState.isOpen} onClose={closeDrawer} />
       </Drawer.Panel>
     </Drawer.Portal>
   );
@@ -42,9 +43,10 @@ export function VenueBookingDrawer({ booking, onClose }: VenueBookingDrawerProps
 type VenueBookingPanelContentProps = {
   booking: VenueBooking;
   onClose: () => void;
+  open: boolean;
 };
 
-export function VenueBookingPanelContent({ booking, onClose }: VenueBookingPanelContentProps) {
+export function VenueBookingPanelContent({ booking, open, onClose }: VenueBookingPanelContentProps) {
   const linkState = useDetailLinkState()
   const { state: { at } } = useVenueBookings();
   const cancel = useVenueBookingCancel();
@@ -127,19 +129,14 @@ export function VenueBookingPanelContent({ booking, onClose }: VenueBookingPanel
 
         <RequestLinkField kind="venue-booking" id={booking.id} />
 
-        {booking.notes && (
-          <>
-            <Divider className="my-0" />
-            <VenueBookingNotes booking={booking} />
-          </>
-        )}
-
         {isCancelled && (
           <>
             <Divider className="my-0" />
             <VenueBookingCancellationAudit booking={booking} />
           </>
         )}
+        <Divider className="my-0" />
+        <ItemDiscussionPanel kind="venue-booking" itemId={booking.id} enabled={open} />
       </SplitPanel.Content>
 
       <VenueBookingCancelModal

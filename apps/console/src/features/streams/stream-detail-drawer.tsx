@@ -1,3 +1,4 @@
+import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { RequestLinkField } from "@/features/request-links/request-link-field"
 import { SplitPanel } from "@moc/ui/components/layout/split-panel"
 import { Button } from "@moc/ui/components/controls/button"
@@ -198,6 +199,7 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
             </Section.Body>
           </Section>
         )}
+        <ItemDiscussionPanel kind="stream" itemId={stream.id} />
       </SplitPanel.Content>
     </>
   )

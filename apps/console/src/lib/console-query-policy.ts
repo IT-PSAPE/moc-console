@@ -22,7 +22,7 @@ export function consoleQueryPolicy(resource: string): ConsoleQueryPolicy {
   return {
     staleTime: family === 'youtube-categories' ? 60 * MINUTE : referenceResources.has(family) ? 5 * MINUTE : live ? 30_000 : MINUTE,
     gcTime: 30 * MINUTE,
-    refetchInterval: family === 'request-discussion' ? 15_000 : live ? 30_000 : false,
+    refetchInterval: family === 'item-activity' || family === 'item-comments' ? 15_000 : live ? 30_000 : false,
     refetchIntervalInBackground: false,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
