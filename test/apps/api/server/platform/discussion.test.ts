@@ -26,6 +26,17 @@ function historyRow(overrides: Record<string, unknown> = {}): Record<string, unk
 }
 
 describe("item discussion platform", () => {
+  test("equipment activity merges booking records inside the scoped cursor query while comments stay independent", async () => {
+    const query = vi.fn(async (sql: string) => ({ rows: sql.includes("current_user_can") ? [{ allowed: true }] : sql.startsWith("SELECT id") ? [{ id: ITEM_ID }] : [] }))
+    const equipment = { kind: "equipment", itemId: ITEM_ID }
+    await operations.listActivity.run(context(query), equipment)
+    expect(query.mock.calls[2][0]).toContain("UNION ALL")
+    expect(query.mock.calls[2][0]).toContain("booking_recorded")
+    expect(query).toHaveBeenLastCalledWith(expect.stringContaining("booking.workspace_id=$1"), [WORKSPACE_ID, "equipment", ITEM_ID, null, null, 31])
+    await operations.listComments.run(context(query), equipment)
+    expect(query.mock.calls[5][0]).toContain("FROM public.item_comments")
+    expect(query.mock.calls[5][0]).not.toContain("UNION ALL")
+  })
   test("reads only after resolving an item inside the verified workspace and preserves all changes", async () => {
     const query = vi.fn(async (sql: string) => ({ rows: sql.includes("current_user_can") ? [{ allowed: true }] : sql.startsWith("SELECT id") ? [{ id: ITEM_ID }] : [historyRow()] }))
     const result = await operations.listActivity.run(context(query), target) as DiscussionPage<ItemActivity>

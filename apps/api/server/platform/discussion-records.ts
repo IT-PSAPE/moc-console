@@ -30,6 +30,28 @@ export const DISCUSSION_SELECT = `history.*,
 export const DISCUSSION_ACTOR_JOIN = "LEFT JOIN public.users AS actor ON actor.id = history.actor_id"
 export const DISCUSSION_PAGE_SIZE = 30
 
+// Existing booking records predate the audit trail. Include them in the same
+// cursor window, unless the equipment already has the recorded booking link.
+export const EQUIPMENT_ACTIVITY_SOURCE = `(
+  SELECT id,workspace_id,item_kind,item_id,actor_id,actor_kind,actor_name,event_type,changes,details,operation_id,created_at
+  FROM public.item_activity
+  WHERE workspace_id=$1 AND item_kind=$2 AND item_id=$3
+  UNION ALL
+  SELECT booking.id,booking.workspace_id,'equipment'::text,$3::uuid,NULL::uuid,'unknown'::text,
+    booking.booked_by,'booking_recorded'::text,'[]'::jsonb,
+    jsonb_strip_nulls(jsonb_build_object('booking_id',booking.id,'label',booking.title,'status',booking.status,
+      'checked_out_at',booking.checked_out_at,'expected_return_at',booking.expected_return_at,'returned_at',booking.returned_at)),
+    NULL::text,booking.created_at
+  FROM public.bookings AS booking
+  WHERE booking.workspace_id=$1
+    AND EXISTS (SELECT 1 FROM public.booking_items AS item WHERE item.booking_id=booking.id AND item.equipment_id=$3)
+    AND NOT EXISTS (
+      SELECT 1 FROM public.item_activity AS recorded
+      WHERE recorded.workspace_id=$1 AND recorded.item_kind=$2 AND recorded.item_id=$3
+        AND recorded.event_type='equipment_added' AND recorded.details->>'booking_id'=booking.id::text
+    )
+)`
+
 function discussionActor(row: HistoryRow): DiscussionActor {
   const labels: Record<DiscussionActor["kind"], string> = {
     member: "Unknown member", requester: "Requester", integration: "Integration", system: "System", unknown: "Unknown",

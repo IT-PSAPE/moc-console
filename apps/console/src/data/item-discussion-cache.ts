@@ -25,11 +25,11 @@ function addLinkedRequest(items: Map<string, ItemReference>, record: Record<stri
     if (typeof requestId === 'string') items.set(`request:${requestId}`, { kind: 'request', id: requestId })
 }
 
-function refreshEquipmentMembership(items: Map<string, ItemReference>, previous: Record<string, unknown> | undefined | null, next: Record<string, unknown> | undefined | null): void {
+function refreshEquipmentActivity(items: Map<string, ItemReference>, previous: Record<string, unknown> | undefined | null, next: Record<string, unknown> | undefined | null): void {
     const before = equipmentIds(previous?.items)
     const after = equipmentIds(next?.items)
     for (const id of new Set([...before, ...after])) {
-        if (before.has(id) !== after.has(id)) items.set(`equipment:${id}`, { kind: 'equipment', id })
+        items.set(`equipment:${id}`, { kind: 'equipment', id })
     }
 }
 
@@ -63,7 +63,7 @@ export function changedDiscussionItems(resource: string, previous: unknown, next
         items.set(`${kind}:${detailId}`, { kind, id: detailId })
         addLinkedRequest(items, asRecord(previous))
         addLinkedRequest(items, asRecord(next))
-        if (kind === 'booking') refreshEquipmentMembership(items, asRecord(previous), asRecord(next))
+        if (kind === 'booking') refreshEquipmentActivity(items, asRecord(previous), asRecord(next))
     } else if (kind) {
         const before = indexedRecords(previous)
         const after = indexedRecords(next)
@@ -72,7 +72,7 @@ export function changedDiscussionItems(resource: string, previous: unknown, next
             items.set(`${kind}:${id}`, { kind, id })
             addLinkedRequest(items, before.get(id))
             addLinkedRequest(items, after.get(id))
-            if (kind === 'booking') refreshEquipmentMembership(items, before.get(id), after.get(id))
+            if (kind === 'booking') refreshEquipmentActivity(items, before.get(id), after.get(id))
         }
         if (kind === 'scheduled-message') changedScheduleOccurrences(items, previous, next)
     } else if (instanceId) {

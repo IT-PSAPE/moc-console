@@ -69,4 +69,24 @@ describe('item discussion formatting', () => {
         expect(formatDiscussionTime('2026-10-26T11:00:00Z', now).exact).toContain('26 Oct 2026')
         expect(formatDiscussionTime('invalid', now).relative).toBe('Unknown time')
     })
+
+    test('booking history retains its booker, current status, dates and safe booking link', () => {
+        const id = '00000000-0000-4000-8000-000000000001'
+        const entry: ItemActivity = { ...activity('booking', '2026-10-25T12:00:00Z'), itemKind: 'equipment', type: 'booking_recorded', actor: { id: null, name: 'Future GSN', avatarUrl: null, kind: 'unknown' }, details: { booking_id: id, label: 'September Class', status: 'returned', checked_out_at: '2026-10-02T14:30:00Z', returned_at: '2026-10-07T18:18:00Z' } }
+        const row = groupItemActivity([entry], now)[0].items[0]
+        expect(row).toMatchObject({ actor: { name: 'Future GSN', source: null }, action: 'booked this equipment', links: [{ href: `/bookings/${id}`, label: 'September Class' }] })
+        expect(row.description).toContain('Returned · Checked out')
+        expect(row.description).toContain('2 Oct 2026')
+        expect(row.description).toContain('7 Oct 2026')
+        expect(groupItemActivity([{ ...entry, details: { ...entry.details, booking_id: 'https://untrusted.test' } }], now)[0].items[0].links).toEqual([])
+    })
+
+    test('recorded equipment booking links stay reachable when grouped with property changes', () => {
+        const id = '00000000-0000-4000-8000-000000000001'
+        const booking = { ...activity('link', '2026-10-26T11:00:00Z'), itemKind: 'equipment' as const, type: 'equipment_added', operationId: 'booking-change', details: { booking_id: id, label: 'Class' } }
+        const change = { ...booking, id: 'status', type: 'updated', details: {}, changes: [{ field: 'status', before: 'available', after: 'booked' }] }
+        const row = groupItemActivity([booking, change], now)[0].items[0]
+        expect(row.links).toEqual([{ href: `/bookings/${id}`, label: 'Class' }])
+        expect(row.description).toContain('Added this equipment to a booking')
+    })
 })

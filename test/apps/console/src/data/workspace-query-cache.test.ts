@@ -78,12 +78,12 @@ describe('TanStack workspace cache', () => {
 
   test('booking mutations invalidate related calendars and per-equipment reads only in the same workspace', () => {
     const calendar = workspaceResourceKey('workspace-a', 'work-calendar')
-    const bookings = workspaceResourceKey('workspace-a', 'equipment-bookings:camera')
+    const bookings = workspaceResourceKey('workspace-a', 'item-activity:equipment:camera')
     const otherCalendar = workspaceResourceKey('workspace-b', 'work-calendar')
     queryClient.setQueryData(calendar, [])
     queryClient.setQueryData(bookings, [])
     queryClient.setQueryData(otherCalendar, [])
-    setWorkspaceResourceData('workspace-a', 'bookings', ['saved booking'])
+    setWorkspaceResourceData('workspace-a', 'bookings', [{ id: 'saved-booking', items: [{ equipmentId: 'camera' }] }])
     expect(queryClient.getQueryState(calendar)?.isInvalidated).toBe(true)
     expect(queryClient.getQueryState(bookings)?.isInvalidated).toBe(true)
     expect(queryClient.getQueryState(otherCalendar)?.isInvalidated).toBe(false)

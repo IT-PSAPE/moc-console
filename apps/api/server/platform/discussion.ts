@@ -3,7 +3,7 @@ import { WorkspaceAccessError } from "../workspace-access.js"
 import type { PlatformContext, PlatformOperation } from "./context.js"
 import { commentBody, discussionCursor, discussionTarget, ITEM_TABLES, type DiscussionTarget } from "./discussion-input.js"
 import {
-  activityRecord, commentRecord, discussionPage, DISCUSSION_ACTOR_JOIN, DISCUSSION_PAGE_SIZE, DISCUSSION_SELECT,
+  activityRecord, commentRecord, discussionPage, DISCUSSION_ACTOR_JOIN, DISCUSSION_PAGE_SIZE, DISCUSSION_SELECT, EQUIPMENT_ACTIVITY_SOURCE,
   type ActivityRow, type CommentRow,
 } from "./discussion-records.js"
 import { objectInput, uuidField } from "./input.js"
@@ -26,8 +26,9 @@ async function listHistory(context: PlatformContext, value: unknown, table: "ite
   const target = discussionTarget(input)
   const cursor = discussionCursor(input, target)
   await requireItem(context, target, "can_read")
+  const source = table === "item_activity" && target.kind === "equipment" ? EQUIPMENT_ACTIVITY_SOURCE : `public.${table}`
   const result = await context.db.query<ActivityRow | CommentRow>(
-    `SELECT ${DISCUSSION_SELECT} FROM public.${table} AS history ${DISCUSSION_ACTOR_JOIN}
+    `SELECT ${DISCUSSION_SELECT} FROM ${source} AS history ${DISCUSSION_ACTOR_JOIN}
       WHERE history.workspace_id=$1 AND history.item_kind=$2 AND history.item_id=$3
       AND ($4::timestamptz IS NULL OR (history.created_at, history.id) < ($4::timestamptz, $5::uuid))
       ORDER BY history.created_at DESC, history.id DESC LIMIT $6`,

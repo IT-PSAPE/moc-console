@@ -89,6 +89,41 @@ suite("item discussion API against disposable PostgreSQL with production RLS", (
     expect(new Set(events.map((event) => event.id)).size).toBe(31)
   })
 
+  test("legacy equipment bookings share activity pagination and use creation dates rather than future collection dates", async () => {
+    const equipmentId = randomUUID()
+    await pool!.query("INSERT INTO public.equipment (id,workspace_id,name,serial_number,category,status,location) VALUES ($1::uuid,$2,'History camera',$1::text,'camera','available','Shelf')", [equipmentId, workspaceId])
+    const inserted = await pool!.query<{ id: string }>(`WITH saved AS (
+      INSERT INTO public.bookings (workspace_id,title,booked_by,tracking_code,checked_out_at,expected_return_at,created_at,status)
+      SELECT $1,'Legacy booking '||number,'Legacy borrower','BKG-'||gen_random_uuid(),'2099-01-01','2099-01-02','2020-01-01 00:00:00.123456+00','archived'
+      FROM generate_series(1,31) AS number RETURNING id
+    ) INSERT INTO public.booking_items (booking_id,equipment_id) SELECT id,$2 FROM saved RETURNING booking_id AS id`, [workspaceId, equipmentId])
+    // Reproduce existing records from before audit recording was installed.
+    await pool!.query("DELETE FROM public.item_activity WHERE item_kind='equipment' AND item_id=$1 AND details ? 'booking_id'", [equipmentId])
+    const input = { kind: 'equipment', itemId: equipmentId }
+    const first = await run<DiscussionPage<ItemActivity>>(operations.listActivity, input, viewerId)
+    expect(first.items[0].type).toBe('created')
+    expect(first.nextCursor).not.toBeNull()
+    const second = await run<DiscussionPage<ItemActivity>>(operations.listActivity, { ...input, cursor: first.nextCursor }, viewerId)
+    const records = [...first.items, ...second.items].filter(event => event.type === 'booking_recorded')
+    expect(new Set(records.map(event => event.id))).toEqual(new Set(inserted.rows.map(row => row.id)))
+    expect(records).toHaveLength(31)
+    expect(records[0]).toMatchObject({ itemId: equipmentId, createdAt: '2020-01-01T00:00:00.123Z', actor: { id: null, name: 'Legacy borrower', kind: 'unknown' }, details: { status: 'archived' } })
+    expect(second.nextCursor).toBeNull()
+  })
+
+  test("an audited equipment booking appears once and foreign equipment stays inaccessible", async () => {
+    const equipmentId = randomUUID(), foreignEquipmentId = randomUUID()
+    for (const [id, workspace] of [[equipmentId, workspaceId], [foreignEquipmentId, foreignWorkspaceId]]) {
+      await pool!.query("INSERT INTO public.equipment (id,workspace_id,name,serial_number,category,status,location) VALUES ($1::uuid,$2,'Audited camera',$1::text,'camera','available','Shelf')", [id, workspace])
+    }
+    await pool!.query("INSERT INTO public.booking_items (booking_id,equipment_id) VALUES ($1,$2)", [bookingId, equipmentId])
+    const page = await run<DiscussionPage<ItemActivity>>(operations.listActivity, { kind: 'equipment', itemId: equipmentId })
+    const links = page.items.filter(event => event.details.booking_id === bookingId)
+    expect(links).toHaveLength(1)
+    expect(links[0].type).toBe('equipment_added')
+    await expect(run(operations.listActivity, { kind: 'equipment', itemId: foreignEquipmentId })).rejects.toThrow('Item not found')
+  })
+
   test("equipment and booking operations run against the schema after Notes is removed", async () => {
     const record = { id: randomUUID(), name: "Camera", serialNumber: `DISCUSSION-${randomUUID()}`, category: "camera", status: "available", location: "Shelf A", lastActiveDate: "2026-10-26T10:00:00.000Z", thumbnail: null }
     await expect(run(equipment.create, { equipment: record })).resolves.toMatchObject({ id: record.id, location: "Shelf A" })

@@ -7,7 +7,6 @@ import { UnsavedChangesModal } from "@/features/requests/unsaved-changes-modal";
 import { DeleteEquipmentModal } from "./delete-equipment-modal";
 import { EquipmentPropertiesSection } from "./equipment-properties-section";
 import { EquipmentThumbnail } from "./equipment-thumbnail";
-import { BookingHistorySection } from "./booking-history-section";
 import { useEquipmentEditor } from "./use-equipment-editor";
 import type { Equipment } from "@moc/types/equipment";
 import { Maximize2, Trash2, X } from "lucide-react";
@@ -63,8 +62,8 @@ type EquipmentPanelContentProps = Omit<EquipmentDrawerProps, "onEquipmentClose">
 
 export function EquipmentPanelContent({ equipment, onClose, open, isDirtyRef, requestCloseRef }: EquipmentPanelContentProps) {
 
-  const editor = useEquipmentEditor(equipment, onClose, open);
-  const { store, bookingHistory } = editor;
+  const editor = useEquipmentEditor(equipment, onClose);
+  const { store } = editor;
 
   const guard = useDrawerEditorGuard({ close: onClose, discard: store.actions.discard, href: `/equipment/${equipment.id}`, isDirty: store.state.isDirty, isDirtyRef, requestCloseRef, save: editor.actions.save });
 
@@ -115,13 +114,6 @@ export function EquipmentPanelContent({ equipment, onClose, open, isDirtyRef, re
         <EquipmentPropertiesSection
           draft={draft}
           onUpdateField={store.actions.updateField}
-        />
-
-        <Divider className="my-0" />
-        <BookingHistorySection
-          bookings={bookingHistory.state.bookings}
-          isLoading={bookingHistory.state.isLoading}
-          onNavigate={onClose}
         />
 
         <Divider className="my-0" />

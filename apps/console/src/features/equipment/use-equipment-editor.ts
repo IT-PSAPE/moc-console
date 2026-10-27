@@ -4,14 +4,12 @@ import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 import { getErrorMessage } from '@moc/utils/get-error-message'
 import type { Equipment } from '@moc/types/equipment'
 import { useEquipment } from './equipment-provider'
-import { useEquipmentBookings } from './use-equipment-bookings'
 import { useEquipmentStore } from './use-equipment-store'
 
-export function useEquipmentEditor(equipment: Equipment, onDeleted?: () => void, loadBookings = true) {
+export function useEquipmentEditor(equipment: Equipment, onDeleted?: () => void) {
   const { toast } = useFeedback()
   const { actions: { syncEquipment, removeEquipment, removeBookingItemsByEquipmentId } } = useEquipment()
   const store = useEquipmentStore(equipment, { syncEquipment })
-  const bookingHistory = useEquipmentBookings(equipment.id, loadBookings)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -42,5 +40,5 @@ export function useEquipmentEditor(equipment: Equipment, onDeleted?: () => void,
     }
   }, [equipment.id, onDeleted, removeBookingItemsByEquipmentId, removeEquipment, toast])
 
-  return { store, bookingHistory, state: { deleteOpen, isDeleting }, actions: { save, remove, setDeleteOpen } }
+  return { store, state: { deleteOpen, isDeleting }, actions: { save, remove, setDeleteOpen } }
 }

@@ -22,8 +22,3 @@ export async function fetchBookingById(id: string, workspaceId?: string): Promis
   const resolvedWorkspaceId = workspaceId ?? await getCurrentWorkspaceId();
   return (await moc.bookings.getById(id, resolvedWorkspaceId)) ?? undefined;
 }
-
-export async function fetchBookingsByEquipmentId(equipmentId: string): Promise<Booking[]> {
-  const workspaceId = await getCurrentWorkspaceId();
-  return moc.bookings.listByEquipmentId(equipmentId, workspaceId);
-}

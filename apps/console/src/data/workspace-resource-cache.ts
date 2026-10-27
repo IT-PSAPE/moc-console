@@ -15,7 +15,7 @@ export function workspaceResourceKey(workspaceId: string | null, resource: strin
 
 const dependents: Record<string, readonly string[]> = {
   requests: ['work-calendar', 'request-linked-records'],
-  bookings: ['work-calendar', 'request-linked-records', 'equipment-bookings'],
+  bookings: ['work-calendar', 'request-linked-records'],
   'venue-bookings': ['work-calendar', 'request-linked-records'],
   checklists: ['request-linked-records'],
   streams: ['request-linked-records'],

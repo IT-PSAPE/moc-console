@@ -1,6 +1,6 @@
 import type { ActivityChange, ItemActivity, ItemComment, ItemKind } from '@moc/types/discussion'
 import { discussionDay, formatChangeValue, formatDiscussionActor, formatDiscussionTime, humanizeDiscussionValue } from './discussion-formatters'
-import type { ActivityChangeView, ActivityGroupView, ActivityView, CommentView } from './discussion-types'
+import type { ActivityChangeView, ActivityGroupView, ActivityLinkView, ActivityView, CommentView } from './discussion-types'
 
 const itemNames: Record<ItemKind, string> = { request: 'request', equipment: 'equipment item', booking: 'equipment booking', 'venue-booking': 'venue booking', checklist: 'checklist', stream: 'stream', meeting: 'meeting', broadcast: 'broadcast', 'scheduled-message': 'scheduled message' }
 const fieldNames: Record<string, string> = { due_at: 'Due date', scheduled_at: 'Scheduled for', assignees: 'Assignees', request_id: 'Linked request', requestId: 'Linked request', is_checked: 'Completed', expected_return_at: 'Expected return', checked_out_at: 'Checked out', returned_at: 'Returned', body: 'Message', post_role: 'Message phase', follow_up_minutes: 'Follow-up delay (minutes)', send_on: 'Send time', occurrence_on: 'Occurrence date', attendance_groups: 'Attendance groups', attendee_ids: 'Attendees', items: 'Items', user_id: 'Member', title: 'Title', name: 'Name' }
@@ -20,6 +20,12 @@ const actions: Record<string, string> = {
 }
 
 function actionText(activity: ItemActivity): string {
+    if (activity.itemKind === 'equipment' && activity.details.booking_id) {
+        if (activity.type === 'booking_recorded') return 'booked this equipment'
+        if (activity.type === 'equipment_added') return 'added this equipment to a booking'
+        if (activity.type === 'equipment_removed') return 'removed this equipment from a booking'
+        if (activity.type === 'equipment_updated') return 'updated this equipment in a booking'
+    }
     if (activity.type === 'created') return activity.actor.kind === 'requester' ? `submitted this ${itemNames[activity.itemKind]}` : `created this ${itemNames[activity.itemKind]}`
     if (activity.type === 'updated' && activity.changes.length === 1) return `changed ${fieldNames[activity.changes[0].field]?.toLowerCase() ?? humanizeDiscussionValue(activity.changes[0].field).toLowerCase()}`
     if (activity.type === 'updated' && activity.changes.length > 1) return `updated ${activity.changes.length} properties`
@@ -42,10 +48,27 @@ function formatRelationValue(change: ActivityChange, activity: ItemActivity, sid
 
 function formatActivity(activity: ItemActivity, now: number): ActivityView {
     const changes = activity.changes.map(formatActivityChange)
-    const description = typeof activity.details.description === 'string' ? activity.details.description : typeof activity.details.reason === 'string' ? activity.details.reason : typeof activity.details.label === 'string' ? activity.details.label : typeof activity.details.requester_name === 'string' && activity.actor.kind === 'unknown' ? `Submitted by ${activity.details.requester_name}` : null
+    const links = bookingLinks(activity)
+    const description = activity.type === 'booking_recorded' ? bookingDescription(activity) : typeof activity.details.description === 'string' ? activity.details.description : typeof activity.details.reason === 'string' ? activity.details.reason : !links.length && typeof activity.details.label === 'string' ? activity.details.label : typeof activity.details.requester_name === 'string' && activity.actor.kind === 'unknown' ? `Submitted by ${activity.details.requester_name}` : null
     const expandable = changes.length > 1 || changes.some(isLongChange) || (description?.length ?? 0) > 220
-    return { id: activity.id, actor: formatDiscussionActor(activity.actor), time: formatDiscussionTime(activity.createdAt, now), action: actionText(activity), description, changes, expandable, changesLabel: changes.length ? `View ${changes.length === 1 ? 'change' : `${changes.length} changes`}` : 'View details' }
+    return { id: activity.id, actor: formatDiscussionActor(activity.actor), time: formatDiscussionTime(activity.createdAt, now), action: actionText(activity), description, changes, expandable, changesLabel: changes.length ? `View ${changes.length === 1 ? 'change' : `${changes.length} changes`}` : 'View details', links }
     function formatActivityChange(change: ActivityChange): ActivityChangeView { return formatChange(change, activity) }
+}
+
+function bookingLinks(activity: ItemActivity): ActivityLinkView[] {
+    const id = activity.details.booking_id
+    if (activity.itemKind !== 'equipment' || typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return []
+    const label = typeof activity.details.label === 'string' && activity.details.label.trim() ? activity.details.label : 'View booking'
+    return [{ href: `/bookings/${id}`, label }]
+}
+
+function bookingDescription(activity: ItemActivity): string {
+    const { status, checked_out_at: checkedOutAt, expected_return_at: expectedReturnAt, returned_at: returnedAt } = activity.details
+    const parts = [typeof status === 'string' ? humanizeDiscussionValue(status) : 'Booking']
+    if (typeof checkedOutAt === 'string') parts.push(`${status === 'booked' ? 'Collection' : 'Checked out'} ${formatDiscussionTime(checkedOutAt).exact}`)
+    if (typeof returnedAt === 'string') parts.push(`Returned ${formatDiscussionTime(returnedAt).exact}`)
+    else if (typeof expectedReturnAt === 'string') parts.push(`Expected return ${formatDiscussionTime(expectedReturnAt).exact}`)
+    return parts.join(' · ')
 }
 
 function isLongChange(change: ActivityChangeView): boolean { return change.before.length + change.after.length > 160 }
@@ -82,9 +105,13 @@ function formatOperation(items: ItemActivity[], now: number): ActivityView {
     const views = items.map(formatOperationItem)
     if (views.length === 1) return views[0]
     const created = views.find(isCreation)
-    return { ...views[0], action: created?.action ?? `made ${views.length} updates`, expandable: true, changesLabel: `View ${views.length} updates`, changes: views.flatMap(contextualChanges), description: views.map(actionSummary).join('\n') }
+    const links = new Map(views.flatMap(viewLinks).map(linkEntry))
+    return { ...views[0], action: created?.action ?? `made ${views.length} updates`, expandable: true, changesLabel: `View ${views.length} updates`, changes: views.flatMap(contextualChanges), description: views.map(actionSummary).join('\n'), links: [...links.values()] }
     function formatOperationItem(item: ItemActivity): ActivityView { return formatActivity(item, now) }
 }
+
+function viewLinks(view: ActivityView): ActivityLinkView[] { return view.links ?? [] }
+function linkEntry(link: ActivityLinkView): [string, ActivityLinkView] { return [link.href, link] }
 
 function isCreation(view: ActivityView): boolean { return view.action.startsWith('created this') || view.action.startsWith('submitted this') }
 function actionSummary(view: ActivityView): string { return `${humanizeDiscussionValue(view.action)}${view.description ? ` · ${view.description}` : ''}` }

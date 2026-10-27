@@ -2,7 +2,6 @@ import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-
 import { useDetailReturn } from "@/hooks/use-detail-return"
 import { useCallback } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { BookingHistorySection } from "@/features/equipment/booking-history-section"
 import { DeleteEquipmentModal } from "@/features/equipment/delete-equipment-modal"
 import { EquipmentPropertiesSection } from "@/features/equipment/equipment-properties-section"
 import { EquipmentQrSection } from "@/features/equipment/equipment-qr-section"
@@ -25,7 +24,7 @@ export function EquipmentDetailContent({ equipment }: { equipment: Equipment }) 
   const navigate = useNavigate()
   const handleDeleted = useCallback(() => navigate("/equipment"), [navigate])
   const editor = useEquipmentEditor(equipment, handleDeleted)
-  const { store, bookingHistory } = editor
+  const { store } = editor
   const guard = useUnsavedNavigationGuard({ isDirty: store.state.isDirty, save: editor.actions.save, discard: store.actions.discard })
   const draft = store.state.draft
 
@@ -61,8 +60,6 @@ export function EquipmentDetailContent({ equipment }: { equipment: Equipment }) 
         </DetailPage.Header>
 
         <DetailPage.Section><EquipmentPropertiesSection draft={draft} onUpdateField={store.actions.updateField} /></DetailPage.Section>
-        <DetailPage.Divider />
-        <DetailPage.Section><BookingHistorySection bookings={bookingHistory.state.bookings} isLoading={bookingHistory.state.isLoading} /></DetailPage.Section>
         <DetailPage.Divider />
         <DetailPage.Section><EquipmentQrSection equipment={draft} /></DetailPage.Section>
         <DetailPage.Divider />

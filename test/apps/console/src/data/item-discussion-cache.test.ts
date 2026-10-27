@@ -28,6 +28,13 @@ test('booking membership refreshes affected equipment and schedule changes refre
     expect(changedDiscussionItems('scheduled-messages', previous, next)).toEqual([{ kind: 'scheduled-message', id: 'related' }])
 })
 
+test('booking status and title changes refresh equipment activity even when membership stays the same', () => {
+    const before = { id: 'booking', title: 'Before', status: 'checked_out', items: [{ equipmentId: 'camera' }] }
+    const after = { ...before, title: 'After', status: 'returned' }
+    expect(changedDiscussionItems('bookings', [before], [after])).toEqual([{ kind: 'booking', id: 'booking' }, { kind: 'equipment', id: 'camera' }])
+    expect(changedDiscussionItems('bookings', before, after, 'booking')).toEqual([{ kind: 'booking', id: 'booking' }, { kind: 'equipment', id: 'camera' }])
+})
+
 test('successful writes invalidate only the affected item activity within the workspace', () => {
     const workspaceId = 'alpha'
     const changed = workspaceResourceKey(workspaceId, 'item-activity:request:edited')

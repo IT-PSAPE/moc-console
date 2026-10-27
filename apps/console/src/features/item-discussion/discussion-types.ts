@@ -12,6 +12,7 @@ export type DiscussionTimeView = {
 }
 
 export type ActivityChangeView = { field: string; before: string; after: string }
+export type ActivityLinkView = { href: string; label: string }
 export type ActivityView = {
     id: string
     actor: DiscussionActorView
@@ -21,6 +22,7 @@ export type ActivityView = {
     changes: ActivityChangeView[]
     expandable: boolean
     changesLabel: string
+    links?: ActivityLinkView[]
 }
 export type ActivityGroupView = { key: string; label: string; items: ActivityView[] }
 export type CommentView = { id: string; actor: DiscussionActorView; body: string; origin: string | null; time: DiscussionTimeView }

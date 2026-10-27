@@ -1,12 +1,17 @@
 import { Accordion } from '@moc/ui/components/display/accordion'
+import { InteractiveSurface } from '@moc/ui/components/controls/interactive-surface'
 import { Section } from '@moc/ui/components/display/section'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { Timeline } from '@moc/ui/components/display/timeline'
 import { ArrowRight, ChevronDown } from 'lucide-react'
-import type { ActivityChangeView, ActivityView } from './discussion-types'
+import type { ActivityChangeView, ActivityLinkView, ActivityView } from './discussion-types'
 import { DiscussionActorAvatar } from './discussion-actor-avatar'
+import { Link } from 'react-router-dom'
 
 export function ItemActivityRow({ activity }: { activity: ActivityView }) {
+    function renderLink(link: ActivityLinkView) {
+        return <InteractiveSurface.Link key={link.href} render={<Link to={link.href} />} className="max-w-full break-words paragraph-sm font-medium text-primary underline decoration-border-secondary underline-offset-4 hover:decoration-current [overflow-wrap:anywhere]">{link.label}</InteractiveSurface.Link>
+    }
     function renderChange(change: ActivityChangeView, index: number) {
         return (
             <Section.Body key={`${change.field}:${index}`} className="gap-1">
@@ -36,6 +41,7 @@ export function ItemActivityRow({ activity }: { activity: ActivityView }) {
             <Timeline.Content>
                 <Paragraph.sm className="break-words text-secondary [overflow-wrap:anywhere]"><Label.sm className="text-primary">{activity.actor.name}</Label.sm>{' '}{activity.action}</Paragraph.sm>
                 <Paragraph.xs className="text-tertiary" title={activity.time.exact}>{activity.time.relative}{activity.time.clock && ` · ${activity.time.clock}`}{activity.actor.source && ` · ${activity.actor.source}`}</Paragraph.xs>
+                {Boolean(activity.links?.length) && <Section.Body className="items-start gap-1">{activity.links?.map(renderLink)}</Section.Body>}
                 {activity.expandable ? (
                     <Accordion>
                         <Accordion.Item value={activity.id}>
