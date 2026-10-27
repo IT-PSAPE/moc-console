@@ -20,8 +20,18 @@ describe('Neon infrastructure policy', () => {
     const config = createNeonConfig({MOC_ENABLE_PRODUCTION_JOBS:'true',MOC_NEON_BRANCH:'production'})
     expect(config.triggers['moc-weekly-archive'].cron).toBe('0 0 * * 1')
     expect(config.triggers['moc-notification-deliveries-daily'].cron).toBe('0 1 * * *')
+    expect(config.triggers['moc-console-push-minutely'].cron).toBe('* * * * *')
     expect(config.triggers['moc-provider-stream-sync-daily'].cron).toBe('0 9 * * *')
     expect(config.triggers['moc-scheduled-messages-hourly'].cron).toBe('0 * * * *')
     expect(Object.values(config.triggers).every((trigger)=>trigger.enabled)).toBe(true)
+  })
+  test('passes push keys only to the Console push worker', () => {
+    const env = { WEB_PUSH_VAPID_PUBLIC_KEY: 'public', WEB_PUSH_VAPID_PRIVATE_KEY: 'private', WEB_PUSH_VAPID_SUBJECT: 'mailto:ops@example.test' }
+    const config = createNeonConfig(env)
+    expect(config.functions.consolepush.env).toEqual(env)
+    for (const [name, fn] of Object.entries(config.functions)) {
+      if (name === 'consolepush' || !('env' in fn)) continue
+      expect(fn.env).not.toHaveProperty('WEB_PUSH_VAPID_PRIVATE_KEY')
+    }
   })
 })

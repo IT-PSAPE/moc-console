@@ -8,6 +8,7 @@ import { createIntegrationsClient } from "./integrations"
 import { createNotificationSettingsClient } from "./notification-settings"
 import { createNotificationsClient } from "./notifications"
 import { createPublicSubmissionsClient } from "./public-submissions"
+import { createPushClient } from "./push"
 import { createRequestsClient } from "./requests"
 import { createStorageClient } from "./storage"
 import { createStreamsClient } from "./streams"
@@ -32,6 +33,7 @@ export function createMocClient(baseUrl: string, options: MocTransportOptions = 
     notificationSettings: createNotificationSettingsClient(transport),
     notifications: createNotificationsClient(transport),
     publicSubmissions: createPublicSubmissionsClient(transport),
+    push: createPushClient(transport),
     requests: createRequestsClient(transport),
     storage: createStorageClient(transport),
     streams: createStreamsClient(transport),

@@ -10,9 +10,6 @@ import { AuthProvider } from '@/lib/auth-context'
 import { OverlayProvider } from '@moc/ui/components/overlays/overlay-provider'
 import { FeedbackProvider } from '@moc/ui/components/feedback/feedback-provider'
 import { ConnectivityMonitor } from '@/lib/connectivity-monitor'
-import { removeLegacyServiceWorker } from '@/lib/remove-legacy-service-worker'
-
-void removeLegacyServiceWorker().catch(() => undefined)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

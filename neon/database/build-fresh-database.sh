@@ -26,6 +26,8 @@ psql "$database_url" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1
   -f "$script_dir/storage.sql" \
   -f "$script_dir/broadcast-revisions.sql" \
   -f "$script_dir/90-runtime-grants.sql" \
+  -f "$script_dir/console-push.sql" \
+  -f "$script_dir/verify-console-push.sql" \
   -f "$script_dir/verify-final-state.sql"
 if [ "${2:-}" != '--legacy-import' ]; then
   psql "$database_url" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1 \

@@ -1,5 +1,7 @@
 # Neon database baseline
 
+Console Web Push is installed by `console-push.sql` with `verify-console-push.sql`. Apply it transactionally with a migration-owner connection before deploying push support; fresh bootstrap includes it after the baseline runtime grants. Subscriptions use per-user RLS in `moc_private`, and deliveries are worker-only. Setup and future event integration are documented in `docs/console-push.md`.
+
 Personal calendar defaults are installed by `user-preferences.sql`. Apply this additive migration to existing databases before deploying the preferences API. It defaults every account to Week view and constrains saved values to Day, Week, Month, or Agenda. Fresh database builds include it automatically. Users update only their own preference through the authenticated API and existing profile RLS.
 
 `build-fresh-database.sh` installs the complete MoC schema only when the MoC-owned `public`, `moc_private`, and `moc_auth` namespaces have no relations. It leaves Neon's managed `neon_auth` schema untouched. The bootstrap applies the Better Auth tables, constrained database roles, the standalone final-state domain schema, upload tables, and broadcast revision tables, then runs the independent catalog verifier in the same transaction. The enum preflight is the only separately committed additive step because PostgreSQL requires a new enum label to commit before use.

@@ -6,6 +6,7 @@ import { routes } from "@/screens/console-routes"
 import { clearCurrentWorkspaceCache } from "@/data/current-workspace"
 import { moc } from "@/lib/moc-client"
 import { authCallbackError } from "@moc/sdk/auth"
+import { disableWebPush, reconcileWebPushOwner } from "@/data/web-push"
 
 type AuthState = {
   session: MoCSession | null
@@ -60,6 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const nextSession = await moc.auth.getSession()
       if (request !== sessionRequestRef.current) return
       const nextUserId = nextSession?.user.id ?? null
+      if (nextUserId !== sessionUserIdRef.current || nextUserId === null) {
+        await reconcileWebPushOwner(nextUserId).catch(() => undefined)
+        if (request !== sessionRequestRef.current) return
+      }
       if (nextUserId !== sessionUserIdRef.current) {
         clearCurrentWorkspaceCache()
         setProfile(null)
@@ -71,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       if (request !== sessionRequestRef.current) return
       if (import.meta.env.DEV) console.error("Failed to restore authentication session:", error)
+      await reconcileWebPushOwner(null).catch(() => undefined)
       sessionUserIdRef.current = null
       clearCurrentWorkspaceCache()
       setSession(null)
@@ -143,6 +149,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signingOutRef.current = true
     sessionRequestRef.current += 1
     let error: Error | null = null
+    await disableWebPush({ signingOut: true }).catch((cause) => {
+      if (import.meta.env.DEV) console.error("Failed to clean up web push during sign-out:", cause)
+    })
     try {
       const result = await moc.auth.signOut()
       error = result.error

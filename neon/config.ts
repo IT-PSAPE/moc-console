@@ -9,6 +9,7 @@ function configuredEnvironment(names: readonly string[], env: NodeJS.ProcessEnv)
 export function createNeonConfig(env: NodeJS.ProcessEnv = process.env) {
   const jobsEnabled = env.MOC_ENABLE_PRODUCTION_JOBS === 'true' && env.MOC_NEON_BRANCH === 'production'
   const shared = configuredEnvironment(['CONSOLE_BASE_URL', 'TELEGRAM_BOT_TOKEN', 'TELEGRAM_BOT_USERNAME', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'ZOOM_CLIENT_ID', 'ZOOM_CLIENT_SECRET'], env)
+  const push = configuredEnvironment(['WEB_PUSH_VAPID_PUBLIC_KEY', 'WEB_PUSH_VAPID_PRIVATE_KEY', 'WEB_PUSH_VAPID_SUBJECT'], env)
   const auth = configuredEnvironment(['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'BETTER_AUTH_SECRET', 'MOC_AUTH_SERVICE_SECRET', 'MOC_AUTH_TRUSTED_ORIGINS', 'MOC_AUTH_PUBLIC_BASE_URL', 'MOC_CONSOLE_ORIGIN', 'MOC_AUTH_COOKIE_SECURE', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM'], env)
   // Neon injects branch-scoped database and S3 credentials. These are never
   // copied into browser builds or pinned to a different branch's database.
@@ -21,6 +22,7 @@ export function createNeonConfig(env: NodeJS.ProcessEnv = process.env) {
       uploads: { name: 'MoC upload finalization', source: './neon/functions/uploads.ts' },
       archive: { name: 'MoC weekly archive', source: './neon/functions/weekly-archive.ts' },
       notifications: { name: 'MoC notification deliveries', source: './neon/functions/notification-deliveries.ts', env: shared },
+      consolepush: { name: 'MoC Console push deliveries', source: './neon/functions/console-push.ts', env: push },
       scheduled: { name: 'MoC scheduled messages', source: './neon/functions/scheduled-messages.ts', env: shared },
       streamsync: { name: 'MoC provider synchronization', source: './neon/functions/stream-sync.ts', env: shared },
     },
@@ -29,6 +31,7 @@ export function createNeonConfig(env: NodeJS.ProcessEnv = process.env) {
     triggers: {
       'moc-weekly-archive': { type: 'schedule', function: 'archive', cron: '0 0 * * 1', enabled: jobsEnabled },
       'moc-notification-deliveries-daily': { type: 'schedule', function: 'notifications', cron: '0 1 * * *', enabled: jobsEnabled },
+      'moc-console-push-minutely': { type: 'schedule', function: 'consolepush', cron: '* * * * *', enabled: jobsEnabled },
       'moc-scheduled-messages-hourly': { type: 'schedule', function: 'scheduled', cron: '0 * * * *', enabled: jobsEnabled },
       'moc-provider-stream-sync-daily': { type: 'schedule', function: 'streamsync', cron: '0 9 * * *', enabled: jobsEnabled },
       'storage-uploads': { type: 'schedule', function: 'uploads', cron: '* * * * *', enabled: jobsEnabled },

@@ -13,6 +13,7 @@ import { operations as capability10 } from "./venue-bookings.js"
 import { operations as capability11 } from "./venues.js"
 import { operations as capability12 } from "./workspaces.js"
 import { operations as discussion } from "./discussion.js"
+import { operations as push } from "./push.js"
 
 export const platformRegistry: PlatformRegistry = {
   "bookings": capability0,
@@ -22,6 +23,7 @@ export const platformRegistry: PlatformRegistry = {
   "equipment": capability3,
   "notification-settings": capability4,
   "publicSubmissions": capability5,
+  "push": push,
   "requests": capability6,
   "streams": capability7,
   "telegram": capability8,

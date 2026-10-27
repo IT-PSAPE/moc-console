@@ -7,11 +7,13 @@ import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { FormField } from "@moc/ui/components/form/form-label"
 import { Input } from "@moc/ui/components/form/input"
 import { TextArea } from "@moc/ui/components/form/text-area"
+import { Toggle } from "@moc/ui/components/form/toggle"
 import { Modal } from "@moc/ui/components/overlays/modal"
 import { UnsavedChangesDialog } from "@moc/ui/components/overlays/unsaved-changes-dialog"
-import { Camera, Trash2 } from "lucide-react"
+import { Bell, Camera, Trash2 } from "lucide-react"
 import { TelegramLinkRow } from "./telegram-link-row"
 import { PROFILE_STATUS_MAX_LENGTH, useProfileSettings } from "./use-profile-settings"
+import { useWebPush } from "./use-web-push"
 
 type EditProfileModalProps = {
   open: boolean
@@ -20,6 +22,7 @@ type EditProfileModalProps = {
 
 export function EditProfileModal({ open, onOpenChange }: EditProfileModalProps) {
   const { state, actions, fileInputRef, meta } = useProfileSettings({ open, onOpenChange })
+  const webPush = useWebPush(open)
   const { profile } = meta
 
   function handleNameChange(event: ChangeEvent<HTMLInputElement>) {
@@ -36,6 +39,18 @@ export function EditProfileModal({ open, onOpenChange }: EditProfileModalProps) 
 
   function handleStatusChange(event: ChangeEvent<HTMLTextAreaElement>) {
     actions.setStatus(event.target.value)
+  }
+
+  function handleWebPushChange(enabled: boolean) {
+    void webPush.actions.changeEnabled(enabled)
+  }
+
+  function sendWebPushTest() {
+    void webPush.actions.sendTest()
+  }
+
+  function refreshWebPush() {
+    void webPush.actions.refresh()
   }
 
   return (
@@ -98,6 +113,28 @@ export function EditProfileModal({ open, onOpenChange }: EditProfileModalProps) 
                         {profile.telegramChatId ? "Assignment and stream notifications reach you in Telegram." : "Connect Telegram to get assignment and stream notifications there."}
                       </Paragraph.xs>
                       <TelegramLinkRow userId={profile.id} telegramChatId={profile.telegramChatId} />
+                    </FormField>
+
+                    <FormField label="Web push notifications">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <Toggle
+                            aria-label="Web push notifications on this device"
+                            checked={webPush.state.isEnabled}
+                            onChange={handleWebPushChange}
+                            disabled={!webPush.meta.canToggle || webPush.state.isLoading || webPush.state.isBusy}
+                          />
+                          {webPush.state.isLoading && <Paragraph.xs className="text-tertiary">Checking availability…</Paragraph.xs>}
+                        </div>
+                        {webPush.meta.availabilityMessage && <Paragraph.xs className="text-tertiary">{webPush.meta.availabilityMessage}</Paragraph.xs>}
+                        {webPush.state.error && <Paragraph.xs className="text-error">{webPush.state.error}</Paragraph.xs>}
+                        {webPush.state.error && !webPush.state.isBusy && <Button variant="ghost" onClick={refreshWebPush} disabled={webPush.state.isLoading}>Try again</Button>}
+                        {webPush.state.isEnabled && (
+                          <Button variant="secondary" icon={<Bell />} onClick={sendWebPushTest} disabled={webPush.state.isTesting || webPush.state.isLoading || webPush.state.isBusy}>
+                            {webPush.state.isTesting ? "Sending test…" : "Send test notification"}
+                          </Button>
+                        )}
+                      </div>
                     </FormField>
                   </div>
                 ) : <Paragraph.sm className="text-tertiary">Sign in to edit your profile.</Paragraph.sm>}
