@@ -45,8 +45,8 @@ suite("item discussion API against disposable PostgreSQL with production RLS", (
     await pool.query("INSERT INTO public.venue_bookings (id,workspace_id,venue_id,title,requested_by,tracking_code,starts_at,ends_at) VALUES ($1,$2,$3,'Discussion venue','Requester',$4,now()+interval '1 day',now()+interval '2 days')", [venueBookingId, workspaceId, venueId, `VEN-${venueBookingId}`])
     const chatId = `discussion-${randomUUID()}`, scheduleId = randomUUID()
     await pool.query("INSERT INTO public.telegram_groups (chat_id,title,type,active,workspace_id) VALUES ($1,'Discussion group','supergroup',true,$2)", [chatId, workspaceId])
-    await pool.query("INSERT INTO public.scheduled_message_schedules (id,workspace_id,group_chat_id,starts_on,frequency,fields,body,message_type,audience,require_arrival) VALUES ($1,$2,$3,current_date,'once','{}','Message','announcement','{}',false)", [scheduleId, workspaceId, chatId])
-    await pool.query("INSERT INTO public.scheduled_message_occurrences (id,workspace_id,schedule_id,occurrence_on,send_on,expires_at,fields,body,message_type,audience,require_arrival) VALUES ($1,$2,$3,current_date,now(),now()+interval '1 day','{}','Message','announcement','{}',false)", [occurrenceId, workspaceId, scheduleId])
+    await pool.query("INSERT INTO public.scheduled_message_schedules (id,workspace_id,group_chat_id,starts_on,frequency,body,message_type) VALUES ($1,$2,$3,current_date,'once','Message','announcement')", [scheduleId, workspaceId, chatId])
+    await pool.query("INSERT INTO public.scheduled_message_occurrences (id,workspace_id,schedule_id,occurrence_on,send_on,body,message_type) VALUES ($1,$2,$3,current_date,now(),'Message','announcement')", [occurrenceId, workspaceId, scheduleId])
   })
 
   afterAll(async () => { await pool?.end() })

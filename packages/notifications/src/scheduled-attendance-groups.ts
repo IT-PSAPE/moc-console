@@ -5,7 +5,7 @@ export type ScheduledAttendanceGroup = { id: string; label: string }
 /** Group identity is stable across label edits; membership belongs to responses. */
 export function validateScheduledAttendanceGroups(type: ScheduledMessageType, value: unknown): ScheduledAttendanceGroup[] {
     if (!Array.isArray(value) || (value.length !== 0 && (value.length < 2 || value.length > 8))) throw new Error('Use 2 to 8 attendance groups, or none')
-    if (type !== 'pre_attendance' && value.length) throw new Error('Attendance groups are only available for pre-attendance')
+    if (type !== 'attendance' && value.length) throw new Error('Attendance groups are only available for attendance messages')
     const ids = new Set<string>()
     const labels = new Set<string>()
     return value.map((entry: unknown) => {

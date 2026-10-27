@@ -14,7 +14,7 @@ function assert(condition: unknown, message: string): void {
     checks++
 }
 function createEditor(source: string): Editor {
-    return new Editor({ element: document.createElement('div'), extensions: richTextExtensions, content: templateToEditorHtml(source), parseOptions: { preserveWhitespace: true } })
+    return new Editor({ element: document.createElement('div'), extensions: richTextExtensions(), content: templateToEditorHtml(source), parseOptions: { preserveWhitespace: true } })
 }
 function tokens(source: string): string {
     return [...source.matchAll(/{{\s*(\w+)\s*}}/g)].map(match => match[1]).sort().join(',')

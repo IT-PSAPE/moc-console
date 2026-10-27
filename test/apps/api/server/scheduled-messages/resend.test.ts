@@ -9,7 +9,7 @@ function it(name:string,body:()=>Promise<void>):void { runnerIt(name,()=>runWith
 const {handleScheduledMessages}=await import('../../../../../apps/api/server/scheduled-messages/handler.js')
 const workspace = '10000000-0000-4000-8000-000000000001'
 const occurrence = '30000000-0000-4000-8000-000000000001'
-type ActionOptions = { permitted?: boolean; foreign?: boolean; revision?: unknown; op?: string; scope?: string; cleanupError?: string }
+type ActionOptions = { permitted?: boolean; foreign?: boolean; revision?: unknown; op?: string; scope?: string; cleanupError?: string; postRole?: string }
 async function requestOccurrenceAction(options: ActionOptions = {}) {
     const originalFetch=globalThis.fetch
     const cleanupAuth=configureAuthSessionTestEnvironment()
@@ -18,7 +18,8 @@ async function requestOccurrenceAction(options: ActionOptions = {}) {
     const calls: { name: string; body: unknown }[] = []
     setSqlFixture({
         queryRows:async(text:string):Promise<QueryResultRow[]>=>{
-            if(text.includes('FROM public.scheduled_message_occurrences')&&text.includes('WHERE id=$1'))return [{id:occurrence,workspace_id:options.foreign?'another-workspace':workspace,schedule_id:'schedule-1',state:'sent',revision:7,telegram_message_id:700,last_sync_error:options.cleanupError??null,fields:{title:'Test'},message_type:'announcement',expires_at:new Date(Date.now()+60_000).toISOString()}]
+            if(text.includes('public.workspace_timezone'))return [{workspace_timezone:'Africa/Johannesburg'}]
+            if(text.includes('FROM public.scheduled_message_occurrences')&&text.includes('WHERE id=$1'))return [{id:occurrence,workspace_id:options.foreign?'another-workspace':workspace,schedule_id:'schedule-1',state:'sent',revision:7,telegram_message_id:700,last_sync_error:options.cleanupError??null,body:'Test',message_type:'announcement',post_role:options.postRole??'primary',parent_occurrence_id:null,legacy_closed:false,attendee_ids:[],attendance_groups:[]}]
             return []
         },
         queryActor:async(text:string,values:readonly unknown[]=[])=>{
@@ -86,4 +87,9 @@ it('reports a Telegram cleanup failure so the confirmed delete can be retried', 
     const result = await requestOccurrenceAction({ op: 'occurrence.delete', cleanupError: 'Bot removed from group' })
     assert.equal(result.status, 400)
     assert.equal(result.calls.filter(call => call.name === 'delete_scheduled_occurrence').length, 1)
+})
+it('rejects manual sends for linked follow-up occurrences', async () => {
+    const result = await requestOccurrenceAction({ op: 'occurrence.send', postRole: 'follow_up' })
+    assert.equal(result.status, 400)
+    assert.equal(result.calls.length, 0)
 })

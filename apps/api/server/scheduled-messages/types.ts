@@ -2,7 +2,7 @@ import type { ScheduledAttendanceGroup, ScheduledOccurrence, ScheduledSchedule, 
 
 export type Occurrence = ScheduledOccurrence
 export type Schedule = ScheduledSchedule
-export type AttendanceResponse = { user_id: string; name: string; status: 'awaiting' | 'attending' | 'not_attending'; arrival_time: string | null; group_id: string | null }
+export type AttendanceResponse = { user_id: string; name: string; status: 'awaiting' | 'attending' | 'not_attending'; arrival_time: string | null; group_id: string | null; decline_reason: string | null; checked_in_at: string | Date | null }
 export type EditScope = ScheduledEditScope
 export type SessionData = {
   transientMessageIds?: number[]; revision?: number; field?: string; value?: string; scope?: EditScope; promptId?: number;

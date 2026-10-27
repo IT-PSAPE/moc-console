@@ -40,10 +40,6 @@ DECLARE before_row jsonb := CASE WHEN TG_OP<>'INSERT' THEN to_jsonb(OLD) ELSE '{
  old_request uuid := (before_row->>'request_id')::uuid; new_request uuid := (after_row->>'request_id')::uuid;
  requester text := coalesce(item_row->>'requested_by',item_row->>'booked_by');
 BEGIN
- IF TG_TABLE_NAME='scheduled_message_occurrences' THEN
-  before_row := before_row || jsonb_build_object('title',before_row->'fields'->'title','instructions',before_row->'fields'->'instructions');
-  after_row := after_row || jsonb_build_object('title',after_row->'fields'->'title','instructions',after_row->'fields'->'instructions');
- END IF;
  changes := moc_private.item_changes(before_row,after_row,fields);
  IF TG_OP='UPDATE' AND changes='[]'::jsonb THEN RETURN NEW; END IF;
  event := CASE TG_OP WHEN 'INSERT' THEN 'created' WHEN 'DELETE' THEN 'deleted' ELSE 'updated' END;

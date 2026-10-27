@@ -14,7 +14,7 @@ export function ScheduledOccurrenceHistory() {
                 <Modal.Backdrop />
                 <Modal.Positioner>
                     <Modal.FullScreenPanel className="max-w-lg landscape:!max-w-none">
-                        <Modal.Header><Label.md>{occurrence?.fields.title}</Label.md></Modal.Header>
+                        <Modal.Header><Label.md>{occurrence?.label ?? 'Message activity'}</Label.md></Modal.Header>
                         <Modal.Content>
                             {occurrence && (
                                 <>

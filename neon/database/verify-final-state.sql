@@ -34,6 +34,9 @@ BEGIN
       RAISE EXCEPTION 'Shared discussion migration left obsolete request fields';
     END IF;
   END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='scheduled_message_occurrences' AND column_name='post_role') THEN
+    expected_tables := array_remove(expected_tables,'scheduled_message_templates');
+  END IF;
   SELECT array_agg(tablename ORDER BY tablename)
   INTO actual_tables
   FROM pg_tables

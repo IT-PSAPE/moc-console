@@ -24,8 +24,6 @@ export const routes = {
     settings: 'account/settings',
     scheduledMessages: 'scheduled-messages',
     scheduledMessageNew: 'scheduled-messages/new',
-    scheduledTemplateNew: 'scheduled-messages/templates/new',
-    scheduledTemplateDetail: 'scheduled-messages/templates/:id',
     messageTemplateDetail: 'account/settings/message-templates/:messageType',
     privacy: 'legal/privacy',
     terms: 'legal/terms',

@@ -1,234 +1,368 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type MouseEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { SCHEDULED_DEFAULT_BODIES, SCHEDULED_FIELDS, SCHEDULED_VARIABLES, scheduledOccurrenceSummary, validateScheduledAttendanceGroups, validateScheduledBody, validateScheduledFields, type ScheduledAttendanceGroup, type ScheduledEditScope, type ScheduledMessageType, type ScheduledOccurrence, type ScheduledSnapshot } from '@moc/notifications'
+import { DEFAULT_TIMEZONE, validateScheduledAttendanceGroups, validateScheduledBody, type ScheduledAttendanceGroup, type ScheduledEditScope, type ScheduledFrequency, type ScheduledOccurrence, type ScheduledSnapshot } from '@moc/notifications'
 import { useWorkspace } from '@/lib/workspace-context'
 import { getCurrentWorkspaceGeneration } from '@/data/current-workspace'
 import { useWorkspaceResource } from '@/hooks/use-workspace-resource'
 import { routes } from '@/screens/console-routes'
-import { formatUtcIsoInTimezone, formatUtcIsoForDateTimeInput } from '@moc/utils/zoned-date-time'
 import { fetchScheduledMessages, mutateScheduledMessage } from './services/scheduled-message-service'
-import { scheduleTimestamps, scheduledTimestamp, previewExpiry, previewSendTime } from './scheduled-timestamps'
-import { scheduledMessagePreview } from './scheduled-message-preview'
+import { scheduledTimestamp } from './scheduled-timestamps'
 import { useScheduledMessageHistory } from './use-scheduled-message-history'
 import { useScheduledAttendanceGroupEditor } from './use-scheduled-attendance-group-editor'
-import { useTemplateBodyEditor } from '@/hooks/use-template-body-editor'
+import { createScheduledMessagePayload, type NewMessageDraft } from './scheduled-message-payload'
+import { useScheduledMessageDrafts } from './use-scheduled-message-drafts'
+import { canSendScheduledOccurrence, createScheduledMessageViewModel, editValueForOccurrence, type ScheduledMessageEditField } from './scheduled-message-view-model'
 
-const empty: ScheduledSnapshot = { templates: [], schedules: [], occurrences: [], memberTypes: [], groups: [], members: [] }
-const frequencyItems = [{ value: 'once', label: 'Does not repeat' }, { value: 'daily', label: 'Daily' }, { value: 'weekdays', label: 'Weekdays' }, { value: 'weekly', label: 'Weekly' }, { value: 'monthly', label: 'Monthly' }]
-const typeItems = [{ value: 'announcement', label: 'Announcement' }, { value: 'pre_attendance', label: 'Pre-attendance' }]
-const scopeItems = [{ value: 'occurrence', label: 'This occurrence' }, { value: 'future', label: 'This and future occurrences' }, { value: 'series', label: 'Entire series' }]
-type ScheduleDraft = { templateId: string; messageType: ScheduledMessageType; body: string; fields: Record<string, string>; requireArrival: boolean; attendanceGroups: ScheduledAttendanceGroup[]; attendeeIds: string[]; memberSearch: string; groupChatId: string; threadId: string; startsOn: string; untilOn: string; frequency: string; timezone: string; expiresAt: string; autoSend: boolean }
-type EditDraft = { id: string; revision: number; field: string; value: string; scope: ScheduledEditScope }
-function defaultSchedule(): ScheduleDraft {
-    return { templateId: '', messageType: 'announcement', body: SCHEDULED_DEFAULT_BODIES.announcement, fields: { title: '', instructions: '' }, requireArrival: false, attendanceGroups: [], attendeeIds: [], memberSearch: '', groupChatId: '', threadId: '', startsOn: formatUtcIsoForDateTimeInput(new Date(Date.now() + 3600_000).toISOString(), 'Africa/Johannesburg'), untilOn: '', frequency: 'once', timezone: 'Africa/Johannesburg', expiresAt: formatUtcIsoForDateTimeInput(new Date(Date.now() + 73 * 3600_000).toISOString(), 'Africa/Johannesburg'), autoSend: true }
+const empty: ScheduledSnapshot = { workspaceTimezone: DEFAULT_TIMEZONE, schedules: [], occurrences: [], memberTypes: [], groups: [], members: [] }
+const frequencyItems: { value: Exclude<ScheduledFrequency, 'weekdays'>; label: string }[] = [
+    { value: 'once', label: 'Does not repeat' },
+    { value: 'daily', label: 'Daily' },
+    { value: 'weekly', label: 'Weekly' },
+    { value: 'monthly', label: 'Monthly' },
+]
+const typeItems = [{ value: 'announcement', label: 'Announcement' }, { value: 'attendance', label: 'Attendance' }]
+const scopeItems: { value: ScheduledEditScope; label: string }[] = [{ value: 'occurrence', label: 'This message' }, { value: 'future', label: 'This and future messages' }, { value: 'series', label: 'Entire series' }]
+const offsetUnitItems = [{ value: 'hours', label: 'Hours' }, { value: 'days', label: 'Days' }]
+type EditField = ScheduledMessageEditField
+type EditDraft = { id: string; revision: number; field: EditField; value: string; scope: ScheduledEditScope }
+type Confirmation = { op: string; data: unknown; title: string; label: string; description: string }
+
+function parseEditGroups(value: string): ScheduledAttendanceGroup[] {
+    try { return JSON.parse(value) as ScheduledAttendanceGroup[] }
+    catch { return [] }
 }
 
 export function useScheduledMessages() {
     const { currentWorkspaceId } = useWorkspace()
-    const [tab, setTab] = useState('active')
     const navigate = useNavigate()
+    const messageDrafts = useScheduledMessageDrafts(currentWorkspaceId)
+    const { draft } = messageDrafts
+    const updateDraft = messageDrafts.actions.update
+    const initializeDraft = messageDrafts.actions.initialize
+    const resetDraft = messageDrafts.actions.reset
+    const [tab, setTab] = useState<'upcoming' | 'history'>('upcoming')
     const fetcher = useCallback((workspaceId: string) => fetchScheduledMessages(workspaceId), [])
     const resource = useWorkspaceResource({ emptyValue: empty, fetcher, resource: 'scheduled-messages', workspaceId: currentWorkspaceId })
     const history = useScheduledMessageHistory(tab === 'history')
-    const { data: snapshot, isInitialLoading, setData, load: reloadActive } = resource
-    const { load: reloadHistory } = history
+    const loadHistory = history.load
+    const { data: snapshot, isInitialLoading, hasData, setData, load: reloadUpcoming } = resource
     const selectedResource = tab === 'history' ? history : resource
     const { isLoading: loading, error: resourceError } = selectedResource
-    const [loadedWorkspaceId, setLoadedWorkspaceId] = useState<string | null>(currentWorkspaceId)
+    const [loadedWorkspaceId, setLoadedWorkspaceId] = useState<string | null>(null)
     const [busy, setBusy] = useState(false)
-    const mutating = useRef<object | null>(null)
     const [error, setError] = useState('')
-    const loadError = resourceError instanceof Error ? resourceError.message : resourceError ? 'Loading failed' : ''
-    const [now, setNow] = useState(() => Date.now())
-    const [schedule, setSchedule] = useState<ScheduleDraft>(defaultSchedule)
-    const setScheduleBody = useCallback((body: string) => setSchedule(current => ({ ...current, body })), [])
-    const bodyEditor = useTemplateBodyEditor(schedule.body, setScheduleBody)
-    const [deleting, setDeleting] = useState<ScheduledOccurrence | null>(null)
-    const [deleteScope, setDeleteScope] = useState<ScheduledEditScope>('occurrence')
     const [editing, setEditing] = useState<ScheduledOccurrence | null>(null)
     const [details, setDetails] = useState<ScheduledOccurrence | null>(null)
-    const [edit, setEdit] = useState<EditDraft>({ id: '', revision: 0, field: 'title', value: '', scope: 'occurrence' })
-    function parsedEditGroups(value: string): ScheduledAttendanceGroup[] {
-        try { return JSON.parse(value) as ScheduledAttendanceGroup[] }
-        catch { return [] }
-    }
-    function setEditGroups(groups: ScheduledAttendanceGroup[]): void { setEdit(current => ({ ...current, value: JSON.stringify(groups) })) }
-    const occurrenceGroupEditor = useScheduledAttendanceGroupEditor(parsedEditGroups(edit.value), setEditGroups)
-    const scheduleGroupEditor = useScheduledAttendanceGroupEditor(schedule.attendanceGroups, groups => setSchedule(current => ({ ...current, attendanceGroups: groups })))
-    const [confirmation, setConfirmation] = useState<{ op: string; data: unknown; title: string; label: string; description: string } | null>(null)
-    const visibleSnapshot = useMemo(() => ({ ...snapshot, occurrences: snapshot.occurrences.filter(occurrence => Date.parse(occurrence.expires_at) > now) }), [now, snapshot])
-    const reload = useCallback(async () => {
-        if (mutating.current) return
-        if (tab === 'history') await reloadHistory()
-        else await reloadActive(true)
-    }, [reloadActive, reloadHistory, tab])
+    const [deleting, setDeleting] = useState<ScheduledOccurrence | null>(null)
+    const [deleteScope, setDeleteScope] = useState<ScheduledEditScope>('occurrence')
+    const [edit, setEdit] = useState<EditDraft>({ id: '', revision: 0, field: 'body', value: '', scope: 'occurrence' })
+    const [confirmation, setConfirmation] = useState<Confirmation | null>(null)
+    const mutating = useRef<object | null>(null)
+    const loadError = resourceError instanceof Error ? resourceError.message : resourceError ? 'Loading failed' : ''
+    const occurrenceGroupEditor = useScheduledAttendanceGroupEditor(parseEditGroups(edit.value), setEditGroups)
+    const scheduleGroupEditor = useScheduledAttendanceGroupEditor(draft.attendanceGroups, changeAttendanceGroups)
+    const visibleSnapshot = loadedWorkspaceId === currentWorkspaceId ? snapshot : empty
+    const selectedData = tab === 'history' ? history.data : visibleSnapshot
+    const workspaceTimezone = visibleSnapshot.workspaceTimezone
+    const view = createScheduledMessageViewModel(selectedData, draft, editing, details, edit, deleting, frequencyItems, scopeItems, typeItems, offsetUnitItems)
+
     useEffect(() => {
-        setBusy(false); setLoadedWorkspaceId(currentWorkspaceId); setEditing(null); setDetails(null); setDeleting(null); setConfirmation(null); setSchedule(defaultSchedule())
+        setLoadedWorkspaceId(null)
+        setEditing(null)
+        setDetails(null)
+        setDeleting(null)
+        setConfirmation(null)
+        setError('')
         return () => { mutating.current = null }
     }, [currentWorkspaceId])
-    const updateClock = useCallback(() => setNow(Date.now()), [])
+
     useEffect(() => {
-        const timer = window.setInterval(updateClock, 15_000)
-        return () => window.clearInterval(timer)
-    }, [updateClock])
+        if (!hasData || !currentWorkspaceId) return
+        setLoadedWorkspaceId(currentWorkspaceId)
+        initializeDraft(snapshot.workspaceTimezone)
+    }, [currentWorkspaceId, hasData, initializeDraft, snapshot.workspaceTimezone])
+
+    function setEditGroups(groups: ScheduledAttendanceGroup[]): void {
+        setEdit(current => ({ ...current, value: JSON.stringify(groups) }))
+    }
+
+    function changeAttendanceGroups(groups: ScheduledAttendanceGroup[]): void {
+        updateDraft(current => ({ ...current, attendanceGroups: groups }))
+    }
+
+    const reload = useCallback(async () => {
+        if (mutating.current) return
+        if (tab === 'history') await loadHistory()
+        else await reloadUpcoming(true)
+    }, [loadHistory, reloadUpcoming, tab])
+
     async function mutate(op: string, data: unknown): Promise<boolean> {
         if (!currentWorkspaceId || mutating.current) return false
         const mutation = {}
         const generation = getCurrentWorkspaceGeneration()
         function isCurrent(): boolean { return mutating.current === mutation && generation === getCurrentWorkspaceGeneration() }
         mutating.current = mutation
-        setBusy(true); setError('')
+        setBusy(true)
+        setError('')
         try {
             const next = await mutateScheduledMessage(currentWorkspaceId, op, data)
             if (!isCurrent()) return false
-            setData(next); setLoadedWorkspaceId(currentWorkspaceId)
+            setData(next)
+            setLoadedWorkspaceId(currentWorkspaceId)
             if (history.hasData || tab === 'history') void history.load()
             return true
+        } catch (reason) {
+            if (isCurrent()) setError(reason instanceof Error ? reason.message : 'Operation failed')
+            return false
+        } finally {
+            if (mutating.current === mutation) {
+                mutating.current = null
+                setBusy(false)
+            }
         }
-        catch (e) { if (isCurrent()) setError(e instanceof Error ? e.message : 'Operation failed'); return false }
-        finally { if (mutating.current === mutation) { mutating.current = null; setBusy(false) } }
     }
-    const startSchedule = useCallback((templateId: string) => {
-        const template = snapshot.templates.find(t => t.id === templateId)
-        setSchedule({ ...defaultSchedule(), templateId: template?.id ?? '', ...(template ? { messageType: template.message_type, body: template.body, fields: { ...template.fields }, requireArrival: template.require_arrival, attendanceGroups: template.attendance_groups ?? [] } : {}) })
+
+    function startMessage(): void {
+        resetDraft(visibleSnapshot.workspaceTimezone)
         setError('')
-    }, [snapshot.templates])
-    function changeSchedule(event: ChangeEvent<HTMLInputElement>): void {
+    }
+
+    function changeDraftType(value: string): void {
+        if (value !== 'announcement' && value !== 'attendance') return
+        updateDraft(current => ({ ...current, messageType: value }))
+    }
+
+    function changeDraft(event: ChangeEvent<HTMLInputElement>): void {
         const { name, value } = event.target
-        setSchedule(current => ({ ...current, [name]: value }))
+        updateDraft(current => ({ ...current, [name]: value }))
     }
-    function setStartsOn(value: string): void { setSchedule(current => ({ ...current, startsOn: value })) }
-    function setExpiresAt(value: string): void { setSchedule(current => ({ ...current, expiresAt: value })) }
-    function setEditTimestamp(value: string): void { setEdit(current => ({ ...current, value })) }
-    function changeScheduleField(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void {
-        const { name, value } = event.target
-        setSchedule(current => ({ ...current, fields: { ...current.fields, [name]: value } }))
+
+    function changeBody(body: string): void { updateDraft(current => ({ ...current, body })) }
+    function changeMemberSearch(event: ChangeEvent<HTMLInputElement>): void { updateDraft(current => ({ ...current, memberSearch: event.target.value })) }
+    function changeEditBody(body: string): void { setEdit(current => ({ ...current, value: body })) }
+
+    function setStartsOn(value: string): void { updateDraft(current => ({ ...current, startsOn: value })) }
+    function setDeliveryMode(value: string): void { if (value === 'now' || value === 'scheduled') updateDraft(current => ({ ...current, sendMode: value })) }
+    function setFrequency(value: string): void {
+        if (!frequencyItems.some(item => item.value === value)) return
+        updateDraft(current => ({ ...current, frequency: value as NewMessageDraft['frequency'], untilOn: value === 'once' ? '' : current.untilOn }))
     }
-    function changeScheduleType(value: string): void {
-        const messageType = value as ScheduledMessageType
-        setSchedule(current => ({ ...current, templateId: '', messageType, body: SCHEDULED_DEFAULT_BODIES[messageType], fields: { title: '', instructions: '' }, requireArrival: false, attendanceGroups: [], attendeeIds: [] }))
+    function setFollowUpUnit(value: string): void { if (value === 'hours' || value === 'days') updateDraft(current => ({ ...current, followUpUnit: value })) }
+    function changeTab(value: string): void { if (value === 'upcoming' || value === 'history') setTab(value) }
+
+    function changeAttendee(event: ChangeEvent<HTMLInputElement>): void {
+        const { value, checked } = event.currentTarget
+        updateDraft(current => ({ ...current, attendeeIds: checked ? [...current.attendeeIds, value] : current.attendeeIds.filter(id => id !== value) }))
     }
-    function changeScheduleArrival(event: ChangeEvent<HTMLInputElement>): void { setSchedule(current => ({ ...current, requireArrival: event.target.checked })) }
-    function changeScheduleAttendee(event: ChangeEvent<HTMLInputElement>): void {
-        const { value, checked } = event.target
-        setSchedule(current => ({ ...current, attendeeIds: checked ? [...current.attendeeIds, value] : current.attendeeIds.filter(id => id !== value) }))
-    }
-    function changeMemberSearch(event: ChangeEvent<HTMLInputElement>): void { setSchedule(current => ({ ...current, memberSearch: event.target.value })) }
-    function setGroup(value: string): void { setSchedule(current => ({ ...current, groupChatId: value, threadId: '' })) }
-    function setTopic(value: string): void { setSchedule(current => ({ ...current, threadId: value === 'main' ? '' : value })) }
-    function setFrequency(value: string): void { setSchedule(current => ({ ...current, frequency: value, untilOn: value === 'once' ? '' : current.untilOn })) }
-    function changeAutoSend(event: ChangeEvent<HTMLInputElement>): void { setSchedule(current => ({ ...current, autoSend: event.target.checked })) }
-    function requestSchedule(): void {
-        let timestamps: { startsOn: string; expiresAt: string }
-        try { validateScheduledBody(schedule.messageType, schedule.body); validateScheduledFields(schedule.messageType, schedule.fields); validateScheduledAttendanceGroups(schedule.messageType, schedule.messageType === 'pre_attendance' ? schedule.attendanceGroups : []); timestamps = scheduleTimestamps(schedule.startsOn, schedule.expiresAt, schedule.timezone) }
-        catch (e) { setError(e instanceof Error ? e.message : 'Check message values'); return }
-        if (schedule.messageType === 'pre_attendance' && !schedule.attendeeIds.length) { setError('Select at least one attendee'); return }
-        const group = snapshot.groups.find(g => g.chat_id === schedule.groupChatId)
-        const topic = group?.telegram_group_topics.find(t => String(t.thread_id) === schedule.threadId)
+
+    function setGroup(groupChatId: string): void { updateDraft(current => ({ ...current, groupChatId, threadId: '' })) }
+    function setTopic(threadId: string): void { updateDraft(current => ({ ...current, threadId: threadId === 'main' ? '' : threadId })) }
+
+    function requestCreate(): void {
+        if (!currentWorkspaceId || loadedWorkspaceId !== currentWorkspaceId || !messageDrafts.isInitialized) return
+        let payload
+        try { payload = createScheduledMessagePayload(draft, workspaceTimezone) }
+        catch (reason) { setError(reason instanceof Error ? reason.message : 'Check message details'); return }
+        const group = visibleSnapshot.groups.find(item => item.chat_id === draft.groupChatId)
+        const topic = group?.telegram_group_topics.find(item => String(item.thread_id) === draft.threadId)
         const destination = [group?.title, topic?.name].filter(Boolean).join(' / ')
-        const repeat = frequencyItems.find(item => item.value === schedule.frequency)?.label
-        const end = schedule.frequency !== 'once' && schedule.untilOn ? ` through ${schedule.untilOn}` : ''
-        const directMessage: Partial<ScheduleDraft> = { ...schedule }
-        delete directMessage.templateId
-        delete directMessage.memberSearch
-        setConfirmation({ op: 'schedule.create', title: 'Schedule this message?', label: 'Schedule message', data: { ...directMessage, ...timestamps, threadId: schedule.threadId ? Number(schedule.threadId) : null, untilOn: schedule.untilOn || null, attendanceGroups: schedule.messageType === 'pre_attendance' ? schedule.attendanceGroups : [], attendeeIds: schedule.messageType === 'pre_attendance' ? schedule.attendeeIds : [] }, description: `${schedule.fields.title} → ${destination}. ${schedule.startsOn} · ${repeat}${end}. ${schedule.autoSend ? 'Automatic delivery checks hourly and may be delayed on the free plan.' : 'You will send this manually with Send now.'}` })
+        const scheduledDescription = draft.sendMode === 'now'
+            ? `${destination}. The primary message will be queued now${draft.messageType === 'attendance' ? `; its Attendance follow-up is due ${draft.followUpAmount} ${draft.followUpUnit} later` : ''}.`
+            : `${destination}. ${draft.startsOn} · ${frequencyItems.find(item => item.value === draft.frequency)?.label ?? 'Does not repeat'}${draft.frequency !== 'once' && draft.untilOn ? ` through ${draft.untilOn}` : ''}${draft.messageType === 'attendance' ? ` · Attendance follow-up ${draft.followUpAmount} ${draft.followUpUnit} after each primary send` : ''}. Scheduled messages are checked hourly and may be delayed by up to an hour.`
+        setConfirmation({ op: 'schedule.create', title: draft.sendMode === 'now' ? 'Send this message now?' : 'Schedule this message?', label: draft.sendMode === 'now' ? 'Send now' : 'Schedule message', data: payload, description: scheduledDescription })
     }
+
     function selectOccurrence(id: string): void {
-        const o = snapshot.occurrences.find(row => row.id === id)
-        if (!o || !['scheduled', 'sent'].includes(o.state)) return
-        setError(''); setEditing(o); setEdit({ id: o.id, revision: o.revision, field: 'title', value: o.fields.title, scope: 'occurrence' })
+        const occurrence = selectedData.occurrences.find(item => item.id === id)
+        if (!occurrence || occurrence.legacy_closed || !['scheduled', 'sent'].includes(occurrence.state)) return
+        setError('')
+        setEditing(occurrence)
+        setEdit({ id: occurrence.id, revision: occurrence.revision, field: 'body', value: occurrence.body, scope: 'occurrence' })
     }
+
     function viewHistory(id: string): void {
-        const occurrence = snapshot.occurrences.find(row => row.id === id) ?? history.data.occurrences.find(row => row.id === id)
+        const occurrence = visibleSnapshot.occurrences.find(item => item.id === id) ?? history.data.occurrences.find(item => item.id === id)
         if (occurrence) setDetails(occurrence)
     }
+
     function changeDetailsOpen(open: boolean): void { if (!open) setDetails(null) }
+
     function changeEditField(field: string): void {
-        if (!editing) return
-        const s = snapshot.schedules.find(row => row.id === editing.schedule_id)
-        const value = field === 'attendanceGroups' ? JSON.stringify(editing.attendance_groups ?? []) : field === 'sendOn' ? formatUtcIsoForDateTimeInput(editing.send_on, s?.timezone ?? 'UTC') : field === 'expiresAt' ? formatUtcIsoForDateTimeInput(editing.expires_at, s?.timezone ?? 'UTC') : field === 'expiryHours' ? String(s?.expiry_hours ?? 72) : editing.fields[field] ?? ''
-        setEdit(current => ({ ...current, field, value, scope: 'occurrence' }))
+        if (!editing || !['body', 'attendanceGroups', 'sendOn', 'followUpMinutes'].includes(field)) return
+        const value = editValueForOccurrence(field as EditField, editing, selectedData)
+        setEdit(current => ({ ...current, field: field as EditField, value, scope: 'occurrence' }))
     }
+
     function changeEditValue(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void { setEdit(current => ({ ...current, value: event.target.value })) }
-    function changeScope(scope: string): void { setEdit(current => ({ ...current, scope: scope as ScheduledEditScope })) }
+    function setEditTimestamp(value: string): void { setEdit(current => ({ ...current, value })) }
+    function changeScope(value: string): void { if (value === 'occurrence' || value === 'future' || value === 'series') setEdit(current => ({ ...current, scope: value })) }
+
     function requestEdit(): void {
-        if (edit.field === 'attendanceGroups') {
-            try { validateScheduledAttendanceGroups('pre_attendance', parsedEditGroups(edit.value)) }
-            catch (e) { setError(e instanceof Error ? e.message : 'Check attendance groups'); return }
+        if (!editing) return
+        let value: string = edit.value
+        try {
+            if (edit.field === 'body') validateScheduledBody(editing.message_type, edit.value)
+            if (edit.field === 'attendanceGroups') {
+                value = JSON.stringify(validateScheduledAttendanceGroups(editing.message_type, parseEditGroups(edit.value)))
+            }
+            if (edit.field === 'sendOn') value = scheduledTimestamp(edit.value, selectedData.schedules.find(item => item.id === editing.schedule_id)?.timezone ?? selectedData.workspaceTimezone)
+            if (edit.field === 'followUpMinutes') {
+                const minutes = Number(edit.value)
+                if (!Number.isInteger(minutes) || minutes < 1 || minutes > 525600) throw new Error('Follow-up delay must be 1 to 525600 minutes')
+                value = String(minutes)
+            }
+        } catch (reason) {
+            setError(reason instanceof Error ? reason.message : 'Check the message details')
+            return
         }
-        let payload = edit
-        if (['sendOn', 'expiresAt'].includes(edit.field)) {
-            try { payload = { ...edit, value: scheduledTimestamp(edit.value, snapshot.schedules.find(s => s.id === editing?.schedule_id)?.timezone ?? 'UTC') } }
-            catch (e) { setError(e instanceof Error ? e.message : 'Check date and time'); return }
-        }
-        const groups = parsedEditGroups(edit.value)
-        const value = edit.field === 'attendanceGroups' ? (groups.length ? groups.map(group => group.label).join(', ') : 'no group choices') : edit.value || '(empty)'
-        const target = edit.scope === 'occurrence' ? 'this occurrence' : edit.scope === 'future' ? 'this and future occurrences' : 'the entire series'
-        const description = edit.field === 'attendanceGroups' ? `Set attendance groups to ${value} for ${target}? Attendance responses will be retained.` : `Apply ${edit.field}: ${edit.value || '(empty)'} to ${target}? Attendance responses will be retained.`
-        setConfirmation({ op: 'occurrence.edit', title: 'Apply this change?', label: 'Apply change', data: payload, description })
+        const target = edit.scope === 'occurrence' ? 'this message' : edit.scope === 'future' ? 'this and future messages' : 'the entire series'
+        const editLabels: Record<EditField, string> = { body: 'message body', attendanceGroups: 'attendance groups', sendOn: 'send time', followUpMinutes: 'follow-up delay' }
+        const label = editLabels[edit.field]
+        const followUpDescription = edit.field === 'followUpMinutes' ? ` The follow-up is anchored to the primary send time and waits for the primary to be sent if that time has passed.` : ''
+        setConfirmation({ op: 'occurrence.edit', title: 'Apply this change?', label: 'Apply change', data: { id: edit.id, revision: edit.revision, field: edit.field, value, scope: edit.scope }, description: `Apply the ${label} change to ${target}? Existing attendance responses and discussion stay with this message.${followUpDescription}` })
     }
+
     function requestSend(id: string): void {
-        const occurrence = snapshot.occurrences.find(row => row.id === id)
-        if (!occurrence || !['scheduled', 'sent'].includes(occurrence.state)) return
-        const resend = occurrence.state === 'sent'
+        const occurrence = selectedData.occurrences.find(item => item.id === id)
+        if (!occurrence || !canSendScheduledOccurrence(occurrence)) return
         setError('')
-        setConfirmation({ op: resend ? 'occurrence.resend' : 'occurrence.send', title: resend ? 'Resend this message?' : 'Send this message now?', label: resend ? 'Resend' : 'Send now', data: { id, revision: occurrence.revision }, description: resend ? 'This posts a new message with the current content and saved attendance responses. Future updates will use the new message. If the old message still exists, both will remain visible.' : 'This will post the occurrence to its Telegram group.' })
+        setConfirmation({ op: 'occurrence.send', title: 'Send this message now?', label: 'Send now', data: { id, revision: occurrence.revision }, description: 'This queues the scheduled message for Telegram delivery.' })
     }
-    function requestTemplateDelete(event: MouseEvent<HTMLButtonElement>): void {
-        const template = snapshot.templates.find(row => row.id === event.currentTarget.dataset.templateId)
-        if (!template || busy) return
+
+    function requestResend(id: string): void {
+        const occurrence = selectedData.occurrences.find(item => item.id === id)
+        if (!occurrence || occurrence.state !== 'sent' || occurrence.legacy_closed) return
         setError('')
-        setConfirmation({ op: 'template.delete', title: 'Delete template?', label: 'Delete template', data: { id: template.id }, description: `Delete “${template.name}” from your template library? Existing scheduled messages and attendance responses will be kept. This cannot be undone.` })
+        setConfirmation({ op: 'occurrence.resend', title: 'Resend this message?', label: 'Resend', data: { id, revision: occurrence.revision }, description: 'This posts a new Telegram message using the saved content and responses. Discussion remains with the existing message.' })
     }
+
     function requestDelete(id: string): void {
-        const occurrence = snapshot.occurrences.find(row => row.id === id)
+        const occurrence = selectedData.occurrences.find(item => item.id === id)
         if (!occurrence || occurrence.state === 'sending' || busy) return
-        setError(''); setDeleteScope('occurrence')
-        if (snapshot.schedules.find(row => row.id === occurrence.schedule_id)?.frequency === 'once') confirmDeletion(occurrence, 'occurrence')
-        else setDeleting(occurrence)
+        setError('')
+        setDeleteScope('occurrence')
+        setDeleting(occurrence)
     }
-    function changeDeleteScope(scope: string): void { setDeleteScope(scope as ScheduledEditScope) }
+
+    function changeDeleteScope(value: string): void { if (value === 'occurrence' || value === 'future' || value === 'series') setDeleteScope(value) }
     function changeDeleteOpen(open: boolean): void { if (!open && !busy) setDeleting(null) }
-    function confirmDeletion(occurrence: ScheduledOccurrence, scope: ScheduledEditScope): void {
-        const target = scope === 'occurrence' ? 'this occurrence' : scope === 'future' ? 'this and future occurrences' : 'the entire recurring schedule'
-        const recurring = snapshot.schedules.find(row => row.id === occurrence.schedule_id)?.frequency !== 'once'
-        const future = scope === 'occurrence' ? (recurring ? 'Other recurring occurrences will be kept.' : '') : 'Automatic sends in this scope will stop.'
-        setConfirmation({ op: 'occurrence.delete', title: 'Delete message?', label: 'Delete message', data: { id: occurrence.id, revision: occurrence.revision, scope }, description: `Delete “${occurrence.fields.title}” for ${target}? ${future} Sent messages will be removed from Telegram where possible, or marked deleted with their buttons removed. Saved attendance responses will be kept. This cannot be undone.` })
-    }
     function reviewDelete(): void {
         if (!deleting) return
-        confirmDeletion(deleting, deleteScope)
+        const target = deleteScope === 'occurrence' ? 'this message' : deleteScope === 'future' ? 'this and future messages' : 'the entire series'
+        setConfirmation({ op: 'occurrence.delete', title: 'Delete message?', label: 'Delete message', data: { id: deleting.id, revision: deleting.revision, scope: deleteScope }, description: `Delete ${target}? Scheduled sends will be cancelled and Telegram cleanup will be attempted. Existing responses and discussion are retained in Console history.` })
         setDeleting(null)
     }
+
     function changeEditorOpen(open: boolean): void { if (!open && !busy) setEditing(null) }
     function changeConfirmationOpen(open: boolean): void { if (!open && !busy) setConfirmation(null) }
+
     async function confirm(): Promise<void> {
         if (!confirmation) return
         const op = confirmation.op
-        if (await mutate(op, confirmation.data)) {
-            setConfirmation(null); setEditing(null); setDeleting(null)
-            if (op === 'schedule.create') { setSchedule(defaultSchedule()); setTab('active'); navigate(`/${routes.scheduledMessages}`) }
+        if (!await mutate(op, confirmation.data)) return
+        setConfirmation(null)
+        setEditing(null)
+        setDeleting(null)
+        if (op === 'schedule.create') {
+            resetDraft(visibleSnapshot.workspaceTimezone)
+            setTab('upcoming')
+            navigate(`/${routes.scheduledMessages}`)
         }
     }
+
     async function syncCommands(): Promise<void> { await mutate('commands.sync', {}) }
-    function occurrenceRow(o: ScheduledOccurrence): ScheduledOccurrence & { summary: string; canManage: boolean; canDelete: boolean } {
-        const sourceSchedule = (tab === 'history' ? history.data : snapshot).schedules.find(s => s.id === o.schedule_id)
-        const timezone = sourceSchedule?.timezone ?? 'UTC'
-        const dates = { sendOn: formatUtcIsoInTimezone(o.send_on, timezone, { dateStyle: 'medium', timeStyle: 'short' }), expiresAt: formatUtcIsoInTimezone(o.expires_at, timezone, { timeZoneName: 'short' }) }
-        const isActive = Date.parse(o.expires_at) > now && sourceSchedule?.enabled === true
-        return { ...o, summary: scheduledOccurrenceSummary(o, dates), canManage: isActive && ['scheduled', 'sent'].includes(o.state), canDelete: isActive && o.state !== 'sending' }
-    }
-    const selectedSchedule = snapshot.schedules.find(s => s.id === editing?.schedule_id)
-    const selectedTemplate = snapshot.templates.find(t => t.id === schedule.templateId)
-    const previewInput = { id: selectedTemplate?.id ?? 'preview', messageType: schedule.messageType, body: schedule.body, fields: schedule.fields, requireArrival: schedule.requireArrival, attendanceGroups: schedule.attendanceGroups, expiresAt: previewExpiry(schedule.expiresAt, schedule.timezone), timezone: schedule.timezone }
-    const preview = scheduledMessagePreview({ ...previewInput, audience: [] }, snapshot.members, schedule.attendeeIds)
-    const templateRows = snapshot.templates.map(t => ({ ...t, label: t.message_type === 'pre_attendance' ? 'Pre-attendance' : 'Announcement', editPath: `/${routes.scheduledTemplateDetail.replace(':id', t.id)}`, usePath: `/${routes.scheduledMessageNew}?template=${encodeURIComponent(t.id)}` }))
-    const fieldItems = editing ? [...SCHEDULED_FIELDS[editing.message_type].map(f => ({ value: f.key, label: f.label })), ...(editing.message_type === 'pre_attendance' ? [{ value: 'attendanceGroups', label: 'Attendance groups' }] : []), ...(editing.state === 'scheduled' ? [{ value: 'sendOn', label: 'Send date and time' }] : []), { value: 'expiresAt', label: 'Message expiry date and time' }, { value: 'expiryHours', label: 'Expiry hours from scheduled send' }] : []
-    const topics = snapshot.groups.find(g => g.chat_id === schedule.groupChatId)?.telegram_group_topics ?? []
-    const topicItems = [{ value: 'main', label: 'General' }, ...topics.filter(t => !t.closed).map(t => ({ value: String(t.thread_id), label: t.name }))]
+
     return {
-        state: { historyLoadingMore: history.isLoadingMore, historyPageError: tab === 'history' && history.pageError ? (history.pageError instanceof Error ? history.pageError.message : 'Could not load older messages') : '', details: loadedWorkspaceId === currentWorkspaceId && details ? occurrenceRow(details) : null, snapshot: loadedWorkspaceId === currentWorkspaceId ? visibleSnapshot : empty, schedule, editing: loadedWorkspaceId === currentWorkspaceId ? editing : null, deleting: loadedWorkspaceId === currentWorkspaceId ? deleting : null, deleteScope, edit, confirmation: loadedWorkspaceId === currentWorkspaceId ? confirmation : null, error, loadError, loading, isInitialLoading: isInitialLoading || loadedWorkspaceId !== currentWorkspaceId, busy, tab },
-        actions: { reload, mutate, setTab, startSchedule, changeSchedule, setStartsOn, setExpiresAt, setEditTimestamp, changeScheduleField, changeScheduleType, changeScheduleArrival, changeScheduleAttendee, changeMemberSearch, changeBody: bodyEditor.actions.changeBody, changeRichBody: bodyEditor.actions.changeRichBody, insertTokenFromButton: bodyEditor.actions.insertTokenFromButton, setGroup, setTopic, setFrequency, changeAutoSend, requestSchedule, loadMoreHistory: history.loadMore, selectOccurrence, viewHistory, changeDetailsOpen, changeEditField, changeEditValue, changeScope, changeAttendanceGroup: occurrenceGroupEditor.change, addAttendanceGroup: occurrenceGroupEditor.add, enableAttendanceGroups: occurrenceGroupEditor.enable, removeAttendanceGroup: occurrenceGroupEditor.remove, clearAttendanceGroups: occurrenceGroupEditor.clear, changeScheduleGroup: scheduleGroupEditor.change, addScheduleGroup: scheduleGroupEditor.add, enableScheduleGroups: scheduleGroupEditor.enable, removeScheduleGroup: scheduleGroupEditor.remove, clearScheduleGroups: scheduleGroupEditor.clear, requestEdit, requestSend, requestTemplateDelete, requestDelete, changeDeleteScope, changeDeleteOpen, reviewDelete, changeEditorOpen, changeConfirmationOpen, confirm, syncCommands },
-        meta: { hasMoreHistory: tab === 'history' && history.hasMore, frequencyItems, typeItems, variables: [...SCHEDULED_VARIABLES], scopeItems, fieldItems, topicItems, templateRows, preview, previewSendTime: previewSendTime(schedule.startsOn, schedule.timezone), previewError: preview.error, editGroups: edit.field === 'attendanceGroups' ? parsedEditGroups(edit.value) : editing?.attendance_groups ?? [], isAttendance: schedule.messageType === 'pre_attendance', scheduleFields: SCHEDULED_FIELDS[schedule.messageType], members: snapshot.members.map(member => { const index = schedule.attendeeIds.indexOf(member.id); return { ...member, selected: index >= 0, position: index >= 0 ? index + 1 : null, matchesSearch: member.name.toLocaleLowerCase().includes(schedule.memberSearch.toLocaleLowerCase()) } }), selectedAttendeeCount: schedule.attendeeIds.length, hasMatchingMembers: snapshot.members.some(member => member.name.toLocaleLowerCase().includes(schedule.memberSearch.toLocaleLowerCase())), memberSearch: schedule.memberSearch, scheduleBodyEditor: bodyEditor.state, scheduleBodyMeta: bodyEditor.meta, hasTopics: topicItems.length > 1, isRecurring: schedule.frequency !== 'once', occurrences: (tab === 'history' ? history.data.occurrences : visibleSnapshot.occurrences).map(occurrenceRow), occurrenceLoading: selectedResource.isInitialLoading, occurrenceEmptyTitle: tab === 'history' ? 'No message history' : 'No active messages', occurrenceEmptyDescription: tab === 'history' ? 'Past, cancelled and failed messages appear here.' : 'Schedule a message once or on a recurring basis. Sent messages stay here until they expire.', templateName: selectedTemplate?.name.trim() ?? '', groupItems: snapshot.groups.map(g => ({ value: g.chat_id, label: g.title })), showScope: selectedSchedule?.frequency !== 'once' && !['sendOn', 'expiresAt'].includes(edit.field) },
+        state: {
+            tab,
+            snapshot: visibleSnapshot,
+            draft,
+            editing: loadedWorkspaceId === currentWorkspaceId ? editing : null,
+            deleting: loadedWorkspaceId === currentWorkspaceId ? deleting : null,
+            details: loadedWorkspaceId === currentWorkspaceId ? view.details : null,
+            edit,
+            deleteScope,
+            confirmation: loadedWorkspaceId === currentWorkspaceId ? confirmation : null,
+            error,
+            loadError,
+            loading,
+            isInitialLoading: isInitialLoading || loadedWorkspaceId !== currentWorkspaceId || !messageDrafts.isInitialized,
+            busy,
+            historyLoadingMore: history.isLoadingMore,
+            historyPageError: tab === 'history' && history.pageError ? (history.pageError instanceof Error ? history.pageError.message : 'Could not load older messages') : '',
+        },
+        actions: {
+            reload,
+            setTab: changeTab,
+            startMessage,
+            changeDraft,
+            changeDraftType,
+            changeBody,
+            changeAttendee,
+            changeMemberSearch,
+            setGroup,
+            setTopic,
+            setStartsOn,
+            setDeliveryMode,
+            setFrequency,
+            setFollowUpUnit,
+            requestCreate,
+            loadMoreHistory: history.loadMore,
+            selectOccurrence,
+            viewHistory,
+            changeDetailsOpen,
+            changeEditField,
+            changeEditValue,
+            changeEditBody,
+            setEditTimestamp,
+            setEditGroup: occurrenceGroupEditor.change,
+            addEditGroup: occurrenceGroupEditor.add,
+            enableEditGroups: occurrenceGroupEditor.enable,
+            clearEditGroups: occurrenceGroupEditor.clear,
+            removeEditGroup: occurrenceGroupEditor.remove,
+            changeScope,
+            requestEdit,
+            requestSend,
+            requestResend,
+            requestDelete,
+            changeDeleteScope,
+            changeDeleteOpen,
+            reviewDelete,
+            changeEditorOpen,
+            changeConfirmationOpen,
+            confirm,
+            syncCommands,
+            changeScheduleGroup: scheduleGroupEditor.change,
+            addScheduleGroup: scheduleGroupEditor.add,
+            enableScheduleGroups: scheduleGroupEditor.enable,
+            removeScheduleGroup: scheduleGroupEditor.remove,
+            clearScheduleGroups: scheduleGroupEditor.clear,
+        },
+        meta: {
+            occurrences: view.occurrences,
+            occurrenceLoading: selectedResource.isInitialLoading,
+            hasMoreHistory: tab === 'history' && history.hasMore,
+            groupItems: view.groupItems,
+            topicItems: view.topicItems,
+            hasTopics: view.hasTopics,
+            frequencyItems,
+            typeItems,
+            offsetUnitItems,
+            scopeItems,
+            editFieldItems: view.editFieldItems,
+            workspaceTimezone,
+            primaryPreview: view.primaryPreview,
+            followUpPreview: view.followUpPreview,
+            editPreview: view.editPreview,
+            editGroups: view.editGroups,
+            deletingLabel: view.deletingLabel,
+            editingLabel: view.editingLabel,
+            isAttendance: view.isAttendance,
+            isRecurring: view.isRecurring,
+            members: view.members,
+            selectedAttendeeCount: view.selectedAttendeeCount,
+            hasMatchingMembers: view.hasMatchingMembers,
+            showScope: view.showScope,
+        },
     }
 }

@@ -5,7 +5,17 @@ import { adminCallback, adminInput, showManagementList } from './admin-flow.js'
 import { attendanceCallback, attendanceInput, chooseAttendance, showAttendance } from './attendance-flow.js'
 import { createSession, ownedSession, replySession, trackSessionMessage } from './sessions.js'
 import type { MessageSession } from './types.js'
-import { authorizeManagement, getOccurrence, getSchedule, groupWorkspace, linkedUser } from './store.js'
+import { authorizeManagement, checkInAttendance, getOccurrence, getSchedule, groupWorkspace, linkedUser } from './store.js'
+import { syncOccurrence } from './worker.js'
+
+async function recordFollowUpAttendance(telegramId:string,chatId:string,childId:string,messageId:number|undefined):Promise<void> {
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(childId)) throw new Error('Invalid attendance message')
+  const actor=await linkedUser(telegramId)
+  const workspace=await groupWorkspace(chatId)
+  const timestamp=await checkInAttendance(actor,childId,workspace,chatId,messageId)
+  if(!timestamp) throw new Error('Attendance could not be recorded')
+  await syncOccurrence(childId)
+}
 
 export async function handleScheduledCallback(query: TelegramCallbackQuery): Promise<boolean> {
   if(!query.data?.startsWith('sm:') && !query.data?.startsWith('sa:')) return false
@@ -19,17 +29,24 @@ export async function handleScheduledCallback(query: TelegramCallbackQuery): Pro
       if(s.kind==='admin') await adminCallback(s,actionOrId,arg,query.id)
       else await attendanceCallback(s,actionOrId,arg,query.id)
     } else {
-      if(idOrAction!=='update' && idOrAction!=='yes' && idOrAction!=='no') throw new Error('Invalid attendance action')
-      const actor=await linkedUser(telegramId)
-      const o=await getOccurrence(actionOrId)
-      const schedule=await getSchedule(o.schedule_id)
-      if(schedule.group_chat_id!==chatId || o.telegram_message_id!==query.message?.message_id) throw new Error('This button is not on the original message')
-      const workspace=await groupWorkspace(chatId)
-      if(workspace!==o.workspace_id) throw new Error('Message unavailable')
-      const s=await createSession({user_id:actor,telegram_user_id:telegramId,workspace_id:workspace,chat_id:chatId,thread_id:query.message?.message_thread_id??null,occurrence_id:o.id,kind:'attendance',data:{}})
-      // Existing group cards can still carry the old update callback.
-      if(idOrAction==='update') await showAttendance(s,query.id)
-      else await chooseAttendance(s,idOrAction==='yes'?'attending':'not_attending',query.id)
+      if(idOrAction==='check') {
+        const childId=actionOrId
+        if(!childId) throw new Error('Invalid attendance action')
+        await recordFollowUpAttendance(telegramId,chatId,childId,query.message?.message_id)
+      } else {
+        if(idOrAction!=='update' && idOrAction!=='yes' && idOrAction!=='no') throw new Error('Invalid attendance action')
+        const actor=await linkedUser(telegramId)
+        const o=await getOccurrence(actionOrId)
+        if(o.post_role!=='primary'||o.message_type!=='attendance'||o.legacy_closed) throw new Error('This attendance message is no longer active')
+        const schedule=await getSchedule(o.schedule_id)
+        if(schedule.group_chat_id!==chatId || o.telegram_message_id!==query.message?.message_id) throw new Error('This button is not on the original message')
+        const workspace=await groupWorkspace(chatId)
+        if(workspace!==o.workspace_id) throw new Error('Message unavailable')
+        const s=await createSession({user_id:actor,telegram_user_id:telegramId,workspace_id:workspace,chat_id:chatId,thread_id:query.message?.message_thread_id??null,occurrence_id:o.id,kind:'attendance',data:{}})
+        // Existing primary cards can still carry the old update callback.
+        if(idOrAction==='update') await showAttendance(s,query.id)
+        else await chooseAttendance(s,idOrAction==='yes'?'attending':'not_attending',query.id)
+      }
     }
     await answerTelegramCallbackQuery(query.id)
   } catch(error) {

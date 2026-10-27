@@ -36,8 +36,8 @@ function setup(): void {
     entity_type:null,entity_id:null,reply_markup:null,parent_delivery_id:null,scheduled_operation:'send',
   }
   beginSnapshot = {
-    occurrence:{id:'occurrence-1',workspace_id:'workspace-1',schedule_id:'schedule-1',occurrence_on:'2026-10-04',send_on:'2026-10-04T08:00:00Z',expires_at:'2026-10-04T12:00:00Z',fields:{title:'Service briefing'},body:'<b>{{title}}</b>',message_type:'announcement',require_arrival:false,attendance_groups:[],state:'scheduled',revision:3,telegram_message_id:null,last_sync_error:null},
-    responses:[],expired:false,timezone:'UTC',
+    occurrence:{id:'occurrence-1',workspace_id:'workspace-1',schedule_id:'schedule-1',occurrence_on:'2026-10-04',send_on:'2026-10-04T08:00:00Z',post_role:'primary',parent_occurrence_id:null,legacy_closed:false,attendee_ids:[],body:'<b>Service briefing</b>',message_type:'announcement',attendance_groups:[],state:'scheduled',revision:3,telegram_message_id:null,last_sync_error:null},
+    responses:[],workspaceTimezone:'Africa/Johannesburg',
   }
 }
 
@@ -85,13 +85,13 @@ test('resend renders the current message and saved attendance into a new Telegra
   deliveryRow.scheduled_operation='resend'
   const occurrence=beginSnapshot.occurrence as Record<string,unknown>
   occurrence.state='sent'
-  occurrence.message_type='pre_attendance'
+  occurrence.message_type='attendance'
+  occurrence.post_role='follow_up'
+  occurrence.parent_occurrence_id='primary-occurrence-1'
   occurrence.telegram_message_id=700
-  occurrence.body='<b>{{title}}</b>\n{{date}} {{time}}\n{{instructions}}'
-  occurrence.fields={title:'Service briefing',instructions:'Meet at the entrance'}
-  occurrence.require_arrival=true
+  occurrence.body='<b>Service briefing</b>\nMeet at the entrance'
   occurrence.attendance_groups=[{id:'10000000-0000-4000-8000-000000000001',label:'Noon'},{id:'10000000-0000-4000-8000-000000000002',label:'Evening'}]
-  beginSnapshot.responses=[{name:'Alex Member',status:'attending',arrival_time:'07:30',group_id:'10000000-0000-4000-8000-000000000001'}]
+  beginSnapshot.responses=[{name:'Alex Member',status:'attending',arrival_time:'07:30',group_id:'10000000-0000-4000-8000-000000000001',decline_reason:null,checked_in_at:'2026-10-04T07:15:00.000Z'}]
   let body:Record<string,unknown>|null=null
   const previousFetch=globalThis.fetch
   const previousToken=process.env.TELEGRAM_BOT_TOKEN
@@ -103,7 +103,7 @@ test('resend renders the current message and saved attendance into a new Telegra
     expect(body?.message_id).toBeUndefined()
     expect(JSON.stringify(body)).toContain('Service briefing')
     expect(JSON.stringify(body)).toContain('Noon')
-    expect(JSON.stringify(body)).toContain('✅ Alex Member — 07:30')
+    expect(JSON.stringify(body)).toContain('✅ Alex Member — 09:15')
     const finish=calls.find(call=>call.text.includes('finish_scheduled_delivery'))
     expect(finish?.values.slice(0,3)).toEqual(['delivery-1',3,902])
     expect(finish?.values[4]).toBe(false)

@@ -1,4 +1,4 @@
-import { renderScheduledMessage, toRichHtml } from '@moc/notifications'
+import { renderScheduledMessage, scheduledMessageLabel, toRichHtml } from '@moc/notifications'
 import { queryRows } from '@moc/backend/database'
 import type { QueryResultRow } from 'pg'
 import { editTelegramRichMessage, sendTelegramRichMessage } from '../telegram.js'
@@ -8,7 +8,7 @@ import { deleteScheduledTelegramMessage } from './delete-telegram-message.js'
 import type { AttendanceResponse, Occurrence } from './types.js'
 
 export type ScheduledDelivery = { id: string; chat_id: string; thread_id: number|null; attempt_count: number; scheduled_operation: 'send'|'resend'|'edit'|'expire'|'delete' }
-type DeliverySnapshot = { busy?: boolean; occurrence: Occurrence; responses: AttendanceResponse[]; expired: boolean; timezone?: string }
+type DeliverySnapshot = { busy?: boolean; occurrence: Occurrence; responses: AttendanceResponse[]; workspaceTimezone: string }
 
 export async function deliverScheduledMessage(row: ScheduledDelivery): Promise<DeliveryRunResult> {
   const total: DeliveryRunResult = {attempted:1,sent:0,failed:0,pendingRetry:0}
@@ -35,12 +35,12 @@ export async function deliverScheduledMessage(row: ScheduledDelivery): Promise<D
   }
   const o=snapshot.occurrence
   const postsMessage=row.scheduled_operation==='send' || row.scheduled_operation==='resend'
-  const responses=snapshot.responses.map(r=>({name:r.name,status:r.status,arrivalTime:r.arrival_time,groupId:r.group_id}))
+  const responses=snapshot.responses.map(r=>({name:r.name,status:r.status,arrivalTime:r.arrival_time,groupId:r.group_id,declineReason:r.decline_reason,checkedInAt:r.checked_in_at instanceof Date?r.checked_in_at.toISOString():r.checked_in_at}))
   let result
   try {
-    if(row.scheduled_operation==='delete') result=await deleteScheduledTelegramMessage(row.chat_id,o.telegram_message_id!,o.fields.title)
+    if(row.scheduled_operation==='delete') result=await deleteScheduledTelegramMessage(row.chat_id,o.telegram_message_id!,scheduledMessageLabel(o.body))
     else {
-      const rendered=renderScheduledMessage({id:o.id,messageType:o.message_type,body:o.body,fields:o.fields,requireArrival:o.require_arrival,attendanceGroups:o.attendance_groups,expiresAt:o.expires_at,timezone:snapshot.timezone},responses,snapshot.expired)
+      const rendered=renderScheduledMessage({id:o.id,messageType:o.message_type,body:o.body,postRole:o.post_role,attendanceGroups:o.attendance_groups,timezone:snapshot.workspaceTimezone,legacyClosed:o.legacy_closed},responses)
       result=postsMessage
         ? await sendTelegramRichMessage(row.chat_id,toRichHtml(rendered.text),{threadId:row.thread_id,replyMarkup:rendered.replyMarkup})
         : await editTelegramRichMessage(row.chat_id,o.telegram_message_id!,toRichHtml(rendered.text),rendered.replyMarkup ?? {inline_keyboard:[]})

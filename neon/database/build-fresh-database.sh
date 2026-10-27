@@ -31,6 +31,7 @@ if [ "${2:-}" != '--legacy-import' ]; then
   psql "$database_url" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1 \
     -f "$script_dir/item-discussion.sql" \
     -f "$script_dir/verify-item-discussion.sql" \
+    -f "$script_dir/scheduled-messages-v2.sql" \
     -f "$script_dir/verify-final-state.sql"
 fi
 printf 'Fresh MoC Neon schema installed and verified.\n'

@@ -1,52 +1,70 @@
-import { renderTemplate } from './render-template.js'
-import { scheduledLifecycleVariables } from './scheduled-date.js'
-import type { InlineKeyboardMarkup } from './telegram-keyboard.js'
+import { renderScheduledContentTokens, validateScheduledContentTokens } from './scheduled-content-tokens.js'
 import { validateScheduledAttendanceGroups, type ScheduledAttendanceGroup } from './scheduled-attendance-groups.js'
 import { renderScheduledAttendanceRoster } from './scheduled-attendance-roster.js'
+import type { InlineKeyboardMarkup } from './telegram-keyboard.js'
 
-export type ScheduledMessageType = 'announcement' | 'pre_attendance'
-export type ScheduledFields = Record<string, string>
-export type ScheduledResponse = { name: string; status: 'awaiting' | 'attending' | 'not_attending'; arrivalTime: string | null; groupId?: string | null }
-export type ScheduledRenderInput = { id: string; messageType: ScheduledMessageType; body: string; fields: ScheduledFields; requireArrival: boolean; attendanceGroups?: ScheduledAttendanceGroup[]; expiresAt?: string; timezone?: string }
-export type ScheduledFieldDefinition = { key: string; label: string; maxLength: number }
-export const SCHEDULED_FIELDS: Record<ScheduledMessageType, readonly ScheduledFieldDefinition[]> = {
- announcement: [{ key:'title',label:'Title',maxLength:120 },{ key:'instructions',label:'Message',maxLength:2000 }],
- pre_attendance: [{ key:'title',label:'Title',maxLength:120 },{ key:'instructions',label:'Instructions',maxLength:2000 }],
+export type ScheduledMessageType = 'announcement' | 'attendance'
+export type ScheduledPostRole = 'primary' | 'follow_up'
+export type ScheduledResponseStatus = 'awaiting' | 'attending' | 'not_attending'
+export type ScheduledResponse = {
+    name: string
+    status: ScheduledResponseStatus
+    arrivalTime: string | null
+    groupId?: string | null
+    declineReason?: string | null
+    checkedInAt?: string | null
 }
-export const SCHEDULED_VARIABLES = ['title', 'instructions', 'date', 'time'] as const
-export const SCHEDULED_DEFAULT_BODIES: Record<ScheduledMessageType,string> = {
- announcement: '<b>{{title}}</b>\n{{date}} {{time}}\n{{instructions}}',
- pre_attendance: '<b>{{title}}</b>\n{{date}} {{time}}\n{{instructions}}',
+export type ScheduledRenderInput = {
+    id: string
+    messageType: ScheduledMessageType
+    body: string
+    postRole?: ScheduledPostRole
+    attendanceGroups?: ScheduledAttendanceGroup[]
+    timezone?: string
+    legacyClosed?: boolean
 }
-export const ARRIVAL_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
+export type ScheduledRenderResult = { text: string; replyMarkup: InlineKeyboardMarkup | null }
 
-export function validateScheduledFields(type: ScheduledMessageType, fields: unknown): ScheduledFields {
- if (typeof fields !== 'object' || fields === null || Array.isArray(fields)) throw new Error('Message fields must be an object')
- const result: ScheduledFields = {}
- for (const [key,value] of Object.entries(fields)) {
-  const definition = SCHEDULED_FIELDS[type].find(field => field.key === key)
-  if (!definition || typeof value !== 'string' || value.length > definition.maxLength) throw new Error(`Invalid message field: ${key}`)
-  result[key]=value.trim()
- }
- if (!result.title) throw new Error('A title is required')
- return result
-}
+const MESSAGE_TYPES = new Set<ScheduledMessageType>(['announcement', 'attendance'])
 
-export function validateScheduledBody(type: ScheduledMessageType, body: string): void {
- if (!body.trim() || body.length > 3000) throw new Error('Template must contain 1–3000 characters')
- const allowed: ReadonlySet<string> = new Set(SCHEDULED_VARIABLES)
- if (!SCHEDULED_FIELDS[type]) throw new Error('Invalid message type')
- for (const token of body.matchAll(/{{(\w+)}}/g)) if (!allowed.has(token[1])) throw new Error(`Unknown template field: ${token[1]}`)
+function validateScheduledRenderBody(messageType: ScheduledMessageType, body: string): void {
+    if (!MESSAGE_TYPES.has(messageType)) throw new Error('Invalid message type')
+    if (typeof body !== 'string' || !body.trim()) throw new Error('Message body is required')
+    validateScheduledContentTokens(body)
 }
 
-export function renderScheduledMessage(input: ScheduledRenderInput, responses: ScheduledResponse[], expired: boolean): { text: string; replyMarkup: InlineKeyboardMarkup | null } {
- const body=renderTemplate(input.body,{...input.fields,...scheduledLifecycleVariables(input.expiresAt, input.timezone ?? 'Africa/Johannesburg')})
- const groups=validateScheduledAttendanceGroups(input.messageType,input.attendanceGroups??[])
- const roster=input.messageType === 'pre_attendance' ? renderScheduledAttendanceRoster(groups,responses) : ''
- const text=[body,roster,expired ? 'Closed' : ''].filter(Boolean).join('\n\n')
- if (text.replace(/<[^>]*>/g,'').length > 4096) throw new Error('Message exceeds Telegram’s text limit; shorten the template or audience')
- const replyMarkup:InlineKeyboardMarkup|null = expired || input.messageType !== 'pre_attendance' ? null : {inline_keyboard:[
-  [{text:'Attending',callback_data:`sa:yes:${input.id}`},{text:'Not attending',callback_data:`sa:no:${input.id}`}],
- ]}
- return {text,replyMarkup}
+/** New message bodies contain rich HTML plus explicit date/time content values. */
+export function validateScheduledBody(messageType: ScheduledMessageType, body: string): void {
+    if (!MESSAGE_TYPES.has(messageType)) throw new Error('Invalid message type')
+    if (typeof body !== 'string' || !body.trim() || body.length > 3000) throw new Error('Message must contain 1–3000 characters')
+    validateScheduledContentTokens(body)
+}
+
+/** Render the same deterministic text and action buttons for preview and delivery. */
+export function renderScheduledMessage(input: ScheduledRenderInput, responses: ScheduledResponse[]): ScheduledRenderResult {
+    const postRole = input.postRole ?? 'primary'
+    const closed = input.legacyClosed ?? false
+    if (postRole !== 'primary' && postRole !== 'follow_up') throw new Error('Invalid attendance post role')
+    validateScheduledRenderBody(input.messageType, input.body)
+    if (postRole === 'follow_up' && input.messageType !== 'attendance') throw new Error('Follow-up posts are only available for attendance messages')
+
+    const groups = validateScheduledAttendanceGroups(input.messageType, input.attendanceGroups ?? [])
+    const body = renderScheduledContentTokens(input.body)
+    const roster = input.messageType === 'attendance'
+        ? renderScheduledAttendanceRoster(groups, responses, postRole, input.timezone ?? 'Africa/Johannesburg')
+        : ''
+    const footer = input.messageType === 'attendance' ? `<footer>${postRole === 'primary' ? 'Pre-attendance' : 'Attendance'}</footer>` : ''
+    const text = [body, roster, footer, closed ? 'Closed' : ''].filter(Boolean).join('\n\n')
+    if (text.replace(/<[^>]*>/g, '').length > 4096) throw new Error('Message exceeds Telegram’s text limit; shorten the message or audience')
+
+    let replyMarkup: InlineKeyboardMarkup | null = null
+    if (!closed && input.messageType === 'attendance') {
+        replyMarkup = postRole === 'primary'
+            ? { inline_keyboard: [[
+                { text: 'Attending', style: 'primary', callback_data: `sa:yes:${input.id}` },
+                { text: 'Not attending', callback_data: `sa:no:${input.id}` },
+            ]] }
+            : { inline_keyboard: [[{ text: 'Attended', style: 'success', callback_data: `sa:check:${input.id}` }]] }
+    }
+    return { text, replyMarkup }
 }

@@ -1,12 +1,12 @@
 import { useCallback } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import type { ScheduledOccurrence, ScheduledSnapshot } from '@moc/notifications'
+import { DEFAULT_TIMEZONE, type ScheduledOccurrence, type ScheduledSnapshot } from '@moc/notifications'
 import { workspaceResourceKey } from '@/data/workspace-resource-cache'
 import { consoleQueryPolicy } from '@/lib/console-query-policy'
 import { useWorkspace } from '@/lib/workspace-context'
 import { fetchScheduledMessages } from './services/scheduled-message-service'
 
-const empty: ScheduledSnapshot = { templates: [], schedules: [], occurrences: [], memberTypes: [], groups: [], members: [] }
+const empty: ScheduledSnapshot = { workspaceTimezone: DEFAULT_TIMEZONE, schedules: [], occurrences: [], memberTypes: [], groups: [], members: [] }
 
 export function useScheduledMessageHistory(enabled: boolean) {
     const { currentWorkspaceId, role } = useWorkspace()

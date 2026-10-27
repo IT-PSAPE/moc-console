@@ -21,6 +21,7 @@ psql "$discussion_database" --quiet --no-psqlrc --single-transaction -v ON_ERROR
 psql "$discussion_database" --quiet --no-psqlrc -v ON_ERROR_STOP=1 -f "$root_dir/test/neon/sql/item-discussion.sql"
 psql "$discussion_database" --quiet --no-psqlrc -v ON_ERROR_STOP=1 -f "$root_dir/test/neon/sql/item-discussion-domains.sql"
 psql "$discussion_database" --quiet --no-psqlrc -v ON_ERROR_STOP=1 -f "$root_dir/test/neon/sql/item-discussion-identity.sql"
+psql "$discussion_database" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1 -f "$root_dir/neon/database/scheduled-messages-v2.sql"
 psql "$discussion_database" --quiet --no-psqlrc -v ON_ERROR_STOP=1 -f "$root_dir/test/neon/sql/item-discussion-scheduled.sql"
 psql "$discussion_database" --quiet --no-psqlrc -v ON_ERROR_STOP=1 -f "$root_dir/test/neon/sql/item-discussion-public.sql"
 psql "$discussion_database" --quiet --no-psqlrc -v ON_ERROR_STOP=1 -f "$root_dir/neon/database/verify-item-discussion.sql"

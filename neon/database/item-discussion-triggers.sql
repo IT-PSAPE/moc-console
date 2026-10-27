@@ -12,7 +12,7 @@ BEGIN
   ('streams','stream','title,description,privacy_status,is_for_kids,scheduled_start_time,actual_start_time,actual_end_time,stream_status,category_id,tags,latency_preference,enable_dvr,enable_embed,enable_auto_start,enable_auto_stop,playlist_id,request_id'),
   ('zoom_meetings','meeting','topic,description,meeting_type,start_time,duration,timezone,recurrence_type,recurrence_interval,recurrence_days,waiting_room,mute_on_entry,continuous_chat,request_id'),
   ('broadcasts','broadcast','title,description,slug,kind'),
-  ('scheduled_message_occurrences','scheduled-message','title,instructions,occurrence_on,send_on,expires_at,body,message_type,require_arrival,state,attendance_groups,attendee_ids')
+  ('scheduled_message_occurrences','scheduled-message','occurrence_on,send_on,body,message_type,post_role,state,attendance_groups,attendee_ids')
  ) AS specifications(relation_name,kind,fields) LOOP
   EXECUTE format('DROP TRIGGER IF EXISTS record_item_activity ON public.%I',spec.relation_name);
   EXECUTE format('DROP TRIGGER IF EXISTS record_item_deletion_activity ON public.%I',spec.relation_name);
@@ -26,7 +26,7 @@ CREATE OR REPLACE FUNCTION moc_private.record_schedule_activity() RETURNS trigge
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE changes jsonb; occurrence record;
 BEGIN
- changes := moc_private.item_changes(to_jsonb(OLD),to_jsonb(NEW),ARRAY['starts_on','until_on','timezone','frequency','auto_send','expiry_hours','enabled','send_time']);
+ changes := moc_private.item_changes(to_jsonb(OLD),to_jsonb(NEW),ARRAY['starts_on','until_on','timezone','frequency','follow_up_minutes','enabled','send_time']);
  IF changes='[]'::jsonb THEN RETURN NEW; END IF;
  FOR occurrence IN SELECT id FROM public.scheduled_message_occurrences WHERE schedule_id=NEW.id LOOP
   PERFORM moc_private.append_item_activity(NEW.workspace_id,'scheduled-message',occurrence.id,'schedule_updated',changes);

@@ -77,9 +77,11 @@ function PopoverTrigger({ children, className, ...props }: PopoverTriggerProps) 
 
 // ─── Panel ───────────────────────────────────────────────────────────
 
-type PopoverPanelProps = HTMLAttributes<HTMLDivElement> & Pick<BasePopover.Positioner.Props, 'anchor' | 'sideOffset' | 'alignOffset' | 'collisionPadding'>
+type PopoverPanelProps = HTMLAttributes<HTMLDivElement>
+    & Pick<BasePopover.Positioner.Props, 'anchor' | 'sideOffset' | 'alignOffset' | 'collisionPadding'>
+    & Pick<BasePopover.Popup.Props, 'initialFocus' | 'finalFocus'>
 
-function PopoverPanel({ children, className, anchor, sideOffset = 6, alignOffset, collisionPadding, ...props }: PopoverPanelProps) {
+function PopoverPanel({ children, className, anchor, sideOffset = 6, alignOffset, collisionPadding, initialFocus, finalFocus, ...props }: PopoverPanelProps) {
     const { side, align } = toSideAlign(useContext(PlacementContext))
     const { state: overlayState } = useOverlayStack()
 
@@ -94,6 +96,8 @@ function PopoverPanel({ children, className, anchor, sideOffset = 6, alignOffset
                         'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
                         className,
                     )}
+                    initialFocus={initialFocus}
+                    finalFocus={finalFocus}
                     {...props}
                 >
                     {children}

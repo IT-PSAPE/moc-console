@@ -3,7 +3,7 @@ import { discussionDay, formatChangeValue, formatDiscussionActor, formatDiscussi
 import type { ActivityChangeView, ActivityGroupView, ActivityView, CommentView } from './discussion-types'
 
 const itemNames: Record<ItemKind, string> = { request: 'request', equipment: 'equipment item', booking: 'equipment booking', 'venue-booking': 'venue booking', checklist: 'checklist', stream: 'stream', meeting: 'meeting', broadcast: 'broadcast', 'scheduled-message': 'scheduled message' }
-const fieldNames: Record<string, string> = { due_at: 'Due date', scheduled_at: 'Scheduled for', assignees: 'Assignees', request_id: 'Linked request', requestId: 'Linked request', is_checked: 'Completed', expected_return_at: 'Expected return', checked_out_at: 'Checked out', returned_at: 'Returned', body: 'Message', items: 'Items', user_id: 'Member', title: 'Title', name: 'Name' }
+const fieldNames: Record<string, string> = { due_at: 'Due date', scheduled_at: 'Scheduled for', assignees: 'Assignees', request_id: 'Linked request', requestId: 'Linked request', is_checked: 'Completed', expected_return_at: 'Expected return', checked_out_at: 'Checked out', returned_at: 'Returned', body: 'Message', post_role: 'Message phase', follow_up_minutes: 'Follow-up delay (minutes)', send_on: 'Send time', occurrence_on: 'Occurrence date', attendance_groups: 'Attendance groups', attendee_ids: 'Attendees', items: 'Items', user_id: 'Member', title: 'Title', name: 'Name' }
 const actions: Record<string, string> = {
     updated: 'updated details', title_updated: 'changed the title', status_changed: 'changed the status',
     content_updated: 'updated details', due_date_changed: 'changed the due date', archived: 'archived this item', restored: 'restored this item',

@@ -13,9 +13,8 @@ const RPC_SQL: Record<string, (args: RpcArguments) => { sql: string; values: unk
   request_scheduled_send: (a) => ({ sql: 'SELECT public.request_scheduled_send($1::uuid,$2::uuid)', values: [a.p_actor,a.p_id] }),
   request_scheduled_resend: (a) => ({ sql: 'SELECT public.request_scheduled_resend($1::uuid,$2::uuid,$3::integer)', values: [a.p_actor,a.p_id,a.p_revision] }),
   delete_scheduled_occurrence: (a) => ({ sql: 'SELECT public.delete_scheduled_occurrence($1::uuid,$2::uuid,$3::integer,$4::text)', values: [a.p_actor,a.p_id,a.p_revision,a.p_scope] }),
-  respond_scheduled_attendance: (a) => ({ sql: 'SELECT public.respond_scheduled_attendance($1::uuid,$2::uuid,$3::integer,$4::text,$5::text,$6::text)', values: [a.p_actor,a.p_id,a.p_revision,a.p_status,a.p_arrival,a.p_group] }),
-  save_scheduled_template: (a) => ({ sql: 'SELECT public.save_scheduled_template($1::uuid,$2::uuid,$3::jsonb)', values: [a.p_actor,a.p_workspace,JSON.stringify(a.p_data)] }),
-  delete_scheduled_template: (a) => ({ sql: 'SELECT public.delete_scheduled_template($1::uuid,$2::uuid,$3::uuid)', values: [a.p_actor,a.p_workspace,a.p_id] }),
+  respond_scheduled_attendance: (a) => ({ sql: 'SELECT public.respond_scheduled_attendance($1::uuid,$2::uuid,$3::integer,$4::text,$5::text,$6::text,$7::text)', values: [a.p_actor,a.p_id,a.p_revision,a.p_status,a.p_arrival,a.p_group,a.p_reason] }),
+  check_in_scheduled_attendance: (a) => ({ sql: 'SELECT public.check_in_scheduled_attendance($1::uuid,$2::uuid) AS result', values: [a.p_actor,a.p_id] }),
   create_scheduled_schedule: (a) => ({ sql: 'SELECT public.create_scheduled_schedule($1::uuid,$2::uuid,$3::jsonb)', values: [a.p_actor,a.p_workspace,JSON.stringify(a.p_data)] }),
   begin_scheduled_delivery: (a) => ({ sql: 'SELECT public.begin_scheduled_delivery($1::uuid) AS result', values: [a.p_delivery] }),
   finish_scheduled_delivery: (a) => ({ sql: 'SELECT public.finish_scheduled_delivery($1::uuid,$2::integer,$3::bigint,$4::text,$5::boolean)', values: [a.p_delivery,a.p_revision,a.p_message,a.p_error,a.p_ambiguous] }),
@@ -47,16 +46,23 @@ export async function getSchedule(id: string, client?: PoolClient): Promise<Sche
   return row
 }
 export async function getResponses(id: string, client?: PoolClient): Promise<AttendanceResponse[]> {
-  return queryRows<AttendanceResponse & import('pg').QueryResultRow>('SELECT r.user_id,r.name,r.status,r.arrival_time,r.group_id FROM public.scheduled_message_responses r JOIN public.scheduled_message_occurrences o ON o.id=r.occurrence_id WHERE r.occurrence_id=$1 ORDER BY coalesce(array_position(o.attendee_ids,r.user_id),2147483647),r.name', [id], client)
+  return queryRows<AttendanceResponse & import('pg').QueryResultRow>(
+    `SELECT r.user_id,r.name,r.status,r.arrival_time,r.group_id,r.decline_reason,r.checked_in_at
+     FROM public.scheduled_message_occurrences requested
+     JOIN public.scheduled_message_occurrences primary_occurrence ON primary_occurrence.id=coalesce(requested.parent_occurrence_id,requested.id)
+     JOIN public.scheduled_message_responses r ON r.occurrence_id=primary_occurrence.id
+     WHERE requested.id=$1
+     ORDER BY coalesce(array_position(primary_occurrence.attendee_ids,r.user_id),2147483647),r.name`, [id], client)
 }
 export function assertActive(o: Occurrence): void {
-  if (Date.parse(o.expires_at) <= Date.now() || ['cancelled','unknown','sending'].includes(o.state)) throw new Error('Message is no longer actionable. Reopen the management flow.')
+  if (o.legacy_closed) throw new Error('This historical message is closed.')
+  if (['cancelled','unknown','sending'].includes(o.state)) throw new Error('Message is no longer actionable. Reopen the management flow.')
 }
 export async function listActive(workspaceId: string, chatId?: string, client?: PoolClient, materialize = true): Promise<Occurrence[]> {
   if (materialize) await scheduledRpc('materialize_scheduled_messages')
   return queryRows<Occurrence & import('pg').QueryResultRow>(
     `SELECT o.* FROM public.scheduled_message_occurrences o JOIN public.scheduled_message_schedules s ON s.id=o.schedule_id
-     WHERE o.workspace_id=$1 AND s.enabled AND o.expires_at>now() AND o.state<>'cancelled' AND ($2::text IS NULL OR s.group_chat_id=$2)
+     WHERE o.workspace_id=$1 AND s.enabled AND o.state IN ('scheduled','sending') AND ($2::text IS NULL OR s.group_chat_id=$2)
      ORDER BY o.send_on LIMIT 500`, [workspaceId, chatId ?? null], client,
   )
 }
@@ -65,8 +71,8 @@ export async function listHistory(workspaceId: string, client?: PoolClient, curs
   const cursor = decodeScheduledHistoryCursor(cursorValue, workspaceId)
   const rows = await queryRows<Occurrence & QueryResultRow & { cursor_send_on: string }>(
     `SELECT o.*,to_char(o.send_on AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS cursor_send_on
-     FROM public.scheduled_message_occurrences o JOIN public.scheduled_message_schedules s ON s.id=o.schedule_id
-     WHERE o.workspace_id=$1 AND (o.expires_at<=now() OR o.state IN ('cancelled','unknown') OR o.last_sync_error IS NOT NULL OR NOT s.enabled)
+     FROM public.scheduled_message_occurrences o
+     WHERE o.workspace_id=$1 AND (o.state IN ('sent','cancelled','unknown') OR o.last_sync_error IS NOT NULL)
        AND ($2::timestamptz IS NULL OR (o.send_on,o.id)<($2::timestamptz,$3::uuid))
      ORDER BY o.send_on DESC,o.id DESC LIMIT 101`, [workspaceId,cursor?.sendOn ?? null,cursor?.id ?? null], client,
   )
@@ -94,8 +100,33 @@ export async function resendOccurrence(actor: string,id: string,revision: number
 export async function deleteOccurrence(actor: string,id: string,revision: number,scope: EditScope,client?: PoolClient): Promise<string[]> {
   return await scheduledRpc('delete_scheduled_occurrence',{p_actor:actor,p_id:id,p_revision:revision,p_scope:scope},client) as string[]
 }
-export async function respondAttendance(actor: string,o: Occurrence,status: 'attending'|'not_attending',arrival: string|null,groupId: string|null,client?: PoolClient): Promise<void> {
-  await scheduledRpc('respond_scheduled_attendance',{p_actor:actor,p_id:o.id,p_revision:o.revision,p_status:status,p_arrival:arrival,p_group:groupId},client)
+export async function respondAttendance(actor: string,o: Occurrence,status: 'attending'|'not_attending',arrival: string|null,groupId: string|null,reason: string|null,client?: PoolClient): Promise<void> {
+  await scheduledRpc('respond_scheduled_attendance',{p_actor:actor,p_id:o.id,p_revision:o.revision,p_status:status,p_arrival:arrival,p_group:groupId,p_reason:reason},client)
+}
+export async function checkInAttendance(actor:string,childOccurrenceId:string,workspaceId:string,chatId:string,messageId:number|undefined):Promise<string|null> {
+  return withActor({userId:actor,workspaceId,role:'moc_worker'},async client=>{
+    const [initial]=await queryRows<QueryResultRow & {id:string;parent_occurrence_id:string|null}>(
+      'SELECT id,parent_occurrence_id FROM public.scheduled_message_occurrences WHERE id=$1',[childOccurrenceId],client,
+    )
+    if(!initial?.parent_occurrence_id) throw new Error('This Attendance message is unavailable')
+    const [parent]=await queryRows<QueryResultRow & {id:string}>(
+      'SELECT id FROM public.scheduled_message_occurrences WHERE id=$1 FOR UPDATE',[initial.parent_occurrence_id],client,
+    )
+    if(!parent) throw new Error('This Attendance message is unavailable')
+    const [target]=await queryRows<QueryResultRow & {workspace_id:string;group_chat_id:string;post_role:string;message_type:string;parent_occurrence_id:string|null;state:string;legacy_closed:boolean;telegram_message_id:number|string|null}>(
+      `SELECT o.workspace_id,s.group_chat_id,o.post_role,o.message_type,o.parent_occurrence_id,o.state,o.legacy_closed,o.telegram_message_id
+       FROM public.scheduled_message_occurrences o JOIN public.scheduled_message_schedules s ON s.id=o.schedule_id
+       WHERE o.id=$1 FOR UPDATE OF o`,[childOccurrenceId],client,
+    )
+    if(!target) throw new Error('This Attendance message is unavailable')
+    if(target.parent_occurrence_id!==initial.parent_occurrence_id) throw new Error('This Attendance message is unavailable')
+    if(target.workspace_id!==workspaceId||target.group_chat_id!==chatId) throw new Error('This Attendance message belongs to another workspace or group')
+    if(target.post_role!=='follow_up'||target.message_type!=='attendance'||!target.parent_occurrence_id||target.state!=='sent'||target.legacy_closed) throw new Error('This Attendance message is no longer active')
+    if(messageId===undefined||String(target.telegram_message_id)!==String(messageId)) throw new Error('This button is not on the current Attendance message')
+    const result=await scheduledRpc('check_in_scheduled_attendance',{p_actor:actor,p_id:childOccurrenceId},client)
+    if(result instanceof Date) return result.toISOString()
+    return typeof result==='string'?result:null
+  })
 }
 export async function linkedUser(telegramId: string): Promise<string> {
   const [row] = await queryRows<import('pg').QueryResultRow & { id: string }>('SELECT id FROM public.users WHERE telegram_chat_id=$1', [telegramId])

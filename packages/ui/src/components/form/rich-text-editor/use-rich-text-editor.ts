@@ -1,10 +1,27 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 import { useEditor, useEditorState, type Editor } from '@tiptap/react'
-import { DOMParser as SchemaDOMParser } from '@tiptap/pm/model'
+import { DOMParser as SchemaDOMParser, Mark, Node as ProseMirrorNode } from '@tiptap/pm/model'
 import { formatSelectedVariable, selectedVariable } from './rich-text-variable'
 import { richTextExtensions } from './rich-text-extensions'
 
 export type RichTextCommand = 'bold' | 'italic' | 'underline' | 'strike' | 'code' | 'highlight' | 'subscript' | 'superscript' | 'paragraph' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'blockquote' | 'bulletList' | 'orderedList' | 'codeBlock' | 'divider' | 'table' | 'addRow' | 'addColumn' | 'deleteRow' | 'deleteColumn' | 'deleteTable' | 'undo' | 'redo' | 'clear' | 'unlink'
+
+function sameEditorContent(left: ProseMirrorNode, right: ProseMirrorNode): boolean {
+    if (left.type !== right.type) return false
+    if (left.type.name === 'dateTime') {
+        const leftAttrs = Object.fromEntries(Object.entries(left.attrs).filter(([name]) => name !== 'pickerOpen'))
+        const rightAttrs = Object.fromEntries(Object.entries(right.attrs).filter(([name]) => name !== 'pickerOpen'))
+        if (JSON.stringify(leftAttrs) !== JSON.stringify(rightAttrs) || !Mark.sameSet(left.marks, right.marks)) return false
+    } else if (!left.sameMarkup(right)) {
+        return false
+    }
+    if (left.isText || right.isText) return left.text === right.text
+    if (left.childCount !== right.childCount) return false
+    for (let index = 0; index < left.childCount; index++) {
+        if (!sameEditorContent(left.child(index), right.child(index))) return false
+    }
+    return true
+}
 
 function runCommand(editor: Editor, command: RichTextCommand): void {
     if (formatSelectedVariable(editor, command)) { editor.commands.focus(); return }
@@ -51,12 +68,13 @@ function readSelectionState({ editor }: { editor: Editor | null }): { activeComm
     }
 }
 
-export function useRichTextEditor({ value, onChange, disabled = false }: { value: string; onChange: (html: string) => void; disabled?: boolean }) {
+export function useRichTextEditor({ value, onChange, disabled = false, dateTimeTimeZone }: { value: string; onChange: (html: string) => void; disabled?: boolean; dateTimeTimeZone?: string }) {
     const lastEmitted = useRef(value)
     const [linkUrl, setLinkUrl] = useState('')
     const [linkOpen, setLinkOpen] = useState(false)
+    const extensions = useMemo(() => richTextExtensions(dateTimeTimeZone), [dateTimeTimeZone])
     const editor = useEditor({
-        extensions: richTextExtensions,
+        extensions,
         content: value,
         parseOptions: { preserveWhitespace: true },
         editable: !disabled,
@@ -72,7 +90,7 @@ export function useRichTextEditor({ value, onChange, disabled = false }: { value
         if (editor && value !== lastEmitted.current) {
             const document = new DOMParser().parseFromString(value, 'text/html')
             const nextDocument = SchemaDOMParser.fromSchema(editor.schema).parse(document.body, { preserveWhitespace: true })
-            if (!editor.state.doc.eq(nextDocument)) editor.commands.setContent(value, { emitUpdate: false, parseOptions: { preserveWhitespace: true } })
+            if (!sameEditorContent(editor.state.doc, nextDocument)) editor.commands.setContent(value, { emitUpdate: false, parseOptions: { preserveWhitespace: true } })
             lastEmitted.current = value
         }
     }, [editor, value])
@@ -108,6 +126,6 @@ export function useRichTextEditor({ value, onChange, disabled = false }: { value
     return {
         state: { editor, selection, disabled, linkOpen, linkUrl, linkValid: Boolean(linkUrl.trim() && editor?.can().setLink({ href: linkUrl.trim() })) },
         actions: { command, insertVariable, preserveSelection, openLink, closeLink, applyLink, setLinkUrl },
-        meta: { lastEmitted },
+        meta: { lastEmitted, dateTimeTimeZone },
     }
 }

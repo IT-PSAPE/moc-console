@@ -51,7 +51,6 @@ const MessageTemplateDetailScreen = lazy(() => import('./screens/account/setting
 const ScheduledMessagesLayout = lazy(() => import('./screens/scheduled-messages/layout').then((m) => ({ default: m.ScheduledMessagesLayout })))
 const ScheduledMessagesScreen = lazy(() => import('./screens/scheduled-messages/page').then((m) => ({ default: m.ScheduledMessagesScreen })))
 const ScheduledMessageComposeScreen = lazy(() => import('./screens/scheduled-messages/compose/page').then((m) => ({ default: m.ScheduledMessageComposeScreen })))
-const ScheduledTemplateScreen = lazy(() => import('./screens/scheduled-messages/templates/page').then((m) => ({ default: m.ScheduledTemplateScreen })))
 
 function SuspenseRoute({ children }: { children: React.ReactNode }) {
     return <Suspense fallback={<Page.Loading />}>{children}</Suspense>
@@ -191,8 +190,7 @@ const router = createBrowserRouter([
             { path: routes.scheduledMessages, element: <ScheduledMessagesLayout />, children: [
                 { index: true, element: <ScheduledMessagesScreen /> },
                 { path: 'new', element: <ScheduledMessageComposeScreen /> },
-                { path: 'templates/new', element: <ScheduledTemplateScreen /> },
-                { path: 'templates/:id', element: <ScheduledTemplateScreen /> },
+                { path: 'templates/*', element: <Navigate to={`/${routes.scheduledMessageNew}`} replace /> },
             ] },
             { path: routes.requests, element: <RequestsScreen /> },
             { path: routes.requestsDetail, element: <RequestDetailScreen /> },

@@ -1,59 +1,79 @@
 import { describe, expect, test } from 'vitest'
-import { renderScheduledMessage, validateScheduledFields, validateScheduledBody, SCHEDULED_DEFAULT_BODIES } from '../../../../packages/notifications/src/scheduled-message'
+import { renderScheduledMessage, validateScheduledBody, type ScheduledRenderInput, type ScheduledResponse } from '../../../../packages/notifications/src/scheduled-message'
 
-describe('scheduled message fields and rendering', () => {
- test.each(['announcement','pre_attendance'] as const)('renders %s expiry without adding independently editable fields', messageType => {
-  const fields=validateScheduledFields(messageType,{title:'Service'})
-  validateScheduledBody(messageType,'{{title}}\n{{date}} {{time}}')
-  const result=renderScheduledMessage({id:'abc',messageType,body:'{{title}}\n{{date}} {{time}}',fields,requireArrival:false,expiresAt:'2026-10-04T05:30:00Z',timezone:'Africa/Johannesburg'},[],false)
-  expect(result.text).toBe('Service\n431004 07:30')
-  expect(fields).toEqual({title:'Service'})
- })
- test('rejects generated fields and the retired expected arrival field', () => {
-  expect(() => validateScheduledFields('pre_attendance', { title: 'Service', attendeeList: 'Fake' })).toThrow()
-  expect(() => validateScheduledFields('pre_attendance', { title: 'Service', expectedArrival: '07:30' })).toThrow()
-  expect(() => validateScheduledBody('pre_attendance', '{{title}}\n{{expectedArrival}}')).toThrow()
- })
- test('default pre-attendance renders only its title and instructions', () => {
-  const fields = validateScheduledFields('pre_attendance', { title: 'Service', instructions: 'Please arrive by 07:00.' })
-  const body = SCHEDULED_DEFAULT_BODIES.pre_attendance
-  validateScheduledBody('pre_attendance', body)
-  const result = renderScheduledMessage({ id: 'abc', messageType: 'pre_attendance', body, fields, requireArrival: true }, [], false)
-  expect(result.text).toBe('<b>Service</b>\nPlease arrive by 07:00.')
- })
- test('renders edited instructions without destroying personal arrival times', () => {
-  const result = renderScheduledMessage({ id: 'abc', messageType: 'pre_attendance', body: '{{title}}\n{{instructions}}', fields: {title:'Service', instructions:'Arrive earlier'}, requireArrival: true }, [{name:'Craig',status:'attending',arrivalTime:'07:30'}], false)
-  expect(result.text).toContain('Arrive earlier')
-  expect(result.text).toContain('✅ Craig — 07:30')
-  expect(result.replyMarkup?.inline_keyboard.flat().map(b => b.text)).toEqual(['Attending','Not attending'])
- })
- test('expired render removes all actions and escapes replacements', () => {
-  const result=renderScheduledMessage({id:'abc',messageType:'announcement',body:'{{title}}',fields:{title:'<unsafe>'},requireArrival:false},[],true)
-  expect(result.text).toContain('&lt;unsafe&gt;')
-  expect(result.replyMarkup).toBeNull()
- })
- test.each([
-  { status: 'awaiting' as const, arrivalTime: null, requireArrival: true, expected: '🔁 Port Elizabeth' },
-  { status: 'not_attending' as const, arrivalTime: '07:30', requireArrival: true, expected: '❌ Port Elizabeth' },
-  { status: 'attending' as const, arrivalTime: null, requireArrival: true, expected: '✅ Port Elizabeth' },
-  { status: 'attending' as const, arrivalTime: null, requireArrival: false, expected: '✅ Port Elizabeth' },
-  { status: 'attending' as const, arrivalTime: '07:30', requireArrival: true, expected: '✅ Port Elizabeth — 07:30' },
- ])('renders compact attendee row: $expected', ({status,arrivalTime,requireArrival,expected}) => {
-  const result=renderScheduledMessage({id:'abc',messageType:'pre_attendance',body:'',fields:{},requireArrival},[{name:'Port Elizabeth',status,arrivalTime}],false)
-  expect(result.text).toBe(expected)
- })
- test('escapes attendee names while keeping the attendance icon first', () => {
-  const result=renderScheduledMessage({id:'abc',messageType:'pre_attendance',body:'',fields:{},requireArrival:false},[{name:'<Port & Elizabeth>',status:'awaiting',arrivalTime:null}],false)
-  expect(result.text).toBe('🔁 &lt;Port &amp; Elizabeth&gt;')
- })
-})
+describe('scheduled message content and rendering', () => {
+    test('renders explicit date and 24-hour time values without schedule inputs', () => {
+        const input: ScheduledRenderInput = {
+            id: 'announcement-1',
+            messageType: 'announcement',
+            body: '<b>Service</b>\n{{date:2026-10-04}} at {{time:07:30}}',
+        }
+        validateScheduledBody(input.messageType, input.body)
+        expect(renderScheduledMessage(input, []).text).toBe('<b>Service</b>\n431004 at 07:30')
+        expect(renderScheduledMessage(input, []).replyMarkup).toBeNull()
+    })
 
+    test('rejects retired template variables and malformed or invalid typed values', () => {
+        for (const body of [
+            '{{title}}',
+            '{{date}} {{time}}',
+            '{{date:2025-02-29}}',
+            '{{date:2024-02-30}}',
+            '{{time:24:00}}',
+            '{{time:12:60}}',
+            '{{date:2026-10-04}',
+        ]) {
+            expect(() => validateScheduledBody('announcement', body)).toThrow()
+        }
+    })
 
-test('keeps only initial actions on the shared card even when some attendees have responded', () => {
- const input={id:'abc',messageType:'pre_attendance' as const,body:'{{title}}',fields:{title:'Service'},requireArrival:false}
- for (const responses of [[],[{name:'Alex',status:'attending' as const,arrivalTime:null},{name:'Sam',status:'awaiting' as const,arrivalTime:null}]]) {
-  expect(renderScheduledMessage(input,responses,false).replyMarkup).toEqual({inline_keyboard:[[
-   {text:'Attending',callback_data:'sa:yes:abc'}, {text:'Not attending',callback_data:'sa:no:abc'},
-  ]]})
- }
+    test('renders expanded legacy rich bodies over the new-write limit up to Telegram visible limit', () => {
+        const body = `<b>${'A'.repeat(3500)}</b>`
+        expect(() => validateScheduledBody('announcement', body)).toThrow('1–3000')
+        expect(renderScheduledMessage({ id: 'legacy-1', messageType: 'announcement', body }, []).text).toBe(body)
+        expect(() => renderScheduledMessage({ id: 'legacy-2', messageType: 'announcement', body: 'A'.repeat(4097) }, [])).toThrow('Telegram’s text limit')
+    })
+
+    test('primary attendance uses intent icons, expected times, decline reasons, and its own actions', () => {
+        const input: ScheduledRenderInput = { id: 'primary-1', messageType: 'attendance', body: 'Sunday service' }
+        const responses: ScheduledResponse[] = [
+            { name: 'Sam', status: 'awaiting', arrivalTime: null },
+            { name: '<Alex & Jo>', status: 'attending', arrivalTime: '07:30', checkedInAt: '2026-10-04T05:15:00Z' },
+            { name: 'Lee', status: 'not_attending', arrivalTime: null, declineReason: '<sick & tired>' },
+        ]
+        const rendered = renderScheduledMessage(input, responses)
+        expect(rendered.text).toBe('Sunday service\n\n🔁 Sam\n🔁 &lt;Alex &amp; Jo&gt; — 07:30\n❌ Lee — &lt;sick &amp; tired&gt;\n\n<footer>Pre-attendance</footer>')
+        expect(rendered.replyMarkup?.inline_keyboard).toEqual([[
+            { text: 'Attending', style: 'primary', callback_data: 'sa:yes:primary-1' },
+            { text: 'Not attending', callback_data: 'sa:no:primary-1' },
+        ]])
+    })
+
+    test('follow-up shows actual check-in in workspace time and keeps intent when no check-in exists', () => {
+        const input: ScheduledRenderInput = {
+            id: 'child-1', messageType: 'attendance', postRole: 'follow_up', body: 'Sunday service', timezone: 'Africa/Johannesburg',
+        }
+        const responses: ScheduledResponse[] = [
+            { name: 'Alex', status: 'attending', arrivalTime: '08:00', checkedInAt: '2026-10-04T05:15:00Z' },
+            { name: 'Sam', status: 'awaiting', arrivalTime: null },
+            { name: 'Lee', status: 'not_attending', arrivalTime: null, declineReason: 'Unwell' },
+            { name: 'Jo', status: 'not_attending', arrivalTime: null, checkedInAt: '2026-10-04T06:05:00Z' },
+        ]
+        const rendered = renderScheduledMessage(input, responses)
+        expect(rendered.text).toBe('Sunday service\n\n✅ Alex — 07:15\n🔁 Sam\n❌ Lee — Unwell\n✅ Jo — 08:05\n\n<footer>Attendance</footer>')
+        expect(rendered.replyMarkup?.inline_keyboard).toEqual([[
+            { text: 'Attended', style: 'success', callback_data: 'sa:check:child-1' },
+        ]])
+    })
+
+    test('only attendance follow-ups can use the check-in action', () => {
+        expect(() => renderScheduledMessage({ id: 'announcement-1', messageType: 'announcement', postRole: 'follow_up', body: 'Update' }, [])).toThrow()
+        expect(() => validateScheduledBody('attendance', '   ')).toThrow()
+    })
+
+    test('closed legacy messages retain a closed suffix and have no actions', () => {
+        const result = renderScheduledMessage({ id: 'old-1', messageType: 'attendance', body: 'Legacy post', legacyClosed: true }, [])
+        expect(result.text).toContain('\n\nClosed')
+        expect(result.replyMarkup).toBeNull()
+    })
 })
