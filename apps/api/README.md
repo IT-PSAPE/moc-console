@@ -156,20 +156,21 @@ Authentication uses opaque host-only HttpOnly cookies through app-origin rewrite
 npm run dev:api
 ```
 
-Runs `vercel dev` on port 3001. Frontend Vite servers proxy same-origin
+Runs the local Node/Vite API on port 3001. Handler and imported operation changes
+reload through Vite's module runner without restarting the API. Frontend Vite servers proxy same-origin
 `/api/*` requests here. Set `MOC_API_PROXY_TARGET=http://127.0.0.1:3001` in
 the frontend app's `.env.local`, and add that app's origin to `ALLOWED_ORIGINS`.
 Deployed frontends use their Vercel `/api/*` rewrites.
 
-Vercel CLI reads `.env` in local-only mode, while this repository keeps local
-configuration in the ignored `.env.local`. The launcher creates a temporary
-symlink for the dev process and removes it on shutdown; it never copies or
-prints the values.
+The local API loads configuration from the ignored `apps/api/.env.local`.
+For Vercel-specific development behavior, use `npm run dev:api:vercel` instead.
+That launcher temporarily links `.env.local` as `.env` for the Vercel CLI and
+removes the link on shutdown; it never copies or prints the values.
 
 Creating and managing requests, equipment bookings and venue bookings use
 the shared SDK and API. The API must be running for all application data access.
 
-The root command pins the Vercel CLI version and deliberately avoids an
+The Vercel launcher pins the CLI version and deliberately avoids an
 API-local `dev` script: Vercel treats that script as its application
 development command, which would recursively invoke itself.
 

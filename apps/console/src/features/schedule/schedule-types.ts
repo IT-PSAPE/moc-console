@@ -1,5 +1,14 @@
 import type { CalendarEvent } from "@moc/ui/components/display/calendar";
 import type { CalendarView } from "@moc/sdk/users";
+import type { Booking } from "@moc/types/equipment/booking";
+import type { Request } from "@moc/types/requests";
+import type { VenueBooking } from "@moc/types/venues";
+
+export type ScheduleData = {
+  bookings: Booking[];
+  requests: Request[];
+  venueBookings: VenueBooking[];
+};
 
 export type ScheduleEventType = "request" | "equipment" | "venue";
 export type ScheduleItemType = "all" | ScheduleEventType;

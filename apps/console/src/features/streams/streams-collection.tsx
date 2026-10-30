@@ -1,7 +1,8 @@
 import type { ChangeEvent } from "react"
 import { Button } from "@moc/ui/components/controls/button"
 import { Decision } from "@moc/ui/components/display/decision"
-import { Alert } from "@moc/ui/components/feedback/alert"
+import { Notification } from "@moc/ui/components/feedback/notification"
+import { RetryNotification } from "@moc/ui/components/feedback/retry-notification"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Input } from "@moc/ui/components/form/input"
 import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar"
@@ -39,6 +40,11 @@ export function StreamsCollection() {
 
   function handleRetryZoomLoad() {
     void zoom.actions.retryLoad()
+  }
+
+  function handleRetryLoadErrors() {
+    if (youtube.state.loadError) handleRetryYouTubeLoad()
+    if (zoom.state.loadError) handleRetryZoomLoad()
   }
 
   function handleRetryYouTubeSync() {
@@ -88,7 +94,7 @@ export function StreamsCollection() {
 
       <Page.Content className="flex flex-col gap-4">
         {youtube.meta.isConnected && youtube.meta.needsReauth ? (
-          <Alert
+          <Notification
             variant="error"
             title="YouTube disconnected"
             description="Reconnect YouTube in Settings to resume syncing, creating, and editing streams."
@@ -96,7 +102,7 @@ export function StreamsCollection() {
           />
         ) : null}
         {zoom.meta.isConnected && zoom.meta.needsReauth ? (
-          <Alert
+          <Notification
             variant="error"
             title="Zoom disconnected"
             description="Reconnect Zoom in Settings to resume syncing, scheduling, and editing meetings."
@@ -104,25 +110,34 @@ export function StreamsCollection() {
           />
         ) : null}
         {youtube.state.loadError ? (
-          <Alert variant="error" title="Could not load YouTube streams" description={youtube.state.loadError} action={<Button variant="secondary" onClick={handleRetryYouTubeLoad}>Retry</Button>} />
+          <RetryNotification title="Could not load YouTube streams" description={youtube.state.loadError} onRetry={handleRetryYouTubeLoad} isRetrying={youtube.meta.isLoading} />
         ) : null}
         {zoom.state.loadError ? (
-          <Alert variant="error" title="Could not load Zoom meetings" description={zoom.state.loadError} action={<Button variant="secondary" onClick={handleRetryZoomLoad}>Retry</Button>} />
+          <RetryNotification title="Could not load Zoom meetings" description={zoom.state.loadError} onRetry={handleRetryZoomLoad} isRetrying={zoom.meta.isLoading} />
         ) : null}
         {youtube.state.syncError && !youtube.meta.needsReauth ? (
-          <Alert variant="error" title={providerFailureTitle("YouTube", youtube.meta.providerFailure, "YouTube sync failed")} description={youtube.state.syncError} action={<Button variant="secondary" onClick={handleRetryYouTubeSync}>Retry sync</Button>} />
+          <RetryNotification title={providerFailureTitle("YouTube", youtube.meta.providerFailure, "YouTube sync failed")} description={youtube.state.syncError} onRetry={handleRetryYouTubeSync} retryLabel="Retry sync" isRetrying={youtube.state.isSyncing} />
         ) : null}
         {zoom.state.syncError && !zoom.meta.needsReauth ? (
-          <Alert variant="error" title={providerFailureTitle("Zoom", zoom.meta.providerFailure, "Zoom sync failed")} description={zoom.state.syncError} action={<Button variant="secondary" onClick={handleRetryZoomSync}>Retry sync</Button>} />
+          <RetryNotification title={providerFailureTitle("Zoom", zoom.meta.providerFailure, "Zoom sync failed")} description={zoom.state.syncError} onRetry={handleRetryZoomSync} retryLabel="Retry sync" isRetrying={zoom.state.isSyncing} />
         ) : null}
         <Decision value={meta.isConnected ? collectionState : null}>
           <Decision.Empty>
             {meta.isConnected ? (
-              <EmptyState
-                icon={<RadioTower />}
-                title={filtered ? "No streams match your filters" : "No streams scheduled"}
-                description={filtered ? "Try a different search term or clear the provider filters." : "Create a YouTube stream or Zoom meeting to get started."}
-              />
+              youtube.state.loadError || zoom.state.loadError ? (
+                <EmptyState
+                  icon={<RadioTower />}
+                  title="Streams couldn't be loaded"
+                  description="The stream list is unavailable until the connected services finish loading."
+                  action={<Button variant="secondary" onClick={handleRetryLoadErrors}>Retry</Button>}
+                />
+              ) : (
+                <EmptyState
+                  icon={<RadioTower />}
+                  title={filtered ? "No streams match your filters" : "No streams scheduled"}
+                  description={filtered ? "Try a different search term or clear the provider filters." : "Create a YouTube stream or Zoom meeting to get started."}
+                />
+              )
             ) : (
               <EmptyState
                 icon={<RadioTower />}

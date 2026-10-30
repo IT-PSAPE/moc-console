@@ -33,7 +33,7 @@ export function MeetingDetailScreen() {
   const back = useDetailReturn(`/${routes.streams}`, "Back to streams")
   const { id } = useParams<{ id: string }>()
   const { state, actions, meta } = useMeetingDetail(id)
-  const { meeting, error, isLoading, editOpen, deleteOpen, isDeleting, localDeleteOpen, isRemovingLocal, copiedField, copyMessage } = state
+  const { meeting, error, isLoading, editOpen, deleteOpen, isDeleting, localDeleteOpen, isRemovingLocal, copiedField } = state
 
   useBreadcrumbOverride(id ?? "", meeting?.topic)
   useBreadcrumbOverride("meeting", "Meeting")
@@ -70,7 +70,6 @@ export function MeetingDetailScreen() {
   return (
     <DetailPage>
       <DetailPage.Back render={<Link to={back.href} />}>{back.label}</DetailPage.Back>
-      <Paragraph.xs role="status" aria-live="polite" className="sr-only">{copyMessage}</Paragraph.xs>
       <TopBarActions>
         {meta.canEdit && (
           <Button variant="ghost" icon={<Pencil />} onClick={handleOpenEdit}>Edit</Button>

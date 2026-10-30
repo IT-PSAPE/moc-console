@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useId, useRef, useState, type ChangeEvent, type FocusEvent as ReactFocusEvent, type KeyboardEvent, type MouseEvent } from 'react'
+import { useFeedback } from '../feedback/feedback-provider'
 
 type ComboboxOpenChangeDetails = { reason: string; event: Event; cancel: () => void }
 
@@ -43,6 +44,7 @@ export function useManagedOptionPickerState<Option>({ options, value, onValueCha
     label: string
     placeholder: string
 }) {
+    const { toast } = useFeedback()
     const fieldId = useId()
     const [query, setQuery] = useState(() => {
         const selected = options.find((option) => getOptionKey(option) === value)
@@ -73,6 +75,10 @@ export function useManagedOptionPickerState<Option>({ options, value, onValueCha
     const normalizedQuery = normalizeManagedOptionLabel(query)
     const searchPlaceholder = `Search ${label.toLocaleLowerCase()}`
     const canCreate = Boolean(onCreate && isManagedOptionNameAvailable(normalizedQuery, options, getOptionLabel, getOptionKey))
+
+    function showOperationError(title: string, cause: unknown): void {
+        if (mounted.current) toast({ title, description: cause instanceof Error ? cause.message : 'Try again.', variant: 'error' })
+    }
 
     function select(option: unknown | null) {
         const selected = option as Option | null
@@ -107,8 +113,7 @@ export function useManagedOptionPickerState<Option>({ options, value, onValueCha
                 setOpen(false)
             }
         } catch (cause) {
-            if (!mounted.current) return
-            setError(cause instanceof Error ? cause.message : 'Could not create option. Try again.')
+            showOperationError('Could not create option', cause)
         } finally { if (mounted.current) setBusy(false) }
     }
     function openRename(option: unknown) {
@@ -152,8 +157,7 @@ export function useManagedOptionPickerState<Option>({ options, value, onValueCha
             setRenameOption(null)
             restoreFieldFocus()
         } catch (cause) {
-            if (!mounted.current) return
-            setError(cause instanceof Error ? cause.message : 'Could not rename option. Try again.')
+            showOperationError('Could not rename option', cause)
         } finally { if (mounted.current) setBusy(false) }
     }
     async function changeActive(option: unknown, active: boolean) {
@@ -164,8 +168,7 @@ export function useManagedOptionPickerState<Option>({ options, value, onValueCha
             if (!mounted.current) return
             if (value === getOptionKey(option as Option)) onValueChange(updated)
         } catch (cause) {
-            if (!mounted.current) return
-            setError(cause instanceof Error ? cause.message : 'Could not update option. Try again.')
+            showOperationError('Could not update option', cause)
         } finally { if (mounted.current) setBusy(false) }
     }
     function changeContextKey(key: string | null, event?: MouseEvent) { event?.preventDefault(); event?.stopPropagation(); setContextKey(key) }

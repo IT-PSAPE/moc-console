@@ -14,7 +14,7 @@ export function useStreamDetail(id: string | undefined) {
   const navigate = useNavigate();
   const { toast } = useFeedback();
   const { currentWorkspaceId, role } = useWorkspace();
-  const { state: { streams }, actions: { syncStream, removeStream } } = useStreams();
+  const { actions: { syncStream, removeStream } } = useStreams();
   const detail = useWorkspaceDetail({ resource: "streams", fetcher: fetchStreamById, id, workspaceId: currentWorkspaceId });
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -22,8 +22,7 @@ export function useStreamDetail(id: string | undefined) {
   const [localDeleteOpen, setLocalDeleteOpen] = useState(false);
   const [isRemovingLocal, setIsRemovingLocal] = useState(false);
   const copied = useCopyFeedback<"url" | "key" | "ingestion">();
-  const cachedStream = streams.find((item) => item.id === id) ?? null;
-  const stream = detail.data ?? cachedStream;
+  const stream = detail.data;
   const canCleanupLocal = Boolean(
     stream
     && (stream.streamStatus === "complete"
@@ -98,15 +97,14 @@ export function useStreamDetail(id: string | undefined) {
   const state = useMemo(() => ({
     stream,
     error: detail.error,
-    isLoading: !cachedStream && detail.isLoading,
+    isLoading: detail.isLoading,
     editOpen,
     deleteOpen,
     isDeleting,
     localDeleteOpen,
     isRemovingLocal,
     copiedField: copied.state.copiedField,
-    copyMessage: copied.state.copyMessage,
-  }), [cachedStream, copied.state.copiedField, copied.state.copyMessage, deleteOpen, detail.error, detail.isLoading, editOpen, isDeleting, isRemovingLocal, localDeleteOpen, stream]);
+  }), [copied.state.copiedField, deleteOpen, detail.error, detail.isLoading, editOpen, isDeleting, isRemovingLocal, localDeleteOpen, stream]);
 
   return {
     state,

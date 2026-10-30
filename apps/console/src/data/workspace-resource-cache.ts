@@ -14,14 +14,17 @@ export function workspaceResourceKey(workspaceId: string | null, resource: strin
 }
 
 const dependents: Record<string, readonly string[]> = {
-  requests: ['work-calendar', 'request-linked-records'],
-  bookings: ['work-calendar', 'request-linked-records'],
-  'venue-bookings': ['work-calendar', 'request-linked-records'],
+  'daily-quotes': ['daily-quote'],
+  'notification-settings': ['daily-quote'],
+  'scheduled-messages': ['overview-messages'],
+  requests: ['request-linked-records'],
+  bookings: ['request-linked-records'],
+  'venue-bookings': ['request-linked-records'],
   checklists: ['request-linked-records'],
   streams: ['request-linked-records'],
   'zoom-meetings': ['request-linked-records'],
-  venues: ['work-calendar', 'venue-bookings', 'request-linked-records'],
-  'venue-events': ['work-calendar', 'venue-bookings'],
+  venues: ['venue-bookings', 'request-linked-records'],
+  'venue-events': ['venue-bookings'],
   'telegram-groups': ['scheduled-messages'],
   users: ['members', 'users', 'scheduled-messages'],
   'member-types': ['scheduled-messages'],

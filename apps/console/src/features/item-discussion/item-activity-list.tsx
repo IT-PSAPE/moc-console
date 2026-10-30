@@ -3,7 +3,8 @@ import { Section } from '@moc/ui/components/display/section'
 import { ScrollArea } from '@moc/ui/components/display/scroll-area'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { Timeline } from '@moc/ui/components/display/timeline'
-import { RetryAlert } from '@moc/ui/components/feedback/retry-alert'
+import { EmptyState } from '@moc/ui/components/feedback/empty-state'
+import { RetryNotification } from '@moc/ui/components/feedback/retry-notification'
 import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import type { ActivityGroupView, ActivityView } from './discussion-types'
 import { useItemDiscussionContext } from './item-discussion-context'
@@ -24,8 +25,9 @@ export function ItemActivityList() {
                 <ScrollArea.Content>
                     <Section.Body className="gap-6 pr-2 pb-2">
                         {state.activityLoading && <LoadingSpinner className="py-8" />}
-                        {state.activityError && <RetryAlert title="Couldn’t load activity" description={state.activityError} onRetry={actions.refreshActivity} isRetrying={state.activityFetching} />}
+                        {state.activityError && <RetryNotification title="Couldn’t load activity" description={state.activityError} onRetry={actions.refreshActivity} isRetrying={state.activityFetching} />}
                         {state.activityGroups.map(renderGroup)}
+                        {!state.activityLoading && state.activityError && !state.activityGroups.length && <EmptyState title="Activity couldn't be loaded" description={state.activityError} action={<Button variant="secondary" onClick={actions.refreshActivity} disabled={state.activityFetching}>Retry</Button>} />}
                         {!state.activityLoading && !state.activityError && !state.activityGroups.length && <Paragraph.sm className="py-3 text-tertiary">No recorded changes.</Paragraph.sm>}
                         {state.hasMoreActivity && <Button variant="ghost" size="sm" className="self-start" onClick={actions.loadMoreActivity} disabled={state.activityFetching}>{state.activityFetching ? 'Loading…' : 'Load earlier activity'}</Button>}
                     </Section.Body>

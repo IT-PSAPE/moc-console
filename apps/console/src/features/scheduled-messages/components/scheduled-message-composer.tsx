@@ -56,12 +56,11 @@ export function ScheduledMessageComposer() {
     }
 
     function renderDestination() {
-        if (!meta.groupItems.length) return <EmptyState icon={<MessageSquare />} title="No linked Telegram groups" description="Link the bot to a group before sending a message." action={<Button.Link variant="secondary" render={<Link to={`/${routes.settings}?tab=notifications`} />}>Telegram settings</Button.Link>} />
+        if (!meta.destinationItems.length) return <EmptyState icon={<MessageSquare />} title="No linked Telegram groups" description="Link the bot to a group before sending a message." action={<Button.Link variant="secondary" render={<Link to={`/${routes.settings}?tab=notifications`} />}>Telegram settings</Button.Link>} />
         return <Section>
             <Section.Header size="sm" title="Where to send" />
             <Section.Body className="gap-4">
-                <FormField label="Telegram group"><SelectField name="group" label="Telegram group" items={meta.groupItems} value={state.draft.groupChatId} onValueChange={actions.setGroup} /></FormField>
-                {meta.hasTopics ? <FormField label="Topic"><SelectField name="topic" label="Topic" items={meta.topicItems} value={state.draft.threadId || 'main'} onValueChange={actions.setTopic} /></FormField> : null}
+                <FormField label="Telegram group or topic"><SelectField name="destination" label="Telegram group or topic" placeholder="Choose a group or topic" items={meta.destinationItems} value={meta.destinationValue} onValueChange={actions.setDestination} disabled={state.busy} /></FormField>
             </Section.Body>
         </Section>
     }
@@ -80,14 +79,13 @@ export function ScheduledMessageComposer() {
                         <FormField label="Repeat"><SelectField name="repeat" label="Repeat" items={meta.frequencyItems} value={state.draft.frequency} onValueChange={actions.setFrequency} /></FormField>
                         {meta.isRecurring ? <FormField label="Last recurring date" optional><Input type="date" name="untilOn" aria-label="Last recurring date" value={state.draft.untilOn} onChange={actions.changeDraft} /></FormField> : null}
                     </div>
-                    <Paragraph.xs className="text-tertiary">Times use the workspace timezone: {meta.workspaceTimezone}. Scheduled messages are checked hourly and may be delayed by up to an hour.</Paragraph.xs>
-                </> : <Paragraph.xs className="text-tertiary">The message is queued for Telegram now. Workspace timezone: {meta.workspaceTimezone}.</Paragraph.xs>}
+                </> : null}
             </Section.Body>
         </Section>
     }
 
     if (state.isInitialLoading) return <Page.Loading />
-    if (state.loadError) return <Alert variant="error" title="Couldn't load message setup" description={state.loadError} action={<Button variant="secondary" onClick={actions.reload}>Retry</Button>} />
+    if (state.loadError) return <EmptyState title="Message setup is unavailable" action={<Button variant="secondary" onClick={actions.reload}>Retry</Button>} />
     return <div className="flex flex-col gap-6">
         <FormField label="Message type"><SelectField name="message-type" label="Message type" items={meta.typeItems} value={state.draft.messageType} onValueChange={actions.changeDraftType} /></FormField>
         <Section>

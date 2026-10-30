@@ -13,7 +13,7 @@ export function useMeetingDetail(id: string | undefined) {
   const navigate = useNavigate();
   const { toast } = useFeedback();
   const { currentWorkspaceId, role } = useWorkspace();
-  const { state: { zoomMeetings }, actions: { syncMeeting, removeMeeting } } = useStreams();
+  const { actions: { syncMeeting, removeMeeting } } = useStreams();
   const detail = useWorkspaceDetail({ resource: "zoom-meetings", fetcher: fetchZoomMeetingById, id, workspaceId: currentWorkspaceId });
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -21,8 +21,7 @@ export function useMeetingDetail(id: string | undefined) {
   const [localDeleteOpen, setLocalDeleteOpen] = useState(false);
   const [isRemovingLocal, setIsRemovingLocal] = useState(false);
   const copied = useCopyFeedback<"join" | "pass">();
-  const cachedMeeting = zoomMeetings.find((item) => item.id === id) ?? null;
-  const meeting = detail.data ?? cachedMeeting;
+  const meeting = detail.data;
   const canCleanupLocal = Boolean(
     meeting
     && meeting.recurrenceType === "none"
@@ -90,15 +89,14 @@ export function useMeetingDetail(id: string | undefined) {
   const state = useMemo(() => ({
     meeting,
     error: detail.error,
-    isLoading: !cachedMeeting && detail.isLoading,
+    isLoading: detail.isLoading,
     editOpen,
     deleteOpen,
     isDeleting,
     localDeleteOpen,
     isRemovingLocal,
     copiedField: copied.state.copiedField,
-    copyMessage: copied.state.copyMessage,
-  }), [cachedMeeting, copied.state.copiedField, copied.state.copyMessage, deleteOpen, detail.error, detail.isLoading, editOpen, isDeleting, isRemovingLocal, localDeleteOpen, meeting]);
+  }), [copied.state.copiedField, deleteOpen, detail.error, detail.isLoading, editOpen, isDeleting, isRemovingLocal, localDeleteOpen, meeting]);
 
   return {
     state,

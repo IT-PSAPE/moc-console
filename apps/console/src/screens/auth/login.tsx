@@ -1,5 +1,5 @@
 import { Button } from "@moc/ui/components/controls/button"
-import { Alert } from "@moc/ui/components/feedback/alert"
+import { Notification } from "@moc/ui/components/feedback/notification"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { GoogleIcon } from "@moc/ui/components/display/google-icon"
 import { AuthLayout } from "./auth-layout"
@@ -12,7 +12,7 @@ export function LoginScreen() {
     <AuthLayout>
       <div className="flex flex-col gap-4">
         <Label.md>Sign in</Label.md>
-        {state.error && <Alert variant="error" title={state.error} />}
+        {state.error && <Notification variant="error" title={state.error} />}
         <Button type="button" variant="secondary" disabled={state.loading} className="w-full" onClick={actions.signIn}>
           <GoogleIcon />
           {state.loading ? "Connecting to Google…" : "Continue with Google"}

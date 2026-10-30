@@ -2,7 +2,7 @@ import { Button } from "@moc/ui/components/controls/button";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { Badge } from "@moc/ui/components/display/badge";
-import { Alert } from "@moc/ui/components/feedback/alert";
+import { Notification } from "@moc/ui/components/feedback/notification";
 import { Input } from "@moc/ui/components/form/input";
 import { Modal } from "@moc/ui/components/overlays/modal";
 import { Camera, Keyboard, ScanLine, Smartphone } from "lucide-react";
@@ -89,7 +89,7 @@ export function BookingScanModal({
                 </Paragraph.sm>
               )}
 
-              {error ? <Alert title="Scanner error" description={error} variant="error" /> : null}
+              {open && error ? <Notification title="Scanner error" description={error} variant="error" /> : null}
 
               <div className="flex items-center gap-2">
                 <Input

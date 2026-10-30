@@ -8,7 +8,7 @@ import type { RequestLinkedRecord } from "@/data/request-links"
 import { LinkedRecordRow } from "@moc/ui/components/display/linked-record-row"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
 import { Paragraph } from "@moc/ui/components/display/text"
-import { RetryAlert } from "@moc/ui/components/feedback/retry-alert"
+import { RetryNotification } from "@moc/ui/components/feedback/retry-notification"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { RecordPicker } from "@moc/ui/components/form/record-picker"
 import { Dropdown } from "@moc/ui/components/overlays/dropdown"
@@ -35,7 +35,7 @@ export function RequestLinkedRecords({ request, enabled = true }: RequestLinkedR
     <>
       <MetaRow icon={<Link2 />} label="Linked work">
         <div className="flex min-w-0 flex-col gap-1">
-          {state.isLoading ? <LoadingSpinner size="sm" className="h-control-sm justify-start px-3" /> : state.error ? <RetryAlert title="Could not load related work" description={state.error.message} onRetry={actions.retry} /> : <>
+          {state.isLoading ? <LoadingSpinner size="sm" className="h-control-sm justify-start px-3" /> : state.error ? <RetryNotification title="Could not load related work" description={state.error.message} onRetry={actions.retry} isRetrying={state.isLoading} /> : <>
             {state.records.map(renderRecord)}
             {!state.records.length && !meta.canUpdate && <Paragraph.sm className="text-tertiary">Not linked</Paragraph.sm>}
             <div className="flex min-w-0 items-center gap-1">

@@ -46,7 +46,6 @@ export function BroadcastDetailPanel({ broadcast, canDelete, onDelete }: Broadca
 
   return (
     <>
-      <Paragraph.xs role="status" aria-live="polite" className="sr-only">{state.copyMessage}</Paragraph.xs>
       <Paragraph.xs role="status" aria-live="polite" className="sr-only">{state.isSaving ? "Saving broadcast…" : ""}</Paragraph.xs>
       <SplitPanel.Header className="flex items-center gap-1">
         <SplitPanel.Close aria-label="Close broadcast" size="sm" />

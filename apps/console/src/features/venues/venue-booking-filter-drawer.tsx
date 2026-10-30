@@ -11,6 +11,8 @@ import { venueBookingPhaseGroups } from "@moc/types/venues";
 import { parseSortValue } from "@/utils/parse-sort-value";
 import type { useVenueBookingFilters } from "./use-venue-booking-filters";
 import { ManagedOptionPicker } from "@moc/ui/components/form/managed-option-picker";
+import { Button } from "@moc/ui/components/controls/button";
+import { Notification } from "@moc/ui/components/feedback/notification";
 import type { Venue, VenueEvent } from "@moc/types/venues";
 
 function venueKey(venue: Venue) { return venue.id }
@@ -54,6 +56,14 @@ export function VenueBookingFilterDrawer({ filters }: VenueBookingFilterDrawerPr
         setEventId(event?.id ?? null);
     }
 
+    function retryVenues() {
+        void options.venues.load(true);
+    }
+
+    function retryEvents() {
+        void options.events.load(true);
+    }
+
     return (
         <FilterDrawer hasActiveFilters={hasActiveFilters} onReset={reset}>
             <Tabs defaultTab="filters">
@@ -88,7 +98,7 @@ export function VenueBookingFilterDrawer({ filters }: VenueBookingFilterDrawerPr
                                     <ManagedOptionPicker.Field />
                                     <ManagedOptionPicker.Content />
                                 </ManagedOptionPicker.Root>
-                                {options.venues.error && <p role="alert" className="paragraph-xs text-error">Venues could not be loaded.</p>}
+                                {options.venues.error && <Notification title="Could not load venues" description={options.venues.error.message} variant="error" action={<Button variant="secondary" size="sm" onClick={retryVenues} disabled={options.venues.isLoading}>Retry</Button>} />}
                             </FilterDrawer.Options>
                         </FilterDrawer.Group>
                         <FilterDrawer.Group label="Event type">
@@ -97,7 +107,7 @@ export function VenueBookingFilterDrawer({ filters }: VenueBookingFilterDrawerPr
                                     <ManagedOptionPicker.Field />
                                     <ManagedOptionPicker.Content />
                                 </ManagedOptionPicker.Root>
-                                {options.events.error && <p role="alert" className="paragraph-xs text-error">Event types could not be loaded.</p>}
+                                {options.events.error && <Notification title="Could not load event types" description={options.events.error.message} variant="error" action={<Button variant="secondary" size="sm" onClick={retryEvents} disabled={options.events.isLoading}>Retry</Button>} />}
                             </FilterDrawer.Options>
                         </FilterDrawer.Group>
                         <FilterDrawer.Group label="Timeline">

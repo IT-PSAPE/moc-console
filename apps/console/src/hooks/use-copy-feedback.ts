@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useFeedback } from "@moc/ui/components/feedback/feedback-provider";
 
 export function useCopyFeedback<Field extends string>(duration = 2000) {
+  const { toast } = useFeedback();
   const [copiedField, setCopiedField] = useState<Field | null>(null);
-  const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const timeoutRef = useRef<number | null>(null);
 
   useEffect(() => () => {
@@ -14,17 +15,16 @@ export function useCopyFeedback<Field extends string>(duration = 2000) {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedField(field);
-      setCopyMessage("Copied to clipboard.");
+      toast({ title: "Copied to clipboard", variant: "success" });
     } catch {
       setCopiedField(null);
-      setCopyMessage("Could not copy to the clipboard. Try again.");
+      toast({ title: "Could not copy to the clipboard", description: "Try again.", variant: "error" });
     }
     if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current);
     timeoutRef.current = window.setTimeout(() => {
       setCopiedField(null);
-      setCopyMessage(null);
     }, duration);
-  }, [duration]);
+  }, [duration, toast]);
 
-  return { state: { copiedField, copyMessage }, actions: { copy } };
+  return { state: { copiedField }, actions: { copy } };
 }

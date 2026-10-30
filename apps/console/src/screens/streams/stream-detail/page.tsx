@@ -30,7 +30,7 @@ export function StreamDetailScreen() {
   const back = useDetailReturn(`/${routes.streams}`, "Back to streams")
   const { id } = useParams<{ id: string }>()
   const { state, actions, meta } = useStreamDetail(id)
-  const { stream, error, isLoading, editOpen, deleteOpen, isDeleting, localDeleteOpen, isRemovingLocal, copiedField, copyMessage } = state
+  const { stream, error, isLoading, editOpen, deleteOpen, isDeleting, localDeleteOpen, isRemovingLocal, copiedField } = state
 
   useBreadcrumbOverride(id ?? "", stream?.title)
   useBreadcrumbOverride("stream", "Stream")
@@ -66,7 +66,6 @@ export function StreamDetailScreen() {
   return (
     <DetailPage>
       <DetailPage.Back render={<Link to={back.href} />}>{back.label}</DetailPage.Back>
-      <Paragraph.xs role="status" aria-live="polite" className="sr-only">{copyMessage}</Paragraph.xs>
       <TopBarActions>
         {meta.canEdit && (
           <Button variant="ghost" icon={<Pencil />} onClick={handleOpenEdit}>Edit</Button>

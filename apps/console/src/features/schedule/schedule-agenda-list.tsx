@@ -1,13 +1,14 @@
 import { CalendarDays } from 'lucide-react'
+import { cn } from '@moc/utils/cn'
 import { GroupedList } from '@moc/ui/components/display/grouped-list'
 import { Label } from '@moc/ui/components/display/text'
 import { EmptyState } from '@moc/ui/components/feedback/empty-state'
 import type { ScheduleAgendaGroup, ScheduleAgendaItem } from './schedule-agenda'
 import { ScheduleEventRow } from './schedule-event-row'
 
-type ScheduleAgendaListProps = { groups: ScheduleAgendaGroup[]; returnTo: string }
+type ScheduleAgendaListProps = { groups: ScheduleAgendaGroup[]; returnTo: string; emptyTitle?: string; className?: string }
 
-export function ScheduleAgendaList({ groups, returnTo }: ScheduleAgendaListProps) {
+export function ScheduleAgendaList({ groups, returnTo, emptyTitle = 'No work items', className }: ScheduleAgendaListProps) {
   function renderItem(item: ScheduleAgendaItem) {
     return <ScheduleEventRow key={item.id} item={item} returnTo={returnTo} />
   }
@@ -20,7 +21,7 @@ export function ScheduleAgendaList({ groups, returnTo }: ScheduleAgendaListProps
       <GroupedList.Content className="gap-2 overflow-visible rounded-none border-0 bg-transparent shadow-none divide-y-0">{group.items.map(renderItem)}</GroupedList.Content>
     </GroupedList.Group>
   }
-  return <section aria-label="Agenda" className="min-h-0 min-w-0 flex-1 overflow-y-auto p-2">
-    {groups.length ? <GroupedList>{groups.map(renderGroup)}</GroupedList> : <EmptyState icon={<CalendarDays />} title="No work items" />}
+  return <section aria-label="Agenda" className={cn('min-h-0 min-w-0 flex-1 overflow-y-auto p-2', className)}>
+    {groups.length ? <GroupedList>{groups.map(renderGroup)}</GroupedList> : <EmptyState icon={<CalendarDays />} title={emptyTitle} />}
   </section>
 }

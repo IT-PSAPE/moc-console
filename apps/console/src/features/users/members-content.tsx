@@ -4,9 +4,9 @@ import { Section } from '@moc/ui/components/display/section'
 import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import { Input } from '@moc/ui/components/form/input'
 import { Button } from '@moc/ui/components/controls/button'
-import { Alert } from '@moc/ui/components/feedback/alert'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { Page } from '@moc/ui/components/layout/page'
+import { RetryNotification } from '@moc/ui/components/feedback/retry-notification'
 import { ResourceLoadError } from '@/components/feedback/resource-load-error'
 import { useMembersScreen } from './use-members-screen'
 import { UsersList } from './users-list'
@@ -32,7 +32,7 @@ export function MembersContent() {
               <Section>
                 <Section.Header title="Directory" description={`${meta.totalUsers} people have access to this workspace.`} />
                 <Section.Body>
-                  {state.loadError && <ResourceLoadError title="Couldn't load members" error={state.loadError} onRetry={actions.retryLoad} />}
+                  {state.loadError && (meta.totalUsers > 0 ? <RetryNotification title="Couldn't load members" description={state.loadError.message} onRetry={actions.retryLoad} isRetrying={meta.isLoading} /> : <ResourceLoadError title="Couldn't load members" error={state.loadError} onRetry={actions.retryLoad} />)}
                   {meta.totalUsers > 0 || !state.loadError ? meta.isLoading && meta.totalUsers === 0
                     ? <LoadingSpinner className="py-16" />
                     : <UsersList users={meta.users} isFiltered={meta.isFiltered} roles={meta.roles} canManage={meta.canManage} onRoleChange={actions.updateRole} /> : null}
@@ -47,7 +47,6 @@ export function MembersContent() {
                       <Input id="member-invite-email" aria-label="Email address to invite" name="invite-email" autoComplete="email" type="email" placeholder="person@example.com" value={state.email} onChange={actions.changeEmail} required className="min-w-56 flex-1" />
                       <Button type="submit" disabled={state.isInviting}>{state.isInviting ? "Sending…" : "Invite"}</Button>
                     </div>
-                    {state.invitationError && <Alert variant="error" title={state.invitationError} />}
                   </form>
                   {meta.invitations.length > 0
                     ? <DividedList>{meta.invitations.map(renderInvitation)}</DividedList>

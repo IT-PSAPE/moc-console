@@ -1,31 +1,34 @@
 import { getScheduleAgendaGroups, getScheduleEventItem } from "./schedule-agenda";
-import { useCallback, useEffect, useMemo } from "react";
-import { fetchScheduleData } from "@/features/schedule/schedule-service";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAgendaEvents, getScheduleEvents, matchesScheduleFilters } from "@/features/schedule/schedule-events";
-import { useWorkspaceResource } from "@/hooks/use-workspace-resource";
 import { useWorkspace } from "@/lib/workspace-context";
 import { useSearchParams } from "react-router-dom";
-import type { ScheduleData } from "@/features/schedule/schedule-service";
+import type { ScheduleData } from "./schedule-types";
 import { getBrowserTimeZone } from "@moc/utils/browser-date-time";
 import { getCalendarDateRange, getCalendarDayEvents, getCalendarMonthDays } from "@moc/utils/calendar-date-range";
 import { getScheduleCalendarDates, parseScheduleItemType, updateScheduleDateQuery } from "@/features/schedule/schedule-query";
 import { calendarViewOptions, getCalendarView } from "@/features/preferences/calendar-view-options";
 import { useUserPreferences } from "@/features/preferences/user-preferences-provider";
 import { useRequests } from "@/features/requests/request-provider";
+import { useEquipment } from "@/features/equipment/equipment-provider";
+import { useVenueBookings } from "@/features/venues/venue-bookings-provider";
 import { useManagedVenueEventOptions, useManagedVenueOptions } from "@/features/venues/use-managed-venue-option-resource";
-
-const emptyData: ScheduleData = { bookings: [], requests: [], venueBookings: [] };
 
 function parseList(value: string | null): string[] { return [...new Set(value?.split(",").filter(Boolean) ?? [])]; }
 function hasCustomVenueEvent(bookings: ScheduleData["venueBookings"]): boolean { return bookings.some(booking => booking.eventOther !== null); }
 
 export function useSchedule() {
+  const [currentTimeScrollRequest, setCurrentTimeScrollRequest] = useState(0);
   const { state: preferences, actions: { retry: retryPreferences } } = useUserPreferences();
   const { currentWorkspaceId } = useWorkspace();
   const { state: requestState, actions: requestActions } = useRequests();
+  const { state: equipmentState, actions: equipmentActions } = useEquipment();
+  const { state: venueBookingState, actions: venueBookingActions } = useVenueBookings();
   const managedVenues = useManagedVenueOptions();
   const managedVenueEvents = useManagedVenueEventOptions();
-  const { loadCategories, retryCategories } = requestActions;
+  const { loadActiveRequests, retryActiveRequests, retryCategories } = requestActions;
+  const { loadBookings, retryBookings } = equipmentActions;
+  const { loadBookings: loadVenueBookings, retryBookings: retryVenueBookings } = venueBookingActions;
   const { load: loadVenues } = managedVenues;
   const { load: loadVenueEvents } = managedVenueEvents;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -46,12 +49,16 @@ export function useSchedule() {
   const selectedVenueEvents = useMemo(() => parseList(searchParams.get("venueEvents")), [searchParams]);
   const selectedVenues = useMemo(() => parseList(searchParams.get("venues")), [searchParams]);
   const displayTimezone = getBrowserTimeZone();
-  const fetcher = useCallback((workspaceId: string) => fetchScheduleData(workspaceId), []);
-  const { data, error: resourceError, isLoading, isInitialLoading, load } = useWorkspaceResource({ emptyValue: emptyData, fetcher, resource: "work-calendar", workspaceId: currentWorkspaceId });
+  const data = useMemo<ScheduleData>(() => ({
+    requests: requestState.activeRequests,
+    bookings: equipmentState.bookings,
+    venueBookings: venueBookingState.bookings,
+  }), [requestState.activeRequests, equipmentState.bookings, venueBookingState.bookings]);
   useEffect(() => {
-    void load();
-    void loadCategories();
-  }, [load, loadCategories]);
+    void loadActiveRequests();
+    void loadBookings();
+    void loadVenueBookings();
+  }, [loadActiveRequests, loadBookings, loadVenueBookings]);
   const allEvents = useMemo(() => getScheduleEvents(data, displayTimezone), [data, displayTimezone]);
   const viewEvents = useMemo(() => {
     if (view === "agenda") return getAgendaEvents(allEvents);
@@ -115,7 +122,10 @@ export function useSchedule() {
     }
     changeDate(direction * (view === "week" ? 7 : 1));
   }, [changeDate, month, selectDate, selectedDate, view]);
-  const goToToday = useCallback(() => selectDate(new Date()), [selectDate]);
+  const goToToday = useCallback(() => {
+    selectDate(new Date());
+    setCurrentTimeScrollRequest((request) => request + 1);
+  }, [selectDate]);
   const toggleValue = useCallback((key: string, values: string[], value: string) => setParamList(key, values.includes(value) ? values.filter((item) => item !== value) : [...values, value]), [setParamList]);
   const toggleFilter = useCallback((name: string, value: string) => {
     if (name === "categories") toggleValue("categories", selectedCategories, value);
@@ -129,16 +139,18 @@ export function useSchedule() {
   }, [searchParams, setSearchParams]);
   const retry = useCallback(() => {
     retryPreferences();
-    void load(true);
+    void retryActiveRequests();
+    void retryBookings();
+    void retryVenueBookings();
     void retryCategories();
     void loadVenues(true);
     void loadVenueEvents(true);
-  }, [load, loadVenues, loadVenueEvents, retryCategories, retryPreferences]);
-  const initialLoading = preferences.isLoading || isInitialLoading || requestState.isInitialLoadingCategories || managedVenues.isInitialLoading || managedVenueEvents.isInitialLoading;
-  const loading = isLoading || requestState.isLoadingCategories || managedVenues.isLoading || managedVenueEvents.isLoading;
-  const error = resourceError ?? requestState.categoriesError ?? managedVenues.error ?? managedVenueEvents.error;
+  }, [retryActiveRequests, retryBookings, retryVenueBookings, loadVenues, loadVenueEvents, retryCategories, retryPreferences]);
+  const initialLoading = preferences.isLoading || requestState.isInitialLoadingActive || equipmentState.isInitialLoadingBookings || venueBookingState.isInitialLoading || requestState.isInitialLoadingCategories || managedVenues.isInitialLoading || managedVenueEvents.isInitialLoading;
+  const loading = requestState.isLoadingActive || equipmentState.isLoadingBookings || venueBookingState.isLoading || requestState.isLoadingCategories || managedVenues.isLoading || managedVenueEvents.isLoading;
+  const error = requestState.activeError ?? equipmentState.bookingsError ?? venueBookingState.error ?? requestState.categoriesError ?? managedVenues.error ?? managedVenueEvents.error;
   return {
-    state: { events, agendaGroups, eventDetails, error, isLoading: loading, isInitialLoading: initialLoading, month, date: selectedDate, view, itemType, search, selectedCategories, selectedVenueEvents, selectedVenues, hasActiveFilters },
+    state: { events, agendaGroups, eventDetails, error, isLoading: loading, isInitialLoading: initialLoading, month, date: selectedDate, view, itemType, search, selectedCategories, selectedVenueEvents, selectedVenues, hasActiveFilters, currentTimeScrollRequest },
     actions: {
       changeView, changeItemType, changeSearch, changePeriod, selectDate, goToToday, resetFilters,
       toggleFilter,

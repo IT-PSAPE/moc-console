@@ -5,6 +5,7 @@ export const routes = {
     work: 'work',
     telegram: 'telegram',
     venueCatalog: 'venue-catalog',
+    dailyQuotes: 'daily-quotes',
     requests: 'requests',
     members: 'members',
     schedule: 'schedule',

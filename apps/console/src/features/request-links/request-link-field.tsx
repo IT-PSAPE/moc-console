@@ -6,7 +6,7 @@ import { FileText } from "lucide-react"
 import { LinkedRecordRow } from "@moc/ui/components/display/linked-record-row"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
 import { Paragraph } from "@moc/ui/components/display/text"
-import { RetryAlert } from "@moc/ui/components/feedback/retry-alert"
+import { RetryNotification } from "@moc/ui/components/feedback/retry-notification"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { RecordPicker } from "@moc/ui/components/form/record-picker"
 import { Link } from "react-router-dom"
@@ -28,7 +28,7 @@ export function RequestLinkField({ kind, id, className }: RequestLinkFieldProps)
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <MetaRow icon={<FileText />} label="Request">{renderValue()}</MetaRow>
-      {state.error && <RetryAlert title="Could not load request link" description={state.error.message} onRetry={actions.retry} />}
+      {state.error && <RetryNotification title="Could not load request link" description={state.error.message} onRetry={actions.retry} />}
     </div>
   )
 }

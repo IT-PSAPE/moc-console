@@ -1,8 +1,10 @@
+import { Button } from '@moc/ui/components/controls/button'
 import { DividedList } from '@moc/ui/components/display/divided-list'
+import { EmptyState } from '@moc/ui/components/feedback/empty-state'
 import { Page } from '@moc/ui/components/layout/page'
 import { Section } from '@moc/ui/components/display/section'
 import { Paragraph } from '@moc/ui/components/display/text'
-import { RetryAlert } from '@moc/ui/components/feedback/retry-alert'
+import { RetryNotification } from '@moc/ui/components/feedback/retry-notification'
 import { ConnectEventsModal } from '@/features/notifications/connect-events-modal'
 import { useWorkspace } from '@/lib/workspace-context'
 import { MemberDestinationRow } from './member-destination-row'
@@ -40,8 +42,8 @@ function TelegramPageContent() {
           <Section>
             <Section.Header title="Individual members" description="Choose which events are sent to each linked member in Telegram." />
             <Section.Body>
-              {state.membersError && <RetryAlert title="Couldn't load members" description={state.membersError.message} onRetry={actions.loadMembers} isRetrying={state.isMembersLoading} />}
-              {state.linkedUsers.length > 0 ? <DividedList>{state.linkedUsers.map(renderUser)}</DividedList> : state.membersError ? null : state.isMembersLoading ? <Paragraph.sm className="py-8 text-center text-tertiary">Loading members…</Paragraph.sm> : <Paragraph.sm className="py-8 text-center text-tertiary">No linked members found.</Paragraph.sm>}
+              {state.membersError && <RetryNotification title="Couldn't load members" description={state.membersError.message} onRetry={actions.loadMembers} isRetrying={state.isMembersLoading} />}
+              {state.linkedUsers.length > 0 ? <DividedList>{state.linkedUsers.map(renderUser)}</DividedList> : state.membersError ? <EmptyState title="Members couldn't be loaded" description={state.membersError.message} action={<Button variant="secondary" onClick={actions.loadMembers} disabled={state.isMembersLoading}>Retry</Button>} /> : state.isMembersLoading ? <Paragraph.sm className="py-8 text-center text-tertiary">Loading members…</Paragraph.sm> : <Paragraph.sm className="py-8 text-center text-tertiary">No linked members found.</Paragraph.sm>}
             </Section.Body>
           </Section>
         </Page.Content>

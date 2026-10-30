@@ -1,9 +1,9 @@
 import { routes } from '@/screens/console-routes'
-import { Boxes, Building2, ClipboardList, LayoutDashboard, Megaphone, MessageSquare, MessagesSquare, Radio, Send, UsersRound, BriefcaseBusiness, Clapperboard, type LucideIcon } from 'lucide-react'
+import { Boxes, Building2, ClipboardList, LayoutDashboard, Megaphone, MessageSquare, MessagesSquare, Quote, Radio, Send, UsersRound, BriefcaseBusiness, Clapperboard, type LucideIcon } from 'lucide-react'
 
 export type NavigationSection = 'overview' | 'work' | 'production' | 'communications' | 'people'
 export type NavigationDestination = { title: string; route: string; icon: LucideIcon }
-export type NavigationAccess = { canManageMembers: boolean; canManageScheduledMessages: boolean; canManageTelegram: boolean }
+export type NavigationAccess = { canManageMembers: boolean; canManageScheduledMessages: boolean; canManageTelegram: boolean; canManageQuotes: boolean }
 type PrimaryDestination = { id: NavigationSection; title: string; icon: LucideIcon; route?: string }
 
 export const navigationSections: PrimaryDestination[] = [
@@ -27,12 +27,13 @@ const resources: NavigationDestination[] = [
     { title: 'Equipment', route: routes.equipment, icon: Boxes },
     { title: 'Venues', route: routes.venueCatalog, icon: Building2 },
 ]
+const dailyQuotes: NavigationDestination = { title: 'Daily quotes', route: routes.dailyQuotes, icon: Quote }
 
 export function navigationDestinations(section: NavigationSection, access: NavigationAccess): NavigationDestination[] {
     if (section === 'overview' || section === 'work') return []
     if (section === 'production') return productionDestinations
     if (section === 'communications') return communicationDestinations.filter(destination => destination.route === routes.telegram ? access.canManageTelegram : access.canManageScheduledMessages)
-    return access.canManageMembers ? [members, ...resources] : resources
+    return [...(access.canManageMembers ? [members] : []), ...resources, ...(access.canManageQuotes ? [dailyQuotes] : [])]
 }
 
 export function navigationEntryRoute(section: NavigationSection, access: NavigationAccess): string | null {
@@ -51,6 +52,6 @@ export function navigationSectionForPath(pathname: string): NavigationSection | 
     if ([routes.work, routes.schedule, routes.requests, routes.bookings, routes.venues].some(destination => destination === route)) return 'work'
     if (productionDestinations.some(destination => destination.route === route)) return 'production'
     if (communicationDestinations.some(destination => destination.route === route)) return 'communications'
-    if ([members, ...resources].some(destination => destination.route === route)) return 'people'
+    if ([members, ...resources, dailyQuotes].some(destination => destination.route === route)) return 'people'
     return null
 }

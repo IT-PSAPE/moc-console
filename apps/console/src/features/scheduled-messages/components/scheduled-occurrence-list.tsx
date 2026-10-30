@@ -4,7 +4,7 @@ import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import { DividedList } from '@moc/ui/components/display/divided-list'
 import { Decision } from '@moc/ui/components/display/decision'
 import { Badge } from '@moc/ui/components/display/badge'
-import { Alert } from '@moc/ui/components/feedback/alert'
+import { RetryNotification } from '@moc/ui/components/feedback/retry-notification'
 import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import { EmptyState } from '@moc/ui/components/feedback/empty-state'
 import { Dropdown } from '@moc/ui/components/overlays/dropdown'
@@ -69,7 +69,7 @@ export function ScheduledOccurrenceList() {
         <Decision.Empty><EmptyState icon={<Activity />} title={title} description={description} action={isHistory ? undefined : <Button.Link render={<Link to={`/${routes.scheduledMessageNew}`} />}>New message</Button.Link>} /></Decision.Empty>
         <Decision.Data>
             <DividedList>{meta.occurrences.map(renderOccurrence)}</DividedList>
-            {state.historyPageError ? <Alert variant="error" title="Could not load older messages" description={state.historyPageError} /> : null}
+            {state.historyPageError ? <RetryNotification title="Could not load older messages" description={state.historyPageError} onRetry={actions.loadMoreHistory} isRetrying={state.historyLoadingMore} /> : null}
             {meta.hasMoreHistory ? <Button variant="secondary" onClick={actions.loadMoreHistory} disabled={state.historyLoadingMore}>{state.historyLoadingMore ? 'Loading…' : 'Load more'}</Button> : null}
         </Decision.Data>
     </Decision>

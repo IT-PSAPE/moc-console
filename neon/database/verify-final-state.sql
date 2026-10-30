@@ -5,7 +5,7 @@ DECLARE
     'api_rate_limit_windows', 'booking_items', 'bookings', 'broadcast_items',
     'broadcast_revision_counters', 'broadcast_revisions', 'broadcasts',
     'checklist_item_assignees', 'checklist_items', 'checklist_sections',
-    'checklist_templates', 'checklists', 'equipment', 'notification_deliveries',
+    'checklist_templates', 'checklists', 'daily_quotes', 'daily_quote_overrides', 'equipment', 'notification_deliveries',
     'notification_ingest_replays', 'notification_message_templates',
     'notification_outbox', 'notification_routes', 'notification_settings',
     'request_activity', 'request_assignees', 'request_categories', 'request_comments',
@@ -122,6 +122,16 @@ BEGIN
   END IF;
 
   IF NOT has_table_privilege('moc_app', 'public.broadcast_revisions', 'SELECT')
+    OR NOT has_table_privilege('moc_app', 'public.daily_quotes', 'SELECT')
+    OR NOT has_table_privilege('moc_app', 'public.daily_quotes', 'INSERT')
+    OR NOT has_table_privilege('moc_app', 'public.daily_quotes', 'UPDATE')
+    OR has_table_privilege('moc_app', 'public.daily_quotes', 'DELETE')
+    OR has_table_privilege('moc_public', 'public.daily_quotes', 'SELECT')
+    OR NOT has_table_privilege('moc_app', 'public.daily_quote_overrides', 'SELECT')
+    OR NOT has_table_privilege('moc_app', 'public.daily_quote_overrides', 'INSERT')
+    OR NOT has_table_privilege('moc_app', 'public.daily_quote_overrides', 'UPDATE')
+    OR has_table_privilege('moc_app', 'public.daily_quote_overrides', 'DELETE')
+    OR has_table_privilege('moc_public', 'public.daily_quote_overrides', 'SELECT')
     OR NOT has_table_privilege('moc_app', 'public.workspace_invitations', 'SELECT')
     OR NOT has_table_privilege('moc_app', 'public.workspace_invitations', 'INSERT')
     OR NOT has_table_privilege('moc_app', 'public.workspace_invitations', 'UPDATE')

@@ -11,12 +11,11 @@ type ProviderSyncOptions<T> = {
   clearFailure: () => void
   describeFailure: (error: unknown, fallback: string) => string
   successTitle: string
-  errorTitle: string
   errorMessage: string
 }
 
 /** Sync once on entry, without blocking the saved list or announcing success. */
-export function useProviderSync<T>({ workspaceId, enabled, ready, request, applyResult, clearFailure, describeFailure, successTitle, errorTitle, errorMessage }: ProviderSyncOptions<T>) {
+export function useProviderSync<T>({ workspaceId, enabled, ready, request, applyResult, clearFailure, describeFailure, successTitle, errorMessage }: ProviderSyncOptions<T>) {
   const { toast } = useFeedback()
   const generation = getCurrentWorkspaceGeneration()
   const scope = `${workspaceId}:${generation}`
@@ -55,7 +54,6 @@ export function useProviderSync<T>({ workspaceId, enabled, ready, request, apply
         if (!isCurrent()) return
         const message = describeFailure(error, errorMessage)
         setStatus({ scope, isSyncing: false, error: message })
-        if (!background) toast({ title: errorTitle, description: message, variant: "error" })
       } finally {
         if (isCurrent()) setStatus(current => ({ ...current, isSyncing: false }))
         if (pending.current?.scope === scope) pending.current = null
@@ -65,7 +63,7 @@ export function useProviderSync<T>({ workspaceId, enabled, ready, request, apply
     const promise = performSync()
     pending.current = { scope, promise }
     return promise
-  }, [applyResult, clearFailure, describeFailure, enabled, errorMessage, errorTitle, generation, request, scope, successTitle, toast, workspaceId])
+  }, [applyResult, clearFailure, describeFailure, enabled, errorMessage, generation, request, scope, successTitle, toast, workspaceId])
 
   useEffect(() => {
     if (!ready || !enabled || !workspaceId || attemptedScope.current === scope) return

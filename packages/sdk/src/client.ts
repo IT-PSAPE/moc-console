@@ -3,11 +3,13 @@ import { createBookingsClient } from "./bookings"
 import { createBroadcastsClient } from "./broadcasts"
 import { createChecklistsClient } from "./checklists"
 import { createDiscussionClient } from "./discussion"
+import { createDailyQuotesClient } from "./daily-quotes"
 import { createEquipmentClient } from "./equipment"
 import { createIntegrationsClient } from "./integrations"
 import { createNotificationSettingsClient } from "./notification-settings"
 import { createNotificationsClient } from "./notifications"
 import { createPublicSubmissionsClient } from "./public-submissions"
+import { createOverviewClient } from "./overview"
 import { createPushClient } from "./push"
 import { createRequestsClient } from "./requests"
 import { createStorageClient } from "./storage"
@@ -28,10 +30,12 @@ export function createMocClient(baseUrl: string, options: MocTransportOptions = 
     broadcasts: createBroadcastsClient(transport),
     checklists: createChecklistsClient(transport),
     discussion: createDiscussionClient(transport),
+    dailyQuotes: createDailyQuotesClient(transport),
     equipment: createEquipmentClient(transport),
     integrations: createIntegrationsClient(transport),
     notificationSettings: createNotificationSettingsClient(transport),
     notifications: createNotificationsClient(transport),
+    overview: createOverviewClient(transport),
     publicSubmissions: createPublicSubmissionsClient(transport),
     push: createPushClient(transport),
     requests: createRequestsClient(transport),

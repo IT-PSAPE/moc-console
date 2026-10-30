@@ -44,7 +44,6 @@ export function useZoomMeetings(searchQuery: string) {
     clearFailure: providerFailure.actions.clear,
     describeFailure: actionableErrorMessage,
     successTitle: "Meetings synced from Zoom",
-    errorTitle: "Failed to sync meetings",
     errorMessage: "Meetings could not be synced from Zoom.",
   })
 

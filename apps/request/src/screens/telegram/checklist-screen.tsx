@@ -1,6 +1,6 @@
 import { Divider } from "@moc/ui/components/display/divider"
 import { Paragraph, Title } from "@moc/ui/components/display/text"
-import { Alert } from "@moc/ui/components/feedback/alert"
+import { Notification } from "@moc/ui/components/feedback/notification"
 import { ChecklistSectionView } from "@/features/telegram/components/checklist-section-view"
 import { useChecklistToggle } from "@/features/telegram/use-checklist-toggle"
 import { useMiniAppContext } from "@/features/telegram/mini-app-context"
@@ -19,7 +19,7 @@ export function ChecklistScreen({ detail }: { detail: MiniAppChecklistDetail }) 
       </header>
 
       {checklist.state.lastError && (
-        <Alert variant="error" style="filled" title="Couldn't save that change" description={checklist.state.lastError} />
+        <Notification variant="error" title="Couldn't save that change" description={checklist.state.lastError} />
       )}
 
       {detail.sections.map((section, index) => (

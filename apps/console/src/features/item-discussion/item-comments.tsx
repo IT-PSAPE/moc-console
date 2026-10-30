@@ -1,7 +1,8 @@
 import { Button } from '@moc/ui/components/controls/button'
 import { Section } from '@moc/ui/components/display/section'
 import { ScrollArea } from '@moc/ui/components/display/scroll-area'
-import { RetryAlert } from '@moc/ui/components/feedback/retry-alert'
+import { EmptyState } from '@moc/ui/components/feedback/empty-state'
+import { RetryNotification } from '@moc/ui/components/feedback/retry-notification'
 import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
 import type { CommentView } from './discussion-types'
 import { ItemCommentRow } from './item-comment-row'
@@ -20,7 +21,8 @@ export function ItemComments() {
                     <ScrollArea.Content>
                         <Section.Body className="gap-5 pr-2 pb-4" aria-label="Comments">
                             {state.commentsLoading && <LoadingSpinner className="py-6" />}
-                            {state.commentsError && <RetryAlert title="Couldn’t load comments" description={state.commentsError} onRetry={actions.refreshComments} isRetrying={state.commentsFetching} />}
+                            {state.commentsError && <RetryNotification title="Couldn’t load comments" description={state.commentsError} onRetry={actions.refreshComments} isRetrying={state.commentsFetching} />}
+                            {!state.commentsLoading && state.commentsError && !state.comments.length && <EmptyState title="Comments couldn't be loaded" description={state.commentsError} action={<Button variant="secondary" onClick={actions.refreshComments} disabled={state.commentsFetching}>Retry</Button>} />}
                             {state.hasOlderComments && <Button variant="ghost" size="sm" className="self-start" onClick={actions.loadOlderComments} disabled={state.commentsFetching}>{state.commentsFetching ? 'Loading…' : 'Load older comments'}</Button>}
                             {state.comments.map(renderComment)}
                         </Section.Body>

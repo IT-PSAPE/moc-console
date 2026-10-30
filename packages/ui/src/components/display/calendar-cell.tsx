@@ -1,7 +1,8 @@
-import { formatCalendarDate } from '@moc/utils/calendar-presentation'
+import { formatCalendarDate, isCalendarEventPast } from '@moc/utils/calendar-presentation'
 import { cn } from '@moc/utils/cn'
 import { InteractiveSurface } from '../controls/interactive-surface'
 import { CalendarEventContent } from './calendar-event'
+import { calendarPastEventClasses } from './calendar-event-colors'
 import type { CalendarEvent, CalendarRenderEvent } from './calendar-types'
 
 const eventDotColorMap: Record<NonNullable<CalendarEvent['color']>, string> = {
@@ -14,17 +15,19 @@ export type CalendarCellProps<T = unknown> = {
     isLandscape?: boolean
     isSelected?: boolean
     isToday: boolean
+    now?: Date
     onSelect?: (date: Date) => void
     renderEvent?: CalendarRenderEvent<T>
 }
 
-export function CalendarCell<T = unknown>({ date, events, isCurrentMonth, isLandscape = false, isSelected = false, isToday, onSelect, renderEvent }: CalendarCellProps<T>) {
+export function CalendarCell<T = unknown>({ date, events, isCurrentMonth, isLandscape = false, isSelected = false, isToday, now = new Date(), onSelect, renderEvent }: CalendarCellProps<T>) {
     function selectDate() { onSelect?.(date) }
     function renderItem(event: CalendarEvent<T>, index: number) {
-        return <div key={event.id ?? index} className="min-w-0">{renderEvent ? renderEvent(event, index) : <CalendarEventContent color={event.color} title={event.label}>{event.label}</CalendarEventContent>}</div>
+        const isPast = isCalendarEventPast(event, now)
+        return <div key={event.id ?? index} data-calendar-past={isPast || undefined} className={cn('min-w-0', calendarPastEventClasses)}>{renderEvent ? renderEvent(event, index) : <CalendarEventContent color={event.color} title={event.label}>{event.label}</CalendarEventContent>}</div>
     }
     function renderDot(event: CalendarEvent<T>, index: number) {
-        return <span key={event.id ?? index} className={cn('size-1 shrink-0 rounded-full', eventDotColorMap[event.color ?? 'gray'])} />
+        return <span key={event.id ?? index} className={cn('size-1 shrink-0 rounded-full', eventDotColorMap[event.color ?? 'gray'], isCalendarEventPast(event, now) && 'opacity-50')} />
     }
     const dayLabel = `${formatCalendarDate(date)}, ${events.length} item${events.length === 1 ? '' : 's'}`
     const dateClass = cn('inline-flex size-6 shrink-0 items-center justify-center rounded-full paragraph-xs', isToday ? 'bg-brand_solid text-on-brand' : isCurrentMonth ? 'text-secondary' : 'text-quaternary')

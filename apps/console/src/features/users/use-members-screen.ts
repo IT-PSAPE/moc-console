@@ -24,7 +24,6 @@ export function useMembersScreen() {
   const canManage = role?.can_manage_roles === true
   const [search, setSearch] = useQueryText()
   const [email, setEmail] = useState("")
-  const [invitationError, setInvitationError] = useState<string | null>(null)
   const [isInviting, setIsInviting] = useState(false)
   const [workingInvitation, setWorkingInvitation] = useState<{ id: string; action: "resend" | "revoke" } | null>(null)
   const normalizedSearch = search.trim().toLowerCase()
@@ -41,7 +40,6 @@ export function useMembersScreen() {
 
   function changeEmail(event: ChangeEvent<HTMLInputElement>): void {
     setEmail(event.target.value)
-    setInvitationError(null)
   }
 
   useEffect(() => {
@@ -57,7 +55,6 @@ export function useMembersScreen() {
     const normalizedEmail = email.trim().toLowerCase()
     if (!normalizedEmail) return
     setIsInviting(true)
-    setInvitationError(null)
     try {
       const result = await createInvitation(normalizedEmail)
       setEmail("")
@@ -65,7 +62,7 @@ export function useMembersScreen() {
         ? { title: "Invitation sent", variant: "success" }
         : { title: "Invitation saved, but email could not be delivered", description: "Use Resend to try again.", variant: "error" })
     } catch (cause) {
-      setInvitationError(cause instanceof Error ? cause.message : "Could not create invitation. Please try again.")
+      toast({ title: "Could not create invitation", description: cause instanceof Error ? cause.message : "Please try again.", variant: "error" })
     } finally {
       setIsInviting(false)
     }
@@ -121,7 +118,7 @@ export function useMembersScreen() {
 
   return {
     actions: { changeSearch, changeEmail, retryLoad, submitInvitation, updateRole: (userId: string, roleId: string) => { void updateRole(userId, roleId) } },
-    state: { search, email, invitationError, isInviting, loadError: error },
+    state: { search, email, isInviting, loadError: error },
     meta: { isFiltered: normalizedSearch.length > 0, users: visibleUsers, totalUsers: users.length, roles, invitations: invitationRows, isLoading, canManage, isInitialLoading: isInitialLoading && !error },
   }
 }

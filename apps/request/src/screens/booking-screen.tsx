@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@moc/ui/components/controls/button'
-import { Alert } from '@moc/ui/components/feedback/alert'
+import { Notification } from '@moc/ui/components/feedback/notification'
 import { Spinner } from '@moc/ui/components/feedback/spinner'
 import { PublicLayout } from '@/features/components/public-layout'
 import { BookingDetails } from '@/features/components/booking-details'
@@ -71,7 +71,7 @@ export function BookingScreen() {
           />
         )}
         {state.step === 3 && <BookingReview data={state.data} />}
-        {state.error && <Alert title="Submission failed" description={state.error} variant="error" style="filled" />}
+        {state.error && <Notification title="Submission failed" description={state.error} variant="error" />}
 
         <PublicFlow.Actions>
           <Button type="submit" disabled={state.submitting} className="rounded-full">

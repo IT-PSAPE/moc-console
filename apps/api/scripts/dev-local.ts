@@ -3,7 +3,7 @@ import { readdir } from "node:fs/promises"
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from "node:http"
 import { dirname, join, relative, sep } from "node:path"
 import { fileURLToPath } from "node:url"
-import { createServer as createViteServer } from "vite"
+import { createServer as createViteServer, isRunnableDevEnvironment } from "vite"
 import type { ApiRequest, ApiResponse } from "../server/http.js"
 
 type RouteParameter = { name: string; catchAll: boolean }
@@ -187,20 +187,18 @@ async function main(): Promise<void> {
     configFile: false,
     logLevel: "error",
     appType: "custom",
-    server: { middlewareMode: true },
+    optimizeDeps: { noDiscovery: true },
+    server: { middlewareMode: true, ws: false },
   })
-  const loadedRoutes = new Map<string, Promise<RouteModule>>()
+  const environment = vite.environments.ssr
+  if (!isRunnableDevEnvironment(environment)) throw new Error("The local API requires a runnable Vite server environment")
+  const runner = environment.runner
 
-  function loadRoute(file: string): Promise<RouteModule> {
-    const existing = loadedRoutes.get(file)
-    if (existing) return existing
-    const loading = vite.ssrLoadModule(file).then((loaded) => {
-      const route = loaded as RouteModule
-      if (typeof route.default !== "function") throw new Error("API route has no default handler")
-      return route
-    })
-    loadedRoutes.set(file, loading)
-    return loading
+  async function loadRoute(file: string): Promise<RouteModule> {
+    // Let Vite cache and invalidate handlers when their imported registry changes.
+    const route = await runner.import(file) as RouteModule
+    if (typeof route.default !== "function") throw new Error("API route has no default handler")
+    return route
   }
 
   const server = createHttpServer((incoming, outgoing) => {

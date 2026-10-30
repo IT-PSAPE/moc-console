@@ -3,6 +3,7 @@ import { Button } from '@moc/ui/components/controls/button'
 import { Input } from '@moc/ui/components/form/input'
 import { Spinner } from '@moc/ui/components/feedback/spinner'
 import { Alert } from '@moc/ui/components/feedback/alert'
+import { Notification } from '@moc/ui/components/feedback/notification'
 import { EmptyState } from '@moc/ui/components/feedback/empty-state'
 import { ConfirmationDialog } from '@moc/ui/components/overlays/confirmation-dialog'
 import { PublicLayout } from '@/features/components/public-layout'
@@ -59,9 +60,9 @@ export function TrackScreen() {
           </Button>
         </form>
 
-        {state.error && <Alert title="Request failed" description={state.error} variant="error" style="filled" />}
+        {state.error && <Notification title="Request failed" description={state.error} variant="error" />}
 
-        {state.notice && <Alert title={state.notice} variant="success" style="filled" />}
+        {state.notice && <Notification title={state.notice} variant="success" />}
 
         {state.loading && <div className="flex justify-center"><Spinner size="md" /></div>}
 

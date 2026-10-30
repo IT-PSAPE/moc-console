@@ -109,7 +109,7 @@ export function useBroadcastDetail(broadcast: Broadcast) {
   const items: BroadcastEditorItem[] = displayed.items.map((item) => ({ item, key: `existing:${item.id}`, source: "existing" }))
 
   return {
-    state: { broadcast: displayed, copiedField: copied.state.copiedField, copyMessage: copied.state.copyMessage, isSaving, items, uploadOpen },
+    state: { broadcast: displayed, copiedField: copied.state.copiedField, isSaving, items, uploadOpen },
     actions: { changeUploadOpen, copyPublicUrl, openUpload, removeItem, reorderItem, saveDescription, saveTitle, submitUploads },
     meta: {
       canEdit: canUpdate,

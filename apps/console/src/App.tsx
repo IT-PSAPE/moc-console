@@ -19,6 +19,7 @@ import { AuthLayout } from './screens/auth/auth-layout'
 import { ResourceLoadError } from './components/feedback/resource-load-error'
 import { WorkspaceAccessRequired } from './screens/auth/workspace-access-required'
 import { UserPreferencesProvider } from './features/preferences/user-preferences-provider'
+import { WorkspacePermissionRoute } from './components/routing/workspace-permission-route'
 
 const StreamsScreen = lazy(() => import('@/screens/streams/page').then((m) => ({ default: m.StreamsScreen })))
 const BroadcastsScreen = lazy(() => import('@/screens/broadcasts/page').then((m) => ({ default: m.BroadcastsScreen })))
@@ -33,6 +34,7 @@ const EquipmentDetailScreen = lazy(() => import('@/screens/equipment/detail/page
 const RequestsScreen = lazy(() => import('@/screens/requests/page').then((m) => ({ default: m.RequestsScreen })))
 const MembersScreen = lazy(() => import('@/screens/members/page').then((m) => ({ default: m.MembersScreen })))
 const OverviewPage = lazy(() => import('@/screens/overview/page').then((m) => ({ default: m.OverviewPage })))
+const DailyQuotesScreen = lazy(() => import('@/screens/daily-quotes/page').then((m) => ({ default: m.DailyQuotesScreen })))
 const TelegramPage = lazy(() => import('@/screens/telegram/page').then((m) => ({ default: m.TelegramPage })))
 const VenueCatalogPage = lazy(() => import('@/screens/venue-catalog/page').then((m) => ({ default: m.VenueCatalogPage })))
 const SchedulePage = lazy(() => import('@/screens/schedule/page').then((m) => ({ default: m.SchedulePage })))
@@ -152,12 +154,6 @@ function MembersRoute() {
     return <MembersScreen />
 }
 
-function TelegramRoute() {
-    const { role } = useWorkspace()
-    if (role?.can_manage_roles !== true) return <Navigate to={`/${routes.overview}`} replace />
-    return <TelegramPage />
-}
-
 function LegacyScheduleRoute() {
     const { search } = useLocation()
     return <Navigate to={`/${routes.work}${search}`} replace />
@@ -181,8 +177,9 @@ const router = createBrowserRouter([
             { index: true, element: <Navigate to={`/${routes.overview}`} replace /> },
             { path: routes.overview, element: <OverviewPage /> },
             { path: routes.work, element: <SchedulePage /> },
-            { path: routes.telegram, element: <TelegramRoute /> },
+            { path: routes.telegram, element: <WorkspacePermissionRoute permission="can_manage_roles"><TelegramPage /></WorkspacePermissionRoute> },
             { path: routes.venueCatalog, element: <VenueCatalogPage /> },
+            { path: routes.dailyQuotes, element: <WorkspacePermissionRoute permission="can_manage_roles"><DailyQuotesScreen /></WorkspacePermissionRoute> },
             { path: routes.settings, element: <SettingsScreen /> },
             { path: routes.members, element: <MembersRoute /> },
             { path: routes.schedule, element: <LegacyScheduleRoute /> },

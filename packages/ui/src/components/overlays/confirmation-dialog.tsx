@@ -5,6 +5,7 @@ import { Button } from '../controls/button'
 import { Label, Paragraph } from '../display/text'
 import { useOverlayStack } from './overlay-provider'
 import { OverlayContent, OverlayFooter, OverlayHeader } from './overlay-primitives'
+import { Notification } from '../feedback/notification'
 
 type ConfirmationDialogProps = {
     cancelLabel?: string
@@ -43,7 +44,7 @@ export function ConfirmationDialog({ cancelLabel = 'Cancel', confirmLabel, descr
                             <BaseAlertDialog.Description render={<Paragraph.sm className="text-pretty text-tertiary" />}>
                                 {description}
                             </BaseAlertDialog.Description>
-                            {errorText ? <p role="alert" className="paragraph-sm text-error">{errorText}</p> : null}
+                            {open && errorText ? <Notification variant="error" title="Couldn't complete action" description={errorText} /> : null}
                         </OverlayContent>
                         <OverlayFooter>
                             <BaseAlertDialog.Close nativeButton render={<Button variant="secondary" disabled={isConfirming} />}>

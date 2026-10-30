@@ -14,7 +14,7 @@ export function useAppNavigation(canManageScheduledMessages: boolean) {
     const activeSection = navigationSectionForPath(pathname)
     const canManageTelegram = role?.can_manage_roles === true
     const canManageMembers = role?.can_update === true || role?.can_manage_roles === true
-    const access = { canManageMembers, canManageScheduledMessages, canManageTelegram }
+    const access = { canManageMembers, canManageScheduledMessages, canManageTelegram, canManageQuotes: role?.can_manage_roles === true }
     const [preview, setPreview] = useState<{ section: NavigationSection; locationKey: string; isOpen: boolean } | null>(null)
 
     if (preview && preview.locationKey !== locationKey) setPreview(null)

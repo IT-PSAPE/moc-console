@@ -3,7 +3,8 @@ import { cn } from '@moc/utils/cn'
 import { Label, Paragraph } from '../display/text'
 import { AlertCircle, CheckCircle2, Info, Lightbulb, TriangleAlert, X } from 'lucide-react'
 import { Button } from '../controls/button'
-import type { FeedbackVariant, FeedbackStyle } from './alert'
+import type { FeedbackVariant } from './alert'
+import type { ToastData } from './feedback-types'
 import type { ReactNode } from 'react'
 
 // ─── Variant Icons ──────────────────────────────────────────────────
@@ -24,14 +25,6 @@ const variantIconColorMap: Record<FeedbackVariant, string> = {
     feature: 'text-utility-purple-700',
 }
 
-// ─── Types ──────────────────────────────────────────────────────────
-
-export type ToastData = {
-    variant: FeedbackVariant
-    style: FeedbackStyle
-    dismissible: boolean
-}
-
 // ─── Component ──────────────────────────────────────────────────────
 
 type ToastProps = {
@@ -45,28 +38,21 @@ export function Toast({ toast }: ToastProps) {
     return (
         <BaseToast.Root
             toast={toast}
-            swipeDirection={dismissible ? 'right' : []}
+            swipeDirection={dismissible ? ['right', 'left'] : []}
             className={cn(
-                'pointer-events-auto absolute right-0 bottom-0 w-[22rem] max-w-[calc(100vw-2rem)] origin-bottom-right select-none rounded-xl border border-secondary bg-primary shadow-xl outline-none',
-                '[--gap:0.75rem] [--peek:0.5rem] [--scale:calc(max(0,1-(var(--toast-index)*0.05)))] [--shrink:calc(1-var(--scale))]',
-                '[--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-offset-y)*-1+calc(var(--toast-index)*var(--gap)*-1)+var(--toast-swipe-movement-y))]',
-                'z-[calc(1000-var(--toast-index))] h-[var(--height)]',
-                '[transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--toast-index)*var(--peek))-(var(--shrink)*var(--height))))_scale(var(--scale))]',
-                'transition-[transform,opacity,height] duration-300 ease-out motion-reduce:transition-none',
-                'data-expanded:h-[var(--toast-height)] data-expanded:[transform:translateX(var(--toast-swipe-movement-x))_translateY(var(--offset-y))]',
-                'data-limited:opacity-0 data-[starting-style]:translate-x-full data-[starting-style]:opacity-0',
-                'data-[ending-style]:translate-x-full data-[ending-style]:opacity-0',
-                'after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full after:content-[\'\']',
+                'pointer-events-auto relative w-full shrink-0 rounded-xl border border-secondary bg-primary shadow-lg outline-none',
+                '[transform:translateX(var(--toast-swipe-movement-x))] transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none',
+                'data-[starting-style]:translate-y-2 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0',
             )}
         >
-            <BaseToast.Content className="flex h-full items-start gap-3 overflow-hidden p-3 transition-opacity duration-200 data-behind:opacity-0 data-expanded:opacity-100 motion-reduce:transition-none">
+            <BaseToast.Content className="flex items-start gap-3 p-3">
                 <span className={cn('mt-0.5 shrink-0', variantIconColorMap[variant])}>{variantIcons[variant]}</span>
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">
                     <BaseToast.Title render={<Label.sm className="text-primary" />} />
                     {toast.description ? <BaseToast.Description render={<Paragraph.sm className="mt-0.5 text-tertiary" />} /> : null}
-                    {toast.actionProps ? (
+                    {toast.data?.action || toast.actionProps ? (
                         <div className="mt-2">
-                            <BaseToast.Action render={<Button variant="secondary" size="sm" />} />
+                            {toast.data?.action ?? <BaseToast.Action render={<Button variant="secondary" size="sm" />} />}
                         </div>
                     ) : null}
                 </div>

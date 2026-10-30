@@ -3,7 +3,8 @@ import type { Role, User } from "@moc/types/requests/assignee"
 import type { MocTransport } from "./transport"
 
 export type CalendarView = "day" | "week" | "month" | "agenda"
-export type UserPreferences = { defaultCalendarView: CalendarView }
+export type OverviewItemKind = "request" | "equipment" | "venue" | "stream" | "message"
+export type UserPreferences = { defaultCalendarView: CalendarView; overviewItemKinds: OverviewItemKind[] }
 
 export type UserWithRole = User & {
   workspaceIds: string[]
@@ -25,7 +26,7 @@ export type UserProfileUpdate = {
 export function createUsersClient(transport: MocTransport) {
   return {
     getPreferences: () => transport.call<UserPreferences>("users", "getPreferences"),
-    updatePreferences: (preferences: UserPreferences) => transport.call<void>("users", "updatePreferences", preferences),
+    updatePreferences: (preferences: Partial<UserPreferences>) => transport.call<void>("users", "updatePreferences", preferences),
     getProfile: () => transport.call<User | null>("users", "getProfile"),
     all: (workspaceId: string) => transport.call<User[]>("users", "all", undefined, workspaceId),
     withRoles: (workspaceId: string) => transport.call<UserWithRole[]>("users", "withRoles", undefined, workspaceId),

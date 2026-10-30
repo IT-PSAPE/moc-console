@@ -52,7 +52,6 @@ export function useYouTubeStreams(searchQuery: string) {
     clearFailure: providerFailure.actions.clear,
     describeFailure: actionableErrorMessage,
     successTitle: "Streams synced from YouTube",
-    errorTitle: "Failed to sync streams",
     errorMessage: "Streams could not be synced from YouTube.",
   })
 

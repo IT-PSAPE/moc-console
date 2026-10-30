@@ -2,6 +2,7 @@ import { DEFAULT_TIMEZONE, scheduledMessageLabel, validateScheduledAttendanceGro
 import { formatUtcIsoInTimezone, formatUtcIsoForDateTimeInput } from '@moc/utils/zoned-date-time'
 import { scheduledMessagePreview } from './scheduled-message-preview'
 import type { NewMessageDraft } from './scheduled-message-payload'
+import { notifyDestinationKey } from '@moc/types/streams/notify-destination'
 
 export type ScheduledMessageOccurrenceView = ScheduledOccurrence & {
     label: string
@@ -43,8 +44,17 @@ function toOccurrenceView(occurrence: ScheduledOccurrence, snapshot: ScheduledSn
 }
 
 export function createScheduledMessageViewModel(snapshot: ScheduledSnapshot, draft: ScheduledMessageDraft, editing: ScheduledOccurrence | null, details: ScheduledOccurrence | null, edit: EditValue, deleting: ScheduledOccurrence | null, frequencyItems: { value: NewMessageDraft['frequency']; label: string }[], scopeItems: { value: ScheduledEditScope; label: string }[], typeItems: { value: string; label: string }[], offsetUnitItems: { value: string; label: string }[]) {
-    const topicList = snapshot.groups.find(group => group.chat_id === draft.groupChatId)?.telegram_group_topics ?? []
-    const topicItems = [{ value: 'main', label: 'General' }, ...topicList.filter(topic => !topic.closed).map(topic => ({ value: String(topic.thread_id), label: topic.name }))]
+    const destinationItems = snapshot.groups.flatMap(group => {
+        const main = { groupChatId: group.chat_id, threadId: null }
+        return [
+            { ...main, value: notifyDestinationKey(main), label: group.title },
+            ...group.telegram_group_topics.filter(topic => !topic.closed).map(topic => {
+                const destination = { groupChatId: group.chat_id, threadId: topic.thread_id }
+                return { ...destination, value: notifyDestinationKey(destination), label: `${group.title} › ${topic.name}` }
+            }),
+        ]
+    })
+    const selectedDestination = destinationItems.find(item => item.groupChatId === draft.groupChatId && (item.threadId === null ? '' : String(item.threadId)) === draft.threadId)
     const isAttendance = draft.messageType === 'attendance'
     const primaryPreview = scheduledMessagePreview({ id: 'message-preview', messageType: draft.messageType, body: draft.body, postRole: 'primary', attendanceGroups: draft.attendanceGroups, timezone: snapshot.workspaceTimezone }, snapshot.members, draft.attendeeIds)
     const followUpPreview = isAttendance
@@ -71,8 +81,8 @@ export function createScheduledMessageViewModel(snapshot: ScheduledSnapshot, dra
     return {
         occurrences,
         details: details ? toOccurrenceView(details, snapshot) : null,
-        topicItems,
-        hasTopics: topicItems.length > 1,
+        destinationItems,
+        selectedDestination,
         isAttendance,
         isRecurring: draft.frequency !== 'once',
         primaryPreview,
@@ -86,7 +96,6 @@ export function createScheduledMessageViewModel(snapshot: ScheduledSnapshot, dra
         selectedAttendeeCount: draft.attendeeIds.length,
         hasMatchingMembers: members.some(member => member.matchesSearch),
         showScope: Boolean(activeSchedule && activeSchedule.frequency !== 'once' && edit.field !== 'sendOn'),
-        groupItems: snapshot.groups.map(group => ({ value: group.chat_id, label: group.title })),
         frequencyItems,
         scopeItems,
         typeItems,

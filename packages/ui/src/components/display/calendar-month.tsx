@@ -1,4 +1,4 @@
-import { formatCalendarDate } from '@moc/utils/calendar-presentation'
+import { formatCalendarDate, prioritizeCalendarEvents } from '@moc/utils/calendar-presentation'
 import { getCalendarDateKey, getCalendarDayEvents } from '@moc/utils/calendar-date-range'
 import { cn } from '@moc/utils/cn'
 import { useCalendarMonth } from '../../hooks/use-calendar-month'
@@ -16,17 +16,17 @@ export type CalendarMonthProps<T = unknown> = { date: Date; events?: CalendarEve
 export function CalendarMonth<T = unknown>({ date, events = [], renderDay, renderEvent, renderPreviewEvent, onDateSelect, className }: CalendarMonthProps<T>) {
     const { state, actions } = useCalendarMonth(date, events, onDateSelect)
     const isLandscape = useIsLandscape()
-    const today = getCalendarDateKey(new Date())
+    const today = getCalendarDateKey(state.now)
     function renderWeekday(day: string) {
         return <div key={day} className="flex min-h-8 min-w-0 items-center justify-center border-r border-b border-secondary px-2 py-1 label-xs text-tertiary">{day}</div>
     }
     function renderDate(day: Date) {
         const key = getCalendarDateKey(day)
-        const dayEvents = getCalendarDayEvents(events, day)
+        const dayEvents = prioritizeCalendarEvents(getCalendarDayEvents(events, day), state.now)
         const isCurrentMonth = day.getMonth() === date.getMonth()
         const isToday = key === today
         if (renderDay) return <div key={key} className="min-w-0 border-r border-b border-secondary">{renderDay({ date: day, isCurrentMonth, isToday, events: dayEvents })}</div>
-        return <CalendarCell key={key} date={day} events={dayEvents} isCurrentMonth={isCurrentMonth} isToday={isToday} isLandscape={isLandscape} isSelected={state.previewOpen && state.selectedDate !== null && key === getCalendarDateKey(state.selectedDate)} onSelect={actions.selectDate} renderEvent={renderEvent} />
+        return <CalendarCell key={key} date={day} events={dayEvents} now={state.now} isCurrentMonth={isCurrentMonth} isToday={isToday} isLandscape={isLandscape} isSelected={state.previewOpen && state.selectedDate !== null && key === getCalendarDateKey(state.selectedDate)} onSelect={actions.selectDate} renderEvent={renderEvent} />
     }
     function renderPreviewItem(event: CalendarEvent<T>, index: number) {
         const render = renderPreviewEvent ?? renderEvent

@@ -4,7 +4,7 @@ import { DividedList } from "@moc/ui/components/display/divided-list"
 import { Section } from "@moc/ui/components/display/section"
 import { useStreamConnections } from "./use-stream-connections"
 import { useStreams } from "@/features/streams/streams-provider"
-import { ResourceLoadError } from "@/components/feedback/resource-load-error"
+import { RetryNotification } from "@moc/ui/components/feedback/retry-notification"
 
 export function IntegrationsSection() {
   useStreamConnections()
@@ -14,8 +14,8 @@ export function IntegrationsSection() {
     <Section>
       <Section.Header title="Integrations" description="Manage YouTube and Zoom connections." />
       <Section.Body>
-        {state.youtubeConnectionError ? <ResourceLoadError title="YouTube connection couldn't be loaded" error={state.youtubeConnectionError} onRetry={actions.retryYouTubeConnection} /> : null}
-        {state.zoomConnectionError ? <ResourceLoadError title="Zoom connection couldn't be loaded" error={state.zoomConnectionError} onRetry={actions.retryZoomConnection} /> : null}
+        {state.youtubeConnectionError ? <RetryNotification title="YouTube connection couldn't be loaded" description={state.youtubeConnectionError.message} onRetry={actions.retryYouTubeConnection} /> : null}
+        {state.zoomConnectionError ? <RetryNotification title="Zoom connection couldn't be loaded" description={state.zoomConnectionError.message} onRetry={actions.retryZoomConnection} /> : null}
         <DividedList>
           <YouTubeConnectionCard />
           <ZoomConnectionCard />

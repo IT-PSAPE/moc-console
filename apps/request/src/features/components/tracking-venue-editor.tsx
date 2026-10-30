@@ -1,5 +1,5 @@
 import type { FormEvent } from "react"
-import { Alert } from "@moc/ui/components/feedback/alert"
+import { Notification } from "@moc/ui/components/feedback/notification"
 import { VenueBookingDetails } from "@/features/components/venue-booking-details"
 import { StepErrorSummary } from "@/features/components/step-error-summary"
 import { TrackingEditorActions } from "@/features/components/tracking-editor-actions"
@@ -39,8 +39,8 @@ export function TrackingVenueEditor({ result, onSaved, onCancel }: TrackingVenue
         onRecurrenceChange={editor.actions.setRecurrence}
         errors={editor.state.validationErrors}
       />
-      {availability.listsError && <Alert title="Could not load venues" description={availability.listsError} variant="error" style="filled" />}
-      {availability.slotsError && <Alert title="Could not load availability" description={availability.slotsError} variant="error" style="filled" />}
+      {availability.listsError && <Notification title="Could not load venues" description={availability.listsError} variant="error" />}
+      {availability.slotsError && <Notification title="Could not load availability" description={availability.slotsError} variant="error" />}
       <TrackingEditorActions saving={editor.state.saving} error={editor.state.error} onCancel={onCancel} />
     </form>
   )

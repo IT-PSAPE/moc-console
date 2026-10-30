@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { isNavigationSection, navigationDestinations, navigationEntryRoute, navigationSectionForPath } from '../../../../../apps/console/src/features/navigation-sections'
 
+it('shows quote management only to admins and resolves its navigation section', () => {
+    const editor = { canManageMembers: true, canManageScheduledMessages: true, canManageTelegram: false, canManageQuotes: false }
+    expect(navigationDestinations('people', editor).map(item => item.route)).not.toContain('daily-quotes')
+    expect(navigationDestinations('people', { ...editor, canManageQuotes: true }).map(item => item.route)).toContain('daily-quotes')
+    expect(navigationSectionForPath('/daily-quotes')).toBe('people')
+})
+
 describe('workspace navigation', () => {
     it.each([
         ['/requests/123', 'work'], ['/bookings/123', 'work'], ['/venues/123', 'work'],
@@ -12,17 +19,17 @@ describe('workspace navigation', () => {
     })
 
     it('exposes member and message management only when permitted', () => {
-        const restricted = { canManageMembers: false, canManageScheduledMessages: false, canManageTelegram: false }
-        const privileged = { canManageMembers: true, canManageScheduledMessages: true, canManageTelegram: true }
+        const restricted = { canManageMembers: false, canManageScheduledMessages: false, canManageTelegram: false, canManageQuotes: false }
+        const privileged = { canManageMembers: true, canManageScheduledMessages: true, canManageTelegram: true, canManageQuotes: true }
         expect(navigationDestinations('people', restricted).map(item => item.route)).toEqual(['equipment', 'venue-catalog'])
-        expect(navigationDestinations('people', privileged).map(item => item.route)).toEqual(['members', 'equipment', 'venue-catalog'])
+        expect(navigationDestinations('people', privileged).map(item => item.route)).toEqual(['members', 'equipment', 'venue-catalog', 'daily-quotes'])
         expect(navigationDestinations('production', restricted).map(item => item.route)).toEqual(['streams', 'broadcasts', 'checklists'])
         expect(navigationDestinations('production', privileged).map(item => item.route)).toEqual(['streams', 'broadcasts', 'checklists'])
     })
 
     it('keeps direct destinations free of a secondary menu and separates communications permissions', () => {
-        const editor = { canManageMembers: true, canManageScheduledMessages: true, canManageTelegram: false }
-        const admin = { ...editor, canManageTelegram: true }
+        const editor = { canManageMembers: true, canManageScheduledMessages: true, canManageTelegram: false, canManageQuotes: false }
+        const admin = { ...editor, canManageTelegram: true, canManageQuotes: true }
         expect(navigationDestinations('overview', admin)).toEqual([])
         expect(navigationDestinations('work', admin)).toEqual([])
         expect(navigationDestinations('communications', editor).map(item => item.route)).toEqual(['scheduled-messages'])
@@ -30,8 +37,8 @@ describe('workspace navigation', () => {
     })
 
     it('opens the first permitted page when entering a main navigation group', () => {
-        const viewer = { canManageMembers: false, canManageScheduledMessages: false, canManageTelegram: false }
-        const admin = { canManageMembers: true, canManageScheduledMessages: true, canManageTelegram: true }
+        const viewer = { canManageMembers: false, canManageScheduledMessages: false, canManageTelegram: false, canManageQuotes: false }
+        const admin = { canManageMembers: true, canManageScheduledMessages: true, canManageTelegram: true, canManageQuotes: true }
         expect(navigationEntryRoute('production', admin)).toBe('streams')
         expect(navigationEntryRoute('communications', admin)).toBe('scheduled-messages')
         expect(navigationEntryRoute('communications', viewer)).toBeNull()

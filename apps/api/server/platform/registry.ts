@@ -14,16 +14,20 @@ import { operations as capability11 } from "./venues.js"
 import { operations as capability12 } from "./workspaces.js"
 import { operations as discussion } from "./discussion.js"
 import { operations as push } from "./push.js"
+import { operations as dailyQuotes } from "./daily-quotes.js"
+import { operations as overview } from "./overview.js"
 
 export const platformRegistry: PlatformRegistry = {
   "bookings": capability0,
   "broadcasts": capability1,
   "checklists": capability2,
   "discussion": discussion,
+  "dailyQuotes": dailyQuotes,
   "equipment": capability3,
   "notification-settings": capability4,
   "publicSubmissions": capability5,
   "push": push,
+  "overview": overview,
   "requests": capability6,
   "streams": capability7,
   "telegram": capability8,

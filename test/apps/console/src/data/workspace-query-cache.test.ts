@@ -7,6 +7,19 @@ import { queryClient } from '../../../../../apps/console/src/lib/query-client'
 afterEach(() => clearWorkspaceResources())
 
 describe('TanStack workspace cache', () => {
+  test('message changes invalidate Overview and quote changes invalidate the daily banner only in their workspace', () => {
+    const messages = workspaceResourceKey('workspace-a', 'overview-messages')
+    const quote = workspaceResourceKey('workspace-a', 'daily-quote')
+    const otherQuote = workspaceResourceKey('workspace-b', 'daily-quote')
+    queryClient.setQueryData(messages, ['scheduled'])
+    queryClient.setQueryData(quote, { text: 'Old quote' })
+    queryClient.setQueryData(otherQuote, { text: 'Other workspace' })
+    setWorkspaceResourceData('workspace-a', 'scheduled-messages', { occurrences: [] })
+    setWorkspaceResourceData('workspace-a', 'daily-quotes', [])
+    expect(queryClient.getQueryState(messages)?.isInvalidated).toBe(true)
+    expect(queryClient.getQueryState(quote)?.isInvalidated).toBe(true)
+    expect(queryClient.getQueryState(otherQuote)?.isInvalidated).toBe(false)
+  })
   test('shares an in-flight request and reuses fresh data across consumers', async () => {
     const pending = deferred<string[]>()
     const fetcher = vi.fn(() => pending.promise)
@@ -76,17 +89,17 @@ describe('TanStack workspace cache', () => {
     stop()
   })
 
-  test('booking mutations invalidate related calendars and per-equipment reads only in the same workspace', () => {
-    const calendar = workspaceResourceKey('workspace-a', 'work-calendar')
+  test('booking mutations invalidate related work and per-equipment reads only in the same workspace', () => {
+    const relatedWork = workspaceResourceKey('workspace-a', 'request-linked-records')
     const bookings = workspaceResourceKey('workspace-a', 'item-activity:equipment:camera')
-    const otherCalendar = workspaceResourceKey('workspace-b', 'work-calendar')
-    queryClient.setQueryData(calendar, [])
+    const otherWork = workspaceResourceKey('workspace-b', 'request-linked-records')
+    queryClient.setQueryData(relatedWork, [])
     queryClient.setQueryData(bookings, [])
-    queryClient.setQueryData(otherCalendar, [])
+    queryClient.setQueryData(otherWork, [])
     setWorkspaceResourceData('workspace-a', 'bookings', [{ id: 'saved-booking', items: [{ equipmentId: 'camera' }] }])
-    expect(queryClient.getQueryState(calendar)?.isInvalidated).toBe(true)
+    expect(queryClient.getQueryState(relatedWork)?.isInvalidated).toBe(true)
     expect(queryClient.getQueryState(bookings)?.isInvalidated).toBe(true)
-    expect(queryClient.getQueryState(otherCalendar)?.isInvalidated).toBe(false)
+    expect(queryClient.getQueryState(otherWork)?.isInvalidated).toBe(false)
   })
 
   test('a saved Telegram group marks the Messages snapshot stale for the next visit', () => {

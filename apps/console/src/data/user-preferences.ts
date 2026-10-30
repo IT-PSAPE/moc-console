@@ -5,6 +5,6 @@ export async function fetchUserPreferences(): Promise<UserPreferences> {
   return moc.users.getPreferences()
 }
 
-export async function saveUserPreferences(preferences: UserPreferences): Promise<void> {
+export async function saveUserPreferences(preferences: Partial<UserPreferences>): Promise<void> {
   await moc.users.updatePreferences(preferences)
 }

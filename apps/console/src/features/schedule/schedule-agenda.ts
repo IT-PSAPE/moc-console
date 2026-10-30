@@ -6,7 +6,7 @@ import type { ScheduleEvent, ScheduleItemKind } from './schedule-types'
 export type ScheduleAgendaItem = {
   id: string
   title: string
-  kind: ScheduleItemKind
+  kind: ScheduleItemKind | 'stream' | 'meeting' | 'message'
   href: string
   timeLabel: string
   detail: string

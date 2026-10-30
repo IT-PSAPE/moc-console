@@ -59,11 +59,15 @@ export function useWebPush(open: boolean) {
       setConfiguration(nextConfiguration)
       setIsEnabled(subscribed)
     } catch (cause) {
-      if (request === refreshRequestRef.current) setError(describeError(cause))
+      if (request === refreshRequestRef.current) {
+        const message = describeError(cause)
+        setError(message)
+        toast({ title: "Couldn't load web notifications", description: message, variant: "error" })
+      }
     } finally {
       if (request === refreshRequestRef.current) setIsLoading(false)
     }
-  }, [open, profileId])
+  }, [open, profileId, toast])
 
   useEffect(() => {
     if (!open) {

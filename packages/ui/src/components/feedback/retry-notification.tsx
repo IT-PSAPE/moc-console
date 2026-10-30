@@ -1,8 +1,8 @@
-import { Button } from '@moc/ui/components/controls/button'
-import { Spinner } from '@moc/ui/components/feedback/spinner'
-import { Alert } from './alert'
+import { Button } from '../controls/button'
+import { Spinner } from './spinner'
+import { Notification } from './notification'
 
-type RetryAlertProps = {
+type RetryNotificationProps = {
     title: string
     description: string
     onRetry: () => void
@@ -10,9 +10,9 @@ type RetryAlertProps = {
     retryLabel?: string
 }
 
-export function RetryAlert({ title, description, onRetry, isRetrying = false, retryLabel = 'Retry' }: RetryAlertProps) {
+export function RetryNotification({ title, description, onRetry, isRetrying = false, retryLabel = 'Retry' }: RetryNotificationProps) {
     return (
-        <Alert
+        <Notification
             variant="error"
             title={title}
             description={description}

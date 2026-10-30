@@ -12,9 +12,10 @@ const MINUTE = 60_000
 const referenceResources = new Set([
   'request-categories', 'member-types', 'venues', 'venue-events',
   'notification-settings', 'notification-templates', 'youtube-playlists', 'preferences',
+  'daily-quotes',
 ])
 // These consumers live on pages or in open drawers, never in global providers.
-const liveResources = new Set(['telegram-groups', 'users', 'notification-routes', 'scheduled-messages'])
+const liveResources = new Set(['telegram-groups', 'users', 'notification-routes', 'scheduled-messages', 'daily-quote'])
 
 export function consoleQueryPolicy(resource: string): ConsoleQueryPolicy {
   const family = resource.split(':')[0]

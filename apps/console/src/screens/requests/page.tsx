@@ -22,6 +22,7 @@ import { SplitPanel } from "@moc/ui/components/layout/split-panel";
 import { RequestPanelContent } from "@/features/requests/request-drawer";
 import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar";
 import { ResourceLoadError } from "@/components/feedback/resource-load-error";
+import { RetryNotification } from "@moc/ui/components/feedback/retry-notification";
 
 export function RequestsScreen() {
   const { state, actions, meta } = useRequestsScreen();
@@ -64,7 +65,7 @@ export function RequestsScreen() {
         </CollectionToolbar.Views>
       </CollectionToolbar>
 
-      {meta.categoriesError && !meta.collectionError && <ResourceLoadError title="Couldn't load request types" error={meta.categoriesError} onRetry={actions.retryCategories} />}
+      {meta.categoriesError && !meta.collectionError && <RetryNotification title="Couldn't load request types" description={meta.categoriesError.message} onRetry={actions.retryCategories} />}
 
       <CollectionContent>
       {meta.collectionError ? <ResourceLoadError title={meta.collectionErrorTitle} error={meta.collectionError} onRetry={actions.retryCollection} /> : <Decision value={collectionState}>

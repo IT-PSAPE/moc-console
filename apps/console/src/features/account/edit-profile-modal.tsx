@@ -127,7 +127,6 @@ export function EditProfileModal({ open, onOpenChange }: EditProfileModalProps) 
                           {webPush.state.isLoading && <Paragraph.xs className="text-tertiary">Checking availability…</Paragraph.xs>}
                         </div>
                         {webPush.meta.availabilityMessage && <Paragraph.xs className="text-tertiary">{webPush.meta.availabilityMessage}</Paragraph.xs>}
-                        {webPush.state.error && <Paragraph.xs className="text-error">{webPush.state.error}</Paragraph.xs>}
                         {webPush.state.error && !webPush.state.isBusy && <Button variant="ghost" onClick={refreshWebPush} disabled={webPush.state.isLoading}>Try again</Button>}
                         {webPush.state.isEnabled && (
                           <Button variant="secondary" icon={<Bell />} onClick={sendWebPushTest} disabled={webPush.state.isTesting || webPush.state.isLoading || webPush.state.isBusy}>

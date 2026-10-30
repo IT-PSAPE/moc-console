@@ -22,6 +22,7 @@ psql "$database_url" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1
   -f "$script_dir/20-domain-final.sql" \
   -f "$script_dir/workspace-invitations.sql" \
   -f "$script_dir/user-preferences.sql" \
+  -f "$script_dir/overview.sql" \
   -f "$script_dir/scheduled-direct-messages.sql" \
   -f "$script_dir/storage.sql" \
   -f "$script_dir/broadcast-revisions.sql" \

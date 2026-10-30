@@ -4,7 +4,7 @@ import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import { Paragraph } from '@moc/ui/components/display/text'
 import { Input } from '@moc/ui/components/form/input'
 import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
-import { RetryAlert } from '@moc/ui/components/feedback/retry-alert'
+import { ResourceLoadError } from '@/components/feedback/resource-load-error'
 import { useArchiveAutomations } from './use-archive-automations'
 
 export function ArchiveAutomationsSection() {
@@ -13,7 +13,7 @@ export function ArchiveAutomationsSection() {
         <Section>
             <Section.Header title="Auto-archive" description="Keep completed work out of active views after a set number of days." />
             <Section.Body>
-                {state.loadError ? <RetryAlert title="Couldn't load archive automations" description={state.loadError.message} onRetry={actions.retryLoad} isRetrying={state.isLoading} /> : state.isLoading ? <LoadingSpinner className="py-8" /> : (
+                {state.loadError ? <ResourceLoadError title="Couldn't load archive automations" error={state.loadError} onRetry={actions.retryLoad} isRetrying={state.isLoading} /> : state.isLoading ? <LoadingSpinner className="py-8" /> : (
                     <DividedList>
                         <ListItemCard.Root className="items-center">
                             <ListItemCard.Content>

@@ -1,5 +1,7 @@
 import type { CalendarEvent } from './calendar-types'
 
+export const calendarPastEventClasses = 'transition-opacity motion-reduce:transition-none data-[calendar-past]:opacity-50 data-[calendar-past]:hover:opacity-100 data-[calendar-past]:focus-within:opacity-100'
+
 export const calendarEventColorClasses: Record<NonNullable<CalendarEvent['color']>, string> = {
   red: 'bg-error text-error border-current/20',
   orange: 'bg-warning text-warning border-current/20',

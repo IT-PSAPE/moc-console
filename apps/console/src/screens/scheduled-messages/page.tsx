@@ -4,7 +4,7 @@ import { Page } from '@moc/ui/components/layout/page'
 import { CollectionToolbar } from '@moc/ui/components/layout/collection-toolbar'
 import { SegmentedControl } from '@moc/ui/components/controls/segmented-control'
 import { Button } from '@moc/ui/components/controls/button'
-import { Alert } from '@moc/ui/components/feedback/alert'
+import { ResourceLoadError } from '@/components/feedback/resource-load-error'
 import { ScheduledMessages } from '@/features/scheduled-messages/scheduled-messages'
 import { useScheduledMessagesContext } from '@/features/scheduled-messages/scheduled-messages-context'
 import { routes } from '../console-routes'
@@ -29,8 +29,7 @@ export function ScheduledMessagesScreen() {
                 </SegmentedControl>
             </CollectionToolbar.Views>
         </CollectionToolbar>
-        <Page.Content>{state.loadError ? <Alert variant="error" title="Couldn't load messages" description={state.loadError} action={<Button variant="secondary" onClick={actions.reload}>Retry</Button>} /> : <>
-            {state.error ? <Alert variant="error" title="Couldn't complete action" description={state.error} /> : null}
+        <Page.Content>{state.loadError ? <ResourceLoadError title="Couldn't load messages" error={state.loadError} onRetry={actions.reload} isRetrying={state.loading} /> : <>
             <ScheduledMessages.List />
         </>}</Page.Content>
     </Page>

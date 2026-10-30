@@ -6,7 +6,7 @@ import type { VenueBooking } from "@moc/types/venues";
 import { routes } from "@/screens/console-routes";
 import { getBrowserTimeZone } from "@moc/utils/browser-date-time";
 import { parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time";
-import type { ScheduleData } from "./schedule-service";
+import type { ScheduleData } from "./schedule-types";
 import { scheduleEventColors, type ScheduleEvent, type ScheduleEventType } from "./schedule-types";
 
 function parseScheduleDate(date: string | Date, timezone: string): Date {

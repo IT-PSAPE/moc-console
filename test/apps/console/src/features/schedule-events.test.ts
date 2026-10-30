@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { getAgendaEvents, getAgendaGroups, getScheduleEvents, matchesScheduleFilters } from "../../../../../apps/console/src/features/schedule/schedule-events";
-import type { ScheduleData } from "../../../../../apps/console/src/features/schedule/schedule-service";
+import type { ScheduleData } from "../../../../../apps/console/src/features/schedule/schedule-types";
 
 const baseData: ScheduleData = {
   requests: [

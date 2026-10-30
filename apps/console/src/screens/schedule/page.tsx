@@ -5,7 +5,9 @@ import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import { Input } from "@moc/ui/components/form/input";
 import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar";
 import { FilterMenu } from "@moc/ui/components/overlays/filter-menu";
-import { RetryAlert } from "@moc/ui/components/feedback/retry-alert";
+import { RetryNotification } from "@moc/ui/components/feedback/retry-notification";
+import { EmptyState } from "@moc/ui/components/feedback/empty-state";
+import { Button } from "@moc/ui/components/controls/button";
 import { InteractiveSurface } from "@moc/ui/components/controls/interactive-surface";
 import { Link } from "react-router-dom";
 import { CalendarDays, MapPin, Search, Tag } from "lucide-react";
@@ -57,7 +59,10 @@ export function SchedulePage() {
         </CollectionToolbar.Views>
       </CollectionToolbar>
       <Page.Content className="!max-w-none flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-0! pb-0!">
-        {state.error ? <RetryAlert title="Work couldn't load" description={state.error.message} onRetry={actions.retry} isRetrying={state.isLoading} /> : null}
+        {state.error ? <>
+          <RetryNotification title="Work couldn't load" description={state.error.message} onRetry={actions.retry} isRetrying={state.isLoading} />
+          <EmptyState title="Work couldn't be loaded" description={state.error.message} action={<Button variant="secondary" onClick={actions.retry}>Retry</Button>} />
+        </> : null}
         {!state.error ? <Calendar.Container className="flex min-h-0 flex-1 flex-col rounded-none border-0 shadow-none [&>header]:shrink-0 [&_[data-calendar-month-days]]:min-h-0 [&_[data-calendar-month-days]]:flex-1 [&_[data-calendar-range-root]]:flex [&_[data-calendar-range-root]]:min-h-0 [&_[data-calendar-range-root]]:flex-1 [&_[data-calendar-range-root]]:flex-col [&_[data-calendar-range-content]]:flex [&_[data-calendar-range-content]]:min-h-0 [&_[data-calendar-range-content]]:flex-1 [&_[data-calendar-range-content]]:flex-col [&_[data-calendar-range-viewport]]:h-full [&_[data-calendar-range-viewport]]:max-h-none [&_[data-calendar-range-viewport]]:min-h-0 [&_[data-calendar-range-viewport]]:flex-1">
           <Calendar.Toolbar className="pr-[max(var(--spacing-page-gutter),env(safe-area-inset-right))] pl-[max(var(--spacing-page-gutter),env(safe-area-inset-left))]" date={state.date} view={state.view} views={calendarViewOptions} onViewChange={actions.changeView} onPrevious={handlePrevious} onNext={handleNext} onToday={actions.goToToday}>
             <FilterMenu.Root hasActiveFilters={state.hasActiveFilters} onReset={actions.resetFilters}>
@@ -79,7 +84,7 @@ export function SchedulePage() {
               </FilterMenu.Content>
             </FilterMenu.Root>
           </Calendar.Toolbar>
-          {state.view === "month" ? <Calendar.Month className="flex min-h-0 flex-1 flex-col" onDateSelect={actions.selectDate} date={state.month} events={state.events} renderEvent={renderEvent} renderPreviewEvent={renderPreviewEvent} /> : state.view === "day" ? <Calendar.Day date={state.date} events={state.events} renderEvent={renderEvent} /> : state.view === "week" ? <Calendar.Week date={state.date} events={state.events} renderEvent={renderEvent} /> : <ScheduleAgendaList groups={state.agendaGroups} returnTo={returnTo} />}
+          {state.view === "month" ? <Calendar.Month className="flex min-h-0 flex-1 flex-col" onDateSelect={actions.selectDate} date={state.month} events={state.events} renderEvent={renderEvent} renderPreviewEvent={renderPreviewEvent} /> : state.view === "day" ? <Calendar.Day date={state.date} events={state.events} renderEvent={renderEvent} currentTimeScrollRequest={state.currentTimeScrollRequest} /> : state.view === "week" ? <Calendar.Week date={state.date} events={state.events} renderEvent={renderEvent} currentTimeScrollRequest={state.currentTimeScrollRequest} /> : <ScheduleAgendaList groups={state.agendaGroups} returnTo={returnTo} />}
         </Calendar.Container> : null}
       </Page.Content>
     </Page>

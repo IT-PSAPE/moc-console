@@ -6,7 +6,7 @@ import { Button } from '@moc/ui/components/controls/button'
 import { Check, Copy, Share2 } from 'lucide-react'
 import { useConfirmation } from './use-confirmation'
 import { PublicFlow } from '@/features/components/public-flow'
-import { Alert } from '@moc/ui/components/feedback/alert'
+import { Notification } from '@moc/ui/components/feedback/notification'
 import { ColorSchemeImage } from '@moc/ui/components/display/color-scheme-image'
 
 export function ConfirmationScreen() {
@@ -40,7 +40,7 @@ export function ConfirmationScreen() {
         <Paragraph.sm className="max-w-sm text-center text-tertiary">Keep this code private. Anyone who has it can view, update, or delete this submission.</Paragraph.sm>
       </div>
 
-      {state.shareError && <Alert className="mx-auto mt-6 max-w-sm" title="Could not copy or share" description={state.shareError} variant="error" style="filled" />}
+      {state.shareError && <Notification title="Could not copy or share" description={state.shareError} variant="error" />}
 
       <PublicFlow.Actions className="mx-auto mt-12 max-w-sm">
         <Button variant="secondary" icon={state.shared ? <Check /> : <Share2 />} onClick={actions.share} className="rounded-full px-6 py-3">

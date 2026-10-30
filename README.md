@@ -179,10 +179,10 @@ and imperative cache-aware loads.
 
 | Data | Freshness | Automatic refresh |
 | --- | --- | --- |
-| Telegram groups, member connections, event routes, Messages | 30 seconds | Every 30 seconds while their page/drawer is mounted and visible |
+| Telegram groups, member connections, event routes, Messages, daily quote | 30 seconds | Every 30 seconds while their page/drawer is mounted and visible |
 | Request discussions | 1 minute | Every 15 seconds while open and visible |
 | Requests, checklists, bookings, calendar, streams, linked records | 1 minute | When stale on navigation, focus, or network reconnect |
-| Settings, preferences, categories, venues, member types, YouTube playlists | 5 minutes | When stale on navigation, focus, or reconnect |
+| Settings, preferences, categories, venues, member types, YouTube playlists, quote library | 5 minutes | When stale on navigation, focus, or reconnect |
 | YouTube categories | 1 hour | When stale on navigation, focus, or reconnect |
 | Public request catalogs | 5 minutes | When stale on navigation, focus, or reconnect |
 | Public venue availability | 15 seconds | Every 15 seconds while visible, plus booking mutation invalidation |
@@ -198,13 +198,36 @@ collection providers do not poll just because a page was visited previously.
 Console features use `useWorkspaceResource` and `useWorkspaceDetail`. Keys include
 the workspace and resource (plus the record ID for details); user preferences
 and workspace directories include the user ID. Resource writes cancel stale
-reads, update all observers, and refresh affected detail queries. Related mutation
-invalidation refreshes calendar and linked-record aggregates after request/booking
-changes, and Messages after group/member changes. Explicit retry/refresh actions
+reads, update all observers, and refresh affected detail queries. Work composes
+the same request and booking queries used by their lists, so navigation shares
+in-flight reads and saved changes appear without fetching a separate calendar
+snapshot. Detail queries reuse complete collection records with their original
+update timestamps; fresh records open immediately, while stale or invalidated
+records refresh in the background. Venue details use this same cache rather
+than keeping a second local snapshot. Related mutation invalidation refreshes
+linked-record aggregates after request/booking changes, and Messages after
+group/member changes. Explicit retry/refresh actions
 bypass freshness. Sign-out and
 account replacement clear the entire console QueryClient. Keep form drafts and
 interaction state local; authentication and bearer-code tracking stay fresh
 rather than being reused from a shared cache.
+
+Overview composes the same cached Work collections with scheduled streams,
+fixed-time meetings, and upcoming messages. Past and completed items are omitted;
+ongoing intervals remain visible. Recurring meetings expand over the next 32 days.
+Message summaries retain the existing `can_update` boundary and exclude message
+bodies and recipients. Personal Overview item defaults are saved across devices;
+the Overview filter drawer applies a user/workspace-scoped URL override, and Reset
+restores the saved defaults, including an intentionally empty selection.
+
+Admins manage Daily quotes under People & resources. Active quotes rotate daily
+using the workspace timezone. **Use today** selects a shared override for the
+current workspace day; **Use automatic rotation** clears it. Overrides expire the
+next day and inactive quotes are never selected. Visible Overview pages refresh
+the selection every 30 seconds and at the workspace date boundary. Apply
+[`neon/database/overview.sql`](neon/database/overview.sql) transactionally before
+deploying the updated API and console. Run `bash test/scripts/overview.integration.sh`
+for the isolated PostgreSQL role, rotation, override, and preference checks.
 
 ## Data Model Documentation
 

@@ -2,7 +2,7 @@ import { Modal } from '@moc/ui/components/overlays/modal'
 import { Button } from '@moc/ui/components/controls/button'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'
-import { RetryAlert } from '@moc/ui/components/feedback/retry-alert'
+import { ResourceLoadError } from '@/components/feedback/resource-load-error'
 import { type NotificationEventDefinition } from '@moc/notifications'
 import { useConnectEvents } from './use-connect-events'
 import { ConnectEventRow } from './connect-event-row'
@@ -34,7 +34,7 @@ export function ConnectEventsModal({ target, onClose }: ConnectEventsModalProps)
     function renderContent() {
         if (state.isLoading) return <div className="flex justify-center py-6"><LoadingSpinner size="lg" /></div>
         if (state.error) {
-            return <RetryAlert title="Couldn't load event connections" description={state.error.message} onRetry={actions.retryRoutes} isRetrying={state.isLoading} />
+            return <ResourceLoadError title="Couldn't load event connections" error={state.error} onRetry={actions.retryRoutes} isRetrying={state.isLoading} />
         }
         return <div className="divide-y divide-secondary">{state.notificationOptions.map(renderEvent)}</div>
     }

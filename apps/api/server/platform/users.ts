@@ -58,18 +58,34 @@ export const operations: Record<string, PlatformOperation> = {
     permission: "authenticated",
     async run(context, input) {
       emptyInput(input)
-      const result = await context.db.query<{ default_calendar_view: string }>("SELECT default_calendar_view FROM public.users WHERE id = $1", [context.userId])
+      const result = await context.db.query<{ default_calendar_view: string; overview_item_kinds: string[] }>("SELECT default_calendar_view, overview_item_kinds FROM public.users WHERE id = $1", [context.userId])
       if (!result.rows[0]) throw notFound("User not found")
-      return { defaultCalendarView: result.rows[0].default_calendar_view }
+      return { defaultCalendarView: result.rows[0].default_calendar_view, overviewItemKinds: result.rows[0].overview_item_kinds }
     },
   },
   updatePreferences: {
     permission: "authenticated",
     async run(context, input) {
-      const record = objectInput(input, ["defaultCalendarView"])
-      const view = stringField(record, "defaultCalendarView")
-      if (!["day", "week", "month", "agenda"].includes(view)) throw new PlatformInputError("Invalid calendar view")
-      const result = await context.db.query("UPDATE public.users SET default_calendar_view = $2 WHERE id = $1", [context.userId, view])
+      const record = objectInput(input, ["defaultCalendarView", "overviewItemKinds"])
+      const values: unknown[] = [context.userId]
+      const setters: string[] = []
+      if (record.defaultCalendarView !== undefined) {
+        const view = stringField(record, "defaultCalendarView")
+        if (!["day", "week", "month", "agenda"].includes(view)) throw new PlatformInputError("Invalid calendar view")
+        values.push(view)
+        setters.push(`default_calendar_view = $${values.length}`)
+      }
+      if (record.overviewItemKinds !== undefined) {
+        const kinds = record.overviewItemKinds
+        const allowedKinds = ["request", "equipment", "venue", "stream", "message"]
+        if (!Array.isArray(kinds) || kinds.length > allowedKinds.length || kinds.some((kind: unknown) => typeof kind !== "string" || !allowedKinds.includes(kind)) || new Set(kinds).size !== kinds.length) {
+          throw new PlatformInputError("Invalid overview item kinds")
+        }
+        values.push(kinds)
+        setters.push(`overview_item_kinds = $${values.length}::text[]`)
+      }
+      if (!setters.length) throw new PlatformInputError("Choose preferences to update")
+      const result = await context.db.query(`UPDATE public.users SET ${setters.join(", ")} WHERE id = $1`, values)
       if (result.rowCount === 0) throw notFound("User not found")
       return null
     },

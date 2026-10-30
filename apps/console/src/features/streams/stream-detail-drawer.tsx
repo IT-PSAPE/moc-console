@@ -50,7 +50,6 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
 
   return (
     <>
-      <Paragraph.xs role="status" aria-live="polite" className="sr-only">{drawer.state.copyMessage}</Paragraph.xs>
       <SplitPanel.Header className="flex items-center gap-1">
         <Button.Icon aria-label="Close stream" variant="ghost" size="sm" icon={<X />} onClick={drawer.actions.close} />
         <Button.Icon aria-label="Open full page" variant="ghost" size="sm" icon={<Maximize2 />} onClick={drawer.actions.openFullPage} />

@@ -2,7 +2,7 @@ import type { Broadcast } from "@moc/types/broadcast/broadcast"
 import { Button } from "@moc/ui/components/controls/button"
 import { Decision } from "@moc/ui/components/display/decision"
 import { GroupedList } from "@moc/ui/components/display/grouped-list"
-import { Alert } from "@moc/ui/components/feedback/alert"
+import { RetryNotification } from "@moc/ui/components/feedback/retry-notification"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Input } from "@moc/ui/components/form/input"
 import { Page } from "@moc/ui/components/layout/page"
@@ -63,20 +63,29 @@ function BroadcastsCollection() {
 
           <Page.Content className="flex flex-col gap-4">
             {state.loadError ? (
-              <Alert
-                variant="error"
+              <RetryNotification
                 title="Could not load broadcasts"
                 description={state.loadError.message}
-                action={<Button variant="secondary" onClick={actions.retry}>Retry</Button>}
+                onRetry={actions.retry}
+                isRetrying={state.isLoading}
               />
             ) : null}
             <Decision value={meta.filtered}>
               <Decision.Empty>
-                <EmptyState
-                  icon={<RadioTower />}
-                  title={meta.isFiltered ? "No broadcasts match your search" : "No broadcasts yet"}
-                  description={meta.isFiltered ? "Try a different title or file name." : "Create a playlist to give listeners a public player link."}
-                />
+                {state.loadError ? (
+                  <EmptyState
+                    icon={<RadioTower />}
+                    title="Broadcasts couldn't be loaded"
+                    description={state.loadError.message}
+                    action={<Button variant="secondary" onClick={actions.retry} disabled={state.isLoading}>Retry</Button>}
+                  />
+                ) : (
+                  <EmptyState
+                    icon={<RadioTower />}
+                    title={meta.isFiltered ? "No broadcasts match your search" : "No broadcasts yet"}
+                    description={meta.isFiltered ? "Try a different title or file name." : "Create a playlist to give listeners a public player link."}
+                  />
+                )}
               </Decision.Empty>
               <Decision.Data>
                 <GroupedList>

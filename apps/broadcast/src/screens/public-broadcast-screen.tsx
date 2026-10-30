@@ -3,7 +3,8 @@ import { usePublicBroadcast } from "@/features/use-public-broadcast"
 import { VideoBroadcastPlayer } from "@/features/video-broadcast-player"
 import type { Broadcast } from "@moc/types/broadcast/broadcast"
 import { Decision } from "@moc/ui/components/display/decision"
-import { RetryAlert } from "@moc/ui/components/feedback/retry-alert"
+import { Button } from "@moc/ui/components/controls/button"
+import { RetryNotification } from "@moc/ui/components/feedback/retry-notification"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { RadioTower } from "lucide-react"
@@ -35,7 +36,13 @@ export function PublicBroadcastScreen() {
   if (error) {
     return (
       <BroadcastLayout>
-        <RetryAlert title="Could not load broadcast" description="Check your connection and try again. If the link still fails, ask the broadcast owner to check it." onRetry={retry} />
+        <RetryNotification title="Could not load broadcast" description="Check your connection and try again. If the link still fails, ask the broadcast owner to check it." onRetry={retry} />
+        <EmptyState
+          icon={<RadioTower />}
+          title="Broadcast unavailable"
+          description={error}
+          action={<Button type="button" variant="secondary" onClick={retry}>Try again</Button>}
+        />
       </BroadcastLayout>
     )
   }

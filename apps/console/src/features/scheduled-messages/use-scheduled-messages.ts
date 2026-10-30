@@ -8,10 +8,12 @@ import { routes } from '@/screens/console-routes'
 import { fetchScheduledMessages, mutateScheduledMessage } from './services/scheduled-message-service'
 import { scheduledTimestamp } from './scheduled-timestamps'
 import { useScheduledMessageHistory } from './use-scheduled-message-history'
+import { useScheduledOccurrenceLink } from './use-scheduled-occurrence-link'
 import { useScheduledAttendanceGroupEditor } from './use-scheduled-attendance-group-editor'
 import { createScheduledMessagePayload, type NewMessageDraft } from './scheduled-message-payload'
 import { useScheduledMessageDrafts } from './use-scheduled-message-drafts'
 import { canSendScheduledOccurrence, createScheduledMessageViewModel, editValueForOccurrence, type ScheduledMessageEditField } from './scheduled-message-view-model'
+import { useFeedback } from '@moc/ui/components/feedback/feedback-provider'
 
 const empty: ScheduledSnapshot = { workspaceTimezone: DEFAULT_TIMEZONE, schedules: [], occurrences: [], memberTypes: [], groups: [], members: [] }
 const frequencyItems: { value: Exclude<ScheduledFrequency, 'weekdays'>; label: string }[] = [
@@ -34,6 +36,7 @@ function parseEditGroups(value: string): ScheduledAttendanceGroup[] {
 
 export function useScheduledMessages() {
     const { currentWorkspaceId } = useWorkspace()
+    const { toast } = useFeedback()
     const navigate = useNavigate()
     const messageDrafts = useScheduledMessageDrafts(currentWorkspaceId)
     const { draft } = messageDrafts
@@ -62,9 +65,10 @@ export function useScheduledMessages() {
     const occurrenceGroupEditor = useScheduledAttendanceGroupEditor(parseEditGroups(edit.value), setEditGroups)
     const scheduleGroupEditor = useScheduledAttendanceGroupEditor(draft.attendanceGroups, changeAttendanceGroups)
     const visibleSnapshot = loadedWorkspaceId === currentWorkspaceId ? snapshot : empty
+    const occurrenceLink = useScheduledOccurrenceLink({ occurrences: visibleSnapshot.occurrences, workspaceId: currentWorkspaceId, ready: hasData && loadedWorkspaceId === currentWorkspaceId, enabled: tab === 'upcoming' })
     const selectedData = tab === 'history' ? history.data : visibleSnapshot
     const workspaceTimezone = visibleSnapshot.workspaceTimezone
-    const view = createScheduledMessageViewModel(selectedData, draft, editing, details, edit, deleting, frequencyItems, scopeItems, typeItems, offsetUnitItems)
+    const view = createScheduledMessageViewModel(selectedData, draft, editing, occurrenceLink.occurrence ?? details, edit, deleting, frequencyItems, scopeItems, typeItems, offsetUnitItems)
 
     useEffect(() => {
         setLoadedWorkspaceId(null)
@@ -112,7 +116,7 @@ export function useScheduledMessages() {
             if (history.hasData || tab === 'history') void history.load()
             return true
         } catch (reason) {
-            if (isCurrent()) setError(reason instanceof Error ? reason.message : 'Operation failed')
+            if (isCurrent()) toast({ title: "Couldn't complete action", description: reason instanceof Error ? reason.message : 'Operation failed', variant: 'error' })
             return false
         } finally {
             if (mutating.current === mutation) {
@@ -155,20 +159,23 @@ export function useScheduledMessages() {
         updateDraft(current => ({ ...current, attendeeIds: checked ? [...current.attendeeIds, value] : current.attendeeIds.filter(id => id !== value) }))
     }
 
-    function setGroup(groupChatId: string): void { updateDraft(current => ({ ...current, groupChatId, threadId: '' })) }
-    function setTopic(threadId: string): void { updateDraft(current => ({ ...current, threadId: threadId === 'main' ? '' : threadId })) }
+    function setDestination(value: string): void {
+        const destination = view.destinationItems.find(item => item.value === value)
+        if (!destination) return
+        updateDraft(current => ({ ...current, groupChatId: destination.groupChatId, threadId: destination.threadId === null ? '' : String(destination.threadId) }))
+    }
 
     function requestCreate(): void {
         if (!currentWorkspaceId || loadedWorkspaceId !== currentWorkspaceId || !messageDrafts.isInitialized) return
+        setError('')
+        const destination = view.selectedDestination
+        if (!destination) { setError('Choose an available Telegram group or topic'); return }
         let payload
         try { payload = createScheduledMessagePayload(draft, workspaceTimezone) }
         catch (reason) { setError(reason instanceof Error ? reason.message : 'Check message details'); return }
-        const group = visibleSnapshot.groups.find(item => item.chat_id === draft.groupChatId)
-        const topic = group?.telegram_group_topics.find(item => String(item.thread_id) === draft.threadId)
-        const destination = [group?.title, topic?.name].filter(Boolean).join(' / ')
         const scheduledDescription = draft.sendMode === 'now'
-            ? `${destination}. The primary message will be queued now${draft.messageType === 'attendance' ? `; its Attendance follow-up is due ${draft.followUpAmount} ${draft.followUpUnit} later` : ''}.`
-            : `${destination}. ${draft.startsOn} · ${frequencyItems.find(item => item.value === draft.frequency)?.label ?? 'Does not repeat'}${draft.frequency !== 'once' && draft.untilOn ? ` through ${draft.untilOn}` : ''}${draft.messageType === 'attendance' ? ` · Attendance follow-up ${draft.followUpAmount} ${draft.followUpUnit} after each primary send` : ''}. Scheduled messages are checked hourly and may be delayed by up to an hour.`
+            ? `${destination.label}. The primary message will be queued now${draft.messageType === 'attendance' ? `; its Attendance follow-up is due ${draft.followUpAmount} ${draft.followUpUnit} later` : ''}.`
+            : `${destination.label}. ${draft.startsOn} · ${frequencyItems.find(item => item.value === draft.frequency)?.label ?? 'Does not repeat'}${draft.frequency !== 'once' && draft.untilOn ? ` through ${draft.untilOn}` : ''}${draft.messageType === 'attendance' ? ` · Attendance follow-up ${draft.followUpAmount} ${draft.followUpUnit} after each primary send` : ''}.`
         setConfirmation({ op: 'schedule.create', title: draft.sendMode === 'now' ? 'Send this message now?' : 'Schedule this message?', label: draft.sendMode === 'now' ? 'Send now' : 'Schedule message', data: payload, description: scheduledDescription })
     }
 
@@ -185,7 +192,11 @@ export function useScheduledMessages() {
         if (occurrence) setDetails(occurrence)
     }
 
-    function changeDetailsOpen(open: boolean): void { if (!open) setDetails(null) }
+    function changeDetailsOpen(open: boolean): void {
+        if (open) return
+        setDetails(null)
+        occurrenceLink.close()
+    }
 
     function changeEditField(field: string): void {
         if (!editing || !['body', 'attendanceGroups', 'sendOn', 'followUpMinutes'].includes(field)) return
@@ -199,6 +210,7 @@ export function useScheduledMessages() {
 
     function requestEdit(): void {
         if (!editing) return
+        setError('')
         let value: string = edit.value
         try {
             if (edit.field === 'body') validateScheduledBody(editing.message_type, edit.value)
@@ -286,7 +298,7 @@ export function useScheduledMessages() {
             error,
             loadError,
             loading,
-            isInitialLoading: isInitialLoading || loadedWorkspaceId !== currentWorkspaceId || !messageDrafts.isInitialized,
+            isInitialLoading: !loadError && (isInitialLoading || loadedWorkspaceId !== currentWorkspaceId || !messageDrafts.isInitialized),
             busy,
             historyLoadingMore: history.isLoadingMore,
             historyPageError: tab === 'history' && history.pageError ? (history.pageError instanceof Error ? history.pageError.message : 'Could not load older messages') : '',
@@ -300,8 +312,7 @@ export function useScheduledMessages() {
             changeBody,
             changeAttendee,
             changeMemberSearch,
-            setGroup,
-            setTopic,
+            setDestination,
             setStartsOn,
             setDeliveryMode,
             setFrequency,
@@ -342,9 +353,8 @@ export function useScheduledMessages() {
             occurrences: view.occurrences,
             occurrenceLoading: selectedResource.isInitialLoading,
             hasMoreHistory: tab === 'history' && history.hasMore,
-            groupItems: view.groupItems,
-            topicItems: view.topicItems,
-            hasTopics: view.hasTopics,
+            destinationItems: view.destinationItems,
+            destinationValue: view.selectedDestination?.value ?? '',
             frequencyItems,
             typeItems,
             offsetUnitItems,
