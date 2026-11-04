@@ -1,6 +1,7 @@
 import { formatUtcIsoForBrowserDateTimeInput } from "@moc/utils/browser-date-time"
 import { formatUtcIsoForDateTimeInput } from "@moc/utils/zoned-date-time"
 import { VENUE_EVENT_OTHER_ID } from "@moc/types/venues"
+import { getBookingUserNotes } from "./booking-notes"
 import type { BookingFormData } from "@/types/booking"
 import type { RequestFormData } from "@/types/request"
 import type { VenueBookingFormData } from "@/types/venue-booking"
@@ -72,7 +73,7 @@ export function toBookingEditData(result: TrackingBookingResult): BookingFormDat
     bookedBy: result.bookedBy,
     checkedOutAt: formatUtcIsoForBrowserDateTimeInput(result.checkedOutAt),
     expectedReturnAt: formatUtcIsoForBrowserDateTimeInput(result.expectedReturnAt),
-    notes: result.notes ?? "",
+    notes: getBookingUserNotes(result),
   }
 }
 

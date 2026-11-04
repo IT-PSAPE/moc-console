@@ -1,5 +1,6 @@
 import { apiUrl } from "@moc/utils/api-url"
 import { parseBrowserDateTimeInputToUtcIso } from "@moc/utils/browser-date-time"
+import { buildBookingNotes } from "@/features/booking-notes"
 import type { BookingFormData } from "@/types/booking"
 import type { RequestFormData } from "@/types/request"
 import type { TrackingResult, TrackingVenueBookingResult } from "@/types/tracking"
@@ -70,7 +71,7 @@ export async function updateTrackedBooking(result: Extract<TrackingResult, { typ
       bookedBy: data.bookedBy,
       checkedOutAt: parseBrowserDateTimeInputToUtcIso(data.checkedOutAt),
       expectedReturnAt: parseBrowserDateTimeInputToUtcIso(data.expectedReturnAt),
-      notes: data.notes.trim(),
+      notes: buildBookingNotes(data),
       requestedEquipment: data.requestedEquipment,
       otherEquipment: data.otherEquipment.trim(),
     },

@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
 import { buildTrackingShareData, canRequesterModify, toBookingEditData, toRequestEditData, toVenueEditData } from "../../../../../apps/request/src/features/tracking-submission.js"
+import { buildBookingNotes } from "../../../../../apps/request/src/features/booking-notes"
 
 describe("buildTrackingShareData", () => {
   it("separates the private tracking code and tracking page into scannable sections", () => {
@@ -29,6 +30,24 @@ describe("buildTrackingShareData", () => {
 })
 
 describe("tracking result edit data", () => {
+  it("replaces the equipment summary on edits without duplicating it in notes", () => {
+    const result = {
+      type: "booking" as const,
+      id: "booking-1", trackingCode: "BKG-123456789ABC", title: "Sunday setup",
+      status: "booked" as const, bookedBy: "Rumbi",
+      checkedOutAt: "2026-10-02T06:30:00.000Z", expectedReturnAt: "2026-10-02T12:30:00.000Z",
+      returnedAt: null, notes: "Please include batteries.\n\nEquipment booked:\n- Camera\n- Speaker\n- Tripod",
+      requestedEquipment: ["Camera", "Speaker"], otherEquipment: "Tripod", items: [],
+      createdAt: "2026-09-19T08:00:00.000Z", updatedAt: "2026-09-19T08:00:00.000Z",
+    }
+    const editData = toBookingEditData(result)
+    assert.equal(editData.notes, "Please include batteries.")
+
+    const notes = buildBookingNotes({ ...editData, requestedEquipment: ["Projector"], otherEquipment: "HDMI adapter" })
+    assert.equal(notes, "Please include batteries.\n\nEquipment booked:\n- Projector\n- HDMI adapter")
+    assert.equal(toBookingEditData({ ...result, notes, requestedEquipment: ["Projector"], otherEquipment: "HDMI adapter" }).notes, editData.notes)
+  })
+
   it("maps a request lookup into the complete request form", () => {
     assert.deepEqual(toRequestEditData({
       type: "request",

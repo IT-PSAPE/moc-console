@@ -74,7 +74,9 @@ export function TrackingResult({ data }: { data: TrackingResultType }) {
                 <MetaRow icon={<CalendarCheck />} label="Returned">{formatDateTime(data.returnedAt)}</MetaRow>
               )}
               {data.notes && (
-                <MetaRow icon={<StickyNote />} label="Notes">{data.notes}</MetaRow>
+                <MetaRow icon={<StickyNote />} label="Notes">
+                  <Paragraph.sm className="whitespace-pre-wrap">{data.notes}</Paragraph.sm>
+                </MetaRow>
               )}
             </>
           )}
