@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ChevronRight } from 'lucide-react'
+import { NavArrowRight } from 'iconoir-react'
 import { Badge } from '@moc/ui/components/display/badge'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import { InteractiveSurface } from '@moc/ui/components/controls/interactive-surface'
@@ -26,7 +26,7 @@ export function MessageTemplateRow({ type, customised }: MessageTemplateRowProps
                     <ListItemCard.Subtitle>{meta.description}</ListItemCard.Subtitle>
                 </ListItemCard.Content>
                 <ListItemCard.Trailing>
-                    <ChevronRight className="size-4 shrink-0 text-quaternary" aria-hidden="true" />
+                    <NavArrowRight className="size-4 shrink-0 text-quaternary" aria-hidden="true" />
                 </ListItemCard.Trailing>
             </ListItemCard.Root>
         </InteractiveSurface.CardLink>

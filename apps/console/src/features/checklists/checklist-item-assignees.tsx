@@ -1,4 +1,4 @@
-import { UserPlus } from "lucide-react";
+import { UserPlus } from "iconoir-react";
 import { AssigneeAvatars } from "@/features/assignees/assignee-avatars";
 import { MemberPicker } from "@/features/assignees/member-picker";
 import { Button } from "@moc/ui/components/controls/button";

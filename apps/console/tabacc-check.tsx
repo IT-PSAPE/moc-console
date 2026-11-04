@@ -3,7 +3,7 @@ import "@moc/ui/styles.css";
 import { Accordion } from "@moc/ui/components/display/accordion";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { Tabs } from "@moc/ui/components/layout/tabs";
-import { ChevronDown } from "lucide-react";
+import { NavArrowDown } from "iconoir-react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -27,7 +27,7 @@ function Demo() {
                 <Accordion.Item value="a" className="border-b border-secondary">
                     <Accordion.Trigger className="flex items-center justify-between py-3">
                         <Label.sm>Section A</Label.sm>
-                        <ChevronDown className="size-4 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
+                        <NavArrowDown className="size-4 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
                     </Accordion.Trigger>
                     <Accordion.Content>
                         <div className="pb-3"><Paragraph.sm className="text-tertiary">Body of section A.</Paragraph.sm></div>
@@ -36,7 +36,7 @@ function Demo() {
                 <Accordion.Item value="b" className="border-b border-secondary">
                     <Accordion.Trigger className="flex items-center justify-between py-3">
                         <Label.sm>Section B</Label.sm>
-                        <ChevronDown className="size-4 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
+                        <NavArrowDown className="size-4 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
                     </Accordion.Trigger>
                     <Accordion.Content>
                         <div className="pb-3"><Paragraph.sm className="text-tertiary">Body of section B.</Paragraph.sm></div>

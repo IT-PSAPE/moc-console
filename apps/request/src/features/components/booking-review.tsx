@@ -1,7 +1,7 @@
 import { Badge } from '@moc/ui/components/display/badge'
 import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Label } from '@moc/ui/components/display/text'
-import { Package, User, CalendarDays, CalendarCheck, FileText, Plus } from 'lucide-react'
+import { Box, User, Calendar, CalendarCheck, Page, Plus } from 'iconoir-react'
 import type { BookingFormData } from '@/types/booking'
 import { formatDateTime } from '@/lib/utils'
 
@@ -20,10 +20,10 @@ export function BookingReview({ data }: BookingReviewProps) {
       <section className="flex flex-col gap-3">
         <Label.xs className="text-tertiary uppercase tracking-wider">Booking summary</Label.xs>
         <div className="flex flex-col gap-3">
-          <MetaRow icon={<FileText />} label="Title">
+          <MetaRow icon={<Page />} label="Title">
             <Label.sm>{data.title}</Label.sm>
           </MetaRow>
-          <MetaRow icon={<Package />} label="Equipment">
+          <MetaRow icon={<Box />} label="Equipment">
             <div className="flex flex-wrap gap-1.5">
               {data.requestedEquipment.map((label) => (
                 <Badge key={label} label={label} color="blue" variant="outline" />
@@ -39,7 +39,7 @@ export function BookingReview({ data }: BookingReviewProps) {
           <MetaRow icon={<User />} label="Booked by">
             <Label.sm>{data.bookedBy}</Label.sm>
           </MetaRow>
-          <MetaRow icon={<CalendarDays />} label="Checkout">
+          <MetaRow icon={<Calendar />} label="Checkout">
             <Label.sm>{formatDateTime(data.checkedOutAt)}</Label.sm>
           </MetaRow>
           <MetaRow icon={<CalendarCheck />} label="Expected return">

@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from 'react'
-import { RotateCcw, X } from 'lucide-react'
+import { Undo, Xmark } from 'iconoir-react'
 import { Button } from '../controls/button'
 import { Label } from '../display/text'
 import { Drawer } from './drawer'
@@ -20,13 +20,13 @@ function FilterDrawerRoot({ children, hasActiveFilters = false, onReset, title =
                 <Drawer.Header>
                     <Label.md className="flex-1">{title}</Label.md>
                     <Drawer.Close>
-                        <Button.Icon aria-label="Close filters" variant="ghost" size="sm" icon={<X />} />
+                        <Button.Icon aria-label="Close filters" variant="ghost" size="sm" icon={<Xmark />} />
                     </Drawer.Close>
                 </Drawer.Header>
                 <Drawer.Content>{children}</Drawer.Content>
                 <Drawer.Footer>
                     {hasActiveFilters && onReset && (
-                        <Button variant="secondary" icon={<RotateCcw />} onClick={onReset}>
+                        <Button variant="secondary" icon={<Undo />} onClick={onReset}>
                             Reset
                         </Button>
                     )}

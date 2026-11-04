@@ -1,6 +1,6 @@
 import { AlertDialog as BaseAlertDialog } from '@base-ui/react/alert-dialog'
 import { cn } from '@moc/utils/cn'
-import { TriangleAlert } from 'lucide-react'
+import { WarningTriangle } from 'iconoir-react'
 import { Button } from '../controls/button'
 import { Label, Paragraph } from '../display/text'
 import { useOverlayStack } from './overlay-provider'
@@ -34,7 +34,7 @@ export function ConfirmationDialog({ cancelLabel = 'Cancel', confirmLabel, descr
                     )}>
                         <OverlayHeader>
                             <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-error text-error">
-                                <TriangleAlert className="size-5" aria-hidden="true" />
+                                <WarningTriangle className="size-5" aria-hidden="true" />
                             </span>
                             <BaseAlertDialog.Title render={<Label.md className="min-w-0 flex-1 text-pretty text-primary" />}>
                                 {title}

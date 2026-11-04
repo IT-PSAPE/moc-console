@@ -1,4 +1,4 @@
-import { Bold, Italic, Underline, Strikethrough, Code, Link2, Undo2, Redo2, ChevronDown, Plus, Table2 } from 'lucide-react'
+import { Bold, Italic, Underline, Strikethrough, Code, Link, UndoAction, RedoAction, NavArrowDown, Plus, Table2Columns } from 'iconoir-react'
 import { Button } from '../../controls/button'
 import { Dropdown } from '../../overlays/dropdown'
 import { RichTextEditorCommand } from './rich-text-editor-command'
@@ -8,7 +8,7 @@ import { useRichTextEditorContext } from './rich-text-editor-context'
 export function RichTextEditorControls() {
     const { state, actions } = useRichTextEditorContext()
     return <>
-            <Dropdown><Dropdown.Trigger><Button variant="ghost" size="sm" icon={<ChevronDown />} className="rounded-md">Text style</Button></Dropdown.Trigger><Dropdown.Panel>
+            <Dropdown><Dropdown.Trigger><Button variant="ghost" size="sm" icon={<NavArrowDown />} className="rounded-md">Text style</Button></Dropdown.Trigger><Dropdown.Panel>
                 <RichTextEditorMenuCommand command="paragraph">Paragraph</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="h1">Heading 1</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="h2">Heading 2</RichTextEditorMenuCommand>
@@ -22,7 +22,7 @@ export function RichTextEditorControls() {
             <RichTextEditorCommand command="underline" label="Underline" icon={<Underline />} />
             <RichTextEditorCommand command="strike" label="Strikethrough" icon={<Strikethrough />} />
             <RichTextEditorCommand command="code" label="Inline code" icon={<Code />} />
-            <Button.Icon variant="ghost" size="sm" icon={<Link2 />} aria-label="Edit link" title="Edit link" onMouseDown={actions.preserveSelection} onClick={actions.openLink} disabled={state.disabled || state.selection?.activeCommands.includes('code')} className="rounded-md" />
+            <Button.Icon variant="ghost" size="sm" icon={<Link />} aria-label="Edit link" title="Edit link" onMouseDown={actions.preserveSelection} onClick={actions.openLink} disabled={state.disabled || state.selection?.activeCommands.includes('code')} className="rounded-md" />
             <Dropdown><Dropdown.Trigger><Button variant="ghost" size="sm" icon={<Plus />} className="rounded-md">Insert</Button></Dropdown.Trigger><Dropdown.Panel>
                 <RichTextEditorMenuCommand command="table">Table</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="bulletList">Bullet list</RichTextEditorMenuCommand>
@@ -37,15 +37,15 @@ export function RichTextEditorControls() {
                 <RichTextEditorMenuCommand command="unlink">Remove link</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="clear">Clear formatting</RichTextEditorMenuCommand>
             </Dropdown.Panel></Dropdown>
-            {state.selection?.inTable && <Dropdown><Dropdown.Trigger><Button variant="ghost" size="sm" icon={<Table2 />} className="rounded-md">Table</Button></Dropdown.Trigger><Dropdown.Panel>
+            {state.selection?.inTable && <Dropdown><Dropdown.Trigger><Button variant="ghost" size="sm" icon={<Table2Columns />} className="rounded-md">Table</Button></Dropdown.Trigger><Dropdown.Panel>
                 <RichTextEditorMenuCommand command="addRow">Add row below</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="addColumn">Add column after</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="deleteRow">Delete row</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="deleteColumn">Delete column</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="deleteTable">Delete table</RichTextEditorMenuCommand>
             </Dropdown.Panel></Dropdown>}
-            <RichTextEditorCommand command="undo" label="Undo" icon={<Undo2 />} />
-            <RichTextEditorCommand command="redo" label="Redo" icon={<Redo2 />} />
+            <RichTextEditorCommand command="undo" label="Undo" icon={<UndoAction />} />
+            <RichTextEditorCommand command="redo" label="Redo" icon={<RedoAction />} />
         <RichTextEditorLinkDialog />
     </>
 }

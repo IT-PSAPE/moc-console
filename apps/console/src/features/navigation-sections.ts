@@ -1,31 +1,31 @@
 import { routes } from '@/screens/console-routes'
-import { Boxes, Building2, ClipboardList, LayoutDashboard, Megaphone, MessageSquare, MessagesSquare, Quote, Radio, Send, UsersRound, BriefcaseBusiness, Clapperboard, type LucideIcon } from 'lucide-react'
+import { Packages, Building, TaskList, ViewGrid, Megaphone, Message, ChatLines, Quote, AntennaSignal, SendDiagonal, Group, Suitcase, Movie } from 'iconoir-react'
 
 export type NavigationSection = 'overview' | 'work' | 'production' | 'communications' | 'people'
-export type NavigationDestination = { title: string; route: string; icon: LucideIcon }
+export type NavigationDestination = { title: string; route: string; icon: typeof ViewGrid }
 export type NavigationAccess = { canManageMembers: boolean; canManageScheduledMessages: boolean; canManageTelegram: boolean; canManageQuotes: boolean }
-type PrimaryDestination = { id: NavigationSection; title: string; icon: LucideIcon; route?: string }
+type PrimaryDestination = { id: NavigationSection; title: string; icon: typeof ViewGrid; route?: string }
 
 export const navigationSections: PrimaryDestination[] = [
-    { id: 'overview', title: 'Overview', icon: LayoutDashboard, route: routes.overview },
-    { id: 'work', title: 'Work', icon: BriefcaseBusiness, route: routes.work },
-    { id: 'production', title: 'Production', icon: Clapperboard },
-    { id: 'communications', title: 'Communications', icon: MessagesSquare },
-    { id: 'people', title: 'People & resources', icon: UsersRound },
+    { id: 'overview', title: 'Overview', icon: ViewGrid, route: routes.overview },
+    { id: 'work', title: 'Work', icon: Suitcase, route: routes.work },
+    { id: 'production', title: 'Production', icon: Movie },
+    { id: 'communications', title: 'Communications', icon: ChatLines },
+    { id: 'people', title: 'People & resources', icon: Group },
 ]
 const productionDestinations: NavigationDestination[] = [
-    { title: 'Streams', route: routes.streams, icon: Radio },
+    { title: 'Streams', route: routes.streams, icon: AntennaSignal },
     { title: 'Broadcast', route: routes.broadcasts, icon: Megaphone },
-    { title: 'Checklists', route: routes.checklists, icon: ClipboardList },
+    { title: 'Checklists', route: routes.checklists, icon: TaskList },
 ]
 const communicationDestinations: NavigationDestination[] = [
-    { title: 'Messages', route: routes.scheduledMessages, icon: MessageSquare },
-    { title: 'Telegram', route: routes.telegram, icon: Send },
+    { title: 'Messages', route: routes.scheduledMessages, icon: Message },
+    { title: 'Telegram', route: routes.telegram, icon: SendDiagonal },
 ]
-const members: NavigationDestination = { title: 'Members', route: routes.members, icon: UsersRound }
+const members: NavigationDestination = { title: 'Members', route: routes.members, icon: Group }
 const resources: NavigationDestination[] = [
-    { title: 'Equipment', route: routes.equipment, icon: Boxes },
-    { title: 'Venues', route: routes.venueCatalog, icon: Building2 },
+    { title: 'Equipment', route: routes.equipment, icon: Packages },
+    { title: 'Venues', route: routes.venueCatalog, icon: Building },
 ]
 const dailyQuotes: NavigationDestination = { title: 'Daily quotes', route: routes.dailyQuotes, icon: Quote }
 

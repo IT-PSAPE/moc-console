@@ -3,7 +3,7 @@ import { PublicLayout } from '@/features/components/public-layout'
 import { routes } from '@/screens/console-routes'
 import { Label, Paragraph, Title } from '@moc/ui/components/display/text'
 import { Button } from '@moc/ui/components/controls/button'
-import { Check, Copy, Share2 } from 'lucide-react'
+import { Check, Copy, ShareAndroid } from 'iconoir-react'
 import { useConfirmation } from './use-confirmation'
 import { PublicFlow } from '@/features/components/public-flow'
 import { Notification } from '@moc/ui/components/feedback/notification'
@@ -43,7 +43,7 @@ export function ConfirmationScreen() {
       {state.shareError && <Notification title="Could not copy or share" description={state.shareError} variant="error" />}
 
       <PublicFlow.Actions className="mx-auto mt-12 max-w-sm">
-        <Button variant="secondary" icon={state.shared ? <Check /> : <Share2 />} onClick={actions.share} className="rounded-full px-6 py-3">
+        <Button variant="secondary" icon={state.shared ? <Check /> : <ShareAndroid />} onClick={actions.share} className="rounded-full px-6 py-3">
           {state.shared ? 'Shared' : 'Share tracking details'}
         </Button>
         <Button variant="secondary" onClick={actions.backToHome} className="rounded-full px-6 py-3">

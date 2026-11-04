@@ -5,7 +5,7 @@ import { useIsLandscape } from '../../hooks/use-is-landscape'
 import { Drawer } from './drawer'
 import { mobileSheetPositionerClassName } from './mobile-sheet'
 import { useOverlayStack } from './overlay-provider'
-import { Check } from 'lucide-react'
+import { Check } from 'iconoir-react'
 import { Paragraph } from '../display/text'
 
 // ─── Placement ───────────────────────────────────────────────────────

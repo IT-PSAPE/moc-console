@@ -8,7 +8,7 @@ import { Input } from "@moc/ui/components/form/input"
 import { Page } from "@moc/ui/components/layout/page"
 import { SplitPanel } from "@moc/ui/components/layout/split-panel"
 import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
-import { Plus, RadioTower, Search } from "lucide-react"
+import { Plus, Antenna, Search } from "iconoir-react"
 import type { ChangeEvent } from "react"
 import { BroadcastDetailPanel } from "./broadcast-detail-panel"
 import { BroadcastItem } from "./broadcast-item"
@@ -74,14 +74,14 @@ function BroadcastsCollection() {
               <Decision.Empty>
                 {state.loadError ? (
                   <EmptyState
-                    icon={<RadioTower />}
+                    icon={<Antenna />}
                     title="Broadcasts couldn't be loaded"
                     description={state.loadError.message}
                     action={<Button variant="secondary" onClick={actions.retry} disabled={state.isLoading}>Retry</Button>}
                   />
                 ) : (
                   <EmptyState
-                    icon={<RadioTower />}
+                    icon={<Antenna />}
                     title={meta.isFiltered ? "No broadcasts match your search" : "No broadcasts yet"}
                     description={meta.isFiltered ? "Try a different title or file name." : "Create a playlist to give listeners a public player link."}
                   />

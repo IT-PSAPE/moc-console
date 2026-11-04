@@ -1,4 +1,4 @@
-import { Volume1, VolumeX } from "lucide-react"
+import { SoundLow, SoundOff } from "iconoir-react"
 import { Button } from "@moc/ui/components/controls/button"
 import { useBroadcastPlaybackContext } from "./broadcast-playback-provider"
 import { BroadcastSlider } from "./broadcast-slider"
@@ -15,7 +15,7 @@ export function BroadcastVolume() {
         aria-label={isMuted ? "Unmute" : "Mute"}
         variant="ghost"
         className="size-11 min-w-0 shrink-0 rounded-full border-transparent text-quaternary hover:text-primary [&_svg]:size-4"
-        icon={isMuted ? <VolumeX /> : <Volume1 />}
+        icon={isMuted ? <SoundOff /> : <SoundLow />}
         onClick={toggleMuted}
       />
       <BroadcastSlider

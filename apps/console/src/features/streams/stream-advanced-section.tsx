@@ -6,7 +6,7 @@ import { Accordion } from "@moc/ui/components/display/accordion"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import type { LatencyPreference } from "@moc/types/streams/stream"
 import { latencyPreferenceLabel, latencyPreferenceHint } from "@moc/types/streams/stream-constants"
-import { ChevronDown } from "lucide-react"
+import { NavArrowDown } from "iconoir-react"
 
 type StreamAdvancedSectionProps = {
   latencyPreference: LatencyPreference
@@ -57,7 +57,7 @@ export function StreamAdvancedSection({
     <Accordion.Item value="advanced">
       <Accordion.Trigger className="flex items-center gap-2 py-2 text-left">
         <Label.sm className="flex-1">Advanced settings</Label.sm>
-        <ChevronDown className="size-4 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
+        <NavArrowDown className="size-4 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
       </Accordion.Trigger>
       <Accordion.Content>
         <div className="flex flex-col gap-4 pb-2 pt-1">

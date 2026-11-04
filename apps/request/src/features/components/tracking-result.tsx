@@ -2,7 +2,7 @@ import { Badge } from '@moc/ui/components/display/badge'
 import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Divider } from '@moc/ui/components/display/divider'
 import { Label, Paragraph, Title } from '@moc/ui/components/display/text'
-import { Hash, Package, User, CalendarDays, Flag, Tag, CalendarCheck, Building2, Repeat2 } from 'lucide-react'
+import { Hashtag, Box, User, Calendar, WhiteFlag, Label as LabelIcon, CalendarCheck, Building, Repeat } from 'iconoir-react'
 import { formatVenueRecurrenceEndLabel, formatVenueRecurrenceLabel, venueBookingPhaseLabel, venueBookingPhaseColor } from '@moc/types/venues'
 import type { VenueBookingPhase } from '@moc/types/venues'
 import { STATUS_LABELS, STATUS_COLORS } from '../constants'
@@ -27,25 +27,25 @@ export function TrackingResult({ data }: { data: TrackingResultType }) {
         <Label.xs className="text-tertiary uppercase tracking-wider">{trackingTypeLabels[data.type]}</Label.xs>
         {data.title && <Title.h5>{data.title}</Title.h5>}
         <div className="flex flex-col gap-3">
-          <MetaRow icon={<Hash />} label="Tracking code">
+          <MetaRow icon={<Hashtag />} label="Tracking code">
             <span className="font-mono">{data.trackingCode}</span>
           </MetaRow>
 
           {isRequest && (
             <>
               {data.status && (
-                <MetaRow icon={<Flag />} label="Status">
+                <MetaRow icon={<WhiteFlag />} label="Status">
                   <Badge label={STATUS_LABELS[data.status] ?? data.status} color={STATUS_COLORS[data.status] ?? 'gray'} />
                 </MetaRow>
               )}
               <MetaRow icon={<User />} label="Requested by">{data.requestedBy}</MetaRow>
               {data.category && (
-                <MetaRow icon={<Tag />} label="Category">
+                <MetaRow icon={<LabelIcon />} label="Category">
                   <Badge label={data.categoryName} color="blue" variant="outline" />
                 </MetaRow>
               )}
               {data.dueDate && (
-                <MetaRow icon={<CalendarDays />} label="Due date">{formatDateTime(data.dueDate)}</MetaRow>
+                <MetaRow icon={<Calendar />} label="Due date">{formatDateTime(data.dueDate)}</MetaRow>
               )}
             </>
           )}
@@ -53,13 +53,13 @@ export function TrackingResult({ data }: { data: TrackingResultType }) {
           {isBooking && (
             <>
               {data.status && (
-                <MetaRow icon={<Flag />} label="Status">
+                <MetaRow icon={<WhiteFlag />} label="Status">
                   <Badge label={STATUS_LABELS[data.status] ?? data.status} color={STATUS_COLORS[data.status] ?? 'gray'} />
                 </MetaRow>
               )}
               <MetaRow icon={<User />} label="Booked by">{data.bookedBy}</MetaRow>
               {data.checkedOutAt && (
-                <MetaRow icon={<CalendarDays />} label="Checkout">{formatDateTime(data.checkedOutAt)}</MetaRow>
+                <MetaRow icon={<Calendar />} label="Checkout">{formatDateTime(data.checkedOutAt)}</MetaRow>
               )}
               {data.expectedReturnAt && (
                 <MetaRow icon={<CalendarCheck />} label="Expected return">{formatDateTime(data.expectedReturnAt)}</MetaRow>
@@ -73,23 +73,23 @@ export function TrackingResult({ data }: { data: TrackingResultType }) {
           {isVenueBooking && (
             <>
               {data.status && (
-                <MetaRow icon={<Flag />} label="Status">
+                <MetaRow icon={<WhiteFlag />} label="Status">
                   <Badge label={venueBookingPhaseLabel[data.status as VenueBookingPhase] ?? data.status} color={venueBookingPhaseColor[data.status as VenueBookingPhase] ?? 'gray'} />
                 </MetaRow>
               )}
               <MetaRow icon={<User />} label="Requested by">{data.requestedBy}</MetaRow>
               {data.venueName && (
-                <MetaRow icon={<Building2 />} label="Venue">
+                <MetaRow icon={<Building />} label="Venue">
                   {data.venueName}{data.venueDescription ? ` · ${data.venueDescription}` : ''}
                 </MetaRow>
               )}
               {data.startsAt && (
-                <MetaRow icon={<CalendarDays />} label="Starts">{formatDateTime(data.startsAt)}</MetaRow>
+                <MetaRow icon={<Calendar />} label="Starts">{formatDateTime(data.startsAt)}</MetaRow>
               )}
               {data.endsAt && (
                 <MetaRow icon={<CalendarCheck />} label="Ends">{formatDateTime(data.endsAt)}</MetaRow>
               )}
-              <MetaRow icon={<Repeat2 />} label="Repeats">
+              <MetaRow icon={<Repeat />} label="Repeats">
                 <div className="flex flex-col">
                   <Paragraph.sm>{formatVenueRecurrenceLabel(data.recurrence)}</Paragraph.sm>
                   {recurrenceEndLabel && <Paragraph.xs className="text-tertiary">{data.occurrences.length} occurrences · {recurrenceEndLabel}</Paragraph.xs>}
@@ -98,7 +98,7 @@ export function TrackingResult({ data }: { data: TrackingResultType }) {
             </>
           )}
 
-          <MetaRow icon={<CalendarDays />} label="Submitted">{formatDate(data.createdAt)}</MetaRow>
+          <MetaRow icon={<Calendar />} label="Submitted">{formatDate(data.createdAt)}</MetaRow>
         </div>
       </section>
 
@@ -112,7 +112,7 @@ export function TrackingResult({ data }: { data: TrackingResultType }) {
                 <div key={item.id}>
                   {i > 0 && <Divider className="my-3" />}
                   <div className="flex items-center gap-2">
-                    <Package className="size-4 text-tertiary shrink-0" />
+                    <Box className="size-4 text-tertiary shrink-0" />
                     <Paragraph.sm>{item.equipmentName}</Paragraph.sm>
                   </div>
                 </div>

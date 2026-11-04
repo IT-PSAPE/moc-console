@@ -6,7 +6,7 @@ import { Button } from "@moc/ui/components/controls/button"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Accordion } from "@moc/ui/components/display/accordion"
 import type { YouTubeCategory, YouTubePlaylist } from "@moc/types/streams/stream"
-import { ChevronDown, X } from "lucide-react"
+import { NavArrowDown, Xmark } from "iconoir-react"
 
 type StreamOptionsSectionProps = {
   categoryId: string | null
@@ -67,7 +67,7 @@ export function StreamOptionsSection({
     <Accordion.Item value="optionals">
       <Accordion.Trigger className="flex items-center gap-2 py-2 text-left">
         <Label.sm className="flex-1">Options</Label.sm>
-        <ChevronDown className="size-4 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
+        <NavArrowDown className="size-4 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
       </Accordion.Trigger>
       <Accordion.Content>
         <div className="flex flex-col gap-4 pb-2 pt-1">
@@ -98,7 +98,7 @@ export function StreamOptionsSection({
                   <Button.Icon
                     aria-label={`Remove ${tag}`}
                     variant="ghost"
-                    icon={<X className="size-3" />}
+                    icon={<Xmark className="size-3" />}
                     data-tag={tag}
                     onClick={handleRemoveTag}
                   />

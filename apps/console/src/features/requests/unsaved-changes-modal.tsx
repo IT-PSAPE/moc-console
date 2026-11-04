@@ -1,7 +1,7 @@
 import { Modal } from '@moc/ui/components/overlays/modal'
 import { Button } from '@moc/ui/components/controls/button'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
-import { TriangleAlert } from 'lucide-react'
+import { WarningTriangle } from 'iconoir-react'
 
 type UnsavedChangesModalProps = {
     open: boolean
@@ -30,7 +30,7 @@ export function UnsavedChangesModal({ open, onSave, onDiscard, onCancel, isSavin
                             <Label.md>Unsaved changes</Label.md>
                         </Modal.Header>
                         <Modal.Content className="flex-row">
-                            <TriangleAlert className='size-8 shrink-0' />
+                            <WarningTriangle className='size-8 shrink-0' />
                             <Paragraph.sm className="text-secondary">
                                 {message}
                             </Paragraph.sm>

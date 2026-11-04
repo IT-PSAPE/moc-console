@@ -1,5 +1,6 @@
 import { StrictMode, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { IconoirProvider } from 'iconoir-react'
 import { Button } from '@moc/ui/components/controls/button'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { FeedbackProvider, useFeedback } from '@moc/ui/components/feedback/feedback-provider'
@@ -60,5 +61,5 @@ function FeedbackFixture() {
 }
 
 createRoot(document.getElementById('root')!).render(
-    <StrictMode><OverlayProvider><FeedbackProvider><FeedbackFixture /></FeedbackProvider></OverlayProvider></StrictMode>,
+    <StrictMode><IconoirProvider iconProps={{ width: 24, height: 24, strokeWidth: 1.75, 'aria-hidden': true }}><OverlayProvider><FeedbackProvider><FeedbackFixture /></FeedbackProvider></OverlayProvider></IconoirProvider></StrictMode>,
 )

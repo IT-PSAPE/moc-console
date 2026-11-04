@@ -1,6 +1,6 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
+import { Drag } from "iconoir-react";
 import { Button } from "@moc/ui/components/controls/button";
 import { cn } from "@moc/utils/cn";
 
@@ -17,7 +17,7 @@ export function DraggableSectionHandle({ sectionId, className }: { sectionId: st
         aria-label={`Reorder checklist section ${sectionId}`}
         variant="ghost"
         size="sm"
-        icon={<GripVertical />}
+        icon={<Drag />}
         className="cursor-grab touch-none text-quaternary opacity-0 transition-opacity focus-visible:opacity-100 group-hover/section:opacity-100 landscape:opacity-100"
       />
     </span>

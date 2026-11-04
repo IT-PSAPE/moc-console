@@ -5,7 +5,7 @@ import { FormField } from "@moc/ui/components/form/form-label"
 import { FileDropzone } from "@moc/ui/components/form/file-dropzone"
 import { Paragraph } from "@moc/ui/components/display/text"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
-import { Link, Loader2, X } from "lucide-react"
+import { Link, Refresh, Xmark } from "iconoir-react"
 
 type ThumbnailMode = "file" | "url"
 export type ThumbnailStatus = "idle" | "resolving" | "ready" | "error"
@@ -61,9 +61,9 @@ export function StreamThumbnailField({
             )}
             <Paragraph.sm className="text-secondary truncate flex-1">{selectionName}</Paragraph.sm>
             {status === "resolving" && (
-              <Loader2 className="size-3.5 animate-spin text-quaternary shrink-0 motion-reduce:animate-none" />
+              <Refresh className="size-3.5 animate-spin text-quaternary shrink-0 motion-reduce:animate-none" />
             )}
-            <Button.Icon aria-label="Remove thumbnail" variant="ghost" icon={<X className="size-3.5" />} onClick={onClear} />
+            <Button.Icon aria-label="Remove thumbnail" variant="ghost" icon={<Xmark className="size-3.5" />} onClick={onClear} />
           </div>
           {status === "resolving" && (
             <Paragraph.xs className="text-quaternary">Checking image…</Paragraph.xs>

@@ -1,6 +1,6 @@
 import { Button } from '@moc/ui/components/controls/button'
 import type { Request } from '@moc/types/requests'
-import { Check, Copy, ImageUp, Loader, Share2 } from 'lucide-react'
+import { Check, Copy, MediaImagePlus, Refresh, ShareAndroid } from 'iconoir-react'
 import {
   createContext,
   useContext,
@@ -34,7 +34,7 @@ function LinkButton({ variant = 'secondary', size }: { variant?: IconVariant; si
     <Button.Icon
       variant={variant}
       size={size}
-      icon={state.isSharingLink ? <Loader className="animate-spin motion-reduce:animate-none" /> : <Share2 />}
+      icon={state.isSharingLink ? <Refresh className="animate-spin motion-reduce:animate-none" /> : <ShareAndroid />}
       onClick={actions.shareLink}
       disabled={state.isSharingLink || state.isSharingScreenshot}
       aria-label="Share request link"
@@ -49,7 +49,7 @@ function ScreenshotButton({ variant = 'secondary', size }: { variant?: IconVaria
     <Button.Icon
       variant={variant}
       size={size}
-      icon={state.isSharingScreenshot ? <Loader className="animate-spin motion-reduce:animate-none" /> : <ImageUp />}
+      icon={state.isSharingScreenshot ? <Refresh className="animate-spin motion-reduce:animate-none" /> : <MediaImagePlus />}
       onClick={actions.shareScreenshot}
       disabled={state.isSharingLink || state.isSharingScreenshot}
       aria-label="Share request screenshot"
@@ -66,7 +66,7 @@ function CopyButton({ variant = 'secondary', size }: { variant?: IconVariant; si
       size={size}
       icon={
         state.isCopyingScreenshot
-          ? <Loader className="animate-spin" />
+          ? <Refresh className="animate-spin" />
           : state.hasCopiedScreenshot
             ? <Check className="text-success" />
             : <Copy />

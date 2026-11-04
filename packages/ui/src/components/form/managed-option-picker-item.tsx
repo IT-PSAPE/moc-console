@@ -1,4 +1,4 @@
-import { Check, EllipsisVertical, Pencil, ToggleLeft, ToggleRight, X } from 'lucide-react'
+import { Check, MoreVert, EditPencil, SwitchOff, SwitchOn, Xmark } from 'iconoir-react'
 import type { MouseEvent, PointerEvent } from 'react'
 import { Badge } from '../display/badge'
 import { Button } from '../controls/button'
@@ -29,7 +29,7 @@ export function ManagedOptionPickerItem({ option }: ManagedOptionPickerItemProps
                 <Combobox.Group className="flex w-full max-w-full min-w-0 items-center gap-1 overflow-hidden">
                     <Input aria-label={`Rename ${label}`} name="managed-option-name" autoFocus maxLength={120} readOnly={state.busy} value={state.renameLabel} onChange={actions.changeRenameLabel} onFocus={actions.handleRenameInputFocus} onKeyDown={actions.handleRenameKeyDown} className="min-w-0 flex-1" />
                     <Button.Icon aria-label="Save rename" variant="ghost" icon={<Check />} disabled={meta.renameDisabled} onClick={actions.saveRenameFromButton} />
-                    <Button.Icon aria-label="Cancel rename" variant="ghost" icon={<X />} disabled={state.busy} onClick={actions.cancelRenameFromButton} />
+                    <Button.Icon aria-label="Cancel rename" variant="ghost" icon={<Xmark />} disabled={state.busy} onClick={actions.cancelRenameFromButton} />
                 </Combobox.Group>
                 {state.error ? <p role="alert" className="px-2 py-1 paragraph-xs text-error">{state.error}</p> : null}
             </div>
@@ -44,10 +44,10 @@ export function ManagedOptionPickerItem({ option }: ManagedOptionPickerItemProps
             </Combobox.Item>
             {meta.canRename || meta.canChangeActive ? (
                 <Dropdown placement="bottom-end" open={state.contextKey === key} onOpenChange={handleMenuOpenChange}>
-                    <Dropdown.Trigger><Button.Icon aria-label={`Manage ${label}`} variant="ghost" icon={<EllipsisVertical />} disabled={state.busy} onClick={handleOpenMenu} onPointerDown={handleKeepComboboxFocus} data-managed-option-menu-trigger="" /></Dropdown.Trigger>
+                    <Dropdown.Trigger><Button.Icon aria-label={`Manage ${label}`} variant="ghost" icon={<MoreVert />} disabled={state.busy} onClick={handleOpenMenu} onPointerDown={handleKeepComboboxFocus} data-managed-option-menu-trigger="" /></Dropdown.Trigger>
                     <Dropdown.Panel data-managed-option-menu-content="">
-                        {meta.canRename ? <Dropdown.Item disabled={state.busy} closeOnClick={false} onSelect={handleRename}><Pencil className="size-4" aria-hidden="true" />Rename</Dropdown.Item> : null}
-                        {meta.canChangeActive ? <Dropdown.Item disabled={state.busy} closeOnClick={false} onSelect={handleActiveChange}>{isActive ? <ToggleLeft className="size-4" aria-hidden="true" /> : <ToggleRight className="size-4" aria-hidden="true" />}{isActive ? 'Deactivate' : 'Activate'}</Dropdown.Item> : null}
+                        {meta.canRename ? <Dropdown.Item disabled={state.busy} closeOnClick={false} onSelect={handleRename}><EditPencil className="size-4" aria-hidden="true" />Rename</Dropdown.Item> : null}
+                        {meta.canChangeActive ? <Dropdown.Item disabled={state.busy} closeOnClick={false} onSelect={handleActiveChange}>{isActive ? <SwitchOff className="size-4" aria-hidden="true" /> : <SwitchOn className="size-4" aria-hidden="true" />}{isActive ? 'Deactivate' : 'Activate'}</Dropdown.Item> : null}
                     </Dropdown.Panel>
                 </Dropdown>
             ) : null}

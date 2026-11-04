@@ -13,7 +13,7 @@ import { TrackingBookingEditor } from '@/features/components/tracking-booking-ed
 import { TrackingVenueEditor } from '@/features/components/tracking-venue-editor'
 import { useTrackingLookup } from '@/features/hooks/use-tracking-lookup'
 import { routes } from '@/screens/console-routes'
-import { Search, FileSearch, Pencil, Trash2 } from 'lucide-react'
+import { Search, PageSearch, EditPencil, Trash } from 'iconoir-react'
 import { FlowHeader } from '@/features/components/flow-header'
 import { PublicFlow } from '@/features/components/public-flow'
 import type { ChangeEvent, FormEvent } from 'react'
@@ -68,7 +68,7 @@ export function TrackScreen() {
 
         {state.notFound && (
           <EmptyState
-            icon={<FileSearch />}
+            icon={<PageSearch />}
             title="No submission found"
             description="No request or booking matches that tracking code. Double-check the code and try again."
           />
@@ -79,8 +79,8 @@ export function TrackScreen() {
             <TrackingResult data={state.result} />
             {state.canModify ? (
               <PublicFlow.Actions>
-                <Button variant="secondary" icon={<Pencil />} onClick={actions.beginEdit}>Edit details</Button>
-                <Button variant="danger" icon={<Trash2 />} onClick={actions.openDelete}>Delete submission</Button>
+                <Button variant="secondary" icon={<EditPencil />} onClick={actions.beginEdit}>Edit details</Button>
+                <Button variant="danger" icon={<Trash />} onClick={actions.openDelete}>Delete submission</Button>
               </PublicFlow.Actions>
             ) : (
               <Alert title="Changes are closed" description="This submission has already started or reached a final status, so it can no longer be edited or deleted with the tracking code." variant="info" style="filled" />

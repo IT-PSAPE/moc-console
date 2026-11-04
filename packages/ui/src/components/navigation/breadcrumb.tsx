@@ -1,5 +1,5 @@
 import { Button as BaseButton } from '@base-ui/react/button'
-import { ChevronRight } from 'lucide-react'
+import { NavArrowRight } from 'iconoir-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@moc/utils/cn'
 import { useIsLandscape } from '../../hooks/use-is-landscape'
@@ -114,7 +114,7 @@ function BreadcrumbItem({ label, isLast, onClick, icon }: BreadcrumbItemProps) {
 
 function BreadcrumbSeparator() {
     return (
-        <ChevronRight className="size-4 text-quaternary" aria-hidden="true" />
+        <NavArrowRight className="size-4 text-quaternary" aria-hidden="true" />
     )
 }
 

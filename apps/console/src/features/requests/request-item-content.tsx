@@ -1,4 +1,4 @@
-import { CalendarFold, Tag } from 'lucide-react'
+import { Calendar, Label } from 'iconoir-react'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import type { Request } from '@moc/types/requests'
 import { getCategoryLabel } from '@moc/types/requests'
@@ -13,9 +13,9 @@ export function RequestItemContent({ request }: { request: Request }) {
             </ListItemCard.Content>
             <ListItemCard.Trailing>
                 <ListItemCard.Meta>
-                    <ListItemCard.MetaItem icon={<Tag />}>{getCategoryLabel(request.category, request.categoryName)}</ListItemCard.MetaItem>
+                    <ListItemCard.MetaItem icon={<Label />}>{getCategoryLabel(request.category, request.categoryName)}</ListItemCard.MetaItem>
                     {request.dueDate && (
-                        <ListItemCard.MetaItem icon={<CalendarFold />}>
+                        <ListItemCard.MetaItem icon={<Calendar />}>
                             {formatUtcIsoInBrowserTimeZone(request.dueDate, { day: '2-digit', month: '2-digit', year: 'numeric' })}
                         </ListItemCard.MetaItem>
                     )}

@@ -17,7 +17,7 @@ import { Paragraph } from "@moc/ui/components/display/text"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { Page } from "@moc/ui/components/layout/page"
 import type { Equipment } from "@moc/types/equipment"
-import { Save, Trash2, Undo2 } from "lucide-react"
+import { FloppyDisk, Trash, UndoAction } from "iconoir-react"
 
 export function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
   const back = useDetailReturn(`/${routes.equipment}`, "Back to equipment")
@@ -42,11 +42,11 @@ export function EquipmentDetailContent({ equipment }: { equipment: Equipment }) 
         <TopBarActions>
           {store.state.isDirty && (
             <>
-              <Button variant="ghost" icon={<Undo2 />} onClick={store.actions.discard}>Discard</Button>
-              <Button icon={<Save />} onClick={editor.actions.save} disabled={store.state.isSaving}>{store.state.isSaving ? "Saving…" : "Save"}</Button>
+              <Button variant="ghost" icon={<UndoAction />} onClick={store.actions.discard}>Discard</Button>
+              <Button icon={<FloppyDisk />} onClick={editor.actions.save} disabled={store.state.isSaving}>{store.state.isSaving ? "Saving…" : "Save"}</Button>
             </>
           )}
-          <Button.Icon aria-label="Delete equipment" variant="danger-secondary" icon={<Trash2 />} onClick={openDelete} />
+          <Button.Icon aria-label="Delete equipment" variant="danger-secondary" icon={<Trash />} onClick={openDelete} />
         </TopBarActions>
 
         <DetailPage.Header>

@@ -2,7 +2,7 @@ import { Input } from "@moc/ui/components/form/input";
 import { Page } from "@moc/ui/components/layout/page";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
-import { CalendarDays, ClipboardList, Columns3, List, Search, Settings2 } from "lucide-react";
+import { Calendar, TaskList, ViewColumns3, List, Search, FilterList } from "iconoir-react";
 import type { ChangeEvent } from "react";
 import { BookingFilterDrawer } from "@/features/equipment/booking-filter-drawer";
 import { BookingListView } from "@/features/equipment/booking-list";
@@ -40,7 +40,7 @@ export function BookingsScreen() {
           <Input aria-label="Search bookings" name="booking-search" autoComplete="off" icon={<Search />} placeholder="Search bookings…" value={filters.filters.search} onChange={handleSearch} />
           <Drawer mobileSide="bottom">
             <Drawer.Trigger>
-              <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter bookings">Filter</CollectionToolbar.ActionButton>
+              <CollectionToolbar.ActionButton icon={<FilterList />} variant="secondary" aria-label="Filter bookings">Filter</CollectionToolbar.ActionButton>
             </Drawer.Trigger>
             <BookingFilterDrawer filters={filters} />
           </Drawer>
@@ -51,8 +51,8 @@ export function BookingsScreen() {
           <CollectionToolbar.Views>
             <SegmentedControl value={activeView} onValueChange={actions.changeView} fill={isLandscape}>
               <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
-              <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={isLandscape}>Kanban</CollectionToolbar.ViewItem>
-              <CollectionToolbar.ViewItem value="calendar" icon={<CalendarDays />}>Calendar</CollectionToolbar.ViewItem>
+              <CollectionToolbar.ViewItem value="kanban" icon={<ViewColumns3 />} hide={isLandscape}>Kanban</CollectionToolbar.ViewItem>
+              <CollectionToolbar.ViewItem value="calendar" icon={<Calendar />}>Calendar</CollectionToolbar.ViewItem>
             </SegmentedControl>
           </CollectionToolbar.Views>
       </CollectionToolbar>
@@ -61,7 +61,7 @@ export function BookingsScreen() {
         {meta.error ? <ResourceLoadError title="Couldn't load equipment bookings" error={meta.error} onRetry={actions.retry} /> : <Decision value={collectionState}>
           <Decision.Empty>
             <EmptyState
-              icon={<ClipboardList />}
+              icon={<TaskList />}
               title={filters.filters.search.trim() ? "No bookings match your search" : "No bookings yet"}
               description={filters.filters.search.trim() ? "Try a different search term or clear filters." : "Bookings appear here when equipment is checked out."}
             />

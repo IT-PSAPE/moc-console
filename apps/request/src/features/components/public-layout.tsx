@@ -1,7 +1,7 @@
 import { cn } from '@moc/utils/cn'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { routes } from '@/screens/console-routes'
-import { X } from 'lucide-react'
+import { Xmark } from 'iconoir-react'
 import type { ReactNode } from 'react'
 import { Label } from '@moc/ui/components/display/text';
 import { Button } from '@moc/ui/components/controls/button';
@@ -28,7 +28,7 @@ export function PublicLayout({ children, className}: { children: ReactNode; clas
             <Label.bg>PE Church</Label.bg>
           </Button.Unstyled>
           {!isHome && (
-            <Button.Icon variant="ghost" icon={<X className="size-6" />} onClick={handleHome} className="ml-auto" aria-label="Go to home page" />
+            <Button.Icon variant="ghost" icon={<Xmark className="size-6" />} onClick={handleHome} className="ml-auto" aria-label="Go to home page" />
           )}
         </div>
       </header>

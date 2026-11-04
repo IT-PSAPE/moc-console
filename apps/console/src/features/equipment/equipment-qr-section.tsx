@@ -3,7 +3,7 @@ import { Button } from "@moc/ui/components/controls/button";
 import { Card } from "@moc/ui/components/display/card";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { QRCodeCanvas } from "qrcode.react";
-import { Check, Copy, Download, Printer } from "lucide-react";
+import { Check, Copy, Download, PrintingPage } from "iconoir-react";
 import { useRef } from "react";
 import type { Equipment } from "@moc/types/equipment";
 import { buildEquipmentQrPayload } from "@moc/utils/equipment-scan";
@@ -82,7 +82,7 @@ export function EquipmentQrSection({ equipment }: { equipment: Equipment }) {
           <Button size="sm" variant="secondary" icon={<Download />} onClick={handleDownload}>
             Download
           </Button>
-          <Button size="sm" variant="secondary" icon={<Printer />} onClick={handlePrint}>
+          <Button size="sm" variant="secondary" icon={<PrintingPage />} onClick={handlePrint}>
             Print
           </Button>
           <Button size="sm" variant="secondary" icon={hasCopied ? <Check className="text-success" /> : <Copy />} onClick={handleCopy}>

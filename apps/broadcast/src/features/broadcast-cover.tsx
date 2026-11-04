@@ -1,5 +1,5 @@
 import { cn } from "@moc/utils/cn"
-import { Music2 } from "lucide-react"
+import { MusicNote } from "iconoir-react"
 
 type BroadcastCoverProps = {
   alt?: string
@@ -16,7 +16,7 @@ export function BroadcastCover({ alt, className, coverUrl, iconClassName, title 
       {coverUrl ? (
         <img src={coverUrl} alt={alt ?? `Cover art for ${title}`} className="size-full object-cover" />
       ) : (
-        <Music2 className={cn("text-quaternary", iconClassName)} aria-hidden="true" />
+        <MusicNote className={cn("text-quaternary", iconClassName)} aria-hidden="true" />
       )}
     </div>
   )

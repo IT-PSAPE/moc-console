@@ -10,7 +10,7 @@ import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { Button } from "@moc/ui/components/controls/button";
 import { InteractiveSurface } from "@moc/ui/components/controls/interactive-surface";
 import { Link } from "react-router-dom";
-import { CalendarDays, MapPin, Search, Tag } from "lucide-react";
+import { Calendar as CalendarIcon, MapPin, Search, Label } from "iconoir-react";
 import type { ChangeEvent } from "react";
 import { getEventTime, getVisibleEventTitle } from "@/features/schedule/schedule-events";
 import { useSchedule } from "@/features/schedule/use-schedule";
@@ -69,11 +69,11 @@ export function SchedulePage() {
               <FilterMenu.Trigger aria-label="Filter work" />
               <FilterMenu.Content>
                 <FilterMenu.Group active={state.selectedCategories.length > 0}>
-                  <FilterMenu.GroupTrigger icon={<Tag />}>Request types</FilterMenu.GroupTrigger>
+                  <FilterMenu.GroupTrigger icon={<Label />}>Request types</FilterMenu.GroupTrigger>
                   <FilterMenu.GroupContent><FilterMenu.Options label="Request types" name="categories" options={meta.categoryOptions} selected={state.selectedCategories} onValueChange={actions.toggleFilter} /></FilterMenu.GroupContent>
                 </FilterMenu.Group>
                 <FilterMenu.Group active={state.selectedVenueEvents.length > 0}>
-                  <FilterMenu.GroupTrigger icon={<CalendarDays />}>Venue event types</FilterMenu.GroupTrigger>
+                  <FilterMenu.GroupTrigger icon={<CalendarIcon />}>Venue event types</FilterMenu.GroupTrigger>
                   <FilterMenu.GroupContent><FilterMenu.Options label="Venue event types" name="venueEvents" options={meta.venueEventOptions} selected={state.selectedVenueEvents} onValueChange={actions.toggleFilter} /></FilterMenu.GroupContent>
                 </FilterMenu.Group>
                 <FilterMenu.Group active={state.selectedVenues.length > 0}>

@@ -2,7 +2,7 @@ import { cn } from '@moc/utils/cn'
 import { cv } from '@moc/utils/cv'
 import { Button } from '../controls/button'
 import { Label, Paragraph } from '../display/text'
-import { AlertCircle, CheckCircle2, Info, Lightbulb, TriangleAlert, X } from 'lucide-react'
+import { WarningCircle, CheckCircle, InfoCircle, LightBulb, WarningTriangle, Xmark } from 'iconoir-react'
 import type { HTMLAttributes, ReactNode } from 'react'
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -13,11 +13,11 @@ export type FeedbackStyle = 'filled' | 'outline'
 // ─── Variant Icons ──────────────────────────────────────────────────
 
 const variantIcons: Record<FeedbackVariant, ReactNode> = {
-    error: <AlertCircle className="size-4" />,
-    warning: <TriangleAlert className="size-4" />,
-    success: <CheckCircle2 className="size-4" />,
-    info: <Info className="size-4" />,
-    feature: <Lightbulb className="size-4" />,
+    error: <WarningCircle className="size-4" />,
+    warning: <WarningTriangle className="size-4" />,
+    success: <CheckCircle className="size-4" />,
+    info: <InfoCircle className="size-4" />,
+    feature: <LightBulb className="size-4" />,
 }
 
 // ─── Variants ───────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ export function Alert({ title, description, action, variant = 'info', style = 'f
             {dismissible && onDismiss && (
                 <Button.Icon
                     aria-label="Dismiss"
-                    icon={<X />}
+                    icon={<Xmark />}
                     variant="ghost"
                     size="sm"
                     onClick={onDismiss}

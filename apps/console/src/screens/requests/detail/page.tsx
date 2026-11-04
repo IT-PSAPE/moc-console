@@ -3,7 +3,7 @@ import { useRequestDetailLoader } from "@/features/requests/use-request-detail-l
 import { useBreadcrumbOverride } from "@moc/ui/components/navigation/breadcrumb"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Page } from "@moc/ui/components/layout/page"
-import { Inbox } from "lucide-react"
+import { Drawer } from "iconoir-react"
 import { RequestDetailContent } from "./request-detail-content"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 
@@ -21,7 +21,7 @@ export function RequestDetailScreen() {
   if (!detail.state.request) {
     return (
       <Page><Page.Content width="standard" className="py-16">
-        <EmptyState headingLevel="h1" icon={<Inbox />} title="Request not found" description="This request may have been deleted, or the link is no longer valid." />
+        <EmptyState headingLevel="h1" icon={<Drawer />} title="Request not found" description="This request may have been deleted, or the link is no longer valid." />
       </Page.Content></Page>
     )
   }

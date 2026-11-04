@@ -1,7 +1,7 @@
 import { cn } from '@moc/utils/cn'
 import { cv } from '@moc/utils/cv'
 import { Label } from '@moc/ui/components/display/text'
-import { Check } from 'lucide-react'
+import { Check } from 'iconoir-react'
 
 type StepState = 'active' | 'completed' | 'upcoming'
 

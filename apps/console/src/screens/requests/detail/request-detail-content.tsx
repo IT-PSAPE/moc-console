@@ -2,7 +2,7 @@ import { useDetailReturn } from "@/hooks/use-detail-return"
 import { RequestLinkedRecords } from "@/features/request-links/request-linked-records"
 import { useRef } from "react"
 import { Link } from "react-router-dom"
-import { Archive, ArchiveRestore, EllipsisVertical, Save, Trash2, Undo2 } from "lucide-react"
+import { Archive, UploadSquare, MoreVert, FloppyDisk, Trash, UndoAction } from "iconoir-react"
 import { DeleteRequestModal } from "@/features/requests/delete-request-modal"
 import { RequestAssigneeList } from "@/features/requests/request-assignee-list"
 import { RequestFiveW } from "@/features/requests/request-five-w"
@@ -47,21 +47,21 @@ export function RequestDetailContent({ request, syncRequest }: RequestDetailCont
           <TopBarActions>
             {store.state.isDirty && (
               <>
-                <Button variant="ghost" icon={<Undo2 />} onClick={store.actions.discard}>Discard</Button>
-                <Button icon={<Save />} onClick={actions.handleSave} disabled={store.state.isSaving}>{store.state.isSaving ? "Saving…" : "Save"}</Button>
+                <Button variant="ghost" icon={<UndoAction />} onClick={store.actions.discard}>Discard</Button>
+                <Button icon={<FloppyDisk />} onClick={actions.handleSave} disabled={store.state.isSaving}>{store.state.isSaving ? "Saving…" : "Save"}</Button>
               </>
             )}
             <RequestShareActions.LinkButton />
             <RequestShareActions.ScreenshotButton />
             <RequestShareActions.CopyButton />
             <Dropdown placement="bottom">
-              <Dropdown.Trigger><Button.Icon aria-label="More request actions" variant="secondary" icon={<EllipsisVertical />} /></Dropdown.Trigger>
+              <Dropdown.Trigger><Button.Icon aria-label="More request actions" variant="secondary" icon={<MoreVert />} /></Dropdown.Trigger>
               <Dropdown.Panel>
                 <Dropdown.Item onSelect={actions.handleArchiveToggle}>
-                  {request.status === "archived" ? <><ArchiveRestore className="size-4" />Unarchive</> : <><Archive className="size-4" />Archive</>}
+                  {request.status === "archived" ? <><UploadSquare className="size-4" />Unarchive</> : <><Archive className="size-4" />Archive</>}
                 </Dropdown.Item>
                 <Dropdown.Separator />
-                <Dropdown.Item onSelect={actions.openDeleteModal}><Trash2 className="size-4 text-error" /><span className="text-error">Delete</span></Dropdown.Item>
+                <Dropdown.Item onSelect={actions.openDeleteModal}><Trash className="size-4 text-error" /><span className="text-error">Delete</span></Dropdown.Item>
               </Dropdown.Panel>
             </Dropdown>
           </TopBarActions>

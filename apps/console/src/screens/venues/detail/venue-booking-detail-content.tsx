@@ -1,7 +1,7 @@
 import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { useDetailReturn } from "@/hooks/use-detail-return"
 import { RequestLinkField } from "@/features/request-links/request-link-field"
-import { Ban, Check, EllipsisVertical, RotateCcw, X } from "lucide-react"
+import { Prohibition, Check, MoreVert, Undo, Xmark } from "iconoir-react"
 import { Link } from "react-router-dom"
 import { VenueBookingMetaFields } from "@/features/venues/venue-booking-meta-fields"
 import { VenueBookingCancellationAudit } from "@/features/venues/venue-booking-cancellation-audit"
@@ -66,15 +66,15 @@ export function VenueBookingDetailContent({ booking }: VenueBookingDetailContent
 
       <TopBarActions>
         <Dropdown placement="bottom">
-          <Dropdown.Trigger><Button.Icon aria-label="More booking actions" variant="secondary" icon={<EllipsisVertical />} /></Dropdown.Trigger>
+          <Dropdown.Trigger><Button.Icon aria-label="More booking actions" variant="secondary" icon={<MoreVert />} /></Dropdown.Trigger>
           <Dropdown.Panel>
             {canRestore ? (
-              <Dropdown.Item onSelect={handleRestore}><RotateCcw className="size-4" />Restore booking</Dropdown.Item>
+              <Dropdown.Item onSelect={handleRestore}><Undo className="size-4" />Restore booking</Dropdown.Item>
             ) : (
               <>
                 {canApprove && <Dropdown.Item onSelect={handleApprove}><Check className="size-4 text-success" /><span className="text-success">Approve booking</span></Dropdown.Item>}
-                {canReject && <Dropdown.Item onSelect={handleOpenReject}><X className="size-4 text-error" /><span className="text-error">Reject booking</span></Dropdown.Item>}
-                <Dropdown.Item onSelect={handleOpenCancel}><Ban className="size-4 text-error" /><span className="text-error">Cancel booking</span></Dropdown.Item>
+                {canReject && <Dropdown.Item onSelect={handleOpenReject}><Xmark className="size-4 text-error" /><span className="text-error">Reject booking</span></Dropdown.Item>}
+                <Dropdown.Item onSelect={handleOpenCancel}><Prohibition className="size-4 text-error" /><span className="text-error">Cancel booking</span></Dropdown.Item>
               </>
             )}
           </Dropdown.Panel>

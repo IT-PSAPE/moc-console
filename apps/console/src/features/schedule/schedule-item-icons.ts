@@ -1,12 +1,12 @@
-import { ClipboardList, MapPin, MessageSquare, PackageCheck, PackageOpen, Radio, Video, type LucideIcon } from 'lucide-react'
+import { TaskList, MapPin, Message, BoxIso, Package, AntennaSignal, VideoCamera } from 'iconoir-react'
 import type { ScheduleAgendaItem } from './schedule-agenda'
 
-export const scheduleItemIcons: Record<ScheduleAgendaItem['kind'], LucideIcon> = {
-  request: ClipboardList,
+export const scheduleItemIcons: Record<ScheduleAgendaItem['kind'], typeof TaskList> = {
+  request: TaskList,
   venue: MapPin,
-  'equipment-checkout': PackageOpen,
-  'equipment-return': PackageCheck,
-  stream: Radio,
-  meeting: Video,
-  message: MessageSquare,
+  'equipment-checkout': Package,
+  'equipment-return': BoxIso,
+  stream: AntennaSignal,
+  meeting: VideoCamera,
+  message: Message,
 }

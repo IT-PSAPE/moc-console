@@ -3,7 +3,7 @@ import { Button } from "@moc/ui/components/controls/button";
 import { ListItemCard } from "@moc/ui/components/display/list-item-card";
 import { UserAvatar } from "@moc/ui/components/display/user-avatar";
 import { Paragraph } from "@moc/ui/components/display/text";
-import { X } from "lucide-react";
+import { Xmark } from "iconoir-react";
 import type { MouseEvent } from "react";
 
 type AssignedMemberListProps = {
@@ -34,7 +34,7 @@ export function AssignedMemberList({ assignees, onRemove, emptyLabel }: Assigned
           <ListItemCard.Trailing className="@max-[36rem]/row:basis-auto @max-[36rem]/row:justify-end">
             <Button.Icon
               aria-label={`Remove ${assignee.name} ${assignee.surname}`}
-              icon={<X />}
+              icon={<Xmark />}
               variant="ghost"
               size="sm"
               data-user-id={assignee.id}

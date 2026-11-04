@@ -1,6 +1,6 @@
 import type { ComponentProps, HTMLAttributes } from "react";
 import { cn } from "@moc/utils/cn";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "iconoir-react";
 import { Button } from "../controls/button";
 import { Divider } from "../display/divider";
 import { Header } from "../display/header";

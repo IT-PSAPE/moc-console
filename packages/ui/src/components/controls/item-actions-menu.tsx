@@ -1,4 +1,4 @@
-import { Copy, EllipsisVertical, Pencil, Trash2 } from 'lucide-react'
+import { Copy, MoreVert, EditPencil, Trash } from 'iconoir-react'
 import { Button } from './button'
 import { Dropdown } from '../overlays/dropdown'
 
@@ -14,12 +14,12 @@ type ItemActionsMenuProps = {
 export function ItemActionsMenu({ label, disabled, size = "sm", onEdit, onDuplicate, onDelete }: ItemActionsMenuProps) {
     return (
         <Dropdown placement="bottom-end">
-            <Dropdown.Trigger><Button.Icon aria-label={`Options for ${label}`} variant="ghost" size={size} icon={<EllipsisVertical />} disabled={disabled} /></Dropdown.Trigger>
+            <Dropdown.Trigger><Button.Icon aria-label={`Options for ${label}`} variant="ghost" size={size} icon={<MoreVert />} disabled={disabled} /></Dropdown.Trigger>
             <Dropdown.Panel>
-                <Dropdown.Item onSelect={onEdit}><Pencil className="size-4" aria-hidden="true" />Edit</Dropdown.Item>
+                <Dropdown.Item onSelect={onEdit}><EditPencil className="size-4" aria-hidden="true" />Edit</Dropdown.Item>
                 <Dropdown.Item onSelect={onDuplicate}><Copy className="size-4" aria-hidden="true" />Duplicate</Dropdown.Item>
                 <Dropdown.Separator />
-                <Dropdown.Item onSelect={onDelete}><Trash2 className="size-4 text-error" aria-hidden="true" /><span className="text-error">Delete</span></Dropdown.Item>
+                <Dropdown.Item onSelect={onDelete}><Trash className="size-4 text-error" aria-hidden="true" /><span className="text-error">Delete</span></Dropdown.Item>
             </Dropdown.Panel>
         </Dropdown>
     )

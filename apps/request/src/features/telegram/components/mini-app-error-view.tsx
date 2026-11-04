@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react"
+import { WarningTriangle } from "iconoir-react"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Button } from "@moc/ui/components/controls/button"
 import { MINI_APP_ERROR_COPY } from "@/features/telegram/mini-app-error-copy"
@@ -16,7 +16,7 @@ export function MiniAppErrorView({ code, message, onRetry }: MiniAppErrorViewPro
 
   return (
     <EmptyState
-      icon={<AlertTriangle />}
+      icon={<WarningTriangle />}
       headingLevel="h1"
       title={copy.title}
       description={copy.description}

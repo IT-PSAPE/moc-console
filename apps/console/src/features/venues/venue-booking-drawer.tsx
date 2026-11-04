@@ -1,7 +1,7 @@
 import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { useDetailLinkState } from "@/hooks/use-detail-return"
 import { RequestLinkField } from "@/features/request-links/request-link-field"
-import { Ban, Check, EllipsisVertical, Maximize2, RotateCcw, X } from "lucide-react";
+import { Prohibition, Check, MoreVert, Expand, Undo, Xmark } from "iconoir-react";
 import { Link } from "react-router-dom";
 import { Drawer, useDrawer } from "@moc/ui/components/overlays/drawer";
 import { Dropdown } from "@moc/ui/components/overlays/dropdown";
@@ -85,17 +85,17 @@ export function VenueBookingPanelContent({ booking, open, onClose }: VenueBookin
   return (
     <>
       <SplitPanel.Header className="flex items-center gap-1">
-        <Button.Icon aria-label="Close booking" variant="ghost" size="sm" icon={<X />} onClick={onClose} />
-        <Button.IconLink aria-label="Open full page" variant="ghost" size="sm" icon={<Maximize2 />} render={<Link state={linkState} to={`/${routes.venues}/${booking.id}`} />} />
+        <Button.Icon aria-label="Close booking" variant="ghost" size="sm" icon={<Xmark />} onClick={onClose} />
+        <Button.IconLink aria-label="Open full page" variant="ghost" size="sm" icon={<Expand />} render={<Link state={linkState} to={`/${routes.venues}/${booking.id}`} />} />
         <div className="flex-1" />
         <Dropdown placement="bottom">
           <Dropdown.Trigger>
-            <Button.Icon aria-label="More booking actions" variant="secondary" size="sm" icon={<EllipsisVertical />} />
+            <Button.Icon aria-label="More booking actions" variant="secondary" size="sm" icon={<MoreVert />} />
           </Dropdown.Trigger>
           <Dropdown.Panel>
             {canRestore ? (
               <Dropdown.Item onSelect={handleRestore}>
-                <RotateCcw className="size-4" />
+                <Undo className="size-4" />
                 Restore booking
               </Dropdown.Item>
             ) : (
@@ -108,12 +108,12 @@ export function VenueBookingPanelContent({ booking, open, onClose }: VenueBookin
                 )}
                 {canReject && (
                   <Dropdown.Item onSelect={handleOpenReject}>
-                    <X className="size-4 text-error" />
+                    <Xmark className="size-4 text-error" />
                     <span className="text-error">Reject booking</span>
                   </Dropdown.Item>
                 )}
                 <Dropdown.Item onSelect={handleOpenCancel}>
-                  <Ban className="size-4 text-error" />
+                  <Prohibition className="size-4 text-error" />
                   <span className="text-error">Cancel booking</span>
                 </Dropdown.Item>
               </>

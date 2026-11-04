@@ -1,6 +1,6 @@
 import type { ComponentType, MouseEvent } from "react";
 import { useDroppable } from "@dnd-kit/core";
-import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import { NavArrowDown, Plus, Trash } from "iconoir-react";
 import { Button } from "@moc/ui/components/controls/button";
 import { Accordion } from "@moc/ui/components/display/accordion";
 import { Paragraph } from "@moc/ui/components/display/text";
@@ -47,12 +47,12 @@ export function SectionRow({ section, onToggle, onAddItem, onRenameItem, onDelet
         <div className="group/section relative flex items-center gap-2 pr-5">
           <DraggableSectionHandle sectionId={section.id} className="absolute right-full top-1/2 -translate-y-1/2" />
           <Accordion.Trigger className="flex flex-1 items-center gap-3 pt-4 pb-2 transition-colors hover:bg-tertiary">
-            <ChevronDown className="size-4 shrink-0 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
+            <NavArrowDown className="size-4 shrink-0 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
             <InlineEditableText value={section.name} onSave={renameSection} className="label-sm text-left" />
             <Paragraph.xs className="shrink-0 text-tertiary">{checkedCount}/{section.items.length}</Paragraph.xs>
           </Accordion.Trigger>
           <Button.Icon aria-label="Add item" variant="ghost" size="sm" icon={<Plus />} className="shrink-0 text-tertiary" onClick={requestAdd} />
-          <Button.Icon aria-label="Delete section" variant="ghost" size="sm" icon={<Trash2 />} className="shrink-0 text-quaternary" onClick={openDeleteSection} />
+          <Button.Icon aria-label="Delete section" variant="ghost" size="sm" icon={<Trash />} className="shrink-0 text-quaternary" onClick={openDeleteSection} />
         </div>
 
         <Accordion.Content>

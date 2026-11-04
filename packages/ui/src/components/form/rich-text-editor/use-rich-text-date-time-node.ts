@@ -1,6 +1,6 @@
 import { useId, type ChangeEvent, type MouseEvent } from 'react'
 import type { NodeViewProps } from '@tiptap/react'
-import { CalendarDays, Clock3 } from 'lucide-react'
+import { Calendar, Clock } from 'iconoir-react'
 import {
     currentRichTextDateTimeValue,
     isRichTextDateTimeValue,
@@ -30,6 +30,6 @@ export function useRichTextDateTimeNode({ node, editor, updateAttributes }: Node
     return {
         state: { kind, value, pickerOpen, inputId: useId(), label: kind === 'date' ? 'Date' : 'Time' },
         actions: { changePickerOpen, changeValue, preserveEditorSelection },
-        meta: { Icon: kind === 'date' ? CalendarDays : Clock3, editable: editor.isEditable },
+        meta: { Icon: kind === 'date' ? Calendar : Clock, editable: editor.isEditable },
     }
 }

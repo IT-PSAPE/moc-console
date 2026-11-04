@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search } from "iconoir-react";
 import type { ResolvedAssignee } from "@/data/fetch-assignees";
 import { Paragraph } from "@moc/ui/components/display/text";
 import { Spinner } from "@moc/ui/components/feedback/spinner";

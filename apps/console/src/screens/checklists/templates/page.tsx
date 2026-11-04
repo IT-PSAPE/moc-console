@@ -1,5 +1,5 @@
 import type { ChangeEvent } from 'react'
-import { ListChecks, Plus, Search } from 'lucide-react'
+import { TaskList, Plus, Search } from 'iconoir-react'
 import { DividedList } from '@moc/ui/components/display/divided-list'
 import { Button } from '@moc/ui/components/controls/button'
 import { Input } from '@moc/ui/components/form/input'
@@ -43,7 +43,7 @@ export function ChecklistTemplatesScreen() {
                 <Decision value={meta.templates}>
                     <Decision.Empty>
                         <EmptyState
-                            icon={<ListChecks />}
+                            icon={<TaskList />}
                             title={state.search.trim() ? "No checklist templates match your search" : "No checklist templates yet"}
                             description={state.search.trim() ? "Try a different search term." : "Create a template to standardize recurring preparation steps."}
                         />

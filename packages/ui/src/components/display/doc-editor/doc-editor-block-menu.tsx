@@ -1,5 +1,5 @@
 import { Menu } from '@base-ui/react/menu'
-import { ArrowDownToLine, ArrowUpToLine, Copy, Trash2 } from 'lucide-react'
+import { AlignBottomBox, AlignTopBox, Copy, Trash } from 'iconoir-react'
 import { cn } from '@moc/utils/cn'
 import { useOverlayStack } from '@moc/ui/components/overlays/overlay-provider'
 import type { ReactNode } from 'react'
@@ -18,11 +18,11 @@ type DocEditorMenuItem = {
 }
 
 const menuItems: DocEditorMenuItem[] = [
-    { id: 'delete', icon: <Trash2 className="size-4" />, label: 'Delete block', danger: true },
+    { id: 'delete', icon: <Trash className="size-4" />, label: 'Delete block', danger: true },
     { id: 'duplicate', icon: <Copy className="size-4" />, label: 'Duplicate' },
     { id: 'separator' },
-    { id: 'move-top', icon: <ArrowUpToLine className="size-4" />, label: 'Move to top' },
-    { id: 'move-bottom', icon: <ArrowDownToLine className="size-4" />, label: 'Move to bottom' },
+    { id: 'move-top', icon: <AlignTopBox className="size-4" />, label: 'Move to top' },
+    { id: 'move-bottom', icon: <AlignBottomBox className="size-4" />, label: 'Move to bottom' },
 ]
 
 function DocEditorBlockMenuItem({ item, onAction }: { item: DocEditorMenuItem; onAction: (action: string) => void }) {

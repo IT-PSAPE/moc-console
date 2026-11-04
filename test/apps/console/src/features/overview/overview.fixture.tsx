@@ -1,4 +1,5 @@
 import { createRoot } from 'react-dom/client'
+import { IconoirProvider } from 'iconoir-react'
 import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { OverlayProvider } from '@moc/ui/components/overlays/overlay-provider'
@@ -40,4 +41,4 @@ const router = createBrowserRouter([{ element: <FixtureLayout />, children: [
   { path: '/account/settings', element: <FixturePreferences /> }, { path: '/', element: <Navigate to="/overview" replace /> },
   { path: '*', element: <FixtureItem /> },
 ] }])
-createRoot(document.getElementById('root')!).render(<QueryClientProvider client={queryClient}><OverlayProvider><FeedbackProvider><RouterProvider router={router} /></FeedbackProvider></OverlayProvider></QueryClientProvider>)
+createRoot(document.getElementById('root')!).render(<IconoirProvider iconProps={{ width: 24, height: 24, strokeWidth: 1.75, 'aria-hidden': true }}><QueryClientProvider client={queryClient}><OverlayProvider><FeedbackProvider><RouterProvider router={router} /></FeedbackProvider></OverlayProvider></QueryClientProvider></IconoirProvider>)

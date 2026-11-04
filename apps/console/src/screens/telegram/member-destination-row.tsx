@@ -3,7 +3,7 @@ import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import { UserAvatar } from '@moc/ui/components/display/user-avatar'
 import { TelegramLinkedBadge } from '@/features/users/telegram-linked-badge'
 import type { UserWithRole } from '@/data/fetch-users'
-import { Link2 } from 'lucide-react'
+import { Link } from 'iconoir-react'
 
 type MemberDestinationRowProps = { user: UserWithRole; onOpenConnect: (user: UserWithRole) => void }
 
@@ -21,7 +21,7 @@ export function MemberDestinationRow({ user, onOpenConnect }: MemberDestinationR
       </ListItemCard.Content>
       <ListItemCard.Trailing>
         <TelegramLinkedBadge linked />
-        <Button.Icon size="sm" variant="ghost" icon={<Link2 />} onClick={handleOpenConnect} aria-label={`Connect events to ${user.name} ${user.surname}`} />
+        <Button.Icon size="sm" variant="ghost" icon={<Link />} onClick={handleOpenConnect} aria-label={`Connect events to ${user.name} ${user.surname}`} />
       </ListItemCard.Trailing>
     </ListItemCard.Root>
   )

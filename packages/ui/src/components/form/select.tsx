@@ -1,7 +1,7 @@
 import { Select as BaseSelect } from "@base-ui/react/select";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, NavArrowDown } from "iconoir-react";
 import { createContext, useContext, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { useIsLandscape } from "../../hooks/use-is-landscape";
 import { Drawer } from "../overlays/drawer";
@@ -97,7 +97,7 @@ function SelectTrigger({ children, className, placeholder, size, state, style = 
                 <>
                     <BaseSelect.Value className="min-w-0 flex-1 truncate" placeholder={placeholder} />
                     <BaseSelect.Icon className="shrink-0 text-quaternary">
-                        <ChevronDown className="size-4" />
+                        <NavArrowDown className="size-4" />
                     </BaseSelect.Icon>
                 </>
             )}

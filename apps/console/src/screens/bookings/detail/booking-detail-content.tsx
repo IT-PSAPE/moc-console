@@ -23,7 +23,7 @@ import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { Page } from "@moc/ui/components/layout/page"
 import type { Booking } from "@moc/types/equipment"
 import { formatUtcIsoForBrowserDateTimeInput } from "@moc/utils/browser-date-time"
-import { Calendar, Clock, Loader, Save, ScanLine, Trash2, Undo2, User } from "lucide-react"
+import { Calendar, Clock, Refresh, FloppyDisk, ScanQrCode, Trash, UndoAction, User } from "iconoir-react"
 
 export function BookingDetailContent({ booking }: { booking: Booking }) {
   const back = useDetailReturn(`/${routes.bookings}`, "Back to bookings")
@@ -42,16 +42,16 @@ export function BookingDetailContent({ booking }: { booking: Booking }) {
     <DetailPage>
         <DetailPage.Back render={<Link to={back.href} />}>{back.label}</DetailPage.Back>
         <TopBarActions>
-          <Button variant="secondary" icon={<ScanLine />} onClick={collection.actions.openScanner} disabled={!collection.state.canScan}>
+          <Button variant="secondary" icon={<ScanQrCode />} onClick={collection.actions.openScanner} disabled={!collection.state.canScan}>
             {collection.state.isComplete ? "All scanned" : "Scan"}
           </Button>
           {store.state.isDirty && (
             <>
-              <Button variant="ghost" icon={<Undo2 />} onClick={store.actions.discard}>Discard</Button>
-              <Button icon={<Save />} onClick={editor.actions.save} disabled={store.state.isSaving}>{store.state.isSaving ? "Saving…" : "Save"}</Button>
+              <Button variant="ghost" icon={<UndoAction />} onClick={store.actions.discard}>Discard</Button>
+              <Button icon={<FloppyDisk />} onClick={editor.actions.save} disabled={store.state.isSaving}>{store.state.isSaving ? "Saving…" : "Save"}</Button>
             </>
           )}
-          <Button.Icon aria-label="Delete booking" variant="danger-secondary" icon={<Trash2 />} onClick={openDelete} />
+          <Button.Icon aria-label="Delete booking" variant="danger-secondary" icon={<Trash />} onClick={openDelete} />
         </TopBarActions>
 
         <DetailPage.Header>
@@ -65,7 +65,7 @@ export function BookingDetailContent({ booking }: { booking: Booking }) {
         </DetailPage.Header>
 
         <DetailPage.Section className="space-y-3">
-          <MetaRow icon={<Loader />} label="Status"><BookingStatusSelect status={draft.status} onSelectStatus={editor.actions.selectStatus} /></MetaRow>
+          <MetaRow icon={<Refresh />} label="Status"><BookingStatusSelect status={draft.status} onSelectStatus={editor.actions.selectStatus} /></MetaRow>
           <MetaRow icon={<User />} label="Booked by"><Input aria-label="Booked by" name="booked-by" autoComplete="name" type="text" value={draft.bookedBy} onChange={editor.actions.changeBookedBy} placeholder="Enter name" style="ghost" /></MetaRow>
           <MetaRow icon={<Calendar />} label="Checked out"><DateTimeFields ariaLabel="Checked out" name="checked-out" value={formatUtcIsoForBrowserDateTimeInput(draft.checkedOutDate)} onChange={editor.actions.changeCheckedOutDate} style="ghost" fieldLabels="hidden" required /></MetaRow>
           <MetaRow icon={<Clock />} label="Expected return"><DateTimeFields ariaLabel="Expected return" name="expected-return" value={formatUtcIsoForBrowserDateTimeInput(draft.expectedReturnAt)} onChange={editor.actions.changeExpectedReturn} style="ghost" fieldLabels="hidden" required /></MetaRow>

@@ -2,7 +2,7 @@ import type { Broadcast } from "@moc/types/broadcast/broadcast"
 import { BROADCAST_KIND_LABELS } from "@moc/types/broadcast/broadcast-constants"
 import { ListItemCard } from "@moc/ui/components/display/list-item-card"
 import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time"
-import { Clock, ListMusic } from "lucide-react"
+import { Clock, Playlist } from "iconoir-react"
 
 function formatItemCount(count: number): string {
   return `${count} ${count === 1 ? "item" : "items"}`
@@ -17,7 +17,7 @@ export function BroadcastItemContent({ broadcast }: { broadcast: Broadcast }) {
       </ListItemCard.Content>
       <ListItemCard.Trailing>
         <ListItemCard.Meta>
-          <ListItemCard.MetaItem icon={<ListMusic />}>{`${BROADCAST_KIND_LABELS[broadcast.kind]} · ${formatItemCount(broadcast.items.length)}`}</ListItemCard.MetaItem>
+          <ListItemCard.MetaItem icon={<Playlist />}>{`${BROADCAST_KIND_LABELS[broadcast.kind]} · ${formatItemCount(broadcast.items.length)}`}</ListItemCard.MetaItem>
           <ListItemCard.MetaItem icon={<Clock />}>{formatUtcIsoInBrowserTimeZone(broadcast.updatedAt, { dateStyle: "medium", timeStyle: "short" })}</ListItemCard.MetaItem>
         </ListItemCard.Meta>
       </ListItemCard.Trailing>

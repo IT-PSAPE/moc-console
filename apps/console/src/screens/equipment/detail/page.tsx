@@ -3,7 +3,7 @@ import { useEquipmentDetail } from "@/features/equipment/use-equipment-detail"
 import { useBreadcrumbOverride } from "@moc/ui/components/navigation/breadcrumb"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Page } from "@moc/ui/components/layout/page"
-import { Package } from "lucide-react"
+import { Box } from "iconoir-react"
 import { EquipmentDetailContent } from "./equipment-detail-content"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 
@@ -21,7 +21,7 @@ export function EquipmentDetailScreen() {
   if (!state.equipment) {
     return (
       <Page><Page.Content width="standard" className="py-16">
-        <EmptyState headingLevel="h1" icon={<Package />} title="Equipment not found" description="This item may have been deleted, or the link is no longer valid." />
+        <EmptyState headingLevel="h1" icon={<Box />} title="Equipment not found" description="This item may have been deleted, or the link is no longer valid." />
       </Page.Content></Page>
     )
   }

@@ -2,7 +2,7 @@ import { UnlinkTelegramModal } from "./unlink-telegram-modal"
 import { Button } from "@moc/ui/components/controls/button"
 import { Indicator } from "@moc/ui/components/display/indicator"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
-import { Send, Unplug } from "lucide-react"
+import { SendDiagonal, LinkSlash } from "iconoir-react"
 import { TelegramLinkFallback } from "./telegram-link-fallback"
 import { useTelegramLink } from "./use-telegram-link"
 
@@ -22,7 +22,7 @@ export function TelegramLinkRow({ userId, telegramChatId }: TelegramLinkRowProps
             <Indicator.Dot color="green" className="size-2" />
             <Label.sm className="text-primary">Connected</Label.sm>
           </span>
-          <Button variant="secondary" icon={<Unplug />} onClick={actions.openUnlink} disabled={state.busy}>
+          <Button variant="secondary" icon={<LinkSlash />} onClick={actions.openUnlink} disabled={state.busy}>
             {state.busy ? "Disconnecting…" : "Disconnect"}
           </Button>
         </div>
@@ -39,7 +39,7 @@ export function TelegramLinkRow({ userId, telegramChatId }: TelegramLinkRowProps
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
-        <Button variant="secondary" icon={<Send />} onClick={actions.link} disabled={state.busy}>
+        <Button variant="secondary" icon={<SendDiagonal />} onClick={actions.link} disabled={state.busy}>
           {state.busy ? "Opening Telegram…" : "Connect Telegram"}
         </Button>
         {state.pending && <Paragraph.sm className="text-tertiary">Waiting for Telegram…</Paragraph.sm>}

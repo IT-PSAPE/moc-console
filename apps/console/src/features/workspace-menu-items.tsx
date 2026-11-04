@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { Check } from 'iconoir-react'
 import { Avatar } from '@moc/ui/components/display/avatar'
 import { Dropdown } from '@moc/ui/components/overlays/dropdown'
 import { useWorkspaceSwitcher } from './use-workspace-switcher'

@@ -1,4 +1,4 @@
-import { Check, MapPin, Pencil, Plus, Search, X } from "lucide-react"
+import { Check, MapPin, EditPencil, Plus, Search, Xmark } from "iconoir-react"
 import type { Venue } from "@moc/types/venues"
 import { Button } from "@moc/ui/components/controls/button"
 import { Input } from "@moc/ui/components/form/input"
@@ -22,7 +22,7 @@ export function VenueCatalogPage() {
     return <Table.Row key={venue.id}>
       <Table.Cell className="max-w-0">{state.editingId === venue.id ? <Input aria-label={`Venue name for ${venue.name}`} value={state.editName} onChange={actions.changeEditName} autoFocus onKeyDown={actions.editKeyDownFor(venue)} /> : <Label.sm className="block truncate text-primary" title={venue.name}>{venue.name}</Label.sm>}</Table.Cell>
       <Table.Cell>{meta.canUpdate ? <Toggle checked={venue.active} onChange={actions.changeActiveFor(venue)} disabled={state.saving} aria-label={`${venue.active ? "Mark" : "Make"} ${venue.name} ${venue.active ? "unavailable" : "available"}`} /> : <Badge color={venue.active ? "green" : "gray"} label={venue.active ? "Yes" : "No"} />}</Table.Cell>
-      <Table.Cell className="text-right">{meta.canUpdate ? state.editingId === venue.id ? <div className="flex justify-end gap-1"><Button.Icon aria-label="Save venue name" icon={<Check />} variant="ghost" size="sm" disabled={!actions.nameAvailable(state.editName, venue.id) || state.saving} onClick={actions.saveEditFor(venue)} /><Button.Icon aria-label="Cancel venue rename" icon={<X />} variant="ghost" size="sm" disabled={state.saving} onClick={actions.cancelEdit} /></div> : <Button.Icon aria-label={`Rename ${venue.name}`} icon={<Pencil />} variant="ghost" size="sm" disabled={state.saving} onClick={actions.beginEditFor(venue)} /> : null}</Table.Cell>
+      <Table.Cell className="text-right">{meta.canUpdate ? state.editingId === venue.id ? <div className="flex justify-end gap-1"><Button.Icon aria-label="Save venue name" icon={<Check />} variant="ghost" size="sm" disabled={!actions.nameAvailable(state.editName, venue.id) || state.saving} onClick={actions.saveEditFor(venue)} /><Button.Icon aria-label="Cancel venue rename" icon={<Xmark />} variant="ghost" size="sm" disabled={state.saving} onClick={actions.cancelEdit} /></div> : <Button.Icon aria-label={`Rename ${venue.name}`} icon={<EditPencil />} variant="ghost" size="sm" disabled={state.saving} onClick={actions.beginEditFor(venue)} /> : null}</Table.Cell>
     </Table.Row>
   }
 

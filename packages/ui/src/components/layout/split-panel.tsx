@@ -1,5 +1,5 @@
 import { cn } from '@moc/utils/cn'
-import { X } from 'lucide-react'
+import { Xmark } from 'iconoir-react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties, type HTMLAttributes, type RefObject } from 'react'
 import { Button } from '../controls/button'
 import { ResizeHandle } from '../controls/resize-handle'
@@ -280,7 +280,7 @@ function SplitPanelFooter({ className, ...props }: HTMLAttributes<HTMLDivElement
 
 function SplitPanelClose({ 'aria-label': ariaLabel = 'Close detail panel', ...props }: Omit<ComponentProps<typeof Button.Icon>, 'icon'>) {
     const { actions } = useSplitPanel()
-    return <Button.Icon aria-label={ariaLabel} variant="ghost" icon={<X />} {...props} onClick={actions.close} />
+    return <Button.Icon aria-label={ariaLabel} variant="ghost" icon={<Xmark />} {...props} onClick={actions.close} />
 }
 
 export const SplitPanel = Object.assign(SplitPanelRoot, {

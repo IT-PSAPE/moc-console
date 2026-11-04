@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react'
+import { Plus } from 'iconoir-react'
 import { Button } from '../controls/button'
 import { Combobox } from './combobox'
 import { ManagedOptionPickerItem } from './managed-option-picker-item'

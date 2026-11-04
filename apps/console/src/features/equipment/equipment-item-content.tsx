@@ -1,4 +1,4 @@
-import { MapPin, Tag } from 'lucide-react'
+import { MapPin, Label } from 'iconoir-react'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import type { Equipment } from '@moc/types/equipment'
 import { EquipmentThumbnail } from './equipment-thumbnail'
@@ -15,7 +15,7 @@ export function EquipmentItemContent({ equipment }: { equipment: Equipment }) {
             </ListItemCard.Content>
             <ListItemCard.Trailing>
                 <ListItemCard.Meta>
-                    <ListItemCard.MetaItem icon={<Tag />}>{equipment.category}</ListItemCard.MetaItem>
+                    <ListItemCard.MetaItem icon={<Label />}>{equipment.category}</ListItemCard.MetaItem>
                     <ListItemCard.MetaItem icon={<MapPin />}>{equipment.location}</ListItemCard.MetaItem>
                 </ListItemCard.Meta>
             </ListItemCard.Trailing>

@@ -4,7 +4,7 @@ import { Badge } from "@moc/ui/components/display/badge"
 import { ListItemCard } from "@moc/ui/components/display/list-item-card"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
-import { Link2, RefreshCw, Unlink } from "lucide-react"
+import { Link, RefreshDouble, LinkSlash } from "iconoir-react"
 import { useState, type ReactNode } from "react"
 
 type IntegrationCardProps = {
@@ -68,11 +68,11 @@ export function IntegrationCard({ icon, name, isLoading, isConnected, accountLab
           isConnected ? (
             <>
               {needsReauth && (
-                <Button variant="secondary" onClick={onConnect} icon={<RefreshCw />}>
+                <Button variant="secondary" onClick={onConnect} icon={<RefreshDouble />}>
                   Reconnect
                 </Button>
               )}
-              <Button variant="danger-secondary" onClick={openDisconnectConfirm} disabled={isDisconnecting} icon={<Unlink />}>
+              <Button variant="danger-secondary" onClick={openDisconnectConfirm} disabled={isDisconnecting} icon={<LinkSlash />}>
                 {isDisconnecting ? "Disconnecting…" : "Disconnect"}
               </Button>
               <ConfirmationDialog
@@ -86,7 +86,7 @@ export function IntegrationCard({ icon, name, isLoading, isConnected, accountLab
               />
             </>
           ) : (
-            <Button variant="secondary" onClick={onConnect} icon={<Link2 />}>
+            <Button variant="secondary" onClick={onConnect} icon={<Link />}>
               Connect
             </Button>
           )

@@ -1,12 +1,12 @@
 import type { ChangeEvent } from "react";
 import {
-  CalendarDays,
-  Columns3,
+  Calendar,
+  ViewColumns3,
   List,
   MapPin,
   Search,
-  Settings2,
-} from "lucide-react";
+  FilterList,
+} from "iconoir-react";
 import { VenueBookingCalendarView } from "@/features/venues/venue-booking-calendar";
 import { VenueBookingKanbanView } from "@/features/venues/venue-booking-kanban";
 import { VenueBookingListView } from "@/features/venues/venue-booking-list";
@@ -47,7 +47,7 @@ export function VenueBookingsScreen() {
           <Input aria-label="Search venue bookings" name="venue-booking-search" autoComplete="off" icon={<Search />} placeholder="Search bookings…" value={filters.filters.search} onChange={handleSearch} />
           <Drawer mobileSide="bottom">
             <Drawer.Trigger>
-              <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter venue bookings">Filter</CollectionToolbar.ActionButton>
+              <CollectionToolbar.ActionButton icon={<FilterList />} variant="secondary" aria-label="Filter venue bookings">Filter</CollectionToolbar.ActionButton>
             </Drawer.Trigger>
             <VenueBookingFilterDrawer filters={filters} />
           </Drawer>
@@ -58,8 +58,8 @@ export function VenueBookingsScreen() {
         <CollectionToolbar.Views>
           <SegmentedControl value={activeView} onValueChange={actions.changeView} fill={isLandscape} >
             <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
-            <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={isLandscape}>Kanban</CollectionToolbar.ViewItem>
-            <CollectionToolbar.ViewItem value="calendar" icon={<CalendarDays />}>Calendar</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="kanban" icon={<ViewColumns3 />} hide={isLandscape}>Kanban</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="calendar" icon={<Calendar />}>Calendar</CollectionToolbar.ViewItem>
           </SegmentedControl>
         </CollectionToolbar.Views>
       </CollectionToolbar>

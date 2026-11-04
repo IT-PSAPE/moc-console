@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { WarningTriangle, RefreshDouble } from 'iconoir-react'
 import { Button } from '@moc/ui/components/controls/button'
 import { EmptyState } from '@moc/ui/components/feedback/empty-state'
 
@@ -85,11 +85,11 @@ function ErrorFallback({ error }: { error: Error }) {
     return (
         <div className="flex min-h-[60dvh] items-center justify-center">
             <EmptyState
-                icon={<AlertTriangle />}
+                icon={<WarningTriangle />}
                 title={friendly.title}
                 description={friendly.description}
                 action={(
-                    <Button variant="secondary" icon={<RefreshCw />} onClick={handleRefresh}>
+                    <Button variant="secondary" icon={<RefreshDouble />} onClick={handleRefresh}>
                         Refresh page
                     </Button>
                 )}

@@ -1,4 +1,4 @@
-import { Activity, EllipsisVertical, RotateCcw, Send, Trash2 } from 'lucide-react'
+import { Activity, MoreVert, Undo, SendDiagonal, Trash } from 'iconoir-react'
 import { Button } from '@moc/ui/components/controls/button'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import { DividedList } from '@moc/ui/components/display/divided-list'
@@ -48,13 +48,13 @@ export function ScheduledOccurrenceList() {
             <ListItemCard.Trailing className="ml-auto gap-2">
                 <Badge dot label={statusLabel} color={status.color} />
                 <Dropdown placement="bottom-end">
-                    <Dropdown.Trigger><Button.Icon aria-label={`More actions for ${occurrence.label}`} variant="ghost" size="sm" icon={<EllipsisVertical />} disabled={state.busy} /></Dropdown.Trigger>
+                    <Dropdown.Trigger><Button.Icon aria-label={`More actions for ${occurrence.label}`} variant="ghost" size="sm" icon={<MoreVert />} disabled={state.busy} /></Dropdown.Trigger>
                     <Dropdown.Panel>
                         <Dropdown.Item onSelect={openActivity}><Activity className="size-4" aria-hidden="true" />Activity</Dropdown.Item>
-                        {occurrence.canSend ? <Dropdown.Item onSelect={sendMessage}><Send className="size-4" aria-hidden="true" />Send now</Dropdown.Item> : null}
-                        {occurrence.canResend ? <Dropdown.Item onSelect={resendMessage}><RotateCcw className="size-4" aria-hidden="true" />Resend</Dropdown.Item> : null}
+                        {occurrence.canSend ? <Dropdown.Item onSelect={sendMessage}><SendDiagonal className="size-4" aria-hidden="true" />Send now</Dropdown.Item> : null}
+                        {occurrence.canResend ? <Dropdown.Item onSelect={resendMessage}><Undo className="size-4" aria-hidden="true" />Resend</Dropdown.Item> : null}
                         <Dropdown.Separator />
-                        <Dropdown.Item onSelect={deleteMessage} disabled={state.busy || !occurrence.canDelete}><Trash2 className="size-4 text-error" aria-hidden="true" /><span className="text-error">Delete</span></Dropdown.Item>
+                        <Dropdown.Item onSelect={deleteMessage} disabled={state.busy || !occurrence.canDelete}><Trash className="size-4 text-error" aria-hidden="true" /><span className="text-error">Delete</span></Dropdown.Item>
                     </Dropdown.Panel>
                 </Dropdown>
             </ListItemCard.Trailing>

@@ -1,5 +1,5 @@
 import type { Equipment } from "@moc/types/equipment";
-import { Package } from "lucide-react";
+import { Box } from "iconoir-react";
 
 export function EquipmentThumbnail({ equipment, size }: { equipment: Equipment; size?: 'sm' | 'md' | 'lg' }) {
   const thumbnailSize = size === 'sm' ? 'size-6' : size === 'lg' ? 'size-10' : 'size-8';
@@ -13,7 +13,7 @@ export function EquipmentThumbnail({ equipment, size }: { equipment: Equipment; 
   }
   return (
     <span className={`flex ${thumbnailSize} grow-0 shrink-0 items-center justify-center rounded-lg bg-secondary text-quaternary ${border}`}>
-      <Package className="size-4" />
+      <Box className="size-4" />
     </span>
   );
 }

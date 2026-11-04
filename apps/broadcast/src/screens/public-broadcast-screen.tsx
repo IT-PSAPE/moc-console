@@ -7,7 +7,7 @@ import { Button } from "@moc/ui/components/controls/button"
 import { RetryNotification } from "@moc/ui/components/feedback/retry-notification"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
-import { RadioTower } from "lucide-react"
+import { Antenna } from "iconoir-react"
 import { useParams } from "react-router-dom"
 import { BroadcastLayout } from "@/features/broadcast-layout"
 
@@ -16,7 +16,7 @@ function renderPlayer(broadcast: Broadcast) {
     return (
       <BroadcastLayout>
         <EmptyState
-          icon={<RadioTower />}
+          icon={<Antenna />}
           title="Nothing is queued yet"
           description="This player starts as soon as the broadcast owner adds media."
         />
@@ -38,7 +38,7 @@ export function PublicBroadcastScreen() {
       <BroadcastLayout>
         <RetryNotification title="Could not load broadcast" description="Check your connection and try again. If the link still fails, ask the broadcast owner to check it." onRetry={retry} />
         <EmptyState
-          icon={<RadioTower />}
+          icon={<Antenna />}
           title="Broadcast unavailable"
           description={error}
           action={<Button type="button" variant="secondary" onClick={retry}>Try again</Button>}
@@ -55,7 +55,7 @@ export function PublicBroadcastScreen() {
       <Decision.Empty>
         <BroadcastLayout>
           <EmptyState
-            icon={<RadioTower />}
+            icon={<Antenna />}
             title="Broadcast not found"
             description="This link does not point to an available broadcast."
           />

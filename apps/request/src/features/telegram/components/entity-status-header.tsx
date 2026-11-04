@@ -1,4 +1,4 @@
-import { Hash } from "lucide-react"
+import { Hashtag } from "iconoir-react"
 import { Badge } from "@moc/ui/components/display/badge"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
 import { Title } from "@moc/ui/components/display/text"
@@ -16,7 +16,7 @@ export function EntityStatusHeader({ title, status, trackingCode }: EntityStatus
       <Title.h1 className="title-h4">{title}</Title.h1>
       <Badge label={status.label} color={status.color} />
       {trackingCode && (
-        <MetaRow icon={<Hash />} label="Tracking code">
+        <MetaRow icon={<Hashtag />} label="Tracking code">
           <span className="font-mono">{trackingCode}</span>
         </MetaRow>
       )}

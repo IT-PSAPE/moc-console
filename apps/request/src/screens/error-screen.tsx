@@ -4,7 +4,7 @@ import { EmptyState } from '@moc/ui/components/feedback/empty-state'
 import { Alert } from '@moc/ui/components/feedback/alert'
 import { Button } from '@moc/ui/components/controls/button'
 import { routes } from '@/screens/console-routes'
-import { TriangleAlert } from 'lucide-react'
+import { WarningTriangle } from 'iconoir-react'
 
 export function ErrorScreen() {
   const error = useRouteError()
@@ -29,7 +29,7 @@ export function ErrorScreen() {
     <PublicLayout>
       <div className="flex flex-col gap-6">
         <EmptyState
-          icon={<TriangleAlert />}
+          icon={<WarningTriangle />}
           headingLevel="h1"
           title={isNotFound ? 'Page not found' : 'Something went wrong'}
           description={isNotFound

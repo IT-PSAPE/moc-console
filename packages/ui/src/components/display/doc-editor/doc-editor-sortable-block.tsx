@@ -1,6 +1,6 @@
 import { Button as BaseButton } from '@base-ui/react/button'
 import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react'
-import { Plus, GripVertical } from 'lucide-react'
+import { Plus, Drag } from 'iconoir-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from '@moc/utils/cn'
@@ -215,7 +215,7 @@ export function DocEditorSortableBlock({
                         {...listeners}
                         {...attributes}
                     >
-                        <GripVertical className="size-4" />
+                        <Drag className="size-4" />
                     </BaseButton>
                     {isMenuOpen ? <DocEditorBlockMenu anchorElement={menuTriggerElement} onAction={handleMenuAction} onClose={onMenuClose} /> : null}
                 </div>

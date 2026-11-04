@@ -1,7 +1,7 @@
 import { Button } from "@moc/ui/components/controls/button"
 import { Paragraph } from "@moc/ui/components/display/text"
 import type { FileRejection } from "@moc/utils/file-constraints"
-import { FileWarning, X } from "lucide-react"
+import { WarningTriangle, Xmark } from "iconoir-react"
 
 type BroadcastRejectedFilesProps = {
   onDismiss: () => void
@@ -28,9 +28,9 @@ export function BroadcastRejectedFiles({ onDismiss, rejections }: BroadcastRejec
   return (
     <div role="alert" aria-live="polite" className="flex flex-col gap-2 rounded-lg border border-transparent bg-error p-3">
       <div className="flex items-start gap-2">
-        <FileWarning className="size-4 shrink-0 text-error" />
+        <WarningTriangle className="size-4 shrink-0 text-error" />
         <Paragraph.xs className="flex-1 text-secondary">{`${rejections.length} ${fileLabel} not added to the playlist.`}</Paragraph.xs>
-        <Button.Icon aria-label="Dismiss rejected files" variant="ghost" size="sm" icon={<X />} onClick={onDismiss} />
+        <Button.Icon aria-label="Dismiss rejected files" variant="ghost" size="sm" icon={<Xmark />} onClick={onDismiss} />
       </div>
       <ul className="flex flex-col gap-1.5 pl-6">{rejections.map(renderRejection)}</ul>
     </div>

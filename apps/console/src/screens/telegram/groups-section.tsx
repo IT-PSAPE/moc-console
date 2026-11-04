@@ -3,7 +3,7 @@ import { Section } from "@moc/ui/components/display/section";
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { RetryNotification } from "@moc/ui/components/feedback/retry-notification";
-import { MessagesSquare } from "lucide-react";
+import { ChatLines } from "iconoir-react";
 import { Decision } from "@moc/ui/components/display/decision";
 import type { TelegramGroup } from "@/data/fetch-telegram-groups";
 import { useTelegramContext } from "./telegram-context";
@@ -32,7 +32,7 @@ export function TelegramGroupsSection() {
                 {state.groupsError ? (
                     <>
                         <RetryNotification title="Telegram settings couldn't be loaded" description={state.groupsError.message} onRetry={actions.loadGroups} isRetrying={state.isGroupsLoading} />
-                        {state.groups.length > 0 ? state.groups.map(renderGroup) : <EmptyState icon={<MessagesSquare />} title="Telegram groups couldn't be loaded" description={state.groupsError.message} action={<Button variant="secondary" onClick={actions.loadGroups} disabled={state.isGroupsLoading}>Retry</Button>} />}
+                        {state.groups.length > 0 ? state.groups.map(renderGroup) : <EmptyState icon={<ChatLines />} title="Telegram groups couldn't be loaded" description={state.groupsError.message} action={<Button variant="secondary" onClick={actions.loadGroups} disabled={state.isGroupsLoading}>Retry</Button>} />}
                     </>
                 ) : (
                     <Decision value={state.groups} loading={state.isGroupsLoading}>
@@ -41,7 +41,7 @@ export function TelegramGroupsSection() {
                         </Decision.Loading>
                         <Decision.Empty>
                             <EmptyState
-                                icon={<MessagesSquare />}
+                                icon={<ChatLines />}
                                 title="No groups yet"
                                 description="Groups connected in Telegram appear here."
                             />

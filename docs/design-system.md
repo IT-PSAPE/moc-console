@@ -124,12 +124,17 @@ disabled, table headers, icons in inputs and menus.
 
 ## 6. Icons
 
+- Use named imports from `iconoir-react` for interface icons. App roots use
+  `IconoirProvider` to keep decorative icons hidden from assistive technology
+  and set a 1.75px stroke with a 24px fallback; size classes below set the
+  displayed size.
 - `size-4` (16px) everywhere inside controls, badges, menus, meta rows, alerts,
   row leading icons.
 - `size-5` (20px) only in: navigation rail/sidebar items, empty-state featured
   icon, toast icon.
 - Icon colour inside controls and menus: `text-quaternary` (or inherit on
-  primary buttons). Lucide default stroke.
+  primary buttons). Use solid icons for filled
+  playback controls; preserve the official Google and Telegram brand marks.
 
 ## 7. Components (atoms)
 

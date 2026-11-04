@@ -10,7 +10,7 @@ import { TextArea } from "@moc/ui/components/form/text-area"
 import { Toggle } from "@moc/ui/components/form/toggle"
 import { Modal } from "@moc/ui/components/overlays/modal"
 import { UnsavedChangesDialog } from "@moc/ui/components/overlays/unsaved-changes-dialog"
-import { Bell, Camera, Trash2 } from "lucide-react"
+import { Bell, Camera, Trash } from "iconoir-react"
 import { TelegramLinkRow } from "./telegram-link-row"
 import { PROFILE_STATUS_MAX_LENGTH, useProfileSettings } from "./use-profile-settings"
 import { useWebPush } from "./use-web-push"
@@ -79,7 +79,7 @@ export function EditProfileModal({ open, onOpenChange }: EditProfileModalProps) 
                         />
                       </div>
                       {profile.avatarUrl ? (
-                        <Button variant="ghost" icon={<Trash2 />} className="text-error" disabled={state.isUploadingAvatar} onClick={actions.openRemoveAvatar}>
+                        <Button variant="ghost" icon={<Trash />} className="text-error" disabled={state.isUploadingAvatar} onClick={actions.openRemoveAvatar}>
                           Remove photo
                         </Button>
                       ) : <Paragraph.xs className="text-tertiary">Add a photo so teammates can recognise you.</Paragraph.xs>}

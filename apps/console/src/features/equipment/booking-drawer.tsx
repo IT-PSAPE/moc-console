@@ -15,7 +15,7 @@ import { BookingScanModal } from "./booking-scan-modal";
 import { BookingStatusSelect } from "./booking-status-select";
 import { BookingThumbnail } from "./booking-thumbnail";
 import type { Booking } from "@moc/types/equipment";
-import { Calendar, Clock, Loader, Maximize2, ScanLine, Trash2, User, X } from "lucide-react";
+import { Calendar, Clock, Refresh, Expand, ScanQrCode, Trash, User, Xmark } from "iconoir-react";
 import type { RefObject } from "react";
 import { formatUtcIsoForBrowserDateTimeInput } from "@moc/utils/browser-date-time";
 import { useDrawerClose } from "@/hooks/use-drawer-close";
@@ -73,18 +73,18 @@ export function BookingPanelContent({ booking, open, onClose, isDirtyRef, reques
   return (
     <>
       <SplitPanel.Header className="flex items-center gap-1">
-        <Button.Icon aria-label="Close booking" variant="ghost" size="sm" icon={<X />} onClick={guard.actions.requestClose} />
+        <Button.Icon aria-label="Close booking" variant="ghost" size="sm" icon={<Xmark />} onClick={guard.actions.requestClose} />
         <div className="flex-1" />
         <Button.Icon
           variant="secondary"
           size="sm"
           aria-label={collection.state.isComplete ? "All items scanned" : "Scan booking items"}
           disabled={!collection.state.canScan}
-          icon={<ScanLine />}
+          icon={<ScanQrCode />}
           onClick={collection.actions.openScanner}
         />
-        <Button.Icon variant="ghost" size="sm" icon={<Maximize2 />} onClick={guard.actions.openFullPage} aria-label="Open full page" />
-        <Button.Icon aria-label="Delete booking" variant="danger-secondary" size="sm" icon={<Trash2 />} onClick={handleDeleteRequest} />
+        <Button.Icon variant="ghost" size="sm" icon={<Expand />} onClick={guard.actions.openFullPage} aria-label="Open full page" />
+        <Button.Icon aria-label="Delete booking" variant="danger-secondary" size="sm" icon={<Trash />} onClick={handleDeleteRequest} />
       </SplitPanel.Header>
 
       <SplitPanel.Content>
@@ -100,7 +100,7 @@ export function BookingPanelContent({ booking, open, onClose, isDirtyRef, reques
         {/* Properties */}
         <div className="space-y-3">
           {/* Status */}
-          <MetaRow icon={<Loader />} label="Status">
+          <MetaRow icon={<Refresh />} label="Status">
             <BookingStatusSelect status={draft.status} onSelectStatus={editor.actions.selectStatus} />
           </MetaRow>
 

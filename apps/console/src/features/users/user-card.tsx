@@ -3,7 +3,7 @@ import { Badge } from "@moc/ui/components/display/badge"
 import { ListItemCard } from "@moc/ui/components/display/list-item-card"
 import { UserAvatar } from "@moc/ui/components/display/user-avatar"
 import type { Role } from "@moc/types/requests/assignee"
-import { Shield } from "lucide-react"
+import { Shield } from "iconoir-react"
 import { UserRoleSelect } from "./user-role-select"
 import { useUserMemberType } from '@/features/users/use-user-member-type'
 import { ManagedOptionPicker } from '@moc/ui/components/form/managed-option-picker'

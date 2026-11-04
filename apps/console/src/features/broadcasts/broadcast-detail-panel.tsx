@@ -8,7 +8,7 @@ import { SortableList } from "@moc/ui/components/display/sortable-list"
 import { Paragraph, Title } from "@moc/ui/components/display/text"
 import { InlineEditableText } from "@moc/ui/components/form/inline-editable-text"
 import { SplitPanel } from "@moc/ui/components/layout/split-panel"
-import { Check, Clock, Copy, Link2, ListMusic, Trash2, Upload } from "lucide-react"
+import { Check, Clock, Copy, Link, Playlist, Trash, Upload } from "iconoir-react"
 import type { BroadcastEditorItem } from "./broadcast-editor-types"
 import { BroadcastPlaylistItem } from "./broadcast-playlist-item"
 import { BroadcastUploadModal } from "./broadcast-upload-modal"
@@ -50,7 +50,7 @@ export function BroadcastDetailPanel({ broadcast, canDelete, onDelete }: Broadca
       <SplitPanel.Header className="flex items-center gap-1">
         <SplitPanel.Close aria-label="Close broadcast" size="sm" />
         <div className="flex-1" />
-        {canDelete ? <Button.Icon aria-label="Delete broadcast" variant="danger-secondary" size="sm" icon={<Trash2 />} disabled={state.isSaving} onClick={handleDelete} /> : null}
+        {canDelete ? <Button.Icon aria-label="Delete broadcast" variant="danger-secondary" size="sm" icon={<Trash />} disabled={state.isSaving} onClick={handleDelete} /> : null}
       </SplitPanel.Header>
 
       <SplitPanel.Content>
@@ -68,9 +68,9 @@ export function BroadcastDetailPanel({ broadcast, canDelete, onDelete }: Broadca
         </div>
 
         <div className="flex flex-col gap-3">
-          <MetaRow icon={<ListMusic />} label="Playlist"><Paragraph.sm>{meta.playlistLabel}</Paragraph.sm></MetaRow>
+          <MetaRow icon={<Playlist />} label="Playlist"><Paragraph.sm>{meta.playlistLabel}</Paragraph.sm></MetaRow>
           <MetaRow icon={<Clock />} label="Last updated"><Paragraph.sm>{meta.updatedAt}</Paragraph.sm></MetaRow>
-          <MetaRow icon={<Link2 />} label="Public link">
+          <MetaRow icon={<Link />} label="Public link">
             {meta.publicUrl ? (
               <div className="flex min-w-0 flex-1 items-center gap-1.5">
                 <Paragraph.sm className="min-w-0 flex-1 truncate">{meta.publicUrl}</Paragraph.sm>

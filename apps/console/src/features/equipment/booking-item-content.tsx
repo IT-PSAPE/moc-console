@@ -1,4 +1,4 @@
-import { CalendarRange, Package, User } from 'lucide-react'
+import { Calendar, Box, User } from 'iconoir-react'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import type { Booking } from '@moc/types/equipment'
 import { formatUtcIsoInBrowserTimeZone } from '@moc/utils/browser-date-time'
@@ -16,10 +16,10 @@ export function BookingItemContent({ booking }: { booking: Booking }) {
             <ListItemCard.Trailing>
                 <ListItemCard.Meta>
                     <ListItemCard.MetaItem icon={<User />}>{booking.bookedBy}</ListItemCard.MetaItem>
-                    <ListItemCard.MetaItem icon={<CalendarRange />}>
+                    <ListItemCard.MetaItem icon={<Calendar />}>
                         {checkedOut} → {booking.returnedDate ? formatUtcIsoInBrowserTimeZone(booking.returnedDate) : expectedReturn}
                     </ListItemCard.MetaItem>
-                    <ListItemCard.MetaItem icon={<Package />}>{itemCount} item{itemCount === 1 ? '' : 's'}</ListItemCard.MetaItem>
+                    <ListItemCard.MetaItem icon={<Box />}>{itemCount} item{itemCount === 1 ? '' : 's'}</ListItemCard.MetaItem>
                 </ListItemCard.Meta>
             </ListItemCard.Trailing>
         </ListItemCard.Root>

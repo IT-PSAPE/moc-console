@@ -3,7 +3,7 @@ import { PublicLayout } from '@/features/components/public-layout'
 import { EmptyState } from '@moc/ui/components/feedback/empty-state'
 import { Button } from '@moc/ui/components/controls/button'
 import { routes } from '@/screens/console-routes'
-import { FileQuestion } from 'lucide-react'
+import { HelpCircle } from 'iconoir-react'
 
 export function NotFoundScreen() {
   const navigate = useNavigate()
@@ -15,7 +15,7 @@ export function NotFoundScreen() {
   return (
     <PublicLayout>
       <EmptyState
-        icon={<FileQuestion />}
+        icon={<HelpCircle />}
         headingLevel="h1"
         title="Page not found"
         description="The page you're looking for doesn't exist or has been moved."

@@ -1,7 +1,7 @@
 import type { ComponentType } from "react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Trash2 } from "lucide-react";
+import { Drag, Trash } from "iconoir-react";
 import { Button } from "@moc/ui/components/controls/button";
 import { Checkbox } from "@moc/ui/components/form/checkbox";
 import { InlineEditableText } from "@moc/ui/components/form/inline-editable-text";
@@ -33,13 +33,13 @@ export function DraggableCheckRow({ item, onToggle, onRename, onDelete, itemSlot
           aria-label={`Reorder ${item.label}`}
           variant="ghost"
           size="sm"
-          icon={<GripVertical />}
+          icon={<Drag />}
           className="absolute right-full top-1/2 -translate-y-1/2 cursor-grab touch-none text-quaternary opacity-0 transition-opacity focus-visible:opacity-100 group-hover/item:opacity-100 landscape:opacity-100"
         />
         <Checkbox aria-label={item.checked ? `Mark ${item.label} incomplete` : `Mark ${item.label} complete`} checked={item.checked} onChange={toggle} />
         <InlineEditableText value={item.label} onSave={rename} className={cn("paragraph-sm min-w-0 flex-1", item.checked && "text-tertiary line-through")} />
         {ItemSlot && <div className="shrink-0"><ItemSlot item={item} /></div>}
-        <Button.Icon aria-label="Delete item" variant="ghost" size="sm" icon={<Trash2 />} className="shrink-0 text-quaternary opacity-0 transition-opacity group-hover/item:opacity-100 landscape:opacity-100" onClick={remove} />
+        <Button.Icon aria-label="Delete item" variant="ghost" size="sm" icon={<Trash />} className="shrink-0 text-quaternary opacity-0 transition-opacity group-hover/item:opacity-100 landscape:opacity-100" onClick={remove} />
       </div>
     </div>
   );

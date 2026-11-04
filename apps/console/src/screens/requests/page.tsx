@@ -5,13 +5,13 @@ import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import { Page } from "@moc/ui/components/layout/page";
 import { Input } from "@moc/ui/components/form/input";
 import {
-  CalendarDays,
-  Columns3,
-  Inbox,
+  Calendar,
+  ViewColumns3,
+  Drawer as DrawerIcon,
   List,
   Search,
-  Settings2,
-} from "lucide-react";
+  FilterList,
+} from "iconoir-react";
 import type { ChangeEvent } from "react";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
@@ -48,7 +48,7 @@ export function RequestsScreen() {
           <Input aria-label="Search requests" name="request-search" autoComplete="off" icon={<Search />} placeholder="Search requests…" value={filters.filters.search} onChange={handleSearch} />
           <Drawer mobileSide="bottom">
             <Drawer.Trigger>
-              <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter requests">Filter</CollectionToolbar.ActionButton>
+              <CollectionToolbar.ActionButton icon={<FilterList />} variant="secondary" aria-label="Filter requests">Filter</CollectionToolbar.ActionButton>
             </Drawer.Trigger>
             <RequestFilterDrawer filters={filters} workView={meta.workView} onWorkViewChange={actions.changeWorkView} onReset={actions.resetFilters} />
           </Drawer>
@@ -59,8 +59,8 @@ export function RequestsScreen() {
         <CollectionToolbar.Views>
           <SegmentedControl value={activeView} onValueChange={actions.changeView} fill={isLandscape} >
             <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
-            <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={isLandscape}>Kanban</CollectionToolbar.ViewItem>
-            <CollectionToolbar.ViewItem value="calendar" icon={<CalendarDays />}>Calendar</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="kanban" icon={<ViewColumns3 />} hide={isLandscape}>Kanban</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="calendar" icon={<Calendar />}>Calendar</CollectionToolbar.ViewItem>
           </SegmentedControl>
         </CollectionToolbar.Views>
       </CollectionToolbar>
@@ -71,7 +71,7 @@ export function RequestsScreen() {
       {meta.collectionError ? <ResourceLoadError title={meta.collectionErrorTitle} error={meta.collectionError} onRetry={actions.retryCollection} /> : <Decision value={collectionState}>
         <Decision.Empty>
           <EmptyState
-            icon={<Inbox />}
+            icon={<DrawerIcon />}
             title="No requests found"
             description="No requests match this work view and your current filters."
           />

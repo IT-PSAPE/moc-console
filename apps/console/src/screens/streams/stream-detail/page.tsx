@@ -19,7 +19,7 @@ import { Page } from "@moc/ui/components/layout/page"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 import { routes } from "@/screens/console-routes"
-import { Calendar, Check, Code, Copy, ExternalLink, Eye, Gauge, Key, Link2, ListVideo, Monitor, Pencil, Play, Radio, Square, Tag, Trash2 } from "lucide-react"
+import { Calendar, Check, Code, Copy, OpenNewWindow, Eye, DashboardSpeed, Key, Link as LinkIcon, MediaVideoList, Computer, EditPencil, Play, AntennaSignal, Square, Label, Trash } from "iconoir-react"
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return "Not set"
@@ -56,7 +56,7 @@ export function StreamDetailScreen() {
   if (!stream) {
     return (
       <Page><Page.Content width="standard">
-        <EmptyState headingLevel="h1" icon={<Radio />} title="Stream not found" description="The stream you're looking for doesn't exist." />
+        <EmptyState headingLevel="h1" icon={<AntennaSignal />} title="Stream not found" description="The stream you're looking for doesn't exist." />
       </Page.Content></Page>
     )
   }
@@ -68,10 +68,10 @@ export function StreamDetailScreen() {
       <DetailPage.Back render={<Link to={back.href} />}>{back.label}</DetailPage.Back>
       <TopBarActions>
         {meta.canEdit && (
-          <Button variant="ghost" icon={<Pencil />} onClick={handleOpenEdit}>Edit</Button>
+          <Button variant="ghost" icon={<EditPencil />} onClick={handleOpenEdit}>Edit</Button>
         )}
         {meta.canDelete && (
-          <Button.Icon aria-label="Delete stream" variant="danger-secondary" icon={<Trash2 />} onClick={handleOpenDelete} />
+          <Button.Icon aria-label="Delete stream" variant="danger-secondary" icon={<Trash />} onClick={handleOpenDelete} />
         )}
         {meta.canCleanupLocal && (
           <Button variant="secondary" onClick={handleOpenLocalDelete}>Remove local record</Button>
@@ -126,11 +126,11 @@ export function StreamDetailScreen() {
             </MetaRow>
           )}
 
-          <MetaRow icon={<Gauge />} label="Latency">
+          <MetaRow icon={<DashboardSpeed />} label="Latency">
             <Paragraph.sm>{latencyPreferenceLabel[stream.latencyPreference]}</Paragraph.sm>
           </MetaRow>
 
-          <MetaRow icon={<Monitor />} label="DVR">
+          <MetaRow icon={<Computer />} label="DVR">
             <Paragraph.sm>{stream.enableDvr ? "Enabled" : "Disabled"}</Paragraph.sm>
           </MetaRow>
 
@@ -147,7 +147,7 @@ export function StreamDetailScreen() {
           </MetaRow>
 
           {stream.tags.length > 0 && (
-            <MetaRow icon={<Tag />} label="Tags">
+            <MetaRow icon={<Label />} label="Tags">
               <div className="flex flex-wrap gap-1">
                 {stream.tags.map((tag) => (
                   <Badge key={tag} label={tag} />
@@ -157,7 +157,7 @@ export function StreamDetailScreen() {
           )}
 
           {stream.playlistId && (
-            <MetaRow icon={<ListVideo />} label="Playlist">
+            <MetaRow icon={<MediaVideoList />} label="Playlist">
               <Paragraph.sm className="truncate">{stream.playlistId}</Paragraph.sm>
             </MetaRow>
           )}
@@ -171,7 +171,7 @@ export function StreamDetailScreen() {
             <Section.Header title="Links & setup" size="sm" />
             <div className="space-y-3">
               {stream.streamUrl && (
-                <MetaRow icon={<Link2 />} label="YouTube link">
+                <MetaRow icon={<LinkIcon />} label="YouTube link">
                   <div className="flex items-center gap-1 min-w-0">
                     <Paragraph.sm className="text-tertiary truncate flex-1">{stream.streamUrl}</Paragraph.sm>
                     <Button.Icon
@@ -181,7 +181,7 @@ export function StreamDetailScreen() {
                       icon={copiedField === "url" ? <Check className="text-success" /> : <Copy />}
                       onClick={actions.copyStreamUrl}
                     />
-                    <Button.IconLink render={<a href={stream.streamUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open stream link" variant="ghost" size="sm" icon={<ExternalLink />} />
+                    <Button.IconLink render={<a href={stream.streamUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open stream link" variant="ghost" size="sm" icon={<OpenNewWindow />} />
                   </div>
                 </MetaRow>
               )}
@@ -202,7 +202,7 @@ export function StreamDetailScreen() {
               )}
 
               {meta.canViewStreamKey && stream.ingestionUrl && (
-                <MetaRow icon={<ExternalLink />} label="Server URL">
+                <MetaRow icon={<OpenNewWindow />} label="Server URL">
                   <div className="flex items-center gap-1 min-w-0">
                     <Paragraph.sm className="font-mono truncate">{stream.ingestionUrl}</Paragraph.sm>
                     <Button.Icon

@@ -1,5 +1,5 @@
 import type { ChangeEvent, MouseEvent } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Plus, Xmark } from 'iconoir-react'
 import type { ScheduledAttendanceGroup } from '@moc/notifications'
 import { Button } from '@moc/ui/components/controls/button'
 import { Checkbox } from '@moc/ui/components/form/checkbox'
@@ -23,7 +23,7 @@ export function ScheduledAttendanceGroupFields({ groups, disabled = false, onCha
     function renderGroup(group: ScheduledAttendanceGroup, index: number) {
         return <div key={group.id} className="flex items-center gap-2">
             <Input className="flex-1" disabled={disabled} aria-label={`Group ${index + 1}`} data-group-id={group.id} value={group.label} maxLength={40} onChange={onChange} />
-            <Button.Icon size="sm" variant="ghost" icon={<X />} disabled={disabled || groups.length <= 2} data-group-id={group.id} aria-label={`Remove group ${index + 1}`} onClick={onRemove} />
+            <Button.Icon size="sm" variant="ghost" icon={<Xmark />} disabled={disabled || groups.length <= 2} data-group-id={group.id} aria-label={`Remove group ${index + 1}`} onClick={onRemove} />
         </div>
     }
 

@@ -1,4 +1,4 @@
-import { CalendarClock, Ticket, User } from 'lucide-react'
+import { Calendar, Hashtag, User } from 'iconoir-react'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import type { VenueBooking } from '@moc/types/venues'
 import { formatUtcIsoInBrowserTimeZone } from '@moc/utils/browser-date-time'
@@ -12,11 +12,11 @@ export function VenueBookingItemContent({ booking }: { booking: VenueBooking }) 
             </ListItemCard.Content>
             <ListItemCard.Trailing>
                 <ListItemCard.Meta>
-                    <ListItemCard.MetaItem icon={<CalendarClock />}>
+                    <ListItemCard.MetaItem icon={<Calendar />}>
                         {formatUtcIsoInBrowserTimeZone(booking.startsAt, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </ListItemCard.MetaItem>
                     <ListItemCard.MetaItem icon={<User />}>{booking.requestedBy}</ListItemCard.MetaItem>
-                    <ListItemCard.MetaItem icon={<Ticket />}>{booking.trackingCode}</ListItemCard.MetaItem>
+                    <ListItemCard.MetaItem icon={<Hashtag />}>{booking.trackingCode}</ListItemCard.MetaItem>
                 </ListItemCard.Meta>
             </ListItemCard.Trailing>
         </ListItemCard.Root>

@@ -3,7 +3,7 @@ import { InteractiveSurface } from '@moc/ui/components/controls/interactive-surf
 import { Section } from '@moc/ui/components/display/section'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { Timeline } from '@moc/ui/components/display/timeline'
-import { ArrowRight, ChevronDown } from 'lucide-react'
+import { ArrowRight, NavArrowDown } from 'iconoir-react'
 import type { ActivityChangeView, ActivityLinkView, ActivityView } from './discussion-types'
 import { DiscussionActorAvatar } from './discussion-actor-avatar'
 import { Link } from 'react-router-dom'
@@ -47,7 +47,7 @@ export function ItemActivityRow({ activity }: { activity: ActivityView }) {
                         <Accordion.Item value={activity.id}>
                             <Accordion.Trigger className="mt-1 flex w-auto items-center gap-1 paragraph-xs text-tertiary hover:text-primary">
                                 {activity.changesLabel}
-                                <ChevronDown aria-hidden="true" className="size-3 transition-transform group-data-[panel-open]:rotate-180" />
+                                <NavArrowDown aria-hidden="true" className="size-3 transition-transform group-data-[panel-open]:rotate-180" />
                             </Accordion.Trigger>
                             <Accordion.Content className="pt-2">{details}</Accordion.Content>
                         </Accordion.Item>

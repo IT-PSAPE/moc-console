@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { MessageSquare, Search, Send } from 'lucide-react'
+import { Message, Search, SendDiagonal } from 'iconoir-react'
 import { Section } from '@moc/ui/components/display/section'
 import { Card } from '@moc/ui/components/display/card'
 import { Badge } from '@moc/ui/components/display/badge'
@@ -56,7 +56,7 @@ export function ScheduledMessageComposer() {
     }
 
     function renderDestination() {
-        if (!meta.destinationItems.length) return <EmptyState icon={<MessageSquare />} title="No linked Telegram groups" description="Link the bot to a group before sending a message." action={<Button.Link variant="secondary" render={<Link to={`/${routes.settings}?tab=notifications`} />}>Telegram settings</Button.Link>} />
+        if (!meta.destinationItems.length) return <EmptyState icon={<Message />} title="No linked Telegram groups" description="Link the bot to a group before sending a message." action={<Button.Link variant="secondary" render={<Link to={`/${routes.settings}?tab=notifications`} />}>Telegram settings</Button.Link>} />
         return <Section>
             <Section.Header size="sm" title="Where to send" />
             <Section.Body className="gap-4">
@@ -70,7 +70,7 @@ export function ScheduledMessageComposer() {
             <Section.Header size="sm" title="When to send" />
             <Section.Body className="gap-4">
                 <SegmentedControl value={state.draft.sendMode} onValueChange={actions.setDeliveryMode} fill>
-                    <SegmentedControl.Item value="now" icon={<Send />}>Send now</SegmentedControl.Item>
+                    <SegmentedControl.Item value="now" icon={<SendDiagonal />}>Send now</SegmentedControl.Item>
                     <SegmentedControl.Item value="scheduled">Schedule</SegmentedControl.Item>
                 </SegmentedControl>
                 {state.draft.sendMode === 'scheduled' ? <>

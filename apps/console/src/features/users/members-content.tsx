@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react'
+import { Search } from 'iconoir-react'
 import { DividedList } from '@moc/ui/components/display/divided-list'
 import { Section } from '@moc/ui/components/display/section'
 import { LoadingSpinner } from '@moc/ui/components/feedback/spinner'

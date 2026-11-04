@@ -1,5 +1,5 @@
 import type { ReactElement } from "react"
-import { ArrowUpRight, Unlink } from "lucide-react"
+import { ArrowUpRight, LinkSlash } from "iconoir-react"
 import { Button } from "../controls/button"
 
 type LinkedRecordRowProps = {
@@ -14,7 +14,7 @@ export function LinkedRecordRow({ label, render, onRemove, disabled }: LinkedRec
   return (
     <div className="flex min-w-0 items-center gap-2">
       <Button.Link render={render} variant="ghost" size="sm" icon={<ArrowUpRight />} iconPosition="trailing" className="min-w-0 flex-1 justify-start truncate">{label}</Button.Link>
-      {onRemove && <Button.Icon icon={<Unlink />} aria-label={`Unlink ${label}`} variant="ghost" size="sm" onClick={onRemove} disabled={disabled} />}
+      {onRemove && <Button.Icon icon={<LinkSlash />} aria-label={`Unlink ${label}`} variant="ghost" size="sm" onClick={onRemove} disabled={disabled} />}
     </div>
   )
 }

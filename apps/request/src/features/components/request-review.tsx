@@ -2,7 +2,7 @@ import { Badge } from '@moc/ui/components/display/badge'
 import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Divider } from '@moc/ui/components/display/divider'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
-import { User, FileText, CalendarDays, Tag, Users, MapPin, Clock, Target, Lightbulb, Wrench, GitBranch } from 'lucide-react'
+import { User, Page, Calendar, Label as LabelIcon, Group, MapPin, Clock, Archery, LightBulb, Wrench, GitBranch } from 'iconoir-react'
 import type { RequestFormData } from '@/types/request'
 import { formatDateTime } from '@/lib/utils'
 
@@ -12,16 +12,16 @@ export function RequestReview({ data, categoryName }: { data: RequestFormData; c
       <section className="flex flex-col gap-3">
         <Label.xs className="text-tertiary uppercase tracking-wider">Basic info</Label.xs>
         <div className="flex flex-col gap-3">
-          <MetaRow icon={<FileText />} label="Title">
+          <MetaRow icon={<Page />} label="Title">
             <Label.sm>{data.title}</Label.sm>
           </MetaRow>
           <MetaRow icon={<User />} label="Requested by">
             <Label.sm>{data.requestedBy}</Label.sm>
           </MetaRow>
-          <MetaRow icon={<Tag />} label="Category">
+          <MetaRow icon={<LabelIcon />} label="Category">
             <Badge label={categoryName || data.category} color="blue" variant="outline" />
           </MetaRow>
-          <MetaRow icon={<CalendarDays />} label="Due date">
+          <MetaRow icon={<Calendar />} label="Due date">
             <Label.sm>{formatDateTime(data.dueDate)}</Label.sm>
           </MetaRow>
         </div>
@@ -32,10 +32,10 @@ export function RequestReview({ data, categoryName }: { data: RequestFormData; c
       <section className="flex flex-col gap-3">
         <Label.xs className="text-tertiary uppercase tracking-wider">Details</Label.xs>
         <div className="flex flex-col gap-3 whitespace-pre-wrap">
-          <MetaRow icon={<Users />} label="Who">
+          <MetaRow icon={<Group />} label="Who">
             <Label.sm>{data.who}</Label.sm>
           </MetaRow>
-          <MetaRow icon={<Target />} label="What">
+          <MetaRow icon={<Archery />} label="What">
             <Label.sm>{data.what}</Label.sm>
           </MetaRow>
           <MetaRow icon={<Clock />} label="When">
@@ -44,7 +44,7 @@ export function RequestReview({ data, categoryName }: { data: RequestFormData; c
           <MetaRow icon={<MapPin />} label="Where">
             <Label.sm>{data.whereText}</Label.sm>
           </MetaRow>
-          <MetaRow icon={<Lightbulb />} label="Why">
+          <MetaRow icon={<LightBulb />} label="Why">
             <Label.sm>{data.why}</Label.sm>
           </MetaRow>
           <MetaRow icon={<Wrench />} label="How">

@@ -15,21 +15,21 @@ import {
   Check,
   Code,
   Copy,
-  ExternalLink,
+  OpenNewWindow,
   Eye,
-  Gauge,
+  DashboardSpeed,
   Key,
-  Link2,
-  ListVideo,
-  Maximize2,
-  Monitor,
-  Pencil,
+  Link,
+  MediaVideoList,
+  Expand,
+  Computer,
+  EditPencil,
   Play,
   Square,
-  Tag,
-  Trash2,
-  X,
-} from "lucide-react"
+  Label as LabelIcon,
+  Trash,
+  Xmark,
+} from "iconoir-react"
 import { useStreamDetailDrawer } from "./use-stream-detail-drawer"
 
 type StreamDetailPanelProps = {
@@ -51,14 +51,14 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
   return (
     <>
       <SplitPanel.Header className="flex items-center gap-1">
-        <Button.Icon aria-label="Close stream" variant="ghost" size="sm" icon={<X />} onClick={drawer.actions.close} />
-        <Button.Icon aria-label="Open full page" variant="ghost" size="sm" icon={<Maximize2 />} onClick={drawer.actions.openFullPage} />
+        <Button.Icon aria-label="Close stream" variant="ghost" size="sm" icon={<Xmark />} onClick={drawer.actions.close} />
+        <Button.Icon aria-label="Open full page" variant="ghost" size="sm" icon={<Expand />} onClick={drawer.actions.openFullPage} />
         <div className="flex-1" />
         {drawer.meta.canEdit && (
-          <Button.Icon aria-label="Edit stream" variant="ghost" size="sm" icon={<Pencil />} onClick={drawer.actions.edit} />
+          <Button.Icon aria-label="Edit stream" variant="ghost" size="sm" icon={<EditPencil />} onClick={drawer.actions.edit} />
         )}
         {drawer.meta.canDelete && (
-          <Button.Icon aria-label="Delete stream" variant="danger-secondary" size="sm" icon={<Trash2 />} onClick={drawer.actions.remove} />
+          <Button.Icon aria-label="Delete stream" variant="danger-secondary" size="sm" icon={<Trash />} onClick={drawer.actions.remove} />
         )}
       </SplitPanel.Header>
 
@@ -108,11 +108,11 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
               </MetaRow>
             )}
 
-            <MetaRow icon={<Gauge />} label="Latency">
+            <MetaRow icon={<DashboardSpeed />} label="Latency">
               <Paragraph.sm>{latencyPreferenceLabel[stream.latencyPreference]}</Paragraph.sm>
             </MetaRow>
 
-            <MetaRow icon={<Monitor />} label="DVR">
+            <MetaRow icon={<Computer />} label="DVR">
               <Paragraph.sm>{stream.enableDvr ? "Enabled" : "Disabled"}</Paragraph.sm>
             </MetaRow>
 
@@ -129,7 +129,7 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
             </MetaRow>
 
             {stream.tags.length > 0 && (
-              <MetaRow icon={<Tag />} label="Tags">
+              <MetaRow icon={<LabelIcon />} label="Tags">
                 <div className="flex flex-wrap gap-1">
                   {stream.tags.map((tag) => (
                     <Badge key={tag} label={tag} />
@@ -139,7 +139,7 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
             )}
 
             {stream.playlistId && (
-              <MetaRow icon={<ListVideo />} label="Playlist">
+              <MetaRow icon={<MediaVideoList />} label="Playlist">
                 <Paragraph.sm className="truncate">{stream.playlistId}</Paragraph.sm>
               </MetaRow>
             )}
@@ -151,7 +151,7 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
             <Section.Header title="Links & setup" size="sm" />
             <Section.Body className="gap-3">
               {stream.streamUrl && (
-                <MetaRow icon={<Link2 />} label="YouTube link">
+                <MetaRow icon={<Link />} label="YouTube link">
                   <div className="flex items-center gap-1">
                     <Paragraph.sm className="min-w-0 flex-1 truncate text-tertiary">{stream.streamUrl}</Paragraph.sm>
                     <Button.Icon
@@ -161,7 +161,7 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
                       icon={drawer.state.copiedField === "url" ? <Check className="text-success" /> : <Copy />}
                       onClick={drawer.actions.copyUrl}
                     />
-                    <Button.IconLink render={<a href={stream.streamUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open stream link" variant="ghost" size="sm" icon={<ExternalLink />} />
+                    <Button.IconLink render={<a href={stream.streamUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open stream link" variant="ghost" size="sm" icon={<OpenNewWindow />} />
                   </div>
                 </MetaRow>
               )}
@@ -182,7 +182,7 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
               )}
 
               {drawer.meta.canViewStreamKey && stream.ingestionUrl && (
-                <MetaRow icon={<ExternalLink />} label="Server URL">
+                <MetaRow icon={<OpenNewWindow />} label="Server URL">
                   <div className="flex items-center gap-1">
                     <Paragraph.sm className="font-mono truncate">{stream.ingestionUrl}</Paragraph.sm>
                     <Button.Icon

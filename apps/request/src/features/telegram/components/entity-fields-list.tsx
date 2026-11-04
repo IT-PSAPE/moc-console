@@ -1,4 +1,4 @@
-import { Info } from "lucide-react"
+import { InfoCircle } from "iconoir-react"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
 import { Divider } from "@moc/ui/components/display/divider"
 import type { MiniAppField } from "@moc/notifications"
@@ -17,7 +17,7 @@ export function EntityFieldsList({ fields }: EntityFieldsListProps) {
       {fields.map((field, index) => (
         <div key={field.label} className="flex flex-col gap-3">
           {index > 0 && <Divider />}
-          <MetaRow icon={<Info />} label={field.label}>{field.value}</MetaRow>
+          <MetaRow icon={<InfoCircle />} label={field.label}>{field.value}</MetaRow>
         </div>
       ))}
     </section>

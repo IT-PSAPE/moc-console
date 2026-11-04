@@ -12,7 +12,7 @@ import { RetryNotification } from "@moc/ui/components/feedback/retry-notificatio
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { RecordPicker } from "@moc/ui/components/form/record-picker"
 import { Dropdown } from "@moc/ui/components/overlays/dropdown"
-import { Link2, Plus } from "lucide-react"
+import { Link as LinkIcon, Plus } from "iconoir-react"
 import { Link } from "react-router-dom"
 import { useRequestLinkedRecords } from "./use-request-linked-records"
 
@@ -33,7 +33,7 @@ export function RequestLinkedRecords({ request, enabled = true }: RequestLinkedR
 
   return (
     <>
-      <MetaRow icon={<Link2 />} label="Linked work">
+      <MetaRow icon={<LinkIcon />} label="Linked work">
         <div className="flex min-w-0 flex-col gap-1">
           {state.isLoading ? <LoadingSpinner size="sm" className="h-control-sm justify-start px-3" /> : state.error ? <RetryNotification title="Could not load related work" description={state.error.message} onRetry={actions.retry} isRetrying={state.isLoading} /> : <>
             {state.records.map(renderRecord)}

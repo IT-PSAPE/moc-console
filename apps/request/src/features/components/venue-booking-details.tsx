@@ -3,7 +3,7 @@ import { Select } from '@moc/ui/components/form/select'
 import { FormField } from '@moc/ui/components/form/form-label'
 import { DateSlotPicker } from '@moc/ui/components/form/date-slot-picker'
 import { VENUE_EVENT_OTHER_ID } from '@moc/types/venues'
-import { CalendarX } from 'lucide-react'
+import { CalendarXmark } from 'iconoir-react'
 import { FieldError } from '@/features/components/field-error'
 import { VenueRecurrenceFields } from '@/features/components/venue-recurrence-fields'
 import type { VenueRecurrenceAction } from '@/features/venue-recurrence'
@@ -121,10 +121,10 @@ export function VenueBookingDetails({
           <DateSlotPicker.Slots>
             {slotsLoading && <DateSlotPicker.Loading label="Loading times" />}
             {!slotsLoading && !hasVenueAndDate && (
-              <DateSlotPicker.Empty icon={<CalendarX />} title="Choose a venue" description="Time slots appear as soon as a venue is selected." />
+              <DateSlotPicker.Empty icon={<CalendarXmark />} title="Choose a venue" description="Time slots appear as soon as a venue is selected." />
             )}
             {!slotsLoading && hasVenueAndDate && slots.length === 0 && (
-              <DateSlotPicker.Empty icon={<CalendarX />} title="No times available" description="Try a different date." />
+              <DateSlotPicker.Empty icon={<CalendarXmark />} title="No times available" description="Try a different date." />
             )}
             {!slotsLoading && hasVenueAndDate && slots.length > 0 && slots.map(renderSlot)}
           </DateSlotPicker.Slots>

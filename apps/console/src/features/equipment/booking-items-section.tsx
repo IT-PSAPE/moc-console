@@ -5,7 +5,7 @@ import { InteractiveSurface } from "@moc/ui/components/controls/interactive-surf
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { equipmentCategoryLabel } from "@moc/types/equipment";
 import type { BookingItem } from "@moc/types/equipment";
-import { ChevronRight, Package } from "lucide-react";
+import { NavArrowRight, Box } from "iconoir-react";
 import { Link } from "react-router-dom";
 
 // Shared between the booking drawer and the booking detail page so the
@@ -58,7 +58,7 @@ function BookingItemRow({ item, isScanned, onNavigate }: { item: BookingItem; is
     <InteractiveSurface.CardLink render={<Link to={`/equipment/${item.equipmentId}`} onClick={onNavigate} />} aria-label={item.equipmentName}>
       <ListItemCard.Root>
         <ListItemCard.Leading>
-          {item.equipmentThumbnail ? <img src={item.equipmentThumbnail} alt="" className="size-full object-cover" /> : <Package />}
+          {item.equipmentThumbnail ? <img src={item.equipmentThumbnail} alt="" className="size-full object-cover" /> : <Box />}
         </ListItemCard.Leading>
         <ListItemCard.Content>
           <ListItemCard.Title>{item.equipmentName}</ListItemCard.Title>
@@ -66,7 +66,7 @@ function BookingItemRow({ item, isScanned, onNavigate }: { item: BookingItem; is
         </ListItemCard.Content>
         <ListItemCard.Trailing>
           {isScanned && <Badge color="green" label="Scanned" />}
-          <ChevronRight className="size-4 shrink-0 text-quaternary" aria-hidden="true" />
+          <NavArrowRight className="size-4 shrink-0 text-quaternary" aria-hidden="true" />
         </ListItemCard.Trailing>
       </ListItemCard.Root>
     </InteractiveSurface.CardLink>

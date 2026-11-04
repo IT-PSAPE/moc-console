@@ -2,7 +2,7 @@ import { cn } from "@moc/utils/cn"
 import { useDetailLinkState } from "@/hooks/use-detail-return"
 import type { RequestLinkedKind } from "@/data/request-links"
 import { routes } from "@/screens/console-routes"
-import { FileText } from "lucide-react"
+import { Page } from "iconoir-react"
 import { LinkedRecordRow } from "@moc/ui/components/display/linked-record-row"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
 import { Paragraph } from "@moc/ui/components/display/text"
@@ -27,7 +27,7 @@ export function RequestLinkField({ kind, id, className }: RequestLinkFieldProps)
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      <MetaRow icon={<FileText />} label="Request">{renderValue()}</MetaRow>
+      <MetaRow icon={<Page />} label="Request">{renderValue()}</MetaRow>
       {state.error && <RetryNotification title="Could not load request link" description={state.error.message} onRetry={actions.retry} />}
     </div>
   )

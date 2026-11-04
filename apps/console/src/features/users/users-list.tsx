@@ -2,7 +2,7 @@ import type { UserWithRole } from "@/data/fetch-users"
 import { DividedList } from "@moc/ui/components/display/divided-list"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import type { Role } from "@moc/types/requests/assignee"
-import { Users } from "lucide-react"
+import { Group } from "iconoir-react"
 import { UserCard } from "./user-card"
 
 type UsersListProps = {
@@ -19,7 +19,7 @@ export function UsersList({ users, isFiltered, roles, canManage, onRoleChange }:
   }
 
   if (users.length === 0) {
-    return <EmptyState icon={<Users />} title={isFiltered ? "No members match your search" : "No members yet"} description={isFiltered ? "Try a different name, email, or role." : "Members added to this workspace will appear here."} />
+    return <EmptyState icon={<Group />} title={isFiltered ? "No members match your search" : "No members yet"} description={isFiltered ? "Try a different name, email, or role." : "Members added to this workspace will appear here."} />
   }
 
   return <DividedList>{users.map(renderUser)}</DividedList>

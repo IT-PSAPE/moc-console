@@ -1,7 +1,7 @@
 import { Toast as BaseToast } from '@base-ui/react/toast'
 import { cn } from '@moc/utils/cn'
 import { Label, Paragraph } from '../display/text'
-import { AlertCircle, CheckCircle2, Info, Lightbulb, TriangleAlert, X } from 'lucide-react'
+import { WarningCircle, CheckCircle, InfoCircle, LightBulb, WarningTriangle, Xmark } from 'iconoir-react'
 import { Button } from '../controls/button'
 import type { FeedbackVariant } from './alert'
 import type { ToastData } from './feedback-types'
@@ -10,11 +10,11 @@ import type { ReactNode } from 'react'
 // ─── Variant Icons ──────────────────────────────────────────────────
 
 const variantIcons: Record<FeedbackVariant, ReactNode> = {
-    error: <AlertCircle className="size-4" />,
-    warning: <TriangleAlert className="size-4" />,
-    success: <CheckCircle2 className="size-4" />,
-    info: <Info className="size-4" />,
-    feature: <Lightbulb className="size-4" />,
+    error: <WarningCircle className="size-4" />,
+    warning: <WarningTriangle className="size-4" />,
+    success: <CheckCircle className="size-4" />,
+    info: <InfoCircle className="size-4" />,
+    feature: <LightBulb className="size-4" />,
 }
 
 const variantIconColorMap: Record<FeedbackVariant, string> = {
@@ -57,7 +57,7 @@ export function Toast({ toast }: ToastProps) {
                     ) : null}
                 </div>
                 {dismissible ? (
-                    <BaseToast.Close render={<Button.Icon aria-label="Dismiss" icon={<X />} variant="ghost" size="sm" className="mt-0.5" />} />
+                    <BaseToast.Close render={<Button.Icon aria-label="Dismiss" icon={<Xmark />} variant="ghost" size="sm" className="mt-0.5" />} />
                 ) : null}
             </BaseToast.Content>
         </BaseToast.Root>

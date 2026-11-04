@@ -5,7 +5,7 @@ import { Badge } from "@moc/ui/components/display/badge";
 import { Notification } from "@moc/ui/components/feedback/notification";
 import { Input } from "@moc/ui/components/form/input";
 import { Modal } from "@moc/ui/components/overlays/modal";
-import { Camera, Keyboard, ScanLine, Smartphone } from "lucide-react";
+import { Camera, InputField, ScanQrCode, SmartphoneDevice } from "iconoir-react";
 import type { ChangeEvent, KeyboardEvent, RefObject } from "react";
 
 type BookingScanModalProps = {
@@ -75,7 +75,7 @@ export function BookingScanModal({
               ) : (
                 <EmptyState
                   className="rounded-lg border border-dashed border-secondary py-10"
-                  icon={<Smartphone />}
+                  icon={<SmartphoneDevice />}
                   title="QR scanning is unavailable here"
                   description="Enter the equipment code below or use a supported camera scanner."
                 />
@@ -95,7 +95,7 @@ export function BookingScanModal({
                 <Input
                   aria-label="Equipment code"
                   autoComplete="off"
-                  icon={<Keyboard />}
+                  icon={<InputField />}
                   name="equipment-code"
                   placeholder="Enter equipment code…"
                   value={manualCode}
@@ -109,7 +109,7 @@ export function BookingScanModal({
             </Modal.Content>
 
             <Modal.Footer>
-              <Button variant="secondary" onClick={onClose} icon={isSupported ? <ScanLine /> : <Camera />}>
+              <Button variant="secondary" onClick={onClose} icon={isSupported ? <ScanQrCode /> : <Camera />}>
                 Close
               </Button>
             </Modal.Footer>

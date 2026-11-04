@@ -1,4 +1,4 @@
-import { FilePlus2, ListChecks, Plus, Search } from 'lucide-react'
+import { PagePlus, TaskList, Plus, Search } from 'iconoir-react'
 import { Button } from '@moc/ui/components/controls/button'
 import { GroupedList } from '@moc/ui/components/display/grouped-list'
 import { Indicator } from '@moc/ui/components/display/indicator'
@@ -50,14 +50,14 @@ export function ChecklistsScreen() {
                     </Dropdown.Trigger>
                     <Dropdown.Panel>
                         <Dropdown.Item onSelect={actions.pickBlank}>
-                            <FilePlus2 className="size-4" />
+                            <PagePlus className="size-4" />
                             Blank checklist
                         </Dropdown.Item>
                         {state.templates.length > 0 && <Dropdown.Separator />}
                         {state.templates.map(renderTemplate)}
                         {state.templates.length > 0 && <Dropdown.Separator />}
                         <Dropdown.Item onSelect={actions.openTemplates}>
-                            <ListChecks className="size-4" />
+                            <TaskList className="size-4" />
                             Manage checklist templates
                         </Dropdown.Item>
                     </Dropdown.Panel>
@@ -69,7 +69,7 @@ export function ChecklistsScreen() {
                 <Decision value={meta.filtered}>
                     <Decision.Empty>
                         <EmptyState
-                            icon={<ListChecks />}
+                            icon={<TaskList />}
                             title={state.search.trim() ? "No checklist runs match your search" : "No checklist runs"}
                             description={state.search.trim() ? "Try a different search term." : "Create a checklist run to see it here."}
                         />

@@ -3,7 +3,7 @@ import { useBookingDetail } from "@/features/equipment/use-booking-detail"
 import { useBreadcrumbOverride } from "@moc/ui/components/navigation/breadcrumb"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Page } from "@moc/ui/components/layout/page"
-import { ClipboardList } from "lucide-react"
+import { TaskList } from "iconoir-react"
 import { BookingDetailContent } from "./booking-detail-content"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 
@@ -21,7 +21,7 @@ export function BookingDetailScreen() {
   if (!state.booking) {
     return (
       <Page><Page.Content width="standard" className="py-16">
-        <EmptyState headingLevel="h1" icon={<ClipboardList />} title="Booking not found" description="This booking may have been deleted, or the link is no longer valid." />
+        <EmptyState headingLevel="h1" icon={<TaskList />} title="Booking not found" description="This booking may have been deleted, or the link is no longer valid." />
       </Page.Content></Page>
     )
   }

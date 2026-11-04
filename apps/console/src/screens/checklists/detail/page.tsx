@@ -14,7 +14,7 @@ import { Page } from "@moc/ui/components/layout/page"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
 import { Dropdown } from "@moc/ui/components/overlays/dropdown"
-import { CopyPlus, FolderPlus, ListChecks, Plus, SquarePlus, Trash2 } from "lucide-react"
+import { MultiplePagesPlus, FolderPlus, TaskList, Plus, PlusSquare, Trash } from "iconoir-react"
 import { useChecklistDetail } from "./use-checklist-detail"
 import { ChecklistEditorContent } from "@/features/checklists/checklist-editor-content"
 import { RequestLinkField } from "@/features/request-links/request-link-field"
@@ -37,7 +37,7 @@ export function ChecklistDetailScreen() {
         <Page.Content width="readable">
           <EmptyState
             headingLevel="h1"
-            icon={<ListChecks />}
+            icon={<TaskList />}
             title="Checklist not found"
             action={<Button.Link render={<Link to={back.href} />} variant="secondary">{back.label}</Button.Link>}
           />
@@ -50,14 +50,14 @@ export function ChecklistDetailScreen() {
     <DetailPage>
         <DetailPage.Back render={<Link to={back.href} />}>{back.label}</DetailPage.Back>
         <TopBarActions>
-          <Button.Icon aria-label="Delete checklist" variant="danger-secondary" icon={<Trash2 />} onClick={actions.openDelete} />
-          {checklist.kind === "instance" && <Button.Icon aria-label="Save as checklist template" variant="secondary" icon={<CopyPlus />} onClick={actions.createTemplate} />}
+          <Button.Icon aria-label="Delete checklist" variant="danger-secondary" icon={<Trash />} onClick={actions.openDelete} />
+          {checklist.kind === "instance" && <Button.Icon aria-label="Save as checklist template" variant="secondary" icon={<MultiplePagesPlus />} onClick={actions.createTemplate} />}
           <Dropdown placement="bottom">
             <Dropdown.Trigger>
               <Button.Icon aria-label="Add checklist content" variant="secondary" icon={<Plus />} />
             </Dropdown.Trigger>
             <Dropdown.Panel>
-              <Dropdown.Item onSelect={actions.addItem}><SquarePlus className="size-4" />Item</Dropdown.Item>
+              <Dropdown.Item onSelect={actions.addItem}><PlusSquare className="size-4" />Item</Dropdown.Item>
               <Dropdown.Item onSelect={actions.addSection}><FolderPlus className="size-4" />Section</Dropdown.Item>
             </Dropdown.Panel>
           </Dropdown>
@@ -70,7 +70,7 @@ export function ChecklistDetailScreen() {
         </DetailPage.Header>
 
         <DetailPage.Section className="flex items-center gap-3 pb-0 pt-2">
-          <Badge label={`${counts.checked}/${counts.total}`} icon={<ListChecks />} color={counts.checked === counts.total && counts.total > 0 ? "green" : "gray"} />
+          <Badge label={`${counts.checked}/${counts.total}`} icon={<TaskList />} color={counts.checked === counts.total && counts.total > 0 ? "green" : "gray"} />
           <Paragraph.sm className="text-tertiary">
             <InlineEditableText value={checklist.description} onSave={actions.updateDescription} className="paragraph-sm text-tertiary" placeholder="Add description" />
           </Paragraph.sm>

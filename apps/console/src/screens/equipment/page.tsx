@@ -4,13 +4,13 @@ import { Input } from "@moc/ui/components/form/input";
 import { Page } from "@moc/ui/components/layout/page";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
 import {
-  Columns3,
+  ViewColumns3,
   List,
-  Package,
+  Box,
   Plus,
   Search,
-  Settings2,
-} from "lucide-react";
+  FilterList,
+} from "iconoir-react";
 import { Decision } from "@moc/ui/components/display/decision";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
@@ -55,7 +55,7 @@ export function EquipmentScreen() {
           />
           <Drawer mobileSide="bottom">
             <Drawer.Trigger>
-              <CollectionToolbar.ActionButton icon={<Settings2 />} variant="secondary" aria-label="Filter equipment">Filter</CollectionToolbar.ActionButton>
+              <CollectionToolbar.ActionButton icon={<FilterList />} variant="secondary" aria-label="Filter equipment">Filter</CollectionToolbar.ActionButton>
             </Drawer.Trigger>
             <EquipmentFilterDrawer filters={meta.filters} />
           </Drawer>
@@ -72,7 +72,7 @@ export function EquipmentScreen() {
         <CollectionToolbar.Views>
           <SegmentedControl value={state.activeView} onValueChange={actions.changeView} fill={state.isLandscape} >
             <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
-            <CollectionToolbar.ViewItem value="kanban" icon={<Columns3 />} hide={state.isLandscape}>Kanban</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="kanban" icon={<ViewColumns3 />} hide={state.isLandscape}>Kanban</CollectionToolbar.ViewItem>
           </SegmentedControl>
         </CollectionToolbar.Views>
       </CollectionToolbar>
@@ -81,7 +81,7 @@ export function EquipmentScreen() {
       {meta.error ? <ResourceLoadError title="Couldn't load equipment" error={meta.error} onRetry={actions.retry} /> : <Decision value={collectionState}>
         <Decision.Empty>
           <EmptyState
-            icon={<Package />}
+            icon={<Box />}
             title={state.filterState.search.trim() ? "No equipment matches your search" : "No equipment yet"}
             description={state.filterState.search.trim() ? "Try a different search term or clear filters." : "Add equipment to start tracking inventory."}
           />

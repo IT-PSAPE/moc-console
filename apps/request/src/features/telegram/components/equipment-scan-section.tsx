@@ -1,4 +1,4 @@
-import { ScanLine } from "lucide-react"
+import { ScanQrCode } from "iconoir-react"
 import { Button } from "@moc/ui/components/controls/button"
 import { Section } from "@moc/ui/components/display/section"
 import { RetryNotification } from "@moc/ui/components/feedback/retry-notification"
@@ -44,7 +44,7 @@ export function EquipmentScanSection({ bookingId, items, scanMode, autoStart }: 
         )}
         {scanMode && (
           <div className="flex gap-2">
-            <Button variant="secondary" icon={<ScanLine />} disabled={scan.state.isSubmitting} onClick={scan.actions.start}>
+            <Button variant="secondary" icon={<ScanQrCode />} disabled={scan.state.isSubmitting} onClick={scan.actions.start}>
               Scan items
             </Button>
             {scan.state.isScanning && (

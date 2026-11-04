@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { NavArrowLeft, NavArrowRight } from 'iconoir-react'
 import { getCalendarToolbarLabels } from '@moc/utils/calendar-presentation'
 import { Button } from '../controls/button'
 import { ButtonGroup } from '../controls/button-group'
@@ -39,9 +39,9 @@ export function CalendarToolbar({ date, view, views, onViewChange, onPrevious, o
         </div>
         <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 landscape:w-full landscape:justify-start">
             {view !== 'agenda' && <ButtonGroup aria-label="Calendar navigation">
-                <Button.Icon variant="secondary" aria-label={`Previous ${view}`} icon={<ChevronLeft />} onClick={onPrevious} />
+                <Button.Icon variant="secondary" aria-label={`Previous ${view}`} icon={<NavArrowLeft />} onClick={onPrevious} />
                 <Button variant="secondary" onClick={onToday}>Today</Button>
-                <Button.Icon variant="secondary" aria-label={`Next ${view}`} icon={<ChevronRight />} onClick={onNext} />
+                <Button.Icon variant="secondary" aria-label={`Next ${view}`} icon={<NavArrowRight />} onClick={onNext} />
             </ButtonGroup>}
             {views && onViewChange && <Select.Root value={view} onValueChange={changeView} items={views}><Select.Trigger className="!w-auto !bg-primary" aria-label="Calendar view" /><Select.Content>{views.map(renderView)}</Select.Content></Select.Root>}
             {children}

@@ -1,6 +1,6 @@
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { cn } from '@moc/utils/cn'
-import { ChevronDown, Search, X } from 'lucide-react'
+import { NavArrowDown, Search, Xmark } from 'iconoir-react'
 import { createContext, Fragment, useContext, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useIsLandscape } from '../../hooks/use-is-landscape'
 import { Drawer } from '../overlays/drawer'
@@ -166,7 +166,7 @@ function ComboboxField({ className, size, style, ...props }: Styled<Omit<React.C
                     </BaseCombobox.Value>
                 </span>
                 <BaseCombobox.Icon className="shrink-0 text-quaternary">
-                    <ChevronDown className="size-4" />
+                    <NavArrowDown className="size-4" />
                 </BaseCombobox.Icon>
             </BaseCombobox.Trigger>
         )
@@ -179,7 +179,7 @@ function ComboboxField({ className, size, style, ...props }: Styled<Omit<React.C
                 {...props}
             />
             <BaseCombobox.Icon className="shrink-0 text-quaternary">
-                <ChevronDown className="size-4" />
+                <NavArrowDown className="size-4" />
             </BaseCombobox.Icon>
         </BaseCombobox.InputGroup>
     )
@@ -212,7 +212,7 @@ function ComboboxChipsField<Value>({ chipLabel, chipKey, placeholder, className,
                     </BaseCombobox.Value>
                 </span>
                 <BaseCombobox.Icon className="shrink-0 text-quaternary">
-                    <ChevronDown className="size-4" />
+                    <NavArrowDown className="size-4" />
                 </BaseCombobox.Icon>
             </BaseCombobox.Trigger>
         )
@@ -235,7 +235,7 @@ function ComboboxChipsField<Value>({ chipLabel, chipKey, placeholder, className,
                                         className="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-sm border-0 bg-transparent p-0 text-quaternary hover:text-primary"
                                         aria-label={`Remove ${chipLabel(item)}`}
                                     >
-                                        <X className="size-3" />
+                                        <Xmark className="size-3" />
                                     </BaseCombobox.ChipRemove>
                                 </BaseCombobox.Chip>
                             ))}
@@ -248,7 +248,7 @@ function ComboboxChipsField<Value>({ chipLabel, chipKey, placeholder, className,
                 </BaseCombobox.Value>
             </BaseCombobox.Chips>
             <BaseCombobox.Icon className="shrink-0 text-quaternary">
-                <ChevronDown className="size-4" />
+                <NavArrowDown className="size-4" />
             </BaseCombobox.Icon>
         </BaseCombobox.InputGroup>
     )

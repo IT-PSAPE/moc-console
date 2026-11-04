@@ -2,7 +2,7 @@ import { Badge } from '@moc/ui/components/display/badge'
 import { Button } from '@moc/ui/components/controls/button'
 import { Paragraph } from '@moc/ui/components/display/text'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
-import { Link2 } from 'lucide-react'
+import { Link } from 'iconoir-react'
 import type { TelegramGroup, TelegramGroupTopic } from '@/data/fetch-telegram-groups'
 
 type TelegramTopicRowProps = {
@@ -26,7 +26,7 @@ export function TelegramTopicRow({ group, topic, onOpenConnect }: TelegramTopicR
             <Button.Icon
                 size="sm"
                 variant="ghost"
-                icon={<Link2 />}
+                icon={<Link />}
                 disabled={!group.active || topic.closed}
                 onClick={handleOpenConnect}
                 aria-label={`Connect events to ${topic.name || `topic ${topic.threadId}`}`}

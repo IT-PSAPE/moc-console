@@ -14,19 +14,19 @@ import {
   Check,
   Clock,
   Copy,
-  ExternalLink,
-  Globe,
+  OpenNewWindow,
+  Internet,
   Key,
-  Link2,
-  Maximize2,
-  MessageCircle,
-  Mic,
-  Pencil,
+  Link,
+  Expand,
+  ChatBubble,
+  Microphone,
+  EditPencil,
   Repeat,
   ShieldCheck,
-  Trash2,
-  X,
-} from "lucide-react"
+  Trash,
+  Xmark,
+} from "iconoir-react"
 import { useMeetingDetailDrawer } from "./use-meeting-detail-drawer"
 import { StreamProviderIcon } from "./stream-provider-icon"
 
@@ -51,14 +51,14 @@ export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: Meeti
   return (
     <>
       <SplitPanel.Header className="flex items-center gap-1">
-        <Button.Icon aria-label="Close meeting" variant="ghost" size="sm" icon={<X />} onClick={drawer.actions.close} />
-        <Button.Icon aria-label="Open full page" variant="ghost" size="sm" icon={<Maximize2 />} onClick={drawer.actions.openFullPage} />
+        <Button.Icon aria-label="Close meeting" variant="ghost" size="sm" icon={<Xmark />} onClick={drawer.actions.close} />
+        <Button.Icon aria-label="Open full page" variant="ghost" size="sm" icon={<Expand />} onClick={drawer.actions.openFullPage} />
         <div className="flex-1" />
         {drawer.meta.canEdit && (
-          <Button.Icon aria-label="Edit meeting" variant="ghost" size="sm" icon={<Pencil />} onClick={drawer.actions.edit} />
+          <Button.Icon aria-label="Edit meeting" variant="ghost" size="sm" icon={<EditPencil />} onClick={drawer.actions.edit} />
         )}
         {drawer.meta.canDelete && (
-          <Button.Icon aria-label="Delete meeting" variant="danger-secondary" size="sm" icon={<Trash2 />} onClick={drawer.actions.remove} />
+          <Button.Icon aria-label="Delete meeting" variant="danger-secondary" size="sm" icon={<Trash />} onClick={drawer.actions.remove} />
         )}
       </SplitPanel.Header>
 
@@ -88,7 +88,7 @@ export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: Meeti
               <Paragraph.sm>{formatDuration(meeting.duration)}</Paragraph.sm>
             </MetaRow>
 
-            <MetaRow icon={<Globe />} label="Timezone">
+            <MetaRow icon={<Internet />} label="Timezone">
               <Paragraph.sm>{meeting.timezone}</Paragraph.sm>
             </MetaRow>
 
@@ -102,11 +102,11 @@ export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: Meeti
               <Paragraph.sm>{meeting.waitingRoom ? "Enabled" : "Disabled"}</Paragraph.sm>
             </MetaRow>
 
-            <MetaRow icon={<Mic />} label="Mute on entry">
+            <MetaRow icon={<Microphone />} label="Mute on entry">
               <Paragraph.sm>{meeting.muteOnEntry ? "On" : "Off"}</Paragraph.sm>
             </MetaRow>
 
-            <MetaRow icon={<MessageCircle />} label="Continuous chat">
+            <MetaRow icon={<ChatBubble />} label="Continuous chat">
               <Paragraph.sm>{meeting.continuousChat ? "Enabled" : "Disabled"}</Paragraph.sm>
             </MetaRow>
           </Section.Body>
@@ -117,7 +117,7 @@ export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: Meeti
             <Section.Header title="Links & setup" size="sm" />
             <Section.Body className="gap-3">
               {meeting.joinUrl && (
-                <MetaRow icon={<Link2 />} label="Join link">
+                <MetaRow icon={<Link />} label="Join link">
                   <div className="flex items-center gap-1">
                     <Paragraph.sm className="min-w-0 flex-1 truncate text-tertiary">{meeting.joinUrl}</Paragraph.sm>
                     <Button.Icon
@@ -127,7 +127,7 @@ export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: Meeti
                       icon={drawer.state.copiedField === "join" ? <Check className="text-success" /> : <Copy />}
                       onClick={drawer.actions.copyJoinUrl}
                     />
-                    <Button.IconLink render={<a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open join link" variant="ghost" size="sm" icon={<ExternalLink />} />
+                    <Button.IconLink render={<a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open join link" variant="ghost" size="sm" icon={<OpenNewWindow />} />
                   </div>
                 </MetaRow>
               )}

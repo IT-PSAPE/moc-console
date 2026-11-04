@@ -10,12 +10,12 @@ import { DeleteRequestModal } from "./delete-request-modal";
 import { useRequests } from "./request-provider";
 import {
   Archive,
-  ArchiveRestore,
-  EllipsisVertical,
-  Maximize2,
-  Trash2,
-  X,
-} from "lucide-react";
+  UploadSquare,
+  MoreVert,
+  Expand,
+  Trash,
+  Xmark,
+} from "iconoir-react";
 import { useRef, type RefObject } from "react";
 import { RequestAssigneeList } from "./request-assignee-list";
 import { RequestFiveW } from "./request-five-w";
@@ -93,12 +93,12 @@ export function RequestPanelContent({ request, onClose, open, isDirtyRef, reques
       {/* Toolbar */}
       <RequestShareActions.Root request={store.state.draft} targetRef={shareTargetRef}>
         <SplitPanel.Header className="gap-2">
-          <Button.Icon aria-label="Close request" variant="ghost" size="sm" icon={<X />} onClick={guard.actions.requestClose} />
+          <Button.Icon aria-label="Close request" variant="ghost" size="sm" icon={<Xmark />} onClick={guard.actions.requestClose} />
           <Button.Icon
             variant="ghost"
             size="sm"
             aria-label="Open full page"
-            icon={<Maximize2 />}
+            icon={<Expand />}
             onClick={guard.actions.openFullPage}
           />
           <div className="flex-1" />
@@ -107,13 +107,13 @@ export function RequestPanelContent({ request, onClose, open, isDirtyRef, reques
           <RequestShareActions.CopyButton size="sm" />
           <Dropdown placement="bottom">
             <Dropdown.Trigger>
-              <Button.Icon aria-label="More request actions" variant="secondary" size="sm" icon={<EllipsisVertical />} />
+              <Button.Icon aria-label="More request actions" variant="secondary" size="sm" icon={<MoreVert />} />
             </Dropdown.Trigger>
             <Dropdown.Panel>
               <Dropdown.Item onSelect={detail.actions.handleArchiveToggle}>
                 {request.status === "archived" ? (
                   <>
-                    <ArchiveRestore className="size-4" />
+                    <UploadSquare className="size-4" />
                     Unarchive
                   </>
                 ) : (
@@ -125,7 +125,7 @@ export function RequestPanelContent({ request, onClose, open, isDirtyRef, reques
               </Dropdown.Item>
               <Dropdown.Separator />
               <Dropdown.Item onSelect={detail.actions.openDeleteModal}>
-                <Trash2 className="size-4 text-error" />
+                <Trash className="size-4 text-error" />
                 <span className="text-error">Delete</span>
               </Dropdown.Item>
             </Dropdown.Panel>

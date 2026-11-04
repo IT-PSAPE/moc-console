@@ -1,4 +1,4 @@
-import { CalendarDays } from 'lucide-react'
+import { Calendar } from 'iconoir-react'
 import { cn } from '@moc/utils/cn'
 import { GroupedList } from '@moc/ui/components/display/grouped-list'
 import { Label } from '@moc/ui/components/display/text'
@@ -22,6 +22,6 @@ export function ScheduleAgendaList({ groups, returnTo, emptyTitle = 'No work ite
     </GroupedList.Group>
   }
   return <section aria-label="Agenda" className={cn('min-h-0 min-w-0 flex-1 overflow-y-auto p-2', className)}>
-    {groups.length ? <GroupedList>{groups.map(renderGroup)}</GroupedList> : <EmptyState icon={<CalendarDays />} title={emptyTitle} />}
+    {groups.length ? <GroupedList>{groups.map(renderGroup)}</GroupedList> : <EmptyState icon={<Calendar />} title={emptyTitle} />}
   </section>
 }

@@ -1,4 +1,4 @@
-import { LogOut, Settings, UserRound } from 'lucide-react'
+import { LogOut, Settings, User } from 'iconoir-react'
 import { Link } from 'react-router-dom'
 import { Avatar } from '@moc/ui/components/display/avatar'
 import { Label } from '@moc/ui/components/display/text'
@@ -41,7 +41,7 @@ export function WorkspaceSwitcher({ isSigningOut, onEditProfile, onSignOut }: Wo
                     Settings
                 </Dropdown.Link>
                 <Dropdown.Item onSelect={onEditProfile}>
-                    <UserRound className="size-4 shrink-0" aria-hidden="true" />
+                    <User className="size-4 shrink-0" aria-hidden="true" />
                     Edit profile
                 </Dropdown.Item>
                 <Dropdown.Separator />

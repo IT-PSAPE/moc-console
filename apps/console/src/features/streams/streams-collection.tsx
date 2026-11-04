@@ -8,7 +8,7 @@ import { Input } from "@moc/ui/components/form/input"
 import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar"
 import { Page } from "@moc/ui/components/layout/page"
 import { Drawer } from "@moc/ui/components/overlays/drawer"
-import { Plus, RadioTower, RefreshCw, Search } from "lucide-react"
+import { Plus, Antenna, RefreshDouble, Search } from "iconoir-react"
 import { CreateStreamModal } from "./create-stream-modal"
 import { MeetingModal } from "./meeting-modal"
 import { StreamFilterDrawer } from "./stream-filter-drawer"
@@ -84,7 +84,7 @@ export function StreamsCollection() {
             </CollectionToolbar.ActionButton>
           ) : null}
           {meta.isConnected ? (
-            <Button.Icon aria-label="Sync streams" variant="secondary" icon={<RefreshCw />} onClick={handleSync} disabled={meta.isSyncing || !meta.canSync} />
+            <Button.Icon aria-label="Sync streams" variant="secondary" icon={<RefreshDouble />} onClick={handleSync} disabled={meta.isSyncing || !meta.canSync} />
           ) : null}
           {meta.canCreate ? (
             <Button.Icon aria-label="Create stream" variant="secondary" icon={<Plus />} onClick={actions.openCreate} />
@@ -126,21 +126,21 @@ export function StreamsCollection() {
             {meta.isConnected ? (
               youtube.state.loadError || zoom.state.loadError ? (
                 <EmptyState
-                  icon={<RadioTower />}
+                  icon={<Antenna />}
                   title="Streams couldn't be loaded"
                   description="The stream list is unavailable until the connected services finish loading."
                   action={<Button variant="secondary" onClick={handleRetryLoadErrors}>Retry</Button>}
                 />
               ) : (
                 <EmptyState
-                  icon={<RadioTower />}
+                  icon={<Antenna />}
                   title={filtered ? "No streams match your filters" : "No streams scheduled"}
                   description={filtered ? "Try a different search term or clear the provider filters." : "Create a YouTube stream or Zoom meeting to get started."}
                 />
               )
             ) : (
               <EmptyState
-                icon={<RadioTower />}
+                icon={<Antenna />}
                 title="Connect a streaming service"
                 description="Connect YouTube or Zoom in Settings to view and schedule streams."
                 action={<Button variant="secondary" onClick={youtube.actions.openSettings}>Open settings</Button>}

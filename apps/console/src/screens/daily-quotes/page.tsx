@@ -1,4 +1,4 @@
-import { Pencil, Plus, Quote, RotateCcw, Search, Sun } from 'lucide-react'
+import { EditPencil, Plus, Quote, Undo, Search, SunLight } from 'iconoir-react'
 import type { DailyQuote } from '@moc/sdk/daily-quotes'
 import { Button } from '@moc/ui/components/controls/button'
 import { Card } from '@moc/ui/components/display/card'
@@ -28,8 +28,8 @@ export function DailyQuotesScreen() {
       </Table.Cell>
       <Table.Cell className="landscape:px-2"><Toggle checked={quote.active} onChange={actions.changeActiveFor(quote)} disabled={!meta.canManage || state.isSaving} aria-label={`Quote active: ${quote.text}`}><span className="landscape:hidden">{quote.active ? 'Active' : 'Inactive'}</span></Toggle></Table.Cell>
       <Table.Cell className="text-right landscape:px-2"><div className="flex items-center justify-end gap-1">
-        {quote.active ? <Button aria-label={`Use today: ${quote.text}`} icon={<Sun />} variant="ghost" size="sm" className="landscape:w-control-sm landscape:px-0" disabled={!meta.canUseToday(quote)} onClick={actions.selectTodayFor(quote)}><span className="landscape:hidden">Use today</span></Button> : null}
-        <Button.Icon aria-label={`Edit quote: ${quote.text}`} icon={<Pencil />} variant="ghost" size="sm" disabled={!meta.canManage || state.isSaving} onClick={actions.editQuoteFor(quote)} />
+        {quote.active ? <Button aria-label={`Use today: ${quote.text}`} icon={<SunLight />} variant="ghost" size="sm" className="landscape:w-control-sm landscape:px-0" disabled={!meta.canUseToday(quote)} onClick={actions.selectTodayFor(quote)}><span className="landscape:hidden">Use today</span></Button> : null}
+        <Button.Icon aria-label={`Edit quote: ${quote.text}`} icon={<EditPencil />} variant="ghost" size="sm" disabled={!meta.canManage || state.isSaving} onClick={actions.editQuoteFor(quote)} />
       </div></Table.Cell>
     </Table.Row>
   }
@@ -41,7 +41,7 @@ export function DailyQuotesScreen() {
       <Page.Heading><Page.Title>Daily quotes</Page.Title></Page.Heading>
       <Page.Controls>
         <Input aria-label="Search daily quotes" name="daily-quote-search" autoComplete="off" icon={<Search />} placeholder="Search quotes…" value={state.search} onChange={actions.changeSearch} />
-        {meta.canManage && state.isOverridden ? <Button icon={<RotateCcw />} variant="secondary" onClick={actions.restoreAutomaticRotation} disabled={state.isSaving}>Use automatic rotation</Button> : null}
+        {meta.canManage && state.isOverridden ? <Button icon={<Undo />} variant="secondary" onClick={actions.restoreAutomaticRotation} disabled={state.isSaving}>Use automatic rotation</Button> : null}
         {meta.canManage ? <Button icon={<Plus />} variant="secondary" onClick={actions.openCreate}>Add quote</Button> : null}
       </Page.Controls>
     </Page.Header>

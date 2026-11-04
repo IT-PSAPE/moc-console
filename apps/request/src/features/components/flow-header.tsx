@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'iconoir-react'
 import { Button } from '@moc/ui/components/controls/button'
 import { Paragraph, Title } from '@moc/ui/components/display/text'
 

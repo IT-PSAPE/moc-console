@@ -20,7 +20,7 @@ import { Page } from "@moc/ui/components/layout/page"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 import { routes } from "@/screens/console-routes"
-import { Calendar, Check, Clock, Copy, ExternalLink, Globe, Key, Link2, MessageCircle, Mic, Pencil, Repeat, ShieldCheck, Trash2, Video } from "lucide-react"
+import { Calendar, Check, Clock, Copy, OpenNewWindow, Internet, Key, Link as LinkIcon, ChatBubble, Microphone, EditPencil, Repeat, ShieldCheck, Trash, VideoCamera } from "iconoir-react"
 
 function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} minutes`
@@ -59,7 +59,7 @@ export function MeetingDetailScreen() {
   if (!meeting) {
     return (
       <Page><Page.Content width="standard">
-        <EmptyState headingLevel="h1" icon={<Video />} title="Meeting not found" description="The meeting you're looking for doesn't exist." />
+        <EmptyState headingLevel="h1" icon={<VideoCamera />} title="Meeting not found" description="The meeting you're looking for doesn't exist." />
       </Page.Content></Page>
     )
   }
@@ -72,10 +72,10 @@ export function MeetingDetailScreen() {
       <DetailPage.Back render={<Link to={back.href} />}>{back.label}</DetailPage.Back>
       <TopBarActions>
         {meta.canEdit && (
-          <Button variant="ghost" icon={<Pencil />} onClick={handleOpenEdit}>Edit</Button>
+          <Button variant="ghost" icon={<EditPencil />} onClick={handleOpenEdit}>Edit</Button>
         )}
         {meta.canDelete && (
-          <Button.Icon aria-label="Delete meeting" variant="danger-secondary" icon={<Trash2 />} onClick={handleOpenDelete} />
+          <Button.Icon aria-label="Delete meeting" variant="danger-secondary" icon={<Trash />} onClick={handleOpenDelete} />
         )}
         {meta.canCleanupLocal && (
           <Button variant="secondary" onClick={handleOpenLocalDelete}>Remove local record</Button>
@@ -110,7 +110,7 @@ export function MeetingDetailScreen() {
             <Paragraph.sm>{formatDuration(meeting.duration)}</Paragraph.sm>
           </MetaRow>
 
-          <MetaRow icon={<Globe />} label="Timezone">
+          <MetaRow icon={<Internet />} label="Timezone">
             <Paragraph.sm>{meeting.timezone}</Paragraph.sm>
           </MetaRow>
 
@@ -124,11 +124,11 @@ export function MeetingDetailScreen() {
             <Paragraph.sm>{meeting.waitingRoom ? "Enabled" : "Disabled"}</Paragraph.sm>
           </MetaRow>
 
-          <MetaRow icon={<Mic />} label="Mute on entry">
+          <MetaRow icon={<Microphone />} label="Mute on entry">
             <Paragraph.sm>{meeting.muteOnEntry ? "On" : "Off"}</Paragraph.sm>
           </MetaRow>
 
-          <MetaRow icon={<MessageCircle />} label="Continuous chat">
+          <MetaRow icon={<ChatBubble />} label="Continuous chat">
             <Paragraph.sm>{meeting.continuousChat ? "Enabled" : "Disabled"}</Paragraph.sm>
           </MetaRow>
         </div>
@@ -141,7 +141,7 @@ export function MeetingDetailScreen() {
             <Section.Header title="Links & setup" size="sm" />
             <div className="space-y-3">
               {meeting.joinUrl && (
-                <MetaRow icon={<Link2 />} label="Join link">
+                <MetaRow icon={<LinkIcon />} label="Join link">
                   <div className="flex items-center gap-1 min-w-0">
                     <Paragraph.sm className="text-tertiary truncate flex-1">{meeting.joinUrl}</Paragraph.sm>
                     <Button.Icon
@@ -151,7 +151,7 @@ export function MeetingDetailScreen() {
                       icon={copiedField === "join" ? <Check className="text-success" /> : <Copy />}
                       onClick={actions.copyJoinUrl}
                     />
-                    <Button.IconLink render={<a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open join link" variant="ghost" size="sm" icon={<ExternalLink />} />
+                    <Button.IconLink render={<a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open join link" variant="ghost" size="sm" icon={<OpenNewWindow />} />
                   </div>
                 </MetaRow>
               )}

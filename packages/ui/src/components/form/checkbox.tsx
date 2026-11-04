@@ -1,7 +1,7 @@
 import { Checkbox as BaseCheckbox } from "@base-ui/react/checkbox";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
-import { Check, Minus } from "lucide-react";
+import { Check, Minus } from "iconoir-react";
 import type { ChangeEvent, InputHTMLAttributes, ReactNode } from "react";
 import { Label } from "../display/text";
 

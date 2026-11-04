@@ -1,4 +1,4 @@
-import { CalendarDays, Clock3 } from 'lucide-react'
+import { Calendar, Clock } from 'iconoir-react'
 import { Button } from '../../controls/button'
 import { Label } from '../../display/text'
 import { Popover } from '../../overlays/popover'
@@ -17,7 +17,7 @@ export function RichTextEditorDateTime() {
     } : undefined
 
     function renderCommand(command: RichTextDateTimeSlashCommand, index: number) {
-        const Icon = command.kind === 'date' ? CalendarDays : Clock3
+        const Icon = command.kind === 'date' ? Calendar : Clock
         const selected = index === slash.selectedIndex
         return <Button.Unstyled
             key={command.kind}

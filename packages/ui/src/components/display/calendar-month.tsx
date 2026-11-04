@@ -5,7 +5,7 @@ import { useCalendarMonth } from '../../hooks/use-calendar-month'
 import { useIsLandscape } from '../../hooks/use-is-landscape'
 import { Drawer } from '../overlays/drawer'
 import { Button } from '../controls/button'
-import { X } from 'lucide-react'
+import { Xmark } from 'iconoir-react'
 import { CalendarCell } from './calendar-cell'
 import { CalendarEventContent } from './calendar-event'
 import type { CalendarEvent, CalendarRenderDayProps, CalendarRenderEvent } from './calendar-types'
@@ -38,6 +38,6 @@ export function CalendarMonth<T = unknown>({ date, events = [], renderDay, rende
             <div className="sticky top-0 z-10 grid shrink-0 grid-cols-7 bg-primary">{weekdays.map(renderWeekday)}</div>
             <div data-calendar-month-days="" className="grid grid-cols-7 auto-rows-[minmax(min-content,1fr)]">{state.days.map(renderDate)}</div>
         </div>
-        {!renderDay && <Drawer open={state.previewOpen} onOpenChange={actions.setPreviewOpen} mobileSide="bottom"><Drawer.Portal><Drawer.Backdrop /><Drawer.Panel aria-label={`Items on ${selectedLabel}`}><Drawer.Header><h2 className="min-w-0 flex-1 label-md">{selectedLabel}</h2><Drawer.Close><Button.Icon variant="ghost" aria-label="Close day preview" icon={<X />} /></Drawer.Close></Drawer.Header><Drawer.Content className="gap-1 p-3">{state.selectedEvents.length ? state.selectedEvents.map(renderPreviewItem) : <p className="paragraph-sm text-tertiary">No items scheduled for this day.</p>}</Drawer.Content></Drawer.Panel></Drawer.Portal></Drawer>}
+        {!renderDay && <Drawer open={state.previewOpen} onOpenChange={actions.setPreviewOpen} mobileSide="bottom"><Drawer.Portal><Drawer.Backdrop /><Drawer.Panel aria-label={`Items on ${selectedLabel}`}><Drawer.Header><h2 className="min-w-0 flex-1 label-md">{selectedLabel}</h2><Drawer.Close><Button.Icon variant="ghost" aria-label="Close day preview" icon={<Xmark />} /></Drawer.Close></Drawer.Header><Drawer.Content className="gap-1 p-3">{state.selectedEvents.length ? state.selectedEvents.map(renderPreviewItem) : <p className="paragraph-sm text-tertiary">No items scheduled for this day.</p>}</Drawer.Content></Drawer.Panel></Drawer.Portal></Drawer>}
     </>
 }

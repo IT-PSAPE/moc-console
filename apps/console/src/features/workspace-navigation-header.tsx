@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react'
+import { NavArrowDown } from 'iconoir-react'
 import type { ReactNode } from 'react'
 import { Avatar } from '@moc/ui/components/display/avatar'
 import { Button } from '@moc/ui/components/controls/button'
@@ -23,7 +23,7 @@ export function WorkspaceNavigationHeader({ onToggle, toggleLabel, toggleIcon }:
                     <Button.Unstyled aria-label={`Switch workspace. Current workspace: ${meta.workspaceName}`} className="flex h-control min-w-0 flex-1 items-center gap-2 rounded-lg px-3 label-sm text-tertiary transition-colors hover:bg-secondary hover:text-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-brand landscape:h-control-lg">
                         <Avatar.initials size="xs" name={meta.currentWorkspaceInitials} />
                         <span className="min-w-0 flex-1 truncate text-left">{meta.workspaceName}</span>
-                        <ChevronDown className="size-4 shrink-0 text-quaternary" aria-hidden="true" />
+                        <NavArrowDown className="size-4 shrink-0 text-quaternary" aria-hidden="true" />
                     </Button.Unstyled>
                 </Dropdown.Trigger>
                 <Dropdown.Panel className="w-72 p-1.5"><WorkspaceMenuItems /></Dropdown.Panel>

@@ -1,7 +1,7 @@
 import { Label } from '@moc/ui/components/display/text'
 import { Paragraph } from '@moc/ui/components/display/text'
 import { cn } from '@moc/utils/cn'
-import { ChevronRight } from 'lucide-react'
+import { NavArrowRight } from 'iconoir-react'
 import type { ReactNode } from 'react'
 import { Button } from '@moc/ui/components/controls/button'
 
@@ -22,7 +22,7 @@ export function OptionCard({ icon, title, description, onClick, className }: { i
         <Label.md>{title}</Label.md>
         <Paragraph.xs className="text-secondary mt-0.5">{description}</Paragraph.xs>
       </div>
-      <ChevronRight className="size-4 text-quaternary shrink-0 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" />
+      <NavArrowRight className="size-4 text-quaternary shrink-0 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" />
     </Button.Surface>
   )
 }

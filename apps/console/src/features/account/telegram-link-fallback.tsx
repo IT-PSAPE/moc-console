@@ -1,7 +1,7 @@
 import { Button } from "@moc/ui/components/controls/button"
 import { Card } from "@moc/ui/components/display/card"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
-import { Check, Copy } from "lucide-react"
+import { Check, Copy } from "iconoir-react"
 import type { PendingTelegramLink, TelegramCopyTarget } from "./use-telegram-link"
 
 type TelegramLinkFallbackProps = {
