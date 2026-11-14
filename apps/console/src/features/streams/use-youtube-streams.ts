@@ -11,11 +11,17 @@ import { useProviderSync } from "./use-provider-sync"
 import { useProviderFailure } from "./use-provider-failure"
 import { useStreamFilters } from "./use-stream-filters"
 import { useStreams } from "./streams-provider"
+import { useTaskLifetime } from "@/hooks/use-task-lifetime"
+import { canCreateYouTubeStreams } from "@/data/youtube-broadcast-reconciliation"
 
-async function getPresetThumbnailUrl(thumbnail: StreamFormData["thumbnail"]): Promise<string | null> {
+async function getPresetThumbnailUrl(thumbnail: StreamFormData["thumbnail"], workspaceId: string, signal: AbortSignal): Promise<string | null> {
+  signal.throwIfAborted()
   if (!thumbnail) return null
   if (thumbnail.origin === "file") {
-    return uploadStreamThumbnail(thumbnail.blob).catch(() => null)
+    return uploadStreamThumbnail(thumbnail.blob, { workspaceId, signal }).catch(() => {
+      signal.throwIfAborted()
+      return null
+    })
   }
   return thumbnail.sourceUrl
 }
@@ -23,6 +29,7 @@ async function getPresetThumbnailUrl(thumbnail: StreamFormData["thumbnail"]): Pr
 export function useYouTubeStreams(searchQuery: string) {
   const navigate = useNavigate()
   const { role, currentWorkspaceId } = useWorkspace()
+  const { start: startTask, finish: finishTask } = useTaskLifetime(currentWorkspaceId ?? "none")
   const { toast } = useFeedback()
   const {
     state: { streams, youtubeConnection, isLoadingStreams, isLoadingConnection, isInitialLoadingStreams, isInitialLoadingConnection, streamsError, youtubeConnectionError },
@@ -37,6 +44,7 @@ export function useYouTubeStreams(searchQuery: string) {
   const providerFailure = useProviderFailure(youtubeConnection, setYouTubeConnection)
   const connectionNeedsReauth = youtubeConnection?.status === "reauth_required"
   const needsReauth = connectionNeedsReauth || providerFailure.meta.needsConnection
+  const canCreate = canCreateYouTubeStreams(role) && !needsReauth
   const canSync = role?.can_read === true && role.can_create && role.can_update && role.can_delete && !needsReauth
 
   const actionableErrorMessage = useCallback((error: unknown, fallback: string): string => {
@@ -84,29 +92,47 @@ export function useYouTubeStreams(searchQuery: string) {
 
   const create = useCallback(async (params: StreamFormData) => {
     if (guardReauthentication()) return
+    if (!canCreate) {
+      const message = "Creating a YouTube stream requires read, create, and update permission for this workspace."
+      toast({ title: "Additional permission required", description: message, variant: "error" })
+      throw new Error(message)
+    }
+    if (!currentWorkspaceId) throw new Error("Select a workspace before creating a stream")
+    const controller = startTask(params.signal)
     try {
-      const { stream, thumbnailError } = await createStream(params)
+      controller.signal.throwIfAborted()
+      const { stream, thumbnailError } = await createStream(params, currentWorkspaceId)
+      controller.signal.throwIfAborted()
       syncStream(stream)
       providerFailure.actions.clear()
       if (params.savePreset) {
-        const thumbnailUrl = await getPresetThumbnailUrl(params.thumbnail)
-        void saveStreamPreset(createStreamPreset(params, thumbnailUrl)).catch(() => undefined)
+        const thumbnailUrl = await getPresetThumbnailUrl(params.thumbnail, currentWorkspaceId, controller.signal)
+        controller.signal.throwIfAborted()
+        await saveStreamPreset(createStreamPreset(params, thumbnailUrl), { workspaceId: currentWorkspaceId, signal: controller.signal }).catch(() => undefined)
+        controller.signal.throwIfAborted()
       }
       toast(thumbnailError
         ? { title: "Stream created, but the thumbnail wasn't applied", description: thumbnailError, variant: "warning" }
         : { title: "Stream created", variant: "success" })
     } catch (error) {
+      if (controller.signal.aborted) throw controller.signal.reason
       const message = actionableErrorMessage(error, "The stream could not be created.")
       toast({ title: "Failed to create stream", description: message, variant: "error" })
       throw new Error(message)
+    } finally {
+      finishTask(controller)
     }
-  }, [actionableErrorMessage, guardReauthentication, providerFailure.actions, syncStream, toast])
+  }, [actionableErrorMessage, canCreate, currentWorkspaceId, finishTask, guardReauthentication, providerFailure.actions, startTask, syncStream, toast])
 
   const update = useCallback(async (params: StreamFormData) => {
     if (!editingStream || guardReauthentication()) return
+    const controller = startTask(params.signal)
     try {
-      const { thumbnail, ...fields } = params
+      controller.signal.throwIfAborted()
+      const { thumbnail, signal, ...fields } = params
+      void signal
       const { stream, thumbnailError, reconciliationWarning } = await updateStream({ ...editingStream, ...fields }, thumbnail)
+      controller.signal.throwIfAborted()
       syncStream(stream)
       providerFailure.actions.clear()
       setEditingStream(null)
@@ -118,11 +144,14 @@ export function useYouTubeStreams(searchQuery: string) {
           : { title: "Stream updated", variant: "success" })
       }
     } catch (error) {
+      if (controller.signal.aborted) throw controller.signal.reason
       const message = actionableErrorMessage(error, "The stream could not be updated.")
       toast({ title: "Failed to update stream", description: message, variant: "error" })
       throw new Error(message)
+    } finally {
+      finishTask(controller)
     }
-  }, [actionableErrorMessage, editingStream, guardReauthentication, providerFailure.actions, syncStream, toast])
+  }, [actionableErrorMessage, editingStream, finishTask, guardReauthentication, providerFailure.actions, startTask, syncStream, toast])
 
   const remove = useCallback(async (stream: Stream) => {
     if (guardReauthentication()) return
@@ -164,7 +193,7 @@ export function useYouTubeStreams(searchQuery: string) {
       needsReauth,
       canSync,
       providerFailure: providerFailure.state.failure,
-      canCreate: role?.can_create === true && !needsReauth,
+      canCreate,
       isLoading: isLoadingStreams || isLoadingConnection,
       isInitialLoading: isInitialLoadingStreams || isInitialLoadingConnection,
     },

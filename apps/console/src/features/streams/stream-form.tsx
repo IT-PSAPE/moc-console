@@ -54,6 +54,7 @@ export function StreamForm({ open, onOpenChange, onSubmit, stream, preset, initi
           thumbnailMode={state.thumbnailMode}
           onModeChange={actions.updateThumbnailMode}
           onFileSelect={actions.handleFileSelect}
+          onFilesChange={actions.handleThumbnailFilesChange}
           onUrlInputChange={actions.updateThumbnailUrlInput}
           onUrlConfirm={actions.handleThumbnailUrlConfirm}
           onClear={actions.clearThumbnail}

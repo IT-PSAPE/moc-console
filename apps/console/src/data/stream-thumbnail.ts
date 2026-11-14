@@ -5,9 +5,12 @@ export type ThumbnailSource =
   | { blob: Blob; origin: "file" | "url"; sourceUrl: string | null }
   | null
 
-export async function uploadStreamThumbnail(blob: Blob): Promise<string> {
-  const workspaceId = await getCurrentWorkspaceId()
-  const result = await moc.storage.upload({ purpose: "stream-thumbnail", workspaceId, file: blob })
+export async function uploadStreamThumbnail(blob: Blob, options: { workspaceId?: string; signal?: AbortSignal } = {}): Promise<string> {
+  options.signal?.throwIfAborted()
+  const workspaceId = options.workspaceId ?? await getCurrentWorkspaceId()
+  options.signal?.throwIfAborted()
+  const result = await moc.storage.upload({ purpose: "stream-thumbnail", workspaceId, file: blob, signal: options.signal })
+  options.signal?.throwIfAborted()
   return result.url
 }
 

@@ -45,4 +45,38 @@ describe('broadcast mutation completion', () => {
     })).rejects.toThrow('This broadcast changed')
     expect(remove).toHaveBeenCalledWith({ purpose: 'broadcast-audio', workspaceId: 'workspace', paths: ['new.mp3'] })
   })
+
+  test('canceled upload resolution cannot create a broadcast, report completion, or start cleanup writes', async () => {
+    let resolve: (value: { url: string; path: string; bucket: string }) => void = () => undefined
+    upload.mockReturnValueOnce(new Promise((next) => { resolve = next }))
+    const controller = new AbortController()
+    const onUploadStatusChange = vi.fn()
+    const pending = createBroadcast({ workspaceId: saved.workspaceId, title: saved.title, description: '', kind: 'audio',
+      files: [{ clientId: 'file', file: new File(['audio'], 'new.mp3', { type: 'audio/mpeg' }) }], signal: controller.signal, onUploadStatusChange })
+    const rejected = expect(pending).rejects.toMatchObject({ name: 'AbortError' })
+    for (let tick = 0; tick < 6; tick += 1) await Promise.resolve()
+    expect(upload).toHaveBeenCalledWith(expect.objectContaining({ workspaceId: saved.workspaceId, signal: controller.signal }))
+    controller.abort()
+    resolve({ url: '/media/new.mp3', path: 'new.mp3', bucket: 'media' })
+    await rejected
+    expect(create).not.toHaveBeenCalled()
+    expect(remove).not.toHaveBeenCalled()
+    expect(onUploadStatusChange.mock.calls.map((call) => call[1])).toEqual(['uploading'])
+  })
+
+  test('cancellation while the playlist commit is in flight skips later storage cleanup', async () => {
+    let resolve: (value: Broadcast) => void = () => undefined
+    update.mockReturnValueOnce(new Promise((next) => { resolve = next }))
+    const controller = new AbortController()
+    const pending = updateBroadcast({ id: saved.id, workspaceId: saved.workspaceId, expectedUpdatedAt: saved.updatedAt,
+      title: saved.title, description: '', kind: 'audio', currentItems: [{ storagePath: 'old.mp3', id: 'old' } as Broadcast['items'][number]],
+      items: [], signal: controller.signal })
+    const rejected = expect(pending).rejects.toMatchObject({ name: 'AbortError' })
+    for (let tick = 0; tick < 6; tick += 1) await Promise.resolve()
+    expect(update).toHaveBeenCalledOnce()
+    controller.abort()
+    resolve(saved)
+    await rejected
+    expect(remove).not.toHaveBeenCalled()
+  })
 })

@@ -1,7 +1,24 @@
 import { describe, expect, test } from "vitest"
-import { getDeletedBroadcastIds, getUnfinishedTrackedBroadcastIds, isCurrentOrUpcomingBroadcast, type StreamReconciliationRow } from "../../../../../apps/console/src/data/youtube-broadcast-reconciliation"
+import { canCreateYouTubeStreams, getDeletedBroadcastIds, getUnfinishedTrackedBroadcastIds, isCurrentOrUpcomingBroadcast, type StreamReconciliationRow } from "../../../../../apps/console/src/data/youtube-broadcast-reconciliation"
 
 const now = new Date("2026-08-05T12:00:00.000Z")
+
+test.each([
+  { can_read: false, can_create: false, can_update: false },
+  { can_read: false, can_create: false, can_update: true },
+  { can_read: false, can_create: true, can_update: false },
+  { can_read: false, can_create: true, can_update: true },
+  { can_read: true, can_create: false, can_update: false },
+  { can_read: true, can_create: false, can_update: true },
+  { can_read: true, can_create: true, can_update: false },
+  { can_read: true, can_create: true, can_update: true },
+])('YouTube creation requires each permission used by its provider workflow: %j', role => {
+  expect(canCreateYouTubeStreams(role)).toBe(role.can_read && role.can_create && role.can_update)
+})
+
+test('YouTube creation is unavailable without a workspace role', () => {
+  expect(canCreateYouTubeStreams(null)).toBe(false)
+})
 
 function tracked(overrides: Partial<StreamReconciliationRow>): StreamReconciliationRow {
   return {

@@ -1,6 +1,7 @@
 import * as React from "react"
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { HookRuntime, createMockReactModule } from "../../../../broadcast/src/features/test-hook-runtime"
+import type { BroadcastUploadSubmit } from "../../../../../../apps/console/src/features/broadcasts/broadcast-editor-types"
 
 type Deferred<T> = { promise: Promise<T>; resolve: (value: T) => void }
 type UploadHook = typeof import("../../../../../../apps/console/src/features/broadcasts/use-broadcast-upload").useBroadcastUpload
@@ -73,5 +74,25 @@ describe("useBroadcastUpload", () => {
 
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ items: [expect.objectContaining({ file, status: "queued" })] }))
     expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  test("unmount cancels submission without late close or success effects", async () => {
+    let resolve: () => void = () => undefined
+    let signal: AbortSignal | undefined
+    const pending = new Promise<void>((next) => { resolve = next })
+    const onOpenChange = vi.fn()
+    const onSubmit = vi.fn(async (params: BroadcastUploadSubmit) => { signal = params.signal; await pending })
+    const runtime = new HookRuntime((props: { open: boolean }) => useBroadcastUpload({ broadcast, open: props.open, onOpenChange, onSubmit }))
+    let hook = runtime.render({ open: true })
+    await hook.actions.addFiles(filePartition(new File(['audio'], 'track.mp3', { type: 'audio/mpeg' })))
+    hook = runtime.rerender()
+    const submitting = hook.actions.submit()
+    expect(signal).toHaveProperty('aborted', false)
+    runtime.unmount()
+    expect(signal).toHaveProperty('aborted', true)
+    resolve()
+    await submitting
+    expect(onOpenChange).not.toHaveBeenCalled()
+    expect(toast).not.toHaveBeenCalled()
   })
 })

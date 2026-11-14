@@ -136,8 +136,8 @@ function getMeetingType(recurrenceType: ZoomRecurrenceType): number {
   return 8 // recurring with fixed time
 }
 
-export async function createZoomMeeting(params: CreateMeetingParams): Promise<ZoomMeeting> {
-  const workspaceId = await getCurrentWorkspaceId()
+export async function createZoomMeeting(params: CreateMeetingParams, requestedWorkspaceId?: string): Promise<ZoomMeeting> {
+  const workspaceId = requestedWorkspaceId ?? await getCurrentWorkspaceId()
   return queueZoomMeetingOperation(workspaceId, () => createZoomMeetingWithinOperation(params, workspaceId))
 }
 
@@ -171,6 +171,7 @@ async function createZoomMeetingWithinOperation(params: CreateMeetingParams, wor
   }
 
   const response = await zoomApiFetch("/users/me/meetings", {
+    workspaceId,
     method: "POST",
     body: JSON.stringify(body),
   })
@@ -210,13 +211,14 @@ async function createZoomMeetingWithinOperation(params: CreateMeetingParams, wor
     // The browser can lose the response after the API has committed the row.
     // Treat an already-persisted client-generated ID as success rather than
     // deleting the provider meeting and encouraging a duplicate retry.
-    const persisted = await fetchZoomMeetingById(localMeetingId).catch(() => undefined)
+    const persisted = await fetchZoomMeetingById(localMeetingId, workspaceId).catch(() => undefined)
     if (persisted) {
       await notifyMeetingCreated(persisted.id, params.notifyDestinations).catch(() => undefined)
       return persisted
     }
 
     const rollbackResponse = await zoomApiFetch(`/meetings/${meeting.id}`, {
+      workspaceId,
       method: "DELETE",
     })
 
@@ -230,7 +232,7 @@ async function createZoomMeetingWithinOperation(params: CreateMeetingParams, wor
 
   // A successful insert is the durable create boundary. Do not turn a
   // follow-up read problem into a failed-create message that causes retries.
-  const saved = await fetchZoomMeetingById(localMeetingId).catch(() => undefined) ?? mapLocalZoomMeetingPayload(payload)
+  const saved = await fetchZoomMeetingById(localMeetingId, workspaceId).catch(() => undefined) ?? mapLocalZoomMeetingPayload(payload)
 
   await notifyMeetingCreated(saved.id, params.notifyDestinations).catch(() => undefined)
 
@@ -274,6 +276,7 @@ async function updateZoomMeetingWithinOperation(meeting: ZoomMeeting): Promise<Z
   }
 
   const response = await zoomApiFetch(`/meetings/${meeting.zoomMeetingId}`, {
+    workspaceId: meeting.workspaceId,
     method: "PATCH",
     body: JSON.stringify(body),
   })
@@ -300,7 +303,7 @@ async function updateZoomMeetingWithinOperation(meeting: ZoomMeeting): Promise<Z
     }
   }
 
-  const saved = await fetchZoomMeetingById(meeting.id).catch(() => undefined) ?? meeting
+  const saved = await fetchZoomMeetingById(meeting.id, meeting.workspaceId).catch(() => undefined) ?? meeting
 
   await notifyMeetingUpdated(saved.id)
 
@@ -316,6 +319,7 @@ async function deleteZoomMeetingWithinOperation(meeting: ZoomMeeting): Promise<v
   // intact. If we deleted locally first and the remote call failed, a rollback
   // could itself fail and leave the two systems permanently out of sync.
   const response = await zoomApiFetch(`/meetings/${meeting.zoomMeetingId}`, {
+    workspaceId: meeting.workspaceId,
     method: "DELETE",
   })
 
@@ -328,11 +332,10 @@ async function deleteZoomMeetingWithinOperation(meeting: ZoomMeeting): Promise<v
 
 export async function deleteLocalZoomMeetingRecord(id: string): Promise<void> {
   const workspaceId = await getCurrentWorkspaceId()
-  return queueZoomMeetingOperation(workspaceId, () => deleteLocalZoomMeetingRecordWithinOperation(id))
+  return queueZoomMeetingOperation(workspaceId, () => deleteLocalZoomMeetingRecordWithinOperation(id, workspaceId))
 }
 
-async function deleteLocalZoomMeetingRecordWithinOperation(id: string): Promise<void> {
-  const workspaceId = await getCurrentWorkspaceId()
+async function deleteLocalZoomMeetingRecordWithinOperation(id: string, workspaceId: string): Promise<void> {
   await moc.streams.deleteZoomMeeting(id, workspaceId)
 }
 

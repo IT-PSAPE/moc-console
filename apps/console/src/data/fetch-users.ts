@@ -53,8 +53,9 @@ export async function updateUserProfile(_userId: string, fields: EditableUserPro
 }
 
 /** Upload the avatar through the storage API, then save its URL to the signed-in profile. */
-export async function uploadUserAvatar(_userId: string, file: Blob): Promise<string> {
-  const { url } = await uploadUserAvatarStorage(file)
+export async function uploadUserAvatar(_userId: string, file: Blob, signal?: AbortSignal): Promise<string> {
+  const { url } = await uploadUserAvatarStorage(file, signal)
+  signal?.throwIfAborted()
   await moc.users.updateProfile({ avatarUrl: url })
   return url
 }

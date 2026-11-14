@@ -1,17 +1,11 @@
+import type { ProviderRequestOptions } from "@moc/sdk/integrations"
 import { providerProxyPath } from "./provider-proxy-path"
 import { checkProviderApiResponse, providerRequestError } from "./provider-request-error"
 import { moc } from "@/lib/moc-client"
 
-export async function youtubeApiFetch(
-  path: string,
-  options: RequestInit = {},
-): Promise<Response> {
-  const response = await moc.integrations.youtubeRequest(providerProxyPath(path), {
-    method: options.method,
-    body: options.body,
-    headers: options.headers,
-    ...(options.signal ? { signal: options.signal } : {}),
-  })
+export async function youtubeApiFetch(path: string, options: ProviderRequestOptions & { workspaceId: string }): Promise<Response> {
+  if (!options.workspaceId) throw new Error("Select a workspace before contacting YouTube")
+  const response = await moc.integrations.youtubeRequest(providerProxyPath(path), options)
   return checkProviderApiResponse(response)
 }
 
@@ -37,9 +31,10 @@ function blobToBase64(blob: Blob): Promise<string> {
  * through untouched, and a body it treats as text arrives corrupt — which
  * YouTube rejects as an invalid image.
  */
-export async function uploadThumbnail(videoId: string, file: Blob): Promise<void> {
+export async function uploadThumbnail(videoId: string, file: Blob, workspaceId: string): Promise<void> {
   const image = await blobToBase64(file)
   const response = await youtubeApiFetch(`/thumbnails/set?videoId=${encodeURIComponent(videoId)}&uploadType=media`, {
+    workspaceId,
     method: "POST",
     body: JSON.stringify({ image, contentType: file.type || "image/jpeg" }),
   })
@@ -55,17 +50,18 @@ export async function uploadThumbnail(videoId: string, file: Blob): Promise<void
  * points at the channel the workspace recorded, so a connection repointed at
  * another Google account is not mistaken for the workspace's own channel.
  */
-export async function fetchAuthenticatedChannelId(workspaceId?: string): Promise<string | null> {
-  const response = await youtubeApiFetch("/channels?part=id&mine=true", workspaceId ? { headers: { "X-MOC-Workspace": workspaceId } } : {})
+export async function fetchAuthenticatedChannelId(workspaceId: string): Promise<string | null> {
+  const response = await youtubeApiFetch("/channels?part=id&mine=true", { workspaceId })
   if (!response.ok) return null
 
   const data = await response.json() as { items?: Array<{ id?: string }> }
   return data.items?.[0]?.id ?? null
 }
 
-export async function fetchVideoCategories(regionCode = "US") {
+export async function fetchVideoCategories(workspaceId: string, regionCode = "US") {
   const response = await youtubeApiFetch(
-    `/videoCategories?part=snippet&regionCode=${regionCode}`,
+    `/videoCategories?part=snippet&regionCode=${encodeURIComponent(regionCode)}`,
+    { workspaceId },
   )
 
   if (!response.ok) {
@@ -81,9 +77,10 @@ export async function fetchVideoCategories(regionCode = "US") {
     }))
 }
 
-export async function fetchChannelPlaylists() {
+export async function fetchChannelPlaylists(workspaceId: string) {
   const response = await youtubeApiFetch(
     "/playlists?part=snippet,contentDetails&mine=true&maxResults=50",
+    { workspaceId },
   )
 
   if (!response.ok) {
@@ -100,8 +97,9 @@ export async function fetchChannelPlaylists() {
   )
 }
 
-export async function addVideoToPlaylist(playlistId: string, videoId: string): Promise<void> {
+export async function addVideoToPlaylist(playlistId: string, videoId: string, workspaceId: string): Promise<void> {
   const response = await youtubeApiFetch("/playlistItems?part=snippet", {
+    workspaceId,
     method: "POST",
     body: JSON.stringify({
       snippet: {
@@ -122,10 +120,9 @@ export async function addVideoToPlaylist(playlistId: string, videoId: string): P
 export async function updateVideoMetadata(
   videoId: string,
   metadata: { categoryId?: string; tags?: string[] },
+  workspaceId: string,
 ): Promise<void> {
-  const getResponse = await youtubeApiFetch(
-    `/videos?part=snippet&id=${videoId}`,
-  )
+  const getResponse = await youtubeApiFetch(`/videos?part=snippet&id=${videoId}`, { workspaceId })
 
   if (!getResponse.ok) {
     throw await providerRequestError(getResponse, "Failed to fetch video for metadata update")
@@ -140,6 +137,7 @@ export async function updateVideoMetadata(
   if (metadata.tags) snippet.tags = metadata.tags
 
   const response = await youtubeApiFetch("/videos?part=snippet", {
+    workspaceId,
     method: "PUT",
     body: JSON.stringify({ id: videoId, snippet }),
   })

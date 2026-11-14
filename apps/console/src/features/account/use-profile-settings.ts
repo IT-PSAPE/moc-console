@@ -1,6 +1,7 @@
 import { removeUserAvatar, updateUserProfile, uploadUserAvatar } from "@/data/fetch-users"
 import { useAuth } from "@/lib/auth-context"
 import { useFeedback } from "@moc/ui/components/feedback/feedback-provider"
+import { useTaskLifetime } from "@/hooks/use-task-lifetime"
 import { useEffect, useRef, useState, type ChangeEvent } from "react"
 
 export const PROFILE_STATUS_MAX_LENGTH = 500
@@ -23,6 +24,16 @@ export function useProfileSettings({ open, onOpenChange }: UseProfileSettingsPro
   const [removeAvatarOpen, setRemoveAvatarOpen] = useState(false)
   const [discardChangesOpen, setDiscardChangesOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const avatarUploadRef = useRef<AbortController | null>(null)
+  const profileId = profile?.id ?? null
+  const tasks = useTaskLifetime(`${open}:${profileId}`)
+
+  useEffect(() => {
+    setIsUploadingAvatar(false)
+    return () => {
+      avatarUploadRef.current = null
+    }
+  }, [open, profileId])
 
   useEffect(() => {
     if (!open || !profile) return
@@ -118,21 +129,31 @@ export function useProfileSettings({ open, onOpenChange }: UseProfileSettingsPro
   }
 
   async function uploadAvatar(blob: Blob) {
-    if (!profile) return
+    if (!profile || avatarUploadRef.current) return
+    const controller = tasks.start()
+    if (controller.signal.aborted) return
+    avatarUploadRef.current = controller
     setIsUploadingAvatar(true)
     try {
-      await uploadUserAvatar(profile.id, blob)
+      await uploadUserAvatar(profile.id, blob, controller.signal)
+      if (controller.signal.aborted) return
       await refreshProfile()
+      if (controller.signal.aborted) return
       toast({ title: "Photo updated", variant: "success" })
       setPendingAvatarFile(null)
     } catch (error) {
+      if (controller.signal.aborted) return
       toast({
         title: "Could not upload photo",
         description: error instanceof Error ? error.message : "Please try again.",
         variant: "error",
       })
     } finally {
-      setIsUploadingAvatar(false)
+      tasks.finish(controller)
+      if (avatarUploadRef.current === controller) {
+        avatarUploadRef.current = null
+        setIsUploadingAvatar(false)
+      }
     }
   }
 
@@ -164,6 +185,13 @@ export function useProfileSettings({ open, onOpenChange }: UseProfileSettingsPro
   }
 
   function cancelAvatarCrop() {
+    const controller = avatarUploadRef.current
+    if (controller) {
+      controller.abort()
+      tasks.finish(controller)
+      avatarUploadRef.current = null
+      setIsUploadingAvatar(false)
+    }
     setPendingAvatarFile(null)
   }
 

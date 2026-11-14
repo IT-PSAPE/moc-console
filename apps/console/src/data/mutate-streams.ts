@@ -57,12 +57,12 @@ type CreateStreamParams = {
   notifyDestinations?: NotifyDestination[]
 }
 
-async function cleanupCreatedYouTubeResources(broadcastId: string | null, streamId: string | null): Promise<string | null> {
+async function cleanupCreatedYouTubeResources(broadcastId: string | null, streamId: string | null, workspaceId: string): Promise<string | null> {
   const failures: string[] = []
 
   if (broadcastId) {
     try {
-      const response = await youtubeApiFetch(`/liveBroadcasts?id=${encodeURIComponent(broadcastId)}`, { method: "DELETE" })
+      const response = await youtubeApiFetch(`/liveBroadcasts?id=${encodeURIComponent(broadcastId)}`, { method: "DELETE", workspaceId })
       if (!response.ok && response.status !== 404) failures.push("broadcast")
     } catch {
       failures.push("broadcast")
@@ -71,7 +71,7 @@ async function cleanupCreatedYouTubeResources(broadcastId: string | null, stream
 
   if (streamId) {
     try {
-      const response = await youtubeApiFetch(`/liveStreams?id=${encodeURIComponent(streamId)}`, { method: "DELETE" })
+      const response = await youtubeApiFetch(`/liveStreams?id=${encodeURIComponent(streamId)}`, { method: "DELETE", workspaceId })
       if (!response.ok && response.status !== 404) failures.push("ingestion stream")
     } catch {
       failures.push("ingestion stream")
@@ -81,8 +81,8 @@ async function cleanupCreatedYouTubeResources(broadcastId: string | null, stream
   return failures.length > 0 ? `Cleanup could not remove the ${failures.join(" and ")}.` : null
 }
 
-export async function createStream(params: CreateStreamParams): Promise<StreamMutationResult> {
-  const workspaceId = await getCurrentWorkspaceId()
+export async function createStream(params: CreateStreamParams, requestedWorkspaceId?: string): Promise<StreamMutationResult> {
+  const workspaceId = requestedWorkspaceId ?? await getCurrentWorkspaceId()
   const session = await moc.auth.getSession()
 
   if (!session?.user) {
@@ -97,6 +97,7 @@ export async function createStream(params: CreateStreamParams): Promise<StreamMu
     const broadcastResponse = await youtubeApiFetch(
       "/liveBroadcasts?part=snippet,status,contentDetails",
       {
+        workspaceId,
         method: "POST",
         body: JSON.stringify({
           snippet: {
@@ -129,6 +130,7 @@ export async function createStream(params: CreateStreamParams): Promise<StreamMu
     const streamResponse = await youtubeApiFetch(
       "/liveStreams?part=snippet,cdn",
       {
+        workspaceId,
         method: "POST",
         body: JSON.stringify({
           snippet: { title: `${params.title} - Stream` },
@@ -150,7 +152,7 @@ export async function createStream(params: CreateStreamParams): Promise<StreamMu
 
     const bindResponse = await youtubeApiFetch(
       `/liveBroadcasts/bind?id=${broadcast.id}&part=id,contentDetails&streamId=${stream.id}`,
-      { method: "POST" },
+      { method: "POST", workspaceId },
     )
 
     if (!bindResponse.ok) {
@@ -161,8 +163,8 @@ export async function createStream(params: CreateStreamParams): Promise<StreamMu
     let thumbnailError: string | null = null
     if (params.thumbnail) {
       try {
-        await uploadThumbnail(broadcast.id, params.thumbnail.blob)
-        const refreshed = await youtubeApiFetch(`/liveBroadcasts?part=snippet&id=${broadcast.id}`)
+        await uploadThumbnail(broadcast.id, params.thumbnail.blob, workspaceId)
+        const refreshed = await youtubeApiFetch(`/liveBroadcasts?part=snippet&id=${broadcast.id}`, { workspaceId })
         if (refreshed.ok) {
           const refreshedData = await refreshed.json()
           thumbnailUrl = refreshedData.items?.[0]?.snippet?.thumbnails?.medium?.url ?? thumbnailUrl
@@ -177,7 +179,7 @@ export async function createStream(params: CreateStreamParams): Promise<StreamMu
         await updateVideoMetadata(broadcast.id, {
           categoryId: params.categoryId ?? undefined,
           tags: params.tags.length > 0 ? params.tags : undefined,
-        })
+        }, workspaceId)
       } catch {
         console.warn("Video metadata update failed, continuing without tags/category")
       }
@@ -185,7 +187,7 @@ export async function createStream(params: CreateStreamParams): Promise<StreamMu
 
     if (params.playlistId) {
       try {
-        await addVideoToPlaylist(params.playlistId, broadcast.id)
+        await addVideoToPlaylist(params.playlistId, broadcast.id, workspaceId)
       } catch {
         console.warn("Playlist assignment failed, continuing without playlist")
       }
@@ -225,7 +227,7 @@ export async function createStream(params: CreateStreamParams): Promise<StreamMu
       // A network interruption can arrive after the API has committed the
       // insert. Before rolling back YouTube, check whether that durable row is
       // already available under the client-generated ID.
-      const persisted = await fetchStreamById(payload.id).catch(() => undefined)
+      const persisted = await fetchStreamById(payload.id, workspaceId).catch(() => undefined)
       if (persisted) {
         await notifyStreamCreated(persisted.id, params.notifyDestinations)
         return { stream: persisted, thumbnailError, reconciliationWarning: null }
@@ -236,14 +238,14 @@ export async function createStream(params: CreateStreamParams): Promise<StreamMu
     // The insert acknowledgement is the durable success boundary. A follow-up
     // read is useful for server defaults, but must not turn a successful create
     // into an apparent failure that prompts a duplicate retry.
-    const saved = await fetchStreamById(payload.id).catch(() => undefined) ?? mapLocalStreamPayload(payload)
+    const saved = await fetchStreamById(payload.id, workspaceId).catch(() => undefined) ?? mapLocalStreamPayload(payload)
 
     await notifyStreamCreated(saved.id, params.notifyDestinations)
 
     return { stream: saved, thumbnailError, reconciliationWarning: null }
   } catch (error) {
     if (localRecordSaved) throw error
-    const cleanupError = await cleanupCreatedYouTubeResources(broadcastId, streamId).catch(() => "Cleanup could not be completed.")
+    const cleanupError = await cleanupCreatedYouTubeResources(broadcastId, streamId, workspaceId).catch(() => "Cleanup could not be completed.")
     const message = error instanceof Error ? error.message : "The stream could not be created."
     throw new Error(cleanupError ? `${message} ${cleanupError}` : message)
   }
@@ -255,6 +257,7 @@ export async function updateStream(
 ): Promise<StreamMutationResult> {
   const existingResponse = await youtubeApiFetch(
     `/liveBroadcasts?part=contentDetails&id=${stream.youtubeBroadcastId}`,
+    { workspaceId: stream.workspaceId },
   )
 
   if (!existingResponse.ok) {
@@ -271,6 +274,7 @@ export async function updateStream(
   const response = await youtubeApiFetch(
     "/liveBroadcasts?part=snippet,status,contentDetails",
     {
+      workspaceId: stream.workspaceId,
       method: "PUT",
       body: JSON.stringify({
         id: stream.youtubeBroadcastId,
@@ -305,9 +309,10 @@ export async function updateStream(
   let thumbnailError: string | null = null
   if (thumbnail) {
     try {
-      await uploadThumbnail(stream.youtubeBroadcastId, thumbnail.blob)
+      await uploadThumbnail(stream.youtubeBroadcastId, thumbnail.blob, stream.workspaceId)
       const refreshed = await youtubeApiFetch(
         `/liveBroadcasts?part=snippet&id=${stream.youtubeBroadcastId}`,
+        { workspaceId: stream.workspaceId },
       )
       if (refreshed.ok) {
         const refreshedData = await refreshed.json()
@@ -325,7 +330,7 @@ export async function updateStream(
       await updateVideoMetadata(stream.youtubeBroadcastId, {
         categoryId: stream.categoryId ?? undefined,
         tags: stream.tags.length > 0 ? stream.tags : undefined,
-      })
+      }, stream.workspaceId)
     } catch {
       console.warn("Video metadata update failed")
     }
@@ -341,7 +346,7 @@ export async function updateStream(
     // retry the local write once so a transient database error does not leave
     // the user with a misleading failure or force them to repeat the update.
     try {
-      await syncYouTubeStreams()
+      await syncYouTubeStreams(stream.workspaceId)
       await persistLocalStreamUpdate(stream.id, localValues, stream.workspaceId)
     } catch {
       return {
@@ -352,7 +357,7 @@ export async function updateStream(
     }
   }
 
-  const saved = await fetchStreamById(stream.id).catch(() => undefined) ?? { ...stream, thumbnailUrl }
+  const saved = await fetchStreamById(stream.id, stream.workspaceId).catch(() => undefined) ?? { ...stream, thumbnailUrl }
 
   await notifyStreamUpdated(saved.id)
 
@@ -366,7 +371,7 @@ export async function deleteStream(stream: Stream): Promise<void> {
   // means it was already removed on YouTube, which is success here.
   const response = await youtubeApiFetch(
     `/liveBroadcasts?id=${stream.youtubeBroadcastId}`,
-    { method: "DELETE" },
+    { method: "DELETE", workspaceId: stream.workspaceId },
   )
 
   if (!response.ok && response.status !== 404) {

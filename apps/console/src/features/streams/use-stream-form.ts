@@ -7,8 +7,10 @@ import { ProviderRequestError } from "@/lib/provider-request-error";
 import { useWorkspace } from "@/lib/workspace-context";
 import { useAuth } from "@/lib/auth-context";
 import { useWorkspaceResource } from "@/hooks/use-workspace-resource";
+import { useTaskLifetime } from "@/hooks/use-task-lifetime";
 import { useStreams } from "./streams-provider";
-import { fetchImageBlob, UNFETCHABLE_THUMBNAIL_MESSAGE } from "@moc/utils/blob-fetch";
+import { fetchImageBlob, imageDownloadUrl, INVALID_THUMBNAIL_URL_MESSAGE, THUMBNAIL_MAX_SIZE_BYTES, THUMBNAIL_TOO_LARGE_MESSAGE, UNFETCHABLE_THUMBNAIL_MESSAGE } from "@moc/utils/blob-fetch";
+import type { FilePartition } from "@moc/utils/file-constraints";
 import { formatUtcIsoForDateTimeInput, parseDateTimeInputToUtcIso } from "@moc/utils/zoned-date-time";
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import type { ThumbnailStatus } from "./stream-thumbnail-field";
@@ -30,6 +32,7 @@ export type StreamFormData = {
   thumbnail: ThumbnailSource;
   notifyDestinations: NotifyDestination[];
   savePreset: boolean;
+  signal?: AbortSignal;
 };
 
 type ThumbSelection =
@@ -82,6 +85,9 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset, in
   const { toast } = useFeedback();
   const { currentWorkspaceId } = useWorkspace();
   const { user } = useAuth();
+  const taskScope = `${currentWorkspaceId}:${user?.id}:${open}:${stream?.id}`;
+  const tasks = useTaskLifetime(taskScope);
+  const submittingRef = useRef<AbortController | null>(null);
   const { state: { youtubeConnection } } = useStreams();
   const seed = stream ?? preset ?? null;
   const seedScheduledStart = stream ? stream.scheduledStartTime : preset?.scheduledStartTime ?? null;
@@ -125,9 +131,13 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset, in
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [discardChangesOpen, setDiscardChangesOpen] = useState(false);
-  const resolveSeqRef = useRef(0);
   const thumbReady = !thumbSelection || (thumbStatus === "ready" && thumbBlob !== null);
   const canSubmit = Boolean(title.trim()) && !isSubmitting && thumbReady;
+
+  useEffect(() => {
+    submittingRef.current = null;
+    setIsSubmitting(false);
+  }, [taskScope]);
 
   function resetForm() {
     const reset = stream ?? preset ?? null;
@@ -178,7 +188,7 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset, in
 
   useEffect(() => {
     const selection = thumbSelection;
-    if (!selection) {
+    if (!open || !selection) {
       setThumbBlob(null);
       setThumbStatus("idle");
       setThumbError(null);
@@ -186,7 +196,7 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset, in
       return;
     }
 
-    const sequence = ++resolveSeqRef.current;
+    let active = true;
     if (selection.kind === "file") {
       const objectUrl = URL.createObjectURL(selection.file);
       setThumbBlob(selection.file);
@@ -201,25 +211,28 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset, in
     setThumbBlob(null);
     setThumbPreviewUrl(null);
     let objectUrl: string | null = null;
-    fetchImageBlob(selection.url)
+    const controller = new AbortController();
+    fetchImageBlob(selection.url, controller.signal)
       .then((blob) => {
-        if (resolveSeqRef.current !== sequence) return;
+        if (!active) return;
         objectUrl = URL.createObjectURL(blob);
         setThumbBlob(blob);
         setThumbStatus("ready");
         setThumbPreviewUrl(objectUrl);
       })
-      .catch(() => {
-        if (resolveSeqRef.current !== sequence) return;
+      .catch((error: unknown) => {
+        if (!active) return;
         setThumbBlob(null);
         setThumbStatus("error");
-        setThumbError(UNFETCHABLE_THUMBNAIL_MESSAGE);
+        setThumbError(error instanceof RangeError ? error.message : UNFETCHABLE_THUMBNAIL_MESSAGE);
         setThumbPreviewUrl(null);
       });
     return () => {
+      active = false;
+      controller.abort();
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [thumbSelection]);
+  }, [open, thumbSelection]);
 
   function requestClose() {
     if (isDirty) {
@@ -267,9 +280,24 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset, in
     setIsDirty(true);
   }
 
+  function handleThumbnailFilesChange(batch: FilePartition): void {
+    const rejection = batch.rejections[0];
+    if (!rejection || batch.acceptedFiles.length) return;
+    setThumbStatus("error");
+    setThumbError(rejection.file.size > THUMBNAIL_MAX_SIZE_BYTES ? THUMBNAIL_TOO_LARGE_MESSAGE : rejection.reason);
+  }
+
   function handleThumbnailUrlConfirm() {
-    const url = thumbnailUrlInput.trim();
-    if (!url) return;
+    const input = thumbnailUrlInput.trim();
+    if (!input) return;
+    let url: string;
+    try {
+      url = imageDownloadUrl(input);
+    } catch {
+      setThumbStatus("error");
+      setThumbError(INVALID_THUMBNAIL_URL_MESSAGE);
+      return;
+    }
     setThumbSelection({ kind: "url", url });
     setThumbName(fileNameFromUrl(url, "Image from URL"));
     setIsDirty(true);
@@ -315,7 +343,10 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset, in
   }
 
   async function handleSubmit() {
-    if (!canSubmit) return;
+    if (!canSubmit || submittingRef.current) return;
+    const controller = tasks.start();
+    if (controller.signal.aborted) return;
+    submittingRef.current = controller;
     const thumbnail: ThumbnailSource = thumbSelection && thumbBlob && thumbStatus === "ready"
       ? { blob: thumbBlob, origin: thumbSelection.kind, sourceUrl: thumbSelection.kind === "file" ? null : thumbSelection.url }
       : null;
@@ -326,13 +357,21 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset, in
         title: title.trim(), description: description.trim(), privacyStatus, isForKids,
         scheduledStartTime: scheduledStartTime ? parseDateTimeInputToUtcIso(scheduledStartTime, browserTimeZone) : null,
         categoryId, tags, latencyPreference, enableDvr, enableEmbed, enableAutoStart, enableAutoStop,
-        playlistId, savePreset, thumbnail, notifyDestinations,
+        playlistId, savePreset, thumbnail, notifyDestinations, signal: controller.signal,
       });
+      if (controller.signal.aborted) return;
       resetForm();
       setDiscardChangesOpen(false);
       onOpenChange(false);
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      throw error;
     } finally {
-      setIsSubmitting(false);
+      tasks.finish(controller);
+      if (submittingRef.current === controller) {
+        submittingRef.current = null;
+        setIsSubmitting(false);
+      }
     }
   }
 
@@ -347,7 +386,7 @@ export function useStreamForm({ open, onOpenChange, onSubmit, stream, preset, in
       updateTitle, updateDescription, updatePrivacyStatus, updateIsForKids, updateScheduledStartTime, updateNotifyDestinations,
       updateThumbnailUrlInput, updateThumbnailMode, updateCategoryId, updateTagInput, updatePlaylistId, updateLatencyPreference,
       updateEnableDvr, updateEnableEmbed, updateEnableAutoStart, updateEnableAutoStop, requestClose, discardChanges, cancelDiscardChanges, handleFileSelect,
-      handleThumbnailUrlConfirm, clearThumbnail, handleRemoveTag, handleTagInputBlur, handleTagKeyDown,
+      handleThumbnailUrlConfirm, handleThumbnailFilesChange, clearThumbnail, handleRemoveTag, handleTagInputBlur, handleTagKeyDown,
       handleSavePresetChange, handleSubmit,
     },
     meta: { isEditing, canSubmit, isDirty, stream },

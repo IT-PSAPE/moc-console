@@ -28,9 +28,11 @@ export type BroadcastFormSubmit = {
   kind: BroadcastKind
   onUploadStatusChange: BroadcastUploadStatusChange
   title: string
+  signal?: AbortSignal
 }
 
 export type BroadcastUploadSubmit = {
   items: BroadcastEditorItem[]
   onUploadStatusChange: BroadcastUploadStatusChange
+  signal?: AbortSignal
 }

@@ -69,14 +69,16 @@ export function useBroadcastsCollection() {
     }
   }, [closeDetail, deleteBroadcast, deleteTarget, toast])
 
-  const submitEditor = useCallback(async ({ description, items, kind, onUploadStatusChange, title }: BroadcastFormSubmit) => {
+  const submitEditor = useCallback(async ({ description, items, kind, onUploadStatusChange, title, signal }: BroadcastFormSubmit) => {
     const created = await createBroadcast({
       description,
       files: items.flatMap((item) => item.source === "upload" ? [{ clientId: item.key, file: item.file }] : []),
       kind,
       onUploadStatusChange,
       title,
+      signal,
     })
+    signal?.throwIfAborted()
     selectBroadcast(created)
     toast({ title: "Broadcast created", variant: "success" })
   }, [createBroadcast, selectBroadcast, toast])

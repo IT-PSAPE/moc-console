@@ -45,6 +45,7 @@ export function BroadcastsProvider({ children }: { children: ReactNode }) {
   const createBroadcast = useCallback(async (params: Omit<CreateBroadcastParams, "workspaceId">) => {
     if (!currentWorkspaceId) throw new Error("Select a workspace before creating a broadcast")
     const broadcast = await createBroadcastRecord({ ...params, workspaceId: currentWorkspaceId })
+    params.signal?.throwIfAborted()
     updateData((current) => [broadcast, ...current])
     return broadcast
   }, [currentWorkspaceId, updateData])
@@ -59,6 +60,7 @@ export function BroadcastsProvider({ children }: { children: ReactNode }) {
   const updateBroadcast = useCallback(async (params: Omit<UpdateBroadcastParams, "workspaceId">) => {
     if (!currentWorkspaceId) throw new Error("Select a workspace before editing a broadcast")
     const broadcast = await updateBroadcastRecord({ ...params, workspaceId: currentWorkspaceId })
+    params.signal?.throwIfAborted()
     updateData((current) => current.map((entry) => entry.id === broadcast.id ? broadcast : entry))
     return broadcast
   }, [currentWorkspaceId, updateData])

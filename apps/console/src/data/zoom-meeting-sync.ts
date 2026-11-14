@@ -42,7 +42,7 @@ type ZoomMeetingLookup =
  * sync would delete the workspace's meetings.
  */
 async function lookUpZoomMeeting(zoomMeetingId: number, workspaceId: string): Promise<ZoomMeetingLookup> {
-  const response = await zoomApiFetch(`/meetings/${zoomMeetingId}`, { headers: { "X-MOC-Workspace": workspaceId } })
+  const response = await zoomApiFetch(`/meetings/${zoomMeetingId}`, { workspaceId })
   if (response.ok) {
     return { status: "present", meeting: await response.json() as ZoomMeetingSyncRow }
   }
@@ -83,7 +83,7 @@ export async function syncZoomMeetingsWithinOperation(workspaceId: string): Prom
   let pageToken: string | undefined
   do {
     const pageParam = pageToken ? `&next_page_token=${encodeURIComponent(pageToken)}` : ""
-    const response = await zoomApiFetch(`/users/me/meetings?type=upcoming&page_size=300${pageParam}`, { headers: { "X-MOC-Workspace": workspaceId } })
+    const response = await zoomApiFetch(`/users/me/meetings?type=upcoming&page_size=300${pageParam}`, { workspaceId })
     if (!response.ok) throw await providerRequestError(response, "Failed to fetch Zoom meetings")
     const data = await response.json() as { meetings?: ZoomMeetingSyncRow[]; next_page_token?: string }
     meetings.push(...(data.meetings ?? []))

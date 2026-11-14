@@ -126,4 +126,23 @@ describe('broadcast detail editing', () => {
     }))
     runtime.unmount()
   })
+
+  test('a canceled upload leaves a still-mounted detail editable without showing success', async () => {
+    let resolve: (value: Broadcast) => void = () => undefined
+    updateBroadcast.mockReturnValueOnce(new Promise((next) => { resolve = next }))
+    const controller = new AbortController()
+    const runtime = mount()
+    const submitting = runtime.rerender().actions.submitUploads({
+      items: [{ source: 'upload', key: 'upload-1', file: new File(['audio'], 'new.mp3', { type: 'audio/mpeg' }), status: 'queued' }],
+      onUploadStatusChange: vi.fn(), signal: controller.signal,
+    })
+    const rejected = expect(submitting).rejects.toMatchObject({ name: 'AbortError' })
+    expect(runtime.rerender().state.isSaving).toBe(true)
+    controller.abort()
+    resolve(broadcast())
+    await rejected
+    expect(runtime.rerender().state.isSaving).toBe(false)
+    expect(toast).not.toHaveBeenCalled()
+    runtime.unmount()
+  })
 })

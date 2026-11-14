@@ -1,4 +1,12 @@
 import type { Stream } from "@moc/types/streams/stream"
+import type { Role } from "@moc/types/requests/assignee"
+
+type YouTubeStreamCreatePermissions = Pick<Role, "can_read" | "can_create" | "can_update">
+
+/** Creation reads provider settings, inserts resources, then binds the broadcast. */
+export function canCreateYouTubeStreams(role: YouTubeStreamCreatePermissions | null): boolean {
+  return role?.can_read === true && role.can_create === true && role.can_update === true
+}
 
 /** The local view of a stream the workspace already tracks. */
 export type StreamReconciliationRow = {

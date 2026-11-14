@@ -10,31 +10,50 @@ import { useEffect, useRef, useState } from "react"
 import type { BroadcastEditorItem, BroadcastUploadSubmit } from "./broadcast-editor-types"
 import { useBroadcasts } from "./broadcasts-provider"
 import { getBroadcastPublicUrl } from "./broadcast-public-url"
+import { useTaskLifetime } from "@/hooks/use-task-lifetime"
 
 export function useBroadcastDetail(broadcast: Broadcast) {
   const copied = useCopyFeedback<"link">()
-  const { actions: { updateBroadcast }, meta: { canUpdate } } = useBroadcasts()
+  const { actions: { updateBroadcast }, meta: { canUpdate, workspaceId } } = useBroadcasts()
   const { toast } = useFeedback()
+  const scope = `${workspaceId ?? broadcast.workspaceId}:${broadcast.id}`
+  const tasks = useTaskLifetime(scope)
   const [pending, setPending] = useState<Broadcast | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
   const savingRef = useRef(false)
+  const savingControllerRef = useRef<AbortController | null>(null)
   const currentRef = useRef(broadcast)
   const displayed = pending ?? broadcast
   const publicUrl = getBroadcastPublicUrl(displayed.slug)
 
   useEffect(() => {
+    savingRef.current = false
+    savingControllerRef.current = null
+    setIsSaving(false)
+    setPending(null)
+    setUploadOpen(false)
+    return () => {
+      savingRef.current = false
+      savingControllerRef.current = null
+    }
+  }, [scope])
+
+  useEffect(() => {
     if (!savingRef.current) currentRef.current = broadcast
   }, [broadcast])
 
-  async function persist(next: Broadcast, uploads: BroadcastPlaylistUpdateItem[] = [], onUploadStatusChange?: BroadcastUploadStatusChange): Promise<void> {
+  async function persist(next: Broadcast, uploads: BroadcastPlaylistUpdateItem[] = [], onUploadStatusChange?: BroadcastUploadStatusChange, signal?: AbortSignal): Promise<void> {
     if (!canUpdate) throw new Error("You don't have permission to edit this broadcast.")
     if (savingRef.current) throw new Error("Wait for the current change to finish saving.")
     savingRef.current = true
+    const controller = tasks.start(signal)
+    savingControllerRef.current = controller
     setIsSaving(true)
     setPending(next)
     const current = currentRef.current
     try {
+      controller.signal.throwIfAborted()
       const saved = await updateBroadcast({
         id: current.id,
         expectedUpdatedAt: current.updatedAt,
@@ -44,12 +63,21 @@ export function useBroadcastDetail(broadcast: Broadcast) {
         kind: current.kind,
         items: [...next.items.map((item): BroadcastPlaylistUpdateItem => ({ source: "existing", id: item.id })), ...uploads],
         onUploadStatusChange,
+        signal: controller.signal,
       })
+      controller.signal.throwIfAborted()
       currentRef.current = saved
+    } catch (error) {
+      if (controller.signal.aborted) throw controller.signal.reason
+      throw error
     } finally {
-      savingRef.current = false
-      setIsSaving(false)
-      setPending(null)
+      tasks.finish(controller)
+      if (savingControllerRef.current === controller) {
+        savingControllerRef.current = null
+        savingRef.current = false
+        setIsSaving(false)
+        setPending(null)
+      }
     }
   }
 
@@ -57,6 +85,7 @@ export function useBroadcastDetail(broadcast: Broadcast) {
     try {
       await persist(next)
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return
       toast({ title: "Broadcast not updated", description: getErrorMessage(error, "The change could not be saved."), variant: "error" })
     }
   }
@@ -95,10 +124,11 @@ export function useBroadcastDetail(broadcast: Broadcast) {
     if (!savingRef.current) setUploadOpen(open)
   }
 
-  async function submitUploads({ items, onUploadStatusChange }: BroadcastUploadSubmit): Promise<void> {
+  async function submitUploads({ items, onUploadStatusChange, signal }: BroadcastUploadSubmit): Promise<void> {
     const uploads = items.flatMap((item): BroadcastPlaylistUpdateItem[] => item.source === "upload" ? [{ source: "upload", clientId: item.key, file: item.file }] : [])
     if (uploads.length === 0) return
-    await persist(currentRef.current, uploads, onUploadStatusChange)
+    await persist(currentRef.current, uploads, onUploadStatusChange, signal)
+    signal?.throwIfAborted()
     toast({ title: "Files added to broadcast", variant: "success" })
   }
 

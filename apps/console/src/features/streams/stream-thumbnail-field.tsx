@@ -6,6 +6,8 @@ import { FileDropzone } from "@moc/ui/components/form/file-dropzone"
 import { Paragraph } from "@moc/ui/components/display/text"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import { Link, Refresh, Xmark } from "iconoir-react"
+import { THUMBNAIL_MAX_SIZE_BYTES } from "@moc/utils/blob-fetch"
+import type { FilePartition } from "@moc/utils/file-constraints"
 
 type ThumbnailMode = "file" | "url"
 export type ThumbnailStatus = "idle" | "resolving" | "ready" | "error"
@@ -24,25 +26,13 @@ type StreamThumbnailFieldProps = {
   thumbnailMode: ThumbnailMode
   onModeChange: (mode: ThumbnailMode) => void
   onFileSelect: (file: File | null) => void
+  onFilesChange: (batch: FilePartition) => void
   onUrlInputChange: (value: string) => void
   onUrlConfirm: () => void
   onClear: () => void
 }
 
-export function StreamThumbnailField({
-  hasSelection,
-  selectionName,
-  previewUrl,
-  status,
-  errorMessage,
-  thumbnailUrlInput,
-  thumbnailMode,
-  onModeChange,
-  onFileSelect,
-  onUrlInputChange,
-  onUrlConfirm,
-  onClear,
-}: StreamThumbnailFieldProps) {
+export function StreamThumbnailField({ hasSelection, selectionName, previewUrl, status, errorMessage, thumbnailUrlInput, thumbnailMode, onModeChange, onFileSelect, onFilesChange, onUrlInputChange, onUrlConfirm, onClear }: StreamThumbnailFieldProps) {
   function handleModeChange(value: string) {
     onModeChange(value as ThumbnailMode)
   }
@@ -66,10 +56,7 @@ export function StreamThumbnailField({
             <Button.Icon aria-label="Remove thumbnail" variant="ghost" icon={<Xmark className="size-3.5" />} onClick={onClear} />
           </div>
           {status === "resolving" && (
-            <Paragraph.xs className="text-quaternary">Checking image…</Paragraph.xs>
-          )}
-          {status === "error" && errorMessage && (
-            <Paragraph.xs className="text-error">{errorMessage}</Paragraph.xs>
+            <Paragraph.xs role="status" className="text-quaternary">Checking image…</Paragraph.xs>
           )}
         </div>
       ) : (
@@ -95,7 +82,10 @@ export function StreamThumbnailField({
           {thumbnailMode === "file" && (
             <FileDropzone
               accept="image/jpeg,image/png"
+              maxSizeBytes={THUMBNAIL_MAX_SIZE_BYTES}
               onFileSelect={onFileSelect}
+              onFilesChange={onFilesChange}
+              hint="JPEG or PNG, up to 10 MB."
               placeholder="Drop a thumbnail image or click to browse."
               selectedHint="Drop a new image or click to replace."
             />
@@ -119,15 +109,13 @@ export function StreamThumbnailField({
             </div>
           )}
 
-          {status === "error" && errorMessage && (
-            <Paragraph.xs className="text-error">{errorMessage}</Paragraph.xs>
-          )}
 
           <Paragraph.xs className="text-quaternary">
-            JPEG or PNG, 1280x720 recommended, max 2 MB.
+            {thumbnailMode === "file" ? "1280x720 recommended." : "JPEG or PNG, 1280x720 recommended, max 10 MB."}
           </Paragraph.xs>
         </div>
       )}
+      {status === "error" && errorMessage && <Paragraph.xs role="alert" className="text-error">{errorMessage}</Paragraph.xs>}
     </FormField>
   )
 }

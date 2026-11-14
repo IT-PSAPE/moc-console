@@ -84,8 +84,9 @@ export function useZoomMeetings(searchQuery: string) {
       })
       return
     }
+    if (!currentWorkspaceId) throw new Error("Select a workspace before creating a meeting")
     try {
-      const meeting = await createZoomMeeting(params)
+      const meeting = await createZoomMeeting(params, currentWorkspaceId)
       syncMeeting(meeting)
       providerFailure.actions.clear()
       toast({ title: "Meeting scheduled", variant: "success" })
@@ -94,7 +95,7 @@ export function useZoomMeetings(searchQuery: string) {
       toast({ title: "Failed to schedule meeting", description: message, variant: "error" })
       throw new Error(message)
     }
-  }, [actionableErrorMessage, canCreate, guardReauthentication, providerFailure.actions, syncMeeting, toast])
+  }, [actionableErrorMessage, canCreate, currentWorkspaceId, guardReauthentication, providerFailure.actions, syncMeeting, toast])
 
   const update = useCallback(async (params: CreateMeetingParams) => {
     if (!editingMeeting || guardReauthentication()) return

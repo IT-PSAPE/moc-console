@@ -3,8 +3,10 @@ import { getCurrentWorkspaceId } from "./current-workspace"
 import { revokeToken } from "@/lib/youtube-client"
 import { moc } from "@/lib/moc-client"
 
-export async function saveStreamPreset(preset: StreamPreset): Promise<void> {
-  const workspaceId = await getCurrentWorkspaceId()
+export async function saveStreamPreset(preset: StreamPreset, options: { workspaceId?: string; signal?: AbortSignal } = {}): Promise<void> {
+  options.signal?.throwIfAborted()
+  const workspaceId = options.workspaceId ?? await getCurrentWorkspaceId()
+  options.signal?.throwIfAborted()
   await moc.streams.updateYouTubePresets(preset, workspaceId)
 }
 

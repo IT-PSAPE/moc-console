@@ -16,10 +16,10 @@ export async function fetchYouTubeConnection(workspaceId?: string): Promise<YouT
   return moc.streams.getYouTubeConnection(resolvedWorkspaceId)
 }
 
-export async function fetchCategories(regionCode = "US"): Promise<YouTubeCategory[]> {
-  return fetchVideoCategories(regionCode)
+export async function fetchCategories(workspaceId: string, regionCode = "US"): Promise<YouTubeCategory[]> {
+  return fetchVideoCategories(workspaceId, regionCode)
 }
 
-export async function fetchPlaylists(): Promise<YouTubePlaylist[]> {
-  return fetchChannelPlaylists()
+export async function fetchPlaylists(workspaceId: string): Promise<YouTubePlaylist[]> {
+  return fetchChannelPlaylists(workspaceId)
 }

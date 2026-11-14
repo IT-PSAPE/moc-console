@@ -51,7 +51,7 @@ async function fetchCurrentBroadcasts(workspaceId: string): Promise<YouTubeBroad
     let pageToken: string | undefined
     do {
       const pageParam = pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ""
-      const response = await youtubeApiFetch(`/liveBroadcasts?part=${BROADCAST_PART}&broadcastStatus=${broadcastStatus}&broadcastType=all&maxResults=50${pageParam}`, { headers: { "X-MOC-Workspace": workspaceId } })
+      const response = await youtubeApiFetch(`/liveBroadcasts?part=${BROADCAST_PART}&broadcastStatus=${broadcastStatus}&broadcastType=all&maxResults=50${pageParam}`, { workspaceId })
       if (!response.ok) throw await providerRequestError(response, "Failed to fetch broadcasts")
       const data = await response.json() as { items?: YouTubeBroadcastSyncRow[]; nextPageToken?: string }
       broadcasts.push(...(data.items ?? []))
@@ -77,7 +77,7 @@ async function fetchBroadcastsByIds(broadcastIds: string[], workspaceId: string)
     const batch = broadcastIds.slice(start, start + ID_FILTER_LIMIT)
     // `broadcastType` and `maxResults` are only valid alongside a
     // `broadcastStatus` or `mine` filter, so an id lookup sends neither.
-    const response = await youtubeApiFetch(`/liveBroadcasts?part=${BROADCAST_PART}&id=${batch.map(encodeURIComponent).join(",")}`, { headers: { "X-MOC-Workspace": workspaceId } })
+    const response = await youtubeApiFetch(`/liveBroadcasts?part=${BROADCAST_PART}&id=${batch.map(encodeURIComponent).join(",")}`, { workspaceId })
     if (!response.ok) throw await providerRequestError(response, "Failed to fetch broadcasts")
     const data = await response.json() as { items?: YouTubeBroadcastSyncRow[] }
     broadcasts.push(...(data.items ?? []))

@@ -74,7 +74,7 @@ describe("frontend platform boundary", () => {
 
 describe("frontend content security policies", () => {
   for (const application of ["console", "request"] as const) {
-    test(`${application} confines browser API connections to the same origin`, () => {
+    test(`${application} restricts connections to its declared download policy`, () => {
       const vercel = readJson(resolve(root, "apps", application, "vercel.json"))
       const headers = vercel.headers as Array<{ headers: Array<{ key: string; value: string }> }>
       const policies = headers.flatMap((entry) => entry.headers)
@@ -83,7 +83,16 @@ describe("frontend content security policies", () => {
 
       expect(policies.length).toBeGreaterThan(0)
       for (const policy of policies) {
-        expect(policy).toContain("connect-src 'self'")
+        const directives = new Map(policy.split(';').map((directive) => {
+          const [name, ...values] = directive.trim().split(/\s+/)
+          return [name, values]
+        }))
+        expect(directives.get('connect-src')).toEqual(application === 'console' ? ["'self'", 'https:'] : ["'self'"])
+        expect(directives.get('default-src')).toEqual(["'self'"])
+        if (application === 'console') {
+          expect(directives.get('script-src')).toEqual(["'self'"])
+          expect(directives.get('frame-ancestors')).toEqual(["'none'"])
+        }
         expect(policy).not.toContain("api.psape.co.za")
       }
     })
