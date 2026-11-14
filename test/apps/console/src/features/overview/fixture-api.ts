@@ -26,8 +26,9 @@ function saveQuote(input: Record<string, unknown>): DailyQuote {
   if (!text || text.length > 1000) throw Object.assign(new Error('Quote must contain 1 to 1000 characters'), { status: 400 })
   const attribution = typeof input.attribution === 'string' ? input.attribution.trim() || null : null
   if (attribution && attribution.length > 200) throw Object.assign(new Error('Attribution is too long'), { status: 400 })
+  const imageUrl = input.imagePath === null ? null : existing?.imageUrl ?? null
   const now = new Date().toISOString()
-  const quote = { id: existing?.id ?? `fixture-quote-${quotes.length + 1}`, text, attribution, active: typeof input.active === 'boolean' ? input.active : existing?.active ?? true, createdAt: existing?.createdAt ?? now, updatedAt: now }
+  const quote = { id: existing?.id ?? `fixture-quote-${quotes.length + 1}`, text, attribution, imageUrl, active: typeof input.active === 'boolean' ? input.active : existing?.active ?? true, createdAt: existing?.createdAt ?? now, updatedAt: now }
   if (existing) quotes.splice(quotes.indexOf(existing), 1, quote)
   else quotes.push(quote)
   return quote

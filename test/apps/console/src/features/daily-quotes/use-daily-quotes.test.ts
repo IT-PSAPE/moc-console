@@ -34,7 +34,7 @@ vi.doMock('../../../../../../apps/console/src/hooks/use-workspace-resource', () 
 const { useDailyQuotes } = await import('../../../../../../apps/console/src/features/daily-quotes/use-daily-quotes')
 
 function quote(overrides: Partial<DailyQuote> = {}): DailyQuote {
-  return { id: 'quote-1', text: 'A thoughtful quote.', attribution: 'An author', active: true, createdAt: '2026-10-29T10:00:00Z', updatedAt: '2026-10-29T10:00:00Z', ...overrides }
+  return { id: 'quote-1', text: 'A thoughtful quote.', attribution: 'An author', imageUrl: null, active: true, createdAt: '2026-10-29T10:00:00Z', updatedAt: '2026-10-29T10:00:00Z', ...overrides }
 }
 
 function textChange(value: string): React.ChangeEvent<HTMLTextAreaElement> {
@@ -126,7 +126,8 @@ test('failed saves preserve the editor draft and existing cached quotes', async 
   expect(result.state.editorOpen).toBe(true)
   expect(result.state.text).toBe('Keep my draft')
   expect(result.state.visibleQuotes).toEqual([quote()])
-  expect(toast).toHaveBeenCalledWith({ title: 'Could not save quote', description: 'Offline', variant: 'error' })
+  expect(result.state.saveError).toBe('Offline')
+  expect(toast).not.toHaveBeenCalled()
   runtime.unmount()
 })
 

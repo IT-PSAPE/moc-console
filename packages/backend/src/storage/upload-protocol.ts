@@ -1,10 +1,12 @@
+import { DAILY_QUOTE_IMAGE_MAX_SIZE_BYTES, DAILY_QUOTE_IMAGE_TYPES } from "@moc/types/daily-quotes"
+
 export const MAX_CHUNK_SIZE = 4 * 1024 * 1024
 export const ASSEMBLY_PART_SIZE = 8 * 1024 * 1024
 export const MAX_VIDEO_SIZE = 500 * 1024 * 1024
 export const MAX_AUDIO_SIZE = 50 * 1024 * 1024
 
 export type StorageBucket = "avatars" | "media" | "broadcast-media"
-export type UploadPurpose = "avatar" | "stream-thumbnail" | "broadcast-audio" | "broadcast-video"
+export type UploadPurpose = "avatar" | "stream-thumbnail" | "quote-image" | "broadcast-audio" | "broadcast-video"
 
 export type UploadChunk = { index: number; start: number; endExclusive: number }
 
@@ -15,6 +17,7 @@ export type UploadPolicy =
 const POLICIES: Record<UploadPurpose, Omit<Extract<UploadPolicy, { ok: true }>, "ok">> = {
   avatar: { bucket: "avatars", maxSize: 50 * 1024 * 1024, allowedTypes: ["image/jpeg", "image/png", "image/webp"] },
   "stream-thumbnail": { bucket: "media", maxSize: 10 * 1024 * 1024, allowedTypes: ["image/jpeg", "image/png"] },
+  "quote-image": { bucket: "media", maxSize: DAILY_QUOTE_IMAGE_MAX_SIZE_BYTES, allowedTypes: DAILY_QUOTE_IMAGE_TYPES },
   "broadcast-audio": { bucket: "broadcast-media", maxSize: MAX_AUDIO_SIZE, allowedTypes: ["audio/mpeg", "audio/mp4", "audio/aac", "audio/ogg", "audio/wav", "audio/webm"] },
   "broadcast-video": { bucket: "broadcast-media", maxSize: MAX_VIDEO_SIZE, allowedTypes: ["video/mp4", "video/webm", "video/quicktime"] },
 }
@@ -23,8 +26,8 @@ const BUCKETS = new Set<StorageBucket>(["avatars", "media", "broadcast-media"])
 
 export function getUploadPolicy(purpose: string, size: number): UploadPolicy {
   if (!Number.isSafeInteger(size) || size <= 0) return { ok: false, reason: "Upload size must be a positive safe integer" }
+  if (!Object.hasOwn(POLICIES, purpose)) return { ok: false, reason: "Unsupported upload purpose" }
   const policy = POLICIES[purpose as UploadPurpose]
-  if (!policy) return { ok: false, reason: "Unsupported upload purpose" }
   if (size > policy.maxSize) return { ok: false, reason: "Upload exceeds the allowed size" }
   return { ok: true, ...policy }
 }

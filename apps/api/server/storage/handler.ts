@@ -35,6 +35,10 @@ function writeJson(response: ApiResponse, status: number, body: unknown): void {
 }
 
 function errorResponse(response: ApiResponse, error: unknown): void {
+  if (error instanceof AuthError) {
+    writeJson(response, 401, { error: { code: "unauthenticated", message: "Sign in required" }, requestId: randomUUID() })
+    return
+  }
   if (error instanceof UploadServiceError) {
     writeJson(response, error.status, { error: { code: error.code, message: error.message }, requestId: randomUUID() })
     return
@@ -104,7 +108,7 @@ async function withUploadContext<T>(userId: string, workspaceId: string | null, 
   return withActor({ userId, workspaceId, role: "moc_app" }, work)
 }
 
-async function assertWorkspacePermission(db: PoolClient, userId: string, workspaceId: string, permission: "can_create" | "can_delete"): Promise<void> {
+async function assertWorkspacePermission(db: PoolClient, userId: string, workspaceId: string, permission: "can_create" | "can_delete" | "can_manage_roles"): Promise<void> {
   const result = await db.query<{ allowed: boolean } & QueryResultRow>(
     `SELECT EXISTS (
        SELECT 1 FROM public.workspace_users wu JOIN public.roles r ON r.id = wu.role_id
@@ -145,7 +149,7 @@ async function createUpload(request: BinaryRequest, response: ApiResponse, userI
   const fileName = stringField(input, "fileName")
   if (purpose !== "avatar" && !workspaceId) throw new ApiStorageError("invalid_input", "Workspace is required", 400)
   const result = await withUploadContext(userId, workspaceId, async (db) => {
-    if (workspaceId) await assertWorkspacePermission(db, userId, workspaceId, "can_create")
+    if (workspaceId) await assertWorkspacePermission(db, userId, workspaceId, purpose === "quote-image" ? "can_manage_roles" : "can_create")
     const service = new StorageUploadService(new PostgresUploadRepository(db), new S3UploadObjectStore())
     return service.create({ ownerUserId: userId, workspaceId, purpose, size, contentType, fileName })
   })
@@ -223,14 +227,22 @@ async function removeObjects(request: BinaryRequest, response: ApiResponse, user
     throw new ApiStorageError("invalid_input", "Invalid storage paths", 400)
   }
   await withUploadContext(userId, workspaceId, async (db) => {
-    if (workspaceId) await assertWorkspacePermission(db, userId, workspaceId, "can_delete")
+    if (workspaceId) await assertWorkspacePermission(db, userId, workspaceId, purpose === "quote-image" ? "can_manage_roles" : "can_delete")
     const records = await db.query<{ object_path: string; purpose: string; byte_size: number } & QueryResultRow>(
       `SELECT object_path, purpose, byte_size FROM moc_private.storage_objects
        WHERE bucket = $1 AND object_path = ANY($2::text[]) AND owner_user_id = $3
-         AND purpose = $4 AND workspace_id IS NOT DISTINCT FROM $5`,
+         AND purpose = $4 AND workspace_id IS NOT DISTINCT FROM $5${purpose === "quote-image" ? " FOR UPDATE" : ""}`,
       [bucket, paths, userId, purpose, workspaceId],
     )
     if (records.rows.length !== paths.length) throw new ApiStorageError("not_found", "Storage object not found", 404)
+    if (purpose === "quote-image") {
+      // With the object locked, a concurrent quote save cannot attach it during removal.
+      const references = await db.query(
+        `SELECT 1 FROM public.daily_quotes WHERE workspace_id = $1 AND image_path = ANY($2::text[]) LIMIT 1`,
+        [workspaceId, paths],
+      )
+      if (references.rows.length) throw new ApiStorageError("conflict", "This image is still attached to a daily quote", 409)
+    }
     for (const record of records.rows) await getStorageClient().send(new DeleteObjectCommand({ Bucket: bucket, Key: record.object_path }))
     await db.query(
       `DELETE FROM moc_private.storage_objects WHERE bucket = $1 AND object_path = ANY($2::text[]) AND owner_user_id = $3`,

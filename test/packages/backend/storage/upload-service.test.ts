@@ -56,6 +56,19 @@ describe("storage upload service", () => {
     expect(session.bucket).toBe("broadcast-media")
   })
 
+  test("creates quote images in workspace media and enforces image types", async () => {
+    const { service } = setup()
+    const input = { ownerUserId: "owner-a", purpose: "quote-image", size: 8, contentType: "image/webp", fileName: "field.webp" }
+    await expect(service.create(input)).rejects.toMatchObject({ code: "invalid_upload" })
+    await expect(service.create({ ...input, workspaceId: "workspace-a", contentType: "image/svg+xml" })).rejects.toMatchObject({ code: "invalid_upload" })
+    await expect(service.create({ ...input, workspaceId: "workspace-a", size: 10 * 1024 * 1024 + 1 })).rejects.toMatchObject({ code: "invalid_upload" })
+    await expect(service.create({ ...input, workspaceId: "workspace-a" })).resolves.toMatchObject({
+      objectPath: expect.stringMatching(/^moc-uploads\/workspace-a\/owner-a\/daily-quote-images\/.*\.webp$/),
+      bucket: "media",
+      purpose: "quote-image",
+    })
+  })
+
   test("accepts identical chunk retries and rejects conflicting bytes for an index", async () => {
     const { service, repository, objects } = setup()
     const session = await service.create({ ownerUserId: "owner-a", purpose: "avatar", size: 4, contentType: "image/png", fileName: "face.png" })

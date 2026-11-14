@@ -1,15 +1,18 @@
 import type { MocTransport } from "./transport"
 
+export { DAILY_QUOTE_IMAGE_MAX_SIZE_BYTES, DAILY_QUOTE_IMAGE_TYPES } from "@moc/types/daily-quotes"
+
 export type DailyQuote = {
   id: string
   text: string
   attribution: string | null
+  imageUrl: string | null
   active: boolean
   createdAt: string
   updatedAt: string
 }
 
-export type DailyQuoteDraft = { id?: string; text: string; attribution?: string | null; active?: boolean }
+export type DailyQuoteDraft = { id?: string; text: string; attribution?: string | null; imagePath?: string | null; active?: boolean }
 export type DailyQuoteSelection = { quote: DailyQuote | null; date: string; timezone: string; overridden: boolean }
 
 export function createDailyQuotesClient(transport: MocTransport) {

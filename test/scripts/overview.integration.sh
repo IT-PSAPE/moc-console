@@ -16,6 +16,8 @@ overview_database="postgresql://$(id -un)@localhost/postgres?host=${overview_soc
 "$root_dir/neon/database/build-fresh-database.sh" "$overview_database" --legacy-import >"$overview_dir/bootstrap.log" 2>&1 || { cat "$overview_dir/bootstrap.log"; exit 1; }
 psql "$overview_database" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1 -f "$root_dir/neon/database/overview.sql"
 psql "$overview_database" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1 -f "$root_dir/neon/database/overview.sql"
+psql "$overview_database" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1 -f "$root_dir/neon/database/daily-quote-images.sql"
+psql "$overview_database" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1 -f "$root_dir/neon/database/daily-quote-images.sql"
 (cd "$root_dir" && MOC_TEST_DATABASE_URL="$overview_database" DATABASE_URL="$overview_database" npm test -- test/apps/api/server/platform/overview.schema.integration.test.ts)
 psql "$overview_database" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1 \
   -f "$root_dir/neon/database/item-discussion.sql" \

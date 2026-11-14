@@ -31,10 +31,10 @@ test('saves trimmed quotes in the verified workspace and does not silently react
   const saved = await quotes.save.run(context(query), { id: quoteId, text: ' Keep going. ', attribution: '  ' })
   expect(query).toHaveBeenCalledWith(expect.stringContaining('WHERE workspace_id = $1 AND id = $2'), ['verified-workspace', quoteId, 'Keep going.', null, null])
   expect(query.mock.calls[0][0]).toContain('active = coalesce($5, active)')
-  expect(saved).toEqual({ id: quoteId, text: row.text, attribution: null, active: true, createdAt: row.created_at, updatedAt: row.updated_at })
+  expect(saved).toEqual({ id: quoteId, text: row.text, attribution: null, imageUrl: null, active: true, createdAt: row.created_at, updatedAt: row.updated_at })
 })
 
-test.each([{ text: '' }, { text: ' '.repeat(3) }, { text: 'x'.repeat(1001) }, { text: 'Fine', attribution: 'x'.repeat(201) }, { text: 'Fine', active: 'yes' }, { text: 'Fine', active: null }, { text: 'Fine', workspaceId: 'forged' }])('rejects invalid quotes before database work', async input => {
+test.each([{ text: '' }, { text: ' '.repeat(3) }, { text: 'x'.repeat(1001) }, { text: 'Fine', attribution: 'x'.repeat(201) }, { text: 'Fine', active: 'yes' }, { text: 'Fine', active: null }, { text: 'Fine', workspaceId: 'forged' }, { text: 'Fine', imagePath: '' }, { text: 'Fine', imagePath: 123 }])('rejects invalid quotes before database work', async input => {
   const query = vi.fn()
   await expect(quotes.save.run(context(query), input)).rejects.toMatchObject({ status: 400 })
   expect(query).not.toHaveBeenCalled()

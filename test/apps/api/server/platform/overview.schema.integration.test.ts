@@ -75,6 +75,34 @@ suite('Overview schema, role boundaries and preference persistence', () => {
     await expect(run(viewer, context => quotes.save.run(context, { text: 'Viewer quote' }))).rejects.toMatchObject({ code: '42501' })
   })
 
+  test('only finalized quote images owned by the editor in the same workspace can be attached', async () => {
+    const images = [
+      { path: `moc-uploads/${workspace}/${admin}/daily-quote-images/${randomUUID()}.webp`, owner: admin, workspace, purpose: 'quote-image' },
+      { path: `moc-uploads/${workspace}/${editor}/daily-quote-images/${randomUUID()}.webp`, owner: editor, workspace, purpose: 'quote-image' },
+      { path: `moc-uploads/${otherWorkspace}/${admin}/daily-quote-images/${randomUUID()}.webp`, owner: admin, workspace: otherWorkspace, purpose: 'quote-image' },
+      { path: `moc-uploads/${workspace}/${admin}/stream-thumbnails/${randomUUID()}.png`, owner: admin, workspace, purpose: 'stream-thumbnail' },
+    ]
+    for (const image of images) {
+      await pool!.query(`INSERT INTO moc_private.storage_objects
+        (bucket, object_path, owner_user_id, workspace_id, purpose, byte_size, content_type, sha256)
+        VALUES ('media', $1, $2, $3, $4, 100, 'image/webp', $5)`, [image.path, image.owner, image.workspace, image.purpose, 'a'.repeat(64)])
+    }
+    const text = 'First active quote'
+    const imagePath = images[0].path
+    const imageUrl = `/api/storage/media/${imagePath}`
+    for (const unavailablePath of [...images.slice(1).map(image => image.path), `${imagePath}-missing`]) {
+      await expect(run(admin, context => quotes.save.run(context, { id: activeQuote, text, imagePath: unavailablePath }))).rejects.toMatchObject({ status: 400 })
+    }
+    expect(await run(admin, context => quotes.save.run(context, { text: 'New inactive quote', active: false, imagePath }))).toMatchObject({ id: expect.any(String), imageUrl })
+    expect(await run(admin, context => quotes.save.run(context, { id: activeQuote, text, imagePath }))).toMatchObject({ imageUrl })
+    expect(await run(admin, context => quotes.save.run(context, { id: activeQuote, text }))).toMatchObject({ imageUrl })
+    await run(admin, context => quotes.setToday.run(context, { id: activeQuote }))
+    expect(await run(viewer, context => quotes.getDaily.run(context, null))).toMatchObject({ quote: { id: activeQuote, imageUrl } })
+    expect(await run(admin, context => quotes.save.run(context, { id: activeQuote, text, imagePath: null }))).toMatchObject({ imageUrl: null })
+    expect(await run(viewer, context => quotes.getDaily.run(context, null))).toMatchObject({ quote: { id: activeQuote, imageUrl: null } })
+    await run(admin, context => quotes.setToday.run(context, { id: null }))
+  })
+
   test('an admin override is shared with viewers and clearing it restores the automatic selection', async () => {
     const automatic = await run(viewer, context => quotes.getDaily.run(context, null)) as DailyQuoteSelection
     const chosen = await run(admin, context => quotes.setToday.run(context, { id: activeQuote })) as DailyQuoteSelection

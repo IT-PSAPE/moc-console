@@ -1,4 +1,8 @@
 import { Page } from '@moc/ui/components/layout/page'
+import { Section } from '@moc/ui/components/display/section'
+import { Button } from '@moc/ui/components/controls/button'
+import { Link } from 'react-router-dom'
+import { routes } from '@/screens/console-routes'
 import { MessageTemplates } from './message-templates/list'
 import { IntegrationsSection } from './integrations-section'
 import { GeneralSection } from './general-section'
@@ -26,6 +30,9 @@ function SettingsScreenContent({ canManage }: { canManage: boolean }) {
             <PreferencesSection />
             {canManage ? <>
               <DateTimeSection />
+              <Section>
+                <Section.Header title="Daily quotes" description="Manage the quotes and background images shown on Overview." actions={<Button.Link variant="secondary" size="sm" render={<Link to={`/${routes.dailyQuotes}`} />}>Manage quotes</Button.Link>} />
+              </Section>
               <IntegrationsSection />
               <MessageTemplates />
               <ArchiveAutomationsSection />

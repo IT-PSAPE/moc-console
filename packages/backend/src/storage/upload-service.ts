@@ -69,6 +69,13 @@ export type CreateUploadInput = {
 
 export type UploadResult = { bucket: StorageBucket; path: string; url: string; size: number; contentType: string }
 
+const workspaceUploadFolders: Record<Exclude<UploadPurpose, "avatar">, string> = {
+  "stream-thumbnail": "stream-thumbnails",
+  "quote-image": "daily-quote-images",
+  "broadcast-audio": "broadcast-media",
+  "broadcast-video": "broadcast-media",
+}
+
 export class StorageUploadService {
   constructor(
     private readonly repository: UploadRepository,
@@ -86,20 +93,21 @@ export class StorageUploadService {
       Array.from(input.fileName).some((character) => character.charCodeAt(0) < 32)) {
       throw new UploadServiceError("invalid_upload", "Invalid file name", 400)
     }
-    if ((input.purpose === "stream-thumbnail" || input.purpose.startsWith("broadcast-")) && !input.workspaceId) {
+    const purpose = input.purpose as UploadPurpose
+    if (purpose !== "avatar" && !input.workspaceId) {
       throw new UploadServiceError("invalid_upload", "Workspace is required for this upload purpose", 400)
     }
 
     const id = this.newId()
     const extension = extensionFor(input.contentType)
-    const folder = input.purpose === "avatar"
+    const folder = purpose === "avatar"
       ? `${input.ownerUserId}/avatars`
-      : `${input.workspaceId}/${input.ownerUserId}/${input.purpose === "stream-thumbnail" ? "stream-thumbnails" : "broadcast-media"}`
+      : `${input.workspaceId}/${input.ownerUserId}/${workspaceUploadFolders[purpose]}`
     const manifest: UploadManifest = {
       id,
       ownerUserId: input.ownerUserId,
       workspaceId: input.workspaceId ?? null,
-      purpose: input.purpose as UploadPurpose,
+      purpose,
       bucket: policy.bucket,
       objectPath: `moc-uploads/${folder}/${id}.${extension}`,
       stagingPrefix: `${policy.bucket}/.staging/${id}`,

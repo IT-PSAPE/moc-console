@@ -90,8 +90,8 @@ export function useOverview() {
   function openFilters(): void { setFiltersOpen(true) }
   const filterOptions = overviewItemOptions.filter((option) => allowedKinds.includes(option.value))
   return {
-    state: { groups, kinds, filtersOpen, overridden, loading, error, emptyTitle: kinds.length === 0 ? 'Choose what you want to see' : 'Nothing coming up', quoteError: quote.error, quoteLoading: quote.isLoading, quoteText: quote.quote?.text ?? null, attribution: quote.quote?.attribution, greeting: getOverviewGreeting(profile?.name, now), dateLabel: getOverviewDateLabel(now), filtersDisabled: preferences.isLoading },
-    actions: { changeKinds, resetKinds, setFiltersOpen, openFilters, retryAgenda, retryQuote: quote.retry },
+    state: { groups, kinds, filtersOpen, overridden, loading, error, emptyTitle: kinds.length === 0 ? 'Choose what you want to see' : 'Nothing coming up', quoteError: quote.error, quoteLoading: quote.isLoading, quoteText: quote.quote?.text ?? null, quoteImageUrl: quote.imageUrl, attribution: quote.quote?.attribution, greeting: getOverviewGreeting(profile?.name, now), dateLabel: getOverviewDateLabel(now), filtersDisabled: preferences.isLoading },
+    actions: { changeKinds, resetKinds, setFiltersOpen, openFilters, retryAgenda, retryQuote: quote.retry, hideQuoteImage: quote.hideImage },
     meta: { filterOptions, filterTriggerRef },
   }
 }

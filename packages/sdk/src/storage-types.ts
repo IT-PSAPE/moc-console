@@ -1,4 +1,4 @@
-export type StorageUploadPurpose = "avatar" | "stream-thumbnail" | "broadcast-audio" | "broadcast-video"
+export type StorageUploadPurpose = "avatar" | "stream-thumbnail" | "quote-image" | "broadcast-audio" | "broadcast-video"
 export type StorageBucket = "avatars" | "media" | "broadcast-media"
 export type StorageUploadResult = { bucket: StorageBucket; path: string; url: string; size: number; contentType: string }
 export type StorageProgress = { loaded: number; total: number }

@@ -8,7 +8,7 @@ const MAX_RANGE_BYTES = 4 * 1024 * 1024
 
 function bucketForPurpose(purpose: StorageUploadPurpose): StorageBucket {
   if (purpose === "avatar") return "avatars"
-  if (purpose === "stream-thumbnail") return "media"
+  if (purpose === "stream-thumbnail" || purpose === "quote-image") return "media"
   return "broadcast-media"
 }
 

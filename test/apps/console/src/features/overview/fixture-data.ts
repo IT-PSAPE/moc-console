@@ -34,7 +34,7 @@ export const fixtureStreams: Stream[] = [stream('stream-live', 'Evening gatherin
 export const fixtureMeetings: ZoomMeeting[] = [{ id: 'meeting-next', workspaceId: fixtureWorkspaceId, zoomMeetingId: 123456, topic: 'Production team check-in', description: '', meetingType: 'scheduled', startTime: tomorrow(8), duration: 30, timezone: 'Africa/Johannesburg', joinUrl: null, password: null, recurrenceType: 'none', recurrenceInterval: null, recurrenceDays: null, waitingRoom: true, muteOnEntry: true, continuousChat: false, createdBy: fixtureUserId, createdAt: instant(-1440), updatedAt: instant(-60) }]
 export const fixtureMessages: UpcomingScheduledMessage[] = [{ id: 'message-next', title: 'Evening team update', scheduledFor: instant(30), status: 'scheduled' }, { id: 'message-tomorrow', title: 'Volunteer reminder', scheduledFor: tomorrow(7), status: 'scheduled' }]
 export const fixtureQuotes: DailyQuote[] = [
-  { id: 'quote-one', text: 'The small things we do with care become the things that matter most.', attribution: 'Fixture quote · Daily inspiration', active: true, createdAt: instant(-2880), updatedAt: instant(-1440) },
-  { id: 'quote-two', text: 'Make room for what is possible, then take the next thoughtful step.', attribution: 'Fixture quote · A fresh perspective', active: true, createdAt: instant(-1440), updatedAt: instant(-60) },
-  { id: 'quote-inactive', text: 'An inactive quote stays in the library.', attribution: null, active: false, createdAt: instant(-60), updatedAt: instant(-60) },
+  { id: 'quote-one', text: 'The small things we do with care become the things that matter most.', attribution: 'Fixture quote · Daily inspiration', imageUrl: null, active: true, createdAt: instant(-2880), updatedAt: instant(-1440) },
+  { id: 'quote-two', text: 'Make room for what is possible, then take the next thoughtful step.', attribution: 'Fixture quote · A fresh perspective', imageUrl: null, active: true, createdAt: instant(-1440), updatedAt: instant(-60) },
+  { id: 'quote-inactive', text: 'An inactive quote stays in the library.', attribution: null, imageUrl: null, active: false, createdAt: instant(-60), updatedAt: instant(-60) },
 ]

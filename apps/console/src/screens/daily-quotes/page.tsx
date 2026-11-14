@@ -1,5 +1,5 @@
 import { EditPencil, Plus, Quote, Undo, Search, SunLight } from 'iconoir-react'
-import type { DailyQuote } from '@moc/sdk/daily-quotes'
+import { DAILY_QUOTE_IMAGE_MAX_SIZE_BYTES, DAILY_QUOTE_IMAGE_TYPES, type DailyQuote } from '@moc/sdk/daily-quotes'
 import { Button } from '@moc/ui/components/controls/button'
 import { Card } from '@moc/ui/components/display/card'
 import { Table } from '@moc/ui/components/display/table'
@@ -8,6 +8,7 @@ import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { EmptyState } from '@moc/ui/components/feedback/empty-state'
 import { RetryNotification } from '@moc/ui/components/feedback/retry-notification'
 import { FormField } from '@moc/ui/components/form/form-field'
+import { FileDropzone } from '@moc/ui/components/form/file-dropzone'
 import { Input } from '@moc/ui/components/form/input'
 import { TextArea } from '@moc/ui/components/form/text-area'
 import { Toggle } from '@moc/ui/components/form/toggle'
@@ -63,8 +64,31 @@ export function DailyQuotesScreen() {
           <FormField label="Attribution" htmlFor="daily-quote-attribution" optional>
             <Input id="daily-quote-attribution" name="daily-quote-attribution" aria-label="Attribution" autoComplete="off" value={state.attribution} onChange={actions.changeAttribution} maxLength={meta.attributionLimit} disabled={state.isSaving} placeholder="Name or source" />
           </FormField>
+          <FormField label="Banner image" optional disabled={state.isSaving}>
+            {state.imagePreview && !state.imageInvalid ? (
+              <img key={state.imagePreview} src={state.imagePreview} alt="Banner image preview" className="aspect-[3/1] w-full rounded-lg bg-secondary object-cover" onLoad={actions.imageLoaded} onError={actions.imageFailed} />
+            ) : null}
+            <FileDropzone
+              accept={DAILY_QUOTE_IMAGE_TYPES.join(',')}
+              maxSizeBytes={DAILY_QUOTE_IMAGE_MAX_SIZE_BYTES}
+              minSizeBytes={1}
+              fileName={state.imageName}
+              onFilesChange={actions.changeImage}
+              disabled={state.isSaving}
+              placeholder={state.hasImage ? 'Replace banner image' : 'Choose a banner image'}
+              hint="JPEG, PNG, or WebP · Up to 10 MB"
+              selectedHint="Drop an image or click to replace it."
+              className="min-h-0 flex-row items-center px-3 py-2.5 [&_p]:break-all"
+            />
+            {state.imageError ? <Paragraph.xs role="alert" className="text-error">{state.imageError}</Paragraph.xs> : null}
+            {state.hasImage ? <Button variant="ghost" size="sm" className="self-start" onClick={actions.removeImage} disabled={state.isSaving}>{state.replacingImage ? 'Discard replacement' : 'Remove image'}</Button> : null}
+          </FormField>
         </Modal.Content>
-        <Modal.Footer><Button variant="secondary" onClick={actions.closeEditor} disabled={state.isSaving}>Cancel</Button><Button onClick={actions.save} disabled={!meta.canSave}>{state.isSaving ? 'Saving…' : 'Save quote'}</Button></Modal.Footer>
+        {state.saveError ? <Paragraph.sm role="alert" className="px-5 pb-3 text-error">{state.saveError}</Paragraph.sm> : null}
+        <Modal.Footer>
+          {state.isUploading ? <Button variant="secondary" onClick={actions.cancelUpload}>Cancel upload</Button> : <Button variant="secondary" onClick={actions.closeEditor} disabled={state.isSaving}>Cancel</Button>}
+          <Button onClick={actions.save} disabled={!meta.canSave}>{state.isUploading ? 'Uploading image…' : state.isSaving ? 'Saving…' : 'Save quote'}</Button>
+        </Modal.Footer>
       </Modal.Panel></Modal.Positioner></Modal.Portal>
     </Modal> : null}
   </Page>

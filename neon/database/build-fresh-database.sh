@@ -25,6 +25,7 @@ psql "$database_url" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1
   -f "$script_dir/overview.sql" \
   -f "$script_dir/scheduled-direct-messages.sql" \
   -f "$script_dir/storage.sql" \
+  -f "$script_dir/daily-quote-images.sql" \
   -f "$script_dir/broadcast-revisions.sql" \
   -f "$script_dir/90-runtime-grants.sql" \
   -f "$script_dir/console-push.sql" \
