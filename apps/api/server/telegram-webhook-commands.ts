@@ -1,6 +1,7 @@
 
 import { handleCallbackQuery, type TelegramCallbackQuery } from "./telegram-callback-query.js"
 import { queryRows } from "@moc/backend/database"
+import type { TelegramAttribution } from "@moc/notifications"
 import type { QueryResultRow } from "pg"
 import { handleScheduledCallback, handleScheduledMessage } from './scheduled-messages/telegram-flow.js'
 import { syncManagementCommands } from './scheduled-messages/commands.js'
@@ -24,7 +25,7 @@ export type TelegramMessage = {
   ephemeral_message_id?: number
   chat?: TelegramChat
   text?: string
-  from?: { id?: number | string; username?: string }
+  from?: { id?: number | string; username?: string; first_name?: string; last_name?: string }
   message_thread_id?: number
   reply_to_message?: TelegramMessage
   forum_topic_created?: { name?: string }
@@ -59,6 +60,11 @@ const TELEGRAM_SETTINGS_NEXT_STEP = "Open MOC Console → Account Settings → T
 
 async function sendMessage(chatId: number | string, text: string, options: SendMessageOptions = {}): Promise<TelegramSendResult | null> {
   return sendTelegramMessage(chatId, text, options)
+}
+
+function senderAttribution(message: TelegramMessage, action: "registered" | "linked"): TelegramAttribution {
+  const displayName = [message.from?.first_name, message.from?.last_name].filter(Boolean).join(" ")
+  return { action, source: "member", name: displayName || message.from?.username }
 }
 
 function isGroup(chat: TelegramChat | undefined): boolean {
@@ -167,7 +173,7 @@ async function handleRegisterGroupCommand(message: TelegramMessage): Promise<boo
   )
 
   await refreshGroupCommands(String(chatId), workspace.id)
-  const confirmation = await sendMessage(chatId, `✅ Registered "${chat.title ?? "this group"}" to workspace "${workspace.slug}". ${TELEGRAM_SETTINGS_NEXT_STEP}`, { threadId })
+  const confirmation = await sendMessage(chatId, `✅ Registered "${chat.title ?? "this group"}" to workspace "${workspace.slug}". ${TELEGRAM_SETTINGS_NEXT_STEP}`, { threadId, attribution: senderAttribution(message, "registered") })
   if (!confirmation) console.warn(`Telegram registered group ${chatId}, but could not send its confirmation.`)
   return true
 }
@@ -264,7 +270,7 @@ async function handleRegisterTopicCommand(message: TelegramMessage): Promise<boo
     const finalText = resolvedName
       ? `✅ Registered "${resolvedName}" in workspace "${workspace.slug}". ${TELEGRAM_SETTINGS_NEXT_STEP}`
       : `✅ Registered topic #${threadId} in workspace "${workspace.slug}". (Couldn't read the topic name — rename it in Telegram and I'll pick it up.) ${TELEGRAM_SETTINGS_NEXT_STEP}`
-    await editTelegramMessageText(chatId, sent.message_id, finalText)
+    await editTelegramMessageText(chatId, sent.message_id, finalText, senderAttribution(message, "registered"))
   } else {
     console.warn(`Telegram registered topic ${threadId} in group ${groupChatId}, but could not send its confirmation.`)
   }
@@ -301,7 +307,7 @@ async function handleStartCommand(message: TelegramMessage): Promise<void> {
   }
 
   const handle = message.from?.username ? `@${message.from.username}` : "your account"
-  await sendMessage(chatId, `Linked! ${handle} will now receive MOC Console notifications here.`)
+  await sendMessage(chatId, `Linked! ${handle} will now receive MOC Console notifications here.`, { attribution: senderAttribution(message, "linked") })
   const linked = await findLinkedTelegramUser(chatId)
   if(linked) await syncManagementCommands(undefined,linked.id)
 }

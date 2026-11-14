@@ -8,12 +8,14 @@ type SqlCall = { text: string; values: readonly unknown[] }
 const calls: SqlCall[] = []
 let deliveryRow: Record<string, unknown>
 let beginSnapshot: Record<string, unknown>
+let attributionRow: QueryResultRow | undefined
 
 function configureSqlFixture():void {
   const queryRows = async (text: string, values: readonly unknown[] = []):Promise<QueryResultRow[]> => {
     calls.push({ text, values })
     if (text.includes("SELECT id FROM public.notification_deliveries")) return [{ id: deliveryRow.id }]
     if (text.includes("UPDATE public.notification_deliveries SET status='processing'")) return [deliveryRow]
+    if (text.includes('SELECT current_delivery.payload')) return [attributionRow ?? { payload: deliveryRow.payload }]
     return []
   }
   const queryActor = async(text:string,values:readonly unknown[]=[])=>{
@@ -30,9 +32,10 @@ const { processPendingScheduledDeliveries } = await import('../../../../../apps/
 function setup(): void {
   configureSqlFixture()
   calls.length = 0
+  attributionRow = undefined
   deliveryRow = {
     id:'delivery-1',workspace_id:'workspace-1',event_key:'scheduled:occurrence-1',event_type:null,scope:'group',route_id:null,
-    recipient_user_id:null,destination_key:'group:-1001:42',chat_id:'-1001',thread_id:42,text:'unused',payload:{},attempt_count:0,
+    recipient_user_id:null,destination_key:'group:-1001:42',chat_id:'-1001',thread_id:42,text:'unused',payload:{telegramActor:{source:'member',name:'Morgan Sender'}},attempt_count:0,
     entity_type:null,entity_id:null,reply_markup:null,parent_delivery_id:null,scheduled_operation:'send',
   }
   beginSnapshot = {
@@ -64,8 +67,9 @@ test('scheduled send claims and finalizes through named SQL functions with the o
   setup()
   const previousFetch=globalThis.fetch
   const previousToken=process.env.TELEGRAM_BOT_TOKEN
+  let postedBody=''
   process.env.TELEGRAM_BOT_TOKEN='test-token'
-  globalThis.fetch=async()=>new Response(JSON.stringify({ok:true,result:{message_id:901}}),{status:200})
+  globalThis.fetch=async(_input,init)=>{postedBody=String(init?.body??'');return new Response(JSON.stringify({ok:true,result:{message_id:901}}),{status:200})}
   try {
     await expect(processPendingScheduledDeliveries()).resolves.toEqual({attempted:1,sent:1,failed:0,pendingRetry:0})
     expect(calls.some(call=>call.text.includes('UPDATE public.notification_deliveries SET status=\'processing\'') && call.text.includes('RETURNING'))).toBe(true)
@@ -73,6 +77,7 @@ test('scheduled send claims and finalizes through named SQL functions with the o
     const finish=calls.find(call=>call.text.includes('finish_scheduled_delivery'))
     expect(begin?.values).toEqual(['delivery-1'])
     expect(finish?.values.slice(0,3)).toEqual(['delivery-1',3,901])
+    expect(postedBody).toContain('Sent by Morgan Sender')
   } finally {
     globalThis.fetch=previousFetch
     if(previousToken===undefined) delete process.env.TELEGRAM_BOT_TOKEN
@@ -83,6 +88,7 @@ test('scheduled send claims and finalizes through named SQL functions with the o
 test('resend renders the current message and saved attendance into a new Telegram post', async () => {
   setup()
   deliveryRow.scheduled_operation='resend'
+  deliveryRow.payload={telegramActor:{source:'member',name:'Morgan Sender'}}
   const occurrence=beginSnapshot.occurrence as Record<string,unknown>
   occurrence.state='sent'
   occurrence.message_type='attendance'
@@ -104,9 +110,41 @@ test('resend renders the current message and saved attendance into a new Telegra
     expect(JSON.stringify(body)).toContain('Service briefing')
     expect(JSON.stringify(body)).toContain('Noon')
     expect(JSON.stringify(body)).toContain('✅ Alex Member — 09:15')
+    expect(JSON.stringify(body)).toContain('Resent by Morgan Sender')
     const finish=calls.find(call=>call.text.includes('finish_scheduled_delivery'))
     expect(finish?.values.slice(0,3)).toEqual(['delivery-1',3,902])
     expect(finish?.values[4]).toBe(false)
+  } finally {
+    globalThis.fetch=previousFetch
+    if(previousToken===undefined)delete process.env.TELEGRAM_BOT_TOKEN
+    else process.env.TELEGRAM_BOT_TOKEN=previousToken
+  }
+})
+
+test('scheduled edits keep the original sender footer and add the latest updater', async () => {
+  setup()
+  deliveryRow.scheduled_operation='edit'
+  deliveryRow.payload={telegramActor:{source:'member',name:'Earlier Editor'}}
+  attributionRow={
+    payload: { telegramActor:{source:'member',name:'Roster Editor'}, scheduleCreator:{source:'member',name:'Morgan Creator'} },
+    original_actor:{source:'automation'},
+    original_operation:'send',
+  }
+  const occurrence=beginSnapshot.occurrence as Record<string,unknown>
+  occurrence.state='sent'
+  occurrence.telegram_message_id=700
+  let postedBody=''
+  const previousFetch=globalThis.fetch
+  const previousToken=process.env.TELEGRAM_BOT_TOKEN
+  process.env.TELEGRAM_BOT_TOKEN='test-token'
+  globalThis.fetch=async(_input,init)=>{postedBody=String(init?.body??'');return new Response(JSON.stringify({ok:true,result:{message_id:700}}),{status:200})}
+  try {
+    await expect(processPendingScheduledDeliveries()).resolves.toEqual({attempted:1,sent:1,failed:0,pendingRetry:0})
+    expect(postedBody).toContain('Created by Morgan Creator')
+    expect(postedBody).toContain('Automation · Sent automatically')
+    expect(postedBody).toContain('Updated by Roster Editor')
+    expect(postedBody).not.toContain('Earlier Editor')
+    expect(calls.find(call=>call.text.includes('SELECT current_delivery.payload'))?.values).toEqual(['delivery-1','occurrence-1',700,true,'scheduled:occurrence-1:edit:3'])
   } finally {
     globalThis.fetch=previousFetch
     if(previousToken===undefined)delete process.env.TELEGRAM_BOT_TOKEN

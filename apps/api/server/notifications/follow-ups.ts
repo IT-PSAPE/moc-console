@@ -11,38 +11,45 @@
 // round trip. See follow-ups.test.ts.
 
 import {
+  appendAttributionFooter,
   appendUpdateFooter,
-  buildNotificationKeyboard,
   formatDateTokens,
+  readTelegramActorFromPayload,
   renderDeletedOriginal,
+  renderTelegramAttribution,
   renderTemplate,
   toRichHtml,
   type InlineKeyboardMarkup,
   type NotificationEntityType,
+  type TelegramAttribution,
   type TokenValues,
 } from "@moc/notifications"
 import { queryRows } from "@moc/backend/database"
 import type { QueryResultRow } from "pg"
-import { deleteTelegramMessage, editTelegramRichMessage, getTelegramBotUsername, type TelegramSendDetailed } from "../telegram.js"
+import { deleteTelegramMessage, editTelegramRichMessage, type TelegramSendDetailed } from "../telegram.js"
 import { resolveTemplate } from "./templates.js"
 import { fetchFormatSettings, type FormatSettings } from "./format-settings.js"
-import { buildFreshEntityTokens, fetchEntityStoredStatus } from "./entity-tokens.js"
+import { buildFreshEntityTokens } from "./entity-tokens.js"
 import { enqueueDelivery, processDeliveriesForEvent } from "./delivery-store.js"
+import { loadNotificationKeyboard, syncRequestKeyboard } from "./notification-keyboard.js"
 
 export type NotificationEntityRef = { entityType: NotificationEntityType; entityId: string }
 
 export type OriginalRow = QueryResultRow & {
   id: string
   workspace_id: string
-  event_type: string
+  event_type: string | null
   scope: "group" | "dm"
   route_id: string | null
   recipient_user_id: string | null
   chat_id: string
   thread_id: number | null
   text: string
+  payload?: unknown
   telegram_message_id: number
 }
+
+type ChangeNote = { note: string; at: string }
 
 export type FollowUpIO = {
   fetchOriginals: (entityType: NotificationEntityType, entityId: string) => Promise<OriginalRow[]>
@@ -50,17 +57,14 @@ export type FollowUpIO = {
   fetchFormatSettings: (workspaceId: string) => Promise<FormatSettings>
   buildFreshEntityTokens: (workspaceId: string, entityType: NotificationEntityType, entityId: string) => Promise<TokenValues>
   buildKeyboard: (entityType: NotificationEntityType, entityId: string) => Promise<InlineKeyboardMarkup | null>
+  syncRequestKeyboard: typeof syncRequestKeyboard
   editOriginal: (chatId: string, messageId: number, html: string, keyboard: InlineKeyboardMarkup | null) => Promise<TelegramSendDetailed>
   deleteOriginal: (chatId: string, messageId: number) => Promise<{ ok: boolean; description?: string }>
   enqueueDelivery: typeof enqueueDelivery
   processDeliveriesForEvent: typeof processDeliveriesForEvent
-  persistKeyboard: (deliveryId: string, keyboard: InlineKeyboardMarkup | null) => Promise<void>
+  persistKeyboard: (deliveryId: string, keyboard: InlineKeyboardMarkup | null, change?: ChangeNote) => Promise<void>
   markDeleted: (deliveryId: string) => Promise<void>
 }
-
-// Only these entity types carry inline action buttons — see
-// buildNotificationKeyboard's KeyboardTarget union.
-const KEYBOARD_ENTITY_TYPES = new Set<NotificationEntityType>(["request", "booking", "venue_booking"])
 
 function logFollowUpFailure(action: string, ref: NotificationEntityRef, error: unknown): void {
   console.error(`Telegram follow-up failed (${action})`, {
@@ -71,37 +75,29 @@ function logFollowUpFailure(action: string, ref: NotificationEntityRef, error: u
   })
 }
 
-// An "original" is a sent, not-yet-deleted, not-itself-a-reply delivery for
-// this entity. Its event_type is always the entity's own announcement key
-// (there is exactly one *.created event per entity type), so no further
-// filtering by isAnnouncementEvent is needed once entity_type/entity_id and
-// parent_delivery_id are pinned down.
+// Request assignment DMs sent before entity linkage was added still have the
+// request ID in their delivery payload. Match those alongside linked messages.
 async function fetchOriginals(entityType: NotificationEntityType, entityId: string): Promise<OriginalRow[]> {
   return queryRows<OriginalRow>(
     `SELECT id, workspace_id, event_type, scope, route_id, recipient_user_id,
-       chat_id, thread_id, text, telegram_message_id
+       chat_id, thread_id, text, payload, telegram_message_id::double precision AS telegram_message_id
      FROM public.notification_deliveries
-     WHERE entity_type = $1 AND entity_id = $2 AND status = 'sent'
-       AND telegram_deleted_at IS NULL AND parent_delivery_id IS NULL
-       AND telegram_message_id IS NOT NULL`,
+     WHERE status = 'sent' AND telegram_deleted_at IS NULL AND parent_delivery_id IS NULL
+       AND telegram_message_id IS NOT NULL AND (
+         (entity_type = $1 AND entity_id = $2::uuid)
+         OR ($1 = 'request' AND entity_id IS NULL AND scope = 'dm' AND event_type IS NULL
+           AND event_key LIKE 'assignment.request:%' AND payload->>'parentId' = $2::text)
+       )`,
     [entityType, entityId],
   )
 }
 
-async function buildKeyboard(entityType: NotificationEntityType, entityId: string): Promise<InlineKeyboardMarkup | null> {
-  if (!KEYBOARD_ENTITY_TYPES.has(entityType)) return null
-  const status = await fetchEntityStoredStatus(entityType, entityId)
-  if (status === null) return null
-  return buildNotificationKeyboard(
-    { entityType: entityType as "request" | "booking" | "venue_booking", entityId, status },
-    { botUsername: getTelegramBotUsername() },
-  )
-}
-
-async function persistKeyboard(deliveryId: string, keyboard: InlineKeyboardMarkup | null): Promise<void> {
+async function persistKeyboard(deliveryId: string, keyboard: InlineKeyboardMarkup | null, change?: ChangeNote): Promise<void> {
   await queryRows(
-    "UPDATE public.notification_deliveries SET reply_markup = $2::jsonb WHERE id = $1",
-    [deliveryId, keyboard === null ? null : JSON.stringify(keyboard)],
+    `UPDATE public.notification_deliveries SET reply_markup = $2::jsonb,
+       payload = CASE WHEN $3::jsonb IS NULL THEN payload ELSE coalesce(payload, '{}'::jsonb) || jsonb_build_object('telegramChange', $3::jsonb) END
+     WHERE id = $1`,
+    [deliveryId, keyboard === null ? null : JSON.stringify(keyboard), change ? JSON.stringify(change) : null],
   )
 }
 
@@ -114,7 +110,8 @@ export const defaultFollowUpIO: FollowUpIO = {
   resolveTemplate,
   fetchFormatSettings,
   buildFreshEntityTokens,
-  buildKeyboard,
+  buildKeyboard: loadNotificationKeyboard,
+  syncRequestKeyboard,
   editOriginal: (chatId, messageId, html, keyboard) => editTelegramRichMessage(chatId, messageId, html, keyboard),
   deleteOriginal: (chatId, messageId) => deleteTelegramMessage(chatId, messageId),
   enqueueDelivery,
@@ -124,43 +121,50 @@ export const defaultFollowUpIO: FollowUpIO = {
 }
 
 // Re-renders one original from the entity's live data (never from the
-// delivery's stored, possibly stale, text), appends the change-note footer
-// (skipped when `note` is null — refreshEntityOriginals's case), builds a
-// fresh keyboard, and edits the sent message in place.
+// delivery's stored, possibly stale, text), retaining creation attribution and
+// the last visible change when a keyboard-only refresh is needed.
+function storedChange(payload: unknown): ChangeNote | undefined {
+  if (!payload || typeof payload !== "object" || !("telegramChange" in payload)) return undefined
+  const change = payload.telegramChange
+  if (!change || typeof change !== "object" || !("note" in change) || !("at" in change)) return undefined
+  if (typeof change.note !== "string" || typeof change.at !== "string" || !Number.isFinite(Date.parse(change.at))) return undefined
+  return { note: change.note, at: change.at }
+}
+
 async function refreshOriginal(
   io: FollowUpIO,
   original: OriginalRow,
   ref: NotificationEntityRef,
-  note: string | null,
-  now: Date,
+  change?: ChangeNote,
 ): Promise<void> {
+  if (original.event_type === null) {
+    const keyboard = await io.syncRequestKeyboard(ref.entityId, original.chat_id, original.telegram_message_id)
+    await io.persistKeyboard(original.id, keyboard)
+    return
+  }
   const [template, format, tokens, keyboard] = await Promise.all([
-    io.resolveTemplate(original.workspace_id, original.scope, original.event_type as Parameters<typeof resolveTemplate>[2]),
+    io.resolveTemplate(original.workspace_id, "group", original.event_type as Parameters<typeof resolveTemplate>[2]),
     io.fetchFormatSettings(original.workspace_id),
     io.buildFreshEntityTokens(original.workspace_id, ref.entityType, ref.entityId),
     io.buildKeyboard(ref.entityType, ref.entityId),
   ])
   const rendered = renderTemplate(template, formatDateTokens(tokens, format.timezone, format.dateFormat))
-  const html = note !== null ? appendUpdateFooter(toRichHtml(rendered), note, now) : toRichHtml(rendered)
+  const created = appendAttributionFooter(toRichHtml(rendered), { ...readTelegramActorFromPayload(original.payload), action: "created" })
+  const latest = change ?? storedChange(original.payload)
+  const html = latest ? appendUpdateFooter(created, latest.note, new Date(latest.at)) : created
   const edited = await io.editOriginal(original.chat_id, original.telegram_message_id, html, keyboard)
-  if (!edited.ok) {
-    console.error("Telegram original edit failed", {
-      source: "notifications.follow-ups",
-      deliveryId: original.id,
-      entityType: ref.entityType,
-      entityId: ref.entityId,
-      errorCode: edited.errorCode,
-      description: edited.description,
-    })
-  }
-  await io.persistKeyboard(original.id, keyboard)
+  if (!edited.ok) throw new Error(edited.description)
+  const applied = ref.entityType === "request"
+    ? await io.syncRequestKeyboard(ref.entityId, original.chat_id, original.telegram_message_id, keyboard)
+    : keyboard
+  await io.persistKeyboard(original.id, applied, change)
 }
 
 // A loud follow-up's reply reuses the original's own (scope, chatId,
 // threadId) as its destination, so enqueueDelivery's (event_key,
 // destination_key) upsert makes retrying the same eventKey idempotent — the
 // second attempt lands on the same row and is ignored.
-async function enqueueLoudReply(io: FollowUpIO, original: OriginalRow, eventKey: string, note: string): Promise<void> {
+async function enqueueLoudReply(io: FollowUpIO, original: OriginalRow, eventKey: string, note: string, attribution?: TelegramAttribution): Promise<void> {
   await io.enqueueDelivery({
     workspaceId: original.workspace_id,
     eventKey,
@@ -170,8 +174,8 @@ async function enqueueLoudReply(io: FollowUpIO, original: OriginalRow, eventKey:
     recipientUserId: original.recipient_user_id,
     chatId: original.chat_id,
     threadId: original.thread_id,
-    text: note,
-    payload: { parentDeliveryId: original.id },
+    text: attribution ? appendAttributionFooter(note, attribution) : note,
+    payload: { parentDeliveryId: original.id, ...(attribution ? { telegramActor: attribution } : {}) },
     parentDeliveryId: original.id,
   })
   await io.processDeliveriesForEvent(eventKey)
@@ -186,7 +190,7 @@ async function enqueueLoudReply(io: FollowUpIO, original: OriginalRow, eventKey:
  * best-effort notification path in this app.
  */
 export async function publishEntityFollowUp(
-  input: NotificationEntityRef & { eventKey: string; note: string; loud: boolean },
+  input: NotificationEntityRef & { eventKey: string; note: string; loud: boolean; attribution?: TelegramAttribution },
   io: FollowUpIO = defaultFollowUpIO,
 ): Promise<void> {
   try {
@@ -197,10 +201,22 @@ export async function publishEntityFollowUp(
       })
       return
     }
-    const now = new Date()
+    const change = {
+      note: input.attribution ? `${input.note}<br>${renderTelegramAttribution(input.attribution)}` : input.note,
+      at: new Date().toISOString(),
+    }
     for (const original of originals) {
-      await refreshOriginal(io, original, input, input.note, now)
-      if (input.loud) await enqueueLoudReply(io, original, input.eventKey, input.note)
+      try {
+        await refreshOriginal(io, original, input, change)
+      } catch (error) {
+        logFollowUpFailure(`edit delivery ${original.id}`, input, error)
+      }
+      if (!input.loud || original.event_type === null) continue
+      try {
+        await enqueueLoudReply(io, original, input.eventKey, input.note, input.attribution)
+      } catch (error) {
+        logFollowUpFailure(`reply to delivery ${original.id}`, input, error)
+      }
     }
   } catch (error) {
     logFollowUpFailure("publish", input, error)
@@ -214,12 +230,20 @@ export async function publishEntityFollowUp(
  * telegram_deleted_at is stamped so the row stops being a follow-up target.
  */
 export async function deleteEntityOriginals(
-  input: NotificationEntityRef & { eventKey: string },
+  input: NotificationEntityRef & { eventKey: string; attribution?: TelegramAttribution },
   io: FollowUpIO = defaultFollowUpIO,
 ): Promise<void> {
   try {
     const originals = await io.fetchOriginals(input.entityType, input.entityId)
     for (const original of originals) {
+      if (original.event_type === null) {
+        try {
+          await refreshOriginal(io, original, input)
+        } catch (error) {
+          logFollowUpFailure(`clear delivery ${original.id}`, input, error)
+        }
+        continue
+      }
       const deleted = await io.deleteOriginal(original.chat_id, original.telegram_message_id)
       if (!deleted.ok) {
         console.error("Telegram original delete failed; falling back to a struck-through edit", {
@@ -230,7 +254,7 @@ export async function deleteEntityOriginals(
         const edited = await io.editOriginal(
           original.chat_id,
           original.telegram_message_id,
-          renderDeletedOriginal(toRichHtml(original.text)),
+          appendAttributionFooter(renderDeletedOriginal(toRichHtml(original.text)), input.attribution ?? { source: "requester", action: "deleted" }),
           null,
         )
         if (!edited.ok) {
@@ -251,7 +275,7 @@ export async function deleteEntityOriginals(
 
 /**
  * Re-renders and re-keys every sent original for the entity without posting
- * a reply or adding a footer note — used to correct a stale keyboard (e.g.
+ * a reply or replacing the attribution — used to correct a stale keyboard (e.g.
  * after an inline-action attempt found the transition no longer valid).
  */
 export async function refreshEntityOriginals(
@@ -261,7 +285,11 @@ export async function refreshEntityOriginals(
   try {
     const originals = await io.fetchOriginals(input.entityType, input.entityId)
     for (const original of originals) {
-      await refreshOriginal(io, original, input, null, new Date())
+      try {
+        await refreshOriginal(io, original, input)
+      } catch (error) {
+        logFollowUpFailure(`refresh delivery ${original.id}`, input, error)
+      }
     }
   } catch (error) {
     logFollowUpFailure("refresh", input, error)

@@ -1,5 +1,5 @@
-import { renderScheduledMessage, scheduledMessageLabel, toRichHtml } from '@moc/notifications'
-import { queryRows } from '@moc/backend/database'
+import { appendAttributionFooter, readTelegramActor, readTelegramActorFromPayload, renderScheduledMessage, scheduledMessageLabel, toRichHtml, type TelegramAttribution } from '@moc/notifications'
+import { queryRows, withActor } from '@moc/backend/database'
 import type { QueryResultRow } from 'pg'
 import { editTelegramRichMessage, sendTelegramRichMessage } from '../telegram.js'
 import type { DeliveryRunResult } from '../notifications/delivery-store.js'
@@ -9,12 +9,43 @@ import type { AttendanceResponse, Occurrence } from './types.js'
 
 export type ScheduledDelivery = { id: string; chat_id: string; thread_id: number|null; attempt_count: number; scheduled_operation: 'send'|'resend'|'edit'|'expire'|'delete' }
 type DeliverySnapshot = { busy?: boolean; occurrence: Occurrence; responses: AttendanceResponse[]; workspaceTimezone: string }
+type DeliveryAttribution = QueryResultRow & { payload: unknown; original_actor: unknown; original_operation: string | null }
+
+async function beginDelivery(row: ScheduledDelivery): Promise<{ snapshot: DeliverySnapshot | null; attribution?: DeliveryAttribution }> {
+  return withActor({ userId: null, workspaceId: null, role: 'moc_worker' }, async client => {
+    const snapshot = await scheduledRpc('begin_scheduled_delivery', { p_delivery: row.id }, client) as DeliverySnapshot | null
+    if (!snapshot || snapshot.busy) return { snapshot }
+    const occurrence = snapshot.occurrence
+    // The occurrence is locked by begin_scheduled_delivery. Its revision may
+    // be newer than the job we claimed, so render the actor for this revision.
+    const [attribution] = await queryRows<DeliveryAttribution>(
+      `SELECT current_delivery.payload,
+         original.payload->'telegramActor' AS original_actor,
+         original.scheduled_operation AS original_operation
+       FROM public.notification_deliveries AS current_delivery
+       LEFT JOIN LATERAL (
+         SELECT payload, scheduled_operation FROM public.notification_deliveries
+         WHERE scheduled_occurrence_id = $2 AND status = 'sent' AND telegram_message_id = $3
+           AND scheduled_operation IN ('send', 'resend')
+         ORDER BY sent_at DESC NULLS LAST, created_at DESC LIMIT 1
+       ) AS original ON $4::boolean
+       WHERE CASE WHEN $4 THEN current_delivery.event_key = $5 ELSE current_delivery.id = $1 END
+       LIMIT 1`,
+      [row.id, occurrence.id, occurrence.telegram_message_id, row.scheduled_operation === 'edit', `scheduled:${occurrence.id}:edit:${occurrence.revision}`],
+      client,
+    )
+    return { snapshot, attribution }
+  })
+}
 
 export async function deliverScheduledMessage(row: ScheduledDelivery): Promise<DeliveryRunResult> {
   const total: DeliveryRunResult = {attempted:1,sent:0,failed:0,pendingRetry:0}
   let snapshot:DeliverySnapshot|null
+  let snapshotAttribution: DeliveryAttribution | undefined
   try {
-    snapshot=await scheduledRpc('begin_scheduled_delivery',{p_delivery:row.id}) as DeliverySnapshot|null
+    const started = await beginDelivery(row)
+    snapshot = started.snapshot
+    snapshotAttribution = started.attribution
   } catch(error) {
     // Invalid/removed destinations must not abort the whole worker batch.
     const description=error instanceof Error?error.message:'Delivery preparation failed'
@@ -35,15 +66,25 @@ export async function deliverScheduledMessage(row: ScheduledDelivery): Promise<D
   }
   const o=snapshot.occurrence
   const postsMessage=row.scheduled_operation==='send' || row.scheduled_operation==='resend'
+  const payload = snapshotAttribution?.payload
+  const actor = readTelegramActorFromPayload(payload)
+  const scheduleCreator = readTelegramActor(payload && typeof payload === 'object' && 'scheduleCreator' in payload ? payload.scheduleCreator : null)
+  const originalActor = readTelegramActor(snapshotAttribution?.original_actor)
+  const originalAction = snapshotAttribution?.original_operation === 'resend' ? 'resent' : 'sent'
   const responses=snapshot.responses.map(r=>({name:r.name,status:r.status,arrivalTime:r.arrival_time,groupId:r.group_id,declineReason:r.decline_reason,checkedInAt:r.checked_in_at instanceof Date?r.checked_in_at.toISOString():r.checked_in_at}))
   let result
   try {
-    if(row.scheduled_operation==='delete') result=await deleteScheduledTelegramMessage(row.chat_id,o.telegram_message_id!,scheduledMessageLabel(o.body))
+    if(row.scheduled_operation==='delete') result=await deleteScheduledTelegramMessage(row.chat_id,o.telegram_message_id!,scheduledMessageLabel(o.body),actor)
     else {
       const rendered=renderScheduledMessage({id:o.id,messageType:o.message_type,body:o.body,postRole:o.post_role,attendanceGroups:o.attendance_groups,timezone:snapshot.workspaceTimezone,legacyClosed:o.legacy_closed},responses)
+      const action:TelegramAttribution['action']=row.scheduled_operation==='resend'?'resent':row.scheduled_operation==='edit'?'updated':'sent'
+      let attributedHtml=toRichHtml(rendered.text)
+      if(scheduleCreator.name&&(actor.source==='automation'||originalActor.source==='automation')) attributedHtml=appendAttributionFooter(attributedHtml,{...scheduleCreator,action:'created'})
+      if(row.scheduled_operation==='edit'&&originalActor.source!=='unknown') attributedHtml=appendAttributionFooter(attributedHtml,{...originalActor,action:originalAction})
+      attributedHtml=appendAttributionFooter(attributedHtml,{...actor,action})
       result=postsMessage
-        ? await sendTelegramRichMessage(row.chat_id,toRichHtml(rendered.text),{threadId:row.thread_id,replyMarkup:rendered.replyMarkup})
-        : await editTelegramRichMessage(row.chat_id,o.telegram_message_id!,toRichHtml(rendered.text),rendered.replyMarkup ?? {inline_keyboard:[]})
+        ? await sendTelegramRichMessage(row.chat_id,attributedHtml,{threadId:row.thread_id,replyMarkup:rendered.replyMarkup})
+        : await editTelegramRichMessage(row.chat_id,o.telegram_message_id!,attributedHtml,rendered.replyMarkup ?? {inline_keyboard:[]})
     }
   } catch(error) {
     result={ok:false as const,errorCode:400,description:error instanceof Error?error.message:'Rendering failed',retryAfterSeconds:null}

@@ -1,5 +1,5 @@
 import type { InlineKeyboardMarkup } from "@moc/notifications"
-import { toLegacyHtml } from "@moc/notifications"
+import { appendPlainTelegramFooter, renderTelegramAttribution, toLegacyHtml, type TelegramAttribution } from "@moc/notifications"
 
 import type { ProviderResponse } from "./provider-config.js"
 
@@ -20,6 +20,7 @@ export type SendMessageOptions = {
   replyToMessageId?: number
   parseMode?: "HTML" | "MarkdownV2" | "Markdown"
   disableLinkPreview?: boolean
+  attribution?: TelegramAttribution
 }
 
 type TelegramApiDetailed<T> =
@@ -116,7 +117,9 @@ export async function sendTelegramMessageDetailed(
   text: string,
   options: SendMessageOptions = {},
 ): Promise<TelegramSendDetailed> {
-  const body: Record<string, unknown> = { chat_id: chatId, text }
+  const body: Record<string, unknown> = { chat_id: chatId, text: options.parseMode === "HTML" && options.attribution
+    ? `${text}\n\n${renderTelegramAttribution(options.attribution)}`
+    : appendPlainTelegramFooter(text, options.attribution) }
   if (typeof options.threadId === "number") body.message_thread_id = options.threadId
   if (options.parseMode) body.parse_mode = options.parseMode
   if (options.disableLinkPreview) {
@@ -144,11 +147,12 @@ export async function editTelegramMessageText(
   chatId: number | string,
   messageId: number,
   text: string,
+  attribution?: TelegramAttribution,
 ): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN
   if (!token) return
   try {
-    await callTelegramApi("editMessageText", { chat_id: chatId, message_id: messageId, text })
+    await callTelegramApi("editMessageText", { chat_id: chatId, message_id: messageId, text: appendPlainTelegramFooter(text, attribution) })
   } catch {
     // non-fatal
   }
@@ -207,18 +211,31 @@ export async function editTelegramRichMessage(
   html: string,
   replyMarkup: InlineKeyboardMarkup | null,
 ): Promise<TelegramSendDetailed> {
-  const body: Record<string, unknown> = { chat_id: chatId, message_id: messageId, rich_message: { html } }
-  if (replyMarkup) body.reply_markup = replyMarkup
+  const keyboard = replyMarkup ?? { inline_keyboard: [] }
+  const body = { chat_id: chatId, message_id: messageId, rich_message: { html }, reply_markup: keyboard }
 
   const edited = await requestTelegramApi("editMessageText", body)
   if (edited.ok || isNotModified(edited)) return edited.ok ? edited : { ok: true, result: null }
   if (edited.errorCode !== 400) return edited
 
-  const fallbackBody = legacyFallbackBody(chatId, html, replyMarkup)
+  const fallbackBody = legacyFallbackBody(chatId, html, keyboard)
   fallbackBody.message_id = messageId
   const fallback = await requestTelegramApi("editMessageText", fallbackBody)
   if (isNotModified(fallback)) return { ok: true, result: null }
   return fallback
+}
+
+export async function editTelegramMessageKeyboard(
+  chatId: string,
+  messageId: number,
+  keyboard: InlineKeyboardMarkup | null,
+): Promise<TelegramSendDetailed> {
+  const result = await requestTelegramApi("editMessageReplyMarkup", {
+    chat_id: chatId,
+    message_id: messageId,
+    reply_markup: keyboard ?? { inline_keyboard: [] },
+  })
+  return isNotModified(result) ? { ok: true, result: null } : result
 }
 
 export async function deleteTelegramMessage(
@@ -267,7 +284,7 @@ export type EphemeralMessageOptions = {
 /** Ephemeral-only: failures never turn an administrative prompt into a public or DM message. */
 export async function sendTelegramEphemeralMessage(chatId: string, receiverUserId: string, text: string, options: EphemeralMessageOptions = {}): Promise<TelegramSendDetailed> {
   const body: Record<string, unknown> = {
-    chat_id: chatId, text,
+    chat_id: chatId, text: appendPlainTelegramFooter(text),
     ephemeral_message_parameters: {receiver_user_id: Number(receiverUserId), ...(options.callbackQueryId ? {callback_query_id: options.callbackQueryId} : {})},
   }
   if (options.threadId !== undefined && options.threadId !== null) body.message_thread_id = options.threadId
@@ -280,7 +297,7 @@ export async function sendTelegramEphemeralMessage(chatId: string, receiverUserI
 export async function editTelegramEphemeralMessage(chatId: string, receiverUserId: string, ephemeralMessageId: number, text: string, replyMarkup?: InlineKeyboardMarkup): Promise<TelegramSendDetailed> {
   const result = await requestTelegramApi('editEphemeralMessageText', {
     chat_id: chatId, receiver_user_id: Number(receiverUserId), ephemeral_message_id: ephemeralMessageId,
-    text, reply_markup: replyMarkup ?? {inline_keyboard: []},
+    text: appendPlainTelegramFooter(text), reply_markup: replyMarkup ?? {inline_keyboard: []},
   })
   return isNotModified(result) ? {ok: true, result: null} : result
 }

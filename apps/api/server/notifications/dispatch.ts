@@ -1,7 +1,6 @@
 import { queryRows } from "@moc/backend/database"
-import { getTelegramBotUsername } from "../telegram.js"
 import {
-  buildNotificationKeyboard,
+  appendAttributionFooter,
   eventEntityType,
   isAnnouncementEvent,
   isLoudFollowUp,
@@ -9,13 +8,14 @@ import {
   renderFollowUpNote,
   type AnnouncementEventKey,
   type FollowUpEventKey,
-  type InlineKeyboardMarkup,
   type NotificationEventKey,
+  type TelegramActor,
+  type TelegramAttribution,
 } from "@moc/notifications"
 import { enqueueDelivery, processDeliveriesForEvent } from "./delivery-store.js"
 import { buildTokens, renderEventText, toNoteTokens } from "./dispatch-tokens.js"
-import { fetchEntityStoredStatus } from "./entity-tokens.js"
 import { deleteEntityOriginals, publishEntityFollowUp } from "./follow-ups.js"
+import { loadNotificationKeyboard } from "./notification-keyboard.js"
 import {
   resolveDmRouteTarget,
   resolveOverrideTargets,
@@ -51,8 +51,6 @@ export type {
   VenueBookingRequesterMutationPayload,
 } from "./dispatch-payloads.js"
 
-const KEYBOARD_ENTITY_TYPES = new Set(["request", "booking", "venue_booking"])
-
 async function logDeliveryFailure(args: {
   workspaceId: string
   eventType: NotificationEventKey
@@ -82,6 +80,8 @@ async function logDeliveryFailure(args: {
 }
 
 export type DispatchOptions = {
+  /** The actor snapshot from the original event, preserved across retries. */
+  actor?: TelegramActor
   /**
    * Overrides the workspace's configured routing for this one event.
    *
@@ -219,17 +219,20 @@ async function dispatchAnnouncement<K extends NotificationEventKey>(
   // override changes where a notification goes, never what it says.
   // Safe cast: dispatchEvent only reaches here after isAnnouncementEvent
   // has confirmed eventType is one of the five *.created keys.
-  const text = await renderEventText(
+  const message = await renderEventText(
     workspaceId,
     "group",
     eventType as AnnouncementEventKey,
     payload as EventPayloadMap[AnnouncementEventKey],
   )
+  const actor = options.actor ?? { source: "unknown" }
+  const text = appendAttributionFooter(message, { ...actor, action: "created" })
+  const deliveryPayload = { ...payload, telegramActor: actor }
   const eventKey = options.eventKey ?? fallbackEventKey(eventType, payload)
 
   const entityType = options.entityType ?? eventEntityType(eventType)
   const entityId = options.entityId
-  const keyboard = await buildAnnouncementKeyboard(entityType, entityId)
+  const keyboard = entityId ? await loadNotificationKeyboard(entityType, entityId) : null
 
   for (const target of targets) {
     if (target.kind === "group") {
@@ -242,7 +245,7 @@ async function dispatchAnnouncement<K extends NotificationEventKey>(
         chatId: target.groupChatId,
         threadId: target.threadId,
         text,
-        payload,
+        payload: deliveryPayload,
         entityType,
         entityId,
         replyMarkup: keyboard,
@@ -265,7 +268,7 @@ async function dispatchAnnouncement<K extends NotificationEventKey>(
       chatId: target.chatId,
       threadId: null,
       text,
-      payload,
+      payload: deliveryPayload,
       entityType,
       entityId,
       replyMarkup: keyboard,
@@ -274,16 +277,6 @@ async function dispatchAnnouncement<K extends NotificationEventKey>(
 
   const result = await processDeliveriesForEvent(eventKey)
   return { attempted: result.attempted, succeeded: result.sent, failed: result.failed }
-}
-
-async function buildAnnouncementKeyboard(entityType: string, entityId: string | undefined): Promise<InlineKeyboardMarkup | null> {
-  if (!entityId || !KEYBOARD_ENTITY_TYPES.has(entityType)) return null
-  const status = await fetchEntityStoredStatus(entityType as "request" | "booking" | "venue_booking", entityId)
-  if (status === null) return null
-  return buildNotificationKeyboard(
-    { entityType: entityType as "request" | "booking" | "venue_booking", entityId, status },
-    { botUsername: getTelegramBotUsername() },
-  )
 }
 
 async function dispatchFollowUp<K extends NotificationEventKey>(
@@ -306,16 +299,18 @@ async function dispatchFollowUp<K extends NotificationEventKey>(
   }
 
   const ref = { entityType: entityType as never, entityId }
+  const actor = options.actor ?? { source: "unknown" }
 
   if (eventType.endsWith(".requester_deleted")) {
-    await deleteEntityOriginals({ ...ref, eventKey })
+    await deleteEntityOriginals({ ...ref, eventKey, attribution: { ...actor, action: "deleted" } })
     return { attempted: 1, succeeded: 1, failed: 0 }
   }
 
   const tokens = await buildTokens(workspaceId, eventType, payload)
   const note = renderFollowUpNote(eventType as FollowUpEventKey, toNoteTokens(tokens))
   const loud = isLoudFollowUp(eventType as FollowUpEventKey)
-  await publishEntityFollowUp({ ...ref, eventKey, note, loud })
+  const attribution: TelegramAttribution = { ...actor, action: eventType === "request.archived" ? "archived" : "updated" }
+  await publishEntityFollowUp({ ...ref, eventKey, note, loud, attribution })
   return { attempted: 1, succeeded: 1, failed: 0 }
 }
 

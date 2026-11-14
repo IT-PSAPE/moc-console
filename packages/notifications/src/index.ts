@@ -12,6 +12,7 @@ export * from './sample-tokens.js'
 export * from './telegram-rich.js'
 export * from './telegram-keyboard.js'
 export * from './telegram-notes.js'
+export * from './telegram-attribution.js'
 export * from './telegram-mini-app.js'
 
 export * from './scheduled-message.js'

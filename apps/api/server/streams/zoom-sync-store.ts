@@ -60,6 +60,7 @@ export const zoomSyncStore: ZoomSyncDependencies = {
       topic: row.topic,
       startTime: row.start_time,
       joinUrl: row.join_url,
+      telegramActor: { source: "automation", name: "Zoom" },
     })
   },
   deleteMeetings: async (workspaceId, meetingRowIds) => {

@@ -57,6 +57,7 @@ export async function handleScanComplete(
     eventKey: `scan:${bookingId}:${randomUUID()}`,
     note: renderScanNote({ mode, actorName, scannedCount: scannedSet.size, itemCount: booking.items.length, missingNames }),
     loud: true,
+    attribution: { action: "updated", source: "member", name: actorName },
   })
 
   return loadEntityDetailResponse("booking", bookingId, telegramUserId)

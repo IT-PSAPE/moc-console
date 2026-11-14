@@ -36,11 +36,15 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
-  let data: (QueryResultRow & { id: string; workspace_id: string; topic: string; created_by: string }) | undefined
+  let data: (QueryResultRow & { id: string; workspace_id: string; topic: string; created_by: string; actor_name: string | null }) | undefined
   try {
-    ;[data] = await queryRows<QueryResultRow & { id: string; workspace_id: string; topic: string; created_by: string }>(
-      "SELECT id, workspace_id, topic, created_by FROM public.zoom_meetings WHERE id = $1 LIMIT 1",
-      [body.meetingId],
+    ;[data] = await queryRows<QueryResultRow & { id: string; workspace_id: string; topic: string; created_by: string; actor_name: string | null }>(
+      `SELECT meeting.id, meeting.workspace_id, meeting.topic, meeting.created_by,
+         nullif(btrim(concat_ws(' ', actor.name, actor.surname)), '') AS actor_name
+       FROM public.zoom_meetings AS meeting
+       LEFT JOIN public.users AS actor ON actor.id = $2
+       WHERE meeting.id = $1 LIMIT 1`,
+      [body.meetingId, userId],
     )
   } catch (error) {
     console.error("Meeting update notification lookup failed:", error)
@@ -74,7 +78,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       entityType: "meeting",
       entityId: data.id,
       eventKey,
-      payload: { topic: data.topic },
+      payload: { topic: data.topic, telegramActor: { source: "member", name: data.actor_name } },
     })
     const result = await processOutboxEvent(eventKey)
     response.status(200).json({ ok: true, ...result })

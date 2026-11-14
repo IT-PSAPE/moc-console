@@ -69,8 +69,10 @@ BEGIN
   'messageType','announcement','body','<b>Now</b>','attendeeIds','[]'::jsonb,'attendanceGroups','[]'::jsonb,
   'groupChatId','-1000000000001','sendNow',true));
  IF NOT EXISTS(SELECT 1 FROM public.notification_deliveries d JOIN public.scheduled_message_occurrences o ON o.id=d.scheduled_occurrence_id
-  WHERE o.schedule_id=schedule AND o.post_role='primary' AND d.scheduled_operation='send' AND d.status='pending' AND d.payload->>'manual'='true') THEN
-  RAISE EXCEPTION 'Send-now primary was not explicitly queued';
+  WHERE o.schedule_id=schedule AND o.post_role='primary' AND d.scheduled_operation='send' AND d.status='pending' AND d.payload->>'manual'='true'
+   AND d.payload#>>'{telegramActor,source}'='member' AND nullif(d.payload#>>'{telegramActor,name}','') IS NOT NULL
+   AND d.payload#>>'{scheduleCreator,source}'='member' AND nullif(d.payload#>>'{scheduleCreator,name}','') IS NOT NULL) THEN
+  RAISE EXCEPTION 'Send-now primary was not explicitly queued with its sender attribution';
  END IF;
 
  -- A scheduled attendance follow-up survives the inclusive final primary date.

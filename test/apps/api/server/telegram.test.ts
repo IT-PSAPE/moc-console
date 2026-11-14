@@ -4,6 +4,7 @@ import { describe, it } from "vitest"
 import {
   answerTelegramCallbackQuery,
   deleteTelegramMessage,
+  editTelegramMessageKeyboard,
   editTelegramRichMessage,
   getTelegramBotUsername,
   sendTelegramMessageDetailed,
@@ -32,7 +33,7 @@ describe("sendTelegramMessageDetailed", () => {
       assert.ok(init?.signal instanceof AbortSignal)
       assert.deepEqual(JSON.parse(String(init?.body)), {
         chat_id: 42,
-        text: "Hello",
+        text: "Hello\n\nMOC Console automation",
         message_thread_id: 9,
       })
       return new Response(JSON.stringify({ ok: true, result: { message_id: 7 } }), { status: 200 })
@@ -105,11 +106,11 @@ describe("sendTelegramRichMessage", () => {
       }
       const body = JSON.parse(String(init?.body))
       assert.equal(body.parse_mode, "HTML")
-      assert.equal(typeof body.text, "string")
+      assert.equal(body.text, "Hi\n\nCreated by Avery")
       return new Response(JSON.stringify({ ok: true, result: { message_id: 11 } }), { status: 200 })
     }
 
-    const result = await sendTelegramRichMessage(42, "<mark>Hi</mark>")
+    const result = await sendTelegramRichMessage(42, "<mark>Hi</mark>\n<footer>Created by Avery</footer>")
 
     assert.deepEqual(calledMethods, ["sendRichMessage", "sendMessage"])
     assert.deepEqual(result, { ok: true, result: { message_id: 11 } })
@@ -122,6 +123,7 @@ describe("editTelegramRichMessage", () => {
       const body = JSON.parse(String(init?.body))
       assert.equal(body.message_id, 3)
       assert.deepEqual(body.rich_message, { html: "<p>Updated</p>" })
+      assert.deepEqual(body.reply_markup, { inline_keyboard: [] })
       return new Response(JSON.stringify({ ok: true, result: null }), { status: 200 })
     }
 
@@ -152,6 +154,17 @@ describe("editTelegramRichMessage", () => {
     const result = await editTelegramRichMessage(42, 3, "<mark>Hi</mark>", null)
     assert.equal(calls.length, 2)
     assert.deepEqual(result, { ok: true, result: null })
+  }))
+})
+
+describe("editTelegramMessageKeyboard", () => {
+  it("clears actions without replacing the DM body and accepts an already-matching keyboard", () => withToken(async () => {
+    globalThis.fetch = async (input, init) => {
+      assert.match(String(input), /\/editMessageReplyMarkup$/)
+      assert.deepEqual(JSON.parse(String(init?.body)), { chat_id: "assignee", message_id: 11, reply_markup: { inline_keyboard: [] } })
+      return Response.json({ ok: false, error_code: 400, description: "Bad Request: message is not modified" }, { status: 400 })
+    }
+    assert.deepEqual(await editTelegramMessageKeyboard("assignee", 11, null), { ok: true, result: null })
   }))
 })
 

@@ -39,11 +39,15 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
-  let data: (QueryResultRow & { id: string; workspace_id: string; title: string; created_by: string }) | undefined
+  let data: (QueryResultRow & { id: string; workspace_id: string; title: string; created_by: string; actor_name: string | null }) | undefined
   try {
-    ;[data] = await queryRows<QueryResultRow & { id: string; workspace_id: string; title: string; created_by: string }>(
-      "SELECT id, workspace_id, title, created_by FROM public.streams WHERE id = $1 LIMIT 1",
-      [body.streamId],
+    ;[data] = await queryRows<QueryResultRow & { id: string; workspace_id: string; title: string; created_by: string; actor_name: string | null }>(
+      `SELECT stream.id, stream.workspace_id, stream.title, stream.created_by,
+         nullif(btrim(concat_ws(' ', actor.name, actor.surname)), '') AS actor_name
+       FROM public.streams AS stream
+       LEFT JOIN public.users AS actor ON actor.id = $2
+       WHERE stream.id = $1 LIMIT 1`,
+      [body.streamId, userId],
     )
   } catch (error) {
     console.error("Stream update notification lookup failed:", error)
@@ -77,7 +81,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       entityType: "stream",
       entityId: data.id,
       eventKey,
-      payload: { title: data.title },
+      payload: { title: data.title, telegramActor: { source: "member", name: data.actor_name } },
     })
     const result = await processOutboxEvent(eventKey)
     response.status(200).json({ ok: true, ...result })

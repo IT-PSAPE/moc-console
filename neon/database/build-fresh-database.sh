@@ -35,6 +35,8 @@ if [ "${2:-}" != '--legacy-import' ]; then
     -f "$script_dir/item-discussion.sql" \
     -f "$script_dir/verify-item-discussion.sql" \
     -f "$script_dir/scheduled-messages-v2.sql" \
+    -f "$script_dir/notification-outbox-attribution.sql" \
+    -f "$script_dir/scheduled-attribution.sql" \
     -f "$script_dir/verify-final-state.sql"
 fi
 printf 'Fresh MoC Neon schema installed and verified.\n'

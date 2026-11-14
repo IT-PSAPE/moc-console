@@ -20,10 +20,11 @@ describe('Telegram registration permissions', () => {
     it(`allows a workspace Admin to run /${command} and refreshes complete menus`, async () => {
       const fixture = createTelegramCommandFixture()
       try {
-        await processTelegramUpdate({ message: { chat: { id: '-100123', type: 'supergroup' }, from: { id: 456 }, text: `/${command}`, message_thread_id: 22 } })
+        await processTelegramUpdate({ message: { chat: { id: '-100123', type: 'supergroup' }, from: { id: 456, first_name: 'Avery', last_name: 'James' }, text: `/${command}`, message_thread_id: 22 } })
         assert.equal(fixture.writes.some(write => write.table === (command.startsWith('register_group') ? 'telegram_groups' : 'telegram_group_topics')), true)
         const confirmationMethod = command.startsWith('register_group') ? 'sendMessage' : 'editMessageText'
         assert.equal(fixture.telegramCalls.some(call => call.method === confirmationMethod && String(call.body.text).includes('turn on notifications')), true)
+        assert.equal(fixture.telegramCalls.some(call => call.method === confirmationMethod && String(call.body.text).endsWith('Registered by Avery James')), true)
         assert.deepEqual(fixture.menu('chat_member', 456), ['help', 'status', 'about', 'register_group', 'register_topic', 'manage_messages'])
       } finally { fixture.restore() }
     })

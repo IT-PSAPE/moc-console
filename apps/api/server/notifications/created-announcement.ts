@@ -1,4 +1,5 @@
 import { queryRows } from "@moc/backend/database"
+import type { TelegramActor } from "@moc/notifications"
 import type { NotifyDestination } from "./dispatch.js"
 import { enqueueOutboxEvent, processOutboxEvent, type OutboxRunResult } from "./outbox.js"
 
@@ -19,9 +20,12 @@ type CreatedAnnouncement = {
   entityType: "stream" | "meeting"
   eventType: "stream.created" | "meeting.created"
   payload: Record<string, unknown>
+  telegramActor: TelegramActorSnapshot
   table: "streams" | "zoom_meetings"
   workspaceId: string
 }
+
+export type TelegramActorSnapshot = TelegramActor
 
 export type StreamCreatedAnnouncement = {
   destinations?: readonly NotifyDestination[]
@@ -29,6 +33,7 @@ export type StreamCreatedAnnouncement = {
   streamId: string
   streamUrl: string | null
   title: string
+  telegramActor: TelegramActorSnapshot
   workspaceId: string
 }
 
@@ -38,6 +43,7 @@ export type MeetingCreatedAnnouncement = {
   meetingId: string
   startTime: string | null
   topic: string
+  telegramActor: TelegramActorSnapshot
   workspaceId: string
 }
 
@@ -50,9 +56,9 @@ export type MeetingCreatedAnnouncement = {
  * `notified_at` is only stamped where it is still null, which is what stops a
  * later sweep from re-announcing the same item.
  */
-async function announceCreatedEntity({ entityId, entityType, eventType, payload, table, workspaceId }: CreatedAnnouncement): Promise<OutboxRunResult> {
+async function announceCreatedEntity({ entityId, entityType, eventType, payload, table, telegramActor, workspaceId }: CreatedAnnouncement): Promise<OutboxRunResult> {
   const eventKey = `${eventType}:${entityId}`
-  await enqueueOutboxEvent({ workspaceId, eventType, entityType, entityId, eventKey, payload })
+  await enqueueOutboxEvent({ workspaceId, eventType, entityType, entityId, eventKey, payload: { ...payload, telegramActor } })
 
   try {
     await queryRows(
@@ -67,23 +73,25 @@ async function announceCreatedEntity({ entityId, entityType, eventType, payload,
   return processOutboxEvent(eventKey)
 }
 
-export function announceStreamCreated({ destinations, scheduledStartTime, streamId, streamUrl, title, workspaceId }: StreamCreatedAnnouncement): Promise<OutboxRunResult> {
+export function announceStreamCreated({ destinations, scheduledStartTime, streamId, streamUrl, telegramActor, title, workspaceId }: StreamCreatedAnnouncement): Promise<OutboxRunResult> {
   return announceCreatedEntity({
     entityId: streamId,
     entityType: "stream",
     eventType: "stream.created",
     payload: { title, scheduledStartTime, streamUrl, ...(destinations ? { destinations } : {}) },
+    telegramActor,
     table: "streams",
     workspaceId,
   })
 }
 
-export function announceMeetingCreated({ destinations, joinUrl, meetingId, startTime, topic, workspaceId }: MeetingCreatedAnnouncement): Promise<OutboxRunResult> {
+export function announceMeetingCreated({ destinations, joinUrl, meetingId, startTime, telegramActor, topic, workspaceId }: MeetingCreatedAnnouncement): Promise<OutboxRunResult> {
   return announceCreatedEntity({
     entityId: meetingId,
     entityType: "meeting",
     eventType: "meeting.created",
     payload: { topic, startTime, joinUrl, ...(destinations ? { destinations } : {}) },
+    telegramActor,
     table: "zoom_meetings",
     workspaceId,
   })

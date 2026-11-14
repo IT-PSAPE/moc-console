@@ -29,6 +29,7 @@ function original(overrides: Partial<OriginalRow> = {}): OriginalRow {
 function fakeIo(overrides: Partial<FollowUpIO> = {}): { io: FollowUpIO; calls: Record<string, unknown[]> } {
   const calls: Record<string, unknown[]> = {
     editOriginal: [],
+    syncRequestKeyboard: [],
     deleteOriginal: [],
     enqueueDelivery: [],
     processDeliveriesForEvent: [],
@@ -41,6 +42,10 @@ function fakeIo(overrides: Partial<FollowUpIO> = {}): { io: FollowUpIO; calls: R
     fetchFormatSettings: async () => ({ timezone: "Africa/Harare", dateFormat: "day-month-time" }),
     buildFreshEntityTokens: async () => ({ title: "Fresh title" }),
     buildKeyboard: async () => null,
+    syncRequestKeyboard: async (entityId, chatId, messageId, applied) => {
+      calls.syncRequestKeyboard.push([entityId, chatId, messageId, applied])
+      return applied ?? null
+    },
     editOriginal: async (chatId, messageId, html, keyboard) => {
       calls.editOriginal.push([chatId, messageId, html, keyboard])
       return { ok: true, result: null }
@@ -68,6 +73,43 @@ function fakeIo(overrides: Partial<FollowUpIO> = {}): { io: FollowUpIO; calls: R
 }
 
 describe("publishEntityFollowUp", () => {
+  it("updates the group and every request assignment DM without sending another message", async () => {
+    const { io, calls } = fakeIo({
+      fetchOriginals: async () => [
+        original(),
+        original({ id: "assignment-1", event_type: null, scope: "dm", chat_id: "assignee-1", telegram_message_id: 101 }),
+        original({ id: "assignment-2", event_type: null, scope: "dm", chat_id: "assignee-2", telegram_message_id: 102 }),
+      ],
+    })
+    await publishEntityFollowUp({
+      entityType: "request", entityId: "req-1", eventKey: "request.status_changed:req-1:completed", note: "Completed", loud: false,
+    }, io)
+    assert.equal(calls.editOriginal.length, 1)
+    assert.deepEqual(calls.syncRequestKeyboard, [
+      ["req-1", "chat-1", 100, null], ["req-1", "assignee-1", 101, undefined], ["req-1", "assignee-2", 102, undefined],
+    ])
+    assert.deepEqual(calls.persistKeyboard.map(call => (call as unknown[])[0]), ["delivery-1", "assignment-1", "assignment-2"])
+    assert.equal(calls.enqueueDelivery.length, 0)
+  })
+
+  it("keeps refreshing other copies when Telegram rejects one DM edit", async () => {
+    const { io, calls } = fakeIo({
+      fetchOriginals: async () => [
+        original({ id: "unavailable-dm", event_type: null, scope: "dm", chat_id: "missing-chat" }),
+        original(),
+        original({ id: "valid-dm", event_type: null, scope: "dm", chat_id: "valid-chat" }),
+      ],
+      syncRequestKeyboard: async (_id, chatId) => {
+        if (chatId === "missing-chat") throw new Error("message to edit not found")
+        return null
+      },
+    })
+    await refreshEntityOriginals({ entityType: "request", entityId: "req-1" }, io)
+    assert.equal(calls.editOriginal.length, 1)
+    assert.deepEqual(calls.persistKeyboard.map(call => (call as unknown[])[0]), ["delivery-1", "valid-dm"])
+    assert.equal(calls.enqueueDelivery.length, 0)
+  })
+
   it("quiet: edits the original but enqueues no reply", async () => {
     const { io, calls } = fakeIo()
     await publishEntityFollowUp(
@@ -80,10 +122,21 @@ describe("publishEntityFollowUp", () => {
     assert.ok(html.includes("▶️ Started by Craig"), "the footer note is applied to the edited body")
   })
 
+  it("refreshes a routed DM with the announcement template", async () => {
+    const { io, calls } = fakeIo({
+      fetchOriginals: async () => [original({ scope: "dm", chat_id: "routed-chat", thread_id: null })],
+      resolveTemplate: async (_workspaceId, scope) => scope === "group" ? "Custom announcement: {{title}}" : "Assignment template",
+    })
+    await refreshEntityOriginals({ entityType: "request", entityId: "req-1" }, io)
+    assert.match((calls.editOriginal[0] as [string, number, string])[2], /Custom announcement: Fresh title/)
+  })
+
   it("loud: edits the original AND enqueues exactly one reply per original, addressed to it", async () => {
-    const { io, calls } = fakeIo()
+    const { io, calls } = fakeIo({
+      fetchOriginals: async () => [original({ payload: { telegramActor: { source: "member", name: "Creator" } } })],
+    })
     await publishEntityFollowUp(
-      { entityType: "request", entityId: "req-1", eventKey: "request.requester_updated:req-1:abc", note: "✏️ Updated by requester", loud: true },
+      { entityType: "request", entityId: "req-1", eventKey: "request.requester_updated:req-1:abc", note: "✏️ Updated by requester", loud: true, attribution: { action: "updated", source: "requester", name: "A & B" } },
       io,
     )
     assert.equal(calls.editOriginal.length, 1)
@@ -93,7 +146,8 @@ describe("publishEntityFollowUp", () => {
     assert.equal(input.chatId, "chat-1")
     assert.equal(input.threadId, 5)
     assert.equal(input.scope, "group")
-    assert.equal(input.text, "✏️ Updated by requester")
+    assert.equal(input.text, "✏️ Updated by requester\n<footer>Updated by A &amp; B</footer>")
+    assert.match((calls.editOriginal[0] as [string, number, string])[2], /Created by Creator[\s\S]*Updated by A &amp; B/)
     assert.equal(calls.processDeliveriesForEvent.length, 1)
   })
 
@@ -162,12 +216,16 @@ describe("deleteEntityOriginals", () => {
 })
 
 describe("refreshEntityOriginals", () => {
-  it("re-renders and re-keys without adding a footer note", async () => {
-    const { io, calls } = fakeIo()
+  it("re-renders and re-keys while retaining the prior authorship and change note", async () => {
+    const payload = {
+      telegramActor: { source: "member", name: "Creator" },
+      telegramChange: { note: "Updated by Editor", at: "2026-05-21T17:00:00Z" },
+    }
+    const { io, calls } = fakeIo({ fetchOriginals: async () => [original({ payload })] })
     await refreshEntityOriginals({ entityType: "venue_booking", entityId: "vb-1" }, io)
     assert.equal(calls.editOriginal.length, 1)
     const [, , html] = calls.editOriginal[0] as [string, number, string]
-    assert.equal(html.includes("footer"), false)
+    assert.match(html, /Created by Creator[\s\S]*Updated by Editor.*17:00 UTC/)
     assert.equal(calls.enqueueDelivery.length, 0)
   })
 })

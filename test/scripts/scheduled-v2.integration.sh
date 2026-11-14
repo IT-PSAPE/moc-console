@@ -23,6 +23,7 @@ psql "$v2_database" --quiet --no-psqlrc -v ON_ERROR_STOP=1 -f "$root_dir/neon/da
 activity_before="$(psql "$v2_database" --quiet --no-psqlrc --tuples-only --no-align -v ON_ERROR_STOP=1 -c 'SELECT count(*) FROM public.item_activity')"
 psql "$v2_database" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1 -f "$root_dir/neon/database/scheduled-messages-v2.sql"
 psql "$v2_database" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1 -f "$root_dir/neon/database/scheduled-messages-v2.sql"
+psql "$v2_database" --quiet --no-psqlrc --single-transaction -v ON_ERROR_STOP=1 -f "$root_dir/neon/database/scheduled-attribution.sql"
 activity_after="$(psql "$v2_database" --quiet --no-psqlrc --tuples-only --no-align -v ON_ERROR_STOP=1 -c 'SELECT count(*) FROM public.item_activity')"
 if [ "$activity_before" != "$activity_after" ]; then
   echo 'Scheduled-message migration emitted synthetic item activity.' >&2

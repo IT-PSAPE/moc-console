@@ -76,4 +76,31 @@ describe("toLegacyHtml", () => {
   it("turns <footer> into a plain trailing line", () => {
     assert.equal(toLegacyHtml("<footer>TRACK-9</footer>"), "TRACK-9")
   })
+
+  it("keeps output unchanged when it fits the legacy message limit", () => {
+    const input = `<b>${"x".repeat(4096)}</b>`
+    assert.equal(toLegacyHtml(input), input)
+  })
+
+  it("keeps the original order of an interleaved footer when output fits", () => {
+    assert.equal(toLegacyHtml("<footer>First</footer><p>Second</p>"), "First\nSecond")
+  })
+
+  it("truncates oversized content on a Unicode boundary and closes formatting", () => {
+    const result = toLegacyHtml(`<b>${"😀".repeat(2049)}</b>`)
+    assert.ok(result.endsWith("…</b>"))
+    assert.equal([...result.replace(/<[^>]*>/g, "").replace("…", "")].length, 2048)
+  })
+
+  it("counts numeric astral entities as two UTF-16 units", () => {
+    const result = toLegacyHtml(`${"x".repeat(4094)}&#x1F600;z`)
+    assert.ok(result.endsWith("…"))
+    assert.equal(result.length, 4095)
+  })
+
+  it("reserves the end of the legacy message for attribution footers", () => {
+    const result = toLegacyHtml(`${"x".repeat(4096)}<footer><a href="https://example.com">Attribution</a></footer>`)
+    assert.ok(result.endsWith('<a href="https://example.com">Attribution</a>'))
+    assert.equal(result.replace(/<[^>]*>/g, "").length, 4096)
+  })
 })

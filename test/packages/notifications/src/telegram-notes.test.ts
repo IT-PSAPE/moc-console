@@ -2,12 +2,33 @@ import assert from "node:assert/strict"
 import { describe, it } from "vitest"
 
 import {
+  appendAttributionFooter,
+  appendPlainTelegramFooter,
+  readTelegramActorFromPayload,
+} from "../../../../packages/notifications/src/telegram-attribution.js"
+import {
   appendUpdateFooter,
   renderActionNote,
   renderDeletedOriginal,
   renderFollowUpNote,
   renderScanNote,
 } from "../../../../packages/notifications/src/telegram-notes.js"
+
+describe("Telegram attribution", () => {
+  it("appends escaped member and automation footers to a rich body", () => {
+    assert.equal(appendAttributionFooter("<p>Stream</p>", { action: "created", source: "member", name: "A & <B>" }),
+      "<p>Stream</p>\n<footer>Created by A &amp; &lt;B&gt;</footer>")
+    assert.equal(appendAttributionFooter("<p>Stream</p>", { action: "updated", source: "automation", name: "YouTube" }),
+      "<p>Stream</p>\n<footer>Automation · Updated by YouTube</footer>")
+  })
+
+  it("does not invent an actor for older deliveries, and keeps plain replies within the Telegram limit", () => {
+    assert.deepEqual(readTelegramActorFromPayload({}), { source: "unknown" })
+    const plain = appendPlainTelegramFooter("😀".repeat(2300), { action: "assigned", source: "unknown" })
+    assert.ok(plain.length <= 4096)
+    assert.match(plain, /…\n\nAssigned · Actor not recorded$/)
+  })
+})
 
 describe("renderFollowUpNote", () => {
   it("reports what changed for a requester update", () => {

@@ -39,7 +39,7 @@ describe("ephemeral Telegram message transport", () => {
         url: "https://api.telegram.org/bottest-token/sendMessage",
         body: {
           chat_id: "-100123",
-          text: "Choose a field",
+          text: "Choose a field\n\nMOC Console automation",
           message_thread_id: 22,
           reply_markup: { inline_keyboard: [[{ text: "Title", callback_data: "sm:field:title" }]] },
           ephemeral_message_parameters: { receiver_user_id: 456, callback_query_id: "callback-1" },
@@ -76,7 +76,7 @@ describe("ephemeral Telegram message transport", () => {
           chat_id: "-100123",
           receiver_user_id: 456,
           ephemeral_message_id: 81,
-          text: "Enter the title",
+          text: "Enter the title\n\nMOC Console automation",
           reply_markup: { inline_keyboard: [[{ text: "Cancel", callback_data: "sm:cancel" }]] },
         },
       }])

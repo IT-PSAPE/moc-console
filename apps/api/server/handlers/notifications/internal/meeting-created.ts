@@ -34,11 +34,14 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
-  let data: (QueryResultRow & { id: string; workspace_id: string; topic: string; start_time: string | null; join_url: string | null; created_by: string }) | undefined
+  let data: (QueryResultRow & { id: string; workspace_id: string; topic: string; start_time: string | null; join_url: string | null; created_by: string; creator_name: string | null }) | undefined
   try {
-    ;[data] = await queryRows<QueryResultRow & { id: string; workspace_id: string; topic: string; start_time: string | null; join_url: string | null; created_by: string }>(
-      `SELECT id, workspace_id, topic, start_time, join_url, created_by
-       FROM public.zoom_meetings WHERE id = $1 LIMIT 1`,
+    ;[data] = await queryRows<QueryResultRow & { id: string; workspace_id: string; topic: string; start_time: string | null; join_url: string | null; created_by: string; creator_name: string | null }>(
+      `SELECT meeting.id, meeting.workspace_id, meeting.topic, meeting.start_time, meeting.join_url, meeting.created_by,
+         nullif(btrim(concat_ws(' ', creator.name, creator.surname)), '') AS creator_name
+       FROM public.zoom_meetings AS meeting
+       LEFT JOIN public.users AS creator ON creator.id = meeting.created_by
+       WHERE meeting.id = $1 LIMIT 1`,
       [body.meetingId],
     )
   } catch (error) {
@@ -81,6 +84,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       topic: data.topic,
       startTime: data.start_time,
       joinUrl: data.join_url,
+      telegramActor: { source: "member", name: data.creator_name },
       destinations,
     })
   } catch (error) {

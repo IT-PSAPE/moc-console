@@ -84,6 +84,7 @@ export const youTubeSyncStore: YouTubeSyncDependencies = {
       title: row.title,
       scheduledStartTime: row.scheduled_start_time,
       streamUrl: row.stream_url,
+      telegramActor: { source: "automation", name: "YouTube" },
     })
   },
   deleteStreams: async (workspaceId, broadcastIds) => {

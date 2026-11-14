@@ -34,11 +34,14 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return
   }
 
-  let data: (QueryResultRow & { id: string; workspace_id: string; title: string; scheduled_start_time: string | null; stream_url: string | null; created_by: string }) | undefined
+  let data: (QueryResultRow & { id: string; workspace_id: string; title: string; scheduled_start_time: string | null; stream_url: string | null; created_by: string; creator_name: string | null }) | undefined
   try {
-    ;[data] = await queryRows<QueryResultRow & { id: string; workspace_id: string; title: string; scheduled_start_time: string | null; stream_url: string | null; created_by: string }>(
-      `SELECT id, workspace_id, title, scheduled_start_time, stream_url, created_by
-       FROM public.streams WHERE id = $1 LIMIT 1`,
+    ;[data] = await queryRows<QueryResultRow & { id: string; workspace_id: string; title: string; scheduled_start_time: string | null; stream_url: string | null; created_by: string; creator_name: string | null }>(
+      `SELECT stream.id, stream.workspace_id, stream.title, stream.scheduled_start_time, stream.stream_url, stream.created_by,
+         nullif(btrim(concat_ws(' ', creator.name, creator.surname)), '') AS creator_name
+       FROM public.streams AS stream
+       LEFT JOIN public.users AS creator ON creator.id = stream.created_by
+       WHERE stream.id = $1 LIMIT 1`,
       [body.streamId],
     )
   } catch (error) {
@@ -81,6 +84,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       title: data.title,
       scheduledStartTime: data.scheduled_start_time,
       streamUrl: data.stream_url,
+      telegramActor: { source: "member", name: data.creator_name },
       destinations,
     })
   } catch (error) {

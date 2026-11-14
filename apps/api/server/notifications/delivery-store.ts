@@ -1,9 +1,11 @@
 import { queryRows } from '@moc/backend/database'
 import type { QueryResultRow } from 'pg'
 import { sendTelegramRichMessage } from "../telegram.js"
-import { toRichHtml, type InlineKeyboardMarkup } from "@moc/notifications"
+import { appendAttributionFooter, isAnnouncementEvent, toRichHtml, type InlineKeyboardMarkup, type TelegramAttribution } from "@moc/notifications"
 import { deliverScheduledMessage } from '../scheduled-messages/delivery.js'
 import { scheduledRpc } from '../scheduled-messages/store.js'
+import { loadNotificationKeyboard, syncRequestKeyboard } from './notification-keyboard.js'
+import { isUuid } from './signed-ingest.js'
 
 const MAX_ATTEMPTS = 5
 const CLAIM_TIMEOUT_MS = 5 * 60_000
@@ -108,17 +110,48 @@ async function replyToMessageId(parentDeliveryId: string | null): Promise<number
   return typeof row?.telegram_message_id === 'number' ? row.telegram_message_id : null
 }
 
+function renderDeliveryHtml(row: DeliveryRow): string {
+  const html = toRichHtml(row.text)
+  const hasSnapshot = row.payload !== null && typeof row.payload === "object" && "telegramActor" in row.payload
+  if (hasSnapshot) return html
+  let action: TelegramAttribution["action"] = "sent"
+  if (row.event_key.startsWith("assignment.")) action = "assigned"
+  else if (row.event_type && isAnnouncementEvent(row.event_type)) action = "created"
+  else if (row.parent_delivery_id) action = "updated"
+  return appendAttributionFooter(html, { action, source: "unknown" })
+}
+
+function requestDeliveryId(row: DeliveryRow): string | null {
+  if (row.entity_type === 'request' && row.parent_delivery_id === null) return row.entity_id
+  if (row.scope !== 'dm' || !row.event_key.startsWith('assignment.request:') || !row.payload || typeof row.payload !== 'object') return null
+  return 'parentId' in row.payload && isUuid(row.payload.parentId) ? row.payload.parentId : null
+}
+
 async function sendClaimedDelivery(row: DeliveryRow): Promise<DeliveryRunResult> {
   if (row.scheduled_operation) return deliverScheduledMessage({...row,scheduled_operation:row.scheduled_operation})
   const result = emptyResult()
   result.attempted = 1
-  const send = await sendTelegramRichMessage(row.chat_id, toRichHtml(row.text), {
+  const requestId = requestDeliveryId(row)
+  const keyboard = requestId ? await loadNotificationKeyboard('request', requestId) : row.reply_markup
+  const send = await sendTelegramRichMessage(row.chat_id, renderDeliveryHtml(row), {
     threadId: row.thread_id,
-    replyMarkup: row.reply_markup,
+    replyMarkup: keyboard,
     replyToMessageId: await replyToMessageId(row.parent_delivery_id),
   })
   if (send.ok) {
-    await queryRows("UPDATE public.notification_deliveries SET status='sent',attempt_count=$2,sent_at=now(),telegram_message_id=$3,last_error=NULL WHERE id=$1 AND status='processing'",[row.id,row.attempt_count+1,send.result?.message_id??null])
+    const messageId = send.result?.message_id ?? null
+    await queryRows("UPDATE public.notification_deliveries SET status='sent',attempt_count=$2,sent_at=now(),telegram_message_id=$3,last_error=NULL,reply_markup=$4::jsonb WHERE id=$1 AND status='processing'",[row.id,row.attempt_count+1,messageId,keyboard ? JSON.stringify(keyboard) : null])
+    if (requestId && messageId !== null) {
+      // A status change while Telegram was sending could not see this row yet.
+      try {
+        const applied = await syncRequestKeyboard(requestId, row.chat_id, messageId, keyboard)
+        if (JSON.stringify(applied) !== JSON.stringify(keyboard)) {
+          await queryRows('UPDATE public.notification_deliveries SET reply_markup=$2::jsonb WHERE id=$1', [row.id, applied ? JSON.stringify(applied) : null])
+        }
+      } catch (error) {
+        console.warn('Could not refresh a sent request keyboard', { deliveryId: row.id, error })
+      }
+    }
     result.sent = 1
     return result
   }

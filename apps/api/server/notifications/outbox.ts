@@ -1,4 +1,4 @@
-import { isNotificationEventKey, type NotificationEventKey } from "@moc/notifications"
+import { isNotificationEventKey, readTelegramActorFromPayload, type NotificationEventKey } from "@moc/notifications"
 import { queryRows } from "@moc/backend/database"
 import type { QueryResultRow } from "pg"
 import { resolveBaseUrl } from "../base-url.js"
@@ -220,6 +220,7 @@ async function dispatchClaimed(row: OutboxRow): Promise<OutboxRunResult> {
     if (!isNotificationEventKey(row.event_type)) throw new Error(`Unknown notification event: ${row.event_type}`)
     const payload = buildPayload(row)
     await dispatchEvent(row.workspace_id, row.event_type, payload as never, {
+      actor: readTelegramActorFromPayload(row.payload),
       eventKey: row.event_key,
       destinations: destinations(row.payload.destinations),
       entityType: row.entity_type,

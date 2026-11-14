@@ -5,7 +5,7 @@ import { resolveBaseUrl } from "../../base-url.js"
 import { resolveTemplate } from "../../notifications/templates.js"
 import { fetchFormatSettings } from "../../notifications/format-settings.js"
 import { enrichChecklistItem, enrichRequest } from "../../notifications/enrich.js"
-import { fetchEntityStoredStatus } from "../../notifications/entity-tokens.js"
+import { loadNotificationKeyboard } from "../../notifications/notification-keyboard.js"
 import { applyCors } from "../../cors.js"
 import { normaliseHeaders, type ApiRequest, type ApiResponse } from "../../http.js"
 import { observeApiRequest } from "../../observability.js"
@@ -22,8 +22,10 @@ import {
 } from "../../rate-limit.js"
 import { requireWorkspacePermission, WorkspaceAccessError } from "../../workspace-access.js"
 import {
+  appendAttributionFooter,
   buildNotificationKeyboard,
   formatDateTokens,
+  readTelegramActor,
   renderTemplate,
   type DmMessageType,
   type InlineKeyboardMarkup,
@@ -146,9 +148,7 @@ async function buildAssignmentKeyboard(resolved: Resolved): Promise<InlineKeyboa
   if (resolved.entityType === "checklist") {
     return buildNotificationKeyboard({ entityType: "checklist", entityId: resolved.entityId }, { botUsername })
   }
-  const status = await fetchEntityStoredStatus("request", resolved.entityId)
-  if (status === null) return null
-  return buildNotificationKeyboard({ entityType: "request", entityId: resolved.entityId, status }, { botUsername })
+  return loadNotificationKeyboard("request", resolved.entityId)
 }
 
 const CHECKLIST_ITEM_KEYS = new Set(["kind", "parentId", "userId"])
@@ -185,15 +185,17 @@ export function assignmentEventKey(kind: AssignmentKind, assignmentId: string): 
   return `assignment.${kind}:${assignmentId}`
 }
 
-async function findAssignment(body: Body): Promise<{ id: string } | null> {
+type StoredAssignment = QueryResultRow & { id: string; telegram_actor: unknown }
+
+async function findAssignment(body: Body): Promise<StoredAssignment | null> {
   const rows = body.kind === "checklist_item"
-    ? await queryRows<QueryResultRow & { id: string }>(
-      `SELECT id FROM public.checklist_item_assignees
+    ? await queryRows<StoredAssignment>(
+      `SELECT id, to_jsonb(assignment)->'telegram_actor' AS telegram_actor FROM public.checklist_item_assignees AS assignment
        WHERE checklist_item_id = $1 AND user_id = $2 LIMIT 1`,
       [body.parentId, body.userId],
     )
-    : await queryRows<QueryResultRow & { id: string }>(
-      `SELECT id FROM public.request_assignees
+    : await queryRows<StoredAssignment>(
+      `SELECT id, to_jsonb(assignment)->'telegram_actor' AS telegram_actor FROM public.request_assignees AS assignment
        WHERE request_id = $1 AND user_id = $2 AND duty = $3 LIMIT 1`,
       [body.parentId, body.userId, body.duty],
     )
@@ -276,7 +278,7 @@ async function handleAssignment(request: ApiRequest, response: ApiResponse): Pro
     return
   }
 
-  let assignment: { id: string } | null
+  let assignment: StoredAssignment | null
   try {
     assignment = await findAssignment(body)
   } catch {
@@ -322,10 +324,12 @@ async function handleAssignment(request: ApiRequest, response: ApiResponse): Pro
     resolveTemplate(resolved.workspaceId, "dm", resolved.messageType),
     fetchFormatSettings(resolved.workspaceId),
   ])
-  const text = renderTemplate(
+  const message = renderTemplate(
     template,
     formatDateTokens(resolved.tokens, format.timezone, format.dateFormat),
   )
+  const actor = readTelegramActor(assignment.telegram_actor)
+  const text = appendAttributionFooter(message, { ...actor, action: "assigned" })
 
   const eventKey = assignmentEventKey(kind, assignment.id)
   const replyMarkup = await buildAssignmentKeyboard(resolved)
@@ -338,11 +342,8 @@ async function handleAssignment(request: ApiRequest, response: ApiResponse): Pro
       recipientUserId: userId,
       chatId: user.telegram_chat_id,
       text,
-      payload: { assignmentId: assignment.id, ...body },
-      // Deliberately NOT entityType/entityId: those columns mark a
-      // delivery as a follow-up-able "original" (see follow-ups.ts's
-      // fetchOriginals), and an assignment DM is never one — it has no
-      // *.created announcement counterpart to later edit or reply to.
+      payload: { assignmentId: assignment.id, ...body, telegramActor: actor },
+      ...(kind === "request" ? { entityType: "request", entityId: parentId } : {}),
       replyMarkup,
     })
     const delivery = await processDeliveriesForEvent(eventKey)

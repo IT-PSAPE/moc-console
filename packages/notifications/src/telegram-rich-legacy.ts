@@ -79,7 +79,7 @@ function cleanup(html: string): string {
     .trim();
 }
 
-export function toLegacyHtml(rich: string): string {
+function convertLegacyFragment(rich: string): string {
   let text = rich;
   text = convertTables(text);
   text = convertHeadings(text);
@@ -90,4 +90,61 @@ export function toLegacyHtml(rich: string): string {
   text = stripWrapperTags(text);
   text = applyWhitelist(text);
   return cleanup(text);
+}
+
+const LEGACY_TEXT_LIMIT = 4096;
+function parsedLength(value: string): number {
+  const text = value.replace(/<[^>]*>/g, "").replace(/&(#\d+|#x[\da-f]+|[a-z][\da-z]+);/gi, (_entity, value: string) => {
+    if (!value.startsWith("#")) return "x";
+    const codePoint = value[1]?.toLowerCase() === "x" ? Number.parseInt(value.slice(2), 16) : Number.parseInt(value.slice(1), 10);
+    return Number.isFinite(codePoint) && codePoint > 0xffff ? "xx" : "x";
+  });
+  return [...text].reduce((length, character) => length + (character.codePointAt(0)! > 0xffff ? 2 : 1), 0);
+}
+function truncateLegacyHtml(html: string, limit: number): string {
+  if (limit <= 0) return "";
+  if (parsedLength(html) <= limit) return html;
+  let output = "";
+  let length = 0;
+  const contentLimit = Math.max(0, limit - 1);
+  const openTags: string[] = [];
+  const tokens = html.match(/<[^>]*>|&(?:#\d+|#x[\da-f]+|[a-z][\da-z]+);|[\s\S]/gi) ?? [];
+  for (const token of tokens) {
+    if (token.startsWith("<")) {
+      const closing = /^<\/([a-z][\da-z-]*)/i.exec(token);
+      const opening = /^<([a-z][\da-z-]*)/i.exec(token);
+      output += token;
+      if (closing) openTags.splice(openTags.lastIndexOf(closing[1].toLowerCase()), 1);
+      else if (opening && !/\/\s*>$/.test(token)) openTags.push(opening[1].toLowerCase());
+      continue;
+    }
+    const tokenLength = parsedLength(token);
+    if (length + tokenLength > contentLimit) break;
+    output += token;
+    length += tokenLength;
+  }
+  if (length === 0) return "…";
+  output += "…";
+  for (const tag of openTags.reverse()) output += `</${tag}>`;
+  return output;
+}
+
+export function toLegacyHtml(rich: string): string {
+  const converted = convertLegacyFragment(rich);
+  if (parsedLength(converted) <= LEGACY_TEXT_LIMIT) return converted;
+
+  const footers: string[] = [];
+  const body = rich.replace(/<footer\b[^>]*>([\s\S]*?)<\/footer>/gi, (_match, inner: string) => {
+    footers.push(convertLegacyFragment(inner));
+    return "";
+  });
+  const convertedBody = convertLegacyFragment(body);
+  if (footers.length === 0) return truncateLegacyHtml(convertedBody, LEGACY_TEXT_LIMIT);
+
+  const footerText = footers.join("\n");
+  const separator = convertedBody ? "\n" : "";
+  const contentBudget = Math.max(0, LEGACY_TEXT_LIMIT - parsedLength(separator));
+  const keptFooter = truncateLegacyHtml(footerText, contentBudget);
+  const bodyBudget = Math.max(0, contentBudget - parsedLength(keptFooter));
+  return `${truncateLegacyHtml(convertedBody, bodyBudget)}${separator}${keptFooter}`;
 }
