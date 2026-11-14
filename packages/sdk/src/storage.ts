@@ -1,46 +1,15 @@
 import { MocApiError } from "./error"
 import type { MocTransport } from "./transport"
-
-export type StorageUploadPurpose = "avatar" | "stream-thumbnail" | "broadcast-audio" | "broadcast-video"
-export type StorageBucket = "avatars" | "media" | "broadcast-media"
-export type StorageUploadResult = { bucket: StorageBucket; path: string; url: string; size: number; contentType: string }
-export type StorageProgress = { loaded: number; total: number }
-
-type UploadCreated = StorageUploadResult & { id: string; chunkSize: number; expectedChunks: number }
-type UploadState = { id: string; status: "uploading" | "queued" | "processing" | "complete" | "aborted" | "failed"; errorCode: string | null; result: StorageUploadResult | null }
+import { uploadStorageFile } from "./storage-upload"
+import type { StorageBucket, StorageRemoveInput, StorageUploadInput, StorageUploadPurpose, StorageUploadResult, StorageUrlInput } from "./storage-types"
+export type { StorageBucket, StorageProgress, StorageRemoveInput, StorageUploadInput, StorageUploadPurpose, StorageUploadResult, StorageUrlInput } from "./storage-types"
 
 const MAX_RANGE_BYTES = 4 * 1024 * 1024
-const FINALIZE_POLL_START_MS = 400
-const FINALIZE_POLL_MAX_MS = 5_000
-
-export type StorageUploadInput = {
-  purpose: StorageUploadPurpose
-  workspaceId?: string
-  file: Blob
-  onProgress?: (progress: StorageProgress) => void
-}
-
-export type StorageRemoveInput = {
-  purpose: StorageUploadPurpose
-  workspaceId?: string
-  paths: string[]
-}
-
-export type StorageUrlInput = { bucket: StorageBucket; path: string }
-
-function fileName(file: Blob): string {
-  const namedFile = file as Blob & { name?: string }
-  return namedFile.name?.trim() || "upload.bin"
-}
 
 function bucketForPurpose(purpose: StorageUploadPurpose): StorageBucket {
   if (purpose === "avatar") return "avatars"
   if (purpose === "stream-thumbnail") return "media"
   return "broadcast-media"
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 function apiObjectUrl(transport: MocTransport, bucket: StorageBucket, path: string): string {
@@ -83,50 +52,8 @@ async function readApiError(response: Response): Promise<MocApiError> {
 }
 
 export function createStorageClient(transport: MocTransport) {
-  async function upload(input: StorageUploadInput): Promise<StorageUploadResult> {
-    const contentType = input.file.type || "application/octet-stream"
-    const created = await transport.request<UploadCreated>("/api/storage/uploads", {
-      method: "POST",
-      json: {
-        purpose: input.purpose,
-        workspaceId: input.workspaceId,
-        fileName: fileName(input.file),
-        size: input.file.size,
-        contentType,
-      },
-      workspaceId: input.workspaceId,
-    })
-    let loaded = 0
-    for (let index = 0; index < created.expectedChunks; index += 1) {
-      const start = index * created.chunkSize
-      const end = Math.min(start + created.chunkSize, input.file.size)
-      const chunk = input.file.slice(start, end)
-      await transport.request(`/api/storage/uploads/${encodeURIComponent(created.id)}/chunks/${index}`, {
-        method: "PUT",
-        body: chunk,
-        headers: { "Content-Type": contentType },
-        workspaceId: input.workspaceId,
-      })
-      loaded = end
-      input.onProgress?.({ loaded, total: input.file.size })
-    }
-    await transport.request(`/api/storage/uploads/${encodeURIComponent(created.id)}/finalize`, {
-      method: "POST",
-      json: {},
-      workspaceId: input.workspaceId,
-    })
-    let delay = FINALIZE_POLL_START_MS
-    while (true) {
-      const state = await transport.request<UploadState>(`/api/storage/uploads/${encodeURIComponent(created.id)}`, {
-        workspaceId: input.workspaceId,
-      })
-      if (state.status === "complete" && state.result) return state.result
-      if (state.status === "failed" || state.status === "aborted") {
-        throw new MocApiError("Upload could not be completed", { status: 500, code: state.errorCode ?? state.status })
-      }
-      await sleep(delay)
-      delay = Math.min(FINALIZE_POLL_MAX_MS, delay * 1.5)
-    }
+  function upload(input: StorageUploadInput): Promise<StorageUploadResult> {
+    return uploadStorageFile(transport, input)
   }
 
   async function remove(input: StorageRemoveInput): Promise<void> {
