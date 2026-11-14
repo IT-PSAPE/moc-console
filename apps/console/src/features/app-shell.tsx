@@ -7,6 +7,7 @@ import { useIsLandscape } from '@moc/ui/hooks/use-is-landscape'
 import { AppNavigation } from './app-navigation'
 import { ScrollArea } from '@moc/ui/components/display/scroll-area'
 import { TopBar } from './topbar'
+import { WorkspaceRefreshNotice } from '@/components/feedback/workspace-refresh-notice'
 
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -15,6 +16,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return (
         <AppNavigation.Root canManageScheduledMessages={state.canManageScheduledMessages} isSigningOut={state.isSigningOut} onCloseLandscapeNavigation={actions.closeLandscapeSidebar} onEditProfile={actions.openProfile} onSignOut={actions.signOut}>
             <SkipLink />
+            <WorkspaceRefreshNotice />
             <div className="flex h-dvh min-h-0 w-full min-w-0 overflow-hidden bg-secondary text-primary">
                 {isLandscape ? (
                     <Drawer open={state.landscapeSidebarOpen} onOpenChange={actions.setLandscapeSidebarOpen} side="left">

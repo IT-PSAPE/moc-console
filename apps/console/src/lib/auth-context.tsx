@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
 import type { ReactNode } from "react"
 import type { MoCSession, MoCUser } from "@moc/sdk/auth"
+import { MocApiError } from "@moc/sdk/error"
 import type { User as Profile } from "@moc/types/requests/assignee"
 import { routes } from "@/screens/console-routes"
 import { clearCurrentWorkspaceCache } from "@/data/current-workspace"
@@ -14,6 +15,9 @@ type AuthState = {
   profile: Profile | null
   callbackError: string | null
   loading: boolean
+  restoreError: Error | null
+  isRefreshingSession: boolean
+  retrySession: () => void
   signInWithGoogle: () => Promise<{ error: Error | null }>
   signOut: () => Promise<{ error: Error | null }>
   refreshProfile: () => Promise<void>
@@ -49,6 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [callbackError, setCallbackError] = useState<string | null>(() => typeof window === "undefined" ? null : authCallbackError(new URL(window.location.href)))
   const [loading, setLoading] = useState(true)
+  const [restoreError, setRestoreError] = useState<Error | null>(null)
+  const [isRefreshingSession, setIsRefreshingSession] = useState(false)
   const sessionUserIdRef = useRef<string | null>(null)
   const sessionRequestRef = useRef(0)
   const signingOutRef = useRef(false)
@@ -57,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshSession = useCallback(async () => {
     if (signingOutRef.current) return
     const request = ++sessionRequestRef.current
+    setIsRefreshingSession(true)
     try {
       const nextSession = await moc.auth.getSession()
       if (request !== sessionRequestRef.current) return
@@ -69,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearCurrentWorkspaceCache()
         setProfile(null)
       }
+      setRestoreError(null)
       sessionUserIdRef.current = nextUserId
       setSession(nextSession)
       setUser(nextSession?.user ?? null)
@@ -76,16 +84,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       if (request !== sessionRequestRef.current) return
       if (import.meta.env.DEV) console.error("Failed to restore authentication session:", error)
-      await reconcileWebPushOwner(null).catch(() => undefined)
-      sessionUserIdRef.current = null
-      clearCurrentWorkspaceCache()
-      setSession(null)
-      setUser(null)
-      setProfile(null)
+      if (error instanceof MocApiError && (error.status === 401 || error.status === 403)) {
+        await reconcileWebPushOwner(null).catch(() => undefined)
+        if (request !== sessionRequestRef.current) return
+        sessionUserIdRef.current = null
+        clearCurrentWorkspaceCache()
+        setSession(null)
+        setUser(null)
+        setProfile(null)
+        setRestoreError(null)
+      } else {
+        // A failed check does not establish that the server revoked the session.
+        // Keep mounted drafts and cached data until a successful check says so.
+        setRestoreError(error instanceof Error ? error : new Error("Couldn't check your sign-in status. Please try again."))
+      }
     } finally {
-      if (request === sessionRequestRef.current) setLoading(false)
+      if (request === sessionRequestRef.current) {
+        setLoading(false)
+        setIsRefreshingSession(false)
+      }
     }
   }, [])
+
+  const retrySession = useCallback((): void => {
+    if (!sessionUserIdRef.current) setLoading(true)
+    void refreshSession()
+  }, [refreshSession])
 
   useEffect(() => {
     let active = true
@@ -163,14 +187,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null)
     setUser(null)
     setProfile(null)
+    setRestoreError(null)
     setLoading(false)
+    setIsRefreshingSession(false)
     signingOutRef.current = false
     notifyOtherTabs()
     return { error }
   }
 
   return (
-    <AuthContext value={{ session, user, profile, callbackError, loading, signInWithGoogle, signOut, refreshProfile }}>
+    <AuthContext value={{ session, user, profile, callbackError, loading, restoreError, isRefreshingSession, retrySession, signInWithGoogle, signOut, refreshProfile }}>
       {children}
     </AuthContext>
   )

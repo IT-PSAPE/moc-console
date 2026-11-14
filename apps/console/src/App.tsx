@@ -16,6 +16,7 @@ import { TopBarProvider } from './features/topbar'
 import { WorkspaceProvider } from './lib/workspace-context'
 import { useWorkspace } from './lib/workspace-context'
 import { AuthLayout } from './screens/auth/auth-layout'
+import { AuthSessionGate } from './screens/auth/auth-session-gate'
 import { ResourceLoadError } from './components/feedback/resource-load-error'
 import { WorkspaceAccessRequired } from './screens/auth/workspace-access-required'
 import { UserPreferencesProvider } from './features/preferences/user-preferences-provider'
@@ -59,11 +60,7 @@ function SuspenseRoute({ children }: { children: React.ReactNode }) {
 }
 
 function RequireAuth() {
-    const { session, loading } = useAuth()
-
-    if (loading) {
-        return <Page.Loading />
-    }
+    const { session } = useAuth()
 
     if (!session) {
         return <Navigate to={`/${routes.login}`} replace />
@@ -135,11 +132,7 @@ function RouteErrorBoundary({ children }: { children: React.ReactNode }) {
 }
 
 function RedirectIfAuth({ children }: { children: React.ReactNode }) {
-    const { session, loading } = useAuth()
-
-    if (loading) {
-        return <Page.Loading />
-    }
+    const { session } = useAuth()
 
     if (session) {
         return <Navigate to={`/${routes.overview}`} replace />
@@ -161,7 +154,7 @@ function LegacyScheduleRoute() {
 
 const router = createBrowserRouter([
     // Auth routes — redirect to overview if already signed in
-    { path: routes.login, element: <RedirectIfAuth><SuspenseRoute><LoginScreen /></SuspenseRoute></RedirectIfAuth> },
+    { path: routes.login, element: <AuthSessionGate><RedirectIfAuth><SuspenseRoute><LoginScreen /></SuspenseRoute></RedirectIfAuth></AuthSessionGate> },
 
     // Public pages — no auth required
     { path: routes.privacy, element: <SuspenseRoute><PrivacyPolicyScreen /></SuspenseRoute> },
@@ -172,7 +165,7 @@ const router = createBrowserRouter([
 
     // Protected app routes
     {
-        element: <RequireAuth />,
+        element: <AuthSessionGate><RequireAuth /></AuthSessionGate>,
         children: [
             { index: true, element: <Navigate to={`/${routes.overview}`} replace /> },
             { path: routes.overview, element: <OverviewPage /> },
