@@ -9,9 +9,10 @@ SECURITY DEFINER
 SET search_path TO 'pg_catalog', 'public'
 AS $$
 DECLARE
-  actor_kind text := nullif(current_setting('moc.actor_kind', true), '');
-  actor_name text := nullif(btrim(current_setting('moc.actor_name', true)), '');
-  actor_id uuid := moc_private.actor_id();
+  selected_role text := current_setting('role', true);
+  actor_kind text;
+  actor_name text;
+  actor_id uuid;
   actor_source text;
   existing_actor jsonb;
   requester_name text;
@@ -36,6 +37,13 @@ BEGIN
       NEW.telegram_actor := OLD.telegram_actor;
       RETURN NEW;
     END IF;
+  END IF;
+
+  -- Maintenance writes may run without an application actor context.
+  IF selected_role IN ('moc_app', 'moc_worker', 'moc_public') THEN
+    actor_id := moc_private.actor_id();
+    actor_kind := nullif(current_setting('moc.actor_kind', true), '');
+    actor_name := nullif(btrim(current_setting('moc.actor_name', true)), '');
   END IF;
 
   IF actor_id IS NOT NULL THEN

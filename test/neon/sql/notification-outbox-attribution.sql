@@ -194,4 +194,23 @@ BEGIN
   END IF;
 END $$;
 
+-- Migration-owner writes have no application actor, even if actor settings
+-- from an earlier operation are still present in the transaction.
+RESET ROLE;
+SELECT set_config('moc.user_id','20000000-0000-4000-8000-000000000001',true),
+       set_config('moc.actor_kind','integration',true),
+       set_config('moc.actor_name','YouTube',true);
+INSERT INTO public.notification_outbox(workspace_id,event_type,entity_type,entity_id,event_key,payload)
+VALUES(current_setting('moc.test_workspace_id')::uuid,'stream.created','stream','90000000-0000-4000-8000-000000000002',
+       'attribution:maintenance','{"title":"Maintenance import"}'::jsonb);
+UPDATE public.notification_outbox SET payload=payload||'{"title":"Maintenance retry"}'::jsonb
+WHERE event_key='attribution:maintenance';
+DO $$
+BEGIN
+  IF (SELECT payload->'telegramActor' FROM public.notification_outbox WHERE event_key='attribution:maintenance')
+     IS DISTINCT FROM '{"source":"unknown"}'::jsonb THEN
+    RAISE EXCEPTION 'Maintenance write attributed to an application actor';
+  END IF;
+END $$;
+
 ROLLBACK;
