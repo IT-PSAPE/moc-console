@@ -34,3 +34,30 @@ inside this folder; its header describes the isolated Playwright session.
 Neon schema, authorization and worker tests live in `test/neon`.
 PostgreSQL integration tests use disposable local databases and never require
 the hosted database.
+
+## Browser regression gate
+
+The approved development dependency pins `@playwright/cli`. The same smoke gate
+runs locally and in CI against the production build, with the real deployment
+headers and intercepted SDK responses. It never forwards requests to live APIs.
+
+```sh
+npm run build:console
+npx --no-install playwright-cli install-browser chrome --with-deps
+npm run test:browser
+```
+
+The isolated server uses loopback port 5188 and stops on exit. If that port is
+already in use, stop that preview or select another: `MOC_BROWSER_PORT=5198 npm run test:browser`.
+The browser session is also closed on exit; it uses its own ephemeral context.
+Unexpected API operations fail the fixture contract. Screenshots go to
+`output/playwright`; CI uploads those and `output/quality` on failure.
+
+Coverage includes save failure/retry and draft retention, transient session
+failure/retry, stale-data recovery, independent checklist rename/collapse,
+phone reflow and navigation, settings, populated requests/bookings and QR print
+under CSP. Only the operating-system print dialog is stubbed; the app's popup
+listeners, document, QR image and inherited policy execute normally. External
+HTTPS image fetch policy is checked with an intercepted image host; CORS still
+applies to real hosts. Real camera hardware and provider effects remain separate
+verification boundaries.

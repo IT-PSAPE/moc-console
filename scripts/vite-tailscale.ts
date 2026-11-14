@@ -8,8 +8,8 @@
 //     rebinding, and `<machine>.<tailnet>.ts.net` is an unknown host to it.
 //
 // `.ts.net` covers every MagicDNS name rather than hardcoding one tailnet.
-// Those names only resolve for devices already authenticated to the tailnet,
-// so this widens the dev server's reach to the tailnet and no further.
+// MagicDNS resolution is tailnet-scoped, but host:true also allows LAN/IP access.
+// allowedHosts checks Host headers; network isolation depends on routing/firewalls.
 
 import { execFileSync } from "node:child_process"
 import { createConnection } from "node:net"

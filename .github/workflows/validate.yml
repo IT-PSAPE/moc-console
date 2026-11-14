@@ -37,6 +37,7 @@ jobs:
           cache: npm
       - run: npm install --global npm@11.12.1
       - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
       - run: bash neon/database/build-fresh-database.sh "$MOC_TEST_DATABASE_URL"
       - run: psql "$MOC_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f neon/database/request-links.sql
       - run: npm run build
@@ -48,3 +49,13 @@ jobs:
           MOC_AUTH_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/moc_auth_test
           MOC_AUTH_TEST_BRANCH: local
       - run: npm run lint
+      - run: npx --no-install playwright-cli install-browser chrome --with-deps
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-verification
+          path: |
+            output/playwright
+            output/quality
+          retention-days: 7

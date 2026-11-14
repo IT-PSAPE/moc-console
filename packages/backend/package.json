@@ -20,7 +20,7 @@
     "@moc/notifications": "*",
     "@moc/types": "*",
     "better-auth": "1.7.7",
-    "nodemailer": "10.0.14",
+    "nodemailer": "10.1.4",
     "pg": "8.23.1"
   },
   "devDependencies": {

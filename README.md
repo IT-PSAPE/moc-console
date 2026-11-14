@@ -8,6 +8,7 @@ MOC Console is a React 19 admin application for managing operational workflows a
 - checklist runs and reusable templates
 - YouTube streams and Zoom meetings
 - continuously looping public audio and video broadcasts
+- an overview agenda, shared work schedule, scheduled messages and daily quotes
 - authenticated users and role-aware navigation
 
 The UI is built with React, TypeScript, Vite, and Tailwind CSS v4.
@@ -23,7 +24,16 @@ The UI is built with React, TypeScript, Vite, and Tailwind CSS v4.
 
 ## Feature Areas
 
-Navigation is flat: one sidebar item per feature, no nested sections.
+Navigation uses a primary rail for Overview, Work, Production, Communications,
+and People & resources, with a contextual secondary panel for each group. On
+phones, both appear in the navigation drawer. The account menu contains profile,
+workspace switching, settings and sign-out. Overview is the signed-in landing page.
+
+### Overview and Work
+
+- a personal overview agenda with persistent item preferences
+- a shared schedule across requests, bookings, venues, streams and checklists
+- URL-backed views, filters and links back from related records
 
 ### Requests
 
@@ -33,13 +43,13 @@ Navigation is flat: one sidebar item per feature, no nested sections.
 
 ### Equipment
 
-- full inventory (list, table and kanban views)
+- full inventory (list and kanban views)
 - status filter, including items in maintenance
 - equipment detail view with QR and notes
 
 ### Bookings
 
-- equipment bookings (list, table and calendar views)
+- equipment bookings (list, kanban and calendar views)
 - booking detail view with scan-based checkout and return
 
 ### Checklists
@@ -47,6 +57,12 @@ Navigation is flat: one sidebar item per feature, no nested sections.
 - active and completed checklist runs
 - reusable checklist templates
 - item grouping, ordering, completion, and assignments
+
+### Venues and Communications
+
+- venue catalogues, event types and venue bookings
+- scheduled Telegram messages, message templates and workspace routes
+- daily quotes and workspace notification settings
 
 ### Streams
 
@@ -113,9 +129,11 @@ npm run dev:request     # http://<machine>.<tailnet>.ts.net:5176
 ```
 
 Each server prints its own tailnet URL alongside Vite's local one at startup.
-Nothing is exposed to the public internet: MagicDNS names only resolve for
-devices already authenticated to the tailnet, and the allow-list is limited to
-`.ts.net`.
+These development servers bind every network interface. MagicDNS names resolve
+within the tailnet, but a device on the same LAN may also reach the machine's IP
+address. Vite's `.ts.net` host allow-list is a hostname check, not a network access
+control. Reachability from other networks depends on the machine's firewall and
+routing; use a trusted development network or bind loopback when sharing is not needed.
 
 The behaviour lives in [scripts/vite-tailscale.ts](scripts/vite-tailscale.ts)
 and is shared by all three apps. If Tailscale is not installed, not running, or
@@ -281,3 +299,10 @@ Auth routes:
 - Reuse existing shared components before creating new feature-level UI.
 - Keep business logic in hooks, services, and utilities rather than in presentational components.
 - Match the current domain patterns before introducing new structure.
+
+## Quality verification
+
+The workspace build typechecks all shared UI sources, and workspace lint includes
+`@moc/ui`. Run `npm run build`, `npm run lint` and `npm test` before delivery.
+For isolated browser and PostgreSQL verification commands, coverage and current
+limitations, see the [quality audit](docs/quality-audit.md) and [test guide](test/README.md).

@@ -10,8 +10,8 @@
     "telegram:webhook": "node --env-file-if-exists=.env.local scripts/set-telegram-webhook.ts"
   },
   "dependencies": {
-    "@moc/notifications": "*",
     "@moc/backend": "*",
+    "@moc/notifications": "*",
     "@moc/types": "*"
   },
   "devDependencies": {
@@ -21,7 +21,7 @@
     "globals": "17.4.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.57.2",
-    "vite": "8.0.3"
+    "vite": "8.1.6"
   },
   "engines": {
     "node": "24.x"
