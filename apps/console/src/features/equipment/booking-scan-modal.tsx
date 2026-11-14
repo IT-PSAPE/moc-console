@@ -5,7 +5,7 @@ import { Badge } from "@moc/ui/components/display/badge";
 import { Notification } from "@moc/ui/components/feedback/notification";
 import { Input } from "@moc/ui/components/form/input";
 import { Modal } from "@moc/ui/components/overlays/modal";
-import { Camera, InputField, ScanQrCode, SmartphoneDevice } from "iconoir-react";
+import { Camera, Textbox as InputField, QrCode as ScanQrCode, DeviceMobile as SmartphoneDevice } from '@phosphor-icons/react';
 import type { ChangeEvent, KeyboardEvent, RefObject } from "react";
 
 type BookingScanModalProps = {

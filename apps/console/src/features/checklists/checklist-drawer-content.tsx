@@ -1,5 +1,5 @@
 import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
-import { MultiplePagesPlus, FolderPlus, Expand, Plus, PlusSquare, Trash, Xmark } from "iconoir-react";
+import { Files as MultiplePagesPlus, FolderPlus, ArrowsOut as Expand, Plus, PlusSquare, Trash, X as Xmark } from '@phosphor-icons/react';
 import { Button } from "@moc/ui/components/controls/button";
 import { Divider } from "@moc/ui/components/display/divider";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
@@ -18,7 +18,7 @@ export function ChecklistPanelContent({ checklist, open, onClose }: { checklist:
   return (
     <>
       <SplitPanel.Header className="flex items-center gap-1">
-        <Button.Icon aria-label="Close checklist" variant="ghost" size="sm" icon={<Xmark />} onClick={actions.close} />
+        <Button.Icon aria-label="Close checklist" variant="ghost" size="sm" icon={<Xmark weight="regular" />} onClick={actions.close} />
         <Button.Icon aria-label="Open full page" variant="ghost" size="sm" icon={<Expand />} onClick={actions.openFullPage} />
         <div className="flex-1" />
         <Paragraph.sm className="mr-2 text-tertiary">{meta.checked}/{meta.total} done</Paragraph.sm>
@@ -33,7 +33,7 @@ export function ChecklistPanelContent({ checklist, open, onClose }: { checklist:
             <Paragraph.sm className="pt-1 text-tertiary"><InlineEditableText value={checklist.description} onSave={actions.updateDescription} className="paragraph-sm" placeholder="Add description" /></Paragraph.sm>
           </div>
           <Dropdown placement="bottom">
-            <Dropdown.Trigger><Button.Icon aria-label="Add checklist content" variant="ghost" size="sm" icon={<Plus />} /></Dropdown.Trigger>
+            <Dropdown.Trigger><Button.Icon aria-label="Add checklist content" variant="ghost" size="sm" icon={<Plus weight="regular" />} /></Dropdown.Trigger>
             <Dropdown.Panel>
               <Dropdown.Item onSelect={actions.addItem}><PlusSquare className="size-4" />Item</Dropdown.Item>
               <Dropdown.Item onSelect={actions.addSection}><FolderPlus className="size-4" />Section</Dropdown.Item>

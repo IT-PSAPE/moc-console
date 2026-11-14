@@ -1,4 +1,4 @@
-import { Box } from "iconoir-react";
+import { Cube as Box } from '@phosphor-icons/react';
 
 // Header icon tile for a booking record — shared between the booking drawer
 // and the booking detail page so the two headers render identically.

@@ -14,7 +14,7 @@ import { Page } from "@moc/ui/components/layout/page"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
 import { Dropdown } from "@moc/ui/components/overlays/dropdown"
-import { MultiplePagesPlus, FolderPlus, TaskList, Plus, PlusSquare, Trash } from "iconoir-react"
+import { Files as MultiplePagesPlus, FolderPlus, ListChecks as TaskList, Plus, PlusSquare, Trash } from '@phosphor-icons/react'
 import { useChecklistDetail } from "./use-checklist-detail"
 import { ChecklistEditorContent } from "@/features/checklists/checklist-editor-content"
 import { RequestLinkField } from "@/features/request-links/request-link-field"
@@ -54,7 +54,7 @@ export function ChecklistDetailScreen() {
           {checklist.kind === "instance" && <Button.Icon aria-label="Save as checklist template" variant="secondary" icon={<MultiplePagesPlus />} onClick={actions.createTemplate} />}
           <Dropdown placement="bottom">
             <Dropdown.Trigger>
-              <Button.Icon aria-label="Add checklist content" variant="secondary" icon={<Plus />} />
+              <Button.Icon aria-label="Add checklist content" variant="secondary" icon={<Plus weight="regular" />} />
             </Dropdown.Trigger>
             <Dropdown.Panel>
               <Dropdown.Item onSelect={actions.addItem}><PlusSquare className="size-4" />Item</Dropdown.Item>

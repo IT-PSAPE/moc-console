@@ -1,7 +1,7 @@
 import type { ComponentType } from "react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { Drag, Trash } from "iconoir-react";
+import { DotsSix as Drag, Trash } from '@phosphor-icons/react';
 import { Button } from "@moc/ui/components/controls/button";
 import { Checkbox } from "@moc/ui/components/form/checkbox";
 import { InlineEditableText } from "@moc/ui/components/form/inline-editable-text";
@@ -33,7 +33,7 @@ export function DraggableCheckRow({ item, onToggle, onRename, onDelete, itemSlot
           aria-label={`Reorder ${item.label}`}
           variant="ghost"
           size="sm"
-          icon={<Drag />}
+          icon={<Drag weight="regular" />}
           className="cursor-grab touch-none text-quaternary opacity-0 transition-opacity focus-visible:opacity-100 group-hover/item:opacity-100 landscape:opacity-100"
         />
         <Checkbox aria-label={item.checked ? `Mark ${item.label} incomplete` : `Mark ${item.label} complete`} checked={item.checked} onChange={toggle} />

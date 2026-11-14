@@ -2,7 +2,7 @@ import type { Broadcast } from "@moc/types/broadcast/broadcast"
 import { BROADCAST_KIND_LABELS } from "@moc/types/broadcast/broadcast-constants"
 import { ListItemCard } from "@moc/ui/components/display/list-item-card"
 import { formatUtcIsoInBrowserTimeZone } from "@moc/utils/browser-date-time"
-import { Clock, Playlist } from "iconoir-react"
+import { Clock, Playlist } from '@phosphor-icons/react'
 
 function formatItemCount(count: number): string {
   return `${count} ${count === 1 ? "item" : "items"}`

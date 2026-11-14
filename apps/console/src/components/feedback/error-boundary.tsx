@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { WarningTriangle, RefreshDouble } from 'iconoir-react'
+import { Warning as WarningTriangle, ArrowsClockwise as RefreshDouble } from '@phosphor-icons/react'
 import { Button } from '@moc/ui/components/controls/button'
 import { EmptyState } from '@moc/ui/components/feedback/empty-state'
 

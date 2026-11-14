@@ -1,4 +1,4 @@
-import { Activity, MoreVert, Undo, SendDiagonal, Trash } from 'iconoir-react'
+import { Pulse as Activity, DotsThreeVertical as MoreVert, ArrowCounterClockwise as Undo, PaperPlaneRight as SendDiagonal, Trash } from '@phosphor-icons/react'
 import { Button } from '@moc/ui/components/controls/button'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import { DividedList } from '@moc/ui/components/display/divided-list'
@@ -48,7 +48,7 @@ export function ScheduledOccurrenceList() {
             <ListItemCard.Trailing className="ml-auto gap-2">
                 <Badge dot label={statusLabel} color={status.color} />
                 <Dropdown placement="bottom-end">
-                    <Dropdown.Trigger><Button.Icon aria-label={`More actions for ${occurrence.label}`} variant="ghost" size="sm" icon={<MoreVert />} disabled={state.busy} /></Dropdown.Trigger>
+                    <Dropdown.Trigger><Button.Icon aria-label={`More actions for ${occurrence.label}`} variant="ghost" size="sm" icon={<MoreVert weight="regular" />} disabled={state.busy} /></Dropdown.Trigger>
                     <Dropdown.Panel>
                         <Dropdown.Item onSelect={openActivity}><Activity className="size-4" aria-hidden="true" />Activity</Dropdown.Item>
                         {occurrence.canSend ? <Dropdown.Item onSelect={sendMessage}><SendDiagonal className="size-4" aria-hidden="true" />Send now</Dropdown.Item> : null}

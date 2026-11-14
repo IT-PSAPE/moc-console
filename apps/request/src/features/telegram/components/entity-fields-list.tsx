@@ -1,4 +1,4 @@
-import { InfoCircle } from "iconoir-react"
+import { Info as InfoCircle } from '@phosphor-icons/react'
 import { MetaRow } from "@moc/ui/components/display/meta-row"
 import { Divider } from "@moc/ui/components/display/divider"
 import type { MiniAppField } from "@moc/notifications"

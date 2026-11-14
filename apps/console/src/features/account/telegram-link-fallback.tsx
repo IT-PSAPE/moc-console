@@ -1,7 +1,7 @@
 import { Button } from "@moc/ui/components/controls/button"
 import { Card } from "@moc/ui/components/display/card"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
-import { Check, Copy } from "iconoir-react"
+import { Check, Copy } from '@phosphor-icons/react'
 import type { PendingTelegramLink, TelegramCopyTarget } from "./use-telegram-link"
 
 type TelegramLinkFallbackProps = {
@@ -35,7 +35,7 @@ export function TelegramLinkFallback({ botUsername, pending, copied, onRetry, on
         <Button.Icon
           aria-label="Copy Telegram link"
           variant="ghost"
-          icon={copied === "url" ? <Check className="text-success" /> : <Copy />}
+          icon={copied === "url" ? <Check weight="regular" className="text-success" /> : <Copy />}
           onClick={copyUrl}
         />
       </div>
@@ -45,7 +45,7 @@ export function TelegramLinkFallback({ botUsername, pending, copied, onRetry, on
         <Button.Icon
           aria-label="Copy Telegram command"
           variant="ghost"
-          icon={copied === "command" ? <Check className="text-success" /> : <Copy />}
+          icon={copied === "command" ? <Check weight="regular" className="text-success" /> : <Copy />}
           onClick={copyCommand}
         />
       </div>

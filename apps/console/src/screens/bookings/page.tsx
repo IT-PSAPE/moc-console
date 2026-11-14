@@ -2,7 +2,7 @@ import { Input } from "@moc/ui/components/form/input";
 import { Page } from "@moc/ui/components/layout/page";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
-import { Calendar, TaskList, ViewColumns3, List, Search, FilterList } from "iconoir-react";
+import { Calendar, ListChecks as TaskList, Columns as ViewColumns3, List, MagnifyingGlass as Search, FunnelSimple as FilterList } from '@phosphor-icons/react';
 import type { ChangeEvent } from "react";
 import { BookingFilterDrawer } from "@/features/equipment/booking-filter-drawer";
 import { BookingListView } from "@/features/equipment/booking-list";
@@ -50,7 +50,7 @@ export function BookingsScreen() {
       <CollectionToolbar>
           <CollectionToolbar.Views>
             <SegmentedControl value={activeView} onValueChange={actions.changeView} fill={isLandscape}>
-              <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
+              <CollectionToolbar.ViewItem value="list" icon={<List weight="regular" />}>List</CollectionToolbar.ViewItem>
               <CollectionToolbar.ViewItem value="kanban" icon={<ViewColumns3 />} hide={isLandscape}>Kanban</CollectionToolbar.ViewItem>
               <CollectionToolbar.ViewItem value="calendar" icon={<Calendar />}>Calendar</CollectionToolbar.ViewItem>
             </SegmentedControl>

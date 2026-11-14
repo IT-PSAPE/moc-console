@@ -1,12 +1,5 @@
 import type { ChangeEvent } from "react";
-import {
-  Calendar,
-  ViewColumns3,
-  List,
-  MapPin,
-  Search,
-  FilterList,
-} from "iconoir-react";
+import { Calendar, Columns as ViewColumns3, List, MapPin, MagnifyingGlass as Search, FunnelSimple as FilterList } from '@phosphor-icons/react';
 import { VenueBookingCalendarView } from "@/features/venues/venue-booking-calendar";
 import { VenueBookingKanbanView } from "@/features/venues/venue-booking-kanban";
 import { VenueBookingListView } from "@/features/venues/venue-booking-list";
@@ -57,7 +50,7 @@ export function VenueBookingsScreen() {
       <CollectionToolbar>
         <CollectionToolbar.Views>
           <SegmentedControl value={activeView} onValueChange={actions.changeView} fill={isLandscape} >
-            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="list" icon={<List weight="regular" />}>List</CollectionToolbar.ViewItem>
             <CollectionToolbar.ViewItem value="kanban" icon={<ViewColumns3 />} hide={isLandscape}>Kanban</CollectionToolbar.ViewItem>
             <CollectionToolbar.ViewItem value="calendar" icon={<Calendar />}>Calendar</CollectionToolbar.ViewItem>
           </SegmentedControl>

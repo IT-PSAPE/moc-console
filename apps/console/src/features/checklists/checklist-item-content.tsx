@@ -1,4 +1,4 @@
-import { Calendar } from 'iconoir-react'
+import { Calendar } from '@phosphor-icons/react'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import type { Checklist } from '@moc/types/checklists'
 import { formatUtcIsoInBrowserTimeZone } from '@moc/utils/browser-date-time'

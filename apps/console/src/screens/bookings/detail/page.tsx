@@ -3,7 +3,7 @@ import { useBookingDetail } from "@/features/equipment/use-booking-detail"
 import { useBreadcrumbOverride } from "@moc/ui/components/navigation/breadcrumb"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Page } from "@moc/ui/components/layout/page"
-import { TaskList } from "iconoir-react"
+import { ListChecks as TaskList } from '@phosphor-icons/react'
 import { BookingDetailContent } from "./booking-detail-content"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 

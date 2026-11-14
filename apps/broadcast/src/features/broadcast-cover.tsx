@@ -1,5 +1,5 @@
 import { cn } from "@moc/utils/cn"
-import { MusicNote } from "iconoir-react"
+import { MusicNote } from '@phosphor-icons/react'
 
 type BroadcastCoverProps = {
   alt?: string

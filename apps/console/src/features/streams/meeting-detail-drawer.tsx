@@ -9,24 +9,7 @@ import { Section } from "@moc/ui/components/display/section"
 import { zoomRecurrenceLabel } from "@moc/types/streams/zoom-constants"
 import type { ZoomMeeting } from "@moc/types/streams/zoom"
 import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
-import {
-  Calendar,
-  Check,
-  Clock,
-  Copy,
-  OpenNewWindow,
-  Internet,
-  Key,
-  Link,
-  Expand,
-  ChatBubble,
-  Microphone,
-  EditPencil,
-  Repeat,
-  ShieldCheck,
-  Trash,
-  Xmark,
-} from "iconoir-react"
+import { Calendar, Check, Clock, Copy, ArrowSquareOut as OpenNewWindow, Globe as Internet, Key, Link, ArrowsOut as Expand, ChatCircle as ChatBubble, Microphone, PencilSimple as EditPencil, Repeat, ShieldCheck, Trash, X as Xmark } from '@phosphor-icons/react'
 import { useMeetingDetailDrawer } from "./use-meeting-detail-drawer"
 import { StreamProviderIcon } from "./stream-provider-icon"
 
@@ -51,7 +34,7 @@ export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: Meeti
   return (
     <>
       <SplitPanel.Header className="flex items-center gap-1">
-        <Button.Icon aria-label="Close meeting" variant="ghost" size="sm" icon={<Xmark />} onClick={drawer.actions.close} />
+        <Button.Icon aria-label="Close meeting" variant="ghost" size="sm" icon={<Xmark weight="regular" />} onClick={drawer.actions.close} />
         <Button.Icon aria-label="Open full page" variant="ghost" size="sm" icon={<Expand />} onClick={drawer.actions.openFullPage} />
         <div className="flex-1" />
         {drawer.meta.canEdit && (
@@ -124,7 +107,7 @@ export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: Meeti
                       aria-label="Copy join link"
                       variant="ghost"
                       size="sm"
-                      icon={drawer.state.copiedField === "join" ? <Check className="text-success" /> : <Copy />}
+                      icon={drawer.state.copiedField === "join" ? <Check weight="regular" className="text-success" /> : <Copy />}
                       onClick={drawer.actions.copyJoinUrl}
                     />
                     <Button.IconLink render={<a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open join link" variant="ghost" size="sm" icon={<OpenNewWindow />} />
@@ -140,7 +123,7 @@ export function MeetingDetailPanel({ meeting, onClose, onEdit, onDelete }: Meeti
                       aria-label="Copy passcode"
                       variant="ghost"
                       size="sm"
-                      icon={drawer.state.copiedField === "pass" ? <Check className="text-success" /> : <Copy />}
+                      icon={drawer.state.copiedField === "pass" ? <Check weight="regular" className="text-success" /> : <Copy />}
                       onClick={drawer.actions.copyPassword}
                     />
                   </div>

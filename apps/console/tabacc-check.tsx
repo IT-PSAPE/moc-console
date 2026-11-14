@@ -3,7 +3,7 @@ import "@moc/ui/styles.css";
 import { Accordion } from "@moc/ui/components/display/accordion";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { Tabs } from "@moc/ui/components/layout/tabs";
-import { NavArrowDown } from "iconoir-react";
+import { CaretDown as NavArrowDown } from '@phosphor-icons/react';
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 

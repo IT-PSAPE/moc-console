@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ClockRotateRight, Restart, Message, Plus, RefreshDouble } from 'iconoir-react'
+import { ClockCounterClockwise as ClockRotateRight, ArrowCounterClockwise as Restart, Chat as Message, Plus, ArrowsClockwise as RefreshDouble } from '@phosphor-icons/react'
 import { Page } from '@moc/ui/components/layout/page'
 import { CollectionToolbar } from '@moc/ui/components/layout/collection-toolbar'
 import { SegmentedControl } from '@moc/ui/components/controls/segmented-control'
@@ -16,7 +16,7 @@ export function ScheduledMessagesScreen() {
         <Page.Header>
             <Page.Heading><Page.Title>Messages</Page.Title></Page.Heading>
             <Page.Controls>
-                <Button.Link icon={<Plus />} render={<Link to={`/${routes.scheduledMessageNew}`} onClick={actions.startMessage} />}>New message</Button.Link>
+                <Button.Link icon={<Plus weight="regular" />} render={<Link to={`/${routes.scheduledMessageNew}`} onClick={actions.startMessage} />}>New message</Button.Link>
                 <Button.Icon variant="secondary" aria-label="Sync Telegram commands" title="Update the commands shown in Telegram" icon={<Restart />} onClick={actions.syncCommands} disabled={state.busy || state.loading} />
                 <Button.Icon variant="secondary" aria-label="Refresh messages" title="Refresh messages" icon={<RefreshDouble />} onClick={actions.reload} disabled={state.loading || state.busy} />
             </Page.Controls>

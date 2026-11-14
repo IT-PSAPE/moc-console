@@ -1,6 +1,6 @@
 import { BroadcastLayout } from "@/features/broadcast-layout"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
-import { Antenna } from "iconoir-react"
+import { Radio as Antenna } from '@phosphor-icons/react'
 
 export function HomeScreen() {
   return (

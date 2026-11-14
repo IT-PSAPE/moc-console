@@ -2,7 +2,7 @@ import { Button } from "@moc/ui/components/controls/button";
 import { Card } from "@moc/ui/components/display/card";
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { QRCodeCanvas } from "qrcode.react";
-import { Check, Copy, Download, PrintingPage } from "iconoir-react";
+import { Check, Copy, Download, Printer as PrintingPage } from '@phosphor-icons/react';
 import type { Equipment } from "@moc/types/equipment";
 import { useEquipmentQr } from "./use-equipment-qr";
 
@@ -27,7 +27,7 @@ export function EquipmentQrSection({ equipment }: { equipment: Equipment }) {
           <Button size="sm" variant="secondary" icon={<PrintingPage />} onClick={actions.print}>
             Print
           </Button>
-          <Button size="sm" variant="secondary" icon={state.hasCopied ? <Check className="text-success" /> : <Copy />} onClick={actions.copy}>
+          <Button size="sm" variant="secondary" icon={state.hasCopied ? <Check weight="regular" className="text-success" /> : <Copy />} onClick={actions.copy}>
             {state.hasCopied ? "Copied" : "Copy"}
           </Button>
         </div>

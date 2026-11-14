@@ -3,7 +3,7 @@ import { InteractiveSurface } from '@moc/ui/components/controls/interactive-surf
 import { Section } from '@moc/ui/components/display/section'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
 import { Timeline } from '@moc/ui/components/display/timeline'
-import { ArrowRight, NavArrowDown } from 'iconoir-react'
+import { ArrowRight, CaretDown as NavArrowDown } from '@phosphor-icons/react'
 import type { ActivityChangeView, ActivityLinkView, ActivityView } from './discussion-types'
 import { DiscussionActorAvatar } from './discussion-actor-avatar'
 import { Link } from 'react-router-dom'

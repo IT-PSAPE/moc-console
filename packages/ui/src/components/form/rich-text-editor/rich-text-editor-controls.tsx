@@ -1,4 +1,4 @@
-import { Bold, Italic, Underline, Strikethrough, Code, Link, UndoAction, RedoAction, NavArrowDown, Plus, Table2Columns } from 'iconoir-react'
+import { TextB as Bold, TextItalic as Italic, TextUnderline as Underline, TextStrikethrough as Strikethrough, Code, Link, ArrowCounterClockwise as UndoAction, ArrowUUpRight as RedoAction, CaretDown as NavArrowDown, Plus, Columns as Table2Columns } from '@phosphor-icons/react'
 import { Button } from '../../controls/button'
 import { Dropdown } from '../../overlays/dropdown'
 import { RichTextEditorCommand } from './rich-text-editor-command'
@@ -23,7 +23,7 @@ export function RichTextEditorControls() {
             <RichTextEditorCommand command="strike" label="Strikethrough" icon={<Strikethrough />} />
             <RichTextEditorCommand command="code" label="Inline code" icon={<Code />} />
             <Button.Icon variant="ghost" size="sm" icon={<Link />} aria-label="Edit link" title="Edit link" onMouseDown={actions.preserveSelection} onClick={actions.openLink} disabled={state.disabled || state.selection?.activeCommands.includes('code')} className="rounded-md" />
-            <Dropdown><Dropdown.Trigger><Button variant="ghost" size="sm" icon={<Plus />} className="rounded-md">Insert</Button></Dropdown.Trigger><Dropdown.Panel>
+            <Dropdown><Dropdown.Trigger><Button variant="ghost" size="sm" icon={<Plus weight="regular" />} className="rounded-md">Insert</Button></Dropdown.Trigger><Dropdown.Panel>
                 <RichTextEditorMenuCommand command="table">Table</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="bulletList">Bullet list</RichTextEditorMenuCommand>
                 <RichTextEditorMenuCommand command="orderedList">Numbered list</RichTextEditorMenuCommand>

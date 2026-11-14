@@ -1,5 +1,5 @@
 import type { ReactElement } from "react"
-import { ArrowUpRight, LinkSlash } from "iconoir-react"
+import { ArrowUpRight, LinkBreak as LinkSlash } from '@phosphor-icons/react'
 import { Button } from "../controls/button"
 
 type LinkedRecordRowProps = {

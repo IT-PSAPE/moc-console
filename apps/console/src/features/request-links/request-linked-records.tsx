@@ -12,7 +12,7 @@ import { RetryNotification } from "@moc/ui/components/feedback/retry-notificatio
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { RecordPicker } from "@moc/ui/components/form/record-picker"
 import { Dropdown } from "@moc/ui/components/overlays/dropdown"
-import { Link as LinkIcon, Plus } from "iconoir-react"
+import { Link as LinkIcon, Plus } from '@phosphor-icons/react'
 import { Link } from "react-router-dom"
 import { useRequestLinkedRecords } from "./use-request-linked-records"
 
@@ -42,7 +42,7 @@ export function RequestLinkedRecords({ request, enabled = true }: RequestLinkedR
               {meta.canUpdate && <div className="min-w-0 flex-1"><RecordPicker label="Link existing work" placeholder={state.options.length ? "Link existing work…" : "No unlinked records available"} options={state.options} value={null} onSelect={actions.link} disabled={state.isSaving || !state.options.length} style="ghost" size="sm" /></div>}
               {(creation.meta.canCreate || creation.meta.canCreateStream) && (
                 <Dropdown placement="bottom">
-                  <Dropdown.Trigger><Button.Icon aria-label="Create linked work" size="sm" variant="ghost" icon={<Plus />} /></Dropdown.Trigger>
+                  <Dropdown.Trigger><Button.Icon aria-label="Create linked work" size="sm" variant="ghost" icon={<Plus weight="regular" />} /></Dropdown.Trigger>
                   <Dropdown.Panel>
                     {creation.meta.canCreate && <Dropdown.Item onSelect={creation.actions.openChecklist}>Create checklist</Dropdown.Item>}
                     {creation.meta.canCreateStream && <Dropdown.Item onSelect={creation.actions.openStream}>Create stream or meeting</Dropdown.Item>}

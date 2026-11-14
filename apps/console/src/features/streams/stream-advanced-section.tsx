@@ -6,7 +6,7 @@ import { Accordion } from "@moc/ui/components/display/accordion"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
 import type { LatencyPreference } from "@moc/types/streams/stream"
 import { latencyPreferenceLabel, latencyPreferenceHint } from "@moc/types/streams/stream-constants"
-import { NavArrowDown } from "iconoir-react"
+import { CaretDown as NavArrowDown } from '@phosphor-icons/react'
 
 type StreamAdvancedSectionProps = {
   latencyPreference: LatencyPreference

@@ -1,7 +1,7 @@
 import { Select as BaseSelect } from "@base-ui/react/select";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
-import { Check, NavArrowDown } from "iconoir-react";
+import { Check, CaretDown as NavArrowDown } from '@phosphor-icons/react';
 import { createContext, useContext, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { useIsLandscape } from "../../hooks/use-is-landscape";
 import { Drawer } from "../overlays/drawer";
@@ -164,7 +164,7 @@ function SelectItem({ children, className, description, ...props }: Styled<Compo
                 {description && <span className="paragraph-xs whitespace-normal text-tertiary">{description}</span>}
             </span>
             <BaseSelect.ItemIndicator keepMounted className="flex size-4 shrink-0 items-center justify-center opacity-0 group-data-[selected]:opacity-100">
-                <Check className="size-4 text-brand" />
+                <Check weight="regular" className="size-4 text-brand" />
             </BaseSelect.ItemIndicator>
         </BaseSelect.Item>
     );

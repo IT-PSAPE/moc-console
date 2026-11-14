@@ -1,4 +1,4 @@
-import { SidebarCollapse, Xmark } from 'iconoir-react'
+import { SidebarSimple as SidebarCollapse, X as Xmark } from '@phosphor-icons/react'
 import { Sidebar } from '@moc/ui/components/navigation/sidebar'
 import { useIsLandscape } from '@moc/ui/hooks/use-is-landscape'
 import { useNavigation } from './app-navigation-context'
@@ -12,7 +12,7 @@ export function AppNavigationContent() {
 
     return (
         <Sidebar.Secondary id="secondary-navigation" aria-label={`${meta.title} navigation`}>
-            <WorkspaceNavigationHeader onToggle={isLandscape ? actions.closeLandscape : actions.toggleCollapsed} toggleLabel={isLandscape ? 'Close navigation' : 'Collapse navigation details'} toggleIcon={isLandscape ? <Xmark /> : <SidebarCollapse />} />
+            <WorkspaceNavigationHeader onToggle={isLandscape ? actions.closeLandscape : actions.toggleCollapsed} toggleLabel={isLandscape ? 'Close navigation' : 'Collapse navigation details'} toggleIcon={isLandscape ? <Xmark weight="regular" /> : <SidebarCollapse />} />
             {meta.destinations.length > 0 ? <AppNavigationMenu title={meta.title} destinations={meta.destinations} onNavigate={actions.closeLandscape} /> : null}
         </Sidebar.Secondary>
     )

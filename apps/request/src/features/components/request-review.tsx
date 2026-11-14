@@ -2,7 +2,7 @@ import { Badge } from '@moc/ui/components/display/badge'
 import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Divider } from '@moc/ui/components/display/divider'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
-import { User, Page, Calendar, Label as LabelIcon, Group, MapPin, Clock, Archery, LightBulb, Wrench, GitBranch } from 'iconoir-react'
+import { User, File as Page, Calendar, Tag as LabelIcon, UsersThree as Group, MapPin, Clock, Target as Archery, Lightbulb as LightBulb, Wrench, GitBranch } from '@phosphor-icons/react'
 import type { RequestFormData } from '@/types/request'
 import { formatDateTime } from '@/lib/utils'
 

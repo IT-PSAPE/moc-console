@@ -1,4 +1,4 @@
-import { WarningTriangle } from "iconoir-react"
+import { Warning as WarningTriangle } from '@phosphor-icons/react'
 import { Button } from "../controls/button"
 import { Label, Paragraph } from "../display/text"
 import { Modal } from "./modal"

@@ -1,4 +1,4 @@
-import { Calendar } from 'iconoir-react'
+import { Calendar } from '@phosphor-icons/react'
 import { cn } from '@moc/utils/cn'
 import { GroupedList } from '@moc/ui/components/display/grouped-list'
 import { Label } from '@moc/ui/components/display/text'

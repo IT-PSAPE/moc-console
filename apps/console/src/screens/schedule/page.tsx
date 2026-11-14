@@ -10,7 +10,7 @@ import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { Button } from "@moc/ui/components/controls/button";
 import { InteractiveSurface } from "@moc/ui/components/controls/interactive-surface";
 import { Link } from "react-router-dom";
-import { Calendar as CalendarIcon, MapPin, Search, Label } from "iconoir-react";
+import { Calendar as CalendarIcon, MapPin, MagnifyingGlass as Search, Tag as Label } from '@phosphor-icons/react';
 import type { ChangeEvent } from "react";
 import { getEventTime, getVisibleEventTitle } from "@/features/schedule/schedule-events";
 import { useSchedule } from "@/features/schedule/use-schedule";

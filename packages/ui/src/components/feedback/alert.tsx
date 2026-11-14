@@ -2,7 +2,7 @@ import { cn } from '@moc/utils/cn'
 import { cv } from '@moc/utils/cv'
 import { Button } from '../controls/button'
 import { Label, Paragraph } from '../display/text'
-import { WarningCircle, CheckCircle, InfoCircle, LightBulb, WarningTriangle, Xmark } from 'iconoir-react'
+import { WarningCircle, CheckCircle, Info as InfoCircle, Lightbulb as LightBulb, Warning as WarningTriangle, X as Xmark } from '@phosphor-icons/react'
 import type { HTMLAttributes, ReactNode } from 'react'
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ export function Alert({ title, description, action, variant = 'info', style = 'f
             {dismissible && onDismiss && (
                 <Button.Icon
                     aria-label="Dismiss"
-                    icon={<Xmark />}
+                    icon={<Xmark weight="regular" />}
                     variant="ghost"
                     size="sm"
                     onClick={onDismiss}

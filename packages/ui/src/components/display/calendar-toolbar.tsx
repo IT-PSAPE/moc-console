@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { NavArrowLeft, NavArrowRight } from 'iconoir-react'
+import { CaretLeft as NavArrowLeft, CaretRight as NavArrowRight } from '@phosphor-icons/react'
 import { getCalendarToolbarLabels } from '@moc/utils/calendar-presentation'
 import { Button } from '../controls/button'
 import { ButtonGroup } from '../controls/button-group'

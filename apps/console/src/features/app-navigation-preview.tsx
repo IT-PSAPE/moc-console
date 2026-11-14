@@ -1,4 +1,4 @@
-import { SidebarExpand } from 'iconoir-react'
+import { Sidebar as SidebarExpand } from '@phosphor-icons/react'
 import { Popover } from '@moc/ui/components/overlays/popover'
 import { useNavigation } from './app-navigation-context'
 import { WorkspaceNavigationHeader } from './workspace-navigation-header'

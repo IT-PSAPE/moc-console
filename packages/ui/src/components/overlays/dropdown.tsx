@@ -5,7 +5,7 @@ import { useIsLandscape } from '../../hooks/use-is-landscape'
 import { Drawer } from './drawer'
 import { mobileSheetPositionerClassName } from './mobile-sheet'
 import { useOverlayStack } from './overlay-provider'
-import { Check } from 'iconoir-react'
+import { Check } from '@phosphor-icons/react'
 import { Paragraph } from '../display/text'
 
 // ─── Placement ───────────────────────────────────────────────────────
@@ -231,7 +231,7 @@ function DropdownCheckboxList({ label, options, selected, name, onValueChange }:
         function handleCheckedChange() { onValueChange(name, option.value) }
         return <Menu.CheckboxItem key={option.value} checked={selected.includes(option.value)} closeOnClick={false} onCheckedChange={handleCheckedChange} className={cn(dropdownItemClassName, 'group')}>
             <span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center rounded border border-primary bg-primary shadow-xs group-data-[checked]:border-brand_solid group-data-[checked]:bg-brand_solid group-data-[checked]:text-on-brand">
-                <Menu.CheckboxItemIndicator keepMounted className="opacity-0 group-data-[checked]:opacity-100"><Check className="size-3" /></Menu.CheckboxItemIndicator>
+                <Menu.CheckboxItemIndicator keepMounted className="opacity-0 group-data-[checked]:opacity-100"><Check weight="regular" className="size-3" /></Menu.CheckboxItemIndicator>
             </span>
             <span className="min-w-0 flex-1 truncate">{option.label}</span>
         </Menu.CheckboxItem>

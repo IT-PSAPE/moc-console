@@ -1,4 +1,4 @@
-import { Building, Calendar, OnePointCircle, Clock, ClockRotateRight, MapPin, Repeat, Archery, Hashtag, User } from "iconoir-react";
+import { Building, Calendar, Circle as OnePointCircle, Clock, ClockCounterClockwise as ClockRotateRight, MapPin, Repeat, Target as Archery, Hash as Hashtag, User } from '@phosphor-icons/react';
 import { Badge } from "@moc/ui/components/display/badge";
 import { MetaRow } from "@moc/ui/components/display/meta-row";
 import { Paragraph } from "@moc/ui/components/display/text";

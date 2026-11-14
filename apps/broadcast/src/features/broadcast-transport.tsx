@@ -1,5 +1,5 @@
 import { Button } from "@moc/ui/components/controls/button"
-import { Expand, Collapse, PauseSolid, PlaySolid, SkipPrevSolid, SkipNextSolid } from "iconoir-react"
+import { ArrowsOut as Expand, ArrowsIn as Collapse, Pause, Play, SkipBack, SkipForward } from '@phosphor-icons/react'
 import { useBroadcastPlaybackContext } from "./broadcast-playback-provider"
 
 const stepButtonClassName = "size-11 min-w-0 rounded-full border-transparent [&_svg]:size-6"
@@ -20,21 +20,21 @@ export function BroadcastTransport() {
           aria-label="Previous item"
           variant="ghost"
           className={stepButtonClassName}
-          icon={<SkipPrevSolid />}
+          icon={<SkipBack />}
           onClick={moveToPrevious}
         />
         <Button.Icon
           aria-label={isPlaying ? "Pause" : "Play"}
           variant="ghost"
           className="size-14 min-w-0 rounded-full border-transparent [&_svg]:size-8"
-          icon={isPlaying ? <PauseSolid /> : <PlaySolid />}
+          icon={isPlaying ? <Pause /> : <Play />}
           onClick={togglePlayback}
         />
         <Button.Icon
           aria-label="Next item"
           variant="ghost"
           className={stepButtonClassName}
-          icon={<SkipNextSolid />}
+          icon={<SkipForward />}
           onClick={moveToNext}
         />
       </div>

@@ -1,6 +1,6 @@
 import { AlertDialog as BaseAlertDialog } from '@base-ui/react/alert-dialog'
 import { cn } from '@moc/utils/cn'
-import { WarningTriangle } from 'iconoir-react'
+import { Warning as WarningTriangle } from '@phosphor-icons/react'
 import { Button } from '../controls/button'
 import { Label, Paragraph } from '../display/text'
 import { useOverlayStack } from './overlay-provider'

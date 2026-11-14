@@ -1,4 +1,4 @@
-import { WarningTriangle } from "iconoir-react"
+import { Warning as WarningTriangle } from '@phosphor-icons/react'
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Button } from "@moc/ui/components/controls/button"
 import { MINI_APP_ERROR_COPY } from "@/features/telegram/mini-app-error-copy"

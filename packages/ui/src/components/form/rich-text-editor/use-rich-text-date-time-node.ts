@@ -1,6 +1,6 @@
 import { useId, type ChangeEvent, type MouseEvent } from 'react'
 import type { NodeViewProps } from '@tiptap/react'
-import { Calendar, Clock } from 'iconoir-react'
+import { Calendar, Clock } from '@phosphor-icons/react'
 import {
     currentRichTextDateTimeValue,
     isRichTextDateTimeValue,

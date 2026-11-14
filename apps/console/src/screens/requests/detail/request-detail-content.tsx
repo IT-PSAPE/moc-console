@@ -2,7 +2,7 @@ import { useDetailReturn } from "@/hooks/use-detail-return"
 import { RequestLinkedRecords } from "@/features/request-links/request-linked-records"
 import { useRef } from "react"
 import { Link } from "react-router-dom"
-import { Archive, UploadSquare, MoreVert, FloppyDisk, Trash, UndoAction } from "iconoir-react"
+import { Archive, UploadSimple as UploadSquare, DotsThreeVertical as MoreVert, FloppyDisk, Trash, ArrowCounterClockwise as UndoAction } from '@phosphor-icons/react'
 import { DeleteRequestModal } from "@/features/requests/delete-request-modal"
 import { RequestAssigneeList } from "@/features/requests/request-assignee-list"
 import { RequestFiveW } from "@/features/requests/request-five-w"
@@ -55,7 +55,7 @@ export function RequestDetailContent({ request, syncRequest }: RequestDetailCont
             <RequestShareActions.ScreenshotButton />
             <RequestShareActions.CopyButton />
             <Dropdown placement="bottom">
-              <Dropdown.Trigger><Button.Icon aria-label="More request actions" variant="secondary" icon={<MoreVert />} /></Dropdown.Trigger>
+              <Dropdown.Trigger><Button.Icon aria-label="More request actions" variant="secondary" icon={<MoreVert weight="regular" />} /></Dropdown.Trigger>
               <Dropdown.Panel>
                 <Dropdown.Item onSelect={actions.handleArchiveToggle}>
                   {request.status === "archived" ? <><UploadSquare className="size-4" />Unarchive</> : <><Archive className="size-4" />Archive</>}

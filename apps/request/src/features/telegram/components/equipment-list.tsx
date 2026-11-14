@@ -1,4 +1,4 @@
-import { Check, Box } from "iconoir-react"
+import { Check, Cube as Box } from '@phosphor-icons/react'
 import { Divider } from "@moc/ui/components/display/divider"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import type { MiniAppEquipmentItem } from "@moc/notifications"
@@ -24,7 +24,7 @@ export function EquipmentList({ items, scannedItemIds }: EquipmentListProps) {
             </div>
             {scannedItemIds.has(item.id) && (
               <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success text-success">
-                <Check className="size-4" />
+                <Check weight="regular" className="size-4" />
               </span>
             )}
           </div>

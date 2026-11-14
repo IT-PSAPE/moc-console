@@ -7,7 +7,7 @@ import { Button } from "@moc/ui/components/controls/button"
 import { RetryNotification } from "@moc/ui/components/feedback/retry-notification"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
-import { Antenna } from "iconoir-react"
+import { Radio as Antenna } from '@phosphor-icons/react'
 import { useParams } from "react-router-dom"
 import { BroadcastLayout } from "@/features/broadcast-layout"
 

@@ -1,4 +1,4 @@
-import { ScanQrCode } from "iconoir-react"
+import { QrCode as ScanQrCode } from '@phosphor-icons/react'
 import { Button } from "@moc/ui/components/controls/button"
 import { Section } from "@moc/ui/components/display/section"
 import { RetryNotification } from "@moc/ui/components/feedback/retry-notification"

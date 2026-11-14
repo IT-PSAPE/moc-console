@@ -1,5 +1,5 @@
 import type { ChangeEvent } from 'react'
-import { TaskList, Plus, Search } from 'iconoir-react'
+import { ListChecks as TaskList, Plus, MagnifyingGlass as Search } from '@phosphor-icons/react'
 import { DividedList } from '@moc/ui/components/display/divided-list'
 import { Button } from '@moc/ui/components/controls/button'
 import { Input } from '@moc/ui/components/form/input'
@@ -31,7 +31,7 @@ export function ChecklistTemplatesScreen() {
                     <Page.Title>Checklist templates</Page.Title>
                 </Page.Heading>
                 <Page.Actions>
-                    <Button.Icon aria-label="Create checklist template" variant="secondary" icon={<Plus />} onClick={actions.openCreate} />
+                    <Button.Icon aria-label="Create checklist template" variant="secondary" icon={<Plus weight="regular" />} onClick={actions.openCreate} />
                 </Page.Actions>
             </Page.Header>
 

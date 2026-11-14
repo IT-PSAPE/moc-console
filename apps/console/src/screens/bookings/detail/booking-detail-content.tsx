@@ -23,7 +23,7 @@ import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { Page } from "@moc/ui/components/layout/page"
 import type { Booking } from "@moc/types/equipment"
 import { formatUtcIsoForBrowserDateTimeInput } from "@moc/utils/browser-date-time"
-import { Calendar, Clock, Refresh, FloppyDisk, ScanQrCode, Trash, UndoAction, User } from "iconoir-react"
+import { Calendar, Clock, ArrowsClockwise as Refresh, FloppyDisk, QrCode as ScanQrCode, Trash, ArrowCounterClockwise as UndoAction, User } from '@phosphor-icons/react'
 
 export function BookingDetailContent({ booking }: { booking: Booking }) {
   const back = useDetailReturn(`/${routes.bookings}`, "Back to bookings")

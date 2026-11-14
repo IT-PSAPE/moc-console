@@ -2,7 +2,7 @@ import { Paragraph } from '@moc/ui/components/display/text'
 import { Section } from '@moc/ui/components/display/section'
 import { Composer } from '@moc/ui/components/form/composer'
 import { RetryNotification } from '@moc/ui/components/feedback/retry-notification'
-import { SendDiagonal } from 'iconoir-react'
+import { PaperPlaneRight as SendDiagonal } from '@phosphor-icons/react'
 import { useItemDiscussionContext } from './item-discussion-context'
 
 export function ItemCommentComposer() {

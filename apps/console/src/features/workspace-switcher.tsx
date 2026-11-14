@@ -1,4 +1,4 @@
-import { LogOut, Settings, User } from 'iconoir-react'
+import { SignOut as LogOut, Gear as Settings, User } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { Avatar } from '@moc/ui/components/display/avatar'
 import { Label } from '@moc/ui/components/display/text'
@@ -48,7 +48,7 @@ export function WorkspaceSwitcher({ isSigningOut, onEditProfile, onSignOut }: Wo
                 <WorkspaceMenuItems />
                 <Dropdown.Separator />
                 <Dropdown.Item onSelect={onSignOut} disabled={isSigningOut}>
-                    <LogOut className="size-4 shrink-0 text-error" aria-hidden="true" />
+                    <LogOut weight="regular" className="size-4 shrink-0 text-error" aria-hidden="true" />
                     <span className="text-error">{isSigningOut ? 'Logging out…' : 'Log out'}</span>
                 </Dropdown.Item>
             </Dropdown.Panel>

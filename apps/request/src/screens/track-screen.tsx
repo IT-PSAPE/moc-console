@@ -13,7 +13,7 @@ import { TrackingBookingEditor } from '@/features/components/tracking-booking-ed
 import { TrackingVenueEditor } from '@/features/components/tracking-venue-editor'
 import { useTrackingLookup } from '@/features/hooks/use-tracking-lookup'
 import { routes } from '@/screens/console-routes'
-import { Search, PageSearch, EditPencil, Trash } from 'iconoir-react'
+import { MagnifyingGlass as Search, FileMagnifyingGlass as PageSearch, PencilSimple as EditPencil, Trash } from '@phosphor-icons/react'
 import { FlowHeader } from '@/features/components/flow-header'
 import { PublicFlow } from '@/features/components/public-flow'
 import type { ChangeEvent, FormEvent } from 'react'

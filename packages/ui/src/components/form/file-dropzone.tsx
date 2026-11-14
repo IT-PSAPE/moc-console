@@ -2,7 +2,7 @@ import { Button as BaseButton } from "@base-ui/react/button"
 import { Input as BaseInput } from "@base-ui/react/input"
 import { useRef, useState } from "react"
 import type { ChangeEvent, DragEvent } from "react"
-import { Check, Upload } from "iconoir-react"
+import { Check, Upload } from '@phosphor-icons/react'
 import { Paragraph } from "@moc/ui/components/display/text"
 import { cn } from "@moc/utils/cn"
 import { partitionFiles, type FilePartition } from "@moc/utils/file-constraints"
@@ -115,7 +115,7 @@ export function FileDropzone({ accept, className, disabled = false, fileName, fi
         onDrop={handleDrop}
       >
         <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-quaternary", hasSelection && "text-success")}>
-          {hasSelection ? <Check className="size-5" /> : <Upload className="size-5" />}
+          {hasSelection ? <Check weight="regular" className="size-5" /> : <Upload className="size-5" />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <Paragraph.sm className={cn("text-secondary", !hasSelection && "text-quaternary")}>

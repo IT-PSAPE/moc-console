@@ -1,4 +1,4 @@
-import { Hashtag } from "iconoir-react"
+import { Hash as Hashtag } from '@phosphor-icons/react'
 import { Badge } from "@moc/ui/components/display/badge"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
 import { Title } from "@moc/ui/components/display/text"

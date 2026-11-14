@@ -1,4 +1,4 @@
-import { MapPin, Label } from 'iconoir-react'
+import { MapPin, Tag as Label } from '@phosphor-icons/react'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import type { Equipment } from '@moc/types/equipment'
 import { EquipmentThumbnail } from './equipment-thumbnail'

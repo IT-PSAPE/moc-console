@@ -1,4 +1,4 @@
-import { NavArrowDown } from "iconoir-react";
+import { CaretDown as NavArrowDown } from '@phosphor-icons/react';
 import { Input } from "@moc/ui/components/form/input";
 import { useInlineChecklistInput } from "./use-inline-checklist-input";
 

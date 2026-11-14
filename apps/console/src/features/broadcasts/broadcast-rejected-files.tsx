@@ -1,7 +1,7 @@
 import { Button } from "@moc/ui/components/controls/button"
 import { Paragraph } from "@moc/ui/components/display/text"
 import type { FileRejection } from "@moc/utils/file-constraints"
-import { WarningTriangle, Xmark } from "iconoir-react"
+import { Warning as WarningTriangle, X as Xmark } from '@phosphor-icons/react'
 
 type BroadcastRejectedFilesProps = {
   onDismiss: () => void
@@ -30,7 +30,7 @@ export function BroadcastRejectedFiles({ onDismiss, rejections }: BroadcastRejec
       <div className="flex items-start gap-2">
         <WarningTriangle className="size-4 shrink-0 text-error" />
         <Paragraph.xs className="flex-1 text-secondary">{`${rejections.length} ${fileLabel} not added to the playlist.`}</Paragraph.xs>
-        <Button.Icon aria-label="Dismiss rejected files" variant="ghost" size="sm" icon={<Xmark />} onClick={onDismiss} />
+        <Button.Icon aria-label="Dismiss rejected files" variant="ghost" size="sm" icon={<Xmark weight="regular" />} onClick={onDismiss} />
       </div>
       <ul className="flex flex-col gap-1.5 pl-6">{rejections.map(renderRejection)}</ul>
     </div>

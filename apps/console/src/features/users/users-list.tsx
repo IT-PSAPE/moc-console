@@ -2,7 +2,7 @@ import type { UserWithRole } from "@/data/fetch-users"
 import { DividedList } from "@moc/ui/components/display/divided-list"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import type { Role } from "@moc/types/requests/assignee"
-import { Group } from "iconoir-react"
+import { UsersThree as Group } from '@phosphor-icons/react'
 import { UserCard } from "./user-card"
 
 type UsersListProps = {

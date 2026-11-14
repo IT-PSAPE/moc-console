@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'iconoir-react'
+import { ArrowLeft } from '@phosphor-icons/react'
 import { Button } from '@moc/ui/components/controls/button'
 import { Paragraph, Title } from '@moc/ui/components/display/text'
 

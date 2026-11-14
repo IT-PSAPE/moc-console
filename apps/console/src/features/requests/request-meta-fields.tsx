@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Archive, Calendar, Check, Circle, Clock, ClockRotateRight, Refresh, Label, User } from "iconoir-react";
+import { Archive, Calendar, Check, Circle, Clock, ClockCounterClockwise as ClockRotateRight, ArrowsClockwise as Refresh, Tag as Label, User } from '@phosphor-icons/react';
 import { Badge } from "@moc/ui/components/display/badge";
 import { MetaRow } from "@moc/ui/components/display/meta-row";
 import { Paragraph } from "@moc/ui/components/display/text";
@@ -10,7 +10,7 @@ import type { RequestCategoryDefinition, Status } from "@moc/types/requests";
 import { statusColor, statusLabel } from "@moc/types/requests";
 import { useRequestMetaFields, type RequestMetaFieldsOptions } from "./use-request-meta-fields";
 
-const statusIcon: Record<Status, ReactNode> = { not_started: <Circle />, in_progress: <Refresh />, completed: <Check />, archived: <Archive /> };
+const statusIcon: Record<Status, ReactNode> = { not_started: <Circle />, in_progress: <Refresh />, completed: <Check weight="regular" />, archived: <Archive /> };
 const statuses: Status[] = ["not_started", "in_progress", "completed", "archived"];
 const statusItems = statuses.map((value) => ({ label: statusLabel[value], value }));
 

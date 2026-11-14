@@ -9,7 +9,7 @@ import { EquipmentPropertiesSection } from "./equipment-properties-section";
 import { EquipmentThumbnail } from "./equipment-thumbnail";
 import { useEquipmentEditor } from "./use-equipment-editor";
 import type { Equipment } from "@moc/types/equipment";
-import { Expand, Trash, Xmark } from "iconoir-react";
+import { ArrowsOut as Expand, Trash, X as Xmark } from '@phosphor-icons/react';
 import type { RefObject } from "react";
 import { useDrawerClose } from "@/hooks/use-drawer-close";
 import { useDrawerEditorGuard } from "@/hooks/use-drawer-editor-guard";
@@ -71,7 +71,7 @@ export function EquipmentPanelContent({ equipment, onClose, open, isDirtyRef, re
     <>
       {/* Header */}
       <SplitPanel.Header className="flex items-center gap-1">
-        <Button.Icon aria-label="Close equipment" variant="ghost" size="sm" icon={<Xmark />} onClick={guard.actions.requestClose} />
+        <Button.Icon aria-label="Close equipment" variant="ghost" size="sm" icon={<Xmark weight="regular" />} onClick={guard.actions.requestClose} />
         <Button.Icon
           variant="ghost"
           size="sm"

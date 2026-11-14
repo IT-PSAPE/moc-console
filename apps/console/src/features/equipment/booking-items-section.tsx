@@ -5,7 +5,7 @@ import { InteractiveSurface } from "@moc/ui/components/controls/interactive-surf
 import { Label, Paragraph } from "@moc/ui/components/display/text";
 import { equipmentCategoryLabel } from "@moc/types/equipment";
 import type { BookingItem } from "@moc/types/equipment";
-import { NavArrowRight, Box } from "iconoir-react";
+import { CaretRight as NavArrowRight, Cube as Box } from '@phosphor-icons/react';
 import { Link } from "react-router-dom";
 
 // Shared between the booking drawer and the booking detail page so the

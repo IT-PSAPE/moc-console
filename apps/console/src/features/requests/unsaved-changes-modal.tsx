@@ -1,7 +1,7 @@
 import { Modal } from '@moc/ui/components/overlays/modal'
 import { Button } from '@moc/ui/components/controls/button'
 import { Label, Paragraph } from '@moc/ui/components/display/text'
-import { WarningTriangle } from 'iconoir-react'
+import { Warning as WarningTriangle } from '@phosphor-icons/react'
 
 type UnsavedChangesModalProps = {
     open: boolean

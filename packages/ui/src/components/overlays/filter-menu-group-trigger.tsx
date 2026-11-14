@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { NavArrowRight } from 'iconoir-react'
+import { CaretRight as NavArrowRight } from '@phosphor-icons/react'
 import { Indicator } from '../display/indicator'
 import { Dropdown } from './dropdown'
 import { useFilterMenuGroup } from './filter-menu-context'

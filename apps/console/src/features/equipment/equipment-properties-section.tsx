@@ -11,7 +11,7 @@ import type {
   EquipmentStatus,
   EquipmentCategory,
 } from "@moc/types/equipment";
-import { Hashtag, Refresh, MapPin, Label, User } from "iconoir-react";
+import { Hash as Hashtag, ArrowsClockwise as Refresh, MapPin, Tag as Label, User } from '@phosphor-icons/react';
 import type { ChangeEvent } from "react";
 
 const allStatuses: EquipmentStatus[] = [

@@ -1,4 +1,4 @@
-import { EditPencil, Plus, Quote, Undo, Search, SunLight } from 'iconoir-react'
+import { PencilSimple as EditPencil, Plus, Quotes as Quote, ArrowCounterClockwise as Undo, MagnifyingGlass as Search, Sun as SunLight } from '@phosphor-icons/react'
 import { DAILY_QUOTE_IMAGE_MAX_SIZE_BYTES, DAILY_QUOTE_IMAGE_TYPES, type DailyQuote } from '@moc/sdk/daily-quotes'
 import { Button } from '@moc/ui/components/controls/button'
 import { Card } from '@moc/ui/components/display/card'
@@ -43,7 +43,7 @@ export function DailyQuotesScreen() {
       <Page.Controls>
         <Input aria-label="Search daily quotes" name="daily-quote-search" autoComplete="off" icon={<Search />} placeholder="Search quotes…" value={state.search} onChange={actions.changeSearch} />
         {meta.canManage && state.isOverridden ? <Button icon={<Undo />} variant="secondary" onClick={actions.restoreAutomaticRotation} disabled={state.isSaving}>Use automatic rotation</Button> : null}
-        {meta.canManage ? <Button icon={<Plus />} variant="secondary" onClick={actions.openCreate}>Add quote</Button> : null}
+        {meta.canManage ? <Button icon={<Plus weight="regular" />} variant="secondary" onClick={actions.openCreate}>Add quote</Button> : null}
       </Page.Controls>
     </Page.Header>
     <Page.Content>

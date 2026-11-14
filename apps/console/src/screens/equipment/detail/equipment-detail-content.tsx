@@ -17,7 +17,7 @@ import { Paragraph } from "@moc/ui/components/display/text"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { Page } from "@moc/ui/components/layout/page"
 import type { Equipment } from "@moc/types/equipment"
-import { FloppyDisk, Trash, UndoAction } from "iconoir-react"
+import { FloppyDisk, Trash, ArrowCounterClockwise as UndoAction } from '@phosphor-icons/react'
 
 export function EquipmentDetailContent({ equipment }: { equipment: Equipment }) {
   const back = useDetailReturn(`/${routes.equipment}`, "Back to equipment")

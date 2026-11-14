@@ -1,4 +1,4 @@
-import { SoundLow, SoundOff } from "iconoir-react"
+import { SpeakerLow as SoundLow, SpeakerSlash as SoundOff } from '@phosphor-icons/react'
 import { Button } from "@moc/ui/components/controls/button"
 import { useBroadcastPlaybackContext } from "./broadcast-playback-provider"
 import { BroadcastSlider } from "./broadcast-slider"

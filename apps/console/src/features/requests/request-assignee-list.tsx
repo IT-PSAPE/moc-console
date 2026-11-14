@@ -4,7 +4,7 @@ import { MemberPicker } from "@/features/assignees/member-picker";
 import { Button } from "@moc/ui/components/controls/button";
 import { MetaRow } from "@moc/ui/components/display/meta-row";
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
-import { Group } from "iconoir-react";
+import { UsersThree as Group } from '@phosphor-icons/react';
 
 type RequestAssigneeListProps = { assignees: ResolvedAssignee[]; label: string; isLoading: boolean; onAddMember: (userId: string) => void; onRemoveMember: (userId: string) => void };
 

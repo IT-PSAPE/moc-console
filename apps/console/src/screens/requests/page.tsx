@@ -4,14 +4,7 @@ import { RequestListView } from "@/features/requests/request-list";
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control";
 import { Page } from "@moc/ui/components/layout/page";
 import { Input } from "@moc/ui/components/form/input";
-import {
-  Calendar,
-  ViewColumns3,
-  Drawer as DrawerIcon,
-  List,
-  Search,
-  FilterList,
-} from "iconoir-react";
+import { Calendar, Columns as ViewColumns3, Archive as DrawerIcon, List, MagnifyingGlass as Search, FunnelSimple as FilterList } from '@phosphor-icons/react';
 import type { ChangeEvent } from "react";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
@@ -58,7 +51,7 @@ export function RequestsScreen() {
       <CollectionToolbar>
         <CollectionToolbar.Views>
           <SegmentedControl value={activeView} onValueChange={actions.changeView} fill={isLandscape} >
-            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="list" icon={<List weight="regular" />}>List</CollectionToolbar.ViewItem>
             <CollectionToolbar.ViewItem value="kanban" icon={<ViewColumns3 />} hide={isLandscape}>Kanban</CollectionToolbar.ViewItem>
             <CollectionToolbar.ViewItem value="calendar" icon={<Calendar />}>Calendar</CollectionToolbar.ViewItem>
           </SegmentedControl>

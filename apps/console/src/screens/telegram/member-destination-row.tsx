@@ -3,7 +3,7 @@ import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import { UserAvatar } from '@moc/ui/components/display/user-avatar'
 import { TelegramLinkedBadge } from '@/features/users/telegram-linked-badge'
 import type { UserWithRole } from '@/data/fetch-users'
-import { Link } from 'iconoir-react'
+import { Link } from '@phosphor-icons/react'
 
 type MemberDestinationRowProps = { user: UserWithRole; onOpenConnect: (user: UserWithRole) => void }
 

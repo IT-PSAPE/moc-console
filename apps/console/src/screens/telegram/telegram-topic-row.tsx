@@ -2,7 +2,7 @@ import { Badge } from '@moc/ui/components/display/badge'
 import { Button } from '@moc/ui/components/controls/button'
 import { Paragraph } from '@moc/ui/components/display/text'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
-import { Link } from 'iconoir-react'
+import { Link } from '@phosphor-icons/react'
 import type { TelegramGroup, TelegramGroupTopic } from '@/data/fetch-telegram-groups'
 
 type TelegramTopicRowProps = {

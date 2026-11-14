@@ -8,7 +8,7 @@ import { Input } from "@moc/ui/components/form/input"
 import { Page } from "@moc/ui/components/layout/page"
 import { SplitPanel } from "@moc/ui/components/layout/split-panel"
 import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
-import { Plus, Antenna, Search } from "iconoir-react"
+import { Plus, Radio as Antenna, MagnifyingGlass as Search } from '@phosphor-icons/react'
 import type { ChangeEvent } from "react"
 import { BroadcastDetailPanel } from "./broadcast-detail-panel"
 import { BroadcastItem } from "./broadcast-item"
@@ -56,7 +56,7 @@ function BroadcastsCollection() {
                 onChange={handleSearchChange}
               />
               {meta.canCreate ? (
-                <Button.Icon aria-label="Create broadcast" variant="secondary" icon={<Plus />} onClick={actions.openCreate} />
+                <Button.Icon aria-label="Create broadcast" variant="secondary" icon={<Plus weight="regular" />} onClick={actions.openCreate} />
               ) : null}
             </Page.Controls>
           </Page.Header>

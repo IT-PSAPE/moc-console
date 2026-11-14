@@ -1,5 +1,5 @@
 import { Button as BaseButton } from '@base-ui/react/button'
-import { NavArrowRight } from 'iconoir-react'
+import { CaretRight as NavArrowRight } from '@phosphor-icons/react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@moc/utils/cn'
 import { useIsLandscape } from '../../hooks/use-is-landscape'

@@ -3,7 +3,7 @@ import { Section } from "@moc/ui/components/display/section";
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { RetryNotification } from "@moc/ui/components/feedback/retry-notification";
-import { ChatLines } from "iconoir-react";
+import { ChatText as ChatLines } from '@phosphor-icons/react';
 import { Decision } from "@moc/ui/components/display/decision";
 import type { TelegramGroup } from "@/data/fetch-telegram-groups";
 import { useTelegramContext } from "./telegram-context";

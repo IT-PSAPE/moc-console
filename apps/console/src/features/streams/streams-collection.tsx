@@ -8,7 +8,7 @@ import { Input } from "@moc/ui/components/form/input"
 import { CollectionToolbar } from "@moc/ui/components/layout/collection-toolbar"
 import { Page } from "@moc/ui/components/layout/page"
 import { Drawer } from "@moc/ui/components/overlays/drawer"
-import { Plus, Antenna, RefreshDouble, Search } from "iconoir-react"
+import { Plus, Radio as Antenna, ArrowsClockwise as RefreshDouble, MagnifyingGlass as Search } from '@phosphor-icons/react'
 import { CreateStreamModal } from "./create-stream-modal"
 import { MeetingModal } from "./meeting-modal"
 import { StreamFilterDrawer } from "./stream-filter-drawer"
@@ -87,7 +87,7 @@ export function StreamsCollection() {
             <Button.Icon aria-label="Sync streams" variant="secondary" icon={<RefreshDouble />} onClick={handleSync} disabled={meta.isSyncing || !meta.canSync} />
           ) : null}
           {meta.canCreate ? (
-            <Button.Icon aria-label="Create stream" variant="secondary" icon={<Plus />} onClick={actions.openCreate} />
+            <Button.Icon aria-label="Create stream" variant="secondary" icon={<Plus weight="regular" />} onClick={actions.openCreate} />
           ) : null}
         </Page.Controls>
       </Page.Header>

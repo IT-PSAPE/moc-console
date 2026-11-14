@@ -1,6 +1,6 @@
 import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Label } from '@moc/ui/components/display/text'
-import { User, Archery, Building, Calendar, Repeat } from 'iconoir-react'
+import { User, Target as Archery, Building, Calendar, Repeat } from '@phosphor-icons/react'
 import { formatVenueRecurrenceEndLabel, formatVenueRecurrenceLabel } from '@moc/types/venues'
 import { formatDateTime } from '@/lib/utils'
 import type { VenueBookingFormData } from '@/types/venue-booking'

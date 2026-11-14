@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react'
-import { Filter } from 'iconoir-react'
+import { Funnel as Filter } from '@phosphor-icons/react'
 import { Button } from '../controls/button'
 import { Indicator } from '../display/indicator'
 import { Dropdown } from './dropdown'

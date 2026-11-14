@@ -15,7 +15,7 @@ import { BookingScanModal } from "./booking-scan-modal";
 import { BookingStatusSelect } from "./booking-status-select";
 import { BookingThumbnail } from "./booking-thumbnail";
 import type { Booking } from "@moc/types/equipment";
-import { Calendar, Clock, Refresh, Expand, ScanQrCode, Trash, User, Xmark } from "iconoir-react";
+import { Calendar, Clock, ArrowsClockwise as Refresh, ArrowsOut as Expand, QrCode as ScanQrCode, Trash, User, X as Xmark } from '@phosphor-icons/react';
 import type { RefObject } from "react";
 import { formatUtcIsoForBrowserDateTimeInput } from "@moc/utils/browser-date-time";
 import { useDrawerClose } from "@/hooks/use-drawer-close";
@@ -73,7 +73,7 @@ export function BookingPanelContent({ booking, open, onClose, isDirtyRef, reques
   return (
     <>
       <SplitPanel.Header className="flex items-center gap-1">
-        <Button.Icon aria-label="Close booking" variant="ghost" size="sm" icon={<Xmark />} onClick={guard.actions.requestClose} />
+        <Button.Icon aria-label="Close booking" variant="ghost" size="sm" icon={<Xmark weight="regular" />} onClick={guard.actions.requestClose} />
         <div className="flex-1" />
         <Button.Icon
           variant="secondary"

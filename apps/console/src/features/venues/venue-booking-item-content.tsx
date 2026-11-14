@@ -1,4 +1,4 @@
-import { Calendar, Hashtag, User } from 'iconoir-react'
+import { Calendar, Hash as Hashtag, User } from '@phosphor-icons/react'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import type { VenueBooking } from '@moc/types/venues'
 import { formatUtcIsoInBrowserTimeZone } from '@moc/utils/browser-date-time'

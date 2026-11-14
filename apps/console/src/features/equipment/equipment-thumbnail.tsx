@@ -1,5 +1,5 @@
 import type { Equipment } from "@moc/types/equipment";
-import { Box } from "iconoir-react";
+import { Cube as Box } from '@phosphor-icons/react';
 
 export function EquipmentThumbnail({ equipment, size }: { equipment: Equipment; size?: 'sm' | 'md' | 'lg' }) {
   const thumbnailSize = size === 'sm' ? 'size-6' : size === 'lg' ? 'size-10' : 'size-8';

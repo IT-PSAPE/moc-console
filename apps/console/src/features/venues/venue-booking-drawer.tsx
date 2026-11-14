@@ -1,7 +1,7 @@
 import { ItemDiscussionPanel } from "@/features/item-discussion/item-discussion-panel"
 import { useDetailLinkState } from "@/hooks/use-detail-return"
 import { RequestLinkField } from "@/features/request-links/request-link-field"
-import { Prohibition, Check, MoreVert, Expand, Undo, Xmark } from "iconoir-react";
+import { Prohibit as Prohibition, Check, DotsThreeVertical as MoreVert, ArrowsOut as Expand, ArrowCounterClockwise as Undo, X as Xmark } from '@phosphor-icons/react';
 import { Link } from "react-router-dom";
 import { Drawer, useDrawer } from "@moc/ui/components/overlays/drawer";
 import { Dropdown } from "@moc/ui/components/overlays/dropdown";
@@ -85,12 +85,12 @@ export function VenueBookingPanelContent({ booking, open, onClose }: VenueBookin
   return (
     <>
       <SplitPanel.Header className="flex items-center gap-1">
-        <Button.Icon aria-label="Close booking" variant="ghost" size="sm" icon={<Xmark />} onClick={onClose} />
+        <Button.Icon aria-label="Close booking" variant="ghost" size="sm" icon={<Xmark weight="regular" />} onClick={onClose} />
         <Button.IconLink aria-label="Open full page" variant="ghost" size="sm" icon={<Expand />} render={<Link state={linkState} to={`/${routes.venues}/${booking.id}`} />} />
         <div className="flex-1" />
         <Dropdown placement="bottom">
           <Dropdown.Trigger>
-            <Button.Icon aria-label="More booking actions" variant="secondary" size="sm" icon={<MoreVert />} />
+            <Button.Icon aria-label="More booking actions" variant="secondary" size="sm" icon={<MoreVert weight="regular" />} />
           </Dropdown.Trigger>
           <Dropdown.Panel>
             {canRestore ? (
@@ -102,13 +102,13 @@ export function VenueBookingPanelContent({ booking, open, onClose }: VenueBookin
               <>
                 {canApprove && (
                   <Dropdown.Item onSelect={handleApprove}>
-                    <Check className="size-4 text-success" />
+                    <Check weight="regular" className="size-4 text-success" />
                     <span className="text-success">Approve booking</span>
                   </Dropdown.Item>
                 )}
                 {canReject && (
                   <Dropdown.Item onSelect={handleOpenReject}>
-                    <Xmark className="size-4 text-error" />
+                    <Xmark weight="regular" className="size-4 text-error" />
                     <span className="text-error">Reject booking</span>
                   </Dropdown.Item>
                 )}

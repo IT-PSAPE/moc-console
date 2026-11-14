@@ -3,7 +3,7 @@ import { PublicLayout } from '@/features/components/public-layout'
 import { EmptyState } from '@moc/ui/components/feedback/empty-state'
 import { Button } from '@moc/ui/components/controls/button'
 import { routes } from '@/screens/console-routes'
-import { HelpCircle } from 'iconoir-react'
+import { Question as HelpCircle } from '@phosphor-icons/react'
 
 export function NotFoundScreen() {
   const navigate = useNavigate()

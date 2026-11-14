@@ -1,4 +1,4 @@
-import { Check, MapPin, EditPencil, Plus, Search, Xmark } from "iconoir-react"
+import { Check, MapPin, PencilSimple as EditPencil, Plus, MagnifyingGlass as Search, X as Xmark } from '@phosphor-icons/react'
 import type { Venue } from "@moc/types/venues"
 import { Button } from "@moc/ui/components/controls/button"
 import { Input } from "@moc/ui/components/form/input"
@@ -22,7 +22,7 @@ export function VenueCatalogPage() {
     return <Table.Row key={venue.id}>
       <Table.Cell className="max-w-0">{state.editingId === venue.id ? <Input aria-label={`Venue name for ${venue.name}`} value={state.editName} onChange={actions.changeEditName} autoFocus onKeyDown={actions.editKeyDownFor(venue)} /> : <Label.sm className="block truncate text-primary" title={venue.name}>{venue.name}</Label.sm>}</Table.Cell>
       <Table.Cell>{meta.canUpdate ? <Toggle checked={venue.active} onChange={actions.changeActiveFor(venue)} disabled={state.saving} aria-label={`${venue.active ? "Mark" : "Make"} ${venue.name} ${venue.active ? "unavailable" : "available"}`} /> : <Badge color={venue.active ? "green" : "gray"} label={venue.active ? "Yes" : "No"} />}</Table.Cell>
-      <Table.Cell className="text-right">{meta.canUpdate ? state.editingId === venue.id ? <div className="flex justify-end gap-1"><Button.Icon aria-label="Save venue name" icon={<Check />} variant="ghost" size="sm" disabled={!actions.nameAvailable(state.editName, venue.id) || state.saving} onClick={actions.saveEditFor(venue)} /><Button.Icon aria-label="Cancel venue rename" icon={<Xmark />} variant="ghost" size="sm" disabled={state.saving} onClick={actions.cancelEdit} /></div> : <Button.Icon aria-label={`Rename ${venue.name}`} icon={<EditPencil />} variant="ghost" size="sm" disabled={state.saving} onClick={actions.beginEditFor(venue)} /> : null}</Table.Cell>
+      <Table.Cell className="text-right">{meta.canUpdate ? state.editingId === venue.id ? <div className="flex justify-end gap-1"><Button.Icon aria-label="Save venue name" icon={<Check weight="regular" />} variant="ghost" size="sm" disabled={!actions.nameAvailable(state.editName, venue.id) || state.saving} onClick={actions.saveEditFor(venue)} /><Button.Icon aria-label="Cancel venue rename" icon={<Xmark weight="regular" />} variant="ghost" size="sm" disabled={state.saving} onClick={actions.cancelEdit} /></div> : <Button.Icon aria-label={`Rename ${venue.name}`} icon={<EditPencil />} variant="ghost" size="sm" disabled={state.saving} onClick={actions.beginEditFor(venue)} /> : null}</Table.Cell>
     </Table.Row>
   }
 
@@ -31,7 +31,7 @@ export function VenueCatalogPage() {
       <Page.Heading><Page.Title>Venues</Page.Title></Page.Heading>
       <Page.Controls>
         <Input aria-label="Search venues" name="venue-catalog-search" autoComplete="off" icon={<Search />} placeholder="Search venues…" value={state.search} onChange={actions.changeSearch} />
-        {meta.canCreate ? <Button.Icon aria-label="Add venue" variant="secondary" icon={<Plus />} onClick={actions.openCreate} /> : null}
+        {meta.canCreate ? <Button.Icon aria-label="Add venue" variant="secondary" icon={<Plus weight="regular" />} onClick={actions.openCreate} /> : null}
       </Page.Controls>
     </Page.Header>
     <Page.Content>

@@ -3,7 +3,7 @@ import { useEquipmentDetail } from "@/features/equipment/use-equipment-detail"
 import { useBreadcrumbOverride } from "@moc/ui/components/navigation/breadcrumb"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Page } from "@moc/ui/components/layout/page"
-import { Box } from "iconoir-react"
+import { Cube as Box } from '@phosphor-icons/react'
 import { EquipmentDetailContent } from "./equipment-detail-content"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { NavArrowRight } from 'iconoir-react'
+import { CaretRight as NavArrowRight } from '@phosphor-icons/react'
 import { Badge } from '@moc/ui/components/display/badge'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import { InteractiveSurface } from '@moc/ui/components/controls/interactive-surface'

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { NavArrowDown } from "iconoir-react";
+import { CaretDown as NavArrowDown } from '@phosphor-icons/react';
 import { Accordion } from "@moc/ui/components/display/accordion";
 import { Paragraph } from "@moc/ui/components/display/text";
 

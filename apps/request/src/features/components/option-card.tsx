@@ -1,7 +1,7 @@
 import { Label } from '@moc/ui/components/display/text'
 import { Paragraph } from '@moc/ui/components/display/text'
 import { cn } from '@moc/utils/cn'
-import { NavArrowRight } from 'iconoir-react'
+import { CaretRight as NavArrowRight } from '@phosphor-icons/react'
 import type { ReactNode } from 'react'
 import { Button } from '@moc/ui/components/controls/button'
 

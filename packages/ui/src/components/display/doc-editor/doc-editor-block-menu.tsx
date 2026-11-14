@@ -1,5 +1,5 @@
 import { Menu } from '@base-ui/react/menu'
-import { AlignBottomBox, AlignTopBox, Copy, Trash } from 'iconoir-react'
+import { AlignBottom as AlignBottomBox, AlignTop as AlignTopBox, Copy, Trash } from '@phosphor-icons/react'
 import { cn } from '@moc/utils/cn'
 import { useOverlayStack } from '@moc/ui/components/overlays/overlay-provider'
 import type { ReactNode } from 'react'

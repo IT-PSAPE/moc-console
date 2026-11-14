@@ -1,7 +1,7 @@
 import { Badge } from '@moc/ui/components/display/badge'
 import { MetaRow } from '@moc/ui/components/display/meta-row'
 import { Label } from '@moc/ui/components/display/text'
-import { Box, User, Calendar, CalendarCheck, Page, Plus } from 'iconoir-react'
+import { Cube as Box, User, Calendar, CalendarCheck, File as Page, Plus } from '@phosphor-icons/react'
 import type { BookingFormData } from '@/types/booking'
 import { formatDateTime } from '@/lib/utils'
 
@@ -32,7 +32,7 @@ export function BookingReview({ data }: BookingReviewProps) {
             </div>
           </MetaRow>
           {other && (
-            <MetaRow icon={<Plus />} label="Other">
+            <MetaRow icon={<Plus weight="regular" />} label="Other">
               <Label.sm>{other}</Label.sm>
             </MetaRow>
           )}

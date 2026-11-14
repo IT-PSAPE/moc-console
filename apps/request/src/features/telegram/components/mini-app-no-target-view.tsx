@@ -1,4 +1,4 @@
-import { Drawer } from "iconoir-react"
+import { Archive as Drawer } from '@phosphor-icons/react'
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 
 export function MiniAppNoTargetView() {

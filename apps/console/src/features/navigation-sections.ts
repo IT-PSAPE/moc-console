@@ -1,5 +1,5 @@
 import { routes } from '@/screens/console-routes'
-import { Packages, Building, TaskList, ViewGrid, Megaphone, Message, ChatLines, Quote, AntennaSignal, SendDiagonal, Group, Suitcase, Movie } from 'iconoir-react'
+import { Package as Packages, Building, ListChecks as TaskList, SquaresFour as ViewGrid, Megaphone, Chat as Message, ChatText as ChatLines, Quotes as Quote, Broadcast as AntennaSignal, PaperPlaneRight as SendDiagonal, UsersThree as Group, Suitcase, FilmSlate as Movie } from '@phosphor-icons/react'
 
 export type NavigationSection = 'overview' | 'work' | 'production' | 'communications' | 'people'
 export type NavigationDestination = { title: string; route: string; icon: typeof ViewGrid }

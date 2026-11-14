@@ -29,7 +29,7 @@
     "@tiptap/pm": "3.31.4",
     "@tiptap/react": "3.31.4",
     "@tiptap/starter-kit": "3.31.4",
-    "iconoir-react": "7.12.1",
+    "@phosphor-icons/react": "2.1.10",
     "tailwind-merge": "3.5.0"
   },
   "peerDependencies": {

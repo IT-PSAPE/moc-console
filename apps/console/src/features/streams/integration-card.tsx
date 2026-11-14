@@ -4,7 +4,7 @@ import { Badge } from "@moc/ui/components/display/badge"
 import { ListItemCard } from "@moc/ui/components/display/list-item-card"
 import { LoadingSpinner } from "@moc/ui/components/feedback/spinner"
 import { ConfirmationDialog } from "@moc/ui/components/overlays/confirmation-dialog"
-import { Link, RefreshDouble, LinkSlash } from "iconoir-react"
+import { Link, ArrowsClockwise as RefreshDouble, LinkBreak as LinkSlash } from '@phosphor-icons/react'
 import { useState, type ReactNode } from "react"
 
 type IntegrationCardProps = {

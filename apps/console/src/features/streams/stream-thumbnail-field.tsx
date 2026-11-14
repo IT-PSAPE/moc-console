@@ -1,11 +1,12 @@
 import type { ChangeEvent } from "react"
 import { Button } from "@moc/ui/components/controls/button"
+import { Spinner } from "@moc/ui/components/feedback/spinner"
 import { Input } from "@moc/ui/components/form/input"
 import { FormField } from "@moc/ui/components/form/form-label"
 import { FileDropzone } from "@moc/ui/components/form/file-dropzone"
 import { Paragraph } from "@moc/ui/components/display/text"
 import { SegmentedControl } from "@moc/ui/components/controls/segmented-control"
-import { Link, Refresh, Xmark } from "iconoir-react"
+import { Link, X as Xmark } from '@phosphor-icons/react'
 import { THUMBNAIL_MAX_SIZE_BYTES } from "@moc/utils/blob-fetch"
 import type { FilePartition } from "@moc/utils/file-constraints"
 
@@ -51,9 +52,9 @@ export function StreamThumbnailField({ hasSelection, selectionName, previewUrl, 
             )}
             <Paragraph.sm className="text-secondary truncate flex-1">{selectionName}</Paragraph.sm>
             {status === "resolving" && (
-              <Refresh className="size-3.5 animate-spin text-quaternary shrink-0 motion-reduce:animate-none" />
+              <Spinner size="sm" aria-hidden="true" />
             )}
-            <Button.Icon aria-label="Remove thumbnail" variant="ghost" icon={<Xmark className="size-3.5" />} onClick={onClear} />
+            <Button.Icon aria-label="Remove thumbnail" variant="ghost" icon={<Xmark weight="regular" className="size-3.5" />} onClick={onClear} />
           </div>
           {status === "resolving" && (
             <Paragraph.xs role="status" className="text-quaternary">Checking image…</Paragraph.xs>

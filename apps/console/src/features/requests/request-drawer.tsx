@@ -8,14 +8,7 @@ import type { Request } from "@moc/types/requests";
 import { UnsavedChangesModal } from "./unsaved-changes-modal";
 import { DeleteRequestModal } from "./delete-request-modal";
 import { useRequests } from "./request-provider";
-import {
-  Archive,
-  UploadSquare,
-  MoreVert,
-  Expand,
-  Trash,
-  Xmark,
-} from "iconoir-react";
+import { Archive, UploadSimple as UploadSquare, DotsThreeVertical as MoreVert, ArrowsOut as Expand, Trash, X as Xmark } from '@phosphor-icons/react';
 import { useRef, type RefObject } from "react";
 import { RequestAssigneeList } from "./request-assignee-list";
 import { RequestFiveW } from "./request-five-w";
@@ -93,7 +86,7 @@ export function RequestPanelContent({ request, onClose, open, isDirtyRef, reques
       {/* Toolbar */}
       <RequestShareActions.Root request={store.state.draft} targetRef={shareTargetRef}>
         <SplitPanel.Header className="gap-2">
-          <Button.Icon aria-label="Close request" variant="ghost" size="sm" icon={<Xmark />} onClick={guard.actions.requestClose} />
+          <Button.Icon aria-label="Close request" variant="ghost" size="sm" icon={<Xmark weight="regular" />} onClick={guard.actions.requestClose} />
           <Button.Icon
             variant="ghost"
             size="sm"
@@ -107,7 +100,7 @@ export function RequestPanelContent({ request, onClose, open, isDirtyRef, reques
           <RequestShareActions.CopyButton size="sm" />
           <Dropdown placement="bottom">
             <Dropdown.Trigger>
-              <Button.Icon aria-label="More request actions" variant="secondary" size="sm" icon={<MoreVert />} />
+              <Button.Icon aria-label="More request actions" variant="secondary" size="sm" icon={<MoreVert weight="regular" />} />
             </Dropdown.Trigger>
             <Dropdown.Panel>
               <Dropdown.Item onSelect={detail.actions.handleArchiveToggle}>

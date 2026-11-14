@@ -1,7 +1,7 @@
 import type { BroadcastKind } from "@moc/types/broadcast/broadcast"
 import { Button } from "@moc/ui/components/controls/button"
 import { ListItemCard } from "@moc/ui/components/display/list-item-card"
-import { MusicNote, MediaVideo, Xmark } from "iconoir-react"
+import { MusicNote, Video as MediaVideo, X as Xmark } from '@phosphor-icons/react'
 import type { BroadcastEditorItem } from "./broadcast-editor-types"
 import { getBroadcastPlaylistItemSize, getBroadcastPlaylistItemStatus, getBroadcastPlaylistItemTitle } from "./broadcast-playlist-item-data"
 
@@ -41,7 +41,7 @@ export function BroadcastPlaylistItem({ isLocked, item, kind, onRemove }: Broadc
         </ListItemCard.Meta>
       </ListItemCard.Content>
       {onRemove ? <ListItemCard.Trailing className="@max-[36rem]/row:basis-auto @max-[36rem]/row:justify-end opacity-0 transition-opacity group-hover/playlist-item:opacity-100 group-focus-within/playlist-item:opacity-100 [@media(hover:none)]:opacity-100">
-        <Button.Icon aria-label={`Remove ${title}`} variant="ghost" icon={<Xmark />} disabled={isLocked} onClick={handleRemove} />
+        <Button.Icon aria-label={`Remove ${title}`} variant="ghost" icon={<Xmark weight="regular" />} disabled={isLocked} onClick={handleRemove} />
       </ListItemCard.Trailing> : null}
     </ListItemCard.Root>
   )

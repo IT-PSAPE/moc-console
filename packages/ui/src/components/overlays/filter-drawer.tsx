@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from 'react'
-import { Undo, Xmark } from 'iconoir-react'
+import { ArrowCounterClockwise as Undo, X as Xmark } from '@phosphor-icons/react'
 import { Button } from '../controls/button'
 import { Label } from '../display/text'
 import { Drawer } from './drawer'
@@ -20,7 +20,7 @@ function FilterDrawerRoot({ children, hasActiveFilters = false, onReset, title =
                 <Drawer.Header>
                     <Label.md className="flex-1">{title}</Label.md>
                     <Drawer.Close>
-                        <Button.Icon aria-label="Close filters" variant="ghost" size="sm" icon={<Xmark />} />
+                        <Button.Icon aria-label="Close filters" variant="ghost" size="sm" icon={<Xmark weight="regular" />} />
                     </Drawer.Close>
                 </Drawer.Header>
                 <Drawer.Content>{children}</Drawer.Content>

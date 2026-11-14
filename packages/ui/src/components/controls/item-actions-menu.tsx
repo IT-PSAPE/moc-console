@@ -1,4 +1,4 @@
-import { Copy, MoreVert, EditPencil, Trash } from 'iconoir-react'
+import { Copy, DotsThreeVertical as MoreVert, PencilSimple as EditPencil, Trash } from '@phosphor-icons/react'
 import { Button } from './button'
 import { Dropdown } from '../overlays/dropdown'
 
@@ -14,7 +14,7 @@ type ItemActionsMenuProps = {
 export function ItemActionsMenu({ label, disabled, size = "sm", onEdit, onDuplicate, onDelete }: ItemActionsMenuProps) {
     return (
         <Dropdown placement="bottom-end">
-            <Dropdown.Trigger><Button.Icon aria-label={`Options for ${label}`} variant="ghost" size={size} icon={<MoreVert />} disabled={disabled} /></Dropdown.Trigger>
+            <Dropdown.Trigger><Button.Icon aria-label={`Options for ${label}`} variant="ghost" size={size} icon={<MoreVert weight="regular" />} disabled={disabled} /></Dropdown.Trigger>
             <Dropdown.Panel>
                 <Dropdown.Item onSelect={onEdit}><EditPencil className="size-4" aria-hidden="true" />Edit</Dropdown.Item>
                 <Dropdown.Item onSelect={onDuplicate}><Copy className="size-4" aria-hidden="true" />Duplicate</Dropdown.Item>

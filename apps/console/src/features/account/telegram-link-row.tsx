@@ -2,7 +2,7 @@ import { UnlinkTelegramModal } from "./unlink-telegram-modal"
 import { Button } from "@moc/ui/components/controls/button"
 import { Indicator } from "@moc/ui/components/display/indicator"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
-import { SendDiagonal, LinkSlash } from "iconoir-react"
+import { PaperPlaneRight as SendDiagonal, LinkBreak as LinkSlash } from '@phosphor-icons/react'
 import { TelegramLinkFallback } from "./telegram-link-fallback"
 import { useTelegramLink } from "./use-telegram-link"
 

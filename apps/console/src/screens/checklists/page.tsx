@@ -1,4 +1,4 @@
-import { PagePlus, TaskList, Plus, Search } from 'iconoir-react'
+import { FilePlus as PagePlus, ListChecks as TaskList, Plus, MagnifyingGlass as Search } from '@phosphor-icons/react'
 import { Button } from '@moc/ui/components/controls/button'
 import { GroupedList } from '@moc/ui/components/display/grouped-list'
 import { Indicator } from '@moc/ui/components/display/indicator'
@@ -46,7 +46,7 @@ export function ChecklistsScreen() {
                 <Input aria-label="Search checklists" name="checklist-search" autoComplete="off" icon={<Search />} placeholder="Search checklists…" value={state.search} onChange={handleSearchChange} />
                 <Dropdown placement="bottom">
                     <Dropdown.Trigger>
-                        <Button.Icon aria-label="Create checklist" variant='secondary' icon={<Plus />} />
+                        <Button.Icon aria-label="Create checklist" variant='secondary' icon={<Plus weight="regular" />} />
                     </Dropdown.Trigger>
                     <Dropdown.Panel>
                         <Dropdown.Item onSelect={actions.pickBlank}>

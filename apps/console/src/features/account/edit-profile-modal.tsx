@@ -10,7 +10,7 @@ import { TextArea } from "@moc/ui/components/form/text-area"
 import { Toggle } from "@moc/ui/components/form/toggle"
 import { Modal } from "@moc/ui/components/overlays/modal"
 import { UnsavedChangesDialog } from "@moc/ui/components/overlays/unsaved-changes-dialog"
-import { Bell, Camera, Trash } from "iconoir-react"
+import { Bell, Camera, Trash } from '@phosphor-icons/react'
 import { TelegramLinkRow } from "./telegram-link-row"
 import { PROFILE_STATUS_MAX_LENGTH, useProfileSettings } from "./use-profile-settings"
 import { useWebPush } from "./use-web-push"

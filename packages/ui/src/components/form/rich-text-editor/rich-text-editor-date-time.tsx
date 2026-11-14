@@ -1,4 +1,4 @@
-import { Calendar, Clock } from 'iconoir-react'
+import { Calendar, Clock } from '@phosphor-icons/react'
 import { Button } from '../../controls/button'
 import { Label } from '../../display/text'
 import { Popover } from '../../overlays/popover'

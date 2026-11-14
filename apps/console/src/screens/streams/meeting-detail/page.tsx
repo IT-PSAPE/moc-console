@@ -20,7 +20,7 @@ import { Page } from "@moc/ui/components/layout/page"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 import { routes } from "@/screens/console-routes"
-import { Calendar, Check, Clock, Copy, OpenNewWindow, Internet, Key, Link as LinkIcon, ChatBubble, Microphone, EditPencil, Repeat, ShieldCheck, Trash, VideoCamera } from "iconoir-react"
+import { Calendar, Check, Clock, Copy, ArrowSquareOut as OpenNewWindow, Globe as Internet, Key, Link as LinkIcon, ChatCircle as ChatBubble, Microphone, PencilSimple as EditPencil, Repeat, ShieldCheck, Trash, VideoCamera } from '@phosphor-icons/react'
 
 function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} minutes`
@@ -148,7 +148,7 @@ export function MeetingDetailScreen() {
                       aria-label="Copy join link"
                       variant="ghost"
                       size="sm"
-                      icon={copiedField === "join" ? <Check className="text-success" /> : <Copy />}
+                      icon={copiedField === "join" ? <Check weight="regular" className="text-success" /> : <Copy />}
                       onClick={actions.copyJoinUrl}
                     />
                     <Button.IconLink render={<a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open join link" variant="ghost" size="sm" icon={<OpenNewWindow />} />
@@ -164,7 +164,7 @@ export function MeetingDetailScreen() {
                       aria-label="Copy passcode"
                       variant="ghost"
                       size="sm"
-                      icon={copiedField === "pass" ? <Check className="text-success" /> : <Copy />}
+                      icon={copiedField === "pass" ? <Check weight="regular" className="text-success" /> : <Copy />}
                       onClick={actions.copyPassword}
                     />
                   </div>

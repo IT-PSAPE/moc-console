@@ -3,14 +3,7 @@ import { Button } from "@moc/ui/components/controls/button";
 import { Input } from "@moc/ui/components/form/input";
 import { Page } from "@moc/ui/components/layout/page";
 import { Drawer } from "@moc/ui/components/overlays/drawer";
-import {
-  ViewColumns3,
-  List,
-  Box,
-  Plus,
-  Search,
-  FilterList,
-} from "iconoir-react";
+import { Columns as ViewColumns3, List, Cube as Box, Plus, MagnifyingGlass as Search, FunnelSimple as FilterList } from '@phosphor-icons/react';
 import { Decision } from "@moc/ui/components/display/decision";
 import { EmptyState } from "@moc/ui/components/feedback/empty-state";
 import { EquipmentFilterDrawer } from "@/features/equipment/equipment-filter-drawer";
@@ -62,7 +55,7 @@ export function EquipmentScreen() {
           <Button.Icon
             aria-label="Add equipment"
             variant="secondary"
-            icon={<Plus />}
+            icon={<Plus weight="regular" />}
             onClick={actions.openCreate}
           />
         </Page.Controls>
@@ -71,7 +64,7 @@ export function EquipmentScreen() {
       <CollectionToolbar className="landscape:hidden">
         <CollectionToolbar.Views>
           <SegmentedControl value={state.activeView} onValueChange={actions.changeView} fill={state.isLandscape} >
-            <CollectionToolbar.ViewItem value="list" icon={<List />}>List</CollectionToolbar.ViewItem>
+            <CollectionToolbar.ViewItem value="list" icon={<List weight="regular" />}>List</CollectionToolbar.ViewItem>
             <CollectionToolbar.ViewItem value="kanban" icon={<ViewColumns3 />} hide={state.isLandscape}>Kanban</CollectionToolbar.ViewItem>
           </SegmentedControl>
         </CollectionToolbar.Views>

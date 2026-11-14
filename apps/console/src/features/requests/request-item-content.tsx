@@ -1,4 +1,4 @@
-import { Calendar, Label } from 'iconoir-react'
+import { Calendar, Tag as Label } from '@phosphor-icons/react'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import type { Request } from '@moc/types/requests'
 import { getCategoryLabel } from '@moc/types/requests'

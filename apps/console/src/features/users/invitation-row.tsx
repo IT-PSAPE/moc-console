@@ -1,6 +1,6 @@
 import { Button } from "@moc/ui/components/controls/button"
 import { ListItemCard } from "@moc/ui/components/display/list-item-card"
-import { Mail } from "iconoir-react"
+import { Envelope as Mail } from '@phosphor-icons/react'
 
 type InvitationRowProps = {
   email: string

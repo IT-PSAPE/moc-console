@@ -1,7 +1,7 @@
 import { cn } from '@moc/utils/cn'
 import { cv } from '@moc/utils/cv'
 import { Label } from '@moc/ui/components/display/text'
-import { Check } from 'iconoir-react'
+import { Check } from '@phosphor-icons/react'
 
 type StepState = 'active' | 'completed' | 'upcoming'
 
@@ -50,7 +50,7 @@ function StepIndicatorItem({ step, label, state }: { step: number; label?: strin
   return (
     <div className="flex items-center gap-1.5">
       <span className={stepCircle({ state })}>
-        {state === 'completed' ? <Check className="size-3.5" /> : step}
+        {state === 'completed' ? <Check weight="regular" className="size-3.5" /> : step}
       </span>
       {label && (
         <Label.xs className={stepLabel({ state })}>

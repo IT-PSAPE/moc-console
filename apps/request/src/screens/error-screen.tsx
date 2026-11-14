@@ -4,7 +4,7 @@ import { EmptyState } from '@moc/ui/components/feedback/empty-state'
 import { Alert } from '@moc/ui/components/feedback/alert'
 import { Button } from '@moc/ui/components/controls/button'
 import { routes } from '@/screens/console-routes'
-import { WarningTriangle } from 'iconoir-react'
+import { Warning as WarningTriangle } from '@phosphor-icons/react'
 
 export function ErrorScreen() {
   const error = useRouteError()

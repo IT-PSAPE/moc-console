@@ -1,4 +1,4 @@
-import { TaskList, MapPin, Message, BoxIso, Package, AntennaSignal, VideoCamera } from 'iconoir-react'
+import { ListChecks as TaskList, MapPin, Chat as Message, CubeTransparent as BoxIso, Package, Broadcast as AntennaSignal, VideoCamera } from '@phosphor-icons/react'
 import type { ScheduleAgendaItem } from './schedule-agenda'
 
 export const scheduleItemIcons: Record<ScheduleAgendaItem['kind'], typeof TaskList> = {

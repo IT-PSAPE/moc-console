@@ -8,7 +8,7 @@ import { SortableList } from "@moc/ui/components/display/sortable-list"
 import { Paragraph, Title } from "@moc/ui/components/display/text"
 import { InlineEditableText } from "@moc/ui/components/form/inline-editable-text"
 import { SplitPanel } from "@moc/ui/components/layout/split-panel"
-import { Check, Clock, Copy, Link, Playlist, Trash, Upload } from "iconoir-react"
+import { Check, Clock, Copy, Link, Playlist, Trash, Upload } from '@phosphor-icons/react'
 import type { BroadcastEditorItem } from "./broadcast-editor-types"
 import { BroadcastPlaylistItem } from "./broadcast-playlist-item"
 import { BroadcastUploadModal } from "./broadcast-upload-modal"
@@ -74,7 +74,7 @@ export function BroadcastDetailPanel({ broadcast, canDelete, onDelete }: Broadca
             {meta.publicUrl ? (
               <div className="flex min-w-0 flex-1 items-center gap-1.5">
                 <Paragraph.sm className="min-w-0 flex-1 truncate">{meta.publicUrl}</Paragraph.sm>
-                <Button.Icon aria-label="Copy public link" variant="ghost" size="sm" icon={state.copiedField === "link" ? <Check className="text-success" /> : <Copy />} onClick={handleCopy} />
+                <Button.Icon aria-label="Copy public link" variant="ghost" size="sm" icon={state.copiedField === "link" ? <Check weight="regular" className="text-success" /> : <Copy />} onClick={handleCopy} />
               </div>
             ) : <Paragraph.sm className="text-quaternary">Set VITE_BROADCAST_APP_URL to build player links.</Paragraph.sm>}
           </MetaRow>

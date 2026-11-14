@@ -1,4 +1,4 @@
-import { NavArrowDown } from 'iconoir-react'
+import { CaretDown as NavArrowDown } from '@phosphor-icons/react'
 import type { ReactNode } from 'react'
 import { Avatar } from '@moc/ui/components/display/avatar'
 import { Button } from '@moc/ui/components/controls/button'

@@ -3,7 +3,7 @@ import { PublicLayout } from '@/features/components/public-layout'
 import { routes } from '@/screens/console-routes'
 import { Label, Paragraph, Title } from '@moc/ui/components/display/text'
 import { Button } from '@moc/ui/components/controls/button'
-import { Check, Copy, ShareAndroid } from 'iconoir-react'
+import { Check, Copy, ShareNetwork as ShareAndroid } from '@phosphor-icons/react'
 import { useConfirmation } from './use-confirmation'
 import { PublicFlow } from '@/features/components/public-flow'
 import { Notification } from '@moc/ui/components/feedback/notification'
@@ -35,7 +35,7 @@ export function ConfirmationScreen() {
         <Paragraph.md className="text-secondary">Save this tracking code</Paragraph.md>
         <Button.Surface aria-label="Copy tracking code" className="flex w-full max-w-sm items-center justify-center gap-3 rounded-xl border border-secondary bg-secondary/50 px-5 py-3" onClick={actions.copy}>
           <Title.h6 className="font-mono tracking-widest">{trackingCode}</Title.h6>
-          {state.copied ? <Check className="size-4 text-success" /> : <Copy className="size-4 text-tertiary" />}
+          {state.copied ? <Check weight="regular" className="size-4 text-success" /> : <Copy className="size-4 text-tertiary" />}
         </Button.Surface>
         <Paragraph.sm className="max-w-sm text-center text-tertiary">Keep this code private. Anyone who has it can view, update, or delete this submission.</Paragraph.sm>
       </div>
@@ -43,7 +43,7 @@ export function ConfirmationScreen() {
       {state.shareError && <Notification title="Could not copy or share" description={state.shareError} variant="error" />}
 
       <PublicFlow.Actions className="mx-auto mt-12 max-w-sm">
-        <Button variant="secondary" icon={state.shared ? <Check /> : <ShareAndroid />} onClick={actions.share} className="rounded-full px-6 py-3">
+        <Button variant="secondary" icon={state.shared ? <Check weight="regular" /> : <ShareAndroid />} onClick={actions.share} className="rounded-full px-6 py-3">
           {state.shared ? 'Shared' : 'Share tracking details'}
         </Button>
         <Button variant="secondary" onClick={actions.backToHome} className="rounded-full px-6 py-3">

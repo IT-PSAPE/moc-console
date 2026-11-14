@@ -3,7 +3,7 @@ import { useRequestDetailLoader } from "@/features/requests/use-request-detail-l
 import { useBreadcrumbOverride } from "@moc/ui/components/navigation/breadcrumb"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Page } from "@moc/ui/components/layout/page"
-import { Drawer } from "iconoir-react"
+import { Archive as Drawer } from '@phosphor-icons/react'
 import { RequestDetailContent } from "./request-detail-content"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 

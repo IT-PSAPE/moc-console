@@ -1,4 +1,4 @@
-import { Undo } from 'iconoir-react'
+import { ArrowCounterClockwise as Undo } from '@phosphor-icons/react'
 import { Button } from '../controls/button'
 import { Dropdown } from './dropdown'
 import { useFilterMenu } from './filter-menu-context'

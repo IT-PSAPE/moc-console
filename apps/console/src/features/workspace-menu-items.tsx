@@ -1,4 +1,4 @@
-import { Check } from 'iconoir-react'
+import { Check } from '@phosphor-icons/react'
 import { Avatar } from '@moc/ui/components/display/avatar'
 import { Dropdown } from '@moc/ui/components/overlays/dropdown'
 import { useWorkspaceSwitcher } from './use-workspace-switcher'
@@ -11,7 +11,7 @@ export function WorkspaceMenuItems() {
             <Dropdown.Item key={workspace.id} data-workspace-id={workspace.id} onClick={actions.selectWorkspace} aria-label={`${workspace.name}${workspace.id === meta.currentWorkspaceId ? ', current workspace' : ''}`}>
                 <Avatar.initials size="xs" name={workspace.initials} className="bg-secondary text-secondary" />
                 <span className="min-w-0 flex-1 truncate">{workspace.name}</span>
-                {workspace.id === meta.currentWorkspaceId && <Check className="size-4 text-secondary" aria-hidden="true" />}
+                {workspace.id === meta.currentWorkspaceId && <Check weight="regular" className="size-4 text-secondary" aria-hidden="true" />}
             </Dropdown.Item>
         )
     }

@@ -3,7 +3,7 @@ import { useVenueBookingDetail } from "@/features/venues/use-venue-booking-detai
 import { useBreadcrumbOverride } from "@moc/ui/components/navigation/breadcrumb"
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 import { Page } from "@moc/ui/components/layout/page"
-import { MapPin } from "iconoir-react"
+import { MapPin } from '@phosphor-icons/react'
 import { VenueBookingDetailContent } from "./venue-booking-detail-content"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 

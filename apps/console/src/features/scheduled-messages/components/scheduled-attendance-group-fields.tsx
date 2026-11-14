@@ -1,5 +1,5 @@
 import type { ChangeEvent, MouseEvent } from 'react'
-import { Plus, Xmark } from 'iconoir-react'
+import { Plus, X as Xmark } from '@phosphor-icons/react'
 import type { ScheduledAttendanceGroup } from '@moc/notifications'
 import { Button } from '@moc/ui/components/controls/button'
 import { Checkbox } from '@moc/ui/components/form/checkbox'
@@ -23,7 +23,7 @@ export function ScheduledAttendanceGroupFields({ groups, disabled = false, onCha
     function renderGroup(group: ScheduledAttendanceGroup, index: number) {
         return <div key={group.id} className="flex items-center gap-2">
             <Input className="flex-1" disabled={disabled} aria-label={`Group ${index + 1}`} data-group-id={group.id} value={group.label} maxLength={40} onChange={onChange} />
-            <Button.Icon size="sm" variant="ghost" icon={<Xmark />} disabled={disabled || groups.length <= 2} data-group-id={group.id} aria-label={`Remove group ${index + 1}`} onClick={onRemove} />
+            <Button.Icon size="sm" variant="ghost" icon={<Xmark weight="regular" />} disabled={disabled || groups.length <= 2} data-group-id={group.id} aria-label={`Remove group ${index + 1}`} onClick={onRemove} />
         </div>
     }
 
@@ -32,7 +32,7 @@ export function ScheduledAttendanceGroupFields({ groups, disabled = false, onCha
         {enabled ? <div role="group" aria-label="Attendance groups" className="flex flex-col gap-2 pl-6">
             <Paragraph.xs className="text-tertiary">Attendees pick one group when they respond. Names can be changed later.</Paragraph.xs>
             {groups.map(renderGroup)}
-            {groups.length < 8 ? <Button size="sm" variant="secondary" className="w-fit" icon={<Plus />} disabled={disabled} onClick={onAdd}>Add group</Button> : null}
+            {groups.length < 8 ? <Button size="sm" variant="secondary" className="w-fit" icon={<Plus weight="regular" />} disabled={disabled} onClick={onAdd}>Add group</Button> : null}
         </div> : null}
     </div>
 }

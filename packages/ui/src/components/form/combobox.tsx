@@ -1,6 +1,6 @@
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { cn } from '@moc/utils/cn'
-import { NavArrowDown, Search, Xmark } from 'iconoir-react'
+import { CaretDown as NavArrowDown, MagnifyingGlass as Search, X as Xmark } from '@phosphor-icons/react'
 import { createContext, Fragment, useContext, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useIsLandscape } from '../../hooks/use-is-landscape'
 import { Drawer } from '../overlays/drawer'
@@ -235,7 +235,7 @@ function ComboboxChipsField<Value>({ chipLabel, chipKey, placeholder, className,
                                         className="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-sm border-0 bg-transparent p-0 text-quaternary hover:text-primary"
                                         aria-label={`Remove ${chipLabel(item)}`}
                                     >
-                                        <Xmark className="size-3" />
+                                        <Xmark weight="regular" className="size-3" />
                                     </BaseCombobox.ChipRemove>
                                 </BaseCombobox.Chip>
                             ))}

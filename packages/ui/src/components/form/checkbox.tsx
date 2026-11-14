@@ -1,7 +1,7 @@
 import { Checkbox as BaseCheckbox } from "@base-ui/react/checkbox";
 import { cn } from "@moc/utils/cn";
 import { cv } from "@moc/utils/cv";
-import { Check, Minus } from "iconoir-react";
+import { Check, Minus } from '@phosphor-icons/react';
 import type { ChangeEvent, InputHTMLAttributes, ReactNode } from "react";
 import { Label } from "../display/text";
 
@@ -70,7 +70,7 @@ export function Checkbox({
                     keepMounted
                     className="inline-flex opacity-0 data-[checked]:opacity-100 data-[indeterminate]:opacity-100"
                 >
-                    {indeterminate ? <Minus className="size-3" /> : <Check className="size-3" />}
+                    {indeterminate ? <Minus weight="regular" className="size-3" /> : <Check weight="regular" className="size-3" />}
                 </BaseCheckbox.Indicator>
             </BaseCheckbox.Root>
             {children !== null && children !== undefined && children !== false

@@ -1,6 +1,6 @@
 import type { ComponentType, MouseEvent } from "react";
 import { useDroppable } from "@dnd-kit/core";
-import { NavArrowDown, Plus, Trash } from "iconoir-react";
+import { CaretDown as NavArrowDown, Plus, Trash } from '@phosphor-icons/react';
 import { Button } from "@moc/ui/components/controls/button";
 import { Accordion } from "@moc/ui/components/display/accordion";
 import { Paragraph } from "@moc/ui/components/display/text";
@@ -51,7 +51,7 @@ export function SectionRow({ section, onToggle, onAddItem, onRenameItem, onDelet
           </Accordion.Trigger>
           <InlineEditableText value={section.name} onSave={renameSection} aria-label={`Section name: ${section.name}`} className="label-sm min-w-0 flex-1 text-left" />
           <Paragraph.xs className="shrink-0 text-tertiary">{checkedCount}/{section.items.length}</Paragraph.xs>
-          <Button.Icon aria-label="Add item" variant="ghost" size="sm" icon={<Plus />} className="shrink-0 text-tertiary" onClick={requestAdd} />
+          <Button.Icon aria-label="Add item" variant="ghost" size="sm" icon={<Plus weight="regular" />} className="shrink-0 text-tertiary" onClick={requestAdd} />
           <Button.Icon aria-label="Delete section" variant="ghost" size="sm" icon={<Trash />} className="shrink-0 text-quaternary" onClick={openDeleteSection} />
         </div>
 

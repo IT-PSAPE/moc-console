@@ -1,4 +1,4 @@
-import { SendDiagonal } from "iconoir-react"
+import { PaperPlaneRight as SendDiagonal } from '@phosphor-icons/react'
 import { EmptyState } from "@moc/ui/components/feedback/empty-state"
 
 export function MiniAppUnavailableView() {

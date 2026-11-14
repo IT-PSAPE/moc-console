@@ -10,26 +10,7 @@ import { streamStatusColor, streamStatusLabel, streamPrivacyLabel } from "@moc/t
 import type { Stream } from "@moc/types/streams/stream"
 import { latencyPreferenceLabel } from "@moc/types/streams/stream-constants"
 import { formatUtcIsoInTimezone } from "@moc/utils/zoned-date-time"
-import {
-  Calendar,
-  Check,
-  Code,
-  Copy,
-  OpenNewWindow,
-  Eye,
-  DashboardSpeed,
-  Key,
-  Link,
-  MediaVideoList,
-  Expand,
-  Computer,
-  EditPencil,
-  Play,
-  Square,
-  Label as LabelIcon,
-  Trash,
-  Xmark,
-} from "iconoir-react"
+import { Calendar, Check, Code, Copy, ArrowSquareOut as OpenNewWindow, Eye, Gauge as DashboardSpeed, Key, Link, FilmStrip as MediaVideoList, ArrowsOut as Expand, Desktop as Computer, PencilSimple as EditPencil, Play, Square, Tag as LabelIcon, Trash, X as Xmark } from '@phosphor-icons/react'
 import { useStreamDetailDrawer } from "./use-stream-detail-drawer"
 
 type StreamDetailPanelProps = {
@@ -51,7 +32,7 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
   return (
     <>
       <SplitPanel.Header className="flex items-center gap-1">
-        <Button.Icon aria-label="Close stream" variant="ghost" size="sm" icon={<Xmark />} onClick={drawer.actions.close} />
+        <Button.Icon aria-label="Close stream" variant="ghost" size="sm" icon={<Xmark weight="regular" />} onClick={drawer.actions.close} />
         <Button.Icon aria-label="Open full page" variant="ghost" size="sm" icon={<Expand />} onClick={drawer.actions.openFullPage} />
         <div className="flex-1" />
         {drawer.meta.canEdit && (
@@ -158,7 +139,7 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
                       aria-label="Copy stream link"
                       variant="ghost"
                       size="sm"
-                      icon={drawer.state.copiedField === "url" ? <Check className="text-success" /> : <Copy />}
+                      icon={drawer.state.copiedField === "url" ? <Check weight="regular" className="text-success" /> : <Copy />}
                       onClick={drawer.actions.copyUrl}
                     />
                     <Button.IconLink render={<a href={stream.streamUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open stream link" variant="ghost" size="sm" icon={<OpenNewWindow />} />
@@ -174,7 +155,7 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
                       aria-label="Copy stream key"
                       variant="ghost"
                       size="sm"
-                      icon={drawer.state.copiedField === "key" ? <Check className="text-success" /> : <Copy />}
+                      icon={drawer.state.copiedField === "key" ? <Check weight="regular" className="text-success" /> : <Copy />}
                       onClick={drawer.actions.copyKey}
                     />
                   </div>
@@ -189,7 +170,7 @@ export function StreamDetailPanel({ stream, onClose, onEdit, onDelete }: StreamD
                       aria-label="Copy server URL"
                       variant="ghost"
                       size="sm"
-                      icon={drawer.state.copiedField === "ingestion" ? <Check className="text-success" /> : <Copy />}
+                      icon={drawer.state.copiedField === "ingestion" ? <Check weight="regular" className="text-success" /> : <Copy />}
                       onClick={drawer.actions.copyIngestionUrl}
                     />
                   </div>

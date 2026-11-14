@@ -1,7 +1,7 @@
 import { Toast as BaseToast } from '@base-ui/react/toast'
 import { cn } from '@moc/utils/cn'
 import { Label, Paragraph } from '../display/text'
-import { WarningCircle, CheckCircle, InfoCircle, LightBulb, WarningTriangle, Xmark } from 'iconoir-react'
+import { WarningCircle, CheckCircle, Info as InfoCircle, Lightbulb as LightBulb, Warning as WarningTriangle, X as Xmark } from '@phosphor-icons/react'
 import { Button } from '../controls/button'
 import type { FeedbackVariant } from './alert'
 import type { ToastData } from './feedback-types'
@@ -57,7 +57,7 @@ export function Toast({ toast }: ToastProps) {
                     ) : null}
                 </div>
                 {dismissible ? (
-                    <BaseToast.Close render={<Button.Icon aria-label="Dismiss" icon={<Xmark />} variant="ghost" size="sm" className="mt-0.5" />} />
+                    <BaseToast.Close render={<Button.Icon aria-label="Dismiss" icon={<Xmark weight="regular" />} variant="ghost" size="sm" className="mt-0.5" />} />
                 ) : null}
             </BaseToast.Content>
         </BaseToast.Root>

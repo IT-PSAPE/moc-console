@@ -4,7 +4,7 @@ import { Popover } from "@moc/ui/components/overlays/popover";
 import { Modal } from "@moc/ui/components/overlays/modal";
 import { useIsLandscape } from "@moc/ui/hooks/use-is-landscape";
 import { type ResolvedAssignee } from "@/data/fetch-assignees";
-import { Xmark } from "iconoir-react";
+import { X as Xmark } from '@phosphor-icons/react';
 import type { ReactElement } from "react";
 import { MemberPickerPanel } from "./member-picker-panel";
 
@@ -30,7 +30,7 @@ export function MemberPicker({ assignees, onAdd, onRemove, children, placement =
                             <Modal.Header>
                                 <Label.md className="flex-1">Assign member</Label.md>
                                 <Modal.Close>
-                                    <Button.Icon aria-label="Close member picker" variant="ghost" icon={<Xmark />} />
+                                    <Button.Icon aria-label="Close member picker" variant="ghost" icon={<Xmark weight="regular" />} />
                                 </Modal.Close>
                             </Modal.Header>
                             <Modal.Content className="p-0">

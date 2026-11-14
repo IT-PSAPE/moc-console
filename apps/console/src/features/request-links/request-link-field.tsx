@@ -2,7 +2,7 @@ import { cn } from "@moc/utils/cn"
 import { useDetailLinkState } from "@/hooks/use-detail-return"
 import type { RequestLinkedKind } from "@/data/request-links"
 import { routes } from "@/screens/console-routes"
-import { Page } from "iconoir-react"
+import { File as Page } from '@phosphor-icons/react'
 import { LinkedRecordRow } from "@moc/ui/components/display/linked-record-row"
 import { MetaRow } from "@moc/ui/components/display/meta-row"
 import { Paragraph } from "@moc/ui/components/display/text"

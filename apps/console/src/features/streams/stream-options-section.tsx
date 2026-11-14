@@ -6,7 +6,7 @@ import { Button } from "@moc/ui/components/controls/button"
 import { Label, Paragraph } from "@moc/ui/components/display/text"
 import { Accordion } from "@moc/ui/components/display/accordion"
 import type { YouTubeCategory, YouTubePlaylist } from "@moc/types/streams/stream"
-import { NavArrowDown, Xmark } from "iconoir-react"
+import { CaretDown as NavArrowDown, X as Xmark } from '@phosphor-icons/react'
 
 type StreamOptionsSectionProps = {
   categoryId: string | null
@@ -98,7 +98,7 @@ export function StreamOptionsSection({
                   <Button.Icon
                     aria-label={`Remove ${tag}`}
                     variant="ghost"
-                    icon={<Xmark className="size-3" />}
+                    icon={<Xmark weight="regular" className="size-3" />}
                     data-tag={tag}
                     onClick={handleRemoveTag}
                   />

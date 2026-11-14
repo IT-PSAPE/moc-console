@@ -144,17 +144,20 @@ Use these semantic pairs instead of making a status legible through color alone.
 
 ## 6. Icons
 
-- Use named imports from `iconoir-react` for interface icons. App roots use
-  `IconoirProvider` to keep decorative icons hidden from assistive technology
-  and set a 1.75px stroke with a 24px fallback; size classes below set the
-  displayed size.
+- Use named imports from `@phosphor-icons/react` for interface icons. App roots
+  use `IconContext` to set the duotone weight, 24px fallback, and hide decorative
+  icons from assistive technology; size classes below set the displayed size.
+- Set `weight="regular"` on simple open glyphs such as `Check`, `X`, `SignOut`,
+  `Plus`, `Minus`, `DotsSix`, `DotsThreeVertical`, and `List`. Their duotone
+  variants add a low-opacity panel behind the line or dots, which reads as an
+  unintended backing in compact controls. Keep duotone on icons whose secondary
+  shape is part of the glyph, such as arrows, carets, and enclosed status icons.
 - `size-4` (16px) everywhere inside controls, badges, menus, meta rows, alerts,
   row leading icons.
 - `size-5` (20px) only in: navigation rail/sidebar items, empty-state featured
   icon, toast icon.
 - Icon colour inside controls and menus: `text-quaternary` (or inherit on
-  primary buttons). Use solid icons for filled
-  playback controls; preserve the official Google and Telegram brand marks.
+  primary buttons). Keep the official Google and Telegram brand marks.
 
 ## 7. Components (atoms)
 
@@ -238,6 +241,11 @@ Use these semantic pairs instead of making a status legible through color alone.
 - Column header `flex items-center gap-2 px-1 pb-2 Label.xs text-quaternary` with count badge.
 - Column body `flex flex-col gap-2 rounded-xl bg-secondary p-2`.
 - Card `rounded-lg border border-secondary bg-primary shadow-xs p-3 flex flex-col gap-1.5`; title `Label.sm`, meta `Paragraph.xs text-tertiary`.
+
+### LoadingSpinner
+- Use `Spinner` inline and `LoadingSpinner` for a centered loader. Both accept `size` (`sm`/`md`/`lg`, 16/20/32px) and `duration` (1600ms by default).
+- Customize the color with `--gather-color` and the interior opacity with `--gather-fill-opacity` (20% by default). Both CSS properties can be set on the loader or a parent.
+- Four outlined blocks expand, rotate together, then gather. The cluster stays inside the loader footprint during its turn. Reduced motion freezes the blocks in their gathered pose.
 
 ### SettingsRow
 - Inside a Card. `grid grid-cols-[minmax(10rem,14rem)_minmax(0,1fr)] items-center gap-6 px-4 py-3 portrait:grid-cols-1 portrait:gap-2`.

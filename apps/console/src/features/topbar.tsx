@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useSidebar } from '@moc/ui/components/navigation/sidebar'
 import { useIsLandscape } from '@moc/ui/hooks/use-is-landscape'
 import { Button } from '@moc/ui/components/controls/button'
-import { SidebarCollapse } from 'iconoir-react'
+import { SidebarSimple as SidebarCollapse } from '@phosphor-icons/react'
 
 // ─── TopBar action slot (portal-based) ─────────────────
 

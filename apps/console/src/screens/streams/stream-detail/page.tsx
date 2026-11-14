@@ -19,7 +19,7 @@ import { Page } from "@moc/ui/components/layout/page"
 import { DetailPage } from "@moc/ui/components/layout/detail-page"
 import { ResourceLoadError } from "@/components/feedback/resource-load-error"
 import { routes } from "@/screens/console-routes"
-import { Calendar, Check, Code, Copy, OpenNewWindow, Eye, DashboardSpeed, Key, Link as LinkIcon, MediaVideoList, Computer, EditPencil, Play, AntennaSignal, Square, Label, Trash } from "iconoir-react"
+import { Calendar, Check, Code, Copy, ArrowSquareOut as OpenNewWindow, Eye, Gauge as DashboardSpeed, Key, Link as LinkIcon, FilmStrip as MediaVideoList, Desktop as Computer, PencilSimple as EditPencil, Play, Broadcast as AntennaSignal, Square, Tag as Label, Trash } from '@phosphor-icons/react'
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return "Not set"
@@ -178,7 +178,7 @@ export function StreamDetailScreen() {
                       aria-label="Copy stream link"
                       variant="ghost"
                       size="sm"
-                      icon={copiedField === "url" ? <Check className="text-success" /> : <Copy />}
+                      icon={copiedField === "url" ? <Check weight="regular" className="text-success" /> : <Copy />}
                       onClick={actions.copyStreamUrl}
                     />
                     <Button.IconLink render={<a href={stream.streamUrl} target="_blank" rel="noopener noreferrer" />} aria-label="Open stream link" variant="ghost" size="sm" icon={<OpenNewWindow />} />
@@ -194,7 +194,7 @@ export function StreamDetailScreen() {
                       aria-label="Copy stream key"
                       variant="ghost"
                       size="sm"
-                      icon={copiedField === "key" ? <Check className="text-success" /> : <Copy />}
+                      icon={copiedField === "key" ? <Check weight="regular" className="text-success" /> : <Copy />}
                       onClick={actions.copyStreamKey}
                     />
                   </div>
@@ -209,7 +209,7 @@ export function StreamDetailScreen() {
                       aria-label="Copy server URL"
                       variant="ghost"
                       size="sm"
-                      icon={copiedField === "ingestion" ? <Check className="text-success" /> : <Copy />}
+                      icon={copiedField === "ingestion" ? <Check weight="regular" className="text-success" /> : <Copy />}
                       onClick={actions.copyIngestionUrl}
                     />
                   </div>

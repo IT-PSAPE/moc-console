@@ -1,6 +1,6 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { Drag } from "iconoir-react";
+import { DotsSix as Drag } from '@phosphor-icons/react';
 import { Button } from "@moc/ui/components/controls/button";
 
 // Keep the drag measurement/transform on a non-interactive wrapper while the
@@ -16,7 +16,7 @@ export function DraggableSectionHandle({ sectionId }: { sectionId: string }) {
         aria-label={`Reorder checklist section ${sectionId}`}
         variant="ghost"
         size="sm"
-        icon={<Drag />}
+        icon={<Drag weight="regular" />}
         className="cursor-grab touch-none text-quaternary opacity-0 transition-opacity focus-visible:opacity-100 group-hover/section:opacity-100 landscape:opacity-100"
       />
     </span>

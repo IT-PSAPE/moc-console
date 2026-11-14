@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Message, Search, SendDiagonal } from 'iconoir-react'
+import { Chat as Message, MagnifyingGlass as Search, PaperPlaneRight as SendDiagonal } from '@phosphor-icons/react'
 import { Section } from '@moc/ui/components/display/section'
 import { Card } from '@moc/ui/components/display/card'
 import { Badge } from '@moc/ui/components/display/badge'

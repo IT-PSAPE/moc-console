@@ -1,4 +1,4 @@
-import { Calendar, Box, User } from 'iconoir-react'
+import { Calendar, Cube as Box, User } from '@phosphor-icons/react'
 import { ListItemCard } from '@moc/ui/components/display/list-item-card'
 import type { Booking } from '@moc/types/equipment'
 import { formatUtcIsoInBrowserTimeZone } from '@moc/utils/browser-date-time'
