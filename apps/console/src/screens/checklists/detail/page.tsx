@@ -86,7 +86,7 @@ export function ChecklistDetailScreen() {
 
         <DetailPage.Section className="pb-8">
           <Label.sm className="block pb-3 text-primary">Items</Label.sm>
-          <Card className="px-5">
+          <Card className="px-5 landscape:px-2">
             <ChecklistEditorContent checklist={checklist} onUpdate={actions.update} addRequest={state.addRequest} onAddRequestDismiss={actions.dismissAdd} />
           </Card>
         </DetailPage.Section>

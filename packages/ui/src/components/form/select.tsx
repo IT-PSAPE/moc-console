@@ -105,7 +105,7 @@ function SelectTrigger({ children, className, placeholder, size, state, style = 
     );
 }
 
-function SelectContent({ children, className }: { children: ReactNode; className?: string }) {
+function SelectContent({ children, className, 'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy }: { children: ReactNode; className?: string; 'aria-label'?: string; 'aria-labelledby'?: string }) {
     const { isLandscape } = useContext(SelectContext);
     const { state: overlayState } = useOverlayStack();
 
@@ -115,7 +115,7 @@ function SelectContent({ children, className }: { children: ReactNode; className
                 <Drawer.Backdrop />
                 <BaseSelect.Portal container={overlayState.rootElement ?? undefined}>
                     <BaseSelect.Positioner alignItemWithTrigger={false} className={mobileSheetPositionerClassName}>
-                        <Drawer.Panel>
+                        <Drawer.Panel aria-label={ariaLabel ?? (ariaLabelledBy ? undefined : 'Select an option')} aria-labelledby={ariaLabelledBy}>
                             <Drawer.Content className="overflow-hidden !pb-0">
                                 <BaseSelect.Popup className="flex min-h-0 flex-1 flex-col outline-none">
                                     <BaseSelect.List className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1">

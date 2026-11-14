@@ -22,16 +22,11 @@ export type EquipmentDrawerProps = {
   requestCloseRef?: RefObject<(() => void) | null>;
 };
 
-export function EquipmentDrawer({
-  equipment,
-  onEquipmentClose,
-  isDirtyRef,
-  requestCloseRef,
-}: EquipmentDrawerProps) {
+export function EquipmentDrawer({ equipment, onEquipmentClose, isDirtyRef, requestCloseRef }: EquipmentDrawerProps) {
   return (
     <Drawer.Portal>
       <Drawer.Backdrop />
-      <Drawer.Panel className="max-w-lg">
+      <Drawer.Panel aria-label="Equipment details" className="max-w-lg">
         <EquipmentDrawerContent
           equipment={equipment}
           onEquipmentClose={onEquipmentClose}
@@ -43,12 +38,7 @@ export function EquipmentDrawer({
   );
 }
 
-function EquipmentDrawerContent({
-  equipment,
-  onEquipmentClose,
-  isDirtyRef,
-  requestCloseRef,
-}: EquipmentDrawerProps) {
+function EquipmentDrawerContent({ equipment, onEquipmentClose, isDirtyRef, requestCloseRef }: EquipmentDrawerProps) {
   const { state: drawerState } = useDrawer();
   const closeDrawer = useDrawerClose(onEquipmentClose);
 

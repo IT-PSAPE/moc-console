@@ -44,13 +44,13 @@ export function SectionRow({ section, onToggle, onAddItem, onRenameItem, onDelet
   return (
     <div ref={setNodeRef}>
       <Accordion.Item value={section.id} className="border-b border-secondary">
-        <div className="group/section relative flex items-center gap-2 pr-5">
-          <DraggableSectionHandle sectionId={section.id} className="absolute right-full top-1/2 -translate-y-1/2" />
-          <Accordion.Trigger className="flex flex-1 items-center gap-3 pt-4 pb-2 transition-colors hover:bg-tertiary">
+        <div className="group/section relative flex items-center gap-2 pt-4 pb-2">
+          <DraggableSectionHandle sectionId={section.id} />
+          <Accordion.Trigger aria-label={`Toggle section ${section.name}`} className="flex h-control-sm w-8 items-center justify-center rounded-lg transition-colors hover:bg-tertiary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-brand landscape:h-control-lg landscape:w-11">
             <NavArrowDown className="size-4 shrink-0 text-tertiary transition-transform group-data-[panel-open]:rotate-180" />
-            <InlineEditableText value={section.name} onSave={renameSection} className="label-sm text-left" />
-            <Paragraph.xs className="shrink-0 text-tertiary">{checkedCount}/{section.items.length}</Paragraph.xs>
           </Accordion.Trigger>
+          <InlineEditableText value={section.name} onSave={renameSection} aria-label={`Section name: ${section.name}`} className="label-sm min-w-0 flex-1 text-left" />
+          <Paragraph.xs className="shrink-0 text-tertiary">{checkedCount}/{section.items.length}</Paragraph.xs>
           <Button.Icon aria-label="Add item" variant="ghost" size="sm" icon={<Plus />} className="shrink-0 text-tertiary" onClick={requestAdd} />
           <Button.Icon aria-label="Delete section" variant="ghost" size="sm" icon={<Trash />} className="shrink-0 text-quaternary" onClick={openDeleteSection} />
         </div>

@@ -276,7 +276,7 @@ function ComboboxContent({ children, className, empty = 'No matches', footer, se
                 <Drawer.Backdrop />
                 <BaseCombobox.Portal container={overlayState.rootElement ?? undefined}>
                     <BaseCombobox.Positioner className={mobileSheetPositionerClassName}>
-                        <Drawer.Panel className="[--combobox-visible-content-height:calc(94dvh_-_var(--drawer-snap-point-offset,0px)_-_3rem)]">
+                        <Drawer.Panel aria-label={multiple ? 'Select options' : title} className="[--combobox-visible-content-height:calc(94dvh_-_var(--drawer-snap-point-offset,0px)_-_3rem)]">
                             <Drawer.Content className="overflow-hidden !pb-0">
                                 <BaseCombobox.Popup className="flex min-h-0 max-h-[var(--combobox-visible-content-height)] flex-1 flex-col outline-none">
                                     <div className="flex shrink-0 flex-col gap-3 border-b border-secondary px-4 pb-3">

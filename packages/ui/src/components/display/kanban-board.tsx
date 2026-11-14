@@ -101,11 +101,12 @@ type ItemProps = {
     id: string;
     data?: Record<string, unknown>;
     disabled?: boolean;
+    /** Keyboard-accessible record content with an alternative to the drag action. */
     children: ReactNode;
 };
 
 function KanbanBoardItem({ id, data, disabled = false, children }: ItemProps) {
-    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    const { listeners, setNodeRef, transform, isDragging } = useDraggable({
         id,
         data,
         disabled,
@@ -118,8 +119,10 @@ function KanbanBoardItem({ id, data, disabled = false, children }: ItemProps) {
     // Nested `InteractiveSurface.Card` triggers (the item content's click/drag
     // surface) render as a flat row — not another bordered card — inside the
     // `ListSurfaceContext`, so this wrapper is the only card chrome.
+    // Only a pointer sensor is registered. The child owns keyboard activation
+    // and actions; the wrapper must not advertise an inert second button.
     return (
-        <div ref={setNodeRef} style={style} {...(disabled ? {} : { ...listeners, ...attributes })}>
+        <div ref={setNodeRef} style={style} {...(disabled ? {} : listeners)}>
             <ListSurfaceContext.Provider value={true}>
                 <div className={cn("overflow-hidden rounded-lg", isDragging ? "border-2 border-dashed border-secondary" : "border border-secondary bg-primary shadow-xs")}>
                     <div className={isDragging ? "invisible" : ""}>{children}</div>

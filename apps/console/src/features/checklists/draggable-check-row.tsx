@@ -26,7 +26,7 @@ export function DraggableCheckRow({ item, onToggle, onRename, onDelete, itemSlot
 
   return (
     <div ref={setDropRef}>
-      <div ref={setDragRef} style={style} className="group/item relative flex min-h-control w-full items-center gap-3 pr-5 transition-colors hover:bg-tertiary">
+      <div ref={setDragRef} style={style} className="group/item relative flex min-h-control w-full items-center gap-2 transition-colors hover:bg-tertiary">
         <Button.Icon
           {...listeners}
           {...attributes}
@@ -34,7 +34,7 @@ export function DraggableCheckRow({ item, onToggle, onRename, onDelete, itemSlot
           variant="ghost"
           size="sm"
           icon={<Drag />}
-          className="absolute right-full top-1/2 -translate-y-1/2 cursor-grab touch-none text-quaternary opacity-0 transition-opacity focus-visible:opacity-100 group-hover/item:opacity-100 landscape:opacity-100"
+          className="cursor-grab touch-none text-quaternary opacity-0 transition-opacity focus-visible:opacity-100 group-hover/item:opacity-100 landscape:opacity-100"
         />
         <Checkbox aria-label={item.checked ? `Mark ${item.label} incomplete` : `Mark ${item.label} complete`} checked={item.checked} onChange={toggle} />
         <InlineEditableText value={item.label} onSave={rename} className={cn("paragraph-sm min-w-0 flex-1", item.checked && "text-tertiary line-through")} />

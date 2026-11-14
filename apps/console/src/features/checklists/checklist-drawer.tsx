@@ -11,7 +11,7 @@ export function ChecklistDrawer({ checklist }: { checklist: Checklist }) {
     return (
         <Drawer.Portal>
             <Drawer.Backdrop />
-            <Drawer.Panel className="max-w-xl">
+            <Drawer.Panel aria-label="Checklist details" className="max-w-xl">
                 <ChecklistDrawerPanel checklist={checklist} />
             </Drawer.Panel>
         </Drawer.Portal>

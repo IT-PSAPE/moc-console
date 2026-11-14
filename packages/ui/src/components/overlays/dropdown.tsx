@@ -122,7 +122,7 @@ function DropdownPanel({ children, className, ...props }: HTMLAttributes<HTMLDiv
                 <Drawer.Backdrop />
                 <Menu.Portal container={overlayState.rootElement ?? undefined}>
                     <Menu.Positioner className={mobileSheetPositionerClassName}>
-                        <Drawer.Panel>
+                        <Drawer.Panel aria-label={props['aria-label'] ?? (props['aria-labelledby'] ? undefined : 'Actions')} aria-labelledby={props['aria-labelledby']}>
                             <Drawer.Content className="gap-0 overflow-hidden p-0">
                                 <Menu.Popup className={cn('min-h-0 flex-1 overflow-y-auto p-1 outline-none', className)} {...props}>
                                     {children}

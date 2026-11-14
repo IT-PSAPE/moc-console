@@ -71,7 +71,7 @@ Every interactive control is **exactly** one of these heights. Use `h-control`
 
 Two border tokens, two jobs:
 
-- `border-primary` (#CBCBCB) — **control edges**: input, select, textarea,
+- `border-primary` (#8C8C8C light / #707070 dark) — **control edges**: input, select, textarea,
   checkbox, secondary button, segmented item when pressed.
 - `border-secondary` (#E8E8E8) — **structure**: card, table, divider, overlay
   header/footer rule, popover edge, sidebar edge.
@@ -121,6 +121,26 @@ shell. Never use raw `text-base`, `text-lg`, `text-xl`, `font-bold`.
 Colour roles: `text-primary` titles and values, `text-secondary` labels and
 button text, `text-tertiary` descriptions/meta, `text-quaternary` placeholders,
 disabled, table headers, icons in inputs and menus.
+
+### Contrast contracts
+
+Normal text and status labels must meet 4.5:1 against their paired surfaces.
+Control edges and focus indicators must meet 3:1 against adjacent neutral
+surfaces; structural dividers keep the quieter `border-secondary` token.
+Disabled controls are exempt. The contract is checked against the actual CSS
+tokens in `test/packages/ui/src/semantic-color-contrast.test.ts`.
+
+| Role | Light | Dark |
+| --- | --- | --- |
+| Solid brand / on-brand text | #C90061 / #FFFFFF | #C90061 / #F6F6F6 |
+| Solid error / on-brand text | #C8242E / #FFFFFF | #C8242E / #F6F6F6 |
+| Brand text / tint | #D00068 / #FFF0F9 | #FF8DCC / #42112B |
+| Warning text / tint | #B74A15 / #FFF1E8 | #FF9960 / #652D10 |
+| Success text / tint | #1F7D45 / #DDF9E9 | #7EE6AD / #123D24 |
+| Yellow text / tint | #94661C / #FFF9E8 | #FFDA8F / #58421A |
+
+The solid tokens also cover white/light text at the button's 90% hover opacity.
+Use these semantic pairs instead of making a status legible through color alone.
 
 ## 6. Icons
 

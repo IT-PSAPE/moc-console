@@ -1,14 +1,15 @@
 import { Tabs as BaseTabs } from "@base-ui/react/tabs"
 import { cn } from "@moc/utils/cn"
 import { cv } from "@moc/utils/cv"
-import { createContext, useContext, type HTMLAttributes, type ReactNode } from "react"
+import { createContext, useContext, type ComponentProps, type HTMLAttributes } from "react"
 
 type TabsVariant = 'default' | 'pill'
 
 const VariantContext = createContext<TabsVariant>('default')
 
-type TabsRootProps = {
-    children: ReactNode
+type Styled<Props> = Omit<Props, 'className'> & { className?: string }
+
+type TabsRootProps = Omit<ComponentProps<typeof BaseTabs.Root>, 'className' | 'defaultValue' | 'value' | 'onValueChange'> & {
     className?: string
     defaultTab?: string
     value?: string
@@ -44,9 +45,9 @@ const tabsTabVariants = cv({
     defaultVariants: { variant: 'default' },
 })
 
-function TabsRoot({ children, className, defaultTab, value, onValueChange, variant = 'default' }: TabsRootProps) {
-    function handleValueChange(next: string | number) {
-        onValueChange?.(String(next))
+function TabsRoot({ children, className, defaultTab, value, onValueChange, variant = 'default', ...props }: TabsRootProps) {
+    function handleValueChange(next: string | number | null): void {
+        if (next !== null) onValueChange?.(String(next))
     }
 
     return (
@@ -56,6 +57,7 @@ function TabsRoot({ children, className, defaultTab, value, onValueChange, varia
                 defaultValue={defaultTab}
                 onValueChange={handleValueChange}
                 className={className}
+                {...props}
             >
                 {children}
             </BaseTabs.Root>
@@ -63,19 +65,19 @@ function TabsRoot({ children, className, defaultTab, value, onValueChange, varia
     )
 }
 
-function TabsList({ children, className }: HTMLAttributes<HTMLDivElement>) {
+function TabsList({ children, className, ...props }: Styled<ComponentProps<typeof BaseTabs.List>>) {
     const variant = useContext(VariantContext)
     return (
-        <BaseTabs.List className={cn(tabsListVariants({ variant }), className)}>
+        <BaseTabs.List className={cn(tabsListVariants({ variant }), className)} {...props}>
             {children}
         </BaseTabs.List>
     )
 }
 
-function TabsTab({ children, className, value }: HTMLAttributes<HTMLDivElement> & { value: string }) {
+function TabsTab({ children, className, value, ...props }: Styled<Omit<ComponentProps<typeof BaseTabs.Tab>, 'value'>> & { value: string }) {
     const variant = useContext(VariantContext)
     return (
-        <BaseTabs.Tab value={value} className={cn(tabsTabVariants({ variant }), className)}>
+        <BaseTabs.Tab value={value} className={cn(tabsTabVariants({ variant }), className)} {...props}>
             {children}
         </BaseTabs.Tab>
     )
@@ -85,13 +87,13 @@ function TabsTab({ children, className, value }: HTMLAttributes<HTMLDivElement> 
 // this stays a layout-transparent passthrough for API compatibility.
 // Puts the spec's 16px gap between the tab list and whatever the active panel
 // renders (docs/design-system.md §2) so consumers don't each add it.
-function TabsPanels({ children, className }: HTMLAttributes<HTMLDivElement>) {
-    return <div className={cn('pt-4', className)}>{children}</div>
+function TabsPanels({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
+    return <div className={cn('pt-4', className)} {...props}>{children}</div>
 }
 
-function TabsPanel({ children, className, value }: HTMLAttributes<HTMLDivElement> & { value: string }) {
+function TabsPanel({ children, className, value, ...props }: Styled<Omit<ComponentProps<typeof BaseTabs.Panel>, 'value'>> & { value: string }) {
     return (
-        <BaseTabs.Panel value={value} className={cn(className)}>
+        <BaseTabs.Panel value={value} className={cn(className)} {...props}>
             {children}
         </BaseTabs.Panel>
     )

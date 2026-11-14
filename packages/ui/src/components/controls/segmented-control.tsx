@@ -1,7 +1,7 @@
 import { Toggle as BaseToggle } from '@base-ui/react/toggle'
 import { ToggleGroup } from '@base-ui/react/toggle-group'
 import { cn } from '@moc/utils/cn'
-import type { HTMLAttributes, ReactNode } from 'react'
+import type { ComponentProps, ReactNode } from 'react'
 
 // ─── Root ────────────────────────────────────────────────
 //
@@ -11,7 +11,8 @@ import type { HTMLAttributes, ReactNode } from 'react'
 // Base UI would allow) is suppressed to preserve segmented-control semantics
 // where exactly one item stays selected.
 
-type SegmentedControlRootProps = Omit<HTMLAttributes<HTMLDivElement>, 'defaultValue' | 'onChange'> & {
+type SegmentedControlRootProps = Omit<ToggleGroup.Props, 'className' | 'defaultValue' | 'multiple' | 'onValueChange' | 'value'> & {
+    className?: string
     defaultValue?: string
     fill?: boolean
     onValueChange?: (value: string) => void
@@ -20,11 +21,13 @@ type SegmentedControlRootProps = Omit<HTMLAttributes<HTMLDivElement>, 'defaultVa
 
 function SegmentedControlRoot({ children, className, defaultValue = '', fill = false, onValueChange, value, ...props }: SegmentedControlRootProps) {
     const isControlled = value !== undefined
-    function handleValueChange(groupValue: string[]) {
+    function handleValueChange(groupValue: string[], eventDetails: ToggleGroup.ChangeEventDetails): void {
         const next = groupValue[0]
-        if (next !== undefined) {
-            onValueChange?.(next)
+        if (next === undefined) {
+            eventDetails.cancel()
+            return
         }
+        onValueChange?.(next)
     }
 
     return (
@@ -47,7 +50,8 @@ function SegmentedControlRoot({ children, className, defaultValue = '', fill = f
 
 // ─── Item ────────────────────────────────────────────────
 
-type SegmentedControlItemProps = Omit<HTMLAttributes<HTMLButtonElement>, 'value'> & {
+type SegmentedControlItemProps = Omit<ComponentProps<typeof BaseToggle>, 'className' | 'value'> & {
+    className?: string
     icon?: ReactNode
     value: string
     hide?: boolean

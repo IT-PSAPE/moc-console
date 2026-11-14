@@ -41,14 +41,14 @@ const textAreaVariants = cv({
 })
 
 export function TextArea({ className, defaultValue, onInput, ref, style = 'outline', state, value, ...props }: TextAreaProps) {
-    const autoSize = useAutoSizeTextArea({ onInput, ref, value: value ?? defaultValue })
+    const { handleInput, setRef } = useAutoSizeTextArea({ onInput, ref, value: value ?? defaultValue })
 
     return (
         <textarea
-            ref={autoSize.setRef}
+            ref={setRef}
             className={cn(textAreaVariants({ state, style }), className)}
             defaultValue={defaultValue}
-            onInput={autoSize.handleInput}
+            onInput={handleInput}
             value={value}
             {...props}
         />

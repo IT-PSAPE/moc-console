@@ -221,7 +221,7 @@ function SplitPanelDetail({ children, className, maxWidth, minWidth = '28rem', s
             <Drawer open={state.isOpen} onOpenChange={actions.setOpen} mobileSide="bottom" defaultSnapPoint={1}>
                 <Drawer.Portal>
                     <Drawer.Backdrop />
-                    <Drawer.Panel>{children}</Drawer.Panel>
+                    <Drawer.Panel aria-label={detailLabel}>{children}</Drawer.Panel>
                 </Drawer.Portal>
             </Drawer>
         )
