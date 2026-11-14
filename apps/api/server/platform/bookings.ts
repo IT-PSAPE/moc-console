@@ -15,13 +15,13 @@ type BookingRow = {
   returned_at: string | null
   status: BookingStatus
   created_at: string
-  items: Array<{ id: string; equipment_id: string; name: string | null; category: EquipmentCategory | null; thumbnail_url: string | null }> | null
+  items: Array<{ id: string; equipment_id: string; name: string | null; serial_number: string | null; category: EquipmentCategory | null; thumbnail_url: string | null }> | null
 }
 
 const statuses: readonly BookingStatus[] = ["booked", "checked_out", "returned", "archived"]
 const SELECT = `b.id, b.request_id, b.tracking_code, b.title, b.booked_by, b.checked_out_at::text, b.expected_return_at::text, b.returned_at::text,
   b.status, b.created_at::text,
-  COALESCE((SELECT jsonb_agg(jsonb_build_object('id', bi.id, 'equipment_id', bi.equipment_id, 'name', e.name, 'category', e.category, 'thumbnail_url', e.thumbnail_url) ORDER BY e.name)
+  COALESCE((SELECT jsonb_agg(jsonb_build_object('id', bi.id, 'equipment_id', bi.equipment_id, 'name', e.name, 'serial_number', e.serial_number, 'category', e.category, 'thumbnail_url', e.thumbnail_url) ORDER BY e.name)
     FROM public.booking_items bi JOIN public.equipment e ON e.id=bi.equipment_id
     WHERE bi.booking_id=b.id AND e.workspace_id=b.workspace_id), '[]'::jsonb) AS items`
 
@@ -42,6 +42,7 @@ function mapBooking(row: BookingRow): Booking {
     id: item.id,
     equipmentId: item.equipment_id,
     equipmentName: item.name ?? "Unknown equipment",
+    ...(item.serial_number ? { serialNumber: item.serial_number } : {}),
     equipmentCategory: item.category ?? "accessory",
     equipmentThumbnail: item.thumbnail_url,
   }))

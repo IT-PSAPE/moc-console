@@ -68,6 +68,7 @@ export function useQrScanner({ onDetected }: UseQrScannerOptions) {
 
       try {
         const detectedCodes = await detector.detect(videoRef.current);
+        if (!active) return;
         const rawValue = detectedCodes.find((code) => typeof code.rawValue === "string" && code.rawValue.trim().length > 0)?.rawValue?.trim();
 
         if (!rawValue) {
@@ -100,56 +101,50 @@ export function useQrScanner({ onDetected }: UseQrScannerOptions) {
         return;
       }
 
-      if (BarcodeDetector.getSupportedFormats) {
-        const supportedFormats = await BarcodeDetector.getSupportedFormats();
-        if (!supportedFormats.includes("qr_code")) {
-          setIsSupported(false);
-          setIsStarting(false);
-          return;
-        }
-      }
-
       try {
+        if (BarcodeDetector.getSupportedFormats) {
+          const supportedFormats = await BarcodeDetector.getSupportedFormats();
+          if (!active) return;
+          if (!supportedFormats.includes("qr_code")) {
+            setIsSupported(false);
+            setIsStarting(false);
+            return;
+          }
+        }
+
         detector = new BarcodeDetector({ formats: ["qr_code"] });
         stream = await navigator.mediaDevices.getUserMedia({
           audio: false,
-          video: {
-            facingMode: { ideal: "environment" },
-          },
+          video: { facingMode: { ideal: "environment" } },
         });
+        if (!active) {
+          stopStream(stream);
+          return;
+        }
+
+        const video = videoRef.current;
+        if (!video) {
+          stopStream(stream);
+          setError("The scanner preview could not be started. Please close this dialog and try again.");
+          setIsStarting(false);
+          return;
+        }
+
+        videoElement = video;
+        video.srcObject = stream;
+        await video.play();
+        if (!active) return;
+
+        setIsSupported(true);
+        setIsStarting(false);
+        intervalId = window.setInterval(() => { void detectFrame(); }, 400);
       } catch {
+        stopStream(stream);
+        if (videoElement) videoElement.srcObject = null;
+        if (!active) return;
         setError("Camera access is unavailable on this device. Check camera permissions and try again.");
         setIsStarting(false);
-        return;
       }
-
-      if (!active) {
-        stopStream(stream);
-        return;
-      }
-
-      const video = videoRef.current;
-      if (!video) {
-        stopStream(stream);
-        setError("The scanner preview could not be started. Please close this dialog and try again.");
-        setIsStarting(false);
-        return;
-      }
-
-      videoElement = video;
-      video.srcObject = stream;
-      await video.play().catch(() => undefined);
-
-      if (!active) {
-        stopStream(stream);
-        return;
-      }
-
-      setIsSupported(true);
-      setIsStarting(false);
-      intervalId = window.setInterval(() => {
-        void detectFrame();
-      }, 400);
     }
 
     void startScanner();

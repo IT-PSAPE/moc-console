@@ -12,18 +12,7 @@ import { Link } from "react-router-dom";
 // equipment-item list renders identically in both places. `scannedItemIds`
 // reflects transient, per-session scan progress and is only supplied where a
 // scan flow is active; the "Scanned" tick is not persisted state.
-//
-// NOTE: the design spec calls for the equipment serial number as a
-// `Badge variant="outline" font-mono` trailing each row, but `BookingItem`
-// (packages/types/src/equipment/booking.ts) and the API query that builds it
-// (apps/api/server/platform/bookings.ts) don't carry a serial number today —
-// see the audit report for the follow-up needed outside this agent's owned
-// directories. The category label stands in for now.
-export function BookingItemsSection({
-  items,
-  scannedItemIds,
-  onNavigate,
-}: {
+export function BookingItemsSection({ items, scannedItemIds, onNavigate }: {
   items: BookingItem[];
   scannedItemIds?: ReadonlySet<string>;
   onNavigate?: () => void;
@@ -62,7 +51,7 @@ function BookingItemRow({ item, isScanned, onNavigate }: { item: BookingItem; is
         </ListItemCard.Leading>
         <ListItemCard.Content>
           <ListItemCard.Title>{item.equipmentName}</ListItemCard.Title>
-          <ListItemCard.Subtitle>{equipmentCategoryLabel[item.equipmentCategory]}</ListItemCard.Subtitle>
+          <ListItemCard.Subtitle className={item.serialNumber ? "font-mono" : undefined}>{item.serialNumber ?? equipmentCategoryLabel[item.equipmentCategory]}</ListItemCard.Subtitle>
         </ListItemCard.Content>
         <ListItemCard.Trailing>
           {isScanned && <Badge color="green" label="Scanned" />}

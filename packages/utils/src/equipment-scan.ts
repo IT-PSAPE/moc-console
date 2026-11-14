@@ -89,7 +89,7 @@ export function findBookingItemFromScan<T extends ScannableBookingItem>(
 
   const payload = parseEquipmentQrPayload(trimmedValue);
   const normalizedValue = normalizeScannedValue(trimmedValue);
-  const candidates = [normalizedValue, payload?.serialNumber].filter(
+  const candidates = [trimmedValue, normalizedValue, payload?.serialNumber].filter(
     (candidate): candidate is string => Boolean(candidate),
   );
 

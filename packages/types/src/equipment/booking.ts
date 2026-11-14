@@ -6,6 +6,7 @@ export type BookingItem = {
   id: string;
   equipmentId: string;
   equipmentName: string;
+  serialNumber?: string;
   equipmentCategory: EquipmentCategory;
   equipmentThumbnail: string | null;
 };

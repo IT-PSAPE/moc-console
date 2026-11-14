@@ -57,6 +57,11 @@ describe("findBookingItemFromScan", () => {
     expect(findBookingItemFromScan(items, encoded)).toEqual(items[0])
   })
 
+  test('preserves literal printed serials that contain slash characters', () => {
+    const labeledItems = [{ id: 'item-a', equipmentId: 'equipment-a', serialNumber: 'FX3/001' }]
+    expect(findBookingItemFromScan(labeledItems, '  FX3/001  ')).toEqual(labeledItems[0])
+  })
+
   test("returns null when nothing matches", () => {
     expect(findBookingItemFromScan(items, "eq-999")).toBeNull()
     expect(findBookingItemFromScan(items, "")).toBeNull()

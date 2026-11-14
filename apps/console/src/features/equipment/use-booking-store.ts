@@ -11,6 +11,5 @@ export function useBookingStore(initialBooking: Booking, options?: UseBookingSto
     persist: updateBooking,
     errorMessage: "Booking could not be saved. Please review the booking details and try again.",
     sync: options?.syncBooking,
-    restoreDraftOnError: false,
   });
 }

@@ -3,6 +3,8 @@ import type { PlatformContext } from "../../../../../apps/api/server/platform/co
 import { operations as equipmentOperations } from "../../../../../apps/api/server/platform/equipment"
 import { operations as bookingOperations } from "../../../../../apps/api/server/platform/bookings"
 import { operations as venueOperations } from "../../../../../apps/api/server/platform/venue-bookings"
+import type { Booking } from "@moc/types/equipment/booking"
+import { findBookingItemFromScan } from "@moc/utils/equipment-scan"
 
 type QueryCall = { text: string; values: readonly unknown[] }
 
@@ -56,6 +58,36 @@ describe("equipment, bookings and venue booking platform operations", () => {
     expect(calls[0].values).toEqual([context.workspaceId, booking.id, booking.bookedBy, booking.checkedOutDate, booking.expectedReturnAt, null, booking.status])
     expect(calls.every((call) => !/\bnotes\b/.test(call.text))).toBe(true)
     expect(result).not.toHaveProperty("notes")
+  })
+
+  test.each(['list', 'getById', 'listByEquipmentId', 'update'])("booking %s payload supports entering the equipment's printed serial number", async (operation) => {
+    const row = {
+      id: "00000000-0000-4000-8000-000000000003", booked_by: "Craig", checked_out_at: "2026-10-26T10:00:00.000Z",
+      expected_return_at: "2026-10-26T12:00:00.000Z", returned_at: null, status: "booked",
+      items: [{ id: 'booking-item', equipment_id: 'equipment-id', name: 'Sony FX3', serial_number: 'FX3-001', category: 'camera', thumbnail_url: null }],
+    }
+    const { context, calls } = createContext(async text => ({ rows: text.startsWith('SELECT') ? [row] : [], rowCount: 1 }))
+    const input = operation === 'update'
+      ? { booking: { id: row.id, bookedBy: row.booked_by, checkedOutDate: row.checked_out_at, expectedReturnAt: row.expected_return_at, returnedDate: null, status: row.status } }
+      : operation === 'getById' ? { id: row.id } : operation === 'listByEquipmentId' ? { equipmentId: row.id } : null
+    const response = await bookingOperations[operation].run(context, input) as Booking | Booking[]
+    const booking = Array.isArray(response) ? response[0] : response
+    const item = booking.items[0]
+    expect(item.serialNumber).toBe('FX3-001')
+    expect(findBookingItemFromScan(booking.items, '  FX3-001  ')).toEqual(item)
+    expect(findBookingItemFromScan(booking.items, 'FX3-002')).toBeNull()
+    const read = calls.find(call => call.text.startsWith('SELECT'))
+    expect(read?.text).toContain("'serial_number', e.serial_number")
+    expect(read?.text).toContain('e.workspace_id=b.workspace_id')
+  })
+
+  test('bookings without a serial number still support equipment ID scanning', async () => {
+    const { context } = createContext(async () => ({
+      rows: [{ id: 'booking', checked_out_at: '2026-10-26T10:00:00.000Z', expected_return_at: '2026-10-26T12:00:00.000Z', items: [{ id: 'item', equipment_id: 'equipment-id', name: 'Camera', serial_number: null, category: 'camera', thumbnail_url: null }] }], rowCount: 1,
+    }))
+    const [booking] = await bookingOperations.list.run(context, null) as Booking[]
+    expect(booking.items[0]).not.toHaveProperty('serialNumber')
+    expect(findBookingItemFromScan(booking.items, 'equipment-id')).toEqual(booking.items[0])
   })
 
   test.each([
