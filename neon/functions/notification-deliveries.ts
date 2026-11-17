@@ -11,7 +11,7 @@ export default async function fetch(request: Request): Promise<Response> {
   if (!envelope) return jsonResponse(request.method === 'POST' ? 403 : 405, { error: 'Invalid scheduled trigger invocation' })
 
   try {
-    const commands = await syncManagementCommands()
+    const commands = process.env.TELEGRAM_SYNC_COMMANDS === 'false' ? null : await syncManagementCommands()
     const outbox = await processPendingOutbox()
     const deliveries = await processPendingDeliveries()
     const maintenance = await purgeApiMaintenanceData()
