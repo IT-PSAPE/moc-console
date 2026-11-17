@@ -17,7 +17,7 @@ test('scheduled worker rejects requests without Neon trigger provenance before d
   expect(sql).toEqual([])
 })
 
-test('scheduled worker executes SQL preparation and queue selection only for the expected trigger', async () => {
+test('scheduled worker prepares occurrences and recovers due notification work for the expected trigger', async () => {
   sql.length = 0
   const response = await handler(new Request('https://function.test/', {
     method: 'POST', headers: { 'x-neon-trigger-invocation-id': 'invoke-1' },
@@ -26,5 +26,10 @@ test('scheduled worker executes SQL preparation and queue selection only for the
   expect(response.status).toBe(200)
   expect(sql.some(statement => statement.includes('recover_scheduled_deliveries'))).toBe(true)
   expect(sql.some(statement => statement.includes('prepare_scheduled_messages'))).toBe(true)
-  expect(sql.some(statement => statement.includes('scheduled_occurrence_id IS NOT NULL'))).toBe(true)
+  for (const table of ['notification_outbox', 'notification_deliveries']) {
+    const queue = sql.find(statement => statement.includes(`SELECT id FROM public.${table}`))
+    expect(queue).toMatch(/status\s*=\s*'pending'/)
+    expect(queue).toMatch(/next_attempt_at\s*<=\s*now\(\)/)
+    expect(queue).not.toContain('scheduled_occurrence_id IS NOT NULL')
+  }
 })

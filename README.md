@@ -199,7 +199,8 @@ and imperative cache-aware loads.
 | --- | --- | --- |
 | Telegram groups, member connections, event routes, Messages, daily quote | 30 seconds | Every 30 seconds while their page/drawer is mounted and visible |
 | Request discussions | 1 minute | Every 15 seconds while open and visible |
-| Requests, checklists, bookings, calendar, streams, linked records | 1 minute | When stale on navigation, focus, or network reconnect |
+| Requests, equipment bookings, and venue bookings | 1 minute | Every 30 seconds while their list page is visible, and when stale on focus or network reconnect |
+| Checklists, calendar, streams, linked records | 1 minute | When stale on navigation, focus, or network reconnect |
 | Settings, preferences, categories, venues, member types, YouTube playlists, quote library | 5 minutes | When stale on navigation, focus, or reconnect |
 | YouTube categories | 1 hour | When stale on navigation, focus, or reconnect |
 | Public request catalogs | 5 minutes | When stale on navigation, focus, or reconnect |

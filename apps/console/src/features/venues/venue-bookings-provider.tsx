@@ -3,6 +3,8 @@ import { useWorkspaceResource } from '@/hooks/use-workspace-resource'
 import { useWorkspace } from '@/lib/workspace-context'
 import type { VenueBooking } from '@moc/types/venues'
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react'
+import { useMatch } from 'react-router-dom'
+import { routes } from '@/screens/console-routes'
 
 type VenueBookingsContextValue = {
     state: {
@@ -29,7 +31,8 @@ const emptyBookings: VenueBooking[] = []
 
 export function VenueBookingsProvider({ children }: { children: ReactNode }) {
     const { currentWorkspaceId } = useWorkspace()
-    const { data: bookings, error, isLoading, isInitialLoading, load, updateData, setDetailData } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyBookings, fetcher: fetchVenueBookings, resource: 'venue-bookings', workspaceId: currentWorkspaceId })
+    const refreshWhileVisible = Boolean(useMatch(routes.venues))
+    const { data: bookings, error, isLoading, isInitialLoading, load, updateData, setDetailData } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyBookings, fetcher: fetchVenueBookings, resource: 'venue-bookings', workspaceId: currentWorkspaceId, refreshWhileVisible })
 
     const loadBookings = useCallback(async () => {
         await load()

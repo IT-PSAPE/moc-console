@@ -27,7 +27,7 @@ function configureSqlFixture():void {
   setSqlFixture({queryRows,queryActor})
 }
 
-const { processPendingScheduledDeliveries } = await import('../../../../../apps/api/server/notifications/delivery-store.js')
+const { processPendingDeliveries } = await import('../../../../../apps/api/server/notifications/delivery-store.js')
 
 function setup(): void {
   configureSqlFixture()
@@ -51,7 +51,7 @@ test('scheduled send with no returned Telegram message ID is marked ambiguous an
   process.env.TELEGRAM_BOT_TOKEN='test-token'
   globalThis.fetch=async()=>new Response(JSON.stringify({ok:true,result:{}}),{status:200})
   try {
-    await expect(processPendingScheduledDeliveries()).resolves.toEqual({attempted:1,sent:0,failed:1,pendingRetry:0})
+    await expect(processPendingDeliveries()).resolves.toEqual({attempted:1,sent:0,failed:1,pendingRetry:0})
     const finish=calls.find(call=>call.text.includes('finish_scheduled_delivery'))
     expect(finish?.values[4]).toBe(true)
     const update=calls.find(call=>call.text.includes("UPDATE public.notification_deliveries SET status=$2"))
@@ -71,7 +71,7 @@ test('scheduled send claims and finalizes through named SQL functions with the o
   process.env.TELEGRAM_BOT_TOKEN='test-token'
   globalThis.fetch=async(_input,init)=>{postedBody=String(init?.body??'');return new Response(JSON.stringify({ok:true,result:{message_id:901}}),{status:200})}
   try {
-    await expect(processPendingScheduledDeliveries()).resolves.toEqual({attempted:1,sent:1,failed:0,pendingRetry:0})
+    await expect(processPendingDeliveries()).resolves.toEqual({attempted:1,sent:1,failed:0,pendingRetry:0})
     expect(calls.some(call=>call.text.includes('UPDATE public.notification_deliveries SET status=\'processing\'') && call.text.includes('RETURNING'))).toBe(true)
     const begin=calls.find(call=>call.text.includes('begin_scheduled_delivery'))
     const finish=calls.find(call=>call.text.includes('finish_scheduled_delivery'))
@@ -104,7 +104,7 @@ test('resend renders the current message and saved attendance into a new Telegra
   process.env.TELEGRAM_BOT_TOKEN='test-token'
   globalThis.fetch=async(_input,init)=>{body=JSON.parse(String(init?.body)) as Record<string,unknown>;return new Response(JSON.stringify({ok:true,result:{message_id:902}}),{status:200})}
   try {
-    const result=await processPendingScheduledDeliveries()
+    const result=await processPendingDeliveries()
     expect(result).toEqual({attempted:1,sent:1,failed:0,pendingRetry:0})
     expect(body?.message_id).toBeUndefined()
     expect(JSON.stringify(body)).toContain('Service briefing')
@@ -139,7 +139,7 @@ test('scheduled edits keep the original sender footer and add the latest updater
   process.env.TELEGRAM_BOT_TOKEN='test-token'
   globalThis.fetch=async(_input,init)=>{postedBody=String(init?.body??'');return new Response(JSON.stringify({ok:true,result:{message_id:700}}),{status:200})}
   try {
-    await expect(processPendingScheduledDeliveries()).resolves.toEqual({attempted:1,sent:1,failed:0,pendingRetry:0})
+    await expect(processPendingDeliveries()).resolves.toEqual({attempted:1,sent:1,failed:0,pendingRetry:0})
     expect(postedBody).toContain('Created by Morgan Creator')
     expect(postedBody).toContain('Automation · Sent automatically')
     expect(postedBody).toContain('Updated by Roster Editor')
@@ -163,7 +163,7 @@ test('a resend with an ambiguous Telegram result is terminal and never queued fo
   process.env.TELEGRAM_BOT_TOKEN='test-token'
   globalThis.fetch=async()=>new Response(JSON.stringify({ok:true,result:{}}),{status:200})
   try {
-    await expect(processPendingScheduledDeliveries()).resolves.toEqual({attempted:1,sent:0,failed:1,pendingRetry:0})
+    await expect(processPendingDeliveries()).resolves.toEqual({attempted:1,sent:0,failed:1,pendingRetry:0})
     const finish=calls.find(call=>call.text.includes('finish_scheduled_delivery'))
     expect(finish?.values[4]).toBe(true)
     const update=calls.find(call=>call.text.includes('UPDATE public.notification_deliveries SET status=$2'))

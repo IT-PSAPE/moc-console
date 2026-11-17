@@ -142,8 +142,12 @@ async (page) => {
   await page.goto(`${origin}/account/settings`);
   await page.getByRole('combobox', { name: 'Default work view', exact: true }).waitFor();
   await page.screenshot({ path: 'output/playwright/settings-desktop.png' });
+  await page.clock.install();
   await page.goto(`${origin}/requests`);
   await page.getByText('Sunday service livestream', { exact: true }).waitFor();
+  requests.push({ ...requests[0], id: 'audit-public-intake', title: 'Request from the public site' });
+  await page.clock.fastForward(31_000);
+  await page.getByText('Request from the public site', { exact: true }).waitFor({ timeout: 5_000 });
   await page.screenshot({ path: 'output/playwright/requests-desktop.png' });
   await page.goto(`${origin}/bookings/audit-booking`);
   await page.getByRole('heading', { name: 'Sunday camera kit', exact: true }).waitFor();
@@ -183,5 +187,5 @@ async (page) => {
   await closed;
   if (pageErrors.length) throw new Error(`Browser exceptions: ${pageErrors.join('; ')}`);
   if (missing.size) throw new Error(`Missing fixtures: ${[...missing].join(', ')}`);
-  return { passed: ['initial session failure/retry', 'equipment save failure/retry', 'session failure preserves draft', 'background refresh retry retains data', 'checklist rename/collapse', '390px reflow and named detail Escape', 'settings and populated requests/booking', 'camera-unavailable manual printed serial', 'QR print under production CSP'], missing: [...missing] };
+  return { passed: ['initial session failure/retry', 'equipment save failure/retry', 'session failure preserves draft', 'background refresh retry retains data', 'checklist rename/collapse', '390px reflow and named detail Escape', 'settings and populated requests/booking', 'public request appears in an open Console list', 'camera-unavailable manual printed serial', 'QR print under production CSP'], missing: [...missing] };
 }

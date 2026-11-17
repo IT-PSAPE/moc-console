@@ -6,6 +6,7 @@ export type RequestOptions = {
   body?: BodyInit | null
   headers?: HeadersInit
   signal?: AbortSignal
+  keepalive?: boolean
   workspaceId?: string
   responseType?: "json" | "arrayBuffer" | "response"
 }
@@ -83,6 +84,7 @@ export function createMocTransport(apiBaseUrl: string, transportOptions: MocTran
       headers,
       body,
       signal: options.signal,
+      keepalive: options.keepalive,
     })
     if (options.responseType === "response") return response as T
     if (!response.ok) throw readErrorResponse(response, await response.text())

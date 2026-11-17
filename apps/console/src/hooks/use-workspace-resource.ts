@@ -11,12 +11,15 @@ type WorkspaceResourceOptions<T> = {
   workspaceId: string | null
   enabled?: boolean
   deferInitialLoad?: boolean
+  refreshWhileVisible?: boolean
 }
 
-export function useWorkspaceResource<T>({ emptyValue, fetcher, resource, workspaceId, enabled = true, deferInitialLoad = false }: WorkspaceResourceOptions<T>) {
+export function useWorkspaceResource<T>({ emptyValue, fetcher, resource, workspaceId, enabled = true, deferInitialLoad = false, refreshWhileVisible }: WorkspaceResourceOptions<T>) {
   const generation = getCurrentWorkspaceGeneration()
+  const policy = consoleQueryPolicy(resource)
   const query = useQuery({
-    ...consoleQueryPolicy(resource),
+    ...policy,
+    refetchInterval: refreshWhileVisible ? 30_000 : policy.refetchInterval,
     queryKey: workspaceResourceKey(workspaceId, resource),
     queryFn: () => {
       if (!workspaceId) throw new Error("Select a workspace")

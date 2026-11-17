@@ -102,6 +102,7 @@ export function createPublicSubmissionsClient(transport: MocTransport) {
       const field = kind === "venue-booking" ? "venue_booking_id" : kind === "booking" ? "booking_id" : "request_id";
       void transport.request<void>(`/api/notify/${kind}`, {
         method: "POST",
+        keepalive: true,
         json: { [field]: id, tracking_code: trackingCode },
       }).catch(() => undefined);
     },

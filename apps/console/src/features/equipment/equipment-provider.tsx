@@ -4,6 +4,8 @@ import { useWorkspace } from "@/lib/workspace-context";
 import type { Booking } from "@moc/types/equipment/booking";
 import type { Equipment } from "@moc/types/equipment/equipment";
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { useMatch } from "react-router-dom";
+import { routes } from "@/screens/console-routes";
 
 type EquipmentContextValue = {
   state: {
@@ -37,8 +39,9 @@ const emptyBookings: Booking[] = [];
 
 export function EquipmentProvider({ children }: { children: ReactNode }) {
   const { currentWorkspaceId } = useWorkspace();
+  const refreshWhileVisible = Boolean(useMatch(routes.bookings));
   const { data: equipment, error: equipmentError, isLoading: isLoadingEquipment, isInitialLoading: isInitialLoadingEquipment, load: loadEquipmentResource, updateData: updateEquipment } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyEquipment, fetcher: fetchEquipment, resource: "equipment", workspaceId: currentWorkspaceId });
-  const { data: bookings, error: bookingsError, isLoading: isLoadingBookings, isInitialLoading: isInitialLoadingBookings, load: loadBookingsResource, updateData: updateBookings, setDetailData: setBookingDetail } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyBookings, fetcher: fetchBookings, resource: "bookings", workspaceId: currentWorkspaceId });
+  const { data: bookings, error: bookingsError, isLoading: isLoadingBookings, isInitialLoading: isInitialLoadingBookings, load: loadBookingsResource, updateData: updateBookings, setDetailData: setBookingDetail } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyBookings, fetcher: fetchBookings, resource: "bookings", workspaceId: currentWorkspaceId, refreshWhileVisible });
 
   const addEquipment = useCallback((newItem: Equipment) => {
     updateEquipment((current) => [newItem, ...current]);

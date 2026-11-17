@@ -32,10 +32,10 @@ See [ADR-0008](../../docs/adr/0008-extract-moc-api-app.md) for why this exists.
 | `POST /api/telegram/webhook` | Telegram | webhook secret |
 | `GET /api/health` | deployment monitor | none |
 
-Neon schedules the weekly archive (Mondays 00:00 UTC), notification delivery
-retry (daily 01:00 UTC), provider sync (daily 09:00 UTC), and scheduled-message
-delivery (hourly). These schedules stay disabled until `MOC_ENABLE_PRODUCTION_JOBS`
-is enabled during cutover.
+Neon schedules the weekly archive (Mondays 00:00 UTC), notification maintenance
+(daily 01:00 UTC), provider sync (daily 09:00 UTC), and scheduled-message delivery
+and notification retries (hourly). These schedules stay disabled until
+`MOC_ENABLE_PRODUCTION_JOBS` is enabled during cutover.
 Telegram calls exactly one webhook URL per bot, and that registration lives in
 Telegram, not in this repo or in Vercel. After the API changes host, or when
 the bot stops answering `/start` and group commands, re-register it from
@@ -45,8 +45,8 @@ the URL answers 200.
 
 
 Request and booking database triggers create durable notification-outbox rows in
-the same transaction as the source write. The Request PWA can best-effort wake
-the pending created event by presenting the returned record ID and tracking code;
+the same transaction as the source write. The Request PWA wakes the pending
+created event with a keepalive request containing the returned ID and tracking code;
 it cannot inject a workspace, destination, or message payload. Signed external
 endpoints have the same record-derived boundary.
 

@@ -9,7 +9,7 @@ import { isUuid } from './signed-ingest.js'
 
 const MAX_ATTEMPTS = 5
 const CLAIM_TIMEOUT_MS = 5 * 60_000
-const DAILY_RETRY_DELAY_MS = 24 * 60 * 60_000
+const DELIVERY_RETRY_DELAY_MS = 2 * 60_000
 
 type DeliveryRow = {
   id: string
@@ -71,7 +71,7 @@ export function deliveryRetryAt(retryAfterSeconds: number | null, now = new Date
   const providerDelayMs = retryAfterSeconds !== null && Number.isFinite(retryAfterSeconds)
     ? Math.max(0, retryAfterSeconds * 1_000)
     : 0
-  const delayMs = Math.max(DAILY_RETRY_DELAY_MS, providerDelayMs)
+  const delayMs = Math.max(DELIVERY_RETRY_DELAY_MS, providerDelayMs)
   return new Date(now.getTime() + delayMs).toISOString()
 }
 
@@ -187,19 +187,11 @@ export async function processDeliveriesForEvent(eventKey: string): Promise<Deliv
   return processRows(rows)
 }
 
-async function processDueDeliveries(limit: number, scheduledOnly: boolean): Promise<DeliveryRunResult> {
+export async function processPendingDeliveries(limit = 100): Promise<DeliveryRunResult> {
   await releaseExpiredClaims()
   const rows = await queryRows<QueryResultRow & { id: string }>(
     `SELECT id FROM public.notification_deliveries WHERE status='pending' AND next_attempt_at<=now()
-     AND (NOT $2::boolean OR scheduled_occurrence_id IS NOT NULL) ORDER BY created_at LIMIT $1`,[limit,scheduledOnly],
+     ORDER BY created_at LIMIT $1`,[limit],
   )
   return processRows(rows)
-}
-
-export async function processPendingDeliveries(limit = 100): Promise<DeliveryRunResult> {
-  return processDueDeliveries(limit, false)
-}
-
-export async function processPendingScheduledDeliveries(limit = 100): Promise<DeliveryRunResult> {
-  return processDueDeliveries(limit, true)
 }

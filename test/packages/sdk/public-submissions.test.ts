@@ -63,6 +63,22 @@ describe("public submissions SDK", () => {
     expect(seen).toEqual([{ url: "https://api.example.test/api/public/submissions", method: "POST", body: { trackingCode: "REQ-ABC123" } }])
   })
 
+  test("keeps the notification wake alive independently of the submission response", async () => {
+    const fetchCalled = Promise.withResolvers<{ path: string; options: RequestInit | undefined }>()
+    const transport = createMocTransport("https://api.example.test", { fetchImpl: async (path, options) => {
+      fetchCalled.resolve({ path: String(path), options })
+      return Response.json({ error: "Unavailable" }, { status: 503 })
+    } })
+    const client = createPublicSubmissionsClient(transport)
+
+    client.notifyCreated("booking", "booking-1", "BKG-ABCDEF123456")
+
+    const { path, options } = await fetchCalled.promise
+    expect(path).toBe("https://api.example.test/api/notify/booking")
+    expect(options).toMatchObject({ method: "POST", keepalive: true })
+    expect(JSON.parse(String(options?.body))).toEqual({ booking_id: "booking-1", tracking_code: "BKG-ABCDEF123456" })
+  })
+
   test("keeps not-found lookups nullable and stale tracking edits as conflicts", async () => {
     let status = 404
     const transport = createMocTransport("/", { fetchImpl: async () => Response.json(

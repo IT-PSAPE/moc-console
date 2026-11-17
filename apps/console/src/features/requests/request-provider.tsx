@@ -8,6 +8,8 @@ import { useWorkspaceResource } from '@/hooks/use-workspace-resource'
 import { useWorkspace } from '@/lib/workspace-context'
 import type { Request, RequestCategoryDefinition } from '@moc/types/requests'
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react'
+import { useMatch } from 'react-router-dom'
+import { routes } from '@/screens/console-routes'
 
 type RequestsContextValue = {
     state: {
@@ -72,8 +74,9 @@ function renameRequestCategoryLabels(requests: Request[], key: string, name: str
 
 export function RequestsProvider({ children }: { children: ReactNode }) {
     const { currentWorkspaceId } = useWorkspace()
-    const { data: activeData, error: activeError, isLoading: isLoadingActive, isInitialLoading: isInitialLoadingActive, load: loadActiveResource, updateData: updateActive } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyRequests, fetcher: fetchRequests, resource: 'requests:active', workspaceId: currentWorkspaceId })
-    const { data: archivedData, error: archivedError, isLoading: isLoadingArchived, isInitialLoading: isInitialLoadingArchived, load: loadArchivedResource, updateData: updateArchived } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyRequests, fetcher: fetchArchivedRequests, resource: 'requests:archived', workspaceId: currentWorkspaceId })
+    const refreshWhileVisible = Boolean(useMatch(routes.requests))
+    const { data: activeData, error: activeError, isLoading: isLoadingActive, isInitialLoading: isInitialLoadingActive, load: loadActiveResource, updateData: updateActive } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyRequests, fetcher: fetchRequests, resource: 'requests:active', workspaceId: currentWorkspaceId, refreshWhileVisible })
+    const { data: archivedData, error: archivedError, isLoading: isLoadingArchived, isInitialLoading: isInitialLoadingArchived, load: loadArchivedResource, updateData: updateArchived } = useWorkspaceResource({ deferInitialLoad: true, emptyValue: emptyRequests, fetcher: fetchArchivedRequests, resource: 'requests:archived', workspaceId: currentWorkspaceId, refreshWhileVisible })
     const { data: requestCategories, error: categoriesError, isLoading: isLoadingCategories, isInitialLoading: isInitialLoadingCategories, load: loadCategoriesResource, updateData: updateCategories } = useWorkspaceResource({ emptyValue: emptyCategories, fetcher: fetchRequestCategories, resource: 'request-categories', workspaceId: currentWorkspaceId })
     const generation = getCurrentWorkspaceGeneration()
     const requestsById = useMemo(() => mergeRequests(mergeRequests({}, activeData), archivedData), [activeData, archivedData])
