@@ -20,8 +20,8 @@ type RequestsContextValue = {
         categoriesError: Error | null
     }
     actions: {
-        loadActiveRequests: () => Promise<void>
-        loadArchivedRequests: () => Promise<void>
+        loadActiveRequests: (mode?: "background") => Promise<void>
+        loadArchivedRequests: (mode?: "background") => Promise<void>
         loadCategories: () => Promise<void>
         retryActiveRequests: () => Promise<void>
         retryArchivedRequests: () => Promise<void>
@@ -67,12 +67,12 @@ export function RequestsProvider({ children }: { children: ReactNode }) {
         return { ...mergeRequests(mergeRequests({}, activeData), archivedData), ...detailRequests }
     }, [activeData, archivedData, currentWorkspaceId, detailRequestsByWorkspace])
 
-    const loadActiveRequests = useCallback(async () => {
-        await Promise.all([loadActiveResource(), loadCategoriesResource()])
+    const loadActiveRequests = useCallback(async (mode?: "background") => {
+        await Promise.all([loadActiveResource(mode), loadCategoriesResource()])
     }, [loadActiveResource, loadCategoriesResource])
 
-    const loadArchivedRequests = useCallback(async () => {
-        await loadArchivedResource()
+    const loadArchivedRequests = useCallback(async (mode?: "background") => {
+        await loadArchivedResource(mode)
     }, [loadArchivedResource])
 
     const loadCategories = useCallback(async () => {

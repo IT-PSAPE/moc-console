@@ -18,7 +18,7 @@ type EquipmentContextValue = {
     loadEquipment: () => Promise<void>;
     refreshEquipment: () => Promise<void>;
     retryEquipment: () => Promise<void>;
-    loadBookings: () => Promise<void>;
+    loadBookings: (mode?: "background") => Promise<void>;
     retryBookings: () => Promise<void>;
     addEquipment: (equipment: Equipment) => void;
     syncEquipment: (equipment: Equipment) => void;
@@ -83,8 +83,8 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
     await loadEquipmentResource(true);
   }, [loadEquipmentResource]);
 
-  const loadBookings = useCallback(async () => {
-    await loadBookingsResource();
+  const loadBookings = useCallback(async (mode?: "background") => {
+    await loadBookingsResource(mode);
   }, [loadBookingsResource]);
 
   const retryBookings = useCallback(async () => {

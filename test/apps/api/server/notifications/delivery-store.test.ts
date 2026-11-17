@@ -6,12 +6,12 @@ import { deliveryRetryAt } from "../../../../../apps/api/server/notifications/de
 describe("deliveryRetryAt", () => {
   const now = new Date("2026-08-05T01:00:00.000Z")
 
-  it("defers ordinary failed deliveries to the next guaranteed daily worker", () => {
-    assert.equal(deliveryRetryAt(null, now), "2026-08-06T01:00:00.000Z")
-    assert.equal(deliveryRetryAt(30, now), "2026-08-06T01:00:00.000Z")
+  it("makes ordinary failures eligible for retry after a short backoff", () => {
+    assert.equal(deliveryRetryAt(null, now), "2026-08-05T01:02:00.000Z")
+    assert.equal(deliveryRetryAt(30, now), "2026-08-05T01:02:00.000Z")
   })
 
-  it("honours a provider retry-after that exceeds the daily retry interval", () => {
-    assert.equal(deliveryRetryAt(172_800, now), "2026-08-07T01:00:00.000Z")
+  it("honours a longer provider retry-after", () => {
+    assert.equal(deliveryRetryAt(300, now), "2026-08-05T01:05:00.000Z")
   })
 })

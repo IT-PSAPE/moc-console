@@ -8,6 +8,7 @@ type NotificationWake = {
 function wakeNotification({ endpoint, body }: NotificationWake): void {
   void fetch(apiUrl(endpoint), {
     method: "POST",
+    keepalive: true,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   }).catch(() => undefined)

@@ -20,9 +20,9 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   if (!requireAuthorizedCronGet(request, response)) return
 
   try {
-    const commands = await syncManagementCommands()
     const outbox = await processPendingOutbox()
     const deliveries = await processPendingDeliveries()
+    const commands = await syncManagementCommands()
     const maintenance = await purgeApiMaintenanceData()
     response.status(200).json({ ok: true, outbox, deliveries, maintenance, commands })
   } catch (error) {

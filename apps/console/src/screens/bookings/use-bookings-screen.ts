@@ -5,6 +5,7 @@ import { useViewQuery } from "@/hooks/use-view-query"
 import { useIsMobile } from "@moc/ui/hooks/use-is-mobile"
 import type { Booking } from "@moc/types/equipment"
 import { useListDetailSelection } from "@/hooks/use-list-detail-selection"
+import { useVisibleResourceRefresh } from "@/hooks/use-visible-resource-refresh"
 
 const bookingViews = ["list", "kanban", "calendar"] as const
 
@@ -20,10 +21,10 @@ export function useBookingsScreen() {
   const { close: closeDetail, select: selectBooking } = detail.actions
   const activeView = isMobile && view === "kanban" ? "list" : view
 
+  useVisibleResourceRefresh(loadBookings)
   useEffect(() => {
-    void loadBookings()
     void loadEquipment()
-  }, [loadBookings, loadEquipment])
+  }, [loadEquipment])
 
   useEffect(() => {
     if (activeView !== "list") closeDetail()

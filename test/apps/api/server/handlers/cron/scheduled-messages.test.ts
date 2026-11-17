@@ -21,7 +21,7 @@ test('Hobby configuration checks every hour using once-daily jobs, keeping the o
  expect(config.crons.filter(job=>job.path!=='/api/cron/scheduled-messages')).toHaveLength(3)
 })
 
-test('authorized hourly worker prepares occurrences then selects only due scheduled deliveries', async () => {
+test('authorized hourly worker prepares occurrences and recovers due notification work', async () => {
  const priorFetch=globalThis.fetch
  const prior={secret:process.env.CRON_SECRET,url:process.env.VITE_SUPABASE_URL,key:process.env.SUPABASE_SECRET_KEY}
  const calls:URL[]=[]
@@ -37,10 +37,13 @@ test('authorized hourly worker prepares occurrences then selects only due schedu
   const response={status(code:number){status=code;return response},json(){},setHeader(){}}
   await handler({method:'GET',headers:{authorization:'Bearer test-cron-secret'}},response)
   expect(status).toBe(200)
-  expect(calls.slice(0,2).map(url=>url.pathname.split('/').at(-1))).toEqual(['recover_scheduled_deliveries','prepare_scheduled_messages'])
-  const queue=calls.find(url=>url.searchParams.get('select')==='id')
-  expect(queue?.searchParams.get('scheduled_occurrence_id')).toBe('not.is.null')
-  expect(queue?.searchParams.get('next_attempt_at')).toStartWith('lte.')
+  expect(calls.map(url=>url.pathname.split('/').at(-1))).toContain('prepare_scheduled_messages')
+  for (const table of ['notification_outbox', 'notification_deliveries']) {
+   const queue=calls.find(url=>url.pathname.endsWith('/'+table) && url.searchParams.get('select')==='id')
+   expect(queue?.searchParams.get('status')).toBe('eq.pending')
+   expect(queue?.searchParams.get('next_attempt_at')).toStartWith('lte.')
+   expect(queue?.searchParams.has('scheduled_occurrence_id')).toBe(false)
+  }
  } finally {
   globalThis.fetch=priorFetch
   for(const [key,value] of Object.entries({CRON_SECRET:prior.secret,VITE_SUPABASE_URL:prior.url,SUPABASE_SECRET_KEY:prior.key})) {if(value===undefined) delete process.env[key];else process.env[key]=value}

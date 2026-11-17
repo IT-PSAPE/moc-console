@@ -28,7 +28,8 @@ See [ADR-0008](../../docs/adr/0008-extract-moc-api-app.md) for why this exists.
 | `POST /api/telegram/webhook` | Telegram | webhook secret |
 | `GET /api/health` | deployment monitor | none |
 | `GET /api/cron/weekly-archive` | Vercel Cron, Mondays 00:00 | `CRON_SECRET` |
-| `GET /api/cron/notification-deliveries` | Vercel Cron, daily 01:00 fallback retry | `CRON_SECRET` |
+| `GET /api/cron/notification-deliveries` | Vercel Cron, daily 01:00 queue maintenance and command sync | `CRON_SECRET` |
+| `GET /api/cron/scheduled-messages` | Vercel Cron, hourly scheduled messages and notification retries | `CRON_SECRET` |
 Telegram calls exactly one webhook URL per bot, and that registration lives in
 Telegram, not in this repo or in Vercel. After the API changes host, or when
 the bot stops answering `/start` and group commands, re-register it from
@@ -37,10 +38,11 @@ current registration). Pending updates are redelivered once the URL answers 200.
 
 
 Request and booking database triggers create durable notification-outbox rows in
-the same transaction as the source write. The Request PWA can best-effort wake
-the pending created event by presenting the returned record ID and tracking code;
+the same transaction as the source write. The Request PWA wakes the pending
+created event with a keepalive request containing the returned ID and tracking code;
 it cannot inject a workspace, destination, or message payload. Signed external
-endpoints have the same record-derived boundary.
+endpoints have the same record-derived boundary. The hourly worker processes
+missed wakes and due Telegram retries.
 
 ## Public submission management
 

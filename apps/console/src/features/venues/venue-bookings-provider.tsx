@@ -18,7 +18,7 @@ type VenueBookingsContextValue = {
         at: Date
     }
     actions: {
-        loadBookings: () => Promise<void>
+        loadBookings: (mode?: "background") => Promise<void>
         retryBookings: () => Promise<void>
         loadBooking: (id: string) => Promise<void>
         syncVenueBooking: (booking: VenueBooking) => void
@@ -48,8 +48,8 @@ export function VenueBookingsProvider({ children }: { children: ReactNode }) {
         return { ...mergeBookings({}, data), ...detailBookings }
     }, [currentWorkspaceId, data, detailBookingsByWorkspace])
 
-    const loadBookings = useCallback(async () => {
-        await load()
+    const loadBookings = useCallback(async (mode?: "background") => {
+        await load(mode)
     }, [load])
 
     const retryBookings = useCallback(async () => {

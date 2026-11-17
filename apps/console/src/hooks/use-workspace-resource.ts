@@ -44,17 +44,20 @@ export function useWorkspaceResource<T>({ emptyValue, fetcher, resource, workspa
     setStateSnapshotKey(snapshotKey);
   }, [generation, resource, snapshotKey, workspaceId]);
 
-  const load = useCallback(async (force = false) => {
+  const load = useCallback(async (force: boolean | "background" = false) => {
     if (!workspaceId) return;
 
     const requestedSnapshot = { id: workspaceId, generation };
     const cached = getWorkspaceResourceState<T>(workspaceId, resource);
     const requestedVersion = getWorkspaceResourceVersion(workspaceId, resource);
-    setIsLoading(cached.isLoading || !cached.isLoaded || force);
-    setError(null);
+    const background = force === "background" && cached.isLoaded;
+    if (!background) {
+      setIsLoading(cached.isLoading || !cached.isLoaded || force === true);
+      setError(null);
+    }
 
     try {
-      const next = await loadWorkspaceResource(workspaceId, resource, fetcher, force);
+      const next = await loadWorkspaceResource(workspaceId, resource, fetcher, Boolean(force));
       if (isSameWorkspace(currentSnapshotRef.current, requestedSnapshot) && getWorkspaceResourceVersion(workspaceId, resource) === requestedVersion) {
         setDataState(next);
         setError(null);
@@ -62,12 +65,12 @@ export function useWorkspaceResource<T>({ emptyValue, fetcher, resource, workspa
       }
     } catch (reason: unknown) {
       const nextError = reason instanceof Error ? reason : new Error("Failed to load workspace data");
-      if (isSameWorkspace(currentSnapshotRef.current, requestedSnapshot) && getWorkspaceResourceVersion(workspaceId, resource) === requestedVersion) {
+      if (!background && isSameWorkspace(currentSnapshotRef.current, requestedSnapshot) && getWorkspaceResourceVersion(workspaceId, resource) === requestedVersion) {
         setError(nextError);
         setStateSnapshotKey(getSnapshotKey(requestedSnapshot, resource));
       }
     } finally {
-      if (isSameWorkspace(currentSnapshotRef.current, requestedSnapshot) && getWorkspaceResourceVersion(workspaceId, resource) === requestedVersion) {
+      if (!background && isSameWorkspace(currentSnapshotRef.current, requestedSnapshot) && getWorkspaceResourceVersion(workspaceId, resource) === requestedVersion) {
         setIsLoading(false);
       }
     }

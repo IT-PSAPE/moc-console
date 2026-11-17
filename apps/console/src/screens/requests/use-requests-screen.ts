@@ -5,6 +5,7 @@ import { useViewQuery } from "@/hooks/use-view-query"
 import { useIsMobile } from "@moc/ui/hooks/use-is-mobile"
 import type { Request } from "@moc/types/requests"
 import { useListDetailSelection } from "@/hooks/use-list-detail-selection"
+import { useVisibleResourceRefresh } from "@/hooks/use-visible-resource-refresh"
 
 const requestViews = ["list", "kanban", "calendar"] as const
 
@@ -22,13 +23,8 @@ export function useRequestsScreen() {
   const { includesArchived } = filters
   const loadsArchived = includesArchived || activeView === "calendar"
 
-  useEffect(() => {
-    void loadActiveRequests()
-  }, [loadActiveRequests])
-
-  useEffect(() => {
-    if (loadsArchived) void loadArchivedRequests()
-  }, [loadsArchived, loadArchivedRequests])
+  useVisibleResourceRefresh(loadActiveRequests)
+  useVisibleResourceRefresh(loadArchivedRequests, loadsArchived)
 
   useEffect(() => {
     if (activeView !== "list") closeDetail()

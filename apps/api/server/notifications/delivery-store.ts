@@ -6,7 +6,7 @@ import { scheduledRpc } from '../scheduled-messages/store.js'
 
 const MAX_ATTEMPTS = 5
 const CLAIM_TIMEOUT_MS = 5 * 60_000
-const DAILY_RETRY_DELAY_MS = 24 * 60 * 60_000
+const DELIVERY_RETRY_DELAY_MS = 2 * 60_000
 
 type DeliveryRow = {
   id: string
@@ -68,7 +68,7 @@ export function deliveryRetryAt(retryAfterSeconds: number | null, now = new Date
   const providerDelayMs = retryAfterSeconds !== null && Number.isFinite(retryAfterSeconds)
     ? Math.max(0, retryAfterSeconds * 1_000)
     : 0
-  const delayMs = Math.max(DAILY_RETRY_DELAY_MS, providerDelayMs)
+  const delayMs = Math.max(DELIVERY_RETRY_DELAY_MS, providerDelayMs)
   return new Date(now.getTime() + delayMs).toISOString()
 }
 
@@ -173,9 +173,7 @@ async function sendClaimedDelivery(row: DeliveryRow): Promise<DeliveryRunResult>
     .update({
       status: terminal ? "failed" : "pending",
       attempt_count: nextAttempt,
-      // The only guaranteed worker is Vercel's daily cron. A sub-day timestamp
-      // would promise a retry no worker will perform; event-triggered sends are
-      // still attempted immediately when their delivery is first enqueued.
+      // The hourly worker picks up due rows, respecting Telegram's retry-after.
       next_attempt_at: terminal ? new Date().toISOString() : deliveryRetryAt(send.retryAfterSeconds),
       last_error: send.description.slice(0, 2_000),
     })
@@ -218,21 +216,13 @@ export async function processDeliveriesForEvent(eventKey: string): Promise<Deliv
   return processRows((data ?? []) as { id: string }[])
 }
 
-async function processDueDeliveries(limit: number, scheduledOnly: boolean): Promise<DeliveryRunResult> {
+export async function processPendingDeliveries(limit = 100): Promise<DeliveryRunResult> {
   await releaseExpiredClaims()
   const admin = getSupabaseAdmin()
   const now = new Date().toISOString()
-  let query = admin.from("notification_deliveries").select("id").eq("status", "pending").lte("next_attempt_at", now)
-  if (scheduledOnly) query = query.not("scheduled_occurrence_id", "is", null)
-  const { data, error } = await query.order("created_at", { ascending: true }).limit(limit)
+  const { data, error } = await admin.from("notification_deliveries")
+    .select("id").eq("status", "pending").lte("next_attempt_at", now)
+    .order("created_at", { ascending: true }).limit(limit)
   if (error) throw new Error(error.message)
   return processRows((data ?? []) as { id: string }[])
-}
-
-export async function processPendingDeliveries(limit = 100): Promise<DeliveryRunResult> {
-  return processDueDeliveries(limit, false)
-}
-
-export async function processPendingScheduledDeliveries(limit = 100): Promise<DeliveryRunResult> {
-  return processDueDeliveries(limit, true)
 }
